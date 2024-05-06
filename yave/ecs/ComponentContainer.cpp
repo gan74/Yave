@@ -25,27 +25,11 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-ComponentBoxBase::~ComponentBoxBase() {
-}
-
 ComponentContainerBase::~ComponentContainerBase() {
-}
-
-bool ComponentContainerBase::contains(EntityId id) const {
-    return id_set().contains(id);
 }
 
 ComponentTypeIndex ComponentContainerBase::type_id() const {
     return _type_id;
-}
-
-const SparseIdSetBase& ComponentContainerBase::id_set() const {
-    Y_TODO(clean this mess)
-    return *reinterpret_cast<const SparseIdSetBase*>(this + 1);
-}
-
-const SparseIdSet& ComponentContainerBase::recently_mutated() const {
-    return _mutated;
 }
 
 }

@@ -22,18 +22,18 @@ SOFTWARE.
 #ifndef EDITOR_SYSTEMS_DEBUGANIMATESYSTEM_H
 #define EDITOR_SYSTEMS_DEBUGANIMATESYSTEM_H
 
-#include <yave/ecs2/System.h>
+#include <yave/ecs/System.h>
 
 #include <y/core/Chrono.h>
 
 namespace editor {
 
-class DebugAnimateSystem : public ecs2::System {
+class DebugAnimateSystem : public ecs::System {
 
     public:
         DebugAnimateSystem();
 
-        void setup(ecs2::SystemScheduler& sched) override;
+        void setup(ecs::SystemScheduler& sched) override;
 
     private:
         core::Chrono _timer;

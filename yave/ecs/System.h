@@ -22,93 +22,35 @@ SOFTWARE.
 #ifndef YAVE_ECS_SYSTEM_H
 #define YAVE_ECS_SYSTEM_H
 
-#include <yave/ecs/ecs.h>
+#include "ecs.h"
 
 #include <y/core/String.h>
 
 namespace yave {
 namespace ecs {
 
-class System : public NonMovable {
+class System : NonCopyable {
     public:
-        System(core::String name, float fixed_update_time = 0.0f) : _name(std::move(name)), _fixed_update_time(fixed_update_time) {
-        }
-
+        System(core::String name);
         virtual ~System() = default;
 
-        const core::String& name() const {
-            return _name;
-        }
+        virtual void setup(SystemScheduler& sched) = 0;
 
-        virtual void tick() {
-            // nothing
-        }
-
-        virtual void update(float dt) {
-            unused(dt);
-            // nothing
-        }
-
-        virtual void fixed_update(float dt) {
-            unused(dt);
-            // nothing
-        }
-
-        virtual void setup() {
-            // nothing
-        }
-
-        virtual void destroy() {
-            // nothing
-        }
-
-        virtual void reset() {
-            destroy();
-            setup();
-        }
-
-        float fixed_update_time() const {
-            return _fixed_update_time;
-        }
-
-        void schedule_fixed_update(float dt) {
-            if(_fixed_update_time <= 0.0f) {
-                if(_fixed_update_time > -1.0f) {
-                    fixed_update(dt);
-                }
-                return;
-            }
-
-            _fixed_update_acc += dt;
-            while(_fixed_update_acc > _fixed_update_time) {
-                fixed_update(_fixed_update_time);
-                _fixed_update_acc -= _fixed_update_time;
-            }
-        }
-
-        EntityWorld& world() {
-            y_debug_assert(_world);
-            return *_world;
-        }
-
-        const EntityWorld& world() const {
-            y_debug_assert(_world);
-            return *_world;
-        }
+        EntityWorld& world();
+        const core::String& name() const;
 
     private:
-        friend class EntityWorld;
+        friend class SystemManager;
 
-        EntityWorld* _world = nullptr;
+        void register_world(EntityWorld* world);
 
-    private:
         core::String _name;
-        float _fixed_update_time = 0.0f;
-        float _fixed_update_acc = 0.0f;
+        EntityWorld* _world = nullptr;
 };
 
 }
 }
+
 
 #endif // YAVE_ECS_SYSTEM_H
 

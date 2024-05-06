@@ -144,7 +144,7 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, con
     FrameGraphPassBuilder builder = framegraph.add_pass("Editor entity pass");
 
     const EcsScene* ecs_scene = dynamic_cast<const EcsScene*>(view.scene());
-    const ecs2::EntityWorld* world = ecs_scene->world();
+    const ecs::EntityWorld* world = ecs_scene->world();
 
     const usize buffer_size = world->entity_count();
 

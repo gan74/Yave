@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_SYSTEMS_ASSETLOADERSYSTEM_H
 #define YAVE_SYSTEMS_ASSETLOADERSYSTEM_H
 
-#include <yave/ecs2/EntityWorld.h>
+#include <yave/ecs/EntityWorld.h>
 
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>
@@ -31,11 +31,11 @@ SOFTWARE.
 
 namespace yave {
 
-class AssetLoaderSystem : public ecs2::System {
+class AssetLoaderSystem : public ecs::System {
     public:
         AssetLoaderSystem(AssetLoader& loader);
 
-        void setup(ecs2::SystemScheduler& sched) override;
+        void setup(ecs::SystemScheduler& sched) override;
 
         template<typename T>
         void register_component_type() {
@@ -53,18 +53,18 @@ class AssetLoaderSystem : public ecs2::System {
     private:
         struct LoadableComponentTypeInfo {
             core::String loading_tag;
-            void (*load_all)(ecs2::EntityWorld&, AssetLoadingContext&, const core::String& tag) = nullptr;
-            void (*load_recent)(ecs2::EntityWorld&, AssetLoadingContext&, const core::String& tag) = nullptr;
-            void (*update_status)(ecs2::EntityWorld&, const core::String& tag) = nullptr;
+            void (*load_all)(ecs::EntityWorld&, AssetLoadingContext&, const core::String& tag) = nullptr;
+            void (*load_recent)(ecs::EntityWorld&, AssetLoadingContext&, const core::String& tag) = nullptr;
+            void (*update_status)(ecs::EntityWorld&, const core::String& tag) = nullptr;
         };
 
         template<typename T, bool Recent>
-        static void load_components(ecs2::EntityWorld& world, AssetLoadingContext& loading_ctx, const core::String& tag) {
+        static void load_components(ecs::EntityWorld& world, AssetLoadingContext& loading_ctx, const core::String& tag) {
             auto query = [&] {
                 if constexpr(Recent) {
-                    return world.create_group<ecs2::Mutate<ecs2::Changed<T>>>().query();
+                    return world.create_group<ecs::Mutate<ecs::Changed<T>>>().query();
                 } else {
-                    return world.create_group<ecs2::Mutate<T>>().query();
+                    return world.create_group<ecs::Mutate<T>>().query();
                 }
             }();
 
@@ -75,8 +75,8 @@ class AssetLoaderSystem : public ecs2::System {
         }
 
         template<typename T>
-        static void update_loading_status(ecs2::EntityWorld& world, const core::String& tag) {
-            auto query = world.create_group<ecs2::Mutate<T>>(tag.view()).query();
+        static void update_loading_status(ecs::EntityWorld& world, const core::String& tag) {
+            auto query = world.create_group<ecs::Mutate<T>>(tag.view()).query();
             for(auto&& [id, comp] : query.id_components()) {
                 y_debug_assert(world.has_tag(id, tag));
                 if(comp.update_asset_loading_status()) {

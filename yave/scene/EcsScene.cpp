@@ -29,11 +29,11 @@ SOFTWARE.
 
 namespace yave {
 
-EcsScene::EcsScene(const ecs2::EntityWorld* w) : _world(w) {
+EcsScene::EcsScene(const ecs::EntityWorld* w) : _world(w) {
     update_from_world();
 }
 
-const ecs2::EntityWorld* EcsScene::world() const {
+const ecs::EntityWorld* EcsScene::world() const {
     return _world;
 }
 

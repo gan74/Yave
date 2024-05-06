@@ -31,7 +31,7 @@ SOFTWARE.
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/AtmosphereComponent.h>
 #include <yave/meshes/StaticMesh.h>
-#include <yave/ecs2/EntityWorld.h>
+#include <yave/ecs/EntityWorld.h>
 
 #include <yave/graphics/shader_structs.h>
 

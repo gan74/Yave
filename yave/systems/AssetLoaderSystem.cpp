@@ -26,12 +26,12 @@ SOFTWARE.
 
 namespace yave {
 
-AssetLoaderSystem::AssetLoaderSystem(AssetLoader& loader) : ecs2::System("AssetLoaderSystem"), _loader(&loader) {
+AssetLoaderSystem::AssetLoaderSystem(AssetLoader& loader) : ecs::System("AssetLoaderSystem"), _loader(&loader) {
 }
 
-void AssetLoaderSystem::setup(ecs2::SystemScheduler& sched) {
+void AssetLoaderSystem::setup(ecs::SystemScheduler& sched) {
     run_tick(false);
-    sched.schedule(ecs2::SystemSchedule::Tick, "Tick", [this] {
+    sched.schedule(ecs::SystemSchedule::Tick, "Tick", [this] {
         run_tick(true);
     });
 }

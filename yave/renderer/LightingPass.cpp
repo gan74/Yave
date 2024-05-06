@@ -37,7 +37,7 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/SkyLightComponent.h>
-#include <yave/ecs2/EntityWorld.h>
+#include <yave/ecs/EntityWorld.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>

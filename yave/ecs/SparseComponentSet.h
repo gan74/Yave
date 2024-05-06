@@ -121,7 +121,7 @@ class SparseIdSetBase : NonMovable {
             return elem;
         }
 
-        core::Vector<ecs::EntityId> _ids;
+        core::Vector<EntityId> _ids;
         core::Vector<SparseElement> _sparse;
 };
 

@@ -26,7 +26,7 @@ SOFTWARE.
 #include <editor/utils/crashhandler.h>
 
 #include <yave/graphics/device/Instance.h>
-#include <yave/ecs2/EntityWorld.h>
+#include <yave/ecs/EntityWorld.h>
 #include <y/concurrent/concurrent.h>
 #include <y/concurrent/Signal.h>
 

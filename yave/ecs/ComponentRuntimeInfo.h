@@ -25,7 +25,6 @@ SOFTWARE.
 #include "ecs.h"
 
 #include <y/serde3/serde.h>
-
 #include <y/utils/name.h>
 
 #include <memory>
@@ -39,6 +38,7 @@ std::unique_ptr<ComponentContainerBase> create_container();
 template<typename T>
 void create_or_replace_component(EntityWorld& world, EntityId id);
 
+
 struct ComponentRuntimeInfo {
     ComponentTypeIndex type_id;
     std::string_view type_name;
@@ -49,30 +49,30 @@ struct ComponentRuntimeInfo {
         return clean_component_name(type_name);
     }
 
-    static std::string_view clean_component_name(std::string_view name) {
-        usize start = 0;
-        for(usize i = 0; i != name.size(); ++i) {
-            switch(name[i]) {
-                case ':':
-                    start = i + 1;
-                break;
-
-                default:
-                break;
-            }
-        }
-
-        return name.substr(start);
-    }
-
     template<typename T>
     static ComponentRuntimeInfo create() {
         return ComponentRuntimeInfo {
             type_index<T>(),
             ct_type_name<T>(),
             create_container<T>,
-            create_or_replace_component<T>,
+            create_or_replace_component<T>
         };
+    }
+
+    static std::string_view clean_component_name(std::string_view name) {
+        usize start = 0;
+        for(usize i = 0; i != name.size(); ++i) {
+            switch(name[i]) {
+            case ':':
+                start = i + 1;
+                break;
+
+            default:
+                break;
+            }
+        }
+
+        return name.substr(start);
     }
 
 

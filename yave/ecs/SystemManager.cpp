@@ -30,7 +30,7 @@ SOFTWARE.
 #include <numeric>
 
 namespace yave {
-namespace ecs2 {
+namespace ecs {
 
 SystemManager::SystemManager(EntityWorld* world) : _world(world) {
     y_debug_assert(_world);

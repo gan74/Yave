@@ -51,109 +51,30 @@ static auto create_component_containers() {
     return containers;
 }
 
-static EntityId create_prefab_entities(EntityWorld& world, const EntityPrefab& prefab, EntityIdMap& id_map, EntityId base_id = {}) {
-    y_profile();
 
-    y_debug_assert(prefab.original_id().is_valid());
 
-    const EntityId id = base_id.is_valid() ? base_id : world.create_entity();
-    y_always_assert(id_map.find(prefab.original_id()) == id_map.end(), "Invalid prefab: id is duplicated");
-    id_map.emplace_back(prefab.original_id(), id);
-
-    auto parent_child = [&](const auto& child) {
-        if(child) {
-            world.set_parent(create_prefab_entities(world, *child, id_map), id);
-        }
-    };
-
-    for(const auto& child : prefab.children()) {
-        parent_child(child);
-    }
-
-    for(const auto& child : prefab.asset_children()) {
-        parent_child(child);
-    }
-
-    return id;
-}
-
-static void add_prefab_components(EntityWorld& world, const EntityPrefab& prefab, const EntityIdMap& id_map) {
-    y_profile();
-
-    y_debug_assert(prefab.original_id().is_valid());
-
-    const auto it = id_map.find(prefab.original_id());
-    y_debug_assert(it != id_map.end());
-
-    for(const auto& comp : prefab.components()) {
-        if(comp) {
-            comp->add_to(world, it->second, id_map);
+EntityWorld::EntityWorld() : _containers(create_component_containers()), _matrix(_containers.size()), _system_manager(this) {
+    for(auto& container : _containers) {
+        if(container) {
+            container->_matrix = &_matrix;
         }
     }
-
-    auto add_child_components = [&](const auto& child) {
-        if(child) {
-            add_prefab_components(world, *child, id_map);
-        }
-    };
-
-    for(const auto& child : prefab.children()) {
-        add_child_components(child);
-    }
-
-    for(const auto& child : prefab.asset_children()) {
-        add_child_components(child);
-    }
-}
-
-
-
-
-
-EntityWorld::EntityWorld() : _containers(create_component_containers()) {
 }
 
 EntityWorld::~EntityWorld() {
-    for(auto& system : _systems) {
-        y_debug_assert(system->_world == this);
-        system->destroy();
-    }
     _containers.clear();
 }
 
-void EntityWorld::tick() {
-    y_profile();
-
-    {
-        y_profile_zone("tick");
-        for(auto& system : _systems) {
-            y_profile_dyn_zone(system->name().data());
-            y_debug_assert(system->_world == this);
-            system->tick();
-        }
-    }
-
-    {
-        y_profile_zone("clean after tick");
-        for(auto& container : _containers) {
-            if(container) {
-                container->_mutated.clear();
-            }
-        }
-    }
-
-    _entities.audit();
+const SystemManager& EntityWorld::system_manager() const {
+    return _system_manager;
 }
 
-void EntityWorld::update(float dt) {
-    y_profile();
+SystemManager& EntityWorld::system_manager() {
+    return _system_manager;
+}
 
-    for(auto& system : _systems) {
-        y_profile_dyn_zone(system->name().data());
-        y_debug_assert(system->_world == this);
-        system->update(dt);
-        system->schedule_fixed_update(dt);
-    }
+std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) const {
+    return find_container(type_id)->runtime_info().clean_component_name();
 }
 
 usize EntityWorld::entity_count() const {
@@ -165,81 +86,83 @@ bool EntityWorld::exists(EntityId id) const {
 }
 
 EntityId EntityWorld::create_entity() {
-    y_profile();
-
     const EntityId id = _entities.create();
-    _on_created.send(id);
+    _matrix.add_entity(id);
     return id;
 }
 
-EntityId EntityWorld::create_entity(const EntityPrefab& prefab) {
-    const EntityId id = create_entity();
-    add_prefab(id, prefab);
-    return id;
-}
-
-
-void EntityWorld::add_prefab(EntityId id, const EntityPrefab& prefab) {
-    y_profile();
-
-    EntityIdMap id_map;
-    create_prefab_entities(*this, prefab, id_map, id);
-    add_prefab_components(*this, prefab, id_map);
+void EntityWorld::clear() {
+    remove_all_entities();
+    _matrix.clear();
+    _groups.locked([](auto&& groups) { groups.clear(); });
 }
 
 void EntityWorld::remove_entity(EntityId id) {
-    y_profile();
-
-    check_exists(id);
-
-    _on_destroyed.send(id);
-
     remove_all_components(id);
-    _entities.remove(id);
+    remove_all_tags(id);
 
-    // Entities are deleted immediatly, while components linger until the end of tick.
-    // This needs to be changed to be made consistent.
-    // Deferring entity deletion is problematic as we could add new components to the entity, while it is in limbo
-    // Idealy deletions should be instantaneous, and we should rely on callbacks/events rather than to_be_removed & co
-    Y_TODO(Fixme)
+    _matrix.remove_entity(id);
+    _entities.remove(id);
 }
 
 void EntityWorld::remove_all_components(EntityId id) {
     y_profile();
 
-    for(auto& cont : _containers) {
-        if(cont) {
-            cont->remove(id);
-        }
-    }
-
-    for(auto& [tag, container] : _tags) {
-        unused(tag);
-        if(container.contains(id)) {
-            container.erase(id);
+    for(auto& container : _containers) {
+        if(container) {
+            container->remove(id);
         }
     }
 }
 
-void EntityWorld::remove_all_entities() {
+void EntityWorld::remove_all_tags(EntityId id) {
     y_profile();
 
-    auto cached_entities = core::Vector<EntityId>::from_range(all_entities());
+    for(const core::String& tag : _matrix.tags()) {
+        _matrix.remove_tag(id, tag);
+    }
+}
+
+void EntityWorld::remove_all_entities() {
+    auto cached_entities = core::Vector<EntityId>::from_range(_entities.ids());
     for(const EntityId id : cached_entities) {
         remove_entity(id);
     }
 }
 
-EntityId EntityWorld::id_from_index(u32 index) const {
-    return _entities.id_from_index(index);
+const EntityPool& EntityWorld::entity_pool() const {
+    return _entities;
 }
 
-EntityPrefab EntityWorld::create_prefab(EntityId id) const {
-    check_exists(id);
+void EntityWorld::add_tag(EntityId id, const core::String& tag) {
+    y_debug_assert(exists(id));
+    y_debug_assert(!is_tag_implicit(tag));
+    _matrix.add_tag(id, tag);
+}
 
-    EntityPrefab prefab;
-    y_fatal("not supported");
-    return prefab;
+void EntityWorld::remove_tag(EntityId id, const core::String& tag) {
+    y_debug_assert(exists(id));
+    y_debug_assert(!is_tag_implicit(tag));
+    _matrix.remove_tag(id, tag);
+}
+
+void EntityWorld::clear_tag(const core::String& tag) {
+    y_debug_assert(!is_tag_implicit(tag));
+    _matrix.clear_tag(tag);
+}
+
+bool EntityWorld::has_tag(EntityId id, const core::String& tag) const {
+    y_debug_assert(exists(id));
+    y_debug_assert(!is_tag_implicit(tag));
+    return _matrix.has_tag(id, tag);
+}
+const SparseIdSet& EntityWorld::tag_set(const core::String& tag) const {
+    y_debug_assert(!is_tag_implicit(tag));
+    return _matrix.tag_set(tag);
+}
+
+bool EntityWorld::is_tag_implicit(std::string_view tag) {
+    return !tag.empty() && (tag[0] == '@' || tag[0] == '!');
 }
 
 EntityId EntityWorld::parent(EntityId id) const {
@@ -264,87 +187,9 @@ bool EntityWorld::is_parent(EntityId id, EntityId parent) const {
     return _entities.is_parent(id, parent);
 }
 
-const SparseIdSetBase& EntityWorld::component_ids(ComponentTypeIndex type_id) const {
-    return find_container(type_id)->id_set();
-}
-
-const SparseIdSet& EntityWorld::recently_mutated(ComponentTypeIndex type_id) const {
-    return find_container(type_id)->recently_mutated();
-}
-
-core::Span<EntityId> EntityWorld::with_tag(const core::String& tag) const {
-    const SparseIdSetBase* set = tag_set(tag);
-    return set ? set->ids() : core::Span<EntityId>();
-}
-
-const SparseIdSet* EntityWorld::raw_tag_set(const core::String& tag) const {
-    if(const auto it = _tags.find(tag); it != _tags.end()) {
-        return &it->second;
-    }
-    return nullptr;
-}
-
-const SparseIdSetBase* EntityWorld::tag_set(const core::String& tag) const {
-    if(tag.is_empty()) {
-        return nullptr;
-    }
-
-    if(tag[0] == '@') {
-        for(const auto& container : _containers) {
-            if(container->runtime_info().clean_component_name() == tag.sub_str(1)) {
-                return &container->id_set();
-            }
-        }
-        return nullptr;
-    }
-
-    if(tag[0] == '!') {
-        y_fatal("'!' tags can't have a set, use queries instead");
-    }
-
-    return raw_tag_set(tag);
-}
-
-void EntityWorld::add_tag(EntityId id, const core::String& tag) {
-    check_exists(id);
-    y_always_assert(!is_tag_implicit(tag), "Implicit tags can't be added directly");
-    _tags[tag].insert(id);
-}
-
-void EntityWorld::remove_tag(EntityId id, const core::String& tag) {
-    check_exists(id);
-    y_always_assert(!is_tag_implicit(tag), "Implicit tags can't be removed directly");
-    auto& tag_set = _tags[tag];
-    if(tag_set.contains(id)) {
-        tag_set.erase(id);
-    }
-}
-
-void EntityWorld::clear_tag(const core::String& tag) {
-    y_always_assert(!is_tag_implicit(tag), "Implicit tags can't be removed directly");
-    _tags.erase(tag);
-}
-
-bool EntityWorld::has_tag(EntityId id, const core::String& tag) const {
-    check_exists(id);
-    const SparseIdSetBase* set = tag_set(tag);
-    return set ? set->contains(id) : false;
-}
-
-bool EntityWorld::is_tag_implicit(std::string_view tag) {
-    return !tag.empty() && (tag[0] == '@' || tag[0] == '!');
-}
-
-std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) const {
-    return find_container(type_id)->runtime_info().clean_component_name();
-}
-
-void EntityWorld::make_mutated(ComponentTypeIndex type_id, core::Span<EntityId> ids) {
-    y_profile();
-    auto& mutated = find_container(type_id)->_mutated;
-    for(const EntityId id : ids) {
-        mutated.insert(id);
-    }
+bool EntityWorld::has_component(EntityId id, ComponentTypeIndex type) const {
+    y_debug_assert(exists(id));
+    return _matrix.type_exists(type) && _matrix.has_component(id, type);
 }
 
 const ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) const {
@@ -355,14 +200,6 @@ const ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex typ
 ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) {
     y_debug_assert(_containers.size() > usize(type_id));
     return _containers[usize(type_id)].get();
-}
-
-void EntityWorld::register_component_types(System* system) const {
-    for(auto& container : _containers) {
-        if(container) {
-            container->register_component_type(system);
-        }
-    }
 }
 
 void EntityWorld::check_exists(EntityId id) const {
@@ -377,46 +214,43 @@ void EntityWorld::inspect_components(EntityId id, ComponentInspector* inspector)
     }
 }
 
+void EntityWorld::register_component_types(System* system) const {
+    for(auto& container : _containers) {
+        if(container) {
+            container->register_component_type(system);
+        }
+    }
+}
 
 serde3::Result EntityWorld::save_state(serde3::WritableArchive& arc) const {
     y_profile();
 
     y_try(arc.serialize(_entities));
-    y_try(arc.serialize(_tags));
-    y_try(arc.serialize(_world_components));
     y_try(arc.serialize(_containers));
+    y_try(_matrix.save_tags(arc));
 
     return core::Ok(serde3::Success::Full);
 }
 
 serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
-    remove_all_entities();
-    _tags.clear();
-    _world_components.clear();
-
-    y_try(arc.deserialize(_entities));
-    y_try(arc.deserialize(_tags));
-    y_try(arc.deserialize(_world_components));
+    clear();
 
     decltype(_containers) containers;
+
+    y_try(arc.deserialize(_entities));
     y_try(arc.deserialize(containers));
+    y_try(_matrix.load_tags(arc));
+
+    for(EntityId id : _entities.ids()) {
+        _matrix.add_entity(id);
+    }
 
     for(auto&& container : containers) {
         if(container) {
-            _containers[usize(container->type_id())]->take_components_from(container.get());
-        }
-    }
+            container->_matrix = &_matrix;
+            container->post_load();
 
-
-    {
-        for(const EntityId id : _entities.ids()) {
-            _on_created.send(id);
-        }
-
-        for(auto&& container : _containers) {
-            if(container) {
-                container->post_load();
-            }
+            _containers[usize(container->type_id())] = std::move(container);
         }
     }
 

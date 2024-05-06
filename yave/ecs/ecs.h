@@ -103,9 +103,18 @@ template<typename Component, typename... SystemTypes>
 struct RegisterComponent {
     // EntityWorld.inl
     static inline void register_component_type(System*);
-    static inline void register_component_type(ecs2::System*);
 };
 
+
+template<typename T>
+concept Inspectable = requires(T comp) {
+    comp.inspect(static_cast<ecs::ComponentInspector*>(nullptr));
+};
+
+template<typename T>
+concept Registerable = requires(T comp) {
+    comp.register_component_type(static_cast<System*>(nullptr));
+};
 
 
 }
@@ -117,6 +126,14 @@ struct std::hash<yave::ecs::EntityId> : std::hash<y::u64> {
         return hash<y::u64>::operator()(id.as_u64());
     }
 };
+
+
+namespace yave {
+namespace ecs2 {
+using namespace ecs;
+}
+}
+
 
 #endif // YAVE_ECS_ECS_H
 

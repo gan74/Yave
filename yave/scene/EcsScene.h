@@ -38,13 +38,13 @@ class EcsScene : public Scene {
     };
 
     public:
-        EcsScene(const ecs2::EntityWorld* w);
+        EcsScene(const ecs::EntityWorld* w);
 
-        const ecs2::EntityWorld* world() const;
+        const ecs::EntityWorld* world() const;
 
         void update_from_world();
 
-        ecs2::EntityId id_from_index(u32 index) const;
+        ecs::EntityId id_from_index(u32 index) const;
 
     private:
         template<typename S>
@@ -56,7 +56,7 @@ class EcsScene : public Scene {
         template<typename T, typename S>
         void process_components(u32 ObjectIndices::* index, S& storage);
 
-        const ecs2::EntityWorld* _world = nullptr;
+        const ecs::EntityWorld* _world = nullptr;
 
         ecs::SparseComponentSet<ObjectIndices> _indices;
 };

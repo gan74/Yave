@@ -29,7 +29,7 @@ SOFTWARE.
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/ecs2/EntityWorld.h>
+#include <yave/ecs/EntityWorld.h>
 
 #include <y/utils/log.h>
 

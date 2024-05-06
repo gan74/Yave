@@ -36,7 +36,7 @@ SOFTWARE.
 
 #include <y/utils/format.h>
 
-#include <yave/ecs2/System.h>
+#include <yave/ecs/System.h>
 
 
 namespace editor {
@@ -99,23 +99,23 @@ static void busy_sleep(core::Duration dur) {
 }
 
 template<usize I>
-struct TestSystem : ecs2::System {
-    TestSystem() : ecs2::System(fmt("Test {}", I)) {
+struct TestSystem : ecs::System {
+    TestSystem() : ecs::System(fmt("Test {}", I)) {
     }
 
-    void setup(ecs2::SystemScheduler& sched) {
+    void setup(ecs::SystemScheduler& sched) {
         for(usize k = 0; k != 4; ++k) {
             concurrent::DependencyGroup group;
             for(usize i = 0; i != I; ++i) {
-                auto next = sched.schedule(ecs2::SystemSchedule::Tick, fmt("Tick {}/{}", i, k), [] {
+                auto next = sched.schedule(ecs::SystemSchedule::Tick, fmt("Tick {}/{}", i, k), [] {
                     busy_sleep(core::Duration::milliseconds(0.5));
                 }, core::Span<concurrent::DependencyGroup>(&group, i % 3 == 1 ? 1 : 0));
                 group = next;
             }
-            sched.schedule(ecs2::SystemSchedule::Update, "Update", [] {
+            sched.schedule(ecs::SystemSchedule::Update, "Update", [] {
                 busy_sleep(core::Duration::milliseconds(0.5));
             });
-            sched.schedule(ecs2::SystemSchedule::PostUpdate, "Post", [] {
+            sched.schedule(ecs::SystemSchedule::PostUpdate, "Post", [] {
                 busy_sleep(core::Duration::milliseconds(0.5));
             });
         }
@@ -133,8 +133,8 @@ class Ecs2Debug : public Widget {
         void on_gui() override {
             /*{
                 y_profile_zone("ecs2 mutate");
-                ecs2::EntityWorld& world = current_world()._world2;
-                const auto& group = world.create_group<ecs2::Mutate<TransformableComponent>, StaticMeshComponent>();
+                ecs::EntityWorld& world = current_world()._world2;
+                const auto& group = world.create_group<ecs::Mutate<TransformableComponent>, StaticMeshComponent>();
 
                 auto query = group.query();
                 for(auto&& [tr, mesh] : query) {
@@ -143,7 +143,7 @@ class Ecs2Debug : public Widget {
 #if 0
             {
                 y_profile_zone("ecs");
-                ecs2::EntityWorld& world = current_world();
+                ecs::EntityWorld& world = current_world();
                 auto query = world.query<TransformableComponent, StaticMeshComponent>({ecs::tags::debug});
 
                 math::Vec3 sum;
@@ -162,7 +162,7 @@ class Ecs2Debug : public Widget {
 
             {
                 y_profile_zone("ecs2");
-                ecs2::EntityWorld& world = current_world()._world2;
+                ecs::EntityWorld& world = current_world()._world2;
                 const auto& group = world.create_group<TransformableComponent, StaticMeshComponent>({ecs::tags::debug});
 
                 math::Vec3 sum;
@@ -181,7 +181,7 @@ class Ecs2Debug : public Widget {
 
 
 
-                ecs2::EntityWorld& world = current_world()._world2;
+                ecs::EntityWorld& world = current_world()._world2;
                 if(!world.system_manager().find_system<TestSystem<7>>()) {
                     // world.add_system<TestSystem<1>>();
                     // world.add_system<TestSystem<2>>();

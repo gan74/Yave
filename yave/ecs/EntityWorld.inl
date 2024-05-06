@@ -23,13 +23,11 @@ SOFTWARE.
 #define YAVE_ECS_ENTITYWORLD_INL
 
 #ifndef YAVE_ECS_ENTITYWORLD_H
-// #error this file should not be included directly
+#error this file should not be included directly
 
 // Just to help the IDE
 #include "EntityWorld.h"
 #endif
-
-#include <y/reflect/reflect.h>
 
 
 namespace yave {
@@ -45,8 +43,11 @@ void create_or_replace_component(EntityWorld& world, EntityId id) {
     world.add_or_replace_component<T>(id);
 }
 
-
-
+template<typename... Ts>
+SystemScheduler::ArgumentResolver::operator const EntityGroup<Ts...>&() const {
+    y_debug_assert(_parent && _parent->_world);
+    return _parent->_world->create_group<Ts...>();
+}
 
 template<typename Component, typename SystemType, typename... Tail>
 static inline void register_component_type_rec(System* system) {
@@ -58,12 +59,11 @@ static inline void register_component_type_rec(System* system) {
     }
 }
 
+
 template<typename Component, typename... SystemTypes>
 void RegisterComponent<Component, SystemTypes...>::register_component_type(System* system) {
     register_component_type_rec<Component, SystemTypes...>(system);
 }
-
-
 
 
 template<typename T>
@@ -91,5 +91,5 @@ void ComponentBox<T>::add_to(EntityWorld& world, EntityId id, const EntityIdMap&
 }
 }
 
-#endif // YAVE_ECS_COMPONENTCONTAINER_H
+#endif // YAVE_ECS_ENTITYWORLD_INL
 

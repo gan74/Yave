@@ -73,10 +73,6 @@ class SetterInspectorBase : public ecs::ComponentInspector {
             return _is_type = (info.type_id == _type);
         }
 
-        bool inspect_component_type(ecs2::ComponentRuntimeInfo info, bool) override {
-            return _is_type = (info.type_id == _type);
-        }
-
         void inspect(const core::String&, math::Transform<>&)                           override {}
         void inspect(const core::String&, math::Vec3&, Vec3Role)                        override {}
         void inspect(const core::String&, float&, FloatRole)                            override {}
@@ -216,10 +212,6 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
         }
 
         bool inspect_component_type(ecs::ComponentRuntimeInfo info, bool has_inspect) override {
-            y_fatal("FIXME");
-        }
-
-        bool inspect_component_type(ecs2::ComponentRuntimeInfo info, bool has_inspect) override {
             end_table();
 
             if(info.type_id == ecs::type_index<EditorComponent>()) {

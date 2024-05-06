@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ECS2_SYSTEMMANAGER_H
-#define YAVE_ECS2_SYSTEMMANAGER_H
+#ifndef YAVE_ECS_SYSTEMMANAGER_H
+#define YAVE_ECS_SYSTEMMANAGER_H
 
 #include "System.h"
 #include "EntityGroup.h"
@@ -29,7 +29,7 @@ SOFTWARE.
 
 
 namespace yave {
-namespace ecs2 {
+namespace ecs {
 
 enum SystemSchedule {
     // Tick is always first.
@@ -158,5 +158,5 @@ class SystemManager : NonCopyable {
 }
 
 
-#endif // YAVE_ECS2_SYSTEMMANAGER_H
+#endif // YAVE_ECS_SYSTEMMANAGER_H
 

@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_ECS_COMPONENTINSPECTOR_H
 #define YAVE_ECS_COMPONENTINSPECTOR_H
 
-#include "ecs.h"
+#include "ComponentRuntimeInfo.h"
 
 #include <yave/assets/AssetPtr.h>
 
@@ -56,7 +56,6 @@ class ComponentInspector : NonCopyable {
         virtual ~ComponentInspector();
 
         virtual bool inspect_component_type(ComponentRuntimeInfo info, bool has_inspect) = 0;
-        virtual bool inspect_component_type(ecs2::ComponentRuntimeInfo info, bool has_inspect) = 0;
 
         virtual void inspect(const core::String& name, math::Transform<>& t) = 0;
 

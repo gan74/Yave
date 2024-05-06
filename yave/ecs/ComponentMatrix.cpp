@@ -26,7 +26,7 @@ SOFTWARE.
 #include <y/serde3/archives.h>
 
 namespace yave {
-namespace ecs2 {
+namespace ecs {
 
 ComponentMatrix::ComponentMatrix(usize type_count) : _type_count(std::max(1u, u32(type_count))), _groups(_type_count) {
 }

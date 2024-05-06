@@ -201,14 +201,14 @@ void EditorWorld::clear_selection() {
     clear_tag(ecs::tags::selected);
 }
 
-core::Span<std::pair<core::String, ecs2::ComponentRuntimeInfo>> EditorWorld::component_types() {
-    static core::Vector<std::pair<core::String, ecs2::ComponentRuntimeInfo>> types;
+core::Span<std::pair<core::String, ecs::ComponentRuntimeInfo>> EditorWorld::component_types() {
+    static core::Vector<std::pair<core::String, ecs::ComponentRuntimeInfo>> types;
     static bool init = false;
 
     if(!init) {
-        for(const auto* poly_base = ecs2::ComponentContainerBase::_y_serde3_poly_base.first; poly_base; poly_base = poly_base->next) {
+        for(const auto* poly_base = ecs::ComponentContainerBase::_y_serde3_poly_base.first; poly_base; poly_base = poly_base->next) {
             if(const auto container = poly_base->create()) {
-                const ecs2::ComponentRuntimeInfo info = container->runtime_info();
+                const ecs::ComponentRuntimeInfo info = container->runtime_info();
                 types.emplace_back(info.clean_component_name(), info);
             }
         }

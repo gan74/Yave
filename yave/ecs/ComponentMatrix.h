@@ -19,10 +19,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_ECS2_COMPONENTMATRIX_H
-#define YAVE_ECS2_COMPONENTMATRIX_H
+#ifndef YAVE_ECS_COMPONENTMATRIX_H
+#define YAVE_ECS_COMPONENTMATRIX_H
 
 #include "ecs.h"
+
+#include "SparseComponentSet.h"
 
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>
@@ -34,7 +36,7 @@ SOFTWARE.
 
 
 namespace yave {
-namespace ecs2 {
+namespace ecs {
 
 class ComponentMatrix {
     struct ComponentIndex {
@@ -119,5 +121,5 @@ class ComponentMatrix {
 }
 }
 
-#endif // YAVE_ECS2_COMPONENTMATRIX_H
+#endif // YAVE_ECS_COMPONENTMATRIX_H
 

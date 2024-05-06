@@ -24,7 +24,7 @@ SOFTWARE.
 #include "EntityWorld.h"
 
 namespace yave {
-namespace ecs2 {
+namespace ecs {
 
 System::System(core::String name) : _name(std::move(name)) {
 }

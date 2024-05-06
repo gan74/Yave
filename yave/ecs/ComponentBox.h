@@ -36,7 +36,7 @@ using EntityIdMap = core::AssocVector<EntityId, EntityId>;
 
 class ComponentBoxBase : NonMovable {
     public:
-        virtual ~ComponentBoxBase();
+        virtual ~ComponentBoxBase() = default;
 
         virtual ComponentRuntimeInfo runtime_info() const = 0;
         virtual void add_to(EntityWorld& world, EntityId id, const EntityIdMap& id_map) const = 0;

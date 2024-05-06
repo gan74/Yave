@@ -240,7 +240,6 @@ struct ToneMappingSettings;
 struct TransformData;
 struct TransformableSceneObjectData;
 struct Viewport;
-struct VisibilityData;
 struct VolumeSampler;
 }
 
@@ -252,42 +251,29 @@ struct VkStructInitializer;
 
 
 namespace yave::ecs {
+class ArgumentResolver;
 class ComponentBoxBase;
 class ComponentContainerBase;
 class ComponentInspector;
+class ComponentMatrix;
+class EntityGroupBase;
 class EntityId;
 class EntityPool;
 class EntityPrefab;
 class EntityWorld;
+class Query;
 class SparseIdSet;
 class SparseIdSetBase;
-class System;
-class WorldComponentContainerBase;
-struct ComponentRuntimeInfo;
-struct ComponentsReturnPolicy;
-struct Entity;
-struct IdComponentsReturnPolicy;
-struct QueryUtils;
-struct SetMatch;
-struct SparseElement;
-}
-
-
-namespace yave::ecs2 {
-class ArgumentResolver;
-class ComponentContainerBase;
-class ComponentMatrix;
-class EntityGroupBase;
-class EntityWorld;
-class Query;
 class System;
 class SystemManager;
 class SystemScheduler;
 struct ComponentIndex;
 struct ComponentReturnPolicy;
 struct ComponentRuntimeInfo;
+struct Entity;
 struct IdComponentReturnPolicy;
 struct Schedule;
+struct SparseElement;
 struct TagSet;
 struct Task;
 }
