@@ -189,7 +189,7 @@ bool EntityWorld::is_parent(EntityId id, EntityId parent) const {
 
 bool EntityWorld::has_component(EntityId id, ComponentTypeIndex type) const {
     y_debug_assert(exists(id));
-    return _matrix.has_component(id, type);
+    return _matrix.type_exists(type) && _matrix.has_component(id, type);
 }
 
 const ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) const {

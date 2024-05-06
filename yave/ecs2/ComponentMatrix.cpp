@@ -40,6 +40,10 @@ void ComponentMatrix::clear() {
     }
 }
 
+bool ComponentMatrix::type_exists(ComponentTypeIndex type) const {
+    return u32(type) < _type_count;
+}
+
 void ComponentMatrix::register_group(EntityGroupBase* group) {
     y_profile();
 
@@ -168,6 +172,8 @@ const SparseIdSet& ComponentMatrix::tag_set(const core::String& tag) const {
 }
 
 ComponentMatrix::ComponentIndex ComponentMatrix::component_index(EntityId id, ComponentTypeIndex type) const {
+    y_debug_assert(type_exists(type));
+
     const u32 index = id.index() * _type_count + u32(type);
 
     const u32 pack_index = index / 64;

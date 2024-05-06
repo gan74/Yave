@@ -52,6 +52,8 @@ class ComponentMatrix {
     public:
         void clear();
 
+        bool type_exists(ComponentTypeIndex type) const;
+
         void add_entity(EntityId id);
         void remove_entity(EntityId id);
 
