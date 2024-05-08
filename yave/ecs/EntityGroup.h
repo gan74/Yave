@@ -42,7 +42,7 @@ class EntityGroupBase final : NonMovable {
 
     template<typename T>
     static core::String clean_component_name() {
-        return core::String(ct_type_name<T>())
+        return core::String(ct_type_name<traits::component_raw_type_t<T>>())
             .replaced("class ", "")
             .replaced("struct ", "")
             .replaced("yave::", "")
@@ -52,11 +52,23 @@ class EntityGroupBase final : NonMovable {
     }
 
     template<typename... Ts>
-    static core::String create_name() {
+    static core::String create_group_name(core::Span<std::string_view> tags) {
         core::String name = "EntityGroupBase<";
         name += ((clean_component_name<Ts>() + ", ") + ...);
         name.resize(name.size() - 2);
         name += ">";
+
+        if(!tags.is_empty()) {
+            name += "(";
+            for(const std::string_view tag : tags) {
+                name += "\"";
+                name += tag;
+                name += "\", ";
+            }
+            name.resize(name.size() - 2);
+            name += ")";
+        }
+
         return name;
     }
 

@@ -228,7 +228,7 @@ class EntityWorld : NonMovable {
         template<typename... Ts>
         EntityGroupBase* create_new_group(core::Vector<std::unique_ptr<EntityGroupBase>>& groups, core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> filters) {
             EntityGroupBase* group = groups.emplace_back(std::make_unique<EntityGroupBase>(EntityGroupBase::type_storage<Ts...>(), tags, filters)).get();
-            group->_name = EntityGroupBase::create_name<Ts...>();
+            group->_name = EntityGroupBase::create_group_name<Ts...>(tags);
             _matrix.register_group(group);
             return group;
         }
