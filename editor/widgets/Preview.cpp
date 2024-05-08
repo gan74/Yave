@@ -65,7 +65,6 @@ Preview::~Preview() {
 }
 
 void Preview::refresh() {
-    _world->flush_reload();
 }
 
 void Preview::set_material(const AssetPtr<Material>& material) {

@@ -57,10 +57,6 @@ EditorWorld::EditorWorld(AssetLoader& loader) {
     add_system<DebugAnimateSystem>();
 }
 
-void EditorWorld::flush_reload() {
-    y_fatal("FIXME");
-}
-
 bool EditorWorld::set_entity_name(ecs::EntityId id, std::string_view name) {
     if(EditorComponent* comp = get_or_add_component<EditorComponent>(id)) {
         comp->set_name(name);
