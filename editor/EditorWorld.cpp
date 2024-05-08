@@ -149,7 +149,8 @@ usize EditorWorld::selected_entity_count() const {
 }
 
 core::Span<ecs::EntityId> EditorWorld::selected_entities() const {
-    return tag_set(ecs::tags::selected).ids();
+    const ecs::SparseIdSet* set = tag_set(ecs::tags::selected);
+    return set ? set->ids() : core::Span<ecs::EntityId>();
 }
 
 bool EditorWorld::is_selected(ecs::EntityId id) const {

@@ -70,7 +70,7 @@ class ComponentMatrix {
         void clear_tag(const core::String& tag);
         bool has_tag(EntityId id, const core::String& tag) const;
 
-        const SparseIdSet& tag_set(const core::String& tag) const;
+        const SparseIdSet* tag_set(const core::String& tag) const;
 
 
         template<typename T>

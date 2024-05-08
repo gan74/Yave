@@ -43,12 +43,12 @@ static SceneVisibilitySubPass filter_selected(const SceneVisibilitySubPass& visi
     y_profile();
 
     const EcsScene* scene = dynamic_cast<const EcsScene*>(visibility.scene_view.scene());
-    const ecs::SparseIdSet& selected = scene->world()->tag_set(ecs::tags::selected);
+    const ecs::SparseIdSet* selected = scene->world()->tag_set(ecs::tags::selected);
 
     auto filter = [&](const auto& objects) {
         std::remove_cvref_t<decltype(objects)> filtered;
         filtered.set_min_capacity(objects.size());
-        std::copy_if(objects.begin(), objects.end(), std::back_inserter(filtered), [&](const auto* obj) { return selected.contains(scene->id_from_index(obj->entity_index)); });
+        std::copy_if(objects.begin(), objects.end(), std::back_inserter(filtered), [&](const auto* obj) { return selected && selected->contains(scene->id_from_index(obj->entity_index)); });
         return filtered;
     };
 

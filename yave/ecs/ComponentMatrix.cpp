@@ -51,6 +51,10 @@ void ComponentMatrix::register_group(EntityGroupBase* group) {
         _groups[usize(type)] << group;
     }
 
+    for(const ComponentTypeIndex type : group->type_filters()) {
+        _groups[usize(type)] << group;
+    }
+
     for(const core::String& tags : group->tags()) {
         TagSet& set = _tags[tags];
         set.groups << group;
@@ -63,6 +67,11 @@ void ComponentMatrix::register_group(EntityGroupBase* group) {
     for(const EntityId id : _ids) {
         if(id.is_valid()) {
             for(const ComponentTypeIndex type : group->types()) {
+                if(has_component(id, type)) {
+                    group->add_entity_component(id);
+                }
+            }
+            for(const ComponentTypeIndex type : group->type_filters()) {
                 if(has_component(id, type)) {
                     group->add_entity_component(id);
                 }
@@ -162,13 +171,12 @@ bool ComponentMatrix::has_tag(EntityId id, const core::String& tag) const {
     return false;
 }
 
-const SparseIdSet& ComponentMatrix::tag_set(const core::String& tag) const {
+const SparseIdSet* ComponentMatrix::tag_set(const core::String& tag) const {
     if(const auto it = _tags.find(tag); it != _tags.end()) {
-        return it->second.ids;
+        return &it->second.ids;
     }
 
-    static const SparseIdSet empty;
-    return empty;
+    return nullptr;
 }
 
 ComponentMatrix::ComponentIndex ComponentMatrix::component_index(EntityId id, ComponentTypeIndex type) const {

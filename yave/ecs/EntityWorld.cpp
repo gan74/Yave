@@ -74,6 +74,14 @@ std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) co
     return find_container(type_id)->runtime_info().clean_component_name();
 }
 
+core::Vector<const EntityGroupBase*> EntityWorld::all_groups() {
+    core::Vector<const EntityGroupBase*> gr;
+    _groups.locked([&](auto&& groups) {
+        std::transform(groups.begin(), groups.end(), std::back_inserter(gr), [](const auto& g) { return g.get(); });
+    });
+    return gr;
+}
+
 usize EntityWorld::entity_count() const {
     return _entities.size();
 }
@@ -154,7 +162,8 @@ bool EntityWorld::has_tag(EntityId id, const core::String& tag) const {
     y_debug_assert(!is_tag_implicit(tag));
     return _matrix.has_tag(id, tag);
 }
-const SparseIdSet& EntityWorld::tag_set(const core::String& tag) const {
+
+const SparseIdSet* EntityWorld::tag_set(const core::String& tag) const {
     y_debug_assert(!is_tag_implicit(tag));
     return _matrix.tag_set(tag);
 }

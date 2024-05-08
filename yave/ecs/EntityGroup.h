@@ -36,9 +36,8 @@ class EntityGroupBase : NonMovable {
     public:
         virtual ~EntityGroupBase() = default;
 
-        template<typename T>
-        inline bool has_component_type() const {
-            return std::find(_types.begin(), _types.end(), type_index<T>()) != _types.end();
+        const core::String& name() const {
+            return _name;
         }
 
         inline core::Span<ComponentTypeIndex> types() const {
@@ -51,6 +50,17 @@ class EntityGroupBase : NonMovable {
 
         inline core::Span<core::String> tags() const {
             return _tags;
+        }
+
+        inline core::Span<ComponentTypeIndex> type_filters() const {
+            return _type_filters;
+        }
+
+        inline bool matches(core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> filters) const {
+            if(tags.size() != _tags.size()) {
+                return false;
+            }
+            return _type_filters == filters && std::equal(tags.begin(), tags.end(), _tags.begin());
         }
 
     protected:
@@ -75,17 +85,24 @@ class EntityGroupBase : NonMovable {
         }
 
     protected:
-        EntityGroupBase(core::Span<ComponentTypeIndex> types, core::Span<std::string_view> tags) : _types(types), _tags(tags.size()), _component_count(u8(types.size() + tags.size())) {
+        EntityGroupBase(core::Span<ComponentTypeIndex> types, core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> type_filters) :
+                _types(types),
+                _tags(tags.size()),
+                _type_filters(type_filters),
+                _component_count(u8(types.size() + tags.size() + type_filters.size())) {
             std::copy(tags.begin(), tags.end(), _tags.begin());
-            y_always_assert(_component_count == types.size() + tags.size(), "Too many component types in group");
+            y_always_assert(_component_count == types.size() + tags.size() + type_filters.size(), "Too many component types in group");
         }
 
         SparseIdSet _ids;
         core::Span<ComponentTypeIndex> _types;
         core::FixedArray<core::String> _tags;
+        core::FixedArray<ComponentTypeIndex> _type_filters;
 
         core::Vector<u8> _entity_component_count;
         const u8 _component_count = 0;
+
+        core::String _name;
 };
 
 
@@ -137,6 +154,8 @@ class EntityGroup final : public EntityGroupBase {
 
     template<usize... Is>
     inline void fill_sets(const ContainerTuple& containers, std::index_sequence<Is...>) {
+        _name = "EntityGroup<";
+
         usize mut_index = 0;
         usize filter_index = 0;
         usize const_index = 0;
@@ -265,6 +284,10 @@ class EntityGroup final : public EntityGroupBase {
                 return ids().size();
             }
 
+            inline bool is_empty() const {
+                return _ids.is_empty();
+            }
+
         private:
             friend class EntityGroup;
 
@@ -277,8 +300,12 @@ class EntityGroup final : public EntityGroupBase {
     public:
         static constexpr bool is_const = !mutate_count;
 
-        EntityGroup(const ContainerTuple& containers, core::Span<std::string_view> tags) : EntityGroupBase(type_storage, tags) {
+        EntityGroup(const ContainerTuple& containers, core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> type_filters = {}) : EntityGroupBase(type_storage, tags, type_filters) {
             fill_sets(containers, std::make_index_sequence<type_count>{});
+
+            _name = "EntityGroup<";
+            _name += (core::String(ct_type_name<Ts>()) + ...);
+            _name += ">";
         }
 
         Query query() const {

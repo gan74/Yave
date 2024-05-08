@@ -59,6 +59,8 @@ class EcsScene : public Scene {
         template<typename T, typename S>
         void process_components(u32 ObjectIndices::* index_ptr, S& storage);
 
+        void process_atmosphere();
+
         void audit() const;
 
         const ecs::EntityWorld* _world = nullptr;

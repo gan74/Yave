@@ -88,117 +88,6 @@ class CameraDebug : public Widget {
         }
 };
 
-
-
-
-static void busy_sleep(core::Duration dur) {
-    core::Chrono timer;
-    while(timer.elapsed() < dur) {
-        std::this_thread::yield();
-    }
-}
-
-template<usize I>
-struct TestSystem : ecs::System {
-    TestSystem() : ecs::System(fmt("Test {}", I)) {
-    }
-
-    void setup(ecs::SystemScheduler& sched) {
-        for(usize k = 0; k != 4; ++k) {
-            concurrent::DependencyGroup group;
-            for(usize i = 0; i != I; ++i) {
-                auto next = sched.schedule(ecs::SystemSchedule::Tick, fmt("Tick {}/{}", i, k), [] {
-                    busy_sleep(core::Duration::milliseconds(0.5));
-                }, core::Span<concurrent::DependencyGroup>(&group, i % 3 == 1 ? 1 : 0));
-                group = next;
-            }
-            sched.schedule(ecs::SystemSchedule::Update, "Update", [] {
-                busy_sleep(core::Duration::milliseconds(0.5));
-            });
-            sched.schedule(ecs::SystemSchedule::PostUpdate, "Post", [] {
-                busy_sleep(core::Duration::milliseconds(0.5));
-            });
-        }
-    }
-};
-
-class Ecs2Debug : public Widget {
-    editor_widget(Ecs2Debug, "View", "Debug")
-
-    public:
-        Ecs2Debug() : Widget("ECS2 debug") {
-        }
-
-    protected:
-        void on_gui() override {
-            /*{
-                y_profile_zone("ecs2 mutate");
-                ecs::EntityWorld& world = current_world()._world2;
-                const auto& group = world.create_group<ecs::Mutate<TransformableComponent>, StaticMeshComponent>();
-
-                auto query = group.query();
-                for(auto&& [tr, mesh] : query) {
-                }
-            }*/
-#if 0
-            {
-                y_profile_zone("ecs");
-                ecs::EntityWorld& world = current_world();
-                auto query = world.query<TransformableComponent, StaticMeshComponent>({ecs::tags::debug});
-
-                math::Vec3 sum;
-                {
-                    y_profile_zone("summing");
-                    for(const auto& [tr, mesh] : query.components()) {
-                        sum += tr.position();
-                    }
-                }
-
-                ImGui::Text("%u transformables in query", u32(query.size()));
-                ImGui::Text("Sum of positions = {%f, %f, %f}", sum.x(), sum.y(), sum.z());
-            }
-
-            ImGui::Separator();
-
-            {
-                y_profile_zone("ecs2");
-                ecs::EntityWorld& world = current_world()._world2;
-                const auto& group = world.create_group<TransformableComponent, StaticMeshComponent>({ecs::tags::debug});
-
-                math::Vec3 sum;
-                {
-                    y_profile_zone("summing");
-                    for(auto&& [tr, mesh] : group.query()) {
-                        sum += tr.position();
-                    }
-                }
-
-                ImGui::Text("%u transformables in group", u32(group.ids().size()));
-                ImGui::Text("Sum of positions = {%f, %f, %f}", sum.x(), sum.y(), sum.z());
-            }
-
-            {
-
-
-
-                ecs::EntityWorld& world = current_world()._world2;
-                if(!world.system_manager().find_system<TestSystem<7>>()) {
-                    // world.add_system<TestSystem<1>>();
-                    // world.add_system<TestSystem<2>>();
-                    // world.add_system<TestSystem<3>>();
-                    // world.add_system<TestSystem<4>>();
-                    // world.add_system<TestSystem<5>>();
-                    world.add_system<TestSystem<6>>();
-                    world.add_system<TestSystem<7>>();
-                }
-
-                static concurrent::StaticThreadPool pool;
-                world.system_manager().run_schedule(pool);
-            }
-#endif
-        }
-};
-
 class MemoryDebug : public Widget {
     editor_widget(MemoryDebug, "View", "Debug")
 
@@ -230,46 +119,13 @@ class EcsDebug : public Widget {
         void on_gui() override {
             EditorWorld& world = current_world();
 
-#if 0
             const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
 
-            if(ImGui::CollapsingHeader("Entities")) {
-                if(ImGui::BeginTable("##components", 2, table_flags | ImGuiTableFlags_BordersInnerV)) {
-                    ImGui::TableSetupColumn("Component", ImGuiTableColumnFlags_WidthStretch);
-                    ImGui::TableSetupColumn("Entities", ImGuiTableColumnFlags_WidthFixed);
-                    ImGui::TableHeadersRow();
 
-                    for(const auto& [name, info] : world.component_types()) {
-                        imgui::table_begin_next_row();
-                        ImGui::TextUnformatted(name.begin(), name.end());
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%u", unsigned(world.component_ids(info.type_id).size()));
-                    }
-
-                    {
-                        imgui::table_begin_next_row();
-                        ImGui::TextUnformatted("Total");
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%u", unsigned(world.entity_count()));
-                    }
-
-                    ImGui::EndTable();
-                }
-            }
-
-            if(ImGui::CollapsingHeader("Systems")) {
-                if(ImGui::BeginTable("##systems", 2, table_flags | ImGuiTableFlags_BordersInnerV)) {
-                    ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
-                    ImGui::TableSetupColumn("Fixed update", ImGuiTableColumnFlags_WidthFixed);
-                    ImGui::TableHeadersRow();
-
-                    for(const auto& system : world.systems()) {
-                        imgui::table_begin_next_row();
-                        ImGui::TextUnformatted(system->name().data());
-                        ImGui::TableNextColumn();
-                        ImGui::Text("%.1fms", system->fixed_update_time() * 1000.0f);
-                    }
-                    ImGui::EndTable();
+            if(ImGui::CollapsingHeader("Groups")) {
+                const auto groups = world.all_groups();
+                for(const ecs::EntityGroupBase* group : groups) {
+                    ImGui::TextUnformatted(group->name().data());
                 }
             }
 
@@ -292,7 +148,6 @@ class EcsDebug : public Widget {
                     ImGui::EndTable();
                 }
             }
-#endif
         }
 };
 

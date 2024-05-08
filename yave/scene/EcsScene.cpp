@@ -130,6 +130,27 @@ void EcsScene::process_components(u32 ObjectIndices::* index_ptr, S& storage) {
     }
 }
 
+void EcsScene::process_atmosphere() {
+    auto query = _world->create_group<AtmosphereComponent>().query();
+    if(query.is_empty()) {
+        _atmosphere = nullptr;
+    } else {
+        for(const auto& [id, atmo] : query.id_components()) {
+            const DirectionalLightComponent* sun = _world->component<DirectionalLightComponent>(atmo.sun());
+
+            if(sun) {
+                if(!_atmosphere) {
+                    _atmosphere = std::make_unique<AtmosphereObject>();
+                }
+                _atmosphere->entity_index = id.index();
+                _atmosphere->component = atmo;
+                _atmosphere->sun = *sun;
+                break;
+            }
+        }
+    }
+}
+
 ecs::EntityId EcsScene::id_from_index(u32 index) const {
     return _indices.id_from_index(index);
 }
@@ -142,10 +163,10 @@ void EcsScene::update_from_world() {
     process_transformable_components<StaticMeshComponent>(&ObjectIndices::mesh, _meshes);
     process_transformable_components<PointLightComponent>(&ObjectIndices::point_light, _point_lights);
     process_transformable_components<SpotLightComponent>(&ObjectIndices::spot_light, _spot_lights);
-
     process_components<DirectionalLightComponent>(&ObjectIndices::directional_light, _directionals);
     process_components<SkyLightComponent>(&ObjectIndices::sky_light, _sky_lights);
 
+    process_atmosphere();
 
     {
         ComputeCmdBufferRecorder recorder = create_disposable_compute_cmd_buffer();

@@ -24,12 +24,6 @@ SOFTWARE.
 
 #include <yave/camera/Camera.h>
 
-#include <yave/components/AtmosphereComponent.h>
-#include <yave/components/DirectionalLightComponent.h>
-#include <yave/components/StaticMeshComponent.h>
-#include <yave/components/PointLightComponent.h>
-#include <yave/components/SpotLightComponent.h>
-
 namespace yave {
 
 Scene::Scene() {

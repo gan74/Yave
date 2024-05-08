@@ -43,26 +43,21 @@ EntitySelector::EntitySelector(ecs::ComponentTypeIndex filter) :
 void EntitySelector::on_gui() {
     const EditorWorld& world = current_world();
 
-
-#if 1
-    y_fatal("FIXME");
-#else
     const bool has_filter = (_filter != ecs::ComponentTypeIndex::invalid_index);
 
     if(has_filter) {
         ImGui::Checkbox("Show all entities", &_show_all);
     }
 
-    const auto query = (has_filter && !_show_all)
-        ? world.query<EditorComponent>(world.component_ids(_filter).ids())
-        : world.query<EditorComponent>();
 
+    const auto filters = has_filter && !_show_all ? core::Span<ecs::ComponentTypeIndex>{_filter} : core::Span<ecs::ComponentTypeIndex>{};
+    auto query = world.create_group<EditorComponent>({}, filters).query();
     if(ImGui::BeginChild("##entities")) {
         if(query.is_empty()) {
             ImGui::TextDisabled("No viable entities found");
         }
 
-        for(const auto& [id, comp] : query) {
+        for(const auto& [id, comp] : query.id_components()) {
             imgui::text_icon(world.entity_icon(id));
             ImGui::SameLine();
             if(ImGui::Selectable(comp.name().data())) {
@@ -74,7 +69,6 @@ void EntitySelector::on_gui() {
         }
     }
     ImGui::EndChild();
-#endif
 
 }
 

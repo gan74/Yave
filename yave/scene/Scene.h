@@ -29,6 +29,7 @@ SOFTWARE.
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/SkyLightComponent.h>
+#include <yave/components/AtmosphereComponent.h>
 
 #include <yave/camera/Camera.h>
 
@@ -60,12 +61,16 @@ struct TransformableSceneObject : TransformableSceneObjectData, SceneObject<T> {
 };
 
 
-
 using StaticMeshObject          = TransformableSceneObject<StaticMeshComponent>;
 using PointLightObject          = TransformableSceneObject<PointLightComponent>;
 using SpotLightObject           = TransformableSceneObject<SpotLightComponent>;
 using DirectionalLightObject    = SceneObject<DirectionalLightComponent>;
 using SkyLightObject            = SceneObject<SkyLightComponent>;
+
+struct AtmosphereObject : SceneObject<AtmosphereComponent> {
+    DirectionalLightComponent sun;
+};
+
 
 class Scene : NonMovable {
     public:
@@ -89,6 +94,8 @@ class Scene : NonMovable {
         core::Span<SpotLightObject>         spot_lights() const     { return _spot_lights; }
         core::Span<DirectionalLightObject>  directionals() const    { return _directionals; }
         core::Span<SkyLightObject>          sky_lights() const      { return _sky_lights; }
+
+        const AtmosphereObject*             atmosphere() const      { return _atmosphere.get(); }
 
 
         template<typename T>
@@ -114,6 +121,8 @@ class Scene : NonMovable {
 
         core::Vector<DirectionalLightObject> _directionals;
         core::Vector<SkyLightObject> _sky_lights;
+
+        std::unique_ptr<AtmosphereObject> _atmosphere;
 
         TransformManager _transform_manager;
 };

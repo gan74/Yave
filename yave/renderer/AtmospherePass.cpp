@@ -61,14 +61,17 @@ static FrameGraphVolumeId integrate_atmosphere(FrameGraph& framegraph, const sha
 
 AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const AtmosphereSettings& settings) {
     const Scene* scene = gbuffer.scene_pass.scene_view.scene();
-    const AtmosphereComponent* atmosphere = nullptr;
-    const DirectionalLightComponent* sun = nullptr;
 
-    if(!atmosphere || !sun) {
+    const AtmosphereObject* atmo_object = scene->atmosphere();
+    if(!atmo_object) {
+
         AtmospherePass pass;
         pass.lit = lit;
         return pass;
     }
+
+    const AtmosphereComponent& atmosphere = atmo_object->component;
+    const DirectionalLightComponent& sun = atmo_object->sun;
 
     const auto region = framegraph.region("Atmosphere");
 
@@ -82,17 +85,17 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
     };
 
     const shader::AtmosphereParams params {
-        math::Vec3(0.0f, 0.0f, -atmosphere->zero_altitude()),
-        atmosphere->planet_radius(),
+        math::Vec3(0.0f, 0.0f, -atmosphere.zero_altitude()),
+        atmosphere.planet_radius(),
 
-        rayleigh(atmosphere->scattering_strength()),
-        atmosphere->atmosphere_height(),
+        rayleigh(atmosphere.scattering_strength()),
+        atmosphere.atmosphere_height(),
 
-        -sun->direction().normalized(),
-        atmosphere->planet_radius() + atmosphere->atmosphere_height(),
+        -sun.direction().normalized(),
+        atmosphere.planet_radius() + atmosphere.atmosphere_height(),
 
-        sun->color() * sun->intensity(),
-        atmosphere->density_falloff(),
+        sun.color() * sun.intensity(),
+        atmosphere.density_falloff(),
     };
 
 
