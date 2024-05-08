@@ -121,11 +121,33 @@ class EcsDebug : public Widget {
 
             const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
 
-
             if(ImGui::CollapsingHeader("Groups")) {
-                const auto groups = world.all_groups();
+                auto groups = world.all_groups();
+                std::sort(groups.begin(), groups.end(), [](auto* a, auto* b) { return a->name() < b->name(); });
                 for(const ecs::EntityGroupBase* group : groups) {
-                    ImGui::TextUnformatted(group->name().data());
+                    if(ImGui::TreeNode(fmt_c_str("{}###{}", group->name(), static_cast<const void*>(group)))) {
+                        ImGui::TextUnformatted(fmt_c_str("{} ids", group->ids_before_filtering().size()));
+
+                        if(!group->tags().is_empty()) {
+                            if(ImGui::TreeNode(fmt_c_str("{} tags", group->tags().size()))) {
+                                for(const core::String& tag : group->tags()) {
+                                    ImGui::TextUnformatted(tag.data());
+                                }
+                                ImGui::TreePop();
+                            }
+                        }
+
+                        if(!group->type_filters().is_empty()) {
+                            if(ImGui::TreeNode(fmt_c_str("{} type filters", group->type_filters().size()))) {
+                                for(const ecs::ComponentTypeIndex type : group->type_filters()) {
+                                    ImGui::TextUnformatted(fmt_c_str("{}", world.component_type_name(type)));
+                                }
+                                ImGui::TreePop();
+                            }
+                        }
+
+                        ImGui::TreePop();
+                    }
                 }
             }
 
@@ -143,6 +165,7 @@ class EcsDebug : public Widget {
                         ImGui::TableNextColumn();
                         if(ImGui::SmallButton(ICON_FA_TRASH)) {
                             world.clear_tag(tag);
+                            y_debug_assert(world.tag_set(tag)->is_empty());
                         }
                     }
                     ImGui::EndTable();

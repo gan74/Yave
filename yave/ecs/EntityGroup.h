@@ -43,11 +43,6 @@ class EntityGroupBase : NonMovable {
         inline core::Span<ComponentTypeIndex> types() const {
             return _types;
         }
-
-        inline core::Span<EntityId> ids() const {
-            return _ids.ids();
-        }
-
         inline core::Span<core::String> tags() const {
             return _tags;
         }
@@ -55,6 +50,11 @@ class EntityGroupBase : NonMovable {
         inline core::Span<ComponentTypeIndex> type_filters() const {
             return _type_filters;
         }
+
+        inline core::Span<EntityId> ids_before_filtering() const {
+            return _ids.ids();
+        }
+
 
         inline bool matches(core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> filters) const {
             if(tags.size() != _tags.size()) {
@@ -128,6 +128,18 @@ class EntityGroup final : public EntityGroupBase {
 
 
     template<typename T>
+    static core::String clean_component_name() {
+        return core::String(ct_type_name<T>())
+            .replaced("class ", "")
+            .replaced("struct ", "")
+            .replaced("yave::", "")
+            .replaced("ecs::", "")
+            .replaced("> ", ">")
+        ;
+    }
+
+
+    template<typename T>
     static inline T& get_component(const SetTuple& sets, EntityId id) {
         return (*std::get<SparseComponentSet<traits::component_raw_type_t<T>>*>(sets))[id];
     }
@@ -154,8 +166,6 @@ class EntityGroup final : public EntityGroupBase {
 
     template<usize... Is>
     inline void fill_sets(const ContainerTuple& containers, std::index_sequence<Is...>) {
-        _name = "EntityGroup<";
-
         usize mut_index = 0;
         usize filter_index = 0;
         usize const_index = 0;
@@ -304,7 +314,8 @@ class EntityGroup final : public EntityGroupBase {
             fill_sets(containers, std::make_index_sequence<type_count>{});
 
             _name = "EntityGroup<";
-            _name += (core::String(ct_type_name<Ts>()) + ...);
+            _name += ((clean_component_name<Ts>() + ", ") + ...);
+            _name.resize(_name.size() - 2);
             _name += ">";
         }
 

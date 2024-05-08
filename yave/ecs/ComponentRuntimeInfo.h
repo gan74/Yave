@@ -63,12 +63,12 @@ struct ComponentRuntimeInfo {
         usize start = 0;
         for(usize i = 0; i != name.size(); ++i) {
             switch(name[i]) {
-            case ':':
-                start = i + 1;
-                break;
+                case ':':
+                    start = i + 1;
+                    break;
 
-            default:
-                break;
+                default:
+                    break;
             }
         }
 
