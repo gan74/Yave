@@ -31,6 +31,8 @@ SOFTWARE.
 #include <atomic>
 #include <future>
 #include <condition_variable>
+#include <source_location>
+
 
 namespace y {
 namespace concurrent {
@@ -39,9 +41,9 @@ class StaticThreadPool;
 
 class DependencyGroup {
     public:
-        DependencyGroup() = default;
+        DependencyGroup();
 
-        static DependencyGroup non_empty();
+        static DependencyGroup empty();
 
         bool is_empty() const;
         bool is_ready() const;
@@ -49,6 +51,8 @@ class DependencyGroup {
 
     private:
         friend class StaticThreadPool;
+
+        DependencyGroup(bool init);
 
         void add_dependency();
         void solve_dependency();
@@ -61,13 +65,16 @@ class StaticThreadPool : NonMovable {
         using Func = std::function<void()>;
 
         struct FuncData : NonCopyable {
-            FuncData(Func func, core::Span<DependencyGroup> wait, DependencyGroup done = DependencyGroup());
+            FuncData(Func func, core::Span<DependencyGroup> wait, DependencyGroup done, std::source_location loc);
 
             bool is_ready() const;
 
             Func function;
             core::SmallVector<DependencyGroup, 4> wait_for;
             DependencyGroup signal;
+#ifdef Y_DEBUG
+            std::source_location location;
+#endif
         };
 
         struct SharedData {
@@ -91,7 +98,7 @@ class StaticThreadPool : NonMovable {
         void cancel_pending_tasks();
 
         void wait_for(core::Span<DependencyGroup> wait);
-        void schedule(Func&& func, DependencyGroup* signal = nullptr, core::Span<DependencyGroup> wait_for = {});
+        void schedule(Func&& func, DependencyGroup* signal = nullptr, core::Span<DependencyGroup> wait_for = {}, std::source_location loc = std::source_location::current());
 
         template<typename F, typename R = decltype(std::declval<F>()())>
         std::future<R> schedule_with_future(F&& func, DependencyGroup* on_done = nullptr, core::Span<DependencyGroup> wait_for = {}) {

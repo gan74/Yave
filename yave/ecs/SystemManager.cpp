@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <y/core/ScratchPad.h>
 
+#include <y/core/Chrono.h>
+
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
@@ -43,59 +45,60 @@ void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) cons
 
     const usize dep_count = std::accumulate(_schedulers.begin(), _schedulers.end(), 0_uu, [](usize acc, const auto& s) {
         return acc + std::accumulate(s->_schedules.begin(), s->_schedules.end(), 0_uu, [](usize m, const auto& s) { return std::max(m, s.tasks.size()); });
-    });
+    }) + 1;
 
-    core::ScratchVector<DependencyGroup> tmp_1(dep_count);
-    core::ScratchVector<DependencyGroup> tmp_0(dep_count);
-    auto* current = &tmp_0;
-    auto* next = &tmp_1;
+
+    std::atomic<u32> completed = 0;
+    [[maybe_unused]] u32 submitted = 0;
+
+    core::ScratchVector<DependencyGroup> stage_deps(dep_count);
+    DependencyGroup previous_stage = DependencyGroup::empty();
 
     for(usize i = 0; i != usize(SystemSchedule::Max); ++i) {
-        bool next_cleared = false;
-        auto clear_next_if_needed = [&] {
-            if(!next_cleared && !next->is_empty()) {
-                std::swap(current, next);
-                next->make_empty();
-                next_cleared = true;
-            }
-        };
-
-        const bool wait_for_all = i == SystemSchedule::PostUpdate;
-
         for(const auto& scheduler : _schedulers) {
+
             SystemScheduler::Schedule& sched = scheduler->_schedules[i];
+
             for(usize k = 0; k != sched.tasks.size(); ++k) {
-                clear_next_if_needed();
+                const auto& to_wait = sched.wait_groups[k];
 
-                DepGroups wait = wait_for_all
-                    ? DepGroups(*current)
-                    : (i ? DepGroups(scheduler->_schedules[i - 1].signals) : DepGroups());
-
-
-                core::ScratchPad<DependencyGroup> all_deps;
-                if(!sched.wait_groups[k].is_empty()) {
-                    y_debug_assert(std::all_of(sched.wait_groups[k].begin(), sched.wait_groups[k].end(), [](const auto& g) { return !g.is_empty(); }));
-                    all_deps = core::ScratchPad<DependencyGroup>(wait.size() + sched.wait_groups.size());
-                    std::copy(wait.begin(), wait.begin(), all_deps.begin());
-                    std::copy(sched.wait_groups[k].begin(), sched.wait_groups[k].end(), all_deps.begin() + wait.size());
-                    wait = all_deps;
+                core::ScratchVector<DependencyGroup> wait(to_wait.size() + 1);
+                std::copy(to_wait.begin(), to_wait.end(), std::back_inserter(wait));
+                if(!previous_stage.is_empty()) {
+                    wait.push_back(previous_stage);
                 }
 
-
                 DependencyGroup& signal = sched.signals[k];
-                next->push_back(signal);
 
                 const SystemScheduler::Task& task = sched.tasks[k];
                 thread_pool.schedule([&]() {
                     y_profile_dyn_zone(fmt_c_str("{}: {}", scheduler->_system->name(), task.name));
                     task.func();
+                    ++completed;
                 }, &signal, wait);
+
+                stage_deps.push_back(signal);
+                ++submitted;
             }
         }
+
+        if(!previous_stage.is_empty()) {
+            stage_deps.push_back(previous_stage);
+        }
+
+        DependencyGroup next;
+        thread_pool.schedule([&]() {
+            y_profile_msg("Stage sync");
+        }, &next, stage_deps);
+
+        stage_deps.make_empty();
+        previous_stage = next;
     }
 
     y_profile_zone("waiting for completion");
-    thread_pool.wait_for(DepGroups(*next));
+    thread_pool.wait_for(previous_stage);
+
+    y_debug_assert(completed == submitted);
 }
 
 }

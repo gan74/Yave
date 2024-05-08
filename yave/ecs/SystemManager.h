@@ -95,7 +95,7 @@ class SystemScheduler : NonMovable {
                 std::fill(args.begin(), args.end(), this);
                 std::apply(func, args);
             });
-            return s.signals.emplace_back(DependencyGroup::non_empty());
+            return s.signals.emplace_back();
         }
 
     private:

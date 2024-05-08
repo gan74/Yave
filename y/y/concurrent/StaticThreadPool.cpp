@@ -29,10 +29,17 @@ SOFTWARE.
 namespace y {
 namespace concurrent {
 
-DependencyGroup DependencyGroup::non_empty() {
-    DependencyGroup group;
-    group._counter = std::make_shared<std::atomic<u32>>(0);
-    return group;
+DependencyGroup::DependencyGroup() : DependencyGroup(true) {
+}
+
+DependencyGroup::DependencyGroup(bool init) {
+    if(init) {
+        _counter = std::make_shared<std::atomic<u32>>(0);
+    }
+}
+
+DependencyGroup DependencyGroup::empty() {
+    return DependencyGroup(false);
 }
 
 bool DependencyGroup::is_empty() const {
@@ -48,25 +55,27 @@ u32 DependencyGroup::dependency_count() const {
 }
 
 void DependencyGroup::add_dependency() {
-    if(!_counter) {
-        _counter = std::make_shared<std::atomic<u32>>(1);
-    } else {
-        ++(*_counter);
-    }
+    y_debug_assert(_counter);
+    ++(*_counter);
 }
 
 void DependencyGroup::solve_dependency() {
     if(_counter) {
-        y_debug_assert(*_counter != 0); // not 100% thread safe but we don't care
-        --(*_counter);
+        [[maybe_unused]] u32 prev = (*_counter)--;
+        y_debug_assert(prev != 0);
     }
 }
 
 
-StaticThreadPool::FuncData::FuncData(Func func, core::Span<DependencyGroup> wait, DependencyGroup done) :
+StaticThreadPool::FuncData::FuncData(Func func, core::Span<DependencyGroup> wait, DependencyGroup done, std::source_location loc) :
         function(std::move(func)),
         signal(std::move(done)) {
+
     std::copy_if(wait.begin(), wait.end(), std::back_inserter(wait_for), [](const auto& dep) { return !dep.is_empty(); });
+
+#ifdef Y_DEBUG
+    location = loc;
+#endif
 }
 
 bool StaticThreadPool::FuncData::is_ready() const {
@@ -133,16 +142,17 @@ void StaticThreadPool::wait_for(core::Span<DependencyGroup> wait) {
     }
 }
 
-void StaticThreadPool::schedule(Func&& func, DependencyGroup* signal, core::Span<DependencyGroup> wait_for) {
+void StaticThreadPool::schedule(Func&& func, DependencyGroup* signal, core::Span<DependencyGroup> wait_for, std::source_location loc) {
     y_debug_assert(_shared_data.run);
+    y_debug_assert(std::none_of(wait_for.begin(), wait_for.end(), [](const auto& d) { return d.is_empty(); }));
 
     {
         const std::unique_lock lock(_shared_data.lock);
         if(signal) {
             signal->add_dependency();
-            _shared_data.queue.emplace_back(std::move(func), wait_for, *signal);
+            _shared_data.queue.emplace_back(std::move(func), wait_for, *signal, loc);
         } else {
-            _shared_data.queue.emplace_back(std::move(func), wait_for);
+            _shared_data.queue.emplace_back(std::move(func), wait_for, DependencyGroup::empty(), loc);
         }
     }
 

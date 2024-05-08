@@ -108,6 +108,30 @@ class MemoryDebug : public Widget {
 };
 
 
+static void busy_sleep(core::Duration dur) {
+    core::Chrono timer;
+    while(timer.elapsed() < dur) {
+        std::this_thread::yield();
+    }
+}
+
+struct TestSystem : ecs::System {
+    TestSystem() : ecs::System("Test") {
+    }
+
+    void setup(ecs::SystemScheduler& sched) {
+        sched.schedule(ecs::SystemSchedule::Tick, "Tick", [] {
+            busy_sleep(core::Duration::milliseconds(0.5));
+        });
+        sched.schedule(ecs::SystemSchedule::Update, "Update", [] {
+            busy_sleep(core::Duration::milliseconds(0.5));
+        });
+        sched.schedule(ecs::SystemSchedule::PostUpdate, "Post", [] {
+            busy_sleep(core::Duration::milliseconds(0.5));
+        });
+    }
+};
+
 class EcsDebug : public Widget {
     editor_widget(EcsDebug, "View", "Debug")
 
@@ -118,6 +142,11 @@ class EcsDebug : public Widget {
     protected:
         void on_gui() override {
             EditorWorld& world = current_world();
+
+
+            if(!world.find_system<TestSystem>()){
+                world.add_system<TestSystem>();
+            }
 
             const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
 
