@@ -123,7 +123,20 @@ EntityWorld::~EntityWorld() {
 
 void EntityWorld::tick(concurrent::StaticThreadPool& thread_pool) {
     _system_manager.run_schedule(thread_pool);
-    process_deletions();
+}
+
+void EntityWorld::process_deferred_changes() {
+    for(auto& container : _containers) {
+        if(container) {
+            container->process_deferred_changes();
+        }
+    }
+
+    for(const EntityId id : _to_delete) {
+        _matrix.remove_entity(id);
+        _entities.remove(id);
+    }
+    _to_delete.make_empty();
 }
 
 std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) const {
@@ -166,9 +179,9 @@ void EntityWorld::add_prefab(EntityId id, const EntityPrefab& prefab) {
     add_prefab_components(*this, prefab, id_map);
 }
 
-void EntityWorld::clear() {
+void EntityWorld::clear_immediate() {
     remove_all_entities();
-    process_deletions();
+    process_deferred_changes();
 
     _matrix.clear();
     _groups.locked([](auto&& groups) { groups.clear(); });
@@ -299,20 +312,6 @@ void EntityWorld::register_component_types(System* system) const {
     }
 }
 
-void EntityWorld::process_deletions() {
-    for(auto& container : _containers) {
-        if(container) {
-            container->process_deletions();
-        }
-    }
-
-    for(const EntityId id : _to_delete) {
-        _matrix.remove_entity(id);
-        _entities.remove(id);
-    }
-    _to_delete.make_empty();
-}
-
 serde3::Result EntityWorld::save_state(serde3::WritableArchive& arc) const {
     y_profile();
 
@@ -324,7 +323,7 @@ serde3::Result EntityWorld::save_state(serde3::WritableArchive& arc) const {
 }
 
 serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
-    clear();
+    clear_immediate();
 
     decltype(_containers) containers;
 

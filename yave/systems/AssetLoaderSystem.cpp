@@ -30,26 +30,21 @@ AssetLoaderSystem::AssetLoaderSystem(AssetLoader& loader) : ecs::System("AssetLo
 }
 
 void AssetLoaderSystem::setup(ecs::SystemScheduler& sched) {
-    run_tick(false);
-    sched.schedule(ecs::SystemSchedule::Tick, "Tick", [this] {
-        run_tick(true);
-    });
-}
-
-void AssetLoaderSystem::run_tick(bool only_recent) {
-    y_profile();
-
-    AssetLoadingContext loading_ctx(_loader);
 
     for(const LoadableComponentTypeInfo& info : _infos) {
-        (only_recent ? info.load_recent : info.load_all)(world(), loading_ctx, info.loading_tag);
-    }
+        auto run = [&, this](bool only_recent) {
+            AssetLoadingContext loading_ctx(_loader);
+            (only_recent ? info.load_recent : info.load_all)(world(), loading_ctx, info.loading_tag);
+            info.update_status(world(), info.loading_tag);
+        };
 
-    for(const LoadableComponentTypeInfo& info : _infos) {
-        info.update_status(world(), info.loading_tag);
+        run(false);
+        sched.schedule(ecs::SystemSchedule::Tick, fmt("Tick for {}", info.type_name), [run] {
+            run(true);
+        });
     }
-
 }
+
 
 }
 

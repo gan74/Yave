@@ -58,7 +58,7 @@ class ComponentContainerBase : NonMovable {
 
         virtual void register_component_type(System* system) const = 0;
         virtual void post_load() = 0;
-        virtual void process_deletions() = 0;
+        virtual void process_deferred_changes() = 0;
 
 
         const ComponentTypeIndex _type_id;
@@ -164,13 +164,13 @@ class ComponentContainer final : public ComponentContainerBase {
             }
         }
 
-        void process_deletions() override {
+        void process_deferred_changes() override {
             for(const EntityId id : _to_delete) {
                 _matrix->remove_component<T>(id);
                 _components.erase(id);
-                _mutated.erase(id);
             }
             _to_delete.make_empty();
+            _mutated.make_empty();
         }
 
 

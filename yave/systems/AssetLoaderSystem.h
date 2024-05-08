@@ -40,6 +40,7 @@ class AssetLoaderSystem : public ecs::System {
         template<typename T>
         void register_component_type() {
             _infos << LoadableComponentTypeInfo {
+                ct_type_name<T>(),
                 fmt_to_owned("loading_tag<{}>", ct_type_name<T>()),
                 &load_components<T, false>,
                 &load_components<T, true>,
@@ -48,10 +49,8 @@ class AssetLoaderSystem : public ecs::System {
         }
 
     private:
-        void run_tick(bool only_recent);
-
-    private:
         struct LoadableComponentTypeInfo {
+            std::string_view type_name;
             core::String loading_tag;
             void (*load_all)(ecs::EntityWorld&, AssetLoadingContext&, const core::String& tag) = nullptr;
             void (*load_recent)(ecs::EntityWorld&, AssetLoadingContext&, const core::String& tag) = nullptr;
@@ -68,6 +67,7 @@ class AssetLoaderSystem : public ecs::System {
                 }
             }();
 
+            y_profile_msg(fmt_c_str("Processing {} components", query.size()));
             for(auto&& [id, comp] : query.id_components()) {
                 comp.load_assets(loading_ctx);
                 world.add_tag(id, tag);
@@ -82,6 +82,7 @@ class AssetLoaderSystem : public ecs::System {
                 if(comp.update_asset_loading_status()) {
                     Y_TODO(this is not thread safe!!!)
                     world.remove_tag(id, tag);
+                    y_debug_assert(!world.has_tag(id, tag));
                 }
             }
         }

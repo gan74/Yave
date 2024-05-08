@@ -44,6 +44,7 @@ class EntityWorld : NonMovable {
         ~EntityWorld();
 
         void tick(concurrent::StaticThreadPool& thread_pool);
+        void process_deferred_changes();
 
 
         std::string_view component_type_name(ComponentTypeIndex type_id) const;
@@ -58,7 +59,7 @@ class EntityWorld : NonMovable {
 
         void add_prefab(EntityId id, const EntityPrefab& prefab);
 
-        void clear();
+        void clear_immediate();
 
         void remove_entity(EntityId id);
         void remove_all_components(EntityId id);
@@ -242,8 +243,6 @@ class EntityWorld : NonMovable {
         void register_component_types(System* system) const;
 
         void check_exists(EntityId id) const;
-
-        void process_deletions();
 
 
 
