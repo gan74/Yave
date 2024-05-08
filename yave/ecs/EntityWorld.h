@@ -54,7 +54,9 @@ class EntityWorld : NonMovable {
         bool exists(EntityId id) const;
 
         EntityId create_entity();
-        EntityId create_entity(const EntityPrefab&) { y_fatal("FIXME"); }
+        EntityId create_entity(const EntityPrefab&prefab);
+
+        void add_prefab(EntityId id, const EntityPrefab& prefab);
 
         void clear();
 

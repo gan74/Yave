@@ -51,6 +51,62 @@ static auto create_component_containers() {
     return containers;
 }
 
+static EntityId create_prefab_entities(EntityWorld& world, const EntityPrefab& prefab, EntityIdMap& id_map, EntityId base_id = {}) {
+    y_profile();
+
+    y_debug_assert(prefab.original_id().is_valid());
+
+    const EntityId id = base_id.is_valid() ? base_id : world.create_entity();
+    y_always_assert(id_map.find(prefab.original_id()) == id_map.end(), "Invalid prefab: id is duplicated");
+    id_map.emplace_back(prefab.original_id(), id);
+
+    auto parent_child = [&](const auto& child) {
+        if(child) {
+            world.set_parent(create_prefab_entities(world, *child, id_map), id);
+        }
+    };
+
+    for(const auto& child : prefab.children()) {
+        parent_child(child);
+    }
+
+    for(const auto& child : prefab.asset_children()) {
+        parent_child(child);
+    }
+
+    return id;
+}
+
+static void add_prefab_components(EntityWorld& world, const EntityPrefab& prefab, const EntityIdMap& id_map) {
+    y_profile();
+
+    y_debug_assert(prefab.original_id().is_valid());
+
+    const auto it = id_map.find(prefab.original_id());
+    y_debug_assert(it != id_map.end());
+
+    for(const auto& comp : prefab.components()) {
+        if(comp) {
+            comp->add_to(world, it->second, id_map);
+        }
+    }
+
+    auto add_child_components = [&](const auto& child) {
+        if(child) {
+            add_prefab_components(world, *child, id_map);
+        }
+    };
+
+    for(const auto& child : prefab.children()) {
+        add_child_components(child);
+    }
+
+    for(const auto& child : prefab.asset_children()) {
+        add_child_components(child);
+    }
+}
+
+
 
 
 EntityWorld::EntityWorld() : _containers(create_component_containers()), _matrix(_containers.size()), _system_manager(this) {
@@ -94,6 +150,20 @@ EntityId EntityWorld::create_entity() {
     const EntityId id = _entities.create();
     _matrix.add_entity(id);
     return id;
+}
+
+EntityId EntityWorld::create_entity(const EntityPrefab& prefab) {
+    const EntityId id = create_entity();
+    add_prefab(id, prefab);
+    return id;
+}
+
+void EntityWorld::add_prefab(EntityId id, const EntityPrefab& prefab) {
+    y_profile();
+
+    EntityIdMap id_map;
+    create_prefab_entities(*this, prefab, id_map, id);
+    add_prefab_components(*this, prefab, id_map);
 }
 
 void EntityWorld::clear() {
