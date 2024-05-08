@@ -122,13 +122,13 @@ class EcsDebug : public Widget {
             const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
 
             if(ImGui::CollapsingHeader("Groups")) {
-                auto groups = world.all_groups();
+                auto groups = world.all_group_bases();
                 std::sort(groups.begin(), groups.end(), [](auto* a, auto* b) { return a->name() < b->name(); });
                 for(const ecs::EntityGroupBase* group : groups) {
                     if(ImGui::TreeNode(fmt_c_str("{}###{}", group->name(), static_cast<const void*>(group)))) {
-                        ImGui::TextUnformatted(fmt_c_str("{} ids", group->ids_before_filtering().size()));
+                        //ImGui::TextUnformatted(fmt_c_str("{} ids", group->ids_before_filtering().size()));
 
-                        if(!group->tags().is_empty()) {
+                        /*if(!group->tags().is_empty()) {
                             if(ImGui::TreeNode(fmt_c_str("{} tags", group->tags().size()))) {
                                 for(const core::String& tag : group->tags()) {
                                     ImGui::TextUnformatted(tag.data());
@@ -144,7 +144,7 @@ class EcsDebug : public Widget {
                                 }
                                 ImGui::TreePop();
                             }
-                        }
+                        }*/
 
                         ImGui::TreePop();
                     }

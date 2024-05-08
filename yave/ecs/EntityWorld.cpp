@@ -74,7 +74,7 @@ std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) co
     return find_container(type_id)->runtime_info().clean_component_name();
 }
 
-core::Vector<const EntityGroupBase*> EntityWorld::all_groups() {
+core::Vector<const EntityGroupBase*> EntityWorld::all_group_bases() {
     core::Vector<const EntityGroupBase*> gr;
     _groups.locked([&](auto&& groups) {
         std::transform(groups.begin(), groups.end(), std::back_inserter(gr), [](const auto& g) { return g.get(); });

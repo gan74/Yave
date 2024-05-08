@@ -44,7 +44,7 @@ void create_or_replace_component(EntityWorld& world, EntityId id) {
 }
 
 template<typename... Ts>
-SystemScheduler::ArgumentResolver::operator const EntityGroup<Ts...>&() const {
+SystemScheduler::ArgumentResolver::operator EntityGroup<Ts...>() const {
     y_debug_assert(_parent && _parent->_world);
     return _parent->_world->create_group<Ts...>();
 }

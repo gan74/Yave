@@ -48,7 +48,7 @@ class EntityWorld : NonMovable {
 
         std::string_view component_type_name(ComponentTypeIndex type_id) const;
 
-        core::Vector<const EntityGroupBase*> all_groups();
+        core::Vector<const EntityGroupBase*> all_group_bases();
 
         usize entity_count() const;
         bool exists(EntityId id) const;
@@ -167,28 +167,22 @@ class EntityWorld : NonMovable {
         // ---------------------------------------- Groups ----------------------------------------
 
         template<typename... Ts>
-        const EntityGroup<Ts...>& create_group(core::Span<std::string_view> tags = {}, core::Span<ComponentTypeIndex> filters = {}) {
+        EntityGroup<Ts...> create_group(core::Span<std::string_view> tags = {}, core::Span<ComponentTypeIndex> filters = {}) {
             y_profile();
-            return _groups.locked([&](auto&& groups) -> const EntityGroup<Ts...>& {
-                using group_type = EntityGroup<Ts...>;
+            const EntityGroupBase* base = _groups.locked([&](auto&& groups) {
                 for(const auto& group : groups) {
-                    if(const auto* typed_group = dynamic_cast<group_type*>(group.get())) {
-                        if(typed_group->matches(tags, filters)) {
-                            return *typed_group;
-                        }
-                    } else if(group->types().size() == sizeof...(Ts)) {
-                        if((group->contains<Ts>() && ...)) {
-                            log_msg("An entity group with similar component set already exists", Log::Warning);
-                        }
+                    if(group->matches<Ts...>(tags, filters)) {
+                        return group.get();
                     }
                 }
-                return *create_new_group<Ts...>(groups, tags, filters);
+                return create_new_group<Ts...>(groups, tags, filters);
             });
+            return EntityGroup<Ts...>(base, std::tuple{find_container<traits::component_raw_type_t<Ts>>()...});
         }
 
 
         template<typename... Ts>
-        const EntityGroup<Ts...>& create_group(core::Span<std::string_view> tags = {}, core::Span<ComponentTypeIndex> filters = {}) const {
+        EntityGroup<Ts...> create_group(core::Span<std::string_view> tags = {}, core::Span<ComponentTypeIndex> filters = {}) const {
             static_assert(EntityGroup<Ts...>::is_const);
             return const_cast<EntityWorld*>(this)->create_group<Ts...>(tags, filters);
         }
@@ -232,12 +226,11 @@ class EntityWorld : NonMovable {
         }
 
         template<typename... Ts>
-        EntityGroup<Ts...>* create_new_group(core::Vector<std::unique_ptr<EntityGroupBase>>& groups, core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> filters) {
-            auto group = std::make_unique<EntityGroup<Ts...>>(std::tuple{find_container<traits::component_raw_type_t<Ts>>()...}, tags, filters);
-            auto* group_ptr = group.get();
-            groups.emplace_back(std::move(group));
-            _matrix.register_group(group_ptr);
-            return group_ptr;
+        EntityGroupBase* create_new_group(core::Vector<std::unique_ptr<EntityGroupBase>>& groups, core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> filters) {
+            EntityGroupBase* group = groups.emplace_back(std::make_unique<EntityGroupBase>(EntityGroupBase::type_storage<Ts...>(), tags, filters)).get();
+            group->_name = EntityGroupBase::create_name<Ts...>();
+            _matrix.register_group(group);
+            return group;
         }
 
 

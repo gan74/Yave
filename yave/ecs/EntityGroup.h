@@ -32,11 +32,46 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-class EntityGroupBase : NonMovable {
-    public:
-        virtual ~EntityGroupBase() = default;
+class EntityGroupBase final : NonMovable {
 
-        const core::String& name() const {
+    template<typename... Ts>
+    static core::Span<ComponentTypeIndex> type_storage() {
+        static std::array<ComponentTypeIndex, sizeof...(Ts)> storage = { type_index<traits::component_raw_type_t<Ts>>()... };
+        return storage;
+    }
+
+    template<typename T>
+    static core::String clean_component_name() {
+        return core::String(ct_type_name<T>())
+            .replaced("class ", "")
+            .replaced("struct ", "")
+            .replaced("yave::", "")
+            .replaced("ecs::", "")
+            .replaced("> ", ">")
+        ;
+    }
+
+    template<typename... Ts>
+    static core::String create_name() {
+        core::String name = "EntityGroupBase<";
+        name += ((clean_component_name<Ts>() + ", ") + ...);
+        name.resize(name.size() - 2);
+        name += ">";
+        return name;
+    }
+
+    public:
+        EntityGroupBase(core::Span<ComponentTypeIndex> types, core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> type_filters) :
+                _types(types),
+                _tags(tags.size()),
+                _type_filters(type_filters),
+                _component_count(u8(types.size() + tags.size() + type_filters.size())) {
+
+            std::copy(tags.begin(), tags.end(), _tags.begin());
+            y_always_assert(_component_count == types.size() + tags.size() + type_filters.size(), "Too many component types in group");
+        }
+
+        inline const core::String& name() const {
             return _name;
         }
 
@@ -51,20 +86,21 @@ class EntityGroupBase : NonMovable {
             return _type_filters;
         }
 
-        inline core::Span<EntityId> ids_before_filtering() const {
-            return _ids.ids();
+        inline const SparseIdSet& ids() const {
+            return _ids;
         }
 
-
+        template<typename... Ts>
         inline bool matches(core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> filters) const {
-            if(tags.size() != _tags.size()) {
-                return false;
-            }
-            return _type_filters == filters && std::equal(tags.begin(), tags.end(), _tags.begin());
+            return _types == type_storage<Ts...>() &&
+                _type_filters == filters &&
+                (_tags.size() == tags.size() && std::equal(tags.begin(), tags.end(), _tags.begin()))
+            ;
         }
 
-    protected:
+    private:
         friend class ComponentMatrix;
+        friend class EntityWorld;
 
         void add_entity_component(EntityId id) {
             _entity_component_count.set_min_size(id.index() + 1);
@@ -84,16 +120,6 @@ class EntityGroupBase : NonMovable {
             }
         }
 
-    protected:
-        EntityGroupBase(core::Span<ComponentTypeIndex> types, core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> type_filters) :
-                _types(types),
-                _tags(tags.size()),
-                _type_filters(type_filters),
-                _component_count(u8(types.size() + tags.size() + type_filters.size())) {
-            std::copy(tags.begin(), tags.end(), _tags.begin());
-            y_always_assert(_component_count == types.size() + tags.size() + type_filters.size(), "Too many component types in group");
-        }
-
         SparseIdSet _ids;
         core::Span<ComponentTypeIndex> _types;
         core::FixedArray<core::String> _tags;
@@ -102,12 +128,15 @@ class EntityGroupBase : NonMovable {
         core::Vector<u8> _entity_component_count;
         const u8 _component_count = 0;
 
-        core::String _name;
+        core::String _name = "Unnamed group base";
 };
 
 
+
+
+
 template<typename... Ts>
-class EntityGroup final : public EntityGroupBase {
+class EntityGroup final : NonCopyable {
     static constexpr usize type_count = sizeof...(Ts);
     static constexpr usize mutate_count = ((traits::is_component_mutable_v<Ts> ? 1 : 0) + ...);
 
@@ -116,28 +145,12 @@ class EntityGroup final : public EntityGroupBase {
     static constexpr usize filter_count = changed_count + deleted_count;
 
 
-    static inline const std::array<ComponentTypeIndex, type_count> type_storage = { type_index<traits::component_raw_type_t<Ts>>()... };
-
-
     using SetTuple = std::tuple<SparseComponentSet<traits::component_raw_type_t<Ts>>*...>;
     using ContainerTuple = std::tuple<ComponentContainer<traits::component_raw_type_t<Ts>>*...>;
     using ComponentTuple = std::tuple<traits::component_type_t<Ts>&...>;
 
     using MutateContainers = std::array<SparseIdSet*, mutate_count>;
     using FilterContainers = std::array<const SparseIdSet*, filter_count>;
-
-
-    template<typename T>
-    static core::String clean_component_name() {
-        return core::String(ct_type_name<T>())
-            .replaced("class ", "")
-            .replaced("struct ", "")
-            .replaced("yave::", "")
-            .replaced("ecs::", "")
-            .replaced("> ", ">")
-        ;
-    }
-
 
     template<typename T>
     static inline T& get_component(const SetTuple& sets, EntityId id) {
@@ -149,11 +162,11 @@ class EntityGroup final : public EntityGroupBase {
         std::get<I>(_sets) = &std::get<I>(containers)->_components;
 
         if constexpr(traits::is_component_mutable_v<T>) {
-            _write_locks[mut_index] = &std::get<I>(containers)->_lock;
+            _locks.write_locks[mut_index] = &std::get<I>(containers)->_lock;
             _mutate[mut_index] = &std::get<I>(containers)->_mutated;
             ++mut_index;
         } else {
-            _read_locks[const_index++] = &std::get<I>(containers)->_lock;
+            _locks.read_locks[const_index++] = &std::get<I>(containers)->_lock;
         }
 
         if constexpr(traits::is_component_changed_v<T>) {
@@ -173,8 +186,8 @@ class EntityGroup final : public EntityGroupBase {
 
         y_debug_assert(std::all_of(_mutate.begin(), _mutate.end(), [](const auto* s) { return s; }));
         y_debug_assert(std::all_of(_filter.begin(), _filter.end(), [](const auto* s) { return s; }));
-        y_debug_assert(std::all_of(_write_locks.begin(), _write_locks.end(), [](const auto* s) { return s; }));
-        y_debug_assert(std::all_of(_read_locks.begin(), _read_locks.end(), [](const auto* s) { return s; }));
+        y_debug_assert(std::all_of(_locks.write_locks.begin(), _locks.write_locks.end(), [](const auto* s) { return s; }));
+        y_debug_assert(std::all_of(_locks.read_locks.begin(), _locks.read_locks.end(), [](const auto* s) { return s; }));
     }
 
 
@@ -240,20 +253,47 @@ class EntityGroup final : public EntityGroupBase {
             SetTuple _sets = {};
     };
 
-    class Query : NonCopyable {
+    struct SetLocks {
+        std::array<std::shared_mutex*, mutate_count> write_locks = {};
+        std::array<std::shared_mutex*, type_count - mutate_count> read_locks = {};
+
+        void lock_all() {
+            y_profile();
+
+            Y_TODO(This can deadlock if a group locks A exclusively and B shared while another group does the opposite)
+
+            for(auto* lock : write_locks) {
+                lock->lock();
+            }
+
+            for(auto* lock : read_locks) {
+                lock->lock_shared();
+            }
+        }
+
+        void unlock_all() {
+            y_profile();
+
+            for(auto* lock : read_locks) {
+                lock->unlock_shared();
+            }
+
+            for(auto* lock : write_locks) {
+                lock->unlock();
+            }
+        }
+    };
+
+    class Query : NonMovable {
         public:
             using const_iterator = Iterator<ComponentReturnPolicy>;
 
-            Query() = default;
-
-            Query(const EntityGroup* parent) : _parent(parent) {
-                _parent->lock_groups();
+            Query(const SetLocks& locks) : _locks(locks) {
+                _locks.lock_all();
             }
 
             ~Query() {
-                if(_parent) {
-                    _parent->unlock_groups();
-                }
+                _locks.unlock_all();
             }
 
             Query(Query&& other) {
@@ -268,7 +308,7 @@ class EntityGroup final : public EntityGroupBase {
             void swap(Query& other) {
                 std::swap(_ids, other._ids);
                 std::swap(_sets, other._sets);
-                std::swap(_parent, other._parent);
+                std::swap(_locks, other._locks);
             }
 
             inline auto id_components() & {
@@ -304,25 +344,16 @@ class EntityGroup final : public EntityGroupBase {
             core::Vector<EntityId> _ids;
             SetTuple _sets = {};
 
-            const EntityGroup* _parent = nullptr;
+            SetLocks _locks;
     };
 
     public:
         static constexpr bool is_const = !mutate_count;
 
-        EntityGroup(const ContainerTuple& containers, core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> type_filters = {}) : EntityGroupBase(type_storage, tags, type_filters) {
-            fill_sets(containers, std::make_index_sequence<type_count>{});
-
-            _name = "EntityGroup<";
-            _name += ((clean_component_name<Ts>() + ", ") + ...);
-            _name.resize(_name.size() - 2);
-            _name += ">";
-        }
-
         Query query() const {
             y_profile();
 
-            Query query(this);
+            Query query(_locks);
             query._sets = _sets;
 
             if constexpr(filter_count) {
@@ -330,7 +361,7 @@ class EntityGroup final : public EntityGroupBase {
 
                 std::array<const SparseIdSet*, filter_count + 1> matches = {};
                 std::copy_n(_filter.begin(), filter_count, matches.begin());
-                matches[filter_count] = &_ids;
+                matches[filter_count] = &_base->ids();
 
                 std::sort(matches.begin(), matches.end(), [](const SparseIdSet* a, const SparseIdSet* b) {
                     return a->size() < b->size();
@@ -351,7 +382,7 @@ class EntityGroup final : public EntityGroupBase {
                     }
                 }
             } else {
-                query._ids = _ids.ids();
+                query._ids = _base->ids().ids();
             }
 
             if constexpr(mutate_count) {
@@ -367,41 +398,21 @@ class EntityGroup final : public EntityGroupBase {
         }
 
     private:
-        void lock_groups() const {
-            y_profile();
+        friend class EntityWorld;
 
-            Y_TODO(This can deadlock if a group locks A exclusively and B shared while another group does the opposite)
-
-            for(auto* lock : _write_locks) {
-                lock->lock();
-            }
-
-            for(auto* lock : _read_locks) {
-                lock->lock_shared();
-            }
+        EntityGroup(const EntityGroupBase* base, const ContainerTuple& containers) : _base(base) {
+            fill_sets(containers, std::make_index_sequence<type_count>{});
         }
 
-        void unlock_groups() const {
-            y_profile();
 
-            for(auto* lock : _read_locks) {
-                lock->unlock_shared();
-            }
-
-            for(auto* lock : _write_locks) {
-                lock->unlock();
-            }
-        }
+        const EntityGroupBase* _base = nullptr;
 
         SetTuple _sets = {};
 
         MutateContainers _mutate = {};
         FilterContainers _filter = {};
 
-        std::array<std::shared_mutex*, mutate_count> _write_locks;
-        std::array<std::shared_mutex*, type_count - mutate_count> _read_locks;
-
-
+        SetLocks _locks;
 };
 
 

@@ -64,7 +64,7 @@ class SystemScheduler : NonMovable {
                 }
 
                 template<typename... Ts>
-                operator const EntityGroup<Ts...>&() const;
+                operator EntityGroup<Ts...>() const;
 
             private:
                 SystemScheduler* _parent = nullptr;
