@@ -30,17 +30,11 @@ AssetLoaderSystem::AssetLoaderSystem(AssetLoader& loader) : ecs::System("AssetLo
 }
 
 void AssetLoaderSystem::setup(ecs::SystemScheduler& sched) {
-
     for(const LoadableComponentTypeInfo& info : _infos) {
-        auto run = [&, this](bool only_recent) {
+        sched.schedule(ecs::SystemSchedule::Tick, fmt("Tick for {}", info.type_name), [&](ecs::SystemScheduler::FirstTime first_time) {
             AssetLoadingContext loading_ctx(_loader);
-            (only_recent ? info.load_recent : info.load_all)(world(), loading_ctx, info.loading_tag);
+            (first_time.value ? info.load_all : info.load_recent)(world(), loading_ctx, info.loading_tag);
             info.update_status(world(), info.loading_tag);
-        };
-
-        run(false);
-        sched.schedule(ecs::SystemSchedule::Tick, fmt("Tick for {}", info.type_name), [run] {
-            run(true);
         });
     }
 }

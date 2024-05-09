@@ -61,11 +61,16 @@ class AssetLoaderSystem : public ecs::System {
         static void load_components(ecs::EntityWorld& world, AssetLoadingContext& loading_ctx, const core::String& tag) {
             auto query = [&] {
                 if constexpr(Recent) {
+                    Y_TODO(hoist group into system schedule)
                     return world.create_group<ecs::Mutate<ecs::Changed<T>>>().query();
                 } else {
                     return world.create_group<ecs::Mutate<T>>().query();
                 }
             }();
+
+            if(query.is_empty()) {
+                return;
+            }
 
             y_profile_msg(fmt_c_str("Processing {} components", query.size()));
             for(auto&& [id, comp] : query.id_components()) {

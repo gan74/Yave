@@ -43,6 +43,8 @@ class EntityWorld : NonMovable {
         EntityWorld();
         ~EntityWorld();
 
+        TickId tick_id() const;
+
         void tick(concurrent::StaticThreadPool& thread_pool);
         void process_deferred_changes();
 
@@ -256,6 +258,8 @@ class EntityWorld : NonMovable {
         SparseIdSet _to_delete;
 
         SystemManager _system_manager;
+
+        TickId _tick_id;
 };
 
 }

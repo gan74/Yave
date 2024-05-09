@@ -50,18 +50,36 @@ class SystemScheduler : NonMovable {
     public:
         using DependencyGroup = concurrent::DependencyGroup;
 
+        struct FirstTime {
+            bool value = false;
+        };
+
+    public:
+        SystemScheduler(System* sys, EntityWorld* world);
+
+        template<typename Fn>
+        DependencyGroup schedule(SystemSchedule sched, core::String name, Fn&& func, core::Span<DependencyGroup> wait = {}) {
+            auto& s = _schedules[usize(sched)];
+
+            s.wait_groups.emplace_back(wait);
+            s.tasks.emplace_back(std::move(name), [this, func]() {
+                std::array<ArgumentResolver, function_traits<Fn>::arg_count> args;
+                std::fill(args.begin(), args.end(), this);
+                std::apply(func, args);
+            });
+            return s.signals.emplace_back();
+        }
+
     private:
+        friend class SystemManager;
+
         class ArgumentResolver {
             public:
                 ArgumentResolver() = default;
+                ArgumentResolver(SystemScheduler* parent);
 
-                ArgumentResolver(SystemScheduler* parent) : _parent(parent) {
-                }
-
-                operator const EntityWorld&() const {
-                    y_debug_assert(_parent);
-                    return *_parent->_world;
-                }
+                operator const EntityWorld&() const;
+                operator FirstTime() const;
 
                 template<typename... Ts>
                 operator EntityGroup<Ts...>() const;
@@ -81,30 +99,12 @@ class SystemScheduler : NonMovable {
             core::Vector<core::Vector<DependencyGroup>> wait_groups;
         };
 
-    public:
-        SystemScheduler(System* sys, EntityWorld* world) : _system(sys), _world(world) {
-        }
-
-        template<typename Fn>
-        DependencyGroup schedule(SystemSchedule sched, core::String name, Fn&& func, core::Span<DependencyGroup> wait = {}) {
-            auto& s = _schedules[usize(sched)];
-
-            s.wait_groups.emplace_back(wait);
-            s.tasks.emplace_back(std::move(name), [this, func]() {
-                std::array<ArgumentResolver, function_traits<Fn>::arg_count> args;
-                std::fill(args.begin(), args.end(), this);
-                std::apply(func, args);
-            });
-            return s.signals.emplace_back();
-        }
-
-    private:
-        friend class SystemManager;
-
         std::array<Schedule, usize(SystemSchedule::Max)> _schedules;
 
         System* _system = nullptr;
         EntityWorld* _world = nullptr;
+
+        TickId _first_tick;
 };
 
 

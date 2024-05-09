@@ -179,6 +179,7 @@ class ComponentContainer final : public ComponentContainerBase {
         T* add(EntityId id, Args&... args) {
             T* component =  &_components.insert(id, y_fwd(args)...);
             _matrix->add_component<T>(id);
+            _mutated.insert(id);
             return component;
         }
 

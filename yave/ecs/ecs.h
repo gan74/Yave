@@ -45,6 +45,24 @@ ComponentTypeIndex type_index() {
     return type;
 }
 
+class TickId {
+    public:
+        TickId next() const {
+            TickId n = *this;
+            ++n._value;
+            return n;
+        }
+
+        std::strong_ordering operator<=>(const TickId& other) const {
+            return _value <=> other._value;
+        }
+
+        bool operator==(const TickId&) const = default;
+        bool operator!=(const TickId&) const = default;
+
+    private:
+        u64 _value = 0;
+};
 
 
 class EntityId {

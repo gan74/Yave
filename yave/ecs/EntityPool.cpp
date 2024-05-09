@@ -193,8 +193,6 @@ void EntityPool::set_parent(EntityId id, EntityId parent_id) {
         }
         child.parent = parent_id;
     }
-
-    audit();
 }
 
 bool EntityPool::is_parent(EntityId id, EntityId parent) const {

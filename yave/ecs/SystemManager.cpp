@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "SystemManager.h"
+#include "EntityWorld.h"
 
 #include <y/core/ScratchPad.h>
 
@@ -33,6 +34,22 @@ SOFTWARE.
 
 namespace yave {
 namespace ecs {
+
+SystemScheduler::ArgumentResolver::ArgumentResolver(SystemScheduler* parent) : _parent(parent) {
+}
+
+SystemScheduler::ArgumentResolver::operator const EntityWorld&() const {
+    y_debug_assert(_parent);
+    return *_parent->_world;
+}
+
+SystemScheduler::ArgumentResolver::operator SystemScheduler::FirstTime() const {
+    return FirstTime { _parent->_world->tick_id() == _parent->_first_tick };
+}
+
+SystemScheduler::SystemScheduler(System* sys, EntityWorld* world) : _system(sys), _world(world), _first_tick(_world->tick_id().next()) {
+}
+
 
 SystemManager::SystemManager(EntityWorld* world) : _world(world) {
     y_debug_assert(_world);

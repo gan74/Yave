@@ -121,7 +121,12 @@ EntityWorld::~EntityWorld() {
     _containers.clear();
 }
 
+TickId EntityWorld::tick_id() const {
+    return _tick_id;
+}
+
 void EntityWorld::tick(concurrent::StaticThreadPool& thread_pool) {
+    _tick_id = _tick_id.next();
     _system_manager.run_schedule(thread_pool);
 }
 
@@ -137,6 +142,8 @@ void EntityWorld::process_deferred_changes() {
         _entities.remove(id);
     }
     _to_delete.make_empty();
+
+    _entities.audit();
 }
 
 std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) const {
