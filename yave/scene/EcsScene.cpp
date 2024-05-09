@@ -80,12 +80,21 @@ void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
     y_profile();
 
     {
-        auto query = _world->create_group<TransformableComponent, T>().query();
+        y_profile_zone("Update components");
+        auto query = _world->create_group<TransformableComponent, ecs::Changed<T>>().query();
         for(const auto& [id, tr, comp] : query.id_components()) {
             auto& obj = register_object(id, index_ptr, storage);
 
             obj.component = comp;
             obj.entity_index = id.index();
+        }
+    }
+
+    {
+        y_profile_zone("Update transforms");
+        auto query = _world->create_group<ecs::Changed<TransformableComponent>, T>().query();
+        for(const auto& [id, tr, comp] : query.id_components()) {
+            auto& obj = register_object(id, index_ptr, storage);
 
             if(obj.transform_index == u32(-1)) {
                 obj.transform_index = _transform_manager.alloc_transform();
@@ -97,6 +106,7 @@ void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
     }
 
     {
+        y_profile_zone("Delete stale objects");
         auto query = _world->create_group<ecs::Deleted<T>>().query();
         if(query.size())
         log_msg(fmt("{} deleted {}", query.size(), ct_type_name<T>()));
@@ -114,7 +124,7 @@ void EcsScene::process_components(u32 ObjectIndices::* index_ptr, S& storage) {
     y_profile();
 
     {
-        auto query = _world->create_group<T>().query();
+        auto query = _world->create_group<ecs::Changed<T>>().query();
         for(const auto& [id, comp] : query.id_components()) {
             auto& obj = register_object(id, index_ptr, storage);
             obj.component = comp;
