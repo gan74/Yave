@@ -91,8 +91,3 @@
 
 #define ImTextureID y::u64
 
-
-#define IMGUI_TEST_ENGINE_ENABLE_STD_FUNCTION 1
-#define IMGUI_TEST_ENGINE_ENABLE_COROUTINE_STDTHREAD_IMPL 1
-#include <external/imgui_test_engine/imgui_te_imconfig.h>
-

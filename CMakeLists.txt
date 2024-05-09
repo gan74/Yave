@@ -128,9 +128,6 @@ file(GLOB_RECURSE EDITOR_EXTERNAL_FILES
     "external/imgui/*.cpp"
     "external/imgui/*.h"
 
-    "external/imgui_test_engine/*.cpp"
-    "external/imgui_test_engine/*.h"
-
     "external/tinygltf/*.hpp"
     "external/tinygltf/*.h"
 )

@@ -34,11 +34,6 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
-#include <external/imgui_test_engine/imgui_te_context.h>
-#include <external/imgui_test_engine/imgui_te_exporters.h>
-#include <external/imgui_test_engine/imgui_te_internal.h>
-#include <external/imgui_test_engine/imgui_te_ui.h>
-
 #include <deque>
 
 
@@ -46,40 +41,6 @@ namespace editor {
 
 ImGuiPlatform* imgui_platform() {
     return ImGuiPlatform::instance();
-}
-
-
-// ---------------------------------------------- TEST ENGINE ----------------------------------------------
-
-extern void register_editor_tests(ImGuiTestEngine*);
-
-static ImGuiTestEngine* init_test_engine() {
-    ImGuiTestEngine* engine = ImGuiTestEngine_CreateContext();
-    ImGuiTestEngineIO& test_io = ImGuiTestEngine_GetIO(engine);
-    test_io.ConfigSavedSettings = false;
-    test_io.ConfigVerboseLevel = ImGuiTestVerboseLevel_Info;
-    test_io.ConfigVerboseLevelOnError = ImGuiTestVerboseLevel_Debug;
-    test_io.ConfigBreakOnError = true;
-
-    test_io.ConfigRunSpeed = ImGuiTestRunSpeed_Fast;
-
-    const float speed_scale = 2.0f;
-    test_io.MouseSpeed *= speed_scale;
-    test_io.TypingSpeed *= speed_scale;
-    test_io.ActionDelayShort /= speed_scale;
-    test_io.ActionDelayStandard /= speed_scale;
-
-    // Optional: save test output in junit-compatible XML format.
-    //test_io.ExportResultsFile = "./results.xml";
-    //test_io.ExportResultsFormat = ImGuiTestEngineExportFormat_JUnitXml;
-
-    register_editor_tests(engine);
-
-    // Start test engine
-    ImGuiTestEngine_Start(engine, ImGui::GetCurrentContext());
-    ImGuiTestEngine_InstallDefaultCrashHandler();
-
-    return engine;
 }
 
 
@@ -386,7 +347,7 @@ ImGuiPlatform* ImGuiPlatform::instance() {
     return _instance;
 }
 
-ImGuiPlatform::ImGuiPlatform(bool multi_viewport, bool run_tests) {
+ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
     y_profile();
 
     y_always_assert(_instance == nullptr, "ImGuiPlatform instance already exists.");
@@ -437,18 +398,6 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport, bool run_tests) {
 
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     viewport->PlatformHandle = _main_window.get();
-
-    if(run_tests) {
-        _test_engine = init_test_engine();
-
-        log_msg("Running ImGui tests", Log::Debug);
-        io.IniFilename = "tests.ini";
-        ImGuiTestEngine_QueueTests(_test_engine, ImGuiTestGroup_Tests, "tests");
-    } else {
-        // Still create test engine to avoid crashes in imgui
-        init_test_engine();
-    }
-
 }
 
 ImGuiPlatform::~ImGuiPlatform() {
@@ -466,10 +415,6 @@ Window* ImGuiPlatform::main_window() {
     return &_main_window->window;
 }
 
-bool ImGuiPlatform::is_running_tests() const {
-    return _test_engine;
-}
-
 void ImGuiPlatform::exec(OnGuiFunc func) {
     for(;;) {
         {
@@ -478,9 +423,6 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
             do {
                 if(!_main_window->window.update()) {
                     return;
-                }
-                if(_test_engine && ImGuiTestEngine_GetIO(_test_engine).IsRequestingMaxAppSpeed) {
-                    break;
                 }
             } while(max_fps > 0.0f && _frame_timer.elapsed().to_secs() < 1.0f / max_fps);
         }
@@ -501,14 +443,10 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
 
                 setup_imgui_dockspace();
 
-                if(_demo_window && !_test_engine) {
+                if(_demo_window) {
                     ImGui::PushStyleColor(ImGuiCol_MenuBarBg, 0);
                     ImGui::ShowDemoWindow(&_demo_window);
                     ImGui::PopStyleColor();
-                }
-
-                if(_tests_done) {
-                    ImGuiTestEngine_ShowTestEngineWindows(_test_engine, &_tests_done);
                 }
 
                 if(func) {
@@ -535,19 +473,6 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
 
             _main_window->swapchain.present(token, std::move(recorder), command_queue());
             UiTexture::clear_all();
-
-            if(_test_engine && !_tests_done) {
-                ImGuiTestEngine_PostSwap(_test_engine);
-                if(ImGuiTestEngine_IsTestQueueEmpty(_test_engine)) {
-                    int tested = 0;
-                    int success = 0;
-                    ImGuiTestEngine_GetResult(_test_engine, tested, success);
-                    ImGuiTestEngine_PrintResultSummary(_test_engine);
-
-                    log_msg(fmt("{}/{} tests passed", success, tested), success == tested ? Log::Debug : Log::Error);
-                    _tests_done = true;
-                }
-            }
         }
     }
 }

@@ -33,9 +33,6 @@ struct EditorSettings {
     core::String world_file = "../world.yw3";
     core::String asset_store = "../store";
 
-    core::String test_world_file = "../test.yw3";
-    core::String test_asset_store = "../test_store";
-
     float max_fps = 60.0f;
 
     y_reflect(EditorSettings, world_file, asset_store, max_fps)
@@ -52,8 +49,7 @@ struct CameraSettings {
     // Other camera
     Key center_on_obj = Key::H;
 
-    y_reflect(CameraSettings, trackball_sensitivity, dolly_sensitivity,
-              center_on_obj)
+    y_reflect(CameraSettings, trackball_sensitivity, dolly_sensitivity, center_on_obj)
 
 };
 

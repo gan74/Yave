@@ -41,7 +41,6 @@ using namespace editor;
 
 static bool debug_instance = is_debug_defined;
 static bool multi_viewport = false;
-static bool run_tests = false;
 
 
 static void parse_args(int argc, char** argv) {
@@ -54,8 +53,6 @@ static void parse_args(int argc, char** argv) {
             multi_viewport = false;
         } else if(arg == "--mv") {
             multi_viewport = true;
-        } else if(arg == "--run-tests") {
-            run_tests = true;
         } else if(arg == "--errbreak") {
 #ifdef Y_DEBUG
             core::result::break_on_error = true;
@@ -104,7 +101,7 @@ int main(int argc, char** argv) {
 
 
     {
-        ImGuiPlatform platform(multi_viewport, run_tests);
+        ImGuiPlatform platform(multi_viewport);
         init_editor(&platform, Settings::load());
         y_defer(destroy_editor());
 

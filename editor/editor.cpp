@@ -177,14 +177,8 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::imgui_platform = platform;
     application::thread_pool = std::make_unique<concurrent::StaticThreadPool>();
 
-    const bool running_tests = platform->is_running_tests();
-    const auto& store_dir = running_tests
-        ? app_settings().editor.test_asset_store
-        : app_settings().editor.asset_store;
-
-    application::world_file = running_tests
-        ? app_settings().editor.test_world_file
-        : app_settings().editor.world_file;
+    const auto& store_dir = app_settings().editor.asset_store;
+    application::world_file = app_settings().editor.world_file;
 
     application::undo_stack = std::make_unique<UndoStack>();
     application::resources = std::make_unique<EditorResources>();
