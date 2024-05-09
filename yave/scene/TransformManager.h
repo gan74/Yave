@@ -54,6 +54,7 @@ class TransformManager : NonMovable {
 
         const math::Transform<>& transform(u32 index) const;
 
+        bool need_update() const;
         void update_buffer(ComputeCapableCmdBufferRecorder& recorder);
 
         TypedSubBuffer<shader::TransformableData, BufferUsage::StorageBit> transform_buffer() const  {

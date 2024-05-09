@@ -178,7 +178,8 @@ void EcsScene::update_from_world() {
 
     process_atmosphere();
 
-    {
+
+    if(_transform_manager.need_update()) {
         ComputeCmdBufferRecorder recorder = create_disposable_compute_cmd_buffer();
         _transform_manager.update_buffer(recorder);
         recorder.submit_async();

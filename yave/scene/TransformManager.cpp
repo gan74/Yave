@@ -68,6 +68,11 @@ const math::Transform<>& TransformManager::transform(u32 index) const {
     return _transforms[index].transform;
 }
 
+
+bool TransformManager::need_update() const {
+    return !_dirty.is_empty();
+}
+
 void TransformManager::update_buffer(ComputeCapableCmdBufferRecorder& recorder) {
     const usize update_count = _dirty.size();
     if(!update_count) {
