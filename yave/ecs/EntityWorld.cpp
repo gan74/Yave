@@ -118,7 +118,6 @@ EntityWorld::EntityWorld() : _containers(create_component_containers()), _matrix
 }
 
 EntityWorld::~EntityWorld() {
-    _containers.clear();
 }
 
 TickId EntityWorld::tick_id() const {
@@ -184,14 +183,6 @@ void EntityWorld::add_prefab(EntityId id, const EntityPrefab& prefab) {
     EntityIdMap id_map;
     create_prefab_entities(*this, prefab, id_map, id);
     add_prefab_components(*this, prefab, id_map);
-}
-
-void EntityWorld::clear_immediate() {
-    remove_all_entities();
-    process_deferred_changes();
-
-    _matrix.clear();
-    _groups.locked([](auto&& groups) { groups.clear(); });
 }
 
 void EntityWorld::remove_entity(EntityId id) {
@@ -330,7 +321,7 @@ serde3::Result EntityWorld::save_state(serde3::WritableArchive& arc) const {
 }
 
 serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
-    clear_immediate();
+    y_always_assert(!entity_count(), "World should be empty before loading");
 
     decltype(_containers) containers;
 

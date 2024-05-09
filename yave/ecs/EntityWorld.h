@@ -61,8 +61,6 @@ class EntityWorld : NonMovable {
 
         void add_prefab(EntityId id, const EntityPrefab& prefab);
 
-        void clear_immediate();
-
         void remove_entity(EntityId id);
         void remove_all_components(EntityId id);
         void remove_all_tags(EntityId id);

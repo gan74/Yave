@@ -95,7 +95,82 @@ enum DeferredActions : u32 {
 u32 deferred_actions = None;
 }
 
-void post_tick();
+
+
+
+static void create_scene() {
+    application::scene = std::make_unique<EcsScene>(application::world.get());
+    application::default_scene_view = SceneView(application::scene.get());
+    set_scene_view(nullptr);
+}
+
+static void save_world_deferred() {
+    y_profile();
+
+    auto file = io2::File::create(application::world_file);
+    if(!file) {
+        log_msg("Unable to open file", Log::Error);
+        return;
+    }
+
+    serde3::WritableArchive arc(file.unwrap());
+    if(auto r = application::world->save_state(arc); !r) {
+        log_msg(fmt("Unable to save world: {}", serde3::error_msg(r.error())), Log::Error);
+        return;
+    }
+
+    log_msg("World saved");
+}
+
+static void load_world_deferred() {
+    y_profile();
+
+    auto file = io2::File::open(application::world_file);
+    if(!file) {
+        log_msg("Unable to open file", Log::Error);
+        return;
+    }
+
+    auto world = std::make_unique<EditorWorld>(*application::loader);
+
+    serde3::ReadableArchive arc(file.unwrap(), serde3::DeserializationFlags::DontPropagatePolyFailure);
+    if(auto r = world->load_state(arc); !r) {
+        const char* member_name = r.error().member ? r.error().member : "unknown member";
+        log_msg(fmt("Unable to load world: {} (for {})", serde3::error_msg(r.error()), member_name), Log::Error);
+        return;
+    } else if(r.unwrap() == serde3::Success::Partial) {
+        log_msg("World was only partialy loaded", Log::Warning);
+    }
+
+    application::world = std::move(world);
+    create_scene();
+
+    log_msg("World loaded");
+}
+
+void post_tick() {
+    y_profile();
+    if(application::deferred_actions & application::Save) {
+        save_world_deferred();
+    }
+
+    if(application::deferred_actions & application::Load) {
+        load_world_deferred();
+    }
+
+    if(application::deferred_actions & application::New) {
+        application::world = std::make_unique<EditorWorld>(*application::loader);
+        create_scene();
+    }
+
+    application::deferred_actions = application::None;
+}
+
+
+
+
+
+
 
 void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::settings = settings;
@@ -121,8 +196,7 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::scene = std::make_unique<EcsScene>(application::world.get());
     application::debug_drawer = std::make_unique<DirectDraw>();
 
-    application::default_scene_view = SceneView(application::scene.get());
-    application::scene_view = &application::default_scene_view;
+    create_scene();
 
     application::deferred_actions = application::Load;
 
@@ -154,69 +228,6 @@ void run_editor() {
         post_tick();
     });
 }
-
-
-static void save_world_deferred() {
-    y_profile();
-
-    auto file = io2::File::create(application::world_file);
-    if(!file) {
-        log_msg("Unable to open file", Log::Error);
-        return;
-    }
-
-    serde3::WritableArchive arc(file.unwrap());
-    if(auto r = application::world->save_state(arc); !r) {
-        log_msg(fmt("Unable to save world: {}", serde3::error_msg(r.error())), Log::Error);
-        return;
-    }
-
-    log_msg("World saved");
-}
-
-static void load_world_deferred() {
-    y_profile();
-
-    auto file = io2::File::open(application::world_file);
-    if(!file) {
-        log_msg("Unable to open file", Log::Error);
-        return;
-    }
-
-    serde3::ReadableArchive arc(file.unwrap(), serde3::DeserializationFlags::DontPropagatePolyFailure);
-    if(auto r = application::world->load_state(arc); !r) {
-        const char* member_name = r.error().member ? r.error().member : "unknown member";
-        log_msg(fmt("Unable to load world: {} (for {})", serde3::error_msg(r.error()), member_name), Log::Error);
-        return;
-    } else if(r.unwrap() == serde3::Success::Partial) {
-        log_msg("World was only partialy loaded", Log::Warning);
-    }
-
-    log_msg("World loaded");
-}
-
-void post_tick() {
-    y_profile();
-    if(application::deferred_actions & application::Save) {
-        save_world_deferred();
-    }
-
-    if(application::deferred_actions & application::Load) {
-        load_world_deferred();
-    }
-
-    if(application::deferred_actions & application::New) {
-        application::world = std::make_unique<EditorWorld>(*application::loader);
-        application::scene = std::make_unique<EcsScene>(application::world.get());
-        application::default_scene_view = SceneView(application::scene.get());
-        log_msg("New world");
-    }
-
-    application::deferred_actions = application::None;
-}
-
-
-
 
 Settings& app_settings() {
     return application::settings;
