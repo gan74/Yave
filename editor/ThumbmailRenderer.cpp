@@ -93,6 +93,7 @@ static Texture render_scene(const Scene& scene) {
         graph.render(recorder);
     }
     recorder.submit().wait();
+
     return out;
 }
 
@@ -191,6 +192,8 @@ static Texture render_texture(const AssetPtr<Texture>& tex) {
 
 
 
+
+
 ThumbmailRenderer::ThumbmailRenderer(AssetLoader& loader) : _loader(&loader) {
 }
 
@@ -205,25 +208,16 @@ const TextureView* ThumbmailRenderer::thumbmail(AssetId id) {
         auto& data = thumbmails[id];
 
         if(!data) {
-            data = std::make_unique<ThumbmailData>();
-            query(id, *data);
+            data = schedule_render(id);
             return nullptr;
         }
 
         if(data->failed) {
             return nullptr;
-        } else if(data->asset_ptr.is_loaded()) {
-            if(data->done.is_empty()) {
-                y_profile_zone("schedule render");
-                _render_thread.schedule([d = data.get()]() {
-                    d->texture = d->render();
-                    if(!(d->failed = d->texture.is_null())) {
-                        d->view = d->texture;
-                    }
-                }, &data->done);
-            } else if(data->done.is_ready() && !data->failed) {
-                return &data->view;
-            }
+        }
+
+        if(data->done.is_ready()) {
+            return &data->view;
         }
 
         return nullptr;
@@ -234,39 +228,54 @@ usize ThumbmailRenderer::cached_thumbmails()  {
     return _thumbmails.locked([&](auto&& thumbmails) { return thumbmails.size(); });
 }
 
-void ThumbmailRenderer::query(AssetId id, ThumbmailData& data) {
-    const AssetType asset_type = _loader->store().asset_type(id).unwrap_or(AssetType::Unknown);
+std::unique_ptr<ThumbmailRenderer::ThumbmailData> ThumbmailRenderer::schedule_render(AssetId id) {
+    y_profile_zone("schedule render");
 
-    switch(asset_type) {
-        case AssetType::Mesh: {
-            const auto ptr = _loader->load_async<StaticMesh>(id);
-            data.asset_ptr = ptr;
-            data.render = [ptr]{ return render_object(ptr, device_resources()[DeviceResources::EmptyMaterial]); };
-        } break;
+    auto data = std::make_unique<ThumbmailData>();
+    _render_thread.schedule([this, data = data.get(), id]() {
+        const AssetType asset_type = _loader->store().asset_type(id).unwrap_or(AssetType::Unknown);
+        switch(asset_type) {
+            case AssetType::Mesh: {
+                const auto ptr = _loader->load<StaticMesh>(id);
+                data->asset_ptr = ptr;
+                data->texture = render_object(ptr, device_resources()[DeviceResources::EmptyMaterial]);
+            } break;
 
-        case AssetType::Image: {
-            const auto ptr = _loader->load_async<Texture>(id);
-            data.asset_ptr = ptr;
-            data.render = [ptr]{ return render_texture(ptr); };
-        } break;
+            case AssetType::Image: {
+                const auto ptr = _loader->load<Texture>(id);
+                data->asset_ptr = ptr;
+                data->texture = render_texture(ptr);
+            } break;
 
-        case AssetType::Material: {
-            const auto ptr = _loader->load_async<Material>(id);
-            data.asset_ptr = ptr;
-            data.render = [ptr]{ return render_object(device_resources()[DeviceResources::SphereMesh], ptr); };
-        } break;
+            case AssetType::Material: {
+                const auto ptr = _loader->load<Material>(id);
+                data->asset_ptr = ptr;
+                data->texture = render_object(device_resources()[DeviceResources::SphereMesh], ptr);
+            } break;
 
-        case AssetType::Prefab: {
-            const auto ptr = _loader->load_async<ecs::EntityPrefab>(id);
-            data.asset_ptr = ptr;
-            data.render = [ptr]{ return render_prefab(ptr); };
-        } break;
+            case AssetType::Prefab: {
+                const auto ptr = _loader->load<ecs::EntityPrefab>(id);
+                data->asset_ptr = ptr;
+                data->texture = render_prefab(ptr);
+            } break;
 
-        default:
-            data.failed = true;
-            log_msg(fmt("Unknown asset type {} for {}", asset_type, id.id()), Log::Error);
-        break;
-    }
+            default:
+                data->failed = true;
+                log_msg(fmt("Unknown asset type {} for {}", asset_type, id.id()), Log::Error);
+            break;
+        }
+
+        if(!data->failed) {
+            data->failed = data->texture.is_null();
+        }
+
+        if(!data->failed) {
+            data->view = data->texture;
+        }
+
+    }, &data->done);
+
+    return data;
 }
 
 }

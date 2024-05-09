@@ -40,7 +40,6 @@ class ThumbmailRenderer : NonMovable {
         Texture texture;
         TextureView view;
         GenericAssetPtr asset_ptr;
-        std::function<Texture()> render = nullptr;
         // To avoid futures...
         concurrent::DependencyGroup done;
         std::atomic<bool> failed = false;
@@ -56,7 +55,7 @@ class ThumbmailRenderer : NonMovable {
         usize cached_thumbmails();
 
     private:
-        void query(AssetId id, ThumbmailData& data);
+        std::unique_ptr<ThumbmailData> schedule_render(AssetId id);
 
         concurrent::Mutexed<core::FlatHashMap<AssetId, std::unique_ptr<ThumbmailData>>> _thumbmails;
         AssetLoader* _loader = nullptr;

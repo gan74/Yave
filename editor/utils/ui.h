@@ -68,6 +68,7 @@ class UiTexture {
         }
 
         UiTexture(TextureView view) {
+            y_debug_assert(!view.is_null());
             _all_textures.emplace_back(std::make_unique<Data>(view));
             _id = ImTextureID(_all_textures.size());
         }
