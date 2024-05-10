@@ -39,19 +39,14 @@ const ecs::EntityWorld* EcsScene::world() const {
 
 template<typename S>
 typename S::value_type& EcsScene::register_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage) {
-    using object_t = typename S::value_type;
-
     u32& index = _indices.get_or_insert(id).*index_ptr;
 
-    object_t* obj = nullptr;
     if(index == u32(-1)) {
         index = u32(storage.size());
-        obj = &storage.emplace_back();
-    } else {
-        obj = &storage[index];
+        return storage.emplace_back();
     }
 
-    return *obj;
+    return storage[index];
 }
 
 template<typename S>
@@ -79,6 +74,16 @@ template<typename T, typename S>
 void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage) {
     y_profile();
 
+    auto update_transform = [this](auto& obj, const TransformableComponent& tr, const auto& comp) {
+        if(!obj.has_transform()) {
+            obj.transform_index = _transform_manager.alloc_transform();
+        }
+
+
+        _transform_manager.set_transform(obj.transform_index, tr.transform());
+        obj.global_aabb = tr.to_global(comp.aabb());
+    };
+
     {
         y_profile_zone("Update components");
         auto query = _world->create_group<TransformableComponent, ecs::Changed<T>>().query();
@@ -87,6 +92,9 @@ void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
 
             obj.component = comp;
             obj.entity_index = id.index();
+
+            // We need to update in case the AABB has changed
+            update_transform(obj, tr, comp);
         }
     }
 
@@ -95,13 +103,7 @@ void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
         auto query = _world->create_group<ecs::Changed<TransformableComponent>, T>().query();
         for(const auto& [id, tr, comp] : query.id_components()) {
             auto& obj = register_object(id, index_ptr, storage);
-
-            if(obj.transform_index == u32(-1)) {
-                obj.transform_index = _transform_manager.alloc_transform();
-            }
-
-            _transform_manager.set_transform(obj.transform_index, tr.transform());
-            obj.global_aabb = tr.to_global(comp.aabb());
+            update_transform(obj, tr, comp);
         }
     }
 
@@ -109,7 +111,6 @@ void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
         y_profile_zone("Delete stale objects");
         auto query = _world->create_group<ecs::Deleted<T>>().query();
         if(query.size())
-        log_msg(fmt("{} deleted {}", query.size(), ct_type_name<T>()));
         for(const ecs::EntityId id : query.ids()) {
             if(const u32 transform_index = unregister_object(id, index_ptr, storage).transform_index; transform_index == u32(-1)) {
                 _transform_manager.free_transform(transform_index);
@@ -159,6 +160,15 @@ void EcsScene::process_atmosphere() {
             }
         }
     }
+}
+
+const StaticMeshObject* EcsScene::mesh(ecs::EntityId id) const {
+    if(const ObjectIndices* indices = _indices.try_get(id)) {
+        if(indices->mesh != u32(-1)) {
+            return &_meshes[indices->mesh];
+        }
+    }
+    return nullptr;
 }
 
 ecs::EntityId EcsScene::id_from_index(u32 index) const {

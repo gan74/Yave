@@ -27,7 +27,6 @@ SOFTWARE.
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>
 
-#include <y/utils/format.h>
 
 namespace yave {
 
@@ -41,7 +40,6 @@ class AssetLoaderSystem : public ecs::System {
         void register_component_type() {
             _infos << LoadableComponentTypeInfo {
                 ct_type_name<T>(),
-                fmt_to_owned("loading_tag<{}>", ct_type_name<T>()),
                 &load_components<T, false>,
                 &load_components<T, true>,
                 &update_loading_status<T>
@@ -51,14 +49,16 @@ class AssetLoaderSystem : public ecs::System {
     private:
         struct LoadableComponentTypeInfo {
             std::string_view type_name;
-            core::String loading_tag;
-            void (*load_all)(ecs::EntityWorld&, AssetLoadingContext&, const core::String& tag) = nullptr;
-            void (*load_recent)(ecs::EntityWorld&, AssetLoadingContext&, const core::String& tag) = nullptr;
-            void (*update_status)(ecs::EntityWorld&, const core::String& tag) = nullptr;
+            void (*load_all)(ecs::EntityWorld&, AssetLoadingContext&) = nullptr;
+            void (*load_recent)(ecs::EntityWorld&, AssetLoadingContext&) = nullptr;
+            void (*update_status)(ecs::EntityWorld&) = nullptr;
         };
 
+        template<typename T>
+        struct LoadingTag {};
+
         template<typename T, bool Recent>
-        static void load_components(ecs::EntityWorld& world, AssetLoadingContext& loading_ctx, const core::String& tag) {
+        static void load_components(ecs::EntityWorld& world, AssetLoadingContext& loading_ctx) {
             auto query = [&] {
                 if constexpr(Recent) {
                     Y_TODO(hoist group into system schedule)
@@ -75,21 +75,19 @@ class AssetLoaderSystem : public ecs::System {
             y_profile_msg(fmt_c_str("Processing {} components", query.size()));
             for(auto&& [id, comp] : query.id_components()) {
                 comp.load_assets(loading_ctx);
-                world.add_tag(id, tag);
+                world.get_or_add_component<LoadingTag<T>>(id);
             }
         }
 
         template<typename T>
-        static void update_loading_status(ecs::EntityWorld& world, const core::String& tag) {
-            auto query = world.create_group<ecs::Mutate<T>>(tag.view()).query();
-            for(auto&& [id, comp] : query.id_components()) {
-                y_debug_assert(world.has_tag(id, tag));
+        static void update_loading_status(ecs::EntityWorld& world) {
+            auto query = world.create_group<ecs::Mutate<T>, LoadingTag<T>>().query();
+            for(auto&& [id, comp, loading] : query.id_components()) {
                 if(comp.update_asset_loading_status()) {
-                    Y_TODO(this is not thread safe!!!)
-                    world.remove_tag(id, tag);
-                    y_debug_assert(!world.has_tag(id, tag));
+                    world.remove_component<LoadingTag<T>>(id);
                 }
             }
+
         }
 
         core::Vector<LoadableComponentTypeInfo> _infos;

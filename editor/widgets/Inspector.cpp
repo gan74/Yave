@@ -579,6 +579,15 @@ void Inspector::on_gui() {
         if(ImGui::Checkbox(ICON_FA_LOCK "###lock", &locked)) {
             _locked = locked ? selected : ecs::EntityId();
         }
+
+
+        ImGui::SameLine();
+
+        ImGui::TextDisabled("(?)");
+        if(ImGui::BeginItemTooltip()) {
+            ImGui::TextUnformatted(fmt_c_str("ID = {:08x}:{:08x}",id.index(), id.version()));
+            ImGui::EndTooltip();
+        }
     }
 
     InspectorPanelInspector inspector(id, component);

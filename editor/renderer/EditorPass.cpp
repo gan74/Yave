@@ -125,6 +125,21 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
     }
 }
 
+static void render_bbox(DirectDraw& draw, const SceneView& scene_view) {
+    const EditorWorld& world = current_world();
+    const EcsScene* scene = dynamic_cast<const EcsScene*>(scene_view.scene());
+
+    if(!scene || !app_settings().debug.display_selected_bbox) {
+        return;
+    }
+
+    if(const ecs::EntityId selected = world.selected_entity(); selected.is_valid()) {
+        if(const StaticMeshObject* mesh = scene->mesh(selected)) {
+            draw.add_primitive("selected bbox")->add_box(mesh->global_aabb);
+        }
+    }
+}
+
 
 
 
@@ -138,12 +153,12 @@ static FrameGraphMutableImageId copy_or_dummy(FrameGraphPassBuilder& builder, Fr
 
 
 
-EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, const SceneVisibilitySubPass& visibility, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id) {
+EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& scene_view, const SceneVisibilitySubPass& visibility, FrameGraphImageId in_depth, FrameGraphImageId in_color, FrameGraphImageId in_id) {
     const math::Vec2ui size = framegraph.image_size(in_depth);
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Editor entity pass");
 
-    const EcsScene* ecs_scene = dynamic_cast<const EcsScene*>(view.scene());
+    const EcsScene* ecs_scene = dynamic_cast<const EcsScene*>(scene_view.scene());
     const ecs::EntityWorld* world = ecs_scene->world();
 
     const usize buffer_size = world->entity_count();
@@ -166,10 +181,11 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& view, con
     builder.add_color_output(color);
     builder.add_color_output(id);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        render_editor_entities(render_pass, self, view, visibility, pass_buffer, vertex_buffer);
+        render_editor_entities(render_pass, self, scene_view, visibility, pass_buffer, vertex_buffer);
 
-        /*DirectDraw direct;
-        direct.render(render_pass, view.camera().view_proj_matrix());*/
+        DirectDraw direct;
+        render_bbox(direct, scene_view);
+        direct.render(render_pass, scene_view.camera().view_proj_matrix());
     });
 
     EditorPass pass;

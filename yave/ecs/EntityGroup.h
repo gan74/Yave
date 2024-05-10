@@ -393,12 +393,14 @@ class EntityGroup final : NonCopyable {
                         query._ids << id;
                     }
                 }
+
+                y_profile_msg(fmt_c_str("{} entities found", query._ids.size()));
             } else {
                 query._ids = _base->ids().ids();
             }
 
             if constexpr(mutate_count) {
-                y_profile_zone("propagating mutations");
+                y_profile_dyn_zone(fmt_c_str("propagating mutation for {} entities", query.size()));
                 for(SparseIdSet* mut_set : _mutate) {
                     for(const EntityId id : query.ids()) {
                         mut_set->insert(id);

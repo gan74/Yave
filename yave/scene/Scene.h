@@ -54,6 +54,10 @@ struct SceneObject {
 struct TransformableSceneObjectData {
     u32 transform_index = u32(-1);
     AABB global_aabb;
+
+    bool has_transform() const {
+        return transform_index != u32(-1);
+    }
 };
 
 template<typename T>

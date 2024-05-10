@@ -148,6 +148,12 @@ class EntityWorld : NonMovable {
 
 
 
+        template<typename T>
+        void remove_component(EntityId id) {
+            return find_container<T>()->remove_later(id);
+        }
+
+
 
         // ---------------------------------------- Systems ----------------------------------------
 
