@@ -51,13 +51,13 @@ void EntitySelector::on_gui() {
 
 
     const auto filters = has_filter && !_show_all ? core::Span<ecs::ComponentTypeIndex>{_filter} : core::Span<ecs::ComponentTypeIndex>{};
-    auto query = world.create_group<EditorComponent>({}, filters).query();
+    auto group = world.create_group<EditorComponent>({}, filters);
     if(ImGui::BeginChild("##entities")) {
-        if(query.is_empty()) {
+        if(group.is_empty()) {
             ImGui::TextDisabled("No viable entities found");
         }
 
-        for(const auto& [id, comp] : query.id_components()) {
+        for(const auto& [id, comp] : group.id_components()) {
             imgui::text_icon(world.entity_icon(id));
             ImGui::SameLine();
             if(ImGui::Selectable(comp.name().data())) {

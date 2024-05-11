@@ -86,8 +86,8 @@ void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
 
     {
         y_profile_zone("Update components");
-        auto query = _world->create_group<TransformableComponent, ecs::Changed<T>>().query();
-        for(const auto& [id, tr, comp] : query.id_components()) {
+        auto group = _world->create_group<TransformableComponent, ecs::Changed<T>>();
+        for(const auto& [id, tr, comp] : group.id_components()) {
             auto& obj = register_object(id, index_ptr, storage);
 
             obj.component = comp;
@@ -100,8 +100,8 @@ void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
 
     {
         y_profile_zone("Update transforms");
-        auto query = _world->create_group<ecs::Changed<TransformableComponent>, T>().query();
-        for(const auto& [id, tr, comp] : query.id_components()) {
+        auto group = _world->create_group<ecs::Changed<TransformableComponent>, T>();
+        for(const auto& [id, tr, comp] : group.id_components()) {
             auto& obj = register_object(id, index_ptr, storage);
             update_transform(obj, tr, comp);
         }
@@ -109,9 +109,8 @@ void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
 
     {
         y_profile_zone("Delete stale objects");
-        auto query = _world->create_group<ecs::Deleted<T>>().query();
-        if(query.size())
-        for(const ecs::EntityId id : query.ids()) {
+        auto group = _world->create_group<ecs::Deleted<T>>();
+        for(const ecs::EntityId id : group.ids()) {
             if(const u32 transform_index = unregister_object(id, index_ptr, storage).transform_index; transform_index == u32(-1)) {
                 _transform_manager.free_transform(transform_index);
             }
@@ -125,8 +124,8 @@ void EcsScene::process_components(u32 ObjectIndices::* index_ptr, S& storage) {
     y_profile();
 
     {
-        auto query = _world->create_group<ecs::Changed<T>>().query();
-        for(const auto& [id, comp] : query.id_components()) {
+        auto group = _world->create_group<ecs::Changed<T>>();
+        for(const auto& [id, comp] : group.id_components()) {
             auto& obj = register_object(id, index_ptr, storage);
             obj.component = comp;
             obj.entity_index = id.index();
@@ -134,19 +133,19 @@ void EcsScene::process_components(u32 ObjectIndices::* index_ptr, S& storage) {
     }
 
     {
-        auto query = _world->create_group<ecs::Deleted<T>>().query();
-        for(const ecs::EntityId id : query.ids()) {
+        auto group = _world->create_group<ecs::Deleted<T>>();
+        for(const ecs::EntityId id : group.ids()) {
              unregister_object(id, index_ptr, storage);
         }
     }
 }
 
 void EcsScene::process_atmosphere() {
-    auto query = _world->create_group<AtmosphereComponent>().query();
-    if(query.is_empty()) {
+    auto group = _world->create_group<AtmosphereComponent>();
+    if(group.is_empty()) {
         _atmosphere = nullptr;
     } else {
-        for(const auto& [id, atmo] : query.id_components()) {
+        for(const auto& [id, atmo] : group.id_components()) {
             const DirectionalLightComponent* sun = _world->component<DirectionalLightComponent>(atmo.sun());
 
             if(sun) {

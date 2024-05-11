@@ -174,11 +174,11 @@ class EntityGroup final : NonCopyable {
         std::get<I>(_sets) = &std::get<I>(containers)->_components;
 
         if constexpr(traits::is_component_mutable_v<T>) {
-            _locks.write_locks[mut_index] = &std::get<I>(containers)->_lock;
+            _write_locks[mut_index] = &std::get<I>(containers)->_lock;
             _mutate[mut_index] = &std::get<I>(containers)->_mutated;
             ++mut_index;
         } else {
-            _locks.read_locks[const_index++] = &std::get<I>(containers)->_lock;
+            _read_locks[const_index++] = &std::get<I>(containers)->_lock;
         }
 
         if constexpr(traits::is_component_changed_v<T>) {
@@ -198,8 +198,8 @@ class EntityGroup final : NonCopyable {
 
         y_debug_assert(std::all_of(_mutate.begin(), _mutate.end(), [](const auto* s) { return s; }));
         y_debug_assert(std::all_of(_filter.begin(), _filter.end(), [](const auto* s) { return s; }));
-        y_debug_assert(std::all_of(_locks.write_locks.begin(), _locks.write_locks.end(), [](const auto* s) { return s; }));
-        y_debug_assert(std::all_of(_locks.read_locks.begin(), _locks.read_locks.end(), [](const auto* s) { return s; }));
+        y_debug_assert(std::all_of(_write_locks.begin(), _write_locks.end(), [](const auto* s) { return s; }));
+        y_debug_assert(std::all_of(_read_locks.begin(), _read_locks.end(), [](const auto* s) { return s; }));
     }
 
 
@@ -265,108 +265,63 @@ class EntityGroup final : NonCopyable {
             SetTuple _sets = {};
     };
 
-    struct SetLocks {
-        std::array<std::shared_mutex*, mutate_count> write_locks = {};
-        std::array<std::shared_mutex*, type_count - mutate_count> read_locks = {};
-
-        void lock_all() {
-            y_profile();
-
-            Y_TODO(This can deadlock if a group locks A exclusively and B shared while another group does the opposite)
-
-            for(auto* lock : write_locks) {
-                lock->lock();
-            }
-
-            for(auto* lock : read_locks) {
-                lock->lock_shared();
-            }
-        }
-
-        void unlock_all() {
-            y_profile();
-
-            for(auto* lock : read_locks) {
-                lock->unlock_shared();
-            }
-
-            for(auto* lock : write_locks) {
-                lock->unlock();
-            }
-        }
-    };
-
-    class Query : NonMovable {
-        public:
-            using const_iterator = Iterator<ComponentReturnPolicy>;
-
-            Query(const SetLocks& locks) : _locks(locks) {
-                _locks.lock_all();
-            }
-
-            ~Query() {
-                _locks.unlock_all();
-            }
-
-            Query(Query&& other) {
-                swap(other);
-            }
-
-            Query& operator=(Query&& other) {
-                swap(other);
-                return *this;
-            }
-
-            void swap(Query& other) {
-                std::swap(_ids, other._ids);
-                std::swap(_sets, other._sets);
-                std::swap(_locks, other._locks);
-            }
-
-            inline auto id_components() & {
-                return core::Range(
-                    Iterator<IdComponentReturnPolicy>(ids().begin(), _sets),
-                    Iterator<IdComponentReturnPolicy>(ids().end(), _sets)
-                );
-            }
-
-            inline const_iterator begin() const {
-                return const_iterator(_ids.begin(), _sets);
-            }
-
-            inline const_iterator end() const {
-                return const_iterator(_ids.end(), _sets);
-            }
-
-            inline core::Span<EntityId> ids() const {
-                return _ids;
-            }
-
-            inline usize size() const {
-                return ids().size();
-            }
-
-            inline bool is_empty() const {
-                return _ids.is_empty();
-            }
-
-        private:
-            friend class EntityGroup;
-
-            core::Vector<EntityId> _ids;
-            SetTuple _sets = {};
-
-            SetLocks _locks;
-    };
-
     public:
         static constexpr bool is_const = !mutate_count;
 
-        Query query() const {
-            y_profile();
+        using const_iterator = Iterator<ComponentReturnPolicy>;
 
-            Query query(_locks);
-            query._sets = _sets;
+
+        ~EntityGroup() {
+            if(_base) {
+                unlock_all();
+            }
+        }
+
+        // To avoid group being destroyed when used in ranged for (fixed in c++23)
+        inline auto id_components() & {
+            return core::Range(
+                Iterator<IdComponentReturnPolicy>(ids().begin(), _sets),
+                Iterator<IdComponentReturnPolicy>(ids().end(), _sets)
+            );
+        }
+
+        inline const_iterator begin() const {
+            return const_iterator(_ids.begin(), _sets);
+        }
+
+        inline const_iterator end() const {
+            return const_iterator(_ids.end(), _sets);
+        }
+
+        inline core::Span<EntityId> ids() const {
+            return _ids;
+        }
+
+        inline usize size() const {
+            return ids().size();
+        }
+
+        inline bool is_empty() const {
+            return _ids.is_empty();
+        }
+
+        void swap(EntityGroup& other) {
+            _ids.swap(other.ids());
+            std::swap(_sets, other._sets);
+            std::swap(_mutate, other._mutate);
+            std::swap(_filter, other._filter);
+            std::swap(_write_locks, other._write_locks);
+            std::swap(_read_locks, other._read_locks);
+            std::swap(_base, other._base);
+        }
+
+    private:
+        friend class EntityWorld;
+
+        EntityGroup(const EntityGroupBase* base, const ContainerTuple& containers) : _base(base) {
+            fill_sets(containers, std::make_index_sequence<type_count>{});
+
+            lock_all();
 
             if constexpr(filter_count) {
                 y_profile_zone("finding changed entities");
@@ -379,7 +334,7 @@ class EntityGroup final : NonCopyable {
                     return a->size() < b->size();
                 });
 
-                query._ids.set_min_capacity(matches[0]->ids().size());
+                _ids.set_min_capacity(matches[0]->ids().size());
 
                 for(const EntityId id : matches[0]->ids()) {
                     bool match = true;
@@ -390,43 +345,65 @@ class EntityGroup final : NonCopyable {
                         }
                     }
                     if(match) {
-                        query._ids << id;
+                        _ids << id;
                     }
                 }
 
-                y_profile_msg(fmt_c_str("{} entities found", query._ids.size()));
+                y_profile_msg(fmt_c_str("{} entities found", _ids.size()));
             } else {
-                query._ids = _base->ids().ids();
+                _ids = _base->ids().ids();
             }
 
+
             if constexpr(mutate_count) {
-                y_profile_dyn_zone(fmt_c_str("propagating mutation for {} entities", query.size()));
+                y_profile_dyn_zone(fmt_c_str("propagating mutation for {} entities", _ids.size()));
                 for(SparseIdSet* mut_set : _mutate) {
-                    for(const EntityId id : query.ids()) {
+                    for(const EntityId id : ids()) {
                         mut_set->insert(id);
                     }
                 }
             }
-
-            return query;
         }
 
-    private:
-        friend class EntityWorld;
+        void lock_all() {
+            y_profile();
 
-        EntityGroup(const EntityGroupBase* base, const ContainerTuple& containers) : _base(base) {
-            fill_sets(containers, std::make_index_sequence<type_count>{});
+            Y_TODO(This can deadlock if a group locks A exclusively and B shared while another group does the opposite)
+
+            for(auto* lock : _write_locks) {
+                lock->lock();
+            }
+
+            for(auto* lock : _read_locks) {
+                lock->lock_shared();
+            }
+        }
+
+        void unlock_all() {
+            y_profile();
+
+            for(auto* lock : _read_locks) {
+                lock->unlock_shared();
+            }
+
+            for(auto* lock : _write_locks) {
+                lock->unlock();
+            }
         }
 
 
-        const EntityGroupBase* _base = nullptr;
+
+        core::Vector<EntityId> _ids;
 
         SetTuple _sets = {};
 
         MutateContainers _mutate = {};
         FilterContainers _filter = {};
 
-        SetLocks _locks;
+        std::array<std::shared_mutex*, mutate_count> _write_locks = {};
+        std::array<std::shared_mutex*, type_count - mutate_count> _read_locks = {};
+
+        const EntityGroupBase* _base = nullptr;
 };
 
 

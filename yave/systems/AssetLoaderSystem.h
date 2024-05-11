@@ -59,21 +59,21 @@ class AssetLoaderSystem : public ecs::System {
 
         template<typename T, bool Recent>
         static void load_components(ecs::EntityWorld& world, AssetLoadingContext& loading_ctx) {
-            auto query = [&] {
+            auto group = [&] {
                 if constexpr(Recent) {
                     Y_TODO(hoist group into system schedule)
-                    return world.create_group<ecs::Mutate<ecs::Changed<T>>>().query();
+                    return world.create_group<ecs::Mutate<ecs::Changed<T>>>();
                 } else {
-                    return world.create_group<ecs::Mutate<T>>().query();
+                    return world.create_group<ecs::Mutate<T>>();
                 }
             }();
 
-            if(query.is_empty()) {
+            if(group.is_empty()) {
                 return;
             }
 
-            y_profile_msg(fmt_c_str("Processing {} components", query.size()));
-            for(auto&& [id, comp] : query.id_components()) {
+            y_profile_msg(fmt_c_str("Processing {} components", group.size()));
+            for(auto&& [id, comp] : group.id_components()) {
                 comp.load_assets(loading_ctx);
                 world.get_or_add_component<LoadingTag<T>>(id);
             }
@@ -81,8 +81,8 @@ class AssetLoaderSystem : public ecs::System {
 
         template<typename T>
         static void update_loading_status(ecs::EntityWorld& world) {
-            auto query = world.create_group<ecs::Mutate<T>, LoadingTag<T>>().query();
-            for(auto&& [id, comp, loading] : query.id_components()) {
+            auto group = world.create_group<ecs::Mutate<T>, LoadingTag<T>>();
+            for(auto&& [id, comp, loading] : group.id_components()) {
                 if(comp.update_asset_loading_status()) {
                     world.remove_component<LoadingTag<T>>(id);
                 }
