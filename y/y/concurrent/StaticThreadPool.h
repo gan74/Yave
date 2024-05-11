@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 
-#include <list>
 #include <functional>
 #include <thread>
 #include <mutex>
@@ -32,6 +31,8 @@ SOFTWARE.
 #include <future>
 #include <condition_variable>
 #include <source_location>
+#include <optional>
+#include <latch>
 
 
 namespace y {
@@ -40,51 +41,47 @@ namespace concurrent {
 class StaticThreadPool;
 
 class DependencyGroup {
+    struct Data {
+        std::atomic<u32> counter = 0;
+        u32 max = 0;
+
+        bool is_ready() const;
+        bool notify();
+    };
+
     public:
         DependencyGroup();
 
-        static DependencyGroup empty();
+        void reset();
+        void init();
 
         bool is_empty() const;
         bool is_ready() const;
-        u32 dependency_count() const;
 
     private:
         friend class StaticThreadPool;
 
-        DependencyGroup(bool init);
+        std::shared_ptr<DependencyGroup::Data> create_signal();
 
-        void add_dependency();
-        void solve_dependency();
-
-        std::shared_ptr<std::atomic<u32>> _counter;
+        std::shared_ptr<Data> _data;
 };
 
 class StaticThreadPool : NonMovable {
     private:
         using Func = std::function<void()>;
 
-        struct FuncData : NonCopyable {
-            FuncData(Func func, core::Span<DependencyGroup> wait, DependencyGroup done, std::source_location loc);
+        struct Task : NonCopyable {
+            Task(Func func, core::Span<DependencyGroup> wait, std::shared_ptr<DependencyGroup::Data> sig, std::source_location loc);
 
             bool is_ready() const;
 
             Func function;
             core::SmallVector<DependencyGroup, 4> wait_for;
-            DependencyGroup signal;
+            std::shared_ptr<DependencyGroup::Data> signal;
+
 #ifdef Y_DEBUG
             std::source_location location;
 #endif
-        };
-
-        struct SharedData {
-            mutable std::mutex lock;
-            std::condition_variable condition;
-
-            std::list<FuncData> queue;
-
-            std::atomic<u32> working = 0;
-            std::atomic<bool> run = true;
         };
 
     public:
@@ -97,7 +94,8 @@ class StaticThreadPool : NonMovable {
 
         void cancel_pending_tasks();
 
-        void wait_for(core::Span<DependencyGroup> wait);
+        void process_until_complete(core::Span<DependencyGroup> wait_for);
+
         void schedule(Func&& func, DependencyGroup* signal = nullptr, core::Span<DependencyGroup> wait_for = {}, std::source_location loc = std::source_location::current());
 
         template<typename F, typename R = decltype(std::declval<F>()())>
@@ -108,44 +106,21 @@ class StaticThreadPool : NonMovable {
             return future;
         }
 
-        template<typename It, typename Fn>
-        void parallel_for(It begin, It end, Fn&& func) {
-            const usize estimated_splits = ((_threads.size() + 1) * 4) - 1;
-            const usize total_size = usize(end - begin);
-            const usize dispatch_size = std::max(1_uu, total_size / estimated_splits);
-
-            DependencyGroup deps;
-            auto schedule_one = [&](It b, It e) {
-                if(b != e) {
-                    schedule([b, e, func]() {
-                        for(It it = b; it != e; ++it) {
-                            func(it);
-                        }
-                    }, &deps);
-                }
-            };
-
-            It current = begin;
-            for(usize i = 0; i < total_size; i += dispatch_size) {
-                It e = current + dispatch_size;
-                schedule_one(current, e);
-                current = e;
-            }
-
-            schedule_one(current, end);
-
-            while(!deps.is_ready()) {
-                process_until_empty();
-            }
-        }
 
     private:
-        // Empty means all tasks are scheduled, not done!
-        void process_until_empty();
         bool process_one(std::unique_lock<std::mutex> lock);
         void worker();
 
-        SharedData _shared_data;
+        mutable std::mutex _lock;
+
+        std::condition_variable _condition;
+        std::atomic<u64> _generation = 0;
+
+        Y_TODO(change to ring queue)
+        core::Vector<std::shared_ptr<Task>> _queue;
+
+        std::atomic<u32> _working_threads = 0;
+        std::atomic<bool> _run = true;
         core::Vector<std::thread> _threads;
 };
 

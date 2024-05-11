@@ -31,7 +31,6 @@ SOFTWARE.
 #include <y/utils/format.h>
 
 #include <numeric>
-#include <latch>
 
 namespace yave {
 namespace ecs {
@@ -69,10 +68,8 @@ void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) cons
     std::atomic<u32> completed = 0;
     [[maybe_unused]] u32 submitted = 0;
 
-    //std::latch done(static_cast<std::ptrdiff_t>(SystemSchedule::Max));
-
     core::ScratchVector<DependencyGroup> stage_deps(dep_count);
-    DependencyGroup previous_stage = DependencyGroup::empty();
+    DependencyGroup previous_stage;
 
     for(usize i = 0; i != usize(SystemSchedule::Max); ++i) {
         for(const auto& scheduler : _schedulers) {
@@ -89,6 +86,7 @@ void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) cons
                 }
 
                 DependencyGroup& signal = sched.signals[k];
+                signal.reset();
 
                 const SystemScheduler::Task& task = sched.tasks[k];
                 thread_pool.schedule([&]() {
@@ -109,7 +107,6 @@ void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) cons
         DependencyGroup next;
         thread_pool.schedule([&]() {
             y_profile_msg("Stage sync");
-            //done.count_down();
         }, &next, stage_deps);
 
         stage_deps.make_empty();
@@ -117,8 +114,7 @@ void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) cons
     }
 
     y_profile_zone("waiting for completion");
-    thread_pool.wait_for(previous_stage);
-    //done.wait();
+    thread_pool.process_until_complete(previous_stage);
 
     y_debug_assert(completed == submitted);
 }

@@ -29,47 +29,53 @@ SOFTWARE.
 namespace y {
 namespace concurrent {
 
-DependencyGroup::DependencyGroup() : DependencyGroup(true) {
+bool DependencyGroup::Data::is_ready() const {
+    return counter == max;
 }
 
-DependencyGroup::DependencyGroup(bool init) {
-    if(init) {
-        _counter = std::make_shared<std::atomic<u32>>(0);
+bool DependencyGroup::Data::notify() {
+    y_debug_assert(counter < max);
+    return (++counter) == max;
+}
+
+DependencyGroup::DependencyGroup() {
+}
+
+void DependencyGroup::reset() {
+    if(_data) {
+        y_always_assert(_data->is_ready(), "Dependency group is not ready");
+        _data->max = 0;
+        _data->counter = 0;
     }
 }
 
-DependencyGroup DependencyGroup::empty() {
-    return DependencyGroup(false);
+void DependencyGroup::init() {
+    if(!_data) {
+        _data = std::make_shared<Data>();
+    }
 }
 
 bool DependencyGroup::is_empty() const {
-    return _counter == nullptr;
+    return !_data;
 }
 
 bool DependencyGroup::is_ready() const {
-    return dependency_count() == 0;
+    return !_data || _data->is_ready();
 }
 
-u32 DependencyGroup::dependency_count() const {
-    return !_counter ? u32(0) : u32(*_counter);
-}
+std::shared_ptr<DependencyGroup::Data> DependencyGroup::create_signal() {
+    init();
 
-void DependencyGroup::add_dependency() {
-    y_debug_assert(_counter);
-    ++(*_counter);
-}
+    y_debug_assert(!_data->counter);
+    ++(_data->max);
 
-void DependencyGroup::solve_dependency() {
-    if(_counter) {
-        [[maybe_unused]] u32 prev = (*_counter)--;
-        y_debug_assert(prev != 0);
-    }
+    return _data;
 }
 
 
-StaticThreadPool::FuncData::FuncData(Func func, core::Span<DependencyGroup> wait, DependencyGroup done, std::source_location loc) :
+StaticThreadPool::Task::Task(Func func, core::Span<DependencyGroup> wait, std::shared_ptr<DependencyGroup::Data> sig, std::source_location loc) :
         function(std::move(func)),
-        signal(std::move(done)) {
+        signal(std::move(sig)) {
 
     std::copy_if(wait.begin(), wait.end(), std::back_inserter(wait_for), [](const auto& dep) { return !dep.is_empty(); });
 
@@ -78,9 +84,12 @@ StaticThreadPool::FuncData::FuncData(Func func, core::Span<DependencyGroup> wait
 #endif
 }
 
-bool StaticThreadPool::FuncData::is_ready() const {
+bool StaticThreadPool::Task::is_ready() const {
     return std::all_of(wait_for.begin(), wait_for.end(), [](const auto& dg) { return dg.is_ready(); });
 }
+
+
+
 
 StaticThreadPool::StaticThreadPool(usize thread_count) {
     for(usize i = 0; i != thread_count; ++i) {
@@ -92,12 +101,15 @@ StaticThreadPool::StaticThreadPool(usize thread_count) {
 }
 
 StaticThreadPool::~StaticThreadPool() {
-    process_until_empty();
+    while(process_one(std::unique_lock(_lock))) {
+        // Nothing
+    }
 
     {
-        _shared_data.run = false;
-        const std::unique_lock lock(_shared_data.lock);
-        _shared_data.condition.notify_all();
+        _run = false;
+        ++_generation;
+        const std::unique_lock lock(_lock);
+        _condition.notify_all();
     }
 
     for(auto& thread : _threads) {
@@ -112,87 +124,98 @@ usize StaticThreadPool::concurency() const {
 }
 
 bool StaticThreadPool::is_empty() const {
-    const std::unique_lock lock(_shared_data.lock);
-    return _shared_data.queue.empty() && !_shared_data.working;
+    const std::unique_lock lock(_lock);
+    return _queue.is_empty() && !_working_threads;
 }
 
 usize StaticThreadPool::pending_tasks() const {
-    const std::unique_lock lock(_shared_data.lock);
-    return _shared_data.queue.size() + _shared_data.working;
+    const std::unique_lock lock(_lock);
+    return _queue.size() + _working_threads;
 }
 
 void StaticThreadPool::cancel_pending_tasks() {
-    const std::unique_lock lock(_shared_data.lock);
-    _shared_data.queue.clear();
+    const std::unique_lock lock(_lock);
+    _queue.clear();
 }
 
-void StaticThreadPool::process_until_empty() {
-    while(true) {
-        std::unique_lock lock(_shared_data.lock);
-        if(!process_one(std::move(lock))) {
+void StaticThreadPool::process_until_complete(core::Span<DependencyGroup> wait_for) {
+    auto is_done = [&] { return std::all_of(wait_for.begin(), wait_for.end(), [](const DependencyGroup& d) { return d.is_ready(); }); };
+
+    while(!is_done()) {
+        if(process_one(std::unique_lock(_lock))) {
+            continue;
+        }
+
+        std::unique_lock lock(_lock);
+        if(is_done()) {
             break;
         }
-        // Nothing
-    }
-}
 
-void StaticThreadPool::wait_for(core::Span<DependencyGroup> wait) {
-    while(!std::all_of(wait.begin(), wait.end(), [](const auto& w) { return w.is_ready(); })) {
-        process_one(std::unique_lock(_shared_data.lock));
+        const u64 gen = _generation;
+        _condition.wait(lock, [&] { return gen != _generation; });
     }
 }
 
 void StaticThreadPool::schedule(Func&& func, DependencyGroup* signal, core::Span<DependencyGroup> wait_for, std::source_location loc) {
-    y_debug_assert(_shared_data.run);
+    y_debug_assert(_run);
     y_debug_assert(std::none_of(wait_for.begin(), wait_for.end(), [](const auto& d) { return d.is_empty(); }));
 
+    std::shared_ptr<DependencyGroup::Data> signal_data;
+    if(signal) {
+        signal_data = signal->create_signal();
+    }
+
     {
-        const std::unique_lock lock(_shared_data.lock);
-        if(signal) {
-            signal->add_dependency();
-            _shared_data.queue.emplace_back(std::move(func), wait_for, *signal, loc);
-        } else {
-            _shared_data.queue.emplace_back(std::move(func), wait_for, DependencyGroup::empty(), loc);
-        }
+        const std::unique_lock lock(_lock);
+
+        auto& task = _queue.emplace_back();
+        task = std::make_shared<Task>(std::move(func), wait_for, std::move(signal_data), loc);
     }
 
     if(concurency()) {
-        _shared_data.condition.notify_one();
+        ++_generation;
+        _condition.notify_one();
     } else {
-        process_until_empty();
+        while(process_one(std::unique_lock(_lock))) {
+            // Nothing
+        }
     }
 }
 
 bool StaticThreadPool::process_one(std::unique_lock<std::mutex> lock) {
-    ++_shared_data.working;
-    y_defer(--_shared_data.working);
+    ++_working_threads;
+    y_defer(--_working_threads);
 
-    for(auto it = _shared_data.queue.begin(); it != _shared_data.queue.end(); ++it) {
-        if(it->is_ready()) {
-            auto f = std::move(*it);
-            _shared_data.queue.erase(it);
+    for(auto it = _queue.begin(); it != _queue.end(); ++it) {
+        if((*it)->is_ready()) {
+            auto task = std::move(*it);
+            _queue.erase(it);
 
             lock.unlock();
 
-            f.function();
+            task->function();
 
-            {
-                f.signal.solve_dependency();
-                if(f.signal.is_ready()) {
-                    _shared_data.condition.notify_one();
+            if(task->signal) {
+                lock.lock();
+                if(task->signal->notify()) {
+                    ++_generation;
+                    _condition.notify_all();
                 }
             }
+
             return true;
         }
     }
 
+    // We must not unlock if we don't do anything
     return false;
 }
 
 void StaticThreadPool::worker() {
-    while(_shared_data.run) {
-        std::unique_lock lock(_shared_data.lock);
-        _shared_data.condition.wait(lock, [&] { return !_shared_data.queue.empty() || !_shared_data.run; });
+    while(_run) {
+        std::unique_lock lock(_lock);
+        const u64 gen = _generation;
+        _condition.wait(lock, [&] { return (!_queue.is_empty() || !_run) && gen != _generation; });
         process_one(std::move(lock));
     }
 }
