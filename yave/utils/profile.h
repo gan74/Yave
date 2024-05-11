@@ -40,32 +40,40 @@ SOFTWARE.
 #include <external/tracy/public/tracy/Tracy.hpp>
 
 
-#define y_profile_frame_begin()             do {} while(false)
-#define y_profile_frame_end()               do { FrameMark; } while(false)
+#define y_profile_frame_begin()                 do {} while(false)
+#define y_profile_frame_end()                   do { FrameMark; } while(false)
 
-#define y_profile_msg(msg)                  do { const char* y_msg = (msg); TracyMessage(y_msg, std::strlen(y_msg)); } while(false)
+#define y_profile_msg(msg)                      do { const char* y_msg = (msg); TracyMessage(y_msg, std::strlen(y_msg)); } while(false)
 
-#define y_profile()                         ZoneNamed(y_create_name_with_prefix(tracy), true)
-#define y_profile_zone(name)                ZoneNamedN(y_create_name_with_prefix(tracy), name, true)
-#define y_profile_dyn_zone(name)            ZoneNamed(y_create_name_with_prefix(tracy), true); ZoneNameV(y_create_name_with_prefix(tracy), name, std::strlen(name))
+#define y_profile()                             ZoneNamed(y_create_name_with_prefix(tracy), true)
+#define y_profile_zone(name)                    ZoneNamedN(y_create_name_with_prefix(tracy), name, true)
+#define y_profile_dyn_zone(name)                ZoneNamed(y_create_name_with_prefix(tracy), true); ZoneNameV(y_create_name_with_prefix(tracy), name, std::strlen(name))
 
 
-#define y_profile_alloc(ptr, size)          TracyAlloc(ptr, size)
-#define y_profile_free(ptr)                 TracyFree(ptr)
+#define y_profile_alloc(ptr, size)              TracyAlloc(ptr, size)
+#define y_profile_free(ptr)                     TracyFree(ptr)
+
+#define y_profile_lock(type, varname)           TracyLockable(type, varname)
+#define y_profile_shared_lock(type, varname)    TracySharedLockable(type, varname)
+#define y_profile_set_lock_name(varname, name)  do { (varname).CustomName((name), std::strlen(name)); } while(false)
 
 #else
 
-#define y_profile_frame_begin()             do {} while(false)
-#define y_profile_frame_end()               do {} while(false)
+#define y_profile_frame_begin()                 do {} while(false)
+#define y_profile_frame_end()                   do {} while(false)
 
-#define y_profile_msg(msg)                  do {} while(false)
+#define y_profile_msg(msg)                      do {} while(false)
 
-#define y_profile()                         do {} while(false)
-#define y_profile_zone(name)                do {} while(false)
-#define y_profile_dyn_zone(name)            do {} while(false)
+#define y_profile()                             do {} while(false)
+#define y_profile_zone(name)                    do {} while(false)
+#define y_profile_dyn_zone(name)                do {} while(false)
 
-#define y_profile_alloc(ptr, size)          do {} while(false)
-#define y_profile_free(ptr)                 do {} while(false)
+#define y_profile_alloc(ptr, size)              do {} while(false)
+#define y_profile_free(ptr)                     do {} while(false)
+
+#define y_profile_lock(type, varname)           type varname
+#define y_profile_shared_lock(type, varname)    type varname
+#define y_profile_set_lock_name(varname, name)  do {} while(false)
 
 #endif // YAVE_PROFILING
 

@@ -400,8 +400,8 @@ class EntityGroup final : NonCopyable {
         MutateContainers _mutate = {};
         FilterContainers _filter = {};
 
-        std::array<std::shared_mutex*, mutate_count> _write_locks = {};
-        std::array<std::shared_mutex*, type_count - mutate_count> _read_locks = {};
+        std::array<ComponentContainerBase::lock_type*, mutate_count> _write_locks = {};
+        std::array<ComponentContainerBase::lock_type*, type_count - mutate_count> _read_locks = {};
 
         const EntityGroupBase* _base = nullptr;
 };

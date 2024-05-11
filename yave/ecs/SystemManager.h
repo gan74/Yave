@@ -31,7 +31,7 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-enum SystemSchedule {
+enum class SystemSchedule {
     // Tick is always first.
     // Ticks for different systems might run in parallel
     Tick,

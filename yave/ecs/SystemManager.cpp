@@ -31,6 +31,7 @@ SOFTWARE.
 #include <y/utils/format.h>
 
 #include <numeric>
+#include <latch>
 
 namespace yave {
 namespace ecs {
@@ -67,6 +68,8 @@ void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) cons
 
     std::atomic<u32> completed = 0;
     [[maybe_unused]] u32 submitted = 0;
+
+    //std::latch done(static_cast<std::ptrdiff_t>(SystemSchedule::Max));
 
     core::ScratchVector<DependencyGroup> stage_deps(dep_count);
     DependencyGroup previous_stage = DependencyGroup::empty();
@@ -106,6 +109,7 @@ void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) cons
         DependencyGroup next;
         thread_pool.schedule([&]() {
             y_profile_msg("Stage sync");
+            //done.count_down();
         }, &next, stage_deps);
 
         stage_deps.make_empty();
@@ -114,6 +118,7 @@ void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) cons
 
     y_profile_zone("waiting for completion");
     thread_pool.wait_for(previous_stage);
+    //done.wait();
 
     y_debug_assert(completed == submitted);
 }

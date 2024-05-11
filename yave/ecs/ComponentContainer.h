@@ -33,6 +33,7 @@ namespace ecs {
 
 class ComponentContainerBase : NonMovable {
     public:
+
         virtual ~ComponentContainerBase();
 
         ComponentTypeIndex type_id() const;
@@ -66,7 +67,10 @@ class ComponentContainerBase : NonMovable {
         SparseIdSet _mutated;
         SparseIdSet _to_delete;
 
-        std::shared_mutex _lock;
+        y_profile_shared_lock(std::shared_mutex, _lock);
+
+    public:
+        using lock_type = decltype(_lock);
 };
 
 
@@ -76,6 +80,7 @@ class ComponentContainer final : public ComponentContainerBase {
         using component_type = T;
 
         ComponentContainer() : ComponentContainerBase(type_index<T>()) {
+            y_profile_set_lock_name(_lock, fmt_c_str("Lock<{}>", ComponentRuntimeInfo::create<T>().clean_component_name()));
         }
 
         const SparseComponentSet<T>& component_set() const {
