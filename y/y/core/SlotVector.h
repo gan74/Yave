@@ -197,7 +197,7 @@ class SlotVector : Allocator, NonCopyable {
         template<typename F>
         void sort(F&& compare) {
             std::sort(_indices.data(), _indices.data() + _size, [&](usize a, usize b) {
-                return compare(operator[](Slot(a)), operator[](Slot(b)));
+                return compare(_data[a], _data[b]);
             });
         }
 
