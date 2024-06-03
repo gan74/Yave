@@ -156,7 +156,7 @@ core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, 
             for(usize y = 0; y != mip_size.y(); ++y) {
                 for(usize x = 0; x != mip_size.x(); ++x) {
                     const usize orig = (u32(x * factors.x()) + u32(y * factors.y()) * row_size);
-                    y_debug_assert(usize(orig + row_size + texel_width) < orig_size.x() * orig_size.y());
+                    y_debug_assert(usize(orig + row_size + texel_width) <= orig_size.x() * orig_size.y());
 
                     for(usize cc = 0; cc != components; ++cc) {
                         const float a = image_data[components * usize(orig) + cc];
