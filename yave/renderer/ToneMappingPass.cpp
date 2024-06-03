@@ -32,7 +32,7 @@ SOFTWARE.
 namespace yave {
 
 ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageId in_lit, const ExposurePass& exposure, const ToneMappingSettings& settings) {
-    static constexpr ImageFormat format = VK_FORMAT_A2R10G10B10_UNORM_PACK32;
+    const ImageFormat format = settings.debug_exposure ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_A2R10G10B10_UNORM_PACK32;
 
     const math::Vec2ui size = framegraph.image_size(in_lit);
 
