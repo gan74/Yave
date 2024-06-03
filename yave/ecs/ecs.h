@@ -126,7 +126,7 @@ struct RegisterComponent {
 
 template<typename T>
 concept Inspectable = requires(T comp) {
-    comp.inspect(static_cast<ecs::ComponentInspector*>(nullptr));
+    comp.inspect(static_cast<ComponentInspector*>(nullptr));
 };
 
 template<typename T>

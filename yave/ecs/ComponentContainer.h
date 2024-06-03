@@ -27,6 +27,7 @@ SOFTWARE.
 #include "ComponentInspector.h"
 
 #include <y/serde3/poly.h>
+#include <y/serde3/traits.h>
 
 namespace yave {
 namespace ecs {
@@ -147,6 +148,8 @@ class ComponentContainer final : public ComponentContainerBase {
 
         y_serde3_poly(ComponentContainer)
         y_reflect(ComponentContainer, _components)
+
+        y_no_serde3_expr(serde3::has_no_serde3_v<T>);
 
     private:
         friend class EntityWorld;

@@ -28,6 +28,7 @@ SOFTWARE.
 #include <y/utils/name.h>
 
 #include <memory>
+#include <cctype>
 
 namespace yave {
 namespace ecs {
@@ -60,19 +61,26 @@ struct ComponentRuntimeInfo {
     }
 
     static std::string_view clean_component_name(std::string_view name) {
-        usize start = 0;
-        for(usize i = 0; i != name.size(); ++i) {
-            switch(name[i]) {
-                case ':':
-                    start = i + 1;
-                    break;
+        if(name.empty()) {
+            return "???";
+        }
 
-                default:
-                    break;
+        if(name.starts_with("::")) {
+            return clean_component_name(name.substr(2));
+        }
+        if(name.starts_with("class ")) {
+            return clean_component_name(name.substr(6));
+        }
+        if(name.starts_with("struct ")) {
+            return clean_component_name(name.substr(7));
+        }
+        if(const usize n = name.find("::"); n != std::string_view::npos) {
+            if(std::all_of(name.data(), name.data() + n, [](char c) { return std::isalnum(int(c)); })) {
+                return clean_component_name(name.substr(n));
             }
         }
 
-        return name.substr(start);
+        return name;
     }
 
 
