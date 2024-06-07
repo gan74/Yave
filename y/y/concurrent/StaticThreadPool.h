@@ -108,7 +108,7 @@ class StaticThreadPool : NonMovable {
 
 
     private:
-        bool process_one(std::unique_lock<std::mutex> lock);
+        bool process_one(std::unique_lock<std::mutex>& lock);
         void worker();
 
         mutable std::mutex _lock;

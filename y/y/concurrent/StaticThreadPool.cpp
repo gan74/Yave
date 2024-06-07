@@ -101,8 +101,11 @@ StaticThreadPool::StaticThreadPool(usize thread_count) {
 }
 
 StaticThreadPool::~StaticThreadPool() {
-    while(process_one(std::unique_lock(_lock))) {
-        // Nothing
+    for(;;) {
+        std::unique_lock lock(_lock);
+        if(!process_one(lock)) {
+            break;
+        }
     }
 
     {
@@ -142,8 +145,11 @@ void StaticThreadPool::process_until_complete(core::Span<DependencyGroup> wait_f
     auto is_done = [&] { return std::all_of(wait_for.begin(), wait_for.end(), [](const DependencyGroup& d) { return d.is_ready(); }); };
 
     while(!is_done()) {
-        if(process_one(std::unique_lock(_lock))) {
-            continue;
+        for(;;) {
+            std::unique_lock lock(_lock);
+            if(!process_one(lock)) {
+                break;
+            }
         }
 
         std::unique_lock lock(_lock);
@@ -176,13 +182,16 @@ void StaticThreadPool::schedule(Func&& func, DependencyGroup* signal, core::Span
         ++_generation;
         _condition.notify_one();
     } else {
-        while(process_one(std::unique_lock(_lock))) {
-            // Nothing
+        for(;;) {
+            std::unique_lock lock(_lock);
+            if(!process_one(lock)) {
+                break;
+            }
         }
     }
 }
 
-bool StaticThreadPool::process_one(std::unique_lock<std::mutex> lock) {
+bool StaticThreadPool::process_one(std::unique_lock<std::mutex>& lock) {
     ++_working_threads;
     y_defer(--_working_threads);
 
@@ -214,9 +223,10 @@ bool StaticThreadPool::process_one(std::unique_lock<std::mutex> lock) {
 void StaticThreadPool::worker() {
     while(_run) {
         std::unique_lock lock(_lock);
-        const u64 gen = _generation;
-        _condition.wait(lock, [&] { return (!_queue.is_empty() || !_run) && gen != _generation; });
-        process_one(std::move(lock));
+        if(!process_one(lock)) {
+            const u64 gen = _generation;
+            _condition.wait(lock, [&] { return (!_queue.is_empty() || !_run) && gen != _generation; });
+        }
     }
 }
 
