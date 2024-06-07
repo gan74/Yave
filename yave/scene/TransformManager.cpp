@@ -74,6 +74,8 @@ bool TransformManager::need_update() const {
 }
 
 void TransformManager::update_buffer(ComputeCapableCmdBufferRecorder& recorder) {
+    y_profile();
+
     const usize update_count = _dirty.size();
     if(!update_count) {
         return;

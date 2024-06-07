@@ -351,6 +351,7 @@ class EntityGroup final : NonCopyable {
 
                 y_profile_msg(fmt_c_str("{} entities found", _ids.size()));
             } else {
+                // This can be expensive. Find a way to avoid copying everything?
                 _ids = _base->ids().ids();
             }
 
@@ -368,14 +369,38 @@ class EntityGroup final : NonCopyable {
         void lock_all() {
             y_profile();
 
-            Y_TODO(This can deadlock if a group locks A exclusively and B shared while another group does the opposite)
+            usize write_index = 0;
+            usize read_index = 0;
 
-            for(auto* lock : _write_locks) {
-                lock->lock();
-            }
+            auto unlock = [&] {
+                for(usize i = 0; i != read_index; ++i) {
+                    _read_locks[i]->unlock();
+                }
+                for(usize i = 0; i != write_index; ++i) {
+                    _write_locks[i]->unlock();
+                }
 
-            for(auto* lock : _read_locks) {
-                lock->lock_shared();
+            };
+
+            auto try_lock_all = [&] {
+                for(; write_index != _write_locks.size(); ++write_index) {
+                    if(!_write_locks[write_index]->try_lock()) {
+                        return false;
+                    }
+                }
+                for(; read_index != _read_locks.size(); ++read_index) {
+                    if(!_read_locks[read_index]->try_lock_shared()) {
+                        return false;
+                    }
+                }
+
+                return true;
+            };
+
+            while(!try_lock_all()) {
+                unlock();
+                write_index = 0;
+                read_index = 0;
             }
         }
 

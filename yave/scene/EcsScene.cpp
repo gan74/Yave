@@ -200,6 +200,8 @@ void EcsScene::update_from_world() {
 
 void EcsScene::audit() const {
 #ifdef Y_DEBUG
+    y_profile();
+
     for(const auto& [id, object] : _indices) {
         if(object.mesh != u32(-1)) {
             y_debug_assert(_meshes[object.mesh].entity_index == id.index());
