@@ -39,7 +39,7 @@ static DeviceResources::MaterialTemplates material_template_for_data(const Mater
             ;
         }
         if(data.double_sided()) {
-            log_msg("Double sided is not supported for given material configuration", Log::Warning);
+            y_only_once(log_msg("Double sided is not supported for given material configuration", Log::Warning));
         }
         return DeviceResources::TexturedSpecularMaterialTemplate;
     } else {
@@ -50,7 +50,7 @@ static DeviceResources::MaterialTemplates material_template_for_data(const Mater
             ;
         }
         if(data.double_sided()) {
-            log_msg("Double sided is not supported for given material configuration", Log::Warning);
+            y_only_once(log_msg("Double sided is not supported for given material configuration", Log::Warning));
         }
         return DeviceResources::TexturedMaterialTemplate;
     }
