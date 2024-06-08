@@ -32,11 +32,6 @@ void end_capture();
 
 bool is_supported();
 
-inline auto capture() {
-    start_capture();
-    return y::ScopeGuard([] { end_capture(); });
-}
-
 }
 }
 

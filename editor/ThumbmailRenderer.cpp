@@ -76,7 +76,11 @@ static Texture render_scene(const Scene& scene) {
         FrameGraph graph(resource_pool);
 
         RendererSettings settings;
-        settings.tone_mapping.auto_exposure = false;
+        {
+            settings.tone_mapping.auto_exposure = false;
+            settings.taa.enable = false;
+        }
+
         const DefaultRenderer renderer = DefaultRenderer::create(graph, scene_view, out.size(), settings);
 
         const FrameGraphImageId output_image = renderer.tone_mapping.tone_mapped;
