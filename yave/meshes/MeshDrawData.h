@@ -53,7 +53,7 @@ class MeshDrawBuffers : NonMovable {
         MeshDrawBuffers() = default;
 
         core::Span<AttribSubBuffer> attrib_buffers() const;
-        TriangleSubBuffer triangle_buffer() const;
+        const TriangleSubBuffer& triangle_buffer() const;
 
         usize vertex_count() const;
 
@@ -80,7 +80,7 @@ class MeshDrawData : NonCopyable {
         bool is_null() const;
 
         const MeshDrawBuffers& mesh_buffers() const;
-        TriangleSubBuffer triangle_buffer() const;
+        const TriangleSubBuffer& triangle_buffer() const;
 
         const MeshDrawCommand& draw_command() const;
 

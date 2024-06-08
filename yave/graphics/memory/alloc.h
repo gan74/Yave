@@ -121,13 +121,13 @@ inline VkDeviceMemory alloc_memory(usize size, u32 type_bits, MemoryType type) {
                     log_msg(fmt("{} heap out of memory", memory_type_name(type)), Log::Warning);
                     continue;
                 }
-                y_fatal("Failed to allocate memory: {}", vk_result_str(result));
+                y_fatal("Failed to allocate {}KB of memory: {}", size / 1024, vk_result_str(result));
             }
             return memory;
         }
     }
 
-    y_fatal("Failed to allocate memory: no suitable heap found (out of memory?)");
+    y_fatal("Failed to allocate {}KB of memory: no suitable heap found (out of memory?)", size / 1024);
 }
 
 inline VkDeviceMemory alloc_memory(VkMemoryRequirements reqs, MemoryType type) {

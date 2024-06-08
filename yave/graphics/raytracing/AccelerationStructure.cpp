@@ -41,30 +41,33 @@ static VkDeviceOrHostAddressConstKHR buffer_device_address(const SubBufferBase& 
 
 
 
-static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::AccelStructureBit>> create_acceleration_structure(const VkAccelerationStructureGeometryDataKHR& input_geo, VkAccelerationStructureTypeKHR struct_type) {
+static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::AccelStructureBit>> create_acceleration_structure(
+        core::Span<VkAccelerationStructureGeometryKHR> geometries,
+        core::Span<u32> prim_counts,
+        core::Span<VkAccelerationStructureBuildRangeInfoKHR> ranges,
+        VkAccelerationStructureTypeKHR struct_type) {
+
     y_profile();
 
-    VkAccelerationStructureGeometryKHR geometry = vk_struct();
+    y_debug_assert(geometries.size() == prim_counts.size());
+    y_debug_assert(geometries.size() == ranges.size());
+
+    VkAccelerationStructureBuildGeometryInfoKHR build_info = vk_struct();
     {
-        geometry.geometryType = input_geo.triangles.indexData.deviceAddress ? VK_GEOMETRY_TYPE_TRIANGLES_KHR : VK_GEOMETRY_TYPE_INSTANCES_KHR;
-        geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-        geometry.geometry = input_geo;
+        build_info.type = struct_type;
+        build_info.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+        build_info.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+        build_info.geometryCount = u32(geometries.size());
+        build_info.pGeometries = geometries.data();
     }
 
-    VkAccelerationStructureBuildGeometryInfoKHR geometry_infos = vk_struct();
-    {
-        geometry_infos.type = struct_type;
-        geometry_infos.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-        geometry_infos.geometryCount = 1;
-        geometry_infos.pGeometries = &geometry;
-    }
-
-    const u32 primitive_count = 1;
     VkAccelerationStructureBuildSizesInfoKHR size_infos = vk_struct();
-    vkGetAccelerationStructureBuildSizesKHR(vk_device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &geometry_infos, &primitive_count, &size_infos);
+    vkGetAccelerationStructureBuildSizesKHR(vk_device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &build_info, prim_counts.data(), &size_infos);
 
     Buffer<BufferUsage::AccelStructureBit> buffer(size_infos.accelerationStructureSize);
     Buffer<BufferUsage::StorageBit> scratch(size_infos.buildScratchSize);
+
+    build_info.scratchData.deviceAddress = buffer_device_address(SubBuffer(scratch)).deviceAddress;
 
     VkAccelerationStructureCreateInfoKHR create_info = vk_struct();
     {
@@ -75,26 +78,12 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
 
     VkHandle<VkAccelerationStructureKHR> blas;
     vk_check(vkCreateAccelerationStructureKHR(vk_device(), &create_info, vk_allocation_callbacks(), blas.get_ptr_for_init()));
+    build_info.dstAccelerationStructure = blas;
 
-    VkAccelerationStructureBuildGeometryInfoKHR build_info = vk_struct();
-    {
-        build_info.type = struct_type;
-        build_info.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-        build_info.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-        build_info.dstAccelerationStructure = blas;
-        build_info.geometryCount = 1;
-        build_info.pGeometries = &geometry;
-        build_info.scratchData.deviceAddress = buffer_device_address(SubBuffer(scratch)).deviceAddress;
-    }
-
-    VkAccelerationStructureBuildRangeInfoKHR build_range = {};
-    {
-        build_range.primitiveCount = 1;
-    }
 
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     {
-        const VkAccelerationStructureBuildRangeInfoKHR* build_range_ptr = &build_range;
+        const VkAccelerationStructureBuildRangeInfoKHR* build_range_ptr = ranges.data();
         vkCmdBuildAccelerationStructuresKHR(recorder.vk_cmd_buffer(), 1, &build_info, &build_range_ptr);
     }
     recorder.submit();
@@ -105,9 +94,14 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
 
 
 static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::AccelStructureBit>> create_blas(const MeshDrawData& mesh) {
+    const MeshDrawBuffers& mesh_buffers = mesh.mesh_buffers();
+    const MeshDrawCommand& draw_params = mesh.draw_command();
+
+    const u32 prim_count = draw_params.index_count / 3;
+    y_debug_assert(prim_count * 3 == draw_params.index_count);
+
     VkAccelerationStructureGeometryTrianglesDataKHR triangles = vk_struct();
     {
-        const MeshDrawBuffers& mesh_buffers = mesh.mesh_buffers();
         const AttribSubBuffer& position_buffer = mesh_buffers.attrib_buffers()[usize(VertexStreamType::Position)];
 
         triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
@@ -119,7 +113,21 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
         triangles.indexData = buffer_device_address(mesh_buffers.triangle_buffer());
     }
 
-    return create_acceleration_structure(VkAccelerationStructureGeometryDataKHR { .triangles = triangles }, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
+    VkAccelerationStructureGeometryKHR geometry = vk_struct();
+    {
+        geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+        geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+        geometry.geometry.triangles = triangles;
+    }
+
+    VkAccelerationStructureBuildRangeInfoKHR range = {};
+    {
+        range.primitiveCount = prim_count;
+        range.primitiveOffset = u32(mesh.triangle_buffer().byte_offset()) + (draw_params.first_index * sizeof(u32));
+        range.firstVertex = draw_params.vertex_offset;
+    }
+
+    return create_acceleration_structure(geometry, prim_count, range, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
 }
 
 
@@ -133,12 +141,26 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
         std::copy(instances.begin(), instances.end(), mapping.begin());
     }
 
-    VkAccelerationStructureGeometryInstancesDataKHR instances_data = vk_struct();
+    VkAccelerationStructureGeometryInstancesDataKHR geo_instances = vk_struct();
     {
-        instances_data.data = buffer_device_address(SubBuffer(instance_buffer));
+        geo_instances.data = buffer_device_address(SubBuffer(instance_buffer));
     }
 
-    return create_acceleration_structure(VkAccelerationStructureGeometryDataKHR { .instances = instances_data }, VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
+    VkAccelerationStructureGeometryKHR geometry = vk_struct();
+    {
+        geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+        geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+        geometry.geometry.instances = geo_instances;
+    }
+
+    const u32 prim_count = u32(instances.size());
+
+    VkAccelerationStructureBuildRangeInfoKHR range = {};
+    {
+        range.primitiveCount = prim_count;
+    }
+
+    return create_acceleration_structure(geometry, prim_count, range, VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR);
 }
 
 

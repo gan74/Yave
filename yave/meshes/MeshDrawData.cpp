@@ -34,7 +34,7 @@ usize MeshDrawBuffers::vertex_count() const {
     return _vertex_count;
 }
 
-TriangleSubBuffer MeshDrawBuffers::triangle_buffer() const {
+const TriangleSubBuffer& MeshDrawBuffers::triangle_buffer() const {
     return _triangle_buffer;
 }
 
@@ -66,7 +66,7 @@ bool MeshDrawData::is_null() const {
     return !_mesh_buffers;
 }
 
-TriangleSubBuffer MeshDrawData::triangle_buffer() const {
+const TriangleSubBuffer& MeshDrawData::triangle_buffer() const {
     y_debug_assert(_mesh_buffers);
     return _mesh_buffers->triangle_buffer();
 }
