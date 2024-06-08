@@ -31,6 +31,8 @@ SOFTWARE.
 #include <yave/components/SkyLightComponent.h>
 #include <yave/components/AtmosphereComponent.h>
 
+#include <yave/graphics/raytracing/AccelerationStructure.h>
+
 #include <yave/camera/Camera.h>
 
 #include <functional>
@@ -89,6 +91,7 @@ class Scene : NonMovable {
 
         const math::Transform<>& transform(const TransformableSceneObjectData& obj) const;
 
+        TLAS create_tlas() const;
 
         RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneVisibility& visibility, PassType pass_type) const;
 

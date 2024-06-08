@@ -24,7 +24,11 @@ SOFTWARE.
 
 #include <yave/graphics/buffers/Buffer.h>
 
+#include <y/core/Span.h>
+
 namespace yave {
+
+using BLASInstance = VkAccelerationStructureInstanceKHR;
 
 class AccelerationStructure {
     public:
@@ -32,14 +36,33 @@ class AccelerationStructure {
         AccelerationStructure(AccelerationStructure&&) = default;
         AccelerationStructure& operator=(AccelerationStructure&&) = default;
 
-        AccelerationStructure(const MeshDrawData& mesh);
         ~AccelerationStructure();
 
         bool is_null() const;
 
-    private:
+        SubBuffer<BufferUsage::AccelStructureBit> buffer() const;
+
+        VkAccelerationStructureKHR vk_acc_struct() const;
+
+    protected:
         VkHandle<VkAccelerationStructureKHR> _acc_struct;
         Buffer<BufferUsage::AccelStructureBit> _buffer;
+};
+
+
+class BLAS : public AccelerationStructure {
+    public:
+        BLAS() = default;
+
+        BLAS(const MeshDrawData& mesh);
+};
+
+class TLAS : public AccelerationStructure {
+    public:
+        TLAS() = default;
+        TLAS(core::Span<BLASInstance> instances);
+
+        static BLASInstance make_instance(const math::Transform<> &tr, const BLAS &blas);
 };
 
 }

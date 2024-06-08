@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "MeshVertexStreams.h"
 
-#include <yave/graphics/buffers/Buffer.h>
+#include <yave/graphics/raytracing/AccelerationStructure.h>
 
 #include <memory>
 
@@ -84,6 +84,8 @@ class MeshDrawData : NonCopyable {
 
         const MeshDrawCommand& draw_command() const;
 
+        const BLAS& blas() const;
+
     private:
         friend class LifetimeManager;
         friend class MeshAllocator;
@@ -97,6 +99,8 @@ class MeshDrawData : NonCopyable {
         u32 _vertex_count = 0;
 
         MeshDrawBuffers* _mesh_buffers = nullptr;
+
+        BLAS _blas;
 };
 
 }

@@ -39,7 +39,7 @@ enum class BufferUsage : u32 {
     TransferSrcBit              = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
     TransferDstBit              = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 
-    // AccelStructureReadBit       = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+    AccelStructureInputBit      = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
     AccelStructureBit           = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
 };
 

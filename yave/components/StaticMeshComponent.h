@@ -43,6 +43,8 @@ class StaticMeshComponent final : public ecs::RegisterComponent<StaticMeshCompon
         AssetPtr<StaticMesh>& mesh();
         const AssetPtr<StaticMesh>& mesh() const;
 
+        const BLAS* blas() const;
+
         core::MutableSpan<AssetPtr<Material>> materials();
         core::Span<AssetPtr<Material>> materials() const;
 

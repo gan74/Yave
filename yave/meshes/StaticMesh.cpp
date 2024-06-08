@@ -40,8 +40,6 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
             cmd.vertex_offset
         };
     });
-
-    AccelerationStructure acc(_draw_data);
 }
 
 StaticMesh::~StaticMesh() {

@@ -136,7 +136,7 @@ class EcsDebug : public Widget {
     editor_widget(EcsDebug, "View", "Debug")
 
     public:
-        EcsDebug() : Widget("ECS Debug") {
+        EcsDebug() : Widget("ECS debug") {
         }
 
     protected:
@@ -264,6 +264,22 @@ class UiDebug : public Widget {
     protected:
         void on_gui() override {
             ImGui::Text("%u cached thumbmails", u32(thumbmail_renderer().cached_thumbmails()));
+        }
+};
+
+
+class RaytracingDebug : public Widget {
+    editor_widget_open(RaytracingDebug, "View", "Debug")
+
+    public:
+        RaytracingDebug() : Widget("Raytracing debug") {
+        }
+
+    protected:
+        void on_gui() override {
+            TLAS tlas = current_scene().create_tlas();
+
+            ImGui::Text("TLAS size = %uKB", u32(tlas.buffer().byte_size() / 1024));
         }
 };
 

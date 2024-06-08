@@ -51,6 +51,10 @@ const AssetPtr<StaticMesh>& StaticMeshComponent::mesh() const {
     return _mesh;
 }
 
+const BLAS* StaticMeshComponent::blas() const {
+    return _mesh ? &_mesh->draw_data().blas() : nullptr;
+}
+
 core::MutableSpan<AssetPtr<Material>> StaticMeshComponent::materials() {
     return _materials;
 }
