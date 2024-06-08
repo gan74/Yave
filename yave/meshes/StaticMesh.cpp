@@ -23,6 +23,7 @@ SOFTWARE.
 #include "MeshData.h"
 
 #include <yave/graphics/device/MeshAllocator.h>
+#include <yave/graphics/raytracing/AccelerationStructure.h>
 
 namespace yave {
 
@@ -39,6 +40,8 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
             cmd.vertex_offset
         };
     });
+
+    AccelerationStructure acc(_draw_data);
 }
 
 StaticMesh::~StaticMesh() {

@@ -50,6 +50,8 @@ class PhysicalDevice {
         const VkPhysicalDeviceVulkan12Properties& vk_properties_1_2() const;
         const VkPhysicalDeviceVulkan13Properties& vk_properties_1_3() const;
 
+        const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& vk_raytracing_properties() const;
+
         bool supports_features(const VkPhysicalDeviceFeatures& features) const;
         bool supports_features(const VkPhysicalDeviceVulkan11Features& features) const;
         bool supports_features(const VkPhysicalDeviceVulkan12Features& features) const;
@@ -72,6 +74,7 @@ class PhysicalDevice {
         VkPhysicalDeviceVulkan11Properties _properties_1_1 = vk_struct();
         VkPhysicalDeviceVulkan12Properties _properties_1_2 = vk_struct();
         VkPhysicalDeviceVulkan13Properties _properties_1_3 = vk_struct();
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR _raytracing_properties = vk_struct();
 
         VkPhysicalDeviceFeatures2 _supported_features = vk_struct();
         VkPhysicalDeviceVulkan11Features _supported_features_1_1 = vk_struct();

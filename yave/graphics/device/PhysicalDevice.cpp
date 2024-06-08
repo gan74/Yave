@@ -58,6 +58,7 @@ PhysicalDevice::PhysicalDevice(VkPhysicalDevice device) : _device(device) {
         _properties.pNext = &_properties_1_1;
         _properties_1_1.pNext = &_properties_1_2;
         _properties_1_2.pNext = &_properties_1_3;
+        _properties_1_3.pNext = &_raytracing_properties;
 
         vkGetPhysicalDeviceProperties2(_device, &_properties);
     }
@@ -126,6 +127,10 @@ const VkPhysicalDeviceVulkan12Properties& PhysicalDevice::vk_properties_1_2() co
 
 const VkPhysicalDeviceVulkan13Properties& PhysicalDevice::vk_properties_1_3() const {
     return _properties_1_3;
+}
+
+const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& PhysicalDevice::vk_raytracing_properties() const {
+    return _raytracing_properties;
 }
 
 bool PhysicalDevice::supports_features(const VkPhysicalDeviceFeatures& features) const {

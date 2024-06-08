@@ -30,14 +30,17 @@ namespace yave {
 enum class BufferUsage : u32 {
     None = 0,
 
-    AttributeBit    = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-    IndexBit        = VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-    IndirectBit     = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-    UniformBit      = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-    StorageBit      = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    AttributeBit                = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+    IndexBit                    = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+    IndirectBit                 = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+    UniformBit                  = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+    StorageBit                  = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
 
-    TransferSrcBit  = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-    TransferDstBit  = VK_BUFFER_USAGE_TRANSFER_DST_BIT
+    TransferSrcBit              = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    TransferDstBit              = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+
+    // AccelStructureReadBit       = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+    AccelStructureBit           = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
 };
 
 constexpr BufferUsage operator|(BufferUsage a, BufferUsage b) {

@@ -45,7 +45,7 @@ static VkBuffer create_buffer(u64 byte_size, VkBufferUsageFlags usage) {
     VkBufferCreateInfo create_info = vk_struct();
     {
         create_info.size = byte_size;
-        create_info.usage = usage;
+        create_info.usage = usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     }
 

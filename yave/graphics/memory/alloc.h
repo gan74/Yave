@@ -103,10 +103,16 @@ inline VkDeviceMemory alloc_memory(usize size, u32 type_bits, MemoryType type) {
         }
 
         if(best_index != u32(-1)) {
+            VkMemoryAllocateFlagsInfo flags_info = vk_struct();
+            {
+                flags_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+            }
+
             VkMemoryAllocateInfo allocate_info = vk_struct();
             {
                 allocate_info.allocationSize = size;
                 allocate_info.memoryTypeIndex = best_index;
+                allocate_info.pNext = &flags_info;
             }
             VkDeviceMemory memory = {};
             const VkResult result = vkAllocateMemory(vk_device(), &allocate_info, vk_allocation_callbacks(), &memory);

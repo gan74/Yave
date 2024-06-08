@@ -267,6 +267,7 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2() {
     VkPhysicalDeviceVulkan12Features required = vk_struct();
 
     {
+        required.bufferDeviceAddress = true;
         required.timelineSemaphore = true;
         required.runtimeDescriptorArray = true;
         required.descriptorIndexing = true;
@@ -285,6 +286,16 @@ VkPhysicalDeviceVulkan13Features required_device_features_1_3() {
 
     {
         // required.inlineUniformBlock = true; // Fallback
+    }
+
+    return required;
+}
+
+VkPhysicalDeviceAccelerationStructureFeaturesKHR required_device_features_raytracing() {
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR required = vk_struct();
+
+    {
+        required.accelerationStructure = true;
     }
 
     return required;
