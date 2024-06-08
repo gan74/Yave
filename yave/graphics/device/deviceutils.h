@@ -27,9 +27,10 @@ SOFTWARE.
 #include <y/core/Span.h>
 #include <y/core/Vector.h>
 
-#include <atomic>
 
 namespace yave {
+
+core::Span<const char*> raytracing_extensions();
 
 float device_score(const PhysicalDevice& device);
 

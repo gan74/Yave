@@ -25,7 +25,7 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdQueue.h>
 #include <yave/graphics/graphics.h>
 
-#include <yave/graphics/device/extensions/DebugUtils.h>
+#include <yave/graphics/device/DebugUtils.h>
 
 #include <y/core/FixedArray.h>
 #include <y/utils/memory.h>

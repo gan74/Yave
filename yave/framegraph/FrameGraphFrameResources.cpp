@@ -26,7 +26,7 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/buffers/Buffer.h>
 #include <yave/graphics/device/DeviceProperties.h>
-#include <yave/graphics/device/extensions/DebugUtils.h>
+#include <yave/graphics/device/DebugUtils.h>
 
 #include <y/utils/memory.h>
 

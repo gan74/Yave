@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "DescriptorArray.h"
 
-#include <yave/graphics/device/extensions/DebugUtils.h>
+#include <yave/graphics/device/DebugUtils.h>
 #include <yave/graphics/device/DeviceProperties.h>
 
 #include <y/core/ScratchPad.h>

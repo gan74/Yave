@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <yave/material/MaterialData.h>
 
-#include <yave/graphics/device/extensions/DebugUtils.h>
+#include <yave/graphics/device/DebugUtils.h>
 
 #include <numeric>
 

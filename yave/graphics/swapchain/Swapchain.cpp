@@ -28,7 +28,7 @@ SOFTWARE.
 #include <yave/graphics/memory/DeviceMemoryHeapBase.h>
 #include <yave/graphics/barriers/Barrier.h>
 
-#include <yave/graphics/device/extensions/DebugUtils.h>
+#include <yave/graphics/device/DebugUtils.h>
 
 #include <y/core/FixedArray.h>
 #include <y/core/ScratchPad.h>

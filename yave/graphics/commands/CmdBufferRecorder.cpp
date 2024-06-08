@@ -34,7 +34,7 @@ SOFTWARE.
 #include <yave/graphics/barriers/Barrier.h>
 #include <yave/meshes/MeshDrawData.h>
 
-#include <yave/graphics/device/extensions/DebugUtils.h>
+#include <yave/graphics/device/DebugUtils.h>
 
 #include <y/core/ScratchPad.h>
 

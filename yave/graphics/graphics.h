@@ -59,6 +59,7 @@ CmdQueue& command_queue();
 CmdQueue& loading_command_queue();
 const DeviceResources& device_resources();
 const DeviceProperties& device_properties();
+bool raytracing_enabled();
 LifetimeManager& lifetime_manager();
 
 const VkAllocationCallbacks* vk_allocation_callbacks();

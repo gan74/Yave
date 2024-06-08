@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "Instance.h"
-#include "extensions/DebugUtils.h"
+#include "DebugUtils.h"
 
 #include <yave/graphics/graphics.h>
 

@@ -42,6 +42,8 @@ struct DeviceProperties {
     u32 max_inline_uniform_size;
 
     float timestamp_period;
+
+    bool has_raytracing;
 };
 
 }

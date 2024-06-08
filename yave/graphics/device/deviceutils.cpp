@@ -32,6 +32,16 @@ SOFTWARE.
 
 namespace yave {
 
+core::Span<const char*> raytracing_extensions() {
+    static constexpr std::array extensions = {
+        VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+        VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+    };
+
+    return extensions;
+}
+
 float device_score(const PhysicalDevice& device) {
     if(!has_required_features(device)) {
         return -std::numeric_limits<float>::max();
@@ -43,7 +53,9 @@ float device_score(const PhysicalDevice& device) {
 
     const usize heap_size = device.total_device_memory() / (1024 * 1024);
     const float heap_score = float(heap_size) / float(heap_size + 8 * 1024);
+
     const float type_score = device.is_discrete() ? 1.0f : 0.0f;
+
     return heap_score + type_score;
 }
 
@@ -196,6 +208,7 @@ void print_properties(const DeviceProperties& properties) {
     log_msg(fmt("max_memory_allocations = {}", properties.max_memory_allocations));
     log_msg(fmt("max_inline_uniform_size = {}", properties.max_inline_uniform_size));
     log_msg(fmt("max_uniform_buffer_size = {}", properties.max_uniform_buffer_size));
+    log_msg(fmt("raytracing = {}", properties.has_raytracing));
 }
 
 
@@ -278,19 +291,19 @@ VkPhysicalDeviceVulkan13Features required_device_features_1_3() {
 }
 
 bool has_required_features(const PhysicalDevice& physical) {
-    if(!physical.support_features(required_device_features())) {
+    if(!physical.supports_features(required_device_features())) {
         return false;
     }
 
-    if(!physical.support_features(required_device_features_1_1())) {
+    if(!physical.supports_features(required_device_features_1_1())) {
         return false;
     }
 
-    if(!physical.support_features(required_device_features_1_2())) {
+    if(!physical.supports_features(required_device_features_1_2())) {
         return false;
     }
 
-    if(!physical.support_features(required_device_features_1_3())) {
+    if(!physical.supports_features(required_device_features_1_3())) {
         return false;
     }
 

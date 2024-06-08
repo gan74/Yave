@@ -23,7 +23,7 @@ SOFTWARE.
 #include "CmdQueue.h"
 
 #include <yave/graphics/commands/CmdBufferPool.h>
-#include <yave/graphics/device/extensions/DebugUtils.h>
+#include <yave/graphics/device/DebugUtils.h>
 #include <yave/graphics/device/LifetimeManager.h>
 #include <y/core/ScratchPad.h>
 

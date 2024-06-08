@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/framebuffer/RenderPass.h>
-#include <yave/graphics/device/extensions/DebugUtils.h>
+#include <yave/graphics/device/DebugUtils.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>

@@ -21,11 +21,13 @@ SOFTWARE.
 **********************************/
 
 #include "PhysicalDevice.h"
+#include "deviceutils.h"
+
 
 namespace yave {
 
 template<typename T>
-static bool support_all_features(const T& features, const T& supported_features) {
+static bool supports_all_features(const T& features, const T& supported_features) {
     Y_TODO(VkPhysicalDeviceVulkan11Features have sType and pNext, which may cause trouble here)
     static_assert(sizeof(T) % sizeof(VkBool32) == 0);
 
@@ -82,6 +84,8 @@ DeviceProperties PhysicalDevice::device_properties() const {
 
     properties.timestamp_period = limits.timestampPeriod;
 
+    properties.has_raytracing = supports_raytracing();
+
     return properties;
 }
 
@@ -124,20 +128,20 @@ const VkPhysicalDeviceVulkan13Properties& PhysicalDevice::vk_properties_1_3() co
     return _properties_1_3;
 }
 
-bool PhysicalDevice::support_features(const VkPhysicalDeviceFeatures& features) const {
-    return support_all_features(features, _supported_features.features);
+bool PhysicalDevice::supports_features(const VkPhysicalDeviceFeatures& features) const {
+    return supports_all_features(features, _supported_features.features);
 }
 
-bool PhysicalDevice::support_features(const VkPhysicalDeviceVulkan11Features& features) const {
-    return support_all_features(features, _supported_features_1_1);
+bool PhysicalDevice::supports_features(const VkPhysicalDeviceVulkan11Features& features) const {
+    return supports_all_features(features, _supported_features_1_1);
 }
 
-bool PhysicalDevice::support_features(const VkPhysicalDeviceVulkan12Features& features) const {
-    return support_all_features(features, _supported_features_1_2);
+bool PhysicalDevice::supports_features(const VkPhysicalDeviceVulkan12Features& features) const {
+    return supports_all_features(features, _supported_features_1_2);
 }
 
-bool PhysicalDevice::support_features(const VkPhysicalDeviceVulkan13Features& features) const {
-    return support_all_features(features, _supported_features_1_3);
+bool PhysicalDevice::supports_features(const VkPhysicalDeviceVulkan13Features& features) const {
+    return supports_all_features(features, _supported_features_1_3);
 }
 
 core::Vector<VkExtensionProperties> PhysicalDevice::supported_extensions() const {
@@ -155,6 +159,15 @@ bool PhysicalDevice::is_extension_supported(std::string_view name) const {
         }
     }
     return false;
+}
+
+bool PhysicalDevice::supports_raytracing() const {
+    for(const char* ext_name : raytracing_extensions()) {
+        if(!is_extension_supported(ext_name)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 }

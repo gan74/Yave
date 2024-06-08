@@ -41,6 +41,7 @@ class PhysicalDevice {
         bool is_discrete() const;
         u64 total_device_memory() const;
 
+
         const VkPhysicalDeviceMemoryProperties& vk_memory_properties() const;
 
         const VkPhysicalDeviceProperties& vk_properties() const;
@@ -49,13 +50,15 @@ class PhysicalDevice {
         const VkPhysicalDeviceVulkan12Properties& vk_properties_1_2() const;
         const VkPhysicalDeviceVulkan13Properties& vk_properties_1_3() const;
 
-        bool support_features(const VkPhysicalDeviceFeatures& features) const;
-        bool support_features(const VkPhysicalDeviceVulkan11Features& features) const;
-        bool support_features(const VkPhysicalDeviceVulkan12Features& features) const;
-        bool support_features(const VkPhysicalDeviceVulkan13Features& features) const;
+        bool supports_features(const VkPhysicalDeviceFeatures& features) const;
+        bool supports_features(const VkPhysicalDeviceVulkan11Features& features) const;
+        bool supports_features(const VkPhysicalDeviceVulkan12Features& features) const;
+        bool supports_features(const VkPhysicalDeviceVulkan13Features& features) const;
 
         core::Vector<VkExtensionProperties> supported_extensions() const;
         bool is_extension_supported(std::string_view name) const;
+
+        bool supports_raytracing() const;
 
     private:
         friend class Instance;

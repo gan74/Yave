@@ -23,7 +23,7 @@ SOFTWARE.
 #include "DeviceResources.h"
 #include "LifetimeManager.h"
 
-#include <yave/graphics/device/extensions/DebugUtils.h>
+#include <yave/graphics/device/DebugUtils.h>
 #include <yave/graphics/shaders/SpirVData.h>
 #include <yave/graphics/shaders/ShaderModule.h>
 #include <yave/graphics/shaders/ComputeProgram.h>

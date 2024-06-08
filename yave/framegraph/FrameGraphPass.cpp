@@ -24,7 +24,7 @@ SOFTWARE.
 #include "FrameGraphFrameResources.h"
 #include "FrameGraph.h"
 
-#include <yave/graphics/device/extensions/DebugUtils.h>
+#include <yave/graphics/device/DebugUtils.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <y/core/ScratchPad.h>

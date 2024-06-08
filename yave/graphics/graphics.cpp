@@ -84,10 +84,13 @@ static void init_vk_device() {
     const usize queue_count = 1;
 
     auto extensions = core::Vector<const char*>::with_capacity(4);
-    extensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    };
+    extensions << VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 
+    if(device::device_properties.has_raytracing) {
+        for(const char* ext_name : raytracing_extensions()) {
+            extensions << ext_name;
+        }
+    }
 
     const auto required_features = required_device_features();
     auto required_features_1_1 = required_device_features_1_1();
@@ -289,6 +292,10 @@ const DeviceResources& device_resources() {
 
 const DeviceProperties& device_properties() {
     return device::device_properties;
+}
+
+bool raytracing_enabled() {
+    return device_properties().has_raytracing;
 }
 
 LifetimeManager& lifetime_manager() {
