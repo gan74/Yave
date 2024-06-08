@@ -30,10 +30,6 @@ SOFTWARE.
 
 namespace yave {
 
-static void bind_buffer_memory(VkBuffer buffer, const DeviceMemory& memory) {
-    vk_check(vkBindBufferMemory(vk_device(), buffer, memory.vk_memory(), memory.vk_offset()));
-}
-
 static VkBuffer create_buffer(u64 byte_size, VkBufferUsageFlags usage) {
     y_debug_assert(byte_size);
     if(usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
@@ -61,7 +57,8 @@ static std::tuple<VkBuffer, DeviceMemory> alloc_buffer(u64 buffer_size, VkBuffer
 
     const auto buffer = create_buffer(buffer_size, usage);
     auto memory = device_allocator().alloc(buffer, type);
-    bind_buffer_memory(buffer, memory);
+
+    vk_check(vkBindBufferMemory(vk_device(), buffer, memory.vk_memory(), memory.vk_offset()));
 
     return {buffer, std::move(memory)};
 }
