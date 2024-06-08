@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include "ComponentMatrix.h"
 #include "EntityGroup.h"
+#include "tags.h"
 
 #include <y/serde3/archives.h>
 
@@ -55,10 +56,11 @@ void ComponentMatrix::register_group(EntityGroupBase* group) {
         _groups[usize(type)] << group;
     }
 
-    for(const core::String& tags : group->tags()) {
-        TagSet& set = _tags[tags];
-        set.groups << group;
+    for(const core::String& tag : group->tags()) {
+        y_debug_assert(!is_computed_tag(tag));
+        TagSet& set = _tags[tag];
 
+        set.groups << group;
         for(const EntityId id : set.ids) {
             group->add_entity_component(id);
         }
@@ -135,6 +137,7 @@ bool ComponentMatrix::has_component(EntityId id, ComponentTypeIndex type) const 
 }
 
 void ComponentMatrix::add_tag(EntityId id, const core::String& tag) {
+    y_debug_assert(!is_computed_tag(tag));
     y_debug_assert(contains(id));
     TagSet& set = _tags[tag];
     if(set.ids.insert(id)) {
@@ -145,6 +148,7 @@ void ComponentMatrix::add_tag(EntityId id, const core::String& tag) {
 }
 
 void ComponentMatrix::remove_tag(EntityId id, const core::String& tag) {
+    y_debug_assert(!is_computed_tag(tag));
     y_debug_assert(contains(id));
     TagSet& set = _tags[tag];
     if(set.ids.erase(id)) {
@@ -155,6 +159,7 @@ void ComponentMatrix::remove_tag(EntityId id, const core::String& tag) {
 }
 
 void ComponentMatrix::clear_tag(const core::String& tag) {
+    y_debug_assert(!is_computed_tag(tag));
     TagSet& set = _tags[tag];
     for(EntityGroupBase* group : set.groups) {
         for(EntityId id : set.ids.ids()) {
@@ -165,6 +170,7 @@ void ComponentMatrix::clear_tag(const core::String& tag) {
 }
 
 bool ComponentMatrix::has_tag(EntityId id, const core::String& tag) const {
+    y_debug_assert(!is_computed_tag(tag));
     if(const auto it = _tags.find(tag); it != _tags.end()) {
         return it->second.ids.contains(id);
     }
@@ -172,6 +178,7 @@ bool ComponentMatrix::has_tag(EntityId id, const core::String& tag) const {
 }
 
 const SparseIdSet* ComponentMatrix::tag_set(const core::String& tag) const {
+    y_debug_assert(!is_computed_tag(tag));
     if(const auto it = _tags.find(tag); it != _tags.end()) {
         return &it->second.ids;
     }

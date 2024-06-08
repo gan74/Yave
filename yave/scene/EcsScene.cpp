@@ -43,7 +43,12 @@ typename S::value_type& EcsScene::register_object(const ecs::EntityId id, u32 Ob
 
     if(index == u32(-1)) {
         index = u32(storage.size());
-        return storage.emplace_back();
+
+        auto& obj = storage.emplace_back();
+        y_debug_assert(obj.entity_index == u32(-1) || obj.entity_index == id.index());
+        obj.entity_index = id.index();
+
+        return obj;
     }
 
     return storage[index];
@@ -84,15 +89,24 @@ void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
         obj.global_aabb = tr.to_global(comp.aabb());
     };
 
+
+
+    const ecs::EntityGroupBase* group_base = _world->get_or_create_group_base<TransformableComponent, T>();
+
+    {
+        y_profile_zone("Add new objects");
+        for(const ecs::EntityId id : group_base->added_ids()) {
+            register_object(id, index_ptr, storage);
+        }
+    }
+
     {
         y_profile_zone("Update components");
         auto group = _world->create_group<TransformableComponent, ecs::Changed<T>>();
         for(const auto& [id, tr, comp] : group.id_components()) {
-            auto& obj = register_object(id, index_ptr, storage);
+            auto& obj = storage[_indices.try_get(id)->*index_ptr];
 
             obj.component = comp;
-            obj.entity_index = id.index();
-
             // We need to update in case the AABB has changed
             update_transform(obj, tr, comp);
         }
@@ -102,15 +116,14 @@ void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
         y_profile_zone("Update transforms");
         auto group = _world->create_group<ecs::Changed<TransformableComponent>, T>();
         for(const auto& [id, tr, comp] : group.id_components()) {
-            auto& obj = register_object(id, index_ptr, storage);
+            auto& obj = storage[_indices.try_get(id)->*index_ptr];
             update_transform(obj, tr, comp);
         }
     }
 
     {
         y_profile_zone("Delete stale objects");
-        auto group = _world->create_group<ecs::Deleted<T>>();
-        for(const ecs::EntityId id : group.ids()) {
+        for(const ecs::EntityId id : group_base->removed_ids()) {
             if(const u32 transform_index = unregister_object(id, index_ptr, storage).transform_index; transform_index == u32(-1)) {
                 _transform_manager.free_transform(transform_index);
             }
@@ -123,19 +136,28 @@ template<typename T, typename S>
 void EcsScene::process_components(u32 ObjectIndices::* index_ptr, S& storage) {
     y_profile();
 
+    auto group = _world->create_group<ecs::Changed<T>>();
+    const auto* group_base = group.base();
+
     {
-        auto group = _world->create_group<ecs::Changed<T>>();
-        for(const auto& [id, comp] : group.id_components()) {
-            auto& obj = register_object(id, index_ptr, storage);
-            obj.component = comp;
-            obj.entity_index = id.index();
+        y_profile_zone("Add new objects");
+        for(const ecs::EntityId id : group_base->added_ids()) {
+            register_object(id, index_ptr, storage);
         }
     }
 
     {
-        auto group = _world->create_group<ecs::Deleted<T>>();
-        for(const ecs::EntityId id : group.ids()) {
-             unregister_object(id, index_ptr, storage);
+        y_profile_zone("Update components");
+        for(const auto& [id, comp] : group.id_components()) {
+            auto& obj = storage[_indices.try_get(id)->*index_ptr];
+            obj.component = comp;
+        }
+    }
+
+    {
+        y_profile_zone("Delete stale objects");
+        for(const ecs::EntityId id : group_base->removed_ids()) {
+            unregister_object(id, index_ptr, storage);
         }
     }
 }

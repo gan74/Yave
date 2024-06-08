@@ -41,6 +41,7 @@ struct Deleted {};
 
 
 
+
 namespace traits {
 template<typename T>
 struct component_type {

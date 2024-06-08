@@ -102,6 +102,14 @@ class EntityGroupBase final : NonMovable {
             return _ids;
         }
 
+        inline const SparseIdSet& added_ids() const {
+            return _added;
+        }
+
+        inline const SparseIdSet& removed_ids() const {
+            return _removed;
+        }
+
         template<typename... Ts>
         inline bool matches(core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> filters) const {
             return _types == type_storage<Ts...>() &&
@@ -120,6 +128,8 @@ class EntityGroupBase final : NonMovable {
             if(++_entity_component_count[id.index()] == _component_count) {
                 y_debug_assert(!_ids.contains(id));
                 _ids.insert(id);
+                _added.insert(id);
+                _removed.erase(id);
             }
         }
 
@@ -129,10 +139,20 @@ class EntityGroupBase final : NonMovable {
             if(prev_count == _component_count) {
                 y_debug_assert(_ids.contains(id));
                 _ids.erase(id);
+                _added.erase(id);
+                _removed.insert(id);
             }
         }
 
+        void clear_id_lists() {
+            y_profile();
+            _added.make_empty();
+            _removed.make_empty();
+        }
+
         SparseIdSet _ids;
+        SparseIdSet _added;
+        SparseIdSet _removed;
         core::Span<ComponentTypeIndex> _types;
         core::FixedArray<core::String> _tags;
         core::FixedArray<ComponentTypeIndex> _type_filters;
@@ -155,7 +175,6 @@ class EntityGroup final : NonCopyable {
     static constexpr usize changed_count = ((traits::is_component_changed_v<Ts> ? 1 : 0) + ...);
     static constexpr usize deleted_count = ((traits::is_component_deleted_v<Ts> ? 1 : 0) + ...);
     static constexpr usize filter_count = changed_count + deleted_count;
-
 
     using SetTuple = std::tuple<SparseComponentSet<traits::component_raw_type_t<Ts>>*...>;
     using ContainerTuple = std::tuple<ComponentContainer<traits::component_raw_type_t<Ts>>*...>;
@@ -305,6 +324,10 @@ class EntityGroup final : NonCopyable {
             return _ids.is_empty();
         }
 
+        inline const EntityGroupBase* base() const {
+            return _base;
+        }
+
         void swap(EntityGroup& other) {
             _ids.swap(other.ids());
             std::swap(_sets, other._sets);
@@ -415,8 +438,6 @@ class EntityGroup final : NonCopyable {
                 lock->unlock();
             }
         }
-
-
 
         core::Vector<EntityId> _ids;
 

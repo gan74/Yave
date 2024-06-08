@@ -28,11 +28,12 @@ SOFTWARE.
 
 namespace yave {
 namespace ecs {
+
 namespace tags {
 
 #define DECLARE_TAG(tag)                                \
-static const core::String tag = #tag;                   \
-static const core::String not_##tag = "!"#tag;
+static const std::string_view tag = #tag;               \
+static const std::string_view not_##tag = "!"#tag;
 
 
 
@@ -42,8 +43,20 @@ DECLARE_TAG(debug)
 
 
 #undef DECLARE_TAG
-
 }
+
+inline bool is_computed_tag(std::string_view tag) {
+    return !tag.empty() && (tag[0] == '@' || tag[0] == '!');
+}
+
+inline bool is_computed_not_tag(std::string_view tag) {
+    return !tag.empty() && tag[0] == '!';
+}
+
+inline std::string_view raw_tag(std::string_view tag) {
+    return is_computed_tag(tag) ? tag.substr(1) : tag;
+}
+
 }
 }
 

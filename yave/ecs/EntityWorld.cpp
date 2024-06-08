@@ -140,7 +140,15 @@ void EntityWorld::process_deferred_changes() {
         _matrix.remove_entity(id);
         _entities.remove(id);
     }
+
+
     _to_delete.make_empty();
+
+    _groups.locked([&](auto&& groups) {
+        for(auto& group : groups) {
+            group->clear_id_lists();
+        }
+    });
 
     _entities.audit();
 }
@@ -223,34 +231,30 @@ const EntityPool& EntityWorld::entity_pool() const {
 
 void EntityWorld::add_tag(EntityId id, const core::String& tag) {
     y_debug_assert(exists(id));
-    y_debug_assert(!is_tag_implicit(tag));
+    y_debug_assert(!is_computed_tag(tag));
     _matrix.add_tag(id, tag);
 }
 
 void EntityWorld::remove_tag(EntityId id, const core::String& tag) {
     y_debug_assert(exists(id));
-    y_debug_assert(!is_tag_implicit(tag));
+    y_debug_assert(!is_computed_tag(tag));
     _matrix.remove_tag(id, tag);
 }
 
 void EntityWorld::clear_tag(const core::String& tag) {
-    y_debug_assert(!is_tag_implicit(tag));
+    y_debug_assert(!is_computed_tag(tag));
     _matrix.clear_tag(tag);
 }
 
 bool EntityWorld::has_tag(EntityId id, const core::String& tag) const {
     y_debug_assert(exists(id));
-    y_debug_assert(!is_tag_implicit(tag));
+    y_debug_assert(!is_computed_tag(tag));
     return _matrix.has_tag(id, tag);
 }
 
 const SparseIdSet* EntityWorld::tag_set(const core::String& tag) const {
-    y_debug_assert(!is_tag_implicit(tag));
+    y_debug_assert(!is_computed_tag(tag));
     return _matrix.tag_set(tag);
-}
-
-bool EntityWorld::is_tag_implicit(std::string_view tag) {
-    return !tag.empty() && (tag[0] == '@' || tag[0] == '!');
 }
 
 EntityId EntityWorld::parent(EntityId id) const {

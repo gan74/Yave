@@ -28,7 +28,6 @@ SOFTWARE.
 #include <array>
 #include <cstdio>
 #include <cstdlib>
-#include <csignal>
 
 #ifdef Y_OS_WIN
 #include <windows.h>

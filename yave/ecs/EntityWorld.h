@@ -84,9 +84,6 @@ class EntityWorld : NonMovable {
             return _matrix.tags();
         }
 
-        static bool is_tag_implicit(std::string_view tag);
-
-
 
 
         // ---------------------------------------- Parent ----------------------------------------
@@ -176,16 +173,28 @@ class EntityWorld : NonMovable {
         // ---------------------------------------- Groups ----------------------------------------
 
         template<typename... Ts>
-        EntityGroup<Ts...> create_group(core::Span<std::string_view> tags = {}, core::Span<ComponentTypeIndex> filters = {}) {
+        const EntityGroupBase* get_or_create_group_base(core::Span<std::string_view> tags = {}, core::Span<ComponentTypeIndex> filters = {}) {
             y_profile();
-            const EntityGroupBase* base = _groups.locked([&](auto&& groups) {
+            return _groups.locked([&](auto&& groups) -> const EntityGroupBase* {
                 for(const auto& group : groups) {
                     if(group->matches<Ts...>(tags, filters)) {
                         return group.get();
                     }
                 }
-                return create_new_group<Ts...>(groups, tags, filters);
+                return create_new_group_base<Ts...>(groups, tags, filters);
             });
+        }
+
+        template<typename... Ts>
+        const EntityGroupBase* get_or_create_group_base(core::Span<std::string_view> tags = {}, core::Span<ComponentTypeIndex> filters = {}) const {
+            static_assert(EntityGroup<Ts...>::is_const);
+            return const_cast<EntityWorld*>(this)->get_or_create_group_base<Ts...>(tags, filters);
+        }
+
+        template<typename... Ts>
+        EntityGroup<Ts...> create_group(core::Span<std::string_view> tags = {}, core::Span<ComponentTypeIndex> filters = {}) {
+            y_profile();
+            const EntityGroupBase* base = get_or_create_group_base<Ts...>(tags, filters);
             return EntityGroup<Ts...>(base, std::tuple{find_container<traits::component_raw_type_t<Ts>>()...});
         }
 
@@ -235,7 +244,7 @@ class EntityWorld : NonMovable {
         }
 
         template<typename... Ts>
-        EntityGroupBase* create_new_group(core::Vector<std::unique_ptr<EntityGroupBase>>& groups, core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> filters) {
+        EntityGroupBase* create_new_group_base(core::Vector<std::unique_ptr<EntityGroupBase>>& groups, core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> filters) {
             y_profile();
             EntityGroupBase* group = groups.emplace_back(std::make_unique<EntityGroupBase>(EntityGroupBase::type_storage<Ts...>(), tags, filters)).get();
             group->_name = EntityGroupBase::create_group_name<Ts...>(tags);
