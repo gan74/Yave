@@ -76,6 +76,29 @@ typename S::value_type EcsScene::unregister_object(const ecs::EntityId id, u32 O
 }
 
 template<typename T, typename S>
+void EcsScene::process_component_visibility(u32 ObjectIndices::* index_ptr, S& storage) {
+    y_profile();
+
+    auto update_visibility = [&](ecs::EntityId id, u32 mask) {
+        const u32 index = _indices.try_get(id)->*index_ptr;
+        if(index != u32(-1)) {
+            storage[index].visibility_mask = mask;
+        }
+    };
+
+    const std::array tag = {ecs::tags::hidden};
+    const ecs::EntityGroupBase* group_base = _world->get_or_create_group_base<T>(tag);
+
+    for(const ecs::EntityId id : group_base->added_ids()) {
+        update_visibility(id, 0);
+    }
+
+    for(const ecs::EntityId id : group_base->removed_ids()) {
+        update_visibility(id, u32(-1));
+    }
+}
+
+template<typename T, typename S>
 void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage) {
     y_profile();
 
@@ -88,7 +111,6 @@ void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
         _transform_manager.set_transform(obj.transform_index, tr.transform());
         obj.global_aabb = tr.to_global(comp.aabb());
     };
-
 
 
     const ecs::EntityGroupBase* group_base = _world->get_or_create_group_base<TransformableComponent, T>();
@@ -129,6 +151,8 @@ void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
             }
         }
     }
+
+    process_component_visibility<T>(index_ptr, storage);
 }
 
 
@@ -160,26 +184,32 @@ void EcsScene::process_components(u32 ObjectIndices::* index_ptr, S& storage) {
             unregister_object(id, index_ptr, storage);
         }
     }
+
+    process_component_visibility<T>(index_ptr, storage);
 }
 
 void EcsScene::process_atmosphere() {
     auto group = _world->create_group<AtmosphereComponent>();
-    if(group.is_empty()) {
-        _atmosphere = nullptr;
-    } else {
-        for(const auto& [id, atmo] : group.id_components()) {
-            const DirectionalLightComponent* sun = _world->component<DirectionalLightComponent>(atmo.sun());
 
-            if(sun) {
-                if(!_atmosphere) {
-                    _atmosphere = std::make_unique<AtmosphereObject>();
-                }
-                _atmosphere->entity_index = id.index();
-                _atmosphere->component = atmo;
-                _atmosphere->sun = *sun;
-                break;
-            }
+    bool found = false;
+    for(const auto& [id, atmo] : group.id_components()) {
+        if(_world->has_tag(id, ecs::tags::hidden)) {
+            continue;
         }
+        if(const DirectionalLightComponent* sun = _world->component<DirectionalLightComponent>(atmo.sun())) {
+            if(!_atmosphere) {
+                _atmosphere = std::make_unique<AtmosphereObject>();
+            }
+            _atmosphere->entity_index = id.index();
+            _atmosphere->component = atmo;
+            _atmosphere->sun = *sun;
+            found = true;
+            break;
+        }
+    }
+
+    if(!found) {
+        _atmosphere = nullptr;
     }
 }
 

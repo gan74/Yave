@@ -31,9 +31,9 @@ SceneVisibilitySubPass SceneVisibilitySubPass::create(const SceneView& scene_vie
     pass.scene_view = scene_view;
     pass.visible = std::make_shared<SceneVisibility>();
 
-    pass.visible->meshes = scene->gather_visible(scene->meshes(), scene_view.camera());
-    pass.visible->point_lights = scene->gather_visible(scene->point_lights(), scene_view.camera());
-    pass.visible->spot_lights = scene->gather_visible(scene->spot_lights(), scene_view.camera());
+    pass.visible->meshes = scene->gather_visible(scene->meshes(), scene_view.camera(), scene_view.visibility_mask());
+    pass.visible->point_lights = scene->gather_visible(scene->point_lights(), scene_view.camera(), scene_view.visibility_mask());
+    pass.visible->spot_lights = scene->gather_visible(scene->spot_lights(), scene_view.camera(), scene_view.visibility_mask());
 
     return pass;
 }

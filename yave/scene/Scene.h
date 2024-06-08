@@ -49,6 +49,7 @@ template<typename T>
 struct SceneObject {
     T component;
     u32 entity_index = u32(-1);
+    u32 visibility_mask = u32(-1);
 };
 
 struct TransformableSceneObjectData {
@@ -103,16 +104,20 @@ class Scene : NonMovable {
 
 
         template<typename T>
-        static auto gather_visible(core::Span<TransformableSceneObject<T>> objects, const Camera& cam) {
+        static auto gather_visible(core::Span<TransformableSceneObject<T>> objects, const Camera& cam, u32 visibility_mask = u32(-1)) {
             y_profile();
 
             const Frustum frustum = cam.frustum();
 
             core::Vector<const TransformableSceneObject<T>*> visible;
             for(const auto& obj : objects) {
-                if(frustum.intersection(obj.global_aabb) != Intersection::Outside) {
-                    visible << &obj;
+                if((obj.visibility_mask & visibility_mask) == 0) {
+                    continue;
                 }
+                if(frustum.intersection(obj.global_aabb) == Intersection::Outside) {
+                    continue;
+                }
+                visible << &obj;
             }
 
             return visible;

@@ -54,6 +54,10 @@ static constexpr usize max_spot_lights = 1024;
 
 static std::tuple<const IBLProbe*, float, bool> find_probe(const SceneView& scene_view) {
     for(const SkyLightObject& obj : scene_view.scene()->sky_lights()) {
+        if((obj.visibility_mask & scene_view.visibility_mask()) == 0) {
+            continue;
+        }
+
         const SkyLightComponent& sky = obj.component;
         if(const IBLProbe* probe = sky.probe().get()) {
             y_debug_assert(!probe->is_null());
@@ -104,7 +108,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
         u32 count = 0;
         auto mapping = self->resources().map_buffer(directional_buffer);
 
-        for(const auto& [light, id] : scene->directionals()) {
+        for(const auto& [light, id, _] : scene->directionals()) {
             auto shadow_indices = math::Vec4ui(u32(-1));
             if(light.cast_shadow()) {
                 if(const auto it = shadow_pass.shadow_indices->find(&light); it != shadow_pass.shadow_indices->end()) {

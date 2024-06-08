@@ -31,16 +31,19 @@ namespace yave {
 class SceneView {
     public:
         SceneView() = default;
-        SceneView(const Scene* sce, Camera cam = Camera());
+        SceneView(const Scene* sce, Camera cam = Camera(), u32 visibility = u32(-1));
 
         const Scene* scene() const;
 
         const Camera& camera() const;
         Camera& camera();
 
+        u32 visibility_mask() const;
+
     private:
         const Scene* _scene = nullptr;
         Camera _camera;
+        u32 _visility_mask = u32(-1);
 };
 
 }

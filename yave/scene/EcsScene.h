@@ -56,6 +56,9 @@ class EcsScene : public Scene {
         typename S::value_type unregister_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage);
 
         template<typename T, typename S>
+        void process_component_visibility(u32 ObjectIndices::* index_ptr, S& storage);
+
+        template<typename T, typename S>
         void process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage);
 
         template<typename T, typename S>

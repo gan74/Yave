@@ -24,9 +24,10 @@ SOFTWARE.
 
 namespace yave {
 
-SceneView::SceneView(const Scene* sce, Camera cam) :
+SceneView::SceneView(const Scene* sce, Camera cam, u32 visibility) :
         _scene(sce),
-        _camera(cam) {
+        _camera(cam),
+        _visility_mask(visibility) {
 }
 
 const Scene* SceneView::scene() const {
@@ -39,6 +40,10 @@ const Camera& SceneView::camera() const {
 
 Camera& SceneView::camera() {
     return _camera;
+}
+
+u32 SceneView::visibility_mask() const {
+    return _visility_mask;
 }
 
 }
