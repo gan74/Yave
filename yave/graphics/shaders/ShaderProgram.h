@@ -77,8 +77,18 @@ class ShaderProgram final : public ShaderProgramBase {
 class RaytracingProgram final : public ShaderProgramBase {
     public:
         RaytracingProgram() = default;
+        RaytracingProgram(RaytracingProgram&& other) = default;
+        RaytracingProgram& operator=(RaytracingProgram&& other) = default;
 
         RaytracingProgram(const RayGenShader& gen, const MissShader& miss, const ClosestHitShader& chit);
+        ~RaytracingProgram();
+
+        VkPipeline vk_pipeline() const;
+        VkPipelineLayout vk_pipeline_layout() const;
+
+    private:
+        VkHandle<VkPipelineLayout> _layout;
+        VkHandle<VkPipeline> _pipeline;
 };
 
 

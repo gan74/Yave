@@ -41,6 +41,12 @@ namespace yave {
 using Attribs = core::Vector<VkVertexInputAttributeDescription>;
 using Bindings = core::Vector<VkVertexInputBindingDescription>;
 
+
+template<typename... Ts>
+static auto make_shader_array(const Ts&... args) {
+    return std::array<const ShaderModuleBase*, sizeof...(args)> { &args... };
+}
+
 template<typename T, typename S>
 static void merge_bindings(T& into, const S& other) {
     for(const auto& [k, v] : other) {
@@ -216,10 +222,8 @@ core::Span<VkDescriptorSetLayout> ShaderProgramBase::vk_descriptor_layouts() con
 
 
 
-
-
 ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom) :
-        ShaderProgramBase(std::array<const ShaderModuleBase*, 3>{&frag, &vert, &geom}) {
+        ShaderProgramBase(make_shader_array(frag, vert, geom)) {
 
     {
         auto vertex_attribs = core::ScratchPad<ShaderModuleBase::Attribute>(vert.attributes());
@@ -249,7 +253,63 @@ core::Span<u32> ShaderProgram::fragment_outputs() const {
 
 
 RaytracingProgram::RaytracingProgram(const RayGenShader& gen, const MissShader& miss, const ClosestHitShader& chit) :
-        ShaderProgramBase(std::array<const ShaderModuleBase*, 3>{&gen, &miss, &chit}) {
+        ShaderProgramBase(make_shader_array(gen, miss, chit)) {
+
+    const auto shaders = make_shader_array(gen, miss, chit);
+
+
+    VkPipelineLayoutCreateInfo layout_create_info = vk_struct();
+    {
+        layout_create_info.pSetLayouts = _layouts.data();
+        layout_create_info.setLayoutCount = u32(_layouts.size());
+    }
+
+    vk_check(vkCreatePipelineLayout(vk_device(), &layout_create_info, vk_allocation_callbacks(), _layout.get_ptr_for_init()));
+
+
+    std::array<VkRayTracingShaderGroupCreateInfoKHR, 3> groups;
+    for(usize i = 0; i != shaders.size(); ++i) {
+        groups[i] = vk_struct();
+        groups[i].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+        groups[i].generalShader = VK_SHADER_UNUSED_KHR;
+        groups[i].closestHitShader = VK_SHADER_UNUSED_KHR;
+        groups[i].anyHitShader = VK_SHADER_UNUSED_KHR;
+        groups[i].intersectionShader = VK_SHADER_UNUSED_KHR;
+    }
+
+    {
+        groups[0].generalShader = 0;
+        groups[1].generalShader = 1;
+
+        groups[2].closestHitShader = 2;
+        groups[2].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+    }
+
+    VkRayTracingPipelineCreateInfoKHR create_info = vk_struct();
+    {
+        create_info.pStages = _stages.data();
+        create_info.stageCount = u32(_stages.size());
+        create_info.pGroups = groups.data();
+        create_info.groupCount = u32(groups.size());
+
+        create_info.maxPipelineRayRecursionDepth = 1;
+        create_info.layout = _layout;
+    }
+
+    vk_check(vkCreateRayTracingPipelinesKHR(vk_device(), nullptr, nullptr, 1, &create_info, nullptr, _pipeline.get_ptr_for_init()));
+}
+
+RaytracingProgram::~RaytracingProgram() {
+    destroy_graphic_resource(std::move(_layout));
+    destroy_graphic_resource(std::move(_pipeline));
+}
+
+VkPipeline RaytracingProgram::vk_pipeline() const {
+    return _pipeline;
+}
+
+VkPipelineLayout RaytracingProgram::vk_pipeline_layout() const {
+    return _layout;
 }
 
 
