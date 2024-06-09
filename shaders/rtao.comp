@@ -1,0 +1,61 @@
+#version 460
+
+#extension GL_EXT_ray_query : enable
+
+#include "lib/utils.glsl"
+#include "lib/gbuffer.glsl"
+
+
+// -------------------------------- I/O --------------------------------
+
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(r8, set = 0, binding = 0) uniform writeonly image2D out_ao;
+
+layout(set = 0, binding = 1) uniform sampler2D in_depth;
+layout(set = 0, binding = 2) uniform sampler2D in_rt1;
+
+layout(set = 0, binding = 3) uniform CameraData {
+    Camera camera;
+};
+
+layout(set = 0, binding = 4) uniform accelerationStructureEXT tlas;
+
+
+const uint sample_count = 64;
+const float max_dist = 1.0;
+
+
+void main() {
+    const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+    const vec2 image_size = vec2(imageSize(out_ao).xy);
+
+    const float depth = texelFetch(in_depth, coord, 0).x;
+
+    float ao = 0;
+    if(!is_OOB(depth)) {
+        const vec2 uv = (vec2(gl_GlobalInvocationID.xy) + 0.5) / image_size;
+        const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
+        const vec3 normal = read_gbuffer(vec4(0.0), texelFetch(in_rt1, coord, 0)).normal;
+
+        for(uint i = 0; i != sample_count; ++i) {
+            const vec3 sample_dir = compute_sample_dir(normal, i);
+
+            rayQueryEXT query;
+            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xFF, world_pos, 0.01, sample_dir, max_dist);
+            rayQueryProceedEXT(query);
+
+            float hit_dist = max_dist;
+            if(rayQueryGetIntersectionTypeEXT(query, true) != gl_RayQueryCommittedIntersectionNoneEXT) {
+                //hit_dist = rayQueryGetIntersectionTEXT(query, true);
+            } else {
+                ao += 1.0;
+            }
+        }
+
+        ao /= sample_count;
+    }
+
+    imageStore(out_ao, coord, vec4(ao));
+}

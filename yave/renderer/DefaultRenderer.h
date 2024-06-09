@@ -23,13 +23,13 @@ SOFTWARE.
 #define YAVE_RENDERER_DEFAULTRENDERER_H
 
 #include "LightingPass.h"
-#include "RaytracingPass.h"
 #include "AtmospherePass.h"
 #include "ExposurePass.h"
 #include "ToneMappingPass.h"
 #include "SSAOPass.h"
 #include "BloomPass.h"
 #include "TAAPass.h"
+#include "RTAOPass.h"
 
 namespace yave {
 
@@ -53,7 +53,7 @@ struct DefaultRenderer {
     SSAOPass ssao;
     TAAPass taa;
 
-    RaytracingPass raytrace;
+    RTAOPass rtao;
 
     FrameGraphImageId final;
     FrameGraphImageId depth;

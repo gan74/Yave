@@ -58,6 +58,7 @@ class DeviceResources final : NonMovable {
             AtmosphereIntergratorComp,
             PrevCameraComp,
             UpdateTransformsComp,
+            RTAOComp,
 
             TexturedFrag,
             TexturedAlphaFrag,
@@ -111,6 +112,10 @@ class DeviceResources final : NonMovable {
             AtmosphereIntergratorProgram,
             PrevCameraProgram,
             UpdateTransformsProgram,
+
+            MaxNonRaytracingComputePrograms,
+
+            RTAOProgram = MaxNonRaytracingComputePrograms,
 
             MaxComputePrograms
         };

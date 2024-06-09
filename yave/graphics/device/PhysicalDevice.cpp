@@ -23,6 +23,7 @@ SOFTWARE.
 #include "PhysicalDevice.h"
 #include "deviceutils.h"
 
+#include <y/utils/log.h>
 #include <y/utils/memory.h>
 
 namespace yave {
@@ -174,6 +175,7 @@ bool PhysicalDevice::is_extension_supported(std::string_view name) const {
 }
 
 bool PhysicalDevice::supports_raytracing() const {
+    log_msg("We are not checking ray tracing features", Log::Warning);
     for(const char* ext_name : raytracing_extensions()) {
         if(!is_extension_supported(ext_name)) {
             return false;

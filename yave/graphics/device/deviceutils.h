@@ -61,6 +61,7 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2();
 VkPhysicalDeviceVulkan13Features required_device_features_1_3();
 VkPhysicalDeviceAccelerationStructureFeaturesKHR required_device_features_accel_struct();
 VkPhysicalDeviceRayTracingPipelineFeaturesKHR required_device_features_raytracing_pipeline();
+VkPhysicalDeviceRayQueryFeaturesKHR required_device_features_ray_query();
 
 
 

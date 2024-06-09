@@ -23,7 +23,7 @@ const float km = 1000.0;
 void main() {
     const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
     const ivec3 size = imageSize(out_scattering);
-    const vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(size.xy);
+    const vec2 uv = (vec2(gl_GlobalInvocationID.xy) + 0.5) / vec2(size.xy);
     const uint iterations = size.z;
 
     const vec3 view_dir = -view_direction(camera, uv);

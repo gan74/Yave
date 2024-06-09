@@ -71,6 +71,7 @@ static constexpr const char* spirv_names[] = {
     "atmosphere_integrator.comp",
     "prev_camera.comp",
     "update_transforms.comp",
+    "rtao.comp",
 
     "textured.frag",
     "textured_ALPHA_TEST.frag",
@@ -189,7 +190,6 @@ static constexpr std::array<u32, 6> texture_colors[] = {
 
 
 static constexpr usize spirv_count = usize(SpirV::MaxSpirV);
-static constexpr usize compute_count = usize(ComputePrograms::MaxComputePrograms);
 static constexpr usize template_count = usize(MaterialTemplates::MaxMaterialTemplates);
 static constexpr usize texture_count = usize(Textures::MaxTextures);
 static constexpr usize raytracing_count = usize(RaytracingPrograms::MaxRaytracingPrograms);
@@ -241,6 +241,8 @@ static Texture create_white_noise(usize size = 256) {
 
 DeviceResources::DeviceResources() {
     y_profile();
+
+    const usize compute_count = usize(raytracing_enabled() ? ComputePrograms::MaxComputePrograms : ComputePrograms::MaxNonRaytracingComputePrograms);
 
     _spirv = std::make_unique<SpirVData[]>(spirv_count);
     _computes = std::make_unique<ComputeProgram[]>(compute_count);

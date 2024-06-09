@@ -215,7 +215,7 @@ void cull_lights() {
 void main() {
     const ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
     const vec2 image_size = vec2(imageSize(out_color).xy);
-    const vec2 uv = vec2(gl_GlobalInvocationID.xy) / image_size;
+    const vec2 uv = (vec2(gl_GlobalInvocationID.xy) + 0.5) / image_size;
 
     const float depth = texelFetch(in_depth, coord, 0).x;
 

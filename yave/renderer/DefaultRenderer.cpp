@@ -52,9 +52,9 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
 
 
     if(raytracing_enabled()) {
-        renderer.raytrace   = RaytracingPass::create(framegraph, renderer.camera, size);
+        renderer.rtao   = RTAOPass::create(framegraph, renderer.gbuffer, size);
 
-        renderer.final = renderer.raytrace.raytraced;
+        renderer.final = renderer.rtao.ao;
     }
 
     return renderer;
