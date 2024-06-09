@@ -5,6 +5,7 @@
 
 // https://www.shadertoy.com/view/4djSRW
 // https://www.shadertoy.com/view/llGSzw
+// https://www.shadertoy.com/view/4tXyWN
 
 uint hash_1_1(uint n)  {
     // integer hash copied from Hugo Elias
@@ -12,6 +13,13 @@ uint hash_1_1(uint n)  {
     n = n * (n * n * 15731U + 789221U) + 1376312589U;
     return n;
 }
+
+uint hash_1_2(uvec2 x) {
+    uvec2 q = 1103515245U * ((x >> 1U) ^ x.yx);
+    uint n = 1103515245U * (q.x ^ (q.y >> 3U));
+    return n;
+}
+
 
 float hash_1_1(float p) {
     p = fract(p * 0.1031);
