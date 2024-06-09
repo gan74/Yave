@@ -31,7 +31,7 @@ SOFTWARE.
 namespace yave {
 
 RaytracingPass RaytracingPass::create(FrameGraph& framegraph, const CameraBufferPass& camera, const math::Vec2ui& size) {
-    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Raaytracing");
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Raytracing");
 
     const auto raytraced = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, size);
 
