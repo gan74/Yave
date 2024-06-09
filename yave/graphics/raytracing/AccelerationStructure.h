@@ -43,10 +43,12 @@ class AccelerationStructure {
         SubBuffer<BufferUsage::AccelStructureBit> buffer() const;
 
         VkAccelerationStructureKHR vk_accel_struct() const;
+        VkDeviceAddress vk_device_address() const;
 
     protected:
         VkHandle<VkAccelerationStructureKHR> _acc_struct;
         Buffer<BufferUsage::AccelStructureBit> _buffer;
+        VkDeviceAddress _address = {};
 };
 
 

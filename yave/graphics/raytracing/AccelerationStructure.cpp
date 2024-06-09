@@ -83,6 +83,7 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
 
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     {
+        const auto region = recorder.region("Build acceleration structurte");
         const VkAccelerationStructureBuildRangeInfoKHR* build_range_ptr = ranges.data();
         vkCmdBuildAccelerationStructuresKHR(recorder.vk_cmd_buffer(), 1, &build_info, &build_range_ptr);
     }
@@ -174,23 +175,34 @@ bool AccelerationStructure::is_null() const {
     return _acc_struct.is_null();
 }
 
-VkAccelerationStructureKHR AccelerationStructure::vk_accel_struct() const {
-    return _acc_struct.get();
-}
-
 SubBuffer<BufferUsage::AccelStructureBit> AccelerationStructure::buffer() const {
     return _buffer;
 }
 
+VkAccelerationStructureKHR AccelerationStructure::vk_accel_struct() const {
+    return _acc_struct.get();
+}
+
+VkDeviceAddress AccelerationStructure::vk_device_address() const {
+    return _address;
+}
 
 
 BLAS::BLAS(const MeshDrawData& mesh) {
     std::tie(_acc_struct, _buffer) = create_blas(mesh);
+
+    VkAccelerationStructureDeviceAddressInfoKHR addr_info = vk_struct();
+    addr_info.accelerationStructure = vk_accel_struct();
+    _address = vkGetAccelerationStructureDeviceAddressKHR(vk_device(), &addr_info);
 }
 
 
 TLAS::TLAS(core::Span<BLASInstance> instances) {
     std::tie(_acc_struct, _buffer) = create_tlas(instances);
+
+    VkAccelerationStructureDeviceAddressInfoKHR addr_info = vk_struct();
+    addr_info.accelerationStructure = vk_accel_struct();
+    _address = vkGetAccelerationStructureDeviceAddressKHR(vk_device(), &addr_info);
 }
 
 BLASInstance TLAS::make_instance(const math::Transform<>& tr, const BLAS& blas) {
@@ -198,12 +210,9 @@ BLASInstance TLAS::make_instance(const math::Transform<>& tr, const BLAS& blas) 
 
     {
         instance.mask = 0xFF;
+        instance.accelerationStructureReference = blas.vk_device_address();
 
-        VkAccelerationStructureDeviceAddressInfoKHR addr_info = vk_struct();
-        addr_info.accelerationStructure = blas.vk_accel_struct();
-        instance.accelerationStructureReference = vkGetAccelerationStructureDeviceAddressKHR(vk_device(), &addr_info);
-
-        const math::Matrix<4, 3> mat = tr.matrix().to<4, 3>();
+        const math::Matrix mat = tr.matrix().to<3, 4>().transposed();
         std::copy(mat.begin(), mat.end(), &instance.transform.matrix[0][0]);
     }
 
