@@ -137,46 +137,90 @@ static void validate_bindings(core::Span<VkDescriptorSetLayoutBinding> bindings)
     y_debug_assert(max == bindings.size());
 }
 
-ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom) {
-    {
-        merge_bindings(_bindings, frag.bindings());
-        merge_bindings(_bindings, vert.bindings());
-        merge_bindings(_bindings, geom.bindings());
-
-        create_stage_info(_stages, frag);
-        create_stage_info(_stages, vert);
-        create_stage_info(_stages, geom);
-
-        for(auto& [set, bindings] : _bindings) {
-            std::sort(bindings.begin(), bindings.end(), [](const auto& a, const auto& b) { return a.binding < b.binding; });
-            const usize new_size = std::unique(bindings.begin(), bindings.end()) - bindings.begin();
-            bindings.shrink_to(new_size);
-        }
-
-        const u32 max_set = std::accumulate(_bindings.begin(), _bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
-
-        const usize max_variable_binding = frag.variable_size_bindings().size() + vert.variable_size_bindings().size() + geom.variable_size_bindings().size();
-        core::ScratchVector<u32> variable_bindings(max_variable_binding);
-        merge(variable_bindings, frag.variable_size_bindings());
-        merge(variable_bindings, vert.variable_size_bindings());
-        merge(variable_bindings, geom.variable_size_bindings());
-        std::sort(variable_bindings.begin(), variable_bindings.end());
-        const auto variable_bindings_end = std::unique(variable_bindings.begin(), variable_bindings.end());
 
 
-        if(!_bindings.is_empty()) {
-            _layouts = core::Vector<VkDescriptorSetLayout>(max_set + 1, VkDescriptorSetLayout{});
-            for(const auto& binding : _bindings) {
-                validate_bindings(binding.second);
-                if(std::find(variable_bindings.begin(), variable_bindings_end, binding.first) != variable_bindings_end) {
-                    y_always_assert(binding.second.size() == 1, "Variable size descriptor bindings must be alone in descriptor set");
-                    _layouts[binding.first] = texture_library().descriptor_set_layout();
-                } else {
-                    _layouts[binding.first] = descriptor_set_allocator().descriptor_set_layout(binding.second).vk_descriptor_set_layout();
-                }
+
+
+
+
+
+ShaderProgramBase::ShaderProgramBase(core::Span<const ShaderModuleBase*> shaders) {
+    for(const ShaderModuleBase* shader : shaders) {
+        merge_bindings(_bindings, shader->bindings());
+        merge_bindings(_bindings, shader->bindings());
+        merge_bindings(_bindings, shader->bindings());
+    }
+
+    for(const ShaderModuleBase* shader : shaders) {
+        create_stage_info(_stages, *shader);
+    }
+
+    for(auto& [set, bindings] : _bindings) {
+        std::sort(bindings.begin(), bindings.end(), [](const auto& a, const auto& b) { return a.binding < b.binding; });
+        const usize new_size = std::unique(bindings.begin(), bindings.end()) - bindings.begin();
+        bindings.shrink_to(new_size);
+    }
+
+    const u32 max_set = std::accumulate(_bindings.begin(), _bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
+
+    const usize max_variable_binding = std::accumulate(shaders.begin(), shaders.end(), 0_uu, [](usize val, const ShaderModuleBase* shader) { return val + shader->variable_size_bindings().size(); });
+    core::ScratchVector<u32> variable_bindings(max_variable_binding);
+
+    for(const ShaderModuleBase* shader : shaders) {
+        merge(variable_bindings, shader->variable_size_bindings());
+    }
+
+    std::sort(variable_bindings.begin(), variable_bindings.end());
+    const auto variable_bindings_end = std::unique(variable_bindings.begin(), variable_bindings.end());
+
+    if(!_bindings.is_empty()) {
+        _layouts = core::Vector<VkDescriptorSetLayout>(max_set + 1, VkDescriptorSetLayout{});
+        for(const auto& binding : _bindings) {
+            validate_bindings(binding.second);
+            if(std::find(variable_bindings.begin(), variable_bindings_end, binding.first) != variable_bindings_end) {
+                y_always_assert(binding.second.size() == 1, "Variable size descriptor bindings must be alone in descriptor set");
+                _layouts[binding.first] = texture_library().descriptor_set_layout();
+            } else {
+                _layouts[binding.first] = descriptor_set_allocator().descriptor_set_layout(binding.second).vk_descriptor_set_layout();
             }
         }
     }
+}
+
+
+ShaderProgramBase::ShaderProgramBase(ShaderProgramBase&& other) {
+    swap(other);
+}
+
+ShaderProgramBase& ShaderProgramBase::operator=(ShaderProgramBase&& other) {
+    swap(other);
+    return *this;
+}
+
+void ShaderProgramBase::swap(ShaderProgramBase& other) {
+    std::swap(_bindings, other._bindings);
+    std::swap(_layouts, other._layouts);
+    std::swap(_stages, other._stages);
+}
+
+core::Span<VkPipelineShaderStageCreateInfo> ShaderProgramBase::vk_pipeline_stage_info() const {
+    return _stages;
+}
+
+core::Span<VkDescriptorSetLayout> ShaderProgramBase::vk_descriptor_layouts() const {
+    return _layouts;
+}
+
+
+
+
+
+
+
+
+ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom) :
+        ShaderProgramBase(std::array<const ShaderModuleBase*, 3>{&frag, &vert, &geom}) {
+
     {
         auto vertex_attribs = core::ScratchPad<ShaderModuleBase::Attribute>(vert.attributes());
         std::sort(vertex_attribs.begin(), vertex_attribs.end(), [](const auto& a, const auto& b) { return a.location < b.location; });
@@ -186,14 +230,6 @@ ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& ver
         _fragment_outputs = frag.stage_output();
         std::sort(_fragment_outputs.begin(), _fragment_outputs.end());
     }
-}
-
-core::Span<VkPipelineShaderStageCreateInfo> ShaderProgram::vk_pipeline_stage_info() const {
-    return _stages;
-}
-
-core::Span<VkDescriptorSetLayout> ShaderProgram::vk_descriptor_layouts() const {
-    return _layouts;
 }
 
 core::Span<VkVertexInputBindingDescription> ShaderProgram::vk_attribute_bindings() const {
@@ -207,6 +243,16 @@ core::Span<VkVertexInputAttributeDescription> ShaderProgram::vk_attributes_descr
 core::Span<u32> ShaderProgram::fragment_outputs() const {
     return _fragment_outputs;
 }
+
+
+
+
+
+RaytracingProgram::RaytracingProgram(const RayGenShader& gen, const MissShader& miss, const ClosestHitShader& chit) :
+        ShaderProgramBase(std::array<const ShaderModuleBase*, 3>{&gen, &miss, &chit}) {
+}
+
+
 
 }
 

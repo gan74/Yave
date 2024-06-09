@@ -96,7 +96,9 @@ static void init_vk_device() {
     auto required_features_1_1 = required_device_features_1_1();
     auto required_features_1_2 = required_device_features_1_2();
     auto required_features_1_3 = required_device_features_1_3();
-    auto required_features_raytracing = required_device_features_raytracing();
+
+    auto required_features_accel = required_device_features_accel_struct();
+    auto required_features_raytracing = required_device_features_raytracing_pipeline();
 
     if(physical_device().vk_properties_1_3().maxInlineUniformBlockSize > 0) {
         required_features_1_3.inlineUniformBlock = true;
@@ -129,8 +131,10 @@ static void init_vk_device() {
     }
 
     if(device::device_properties.has_raytracing) {
+        required_features_accel.pNext = &required_features_raytracing;
         required_features_raytracing.pNext = features.pNext;
-        features.pNext = &required_features_raytracing;
+
+        features.pNext = &required_features_accel;
     }
 
     VkDeviceCreateInfo create_info = vk_struct();

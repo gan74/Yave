@@ -189,6 +189,10 @@ function(build_engine_shaders SHADER_TARGET)
 
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "")
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "COMBINE_HIGH")
+
+    add_shader_variation(${SHADER_TARGET} "basic.rgen" "")
+    add_shader_variation(${SHADER_TARGET} "basic.rmiss" "")
+    add_shader_variation(${SHADER_TARGET} "basic.rchit" "")
 endfunction(build_engine_shaders)
 
 function(build_editor_shaders SHADER_TARGET)

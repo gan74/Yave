@@ -68,7 +68,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
     VkPipelineShaderStageCreateInfo stage = vk_struct();
     {
         stage.module = comp.vk_shader_module();
-        stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+        stage.stage = VkShaderStageFlagBits(comp.type());
         stage.pName = "main";
         stage.pSpecializationInfo = &spec_info;
     }

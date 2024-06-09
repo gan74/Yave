@@ -1,4 +1,4 @@
-#version 450
+#version 460
 
 #include "lib/lighting.glsl"
 #include "lib/area_light.glsl"

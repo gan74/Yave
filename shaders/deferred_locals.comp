@@ -1,15 +1,10 @@
-#version 450
+#version 460
 
 #include "lib/lighting.glsl"
 #include "lib/area_light.glsl"
 #include "lib/gbuffer.glsl"
 #include "lib/shadow.glsl"
 #include "lib/debug.glsl"
-
-
-// -------------------------------- DEFINES --------------------------------
-
-// #define DEBUG
 
 
 // -------------------------------- I/O --------------------------------

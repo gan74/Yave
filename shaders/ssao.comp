@@ -1,4 +1,4 @@
-#version 450
+#version 460
 
 // Based on MiniEngine's implementation
 // see: https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/MiniEngine/Core/Shaders/AoRenderCS.hlsli

@@ -56,7 +56,8 @@ VkPhysicalDeviceFeatures required_device_features();
 VkPhysicalDeviceVulkan11Features required_device_features_1_1();
 VkPhysicalDeviceVulkan12Features required_device_features_1_2();
 VkPhysicalDeviceVulkan13Features required_device_features_1_3();
-VkPhysicalDeviceAccelerationStructureFeaturesKHR required_device_features_raytracing();
+VkPhysicalDeviceAccelerationStructureFeaturesKHR required_device_features_accel_struct();
+VkPhysicalDeviceRayTracingPipelineFeaturesKHR required_device_features_raytracing_pipeline();
 
 bool has_required_features(const PhysicalDevice& physical);
 bool has_required_properties(const PhysicalDevice &physical);

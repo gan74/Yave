@@ -46,6 +46,10 @@ using VertexShader = ShaderModule<ShaderType::Vertex>;
 using GeometryShader = ShaderModule<ShaderType::Geomery>;
 using ComputeShader = ShaderModule<ShaderType::Compute>;
 
+using RayGenShader = ShaderModule<ShaderType::RayGen>;
+using MissShader = ShaderModule<ShaderType::Miss>;
+using ClosestHitShader = ShaderModule<ShaderType::ClosestHit>;
+
 }
 
 #endif // YAVE_GRAPHICS_SHADERS_SHADERMODULE_H

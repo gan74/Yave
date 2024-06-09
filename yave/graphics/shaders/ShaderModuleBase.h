@@ -37,7 +37,10 @@ enum class ShaderType : u32 {
     Fragment = VK_SHADER_STAGE_FRAGMENT_BIT,
     Vertex = VK_SHADER_STAGE_VERTEX_BIT,
     Geomery = VK_SHADER_STAGE_GEOMETRY_BIT,
-    Compute = VK_SHADER_STAGE_COMPUTE_BIT
+    Compute = VK_SHADER_STAGE_COMPUTE_BIT,
+    RayGen = VK_SHADER_STAGE_RAYGEN_BIT_KHR,
+    Miss = VK_SHADER_STAGE_MISS_BIT_KHR,
+    ClosestHit = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
 };
 
 class SpecializationData : NonCopyable {
@@ -130,7 +133,7 @@ class ShaderModuleBase : NonMovable {
         ShaderModuleBase(const SpirVData& data);
 
     private:
-        friend class ShaderProgram;
+        friend class ShaderProgramBase;
         friend class ComputeProgram;
 
         const auto& bindings() const {

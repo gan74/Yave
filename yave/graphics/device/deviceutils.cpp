@@ -291,11 +291,21 @@ VkPhysicalDeviceVulkan13Features required_device_features_1_3() {
     return required;
 }
 
-VkPhysicalDeviceAccelerationStructureFeaturesKHR required_device_features_raytracing() {
+VkPhysicalDeviceAccelerationStructureFeaturesKHR required_device_features_accel_struct() {
     VkPhysicalDeviceAccelerationStructureFeaturesKHR required = vk_struct();
 
     {
         required.accelerationStructure = true;
+    }
+
+    return required;
+}
+
+VkPhysicalDeviceRayTracingPipelineFeaturesKHR required_device_features_raytracing_pipeline() {
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR required = vk_struct();
+
+    {
+        required.rayTracingPipeline = true;
     }
 
     return required;

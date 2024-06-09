@@ -1,6 +1,6 @@
 // Based on MiniEngine's implementation
 // see: https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/MiniEngine/Core/Shaders/AoBlurAndUpsampleCS.hlsli
-#version 450
+#version 460
 
 #include "lib/utils.glsl"
 

@@ -1,0 +1,35 @@
+#version 460
+
+#extension GL_EXT_ray_tracing : enable
+
+#include "lib/utils.glsl"
+
+layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
+
+layout(set = 0, binding = 1) uniform CameraData {
+    Camera camera;
+};
+
+layout(set = 0, binding = 2) uniform writeonly image2D out_image;
+
+
+layout(location = 0) rayPayloadEXT vec3 hit_value;
+
+
+
+void main() {
+    const vec2 px_center = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
+    const vec2 in_uv = px_center / vec2(gl_LaunchSizeEXT.xy);
+
+    const vec4 origin = camera.inv_view * vec4(0.0, 0.0, 0.0, 1.0);
+    const vec4 target = camera.inv_proj * vec4(in_uv * 2.0 - 1.0, 1.0, 1.0);
+    const vec4 dir = camera.inv_view * vec4(normalize(target.xyz), 0.0) ;
+
+    const float tmin = 0.001;
+    const float tmax = 10000.0;
+
+    hit_value = vec3(0.0);
+    traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin.xyz, 0.001, dir.xyz, 10000.0, 0);
+
+    imageStore(out_image, ivec2(gl_LaunchIDEXT.xy), vec4(hit_value, 0.0));
+}

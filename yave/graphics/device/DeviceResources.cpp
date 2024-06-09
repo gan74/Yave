@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/graphics/shaders/SpirVData.h>
 #include <yave/graphics/shaders/ShaderModule.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
+#include <yave/graphics/shaders/ShaderProgram.h>
 #include <yave/graphics/commands/CmdQueue.h>
 #include <yave/graphics/images/ImageData.h>
 #include <yave/material/Material.h>
@@ -45,10 +46,63 @@ SOFTWARE.
 
 namespace yave {
 
+
 using SpirV = DeviceResources::SpirV;
 using ComputePrograms = DeviceResources::ComputePrograms;
 using MaterialTemplates = DeviceResources::MaterialTemplates;
+using RaytracingPrograms = DeviceResources::RaytracingPrograms;
 using Textures = DeviceResources::Textures;
+
+static constexpr const char* spirv_names[] = {
+    "equirec_convolution.comp",
+    "cubemap_convolution.comp",
+    "brdf_integrator.comp",
+    "deferred_locals.comp",
+    "deferred_locals_DEBUG.comp",
+    "linearize_depth.comp",
+    "ssao.comp",
+    "ssao_upsample.comp",
+    "ssao_upsample_COMBINE_HIGH.comp",
+    "copy.comp",
+    "histogram.comp",
+    "exposure_params.comp",
+    "exposure_debug.comp",
+    "depth_bounds.comp",
+    "atmosphere_integrator.comp",
+    "prev_camera.comp",
+    "update_transforms.comp",
+
+    "textured.frag",
+    "textured_ALPHA_TEST.frag",
+    "textured_SPECULAR.frag",
+    "textured_SPECULAR_ALPHA_TEST.frag",
+    "deferred_light_POINT.frag",
+    "deferred_light_SPOT.frag",
+    "deferred_ambient.frag",
+    "atmosphere.frag",
+    "tonemap.frag",
+    "passthrough.frag",
+    "downsample.frag",
+    "bloom_upscale.frag",
+    "bloom_downscale.frag",
+    "blur_HORIZONTAL.frag",
+    "blur_VERTICAL.frag",
+    "wireframe.frag",
+    "taa_resolve.frag",
+    "id.frag",
+
+    "deferred_light_POINT.vert",
+    "deferred_light_SPOT.vert",
+    "basic.vert",
+    "screen.vert",
+    "wireframe.vert",
+
+    "basic.rgen",
+    "basic.rmiss",
+    "basic.rchit",
+};
+
+
 
 struct DeviceMaterialData {
     const SpirV frag;
@@ -76,95 +130,74 @@ struct DeviceMaterialData {
     }
 };
 
+struct DeviceRaytracingData {
+        const SpirV gen;
+        const SpirV miss;
+        const SpirV hit;
+};
+
+
+
+
+
+
 static constexpr DeviceMaterialData material_datas[] = {
-        DeviceMaterialData::basic(SpirV::TexturedFrag),
-        DeviceMaterialData::basic(SpirV::TexturedAlphaFrag),
-        DeviceMaterialData::basic(SpirV::TexturedAlphaFrag, true),
+    DeviceMaterialData::basic(SpirV::TexturedFrag),
+    DeviceMaterialData::basic(SpirV::TexturedAlphaFrag),
+    DeviceMaterialData::basic(SpirV::TexturedAlphaFrag, true),
 
-        DeviceMaterialData::basic(SpirV::TexturedSpecularFrag),
-        DeviceMaterialData::basic(SpirV::TexturedSpecularAlphaFrag),
-        DeviceMaterialData::basic(SpirV::TexturedSpecularAlphaFrag, true),
+    DeviceMaterialData::basic(SpirV::TexturedSpecularFrag),
+    DeviceMaterialData::basic(SpirV::TexturedSpecularAlphaFrag),
+    DeviceMaterialData::basic(SpirV::TexturedSpecularAlphaFrag, true),
 
-        DeviceMaterialData{SpirV::DeferredPointFrag, SpirV::DeferredPointVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
-        DeviceMaterialData{SpirV::DeferredSpotFrag, SpirV::DeferredSpotVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
-        DeviceMaterialData::screen(SpirV::DeferredAmbientFrag, true),
-        DeviceMaterialData::screen(SpirV::AtmosphereFrag, false),
-        DeviceMaterialData::screen(SpirV::ToneMapFrag),
-        DeviceMaterialData::screen(SpirV::PassthroughFrag),
-        DeviceMaterialData::screen(SpirV::PassthroughFrag, true),
-        DeviceMaterialData::screen(SpirV::DownsampleFrag),
-        DeviceMaterialData{SpirV::BloomUpscaleFrag, SpirV::ScreenVert, DepthTestMode::None, BlendMode::SrcAlpha, CullMode::None, false},
-        DeviceMaterialData::screen(SpirV::BloomDownscaleFrag),
-        DeviceMaterialData::screen(SpirV::HBlurFrag, true),
-        DeviceMaterialData::screen(SpirV::VBlurFrag, true),
-        DeviceMaterialData::wire(SpirV::WireFrameFrag),
-        DeviceMaterialData::screen(SpirV::TAAResolveFrag),
-        DeviceMaterialData::basic(SpirV::IdFrag),
-    };
+    DeviceMaterialData{SpirV::DeferredPointFrag, SpirV::DeferredPointVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
+    DeviceMaterialData{SpirV::DeferredSpotFrag, SpirV::DeferredSpotVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
+    DeviceMaterialData::screen(SpirV::DeferredAmbientFrag, true),
+    DeviceMaterialData::screen(SpirV::AtmosphereFrag, false),
+    DeviceMaterialData::screen(SpirV::ToneMapFrag),
+    DeviceMaterialData::screen(SpirV::PassthroughFrag),
+    DeviceMaterialData::screen(SpirV::PassthroughFrag, true),
+    DeviceMaterialData::screen(SpirV::DownsampleFrag),
+    DeviceMaterialData{SpirV::BloomUpscaleFrag, SpirV::ScreenVert, DepthTestMode::None, BlendMode::SrcAlpha, CullMode::None, false},
+    DeviceMaterialData::screen(SpirV::BloomDownscaleFrag),
+    DeviceMaterialData::screen(SpirV::HBlurFrag, true),
+    DeviceMaterialData::screen(SpirV::VBlurFrag, true),
+    DeviceMaterialData::wire(SpirV::WireFrameFrag),
+    DeviceMaterialData::screen(SpirV::TAAResolveFrag),
+    DeviceMaterialData::basic(SpirV::IdFrag),
+};
 
-static constexpr const char* spirv_names[] = {
-        "equirec_convolution.comp",
-        "cubemap_convolution.comp",
-        "brdf_integrator.comp",
-        "deferred_locals.comp",
-        "deferred_locals_DEBUG.comp",
-        "linearize_depth.comp",
-        "ssao.comp",
-        "ssao_upsample.comp",
-        "ssao_upsample_COMBINE_HIGH.comp",
-        "copy.comp",
-        "histogram.comp",
-        "exposure_params.comp",
-        "exposure_debug.comp",
-        "depth_bounds.comp",
-        "atmosphere_integrator.comp",
-        "prev_camera.comp",
-        "update_transforms.comp",
+static constexpr DeviceRaytracingData raytracing_data[] = {
+    {SpirV::BasicRayGen, SpirV::BasicMiss, SpirV::BasicClosestHit},
+};
 
-        "textured.frag",
-        "textured_ALPHA_TEST.frag",
-        "textured_SPECULAR.frag",
-        "textured_SPECULAR_ALPHA_TEST.frag",
-        "deferred_light_POINT.frag",
-        "deferred_light_SPOT.frag",
-        "deferred_ambient.frag",
-        "atmosphere.frag",
-        "tonemap.frag",
-        "passthrough.frag",
-        "downsample.frag",
-        "bloom_upscale.frag",
-        "bloom_downscale.frag",
-        "blur_HORIZONTAL.frag",
-        "blur_VERTICAL.frag",
-        "wireframe.frag",
-        "taa_resolve.frag",
-        "id.frag",
 
-        "deferred_light_POINT.vert",
-        "deferred_light_SPOT.vert",
-        "basic.vert",
-        "screen.vert",
-        "wireframe.vert",
-    };
+
 
 // ABGR
 static constexpr std::array<u32, 6> texture_colors[] = {
-        {0, 0, 0, 0},
-        {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF},
-        {0xFF7F7F7F, 0xFF7F7F7F, 0xFF7F7F7F, 0xFF7F7F7F},
-        {0xFF0000FF, 0xFF0000FF, 0xFF0000FF, 0xFF0000FF},
-        {0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F},
-        {0xFFFFE5A6, 0xFFFFE5A6, 0xFF475163, 0xFF475163}
-    };
+    {0, 0, 0, 0},
+    {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF},
+    {0xFF7F7F7F, 0xFF7F7F7F, 0xFF7F7F7F, 0xFF7F7F7F},
+    {0xFF0000FF, 0xFF0000FF, 0xFF0000FF, 0xFF0000FF},
+    {0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F},
+    {0xFFFFE5A6, 0xFFFFE5A6, 0xFF475163, 0xFF475163}
+};
+
+
+
+
 
 static constexpr usize spirv_count = usize(SpirV::MaxSpirV);
 static constexpr usize compute_count = usize(ComputePrograms::MaxComputePrograms);
 static constexpr usize template_count = usize(MaterialTemplates::MaxMaterialTemplates);
 static constexpr usize texture_count = usize(Textures::MaxTextures);
+static constexpr usize raytracing_count = usize(RaytracingPrograms::MaxRaytracingPrograms);
 
 static_assert(sizeof(spirv_names) / sizeof(spirv_names[0]) == spirv_count);
 static_assert(sizeof(material_datas) / sizeof(material_datas[0]) == template_count);
 static_assert(sizeof(texture_colors) / sizeof(texture_colors[0]) == texture_count);
+static_assert(sizeof(raytracing_data) / sizeof(raytracing_data[0]) == raytracing_count);
 
 // implemented in DeviceResourcesData.cpp
 MeshData cube_mesh_data();
@@ -204,6 +237,8 @@ static Texture create_white_noise(usize size = 256) {
 
 
 
+
+
 DeviceResources::DeviceResources() {
     y_profile();
 
@@ -211,6 +246,10 @@ DeviceResources::DeviceResources() {
     _computes = std::make_unique<ComputeProgram[]>(compute_count);
     _material_templates = std::make_unique<MaterialTemplate[]>(template_count);
     _textures = std::make_unique<AssetPtr<Texture>[]>(texture_count);
+
+    if(raytracing_enabled()) {
+        _raytracing_programs = std::make_unique<RaytracingProgram[]>(raytracing_count);
+    }
 
     const auto set_name = [debug = debug_utils()](auto handle, const char* name) {
         if(debug) {
@@ -239,6 +278,15 @@ DeviceResources::DeviceResources() {
         for(usize i = 0; i != compute_count; ++i) {
             _computes[i] = ComputeProgram(ComputeShader(_spirv[i]));
             set_name(_computes[i].vk_pipeline(), spirv_names[i]);
+        }
+
+        if(_raytracing_programs) {
+            for(usize i = 0; i != raytracing_count; ++i) {
+                const auto& data = raytracing_data[i];
+                _raytracing_programs[i] = RaytracingProgram(
+                    RayGenShader(_spirv[data.gen]), MissShader(_spirv[data.miss]), ClosestHitShader(_spirv[data.hit])
+                );
+            }
         }
     }
 
@@ -333,6 +381,12 @@ const ComputeProgram& DeviceResources::operator[](ComputePrograms i) const {
 const MaterialTemplate* DeviceResources::operator[](MaterialTemplates i) const {
     y_debug_assert(usize(i) < usize(MaxMaterialTemplates));
     return &_material_templates[usize(i)];
+}
+
+const RaytracingProgram& DeviceResources::operator[](RaytracingPrograms i) const {
+    y_debug_assert(_raytracing_programs);
+    y_debug_assert(usize(i) < usize(MaxRaytracingPrograms));
+    return _raytracing_programs[usize(i)];
 }
 
 const AssetPtr<Texture>& DeviceResources::operator[](Textures i) const {

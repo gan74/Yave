@@ -28,17 +28,35 @@ SOFTWARE.
 
 namespace yave {
 
-class ShaderProgram final {
+class ShaderProgramBase : NonCopyable {
+    public:
+        ShaderProgramBase() = default;
+        ShaderProgramBase(ShaderProgramBase&& other);
+        ShaderProgramBase& operator=(ShaderProgramBase&& other);
+
+        core::Span<VkPipelineShaderStageCreateInfo> vk_pipeline_stage_info() const;
+        core::Span<VkDescriptorSetLayout> vk_descriptor_layouts() const;
+
+        void swap(ShaderProgramBase& other);
+
+    protected:
+        ShaderProgramBase(core::Span<const ShaderModuleBase *> shaders);
+
+        core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
+        core::Vector<VkDescriptorSetLayout> _layouts;
+        core::Vector<VkPipelineShaderStageCreateInfo> _stages;
+};
+
+
+
+class ShaderProgram final : public ShaderProgramBase {
 
     public:
         static constexpr u32 per_instance_location = 8;
         static constexpr u32 per_instance_binding = per_instance_location;
 
+        ShaderProgram() = default;
         ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom);
-
-
-        core::Span<VkPipelineShaderStageCreateInfo> vk_pipeline_stage_info() const;
-        core::Span<VkDescriptorSetLayout> vk_descriptor_layouts() const;
 
         // should ALWAYS be sorted by location
         core::Span<VkVertexInputBindingDescription> vk_attribute_bindings() const;
@@ -47,9 +65,6 @@ class ShaderProgram final {
         core::Span<u32> fragment_outputs() const;
 
     private:
-        core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
-        core::Vector<VkDescriptorSetLayout> _layouts;
-        core::Vector<VkPipelineShaderStageCreateInfo> _stages;
         core::Vector<u32> _fragment_outputs;
 
         struct {
@@ -57,6 +72,16 @@ class ShaderProgram final {
             core::Vector<VkVertexInputBindingDescription> bindings;
         } _vertex;
 };
+
+
+class RaytracingProgram final : public ShaderProgramBase {
+    public:
+        RaytracingProgram() = default;
+
+        RaytracingProgram(const RayGenShader& gen, const MissShader& miss, const ClosestHitShader& chit);
+};
+
+
 
 }
 

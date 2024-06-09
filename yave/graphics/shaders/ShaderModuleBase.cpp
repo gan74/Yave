@@ -65,6 +65,12 @@ static ShaderType module_type(const spirv_cross::Compiler& compiler) {
             return ShaderType::Geomery;
         case spv::ExecutionModelGLCompute:
             return ShaderType::Compute;
+        case spv::ExecutionModelRayGenerationKHR:
+            return ShaderType::RayGen;
+        case spv::ExecutionModelMissKHR:
+            return ShaderType::Miss;
+        case spv::ExecutionModelClosestHitKHR:
+            return ShaderType::ClosestHit;
 
         default:
             break;
@@ -208,6 +214,7 @@ ShaderModuleBase::ShaderModuleBase(const SpirVData& data) : _module(create_shade
     merge(_bindings, create_bindings(compiler, resources.storage_buffers, _type, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER));
     merge(_bindings, create_bindings(compiler, resources.sampled_images, _type, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER));
     merge(_bindings, create_bindings(compiler, resources.storage_images, _type, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE));
+    merge(_bindings, create_bindings(compiler, resources.acceleration_structures, _type, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR));
 
     _variable_size_bindings = find_variable_size_bindings(compiler, resources.sampled_images);
 
