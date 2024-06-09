@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "AccelerationStructure.h"
+#include "yave/graphics/device/deviceutils.h"
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
@@ -28,18 +29,6 @@ SOFTWARE.
 
 
 namespace yave {
-
-static VkDeviceOrHostAddressConstKHR buffer_device_address(const SubBufferBase& buffer) {
-    VkBufferDeviceAddressInfo info = vk_struct();
-    info.buffer = buffer.vk_buffer();
-
-    VkDeviceOrHostAddressConstKHR addr = {};
-    addr.deviceAddress = vkGetBufferDeviceAddress(vk_device(), &info) + buffer.byte_offset();
-
-    return addr;
-}
-
-
 
 static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::AccelStructureBit>> create_acceleration_structure(
         core::Span<VkAccelerationStructureGeometryKHR> geometries,
@@ -67,7 +56,7 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
     Buffer<BufferUsage::AccelStructureBit> buffer(size_infos.accelerationStructureSize);
     Buffer<BufferUsage::StorageBit> scratch(size_infos.buildScratchSize);
 
-    build_info.scratchData.deviceAddress = buffer_device_address(SubBuffer(scratch)).deviceAddress;
+    build_info.scratchData.deviceAddress = vk_buffer_device_address(SubBuffer(scratch));
 
     VkAccelerationStructureCreateInfoKHR create_info = vk_struct();
     {
@@ -107,11 +96,11 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
 
         triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
         triangles.vertexStride = sizeof(math::Vec3);
-        triangles.vertexData = buffer_device_address(position_buffer);
+        triangles.vertexData.deviceAddress = vk_buffer_device_address(position_buffer);
         triangles.maxVertex = u32(mesh_buffers.vertex_count());
 
         triangles.indexType = VK_INDEX_TYPE_UINT32;
-        triangles.indexData = buffer_device_address(mesh_buffers.triangle_buffer());
+        triangles.indexData.deviceAddress = vk_buffer_device_address(mesh_buffers.triangle_buffer());
     }
 
     VkAccelerationStructureGeometryKHR geometry = vk_struct();
@@ -144,7 +133,7 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
 
     VkAccelerationStructureGeometryInstancesDataKHR geo_instances = vk_struct();
     {
-        geo_instances.data = buffer_device_address(SubBuffer(instance_buffer));
+        geo_instances.data.deviceAddress = vk_buffer_device_address(SubBuffer(instance_buffer));
     }
 
     VkAccelerationStructureGeometryKHR geometry = vk_struct();

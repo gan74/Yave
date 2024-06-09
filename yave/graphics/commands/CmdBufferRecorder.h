@@ -142,6 +142,8 @@ class CmdBufferRecorderBase : NonMovable {
         void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
         void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
 
+        void raytrace(const RaytracingProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+
         TimelineFence submit();
         void submit_async();
 
@@ -204,9 +206,12 @@ class CmdBufferRecorder final : public ComputeCapableCmdBufferRecorder {
     friend class CmdQueue; // Needed for present
 
     public:
+        using CmdBufferRecorderBase::raytrace;
+
         RenderPassRecorder bind_framebuffer(const Framebuffer& framebuffer);
 
         void execute(CmdBufferRecorder&& other);
+
 };
 
 static_assert(sizeof(ComputeCapableCmdBufferRecorder) == sizeof(CmdBufferRecorderBase));

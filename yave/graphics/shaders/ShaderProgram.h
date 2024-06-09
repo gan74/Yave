@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "ShaderModule.h"
 
+#include <yave/graphics/buffers/Buffer.h>
+
 #include <y/core/HashMap.h>
 
 namespace yave {
@@ -86,9 +88,12 @@ class RaytracingProgram final : public ShaderProgramBase {
         VkPipeline vk_pipeline() const;
         VkPipelineLayout vk_pipeline_layout() const;
 
+        std::array<VkStridedDeviceAddressRegionKHR, 4> vk_binding_tables() const;
+
     private:
         VkHandle<VkPipelineLayout> _layout;
         VkHandle<VkPipeline> _pipeline;
+        Buffer<BufferUsage::BindingTableBit, MemoryType::CpuVisible> _binding_tables;
 };
 
 

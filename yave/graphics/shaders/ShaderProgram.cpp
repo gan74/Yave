@@ -21,12 +21,15 @@ SOFTWARE.
 **********************************/
 
 #include "ShaderProgram.h"
+#include "yave/graphics/device/deviceutils.h"
 
 #include <yave/graphics/graphics.h>
+#include <yave/graphics/device/DeviceProperties.h>
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 #include <yave/graphics/images/TextureLibrary.h>
 
 #include <y/core/ScratchPad.h>
+
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
@@ -297,6 +300,25 @@ RaytracingProgram::RaytracingProgram(const RayGenShader& gen, const MissShader& 
     }
 
     vk_check(vkCreateRayTracingPipelinesKHR(vk_device(), nullptr, nullptr, 1, &create_info, nullptr, _pipeline.get_ptr_for_init()));
+
+    const u32 group_size = u32(groups.size());
+    const u32 table_size = device_properties().shader_group_handle_size_aligned * group_size;
+
+    core::ScratchPad<u8> table_data(table_size);
+    vk_check(vkGetRayTracingShaderGroupHandlesKHR(vk_device(), _pipeline, 0, group_size, table_size, table_data.data()));
+
+    _binding_tables = Buffer<BufferUsage::BindingTableBit, MemoryType::CpuVisible>(device_properties().shader_group_handle_size_base_aligned * group_size);
+    {
+        auto mapping = _binding_tables.map_bytes(MappingAccess::WriteOnly);
+
+        for(u32 i = 0; i != group_size; ++i) {
+            std::copy_n(
+                table_data.data() + i * device_properties().shader_group_handle_size_aligned,
+                device_properties().shader_group_handle_size,
+                mapping.data() + i * device_properties().shader_group_handle_size_base_aligned
+            );
+        }
+    }
 }
 
 RaytracingProgram::~RaytracingProgram() {
@@ -310,6 +332,21 @@ VkPipeline RaytracingProgram::vk_pipeline() const {
 
 VkPipelineLayout RaytracingProgram::vk_pipeline_layout() const {
     return _layout;
+}
+
+
+std::array<VkStridedDeviceAddressRegionKHR, 4> RaytracingProgram::vk_binding_tables() const {
+    const VkDeviceAddress base_addr = vk_buffer_device_address(SubBuffer(_binding_tables));
+    const u32 table_aligned_size = device_properties().shader_group_handle_size_base_aligned;
+
+    std::array<VkStridedDeviceAddressRegionKHR, 4> tables = {};
+    for(usize i = 0; i != 3; ++i) {
+        tables[i].deviceAddress = base_addr + (i * table_aligned_size);
+        tables[i].size = table_aligned_size;
+        tables[i].stride = table_aligned_size;
+    }
+
+    return tables;
 }
 
 

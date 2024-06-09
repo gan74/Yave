@@ -25,6 +25,8 @@ SOFTWARE.
 #include "Instance.h"
 #include "PhysicalDevice.h"
 
+#include <yave/graphics/buffers/Buffer.h>
+
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
@@ -117,6 +119,13 @@ VkSamplerMipmapMode vk_mip_filter(SamplerType type) {
     }
 }
 
+VkDeviceAddress vk_buffer_device_address(const SubBufferBase& buffer) {
+    VkBufferDeviceAddressInfo info = vk_struct();
+    info.buffer = buffer.vk_buffer();
+
+    return vkGetBufferDeviceAddress(vk_device(), &info) + buffer.byte_offset();
+}
+
 VkHandle<VkSampler> create_sampler(SamplerType type) {
 
     VkSamplerCreateInfo create_info = vk_struct();
@@ -144,6 +153,8 @@ VkHandle<VkSampler> create_sampler(SamplerType type) {
     vk_check(vkCreateSampler(vk_device(), &create_info, vk_allocation_callbacks(), sampler.get_ptr_for_init()));
     return sampler;
 }
+
+
 
 core::Vector<VkQueueFamilyProperties> enumerate_family_properties(VkPhysicalDevice device) {
     core::Vector<VkQueueFamilyProperties> families;

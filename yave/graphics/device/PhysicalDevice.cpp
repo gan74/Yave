@@ -23,6 +23,7 @@ SOFTWARE.
 #include "PhysicalDevice.h"
 #include "deviceutils.h"
 
+#include <y/utils/memory.h>
 
 namespace yave {
 
@@ -86,6 +87,12 @@ DeviceProperties PhysicalDevice::device_properties() const {
     properties.timestamp_period = limits.timestampPeriod;
 
     properties.has_raytracing = supports_raytracing();
+
+    if(properties.has_raytracing) {
+        properties.shader_group_handle_size = _raytracing_properties.shaderGroupHandleSize;
+        properties.shader_group_handle_size_aligned = align_up_to(_raytracing_properties.shaderGroupHandleSize, _raytracing_properties.shaderGroupHandleAlignment);
+        properties.shader_group_handle_size_base_aligned = align_up_to(_raytracing_properties.shaderGroupHandleSize, _raytracing_properties.shaderGroupBaseAlignment);
+    }
 
     return properties;
 }

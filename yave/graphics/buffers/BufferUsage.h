@@ -41,6 +41,7 @@ enum class BufferUsage : u32 {
 
     AccelStructureInputBit      = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
     AccelStructureBit           = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
+    BindingTableBit             = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR,
 };
 
 constexpr BufferUsage operator|(BufferUsage a, BufferUsage b) {

@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_RENDERER_DEFAULTRENDERER_H
 
 #include "LightingPass.h"
+#include "RaytracingPass.h"
 #include "AtmospherePass.h"
 #include "ExposurePass.h"
 #include "ToneMappingPass.h"
@@ -52,6 +53,7 @@ struct DefaultRenderer {
     SSAOPass ssao;
     TAAPass taa;
 
+    RaytracingPass raytrace;
 
     FrameGraphImageId final;
     FrameGraphImageId depth;

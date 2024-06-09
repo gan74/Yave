@@ -43,7 +43,12 @@ struct DeviceProperties {
 
     float timestamp_period;
 
+
     bool has_raytracing;
+
+    u32 shader_group_handle_size;
+    u32 shader_group_handle_size_aligned;
+    u32 shader_group_handle_size_base_aligned;
 };
 
 }

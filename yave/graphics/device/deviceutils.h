@@ -40,7 +40,10 @@ VkSamplerAddressMode vk_address_mode(SamplerType type);
 VkFilter vk_filter(SamplerType type);
 VkSamplerMipmapMode vk_mip_filter(SamplerType type);
 
+VkDeviceAddress vk_buffer_device_address(const SubBufferBase& buffer);
+
 VkHandle<VkSampler> create_sampler(SamplerType type);
+
 
 core::Vector<VkQueueFamilyProperties> enumerate_family_properties(VkPhysicalDevice device);
 u32 queue_family_index(core::Span<VkQueueFamilyProperties> families, VkQueueFlags flags);
@@ -58,6 +61,8 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2();
 VkPhysicalDeviceVulkan13Features required_device_features_1_3();
 VkPhysicalDeviceAccelerationStructureFeaturesKHR required_device_features_accel_struct();
 VkPhysicalDeviceRayTracingPipelineFeaturesKHR required_device_features_raytracing_pipeline();
+
+
 
 bool has_required_features(const PhysicalDevice& physical);
 bool has_required_properties(const PhysicalDevice &physical);
