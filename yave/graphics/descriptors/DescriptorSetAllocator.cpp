@@ -37,11 +37,17 @@ SOFTWARE.
 namespace yave {
 
 static constexpr usize inline_block_index = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 1;
+static constexpr usize accel_struct_index = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 2;
 
 static usize descriptor_type_index(VkDescriptorType type) {
-    if(type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
+    if(Descriptor::is_inline_block(type)) {
         static_assert(inline_block_index < DescriptorSetLayout::descriptor_type_count);
         return inline_block_index;
+    }
+
+    if(Descriptor::is_acceleration_structure(type)) {
+        static_assert(accel_struct_index < DescriptorSetLayout::descriptor_type_count);
+        return accel_struct_index;
     }
 
     y_debug_assert(usize(type) < DescriptorSetLayout::descriptor_type_count);
@@ -50,9 +56,15 @@ static usize descriptor_type_index(VkDescriptorType type) {
 
 static VkDescriptorType index_descriptor_type(usize index) {
     y_debug_assert(index <  DescriptorSetLayout::descriptor_type_count);
+
     if(index == inline_block_index) {
         return VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
     }
+
+    if(index == accel_struct_index) {
+        return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    }
+
     return VkDescriptorType(index);
 }
 
@@ -90,8 +102,10 @@ DescriptorSetLayout::DescriptorSetLayout(core::Span<VkDescriptorSetLayoutBinding
     bindings = patched_bindings;
 
     for(const auto& b : bindings) {
-        if(b.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
+        if(Descriptor::is_inline_block(b.descriptorType)) {
             ++_inline_blocks;
+        } else if(Descriptor::is_acceleration_structure(b.descriptorType)) {
+            ++_accel_structures;
         }
         _sizes[descriptor_type_index(b.descriptorType)] += b.descriptorCount;
     }
@@ -122,6 +136,10 @@ core::Span<DescriptorSetLayout::InlineBlock> DescriptorSetLayout::inline_blocks_
 
 usize DescriptorSetLayout::inline_blocks() const {
     return _inline_blocks;
+}
+
+usize DescriptorSetLayout::acceleration_structures() const {
+    return _accel_structures;
 }
 
 VkDescriptorSetLayout DescriptorSetLayout::vk_descriptor_set_layout() const {
@@ -170,9 +188,10 @@ static VkHandle<VkDescriptorPool> create_descriptor_pool(const DescriptorSetLayo
 }
 
 DescriptorSetPool::DescriptorSetPool(const DescriptorSetLayout& layout) :
-    _pool(create_descriptor_pool(layout, pool_size)),
-    _layout(layout.vk_descriptor_set_layout()),
-    _inline_blocks(layout.inline_blocks()) {
+        _pool(create_descriptor_pool(layout, pool_size)),
+        _layout(layout.vk_descriptor_set_layout()),
+        _inline_blocks(layout.inline_blocks()),
+        _accel_structures(layout.acceleration_structures()) {
 
     std::array<VkDescriptorSetLayout, pool_size> layouts;
     std::fill_n(layouts.begin(), pool_size, _layout);
@@ -217,6 +236,7 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
     const usize descriptor_count = descriptors.size();
 
     core::ScratchVector<VkWriteDescriptorSetInlineUniformBlock> inline_blocks(_inline_blocks ? descriptor_count : 0);
+    core::ScratchVector<VkWriteDescriptorSetAccelerationStructureKHR> accel_structs(_accel_structures);
     core::ScratchVector<VkDescriptorBufferInfo> inline_blocks_buffer_infos(!_inline_buffer.is_null() ? descriptor_count : 0);
 
     usize inline_buffer_offset = 0;
@@ -238,7 +258,6 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
         } else if(desc.is_image()) {
             write.pImageInfo = &desc.descriptor_info().image;
         } else if(desc.is_inline_block()) {
-
             const Descriptor::InlineBlock block = desc.descriptor_info().inline_block;
             if(!inline_uniform_supported || block.size > max_inline_uniform_size) {
                 const usize aligned_block_size = align_up_to(block.size, block_buffer_alignment);
@@ -261,6 +280,11 @@ void DescriptorSetPool::update_set(u32 id, core::Span<Descriptor> descriptors) {
                 write.pNext = &inline_block;
                 y_debug_assert(inline_block.dataSize % 4 == 0);
             }
+        } else if(desc.is_acceleration_structure()) {
+            VkWriteDescriptorSetAccelerationStructureKHR& astr = accel_structs.emplace_back(VkWriteDescriptorSetAccelerationStructureKHR(vk_struct()));
+            astr.accelerationStructureCount = 1;
+            astr.pAccelerationStructures = &desc.descriptor_info().accel;
+            write.pNext = &astr;
         } else {
             y_fatal("Unknown descriptor type");
         }

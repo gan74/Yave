@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include <yave/scene/SceneView.h>
 #include <yave/graphics/device/MeshAllocator.h>
+#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 
@@ -278,6 +279,9 @@ class RaytracingDebug : public Widget {
     protected:
         void on_gui() override {
             TLAS tlas = current_scene().create_tlas();
+
+            const std::array descriptors = {Descriptor(tlas)};
+            const DescriptorSet set(descriptors);
 
             ImGui::Text("TLAS size = %uKB", u32(tlas.buffer().byte_size() / 1024));
         }

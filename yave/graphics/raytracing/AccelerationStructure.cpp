@@ -174,7 +174,7 @@ bool AccelerationStructure::is_null() const {
     return _acc_struct.is_null();
 }
 
-VkAccelerationStructureKHR AccelerationStructure::vk_acc_struct() const {
+VkAccelerationStructureKHR AccelerationStructure::vk_accel_struct() const {
     return _acc_struct.get();
 }
 
@@ -200,7 +200,7 @@ BLASInstance TLAS::make_instance(const math::Transform<>& tr, const BLAS& blas) 
         instance.mask = 0xFF;
 
         VkAccelerationStructureDeviceAddressInfoKHR addr_info = vk_struct();
-        addr_info.accelerationStructure = blas.vk_acc_struct();
+        addr_info.accelerationStructure = blas.vk_accel_struct();
         instance.accelerationStructureReference = vkGetAccelerationStructureDeviceAddressKHR(vk_device(), &addr_info);
 
         const math::Matrix<4, 3> mat = tr.matrix().to<4, 3>();

@@ -50,7 +50,7 @@ namespace yave {
 
 class DescriptorSetLayout {
     public:
-        static constexpr usize descriptor_type_count = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 2;
+        static constexpr usize descriptor_type_count = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT + 3;
 
         struct InlineBlock {
             u32 binding;
@@ -71,6 +71,7 @@ class DescriptorSetLayout {
 
         core::Span<InlineBlock> inline_blocks_fallbacks() const;
         usize inline_blocks() const;
+        usize acceleration_structures() const;
 
         VkDescriptorSetLayout vk_descriptor_set_layout() const;
 
@@ -79,6 +80,7 @@ class DescriptorSetLayout {
         std::array<u32, descriptor_type_count> _sizes = {};
 
         usize _inline_blocks = 0;
+        usize _accel_structures = 0;
         core::Vector<InlineBlock> _inline_blocks_fallbacks;
 };
 
@@ -118,6 +120,7 @@ class DescriptorSetPool : NonMovable {
         NotOwner<VkDescriptorSetLayout> _layout;
 
         usize _inline_blocks = 0;
+        usize _accel_structures = 0;
         u64 _descriptor_buffer_size = 0;
         Buffer<BufferUsage::UniformBit, MemoryType::CpuVisible> _inline_buffer;
 };

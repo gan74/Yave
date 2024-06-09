@@ -26,6 +26,7 @@ SOFTWARE.
 #include <yave/graphics/images/SamplerType.h>
 #include <yave/graphics/images/ImageView.h>
 #include <yave/graphics/buffers/Buffer.h>
+#include <yave/graphics/raytracing/AccelerationStructure.h>
 
 #include <y/core/Span.h>
 
@@ -85,12 +86,16 @@ class Descriptor {
         union DescriptorInfo {
             VkDescriptorImageInfo image;
             VkDescriptorBufferInfo buffer;
+            VkAccelerationStructureKHR accel;
             InlineBlock inline_block;
 
             DescriptorInfo(VkDescriptorImageInfo i) : image(i) {
             }
 
             DescriptorInfo(VkDescriptorBufferInfo b) : buffer(b) {
+            }
+
+            DescriptorInfo(VkAccelerationStructureKHR a) : accel(a) {
             }
 
             DescriptorInfo(const void* data, usize size) : inline_block({data, size}) {
@@ -133,6 +138,11 @@ class Descriptor {
                 Descriptor(SubBuffer<(Usage & BufferUsage::StorageBit) != BufferUsage::None ? BufferUsage::StorageBit : BufferUsage::UniformBit>(buffer)) {
         }
 
+        Descriptor(const TLAS& tlas) :
+                _type(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR),
+                _info(tlas.vk_accel_struct()) {
+        }
+
         Descriptor(InlineDescriptor inline_block) : Descriptor(inline_block.data(), inline_block.size()) {
         }
 
@@ -140,6 +150,7 @@ class Descriptor {
                 _type(VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK),
                 _info(data, size) {
         }
+
 
 
         VkDescriptorSetLayoutBinding descriptor_set_layout_binding(u32 index) const {
@@ -175,6 +186,10 @@ class Descriptor {
             return is_inline_block(_type);
         }
 
+        bool is_acceleration_structure() const {
+            return is_acceleration_structure(_type);
+        }
+
         static bool is_buffer(VkDescriptorType type) {
             switch(type) {
                 case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
@@ -204,14 +219,13 @@ class Descriptor {
         }
 
         static bool is_inline_block(VkDescriptorType type) {
-            switch(type) {
-                case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
-                    return true;
-                default:
-                    break;
-            }
-            return false;
+            return type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
         }
+
+        static bool is_acceleration_structure(VkDescriptorType type) {
+            return type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        }
+
     private:
         VkDescriptorType _type;
         DescriptorInfo _info;

@@ -42,7 +42,7 @@ class AccelerationStructure {
 
         SubBuffer<BufferUsage::AccelStructureBit> buffer() const;
 
-        VkAccelerationStructureKHR vk_acc_struct() const;
+        VkAccelerationStructureKHR vk_accel_struct() const;
 
     protected:
         VkHandle<VkAccelerationStructureKHR> _acc_struct;
