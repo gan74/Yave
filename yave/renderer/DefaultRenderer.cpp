@@ -31,14 +31,13 @@ namespace yave {
 DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& scene_view, const math::Vec2ui& size, const RendererSettings& settings) {
     y_profile();
 
-
     DefaultRenderer renderer;
 
     renderer.visibility     = SceneVisibilitySubPass::create(scene_view);
     renderer.camera         = CameraBufferPass::create(framegraph, scene_view, size, settings.taa);
     renderer.gbuffer        = GBufferPass::create(framegraph, renderer.camera, renderer.visibility, size);
-    renderer.ssao           = SSAOPass::create(framegraph, renderer.gbuffer, settings.ssao);
-    renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ssao.ao, settings.lighting);
+    renderer.ao             = AOPass::create(framegraph, renderer.gbuffer, settings.ao);
+    renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ao.ao, settings.lighting);
     renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.lighting.lit);
 
     renderer.taa            = TAAPass::create(framegraph, renderer.camera, renderer.atmosphere.lit, renderer.gbuffer.depth, renderer.gbuffer.motion);
@@ -49,13 +48,6 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
 
     renderer.final = renderer.tone_mapping.tone_mapped;
     renderer.depth = renderer.gbuffer.depth;
-
-
-    if(raytracing_enabled()) {
-        renderer.rtao   = RTAOPass::create(framegraph, renderer.gbuffer, size);
-
-        renderer.final = renderer.rtao.ao;
-    }
 
     return renderer;
 }

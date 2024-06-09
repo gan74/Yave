@@ -19,21 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_RAYTRACINGPASS_H
-#define YAVE_RENDERER_RAYTRACINGPASS_H
+#ifndef YAVE_RENDERER_AOPASS_H
+#define YAVE_RENDERER_AOPASS_H
 
-#include <yave/framegraph/FrameGraphResourceId.h>
+#include "GBufferPass.h"
+
+#include <y/core/Vector.h>
 
 namespace yave {
 
-struct RTAOPass {
+struct AOSettings {
+    enum class AOMethod {
+        MiniEngine,
+        RTAO,
+
+        None,
+    };
+
+    AOMethod method = AOMethod::RTAO;
+
+    struct {
+        usize level_count = 2;
+        float blur_tolerance = 4.6f;
+        float upsample_tolerance = 12.0f;
+        float noise_filter_tolerance = 0.0f;
+    } mini_engine;
+};
+
+struct AOPass {
     FrameGraphImageId ao;
 
-    static RTAOPass create(FrameGraph& framegraph, const GBufferPass &gbuffer, const math::Vec2ui& size);
+    static AOPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const AOSettings& settings = AOSettings());
 };
+
 
 }
 
-
-#endif // YAVE_RENDERER_RAYTRACINGPASS_H
+#endif // YAVE_RENDERER_AOPASS_H
 

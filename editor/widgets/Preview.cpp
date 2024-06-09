@@ -172,7 +172,7 @@ void Preview::on_gui() {
     UiTexture output;
     {
         RendererSettings settings;
-        settings.ssao.method = SSAOSettings::SSAOMethod::None;
+        settings.ao.method = AOSettings::AOMethod::None;
         settings.tone_mapping.exposure = 2.0f;
 
         FrameGraph graph(_resource_pool);

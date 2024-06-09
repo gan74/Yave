@@ -168,6 +168,7 @@ Frustum Camera::frustum() const {
 
 Camera::operator shader::Camera() const {
     shader::Camera camera_data = {};
+
     camera_data.view_proj = view_proj_matrix();
     camera_data.inv_view_proj = inverse_matrix();
 

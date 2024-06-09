@@ -26,17 +26,16 @@ SOFTWARE.
 #include "AtmospherePass.h"
 #include "ExposurePass.h"
 #include "ToneMappingPass.h"
-#include "SSAOPass.h"
+#include "AOPass.h"
 #include "BloomPass.h"
 #include "TAAPass.h"
-#include "RTAOPass.h"
 
 namespace yave {
 
 struct RendererSettings {
     ToneMappingSettings tone_mapping;
     LightingSettings lighting;
-    SSAOSettings ssao;
+    AOSettings ao;
     BloomSettings bloom;
     TAASettings taa;
 };
@@ -50,10 +49,9 @@ struct DefaultRenderer {
     ExposurePass exposure;
     BloomPass bloom;
     ToneMappingPass tone_mapping;
-    SSAOPass ssao;
+    AOPass ao;
     TAAPass taa;
 
-    RTAOPass rtao;
 
     FrameGraphImageId final;
     FrameGraphImageId depth;

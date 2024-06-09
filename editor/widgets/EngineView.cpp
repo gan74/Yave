@@ -182,7 +182,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.motion);
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
-        builder.add_uniform_input_with_default(renderer.renderer.ssao.ao, Descriptor(white));
+        builder.add_uniform_input_with_default(renderer.renderer.ao.ao, Descriptor(white));
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             {
                 auto render_pass = recorder.bind_framebuffer(self->framebuffer());
@@ -491,27 +491,28 @@ void EngineView::draw_settings_menu() {
         ImGui::EndMenu();
     }
 
-    if(ImGui::BeginMenu("SSAO")) {
-        SSAOSettings& settings = _settings.renderer_settings.ssao;
+    if(ImGui::BeginMenu("AO")) {
+        AOSettings& settings = _settings.renderer_settings.ao;
 
-        const char* methods[] = {"MiniEngine", "None"};
-        if(ImGui::BeginCombo("SSAO", methods[usize(settings.method)])) {
+        const char* methods[] = {"MiniEngine", "RTAO", "None"};
+        if(ImGui::BeginCombo("Method", methods[usize(settings.method)])) {
             for(usize i = 0; i != sizeof(methods) / sizeof(methods[0]); ++i) {
                 const bool selected = usize(settings.method) == i;
                 if(ImGui::Selectable(methods[i], selected)) {
-                    settings.method = SSAOSettings::SSAOMethod(i);
+                    settings.method = AOSettings::AOMethod(i);
                 }
             }
             ImGui::EndCombo();
         }
 
-        int levels = int(settings.level_count);
-        ImGui::SliderInt("Levels", &levels, 2, 8);
-        ImGui::SliderFloat("Blur tolerance", &settings.blur_tolerance, 1.0f, 8.0f);
-        ImGui::SliderFloat("Upsample tolerance", &settings.upsample_tolerance, 1.0f, 12.0f);
-        ImGui::SliderFloat("Noise filter", &settings.noise_filter_tolerance, 0.0f, 8.0f);
-
-        settings.level_count = levels;
+        if(ImGui::CollapsingHeader("MiniEngine")) {
+            int levels = int(settings.mini_engine.level_count);
+            ImGui::SliderInt("Levels", &levels, 2, 8);
+            ImGui::SliderFloat("Blur tolerance", &settings.mini_engine.blur_tolerance, 1.0f, 8.0f);
+            ImGui::SliderFloat("Upsample tolerance", &settings.mini_engine.upsample_tolerance, 1.0f, 12.0f);
+            ImGui::SliderFloat("Noise filter", &settings.mini_engine.noise_filter_tolerance, 0.0f, 8.0f);
+            settings.mini_engine.level_count = levels;
+        }
 
         ImGui::EndMenu();
     }

@@ -56,7 +56,7 @@ class EngineView final : public Widget {
             Depth,
             Motion,
 
-            SSAO,
+            AO,
 
             Max,
         };
