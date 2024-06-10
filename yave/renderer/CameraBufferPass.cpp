@@ -73,11 +73,8 @@ CameraBufferPass CameraBufferPass::create(FrameGraph& framegraph, const SceneVie
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Camera buffer pass");
 
-    shader::Camera camera_data = jittered_view.camera();
-    camera_data.jitter_id = u32(jitter_index);
-
     const auto camera = builder.declare_typed_buffer<shader::Camera>();
-    builder.map_buffer(camera, camera_data);
+    builder.map_buffer(camera, shader::Camera(jittered_view.camera()));
 
     builder.add_input_usage(camera, BufferUsage::UniformBit);
 

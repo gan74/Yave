@@ -505,13 +505,14 @@ void EngineView::draw_settings_menu() {
             ImGui::EndCombo();
         }
 
-        if(ImGui::CollapsingHeader("MiniEngine")) {
+        if(ImGui::BeginMenu("MiniEngine")) {
             int levels = int(settings.mini_engine.level_count);
             ImGui::SliderInt("Levels", &levels, 2, 8);
             ImGui::SliderFloat("Blur tolerance", &settings.mini_engine.blur_tolerance, 1.0f, 8.0f);
             ImGui::SliderFloat("Upsample tolerance", &settings.mini_engine.upsample_tolerance, 1.0f, 12.0f);
             ImGui::SliderFloat("Noise filter", &settings.mini_engine.noise_filter_tolerance, 0.0f, 8.0f);
             settings.mini_engine.level_count = levels;
+            ImGui::EndMenu();
         }
 
         ImGui::EndMenu();

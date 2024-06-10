@@ -30,5 +30,6 @@ void main() {
     }
 
     out_color = samples[index];
+    out_color = samples[0];
 }
 

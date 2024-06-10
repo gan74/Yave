@@ -16,7 +16,7 @@ struct Camera {
     mat4 inv_view;
 
     vec3 position;
-    uint jitter_id;
+    uint padding_0;
 
     vec3 forward;
     uint padding_1;

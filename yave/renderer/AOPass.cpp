@@ -30,6 +30,8 @@ SOFTWARE.
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/device/DeviceResources.h>
 
+#include <y/math/random.h>
+
 namespace yave {
 
 struct MiniAOParams {
@@ -188,10 +190,37 @@ static FrameGraphImageId compute_mini_ao(FrameGraph& framegraph, FrameGraphImage
     return ao;
 }
 
-static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size) {
+
+
+static auto generate_sample_dirs(u64 seed) {
+    y_profile();
+
+    std::array<math::Vec4, 256> dirs;
+    const float golden = (1.0f + std::sqrt(5.0f)) * 0.5f;
+    for(usize i = 0; i != dirs.size(); ++i) {
+        const float wrapped_index = float((i + usize(seed)) % dirs.size());
+
+        const float theta = 2.0f * math::pi<float> * wrapped_index * golden;
+        const float phi = std::acos(1.0f - 2.0f * wrapped_index / float(dirs.size()));
+        dirs[i] = math::Vec4(math::Vec2(std::cos(theta), std::sin(theta)) * std::sin(phi), std::cos(phi), 0.0f);
+    }
+
+    std::shuffle(dirs.begin(), dirs.end(), math::FastRandom(seed));
+
+    return dirs;
+}
+
+static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass& gbuffer) {
+    const std::array sample_dirs = generate_sample_dirs(framegraph.frame_id());
+
+    const math::Vec2ui size = framegraph.image_size(gbuffer.depth) / 2;
+
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("RTAO pass");
 
     const auto ao = builder.declare_image(VK_FORMAT_R8_UNORM, size);
+    const auto sample_dir_buffer = builder.declare_typed_buffer<std::remove_cvref_t<decltype(sample_dirs)>>();
+
+    builder.map_buffer(sample_dir_buffer, sample_dirs);
 
     const auto tlas = gbuffer.scene_pass.scene_view.scene()->create_tlas();
 
@@ -199,6 +228,7 @@ static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass&
     builder.add_uniform_input(gbuffer.depth);
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
+    builder.add_uniform_input(sample_dir_buffer);
     builder.add_descriptor_binding(Descriptor(tlas));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         recorder.dispatch_size(device_resources()[DeviceResources::RTAOProgram], size, self->descriptor_sets());
@@ -212,12 +242,12 @@ static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass&
 AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const AOSettings& settings) {
     const auto region = framegraph.region("AO");
 
-    const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
     FrameGraphImageId ao;
     switch(settings.method) {
         case AOSettings::AOMethod::MiniEngine: {
             y_always_assert(settings.mini_engine.level_count > 1, "AOSettings::level_count needs to be at least 2");
+            const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
             const FrameGraphImageId linear_depth = compute_linear_depth(framegraph, gbuffer, size);
             const DownsamplePass downsample = DownsamplePass::create(framegraph, linear_depth, settings.mini_engine.level_count, DownsamplePass::Filter::Average, true);
             const float tan_half_fov = compute_tan_half_fov(gbuffer);
@@ -230,7 +260,7 @@ AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const 
 
         case yave::AOSettings::AOMethod::RTAO: {
             if(raytracing_enabled()) {
-                ao = compute_rtao(framegraph, gbuffer, size);
+                ao = compute_rtao(framegraph, gbuffer);
             }
         } break;
 
