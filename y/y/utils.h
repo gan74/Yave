@@ -27,8 +27,11 @@ SOFTWARE.
 #include <y/utils/types.h>
 
 
-#define y_defer_named(expr, name)   auto y_create_name_with_prefix(defer_ ## name) = y::ScopeGuard([&]() { expr; })
-#define y_defer(expr)               auto y_create_name_with_prefix(defer)          = y::ScopeGuard([&]() { expr; })
+#define y_defer_named(expr, name)   auto y_create_name_with_prefix(defer_ ## name) = y::ScopeGuard([&] { expr; })
+#define y_defer(expr)               auto y_create_name_with_prefix(defer)          = y::ScopeGuard([&] { expr; })
+
+#define y_only_once(expr)           y::only_once([&] { expr; })
+
 
 namespace y {
 
@@ -75,19 +78,10 @@ inline consteval auto force_ct() {
 // https://stackoverflow.com/a/57453713/3496382
 
 template<typename T>
-class ScopeGuard {
+class ScopeGuard : NonMovable {
     public:
         inline ScopeGuard(T&& t) : _ex(y_fwd(t)) {
         }
-
-        inline ScopeGuard(ScopeGuard&& other) : _ex(std::move(other._ex)) {
-        }
-
-        inline ScopeGuard& operator=(ScopeGuard&& other) {
-            std::swap(_ex, other.ex);
-            return *this;
-        }
-
 
         inline ~ScopeGuard() {
             _ex();
@@ -96,6 +90,15 @@ class ScopeGuard {
     private:
         T _ex;
 };
+
+template<typename F>
+inline void only_once(F&& f) {
+    static bool done_once = false;
+    if(!done_once) {
+        done_once = true;
+        f();
+    }
+}
 
 }
 

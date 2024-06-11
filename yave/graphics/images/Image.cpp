@@ -33,10 +33,6 @@ SOFTWARE.
 
 namespace yave {
 
-static void bind_image_memory(VkImage image, const DeviceMemory& memory) {
-    vk_check(vkBindImageMemory(vk_device(), image, memory.vk_memory(), memory.vk_offset()));
-}
-
 static VkHandle<VkImage> create_image(const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
     y_debug_assert(usage != ImageUsage::TransferDstBit);
 
@@ -121,7 +117,8 @@ static std::tuple<VkHandle<VkImage>, DeviceMemory, VkHandle<VkImageView>> alloc_
 
     auto image = create_image(size, layers, mips, format, usage, type);
     auto memory = device_allocator().alloc(image, alloc_flags);
-    bind_image_memory(image, memory);
+
+    vk_check(vkBindImageMemory(vk_device(), image, memory.vk_memory(), memory.vk_offset()));
 
     return {std::move(image), std::move(memory), create_view(image, format, layers, mips, type)};
 }
