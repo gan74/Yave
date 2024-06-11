@@ -4,3 +4,6 @@
 [submodule "external/tracy"]
 	path = external/tracy
 	url = https://github.com/wolfpld/tracy.git
+[submodule "external/slang"]
+	path = external/slang
+	url = https://github.com/shader-slang/slang.git

@@ -71,6 +71,29 @@ function(add_shader_variation SHADER_TARGET SHADER_FILE SHADER_DEFINES)
     add_custom_command(TARGET ${SHADER_TARGET} POST_BUILD COMMAND spirv-opt ${SHADER_BIN} -O --preserve-bindings -o ${SHADER_BIN})
 endfunction(add_shader_variation)
 
+function(add_slang_shader SHADER_TARGET SHADER_FILE)
+    get_property(SLANGC GLOBAL PROPERTY SLANG_EXECUTABLE)
+    get_filename_component(SHADER_NAME ${SHADER_FILE} NAME_WLE)
+    set(SHADER_BIN "${CMAKE_CURRENT_BINARY_DIR}/${SHADER_NAME}.spv")
+    add_custom_command(
+        TARGET ${SHADER_TARGET}
+        COMMAND ${SLANGC} -capability glsl_spirv_1_5 -O3 "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}" -o ${SHADER_BIN}
+    )
+endfunction(add_shader_variation)
+
+
+function(setup_slang)
+    include(ExternalProject)
+    ExternalProject_Add(slang
+        SOURCE_DIR "${CMAKE_SOURCE_DIR}/external/slang"
+        CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release
+        INSTALL_COMMAND cmake -E echo "Skipping install step."
+        EXCLUDE_FROM_ALL true
+    )
+    ExternalProject_Get_Property(slang BINARY_DIR)
+    set_property(GLOBAL PROPERTY SLANG_EXECUTABLE ${BINARY_DIR}/Release/bin/slangc)
+endfunction(setup_slang)
+
 
 option(YAVE_BUILD_YAVE "Build yave" ON)
 option(YAVE_BUILD_EDITOR "Build editor" ON)
@@ -141,6 +164,10 @@ file(GLOB_RECURSE SHADER_FILES
     "shaders/*.glsl"
 )
 
+file(GLOB_RECURSE SLANG_SHADER_FILES
+    "shaders/*.slang"
+)
+
 
 function(build_engine_shaders SHADER_TARGET)
     add_shader_variation(${SHADER_TARGET} "basic.vert" "")
@@ -158,7 +185,6 @@ function(build_engine_shaders SHADER_TARGET)
     add_shader_variation(${SHADER_TARGET} "deferred_ambient.frag" "")
     add_shader_variation(${SHADER_TARGET} "wireframe.frag" "")
 
-    add_shader_variation(${SHADER_TARGET} "copy.comp" "")
     add_shader_variation(${SHADER_TARGET} "ssao.comp" "")
     add_shader_variation(${SHADER_TARGET} "histogram.comp" "")
     add_shader_variation(${SHADER_TARGET} "prev_camera.comp" "")
@@ -189,6 +215,8 @@ function(build_engine_shaders SHADER_TARGET)
 
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "")
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "COMBINE_HIGH")
+
+    add_slang_shader(${SHADER_TARGET} "copy.comp.slang")
 endfunction(build_engine_shaders)
 
 function(build_editor_shaders SHADER_TARGET)
@@ -209,6 +237,7 @@ endfunction(build_editor_shaders)
 
 
 build_luajit(luajit)
+setup_slang()
 
 if(YAVE_UNITY_BUILD)
     enable_unity_build(yave YAVE_FILES)
@@ -217,7 +246,7 @@ endif()
 if(YAVE_BUILD_YAVE)
     add_subdirectory(external/spirv_cross)
 
-    add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIBS})
+    add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIBS} ${SLANG_SHADER_FILES})
 
     if(UNIX)
         target_link_libraries(yave xcb)
@@ -241,6 +270,7 @@ if(YAVE_BUILD_YAVE)
     target_link_libraries(yave luajit)
 
     add_custom_target(shaders)
+    add_dependencies(shaders slang)
     build_engine_shaders(shaders)
 
     add_dependencies(yave shaders)
