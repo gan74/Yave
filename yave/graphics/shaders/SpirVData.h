@@ -37,10 +37,9 @@ class SpirVData {
     public:
         SpirVData() = default;
 
-        usize size() const;
         bool is_empty() const;
 
-        const u32* data() const;
+        core::Span<u32> data() const;
 
         Y_TODO(what is this?)
         static SpirVData deserialized(io2::Reader& reader);

@@ -76,16 +76,28 @@ function(add_shader_variation SHADER_TARGET SHADER_FILE SHADER_DEFINES)
     optimize_shader(${SHADER_TARGET} ${SHADER_BIN})
 endfunction(add_shader_variation)
 
-function(add_slang_shader SHADER_TARGET SHADER_FILE)
+
+
+function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_STAGES SHADER_DEFINES)
+    get_filename_component(SHADER_NAME ${SHADER_FILE} NAME_WE)
     get_property(SLANGC GLOBAL PROPERTY SLANG_EXECUTABLE)
-    get_filename_component(SHADER_NAME ${SHADER_FILE} NAME_WLE)
-    set(SHADER_BIN "${CMAKE_CURRENT_BINARY_DIR}/${SHADER_NAME}.spv")
-    add_custom_command(
-        TARGET ${SHADER_TARGET}
-        COMMAND ${SLANGC} -target spirv -preserve-params -O0 "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}" -o ${SHADER_BIN}
-    )
-    optimize_shader(${SHADER_TARGET} ${SHADER_BIN})
-endfunction(add_shader_variation)
+
+    foreach(DEF ${SHADER_DEFINES})
+        set(COMPILE_ARGS "${COMPILE_ARGS} -D${DEF}")
+        set(NAME_SUFFIX "${NAME_SUFFIX}_${DEF}")
+    endforeach()
+
+    foreach(STAGE ${SHADER_STAGES})
+        set(SHADER_BIN "${SHADER_NAME}${NAME_SUFFIX}.${STAGE}.spv")
+        add_custom_command(
+            TARGET ${SHADER_TARGET}
+            COMMAND ${SLANGC} -target spirv -preserve-params -O0 -entry "${STAGE}_main" ${COMPILE_ARGS} "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}" -o ${SHADER_BIN}
+        )
+        optimize_shader(${SHADER_TARGET} ${SHADER_BIN})
+    endforeach()
+
+endfunction(add_slang_shader)
+
 
 function(setup_slang)
     include(ExternalProject)
@@ -168,9 +180,6 @@ file(GLOB_RECURSE SHADER_FILES
     "shaders/*.geom"
     "shaders/*.comp"
     "shaders/*.glsl"
-)
-
-file(GLOB_RECURSE SLANG_SHADER_FILES
     "shaders/*.slang"
 )
 
@@ -221,6 +230,9 @@ function(build_engine_shaders SHADER_TARGET)
 
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "")
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "COMBINE_HIGH")
+
+    add_slang_shader(${SHADER_TARGET} "copy.slang" "comp" "")
+    add_slang_shader(${SHADER_TARGET} "mesh.slang" "vert;frag" "")
 endfunction(build_engine_shaders)
 
 function(build_editor_shaders SHADER_TARGET)
@@ -250,7 +262,7 @@ endif()
 if(YAVE_BUILD_YAVE)
     add_subdirectory(external/spirv_cross)
 
-    add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIBS} ${SLANG_SHADER_FILES})
+    add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIBS})
 
     if(UNIX)
         target_link_libraries(yave xcb)
@@ -275,12 +287,9 @@ if(YAVE_BUILD_YAVE)
 
     add_custom_target(shaders)
     build_engine_shaders(shaders)
-	
-    add_custom_target(slang_shaders)
-    add_dependencies(slang_shaders slang)
-    add_slang_shader(slang_shaders "copy.comp.slang")
+    add_dependencies(shaders slang)
 
-    add_dependencies(yave shaders slang_shaders)
+    add_dependencies(yave shaders)
 endif()
 
 if(YAVE_BUILD_EDITOR)

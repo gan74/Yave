@@ -45,12 +45,8 @@ SpirVData SpirVData::deserialized(io2::Reader& reader) {
     return SpirVData(data);
 }
 
-usize SpirVData::size() const {
-    return _data.size() * 4;
-}
-
-const u32* SpirVData::data() const {
-    return _data.begin();
+core::Span<u32> SpirVData::data() const {
+    return _data;
 }
 
 bool SpirVData::is_empty() const {

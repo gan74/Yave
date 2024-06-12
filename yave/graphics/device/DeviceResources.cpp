@@ -45,126 +45,98 @@ SOFTWARE.
 
 namespace yave {
 
-using SpirV = DeviceResources::SpirV;
 using ComputePrograms = DeviceResources::ComputePrograms;
 using MaterialTemplates = DeviceResources::MaterialTemplates;
 using Textures = DeviceResources::Textures;
 
 struct DeviceMaterialData {
-    const SpirV frag;
-    const SpirV vert;
+    const std::string_view frag;
+    const std::string_view vert;
+
     const DepthTestMode depth_test;
     const BlendMode blend_mode;
     const CullMode cull_mode;
     const bool depth_write;
     const PrimitiveType primitive_type = PrimitiveType::Triangles;
 
-    static constexpr DeviceMaterialData screen(SpirV frag, bool blended = false) {
-        return DeviceMaterialData{frag, SpirV::ScreenVert, DepthTestMode::None, blended ? BlendMode::Add : BlendMode::None, CullMode::None, false};
+    static constexpr DeviceMaterialData screen(std::string_view frag, BlendMode mode) {
+        return DeviceMaterialData{frag, "screen", DepthTestMode::None, mode, CullMode::None, false};
     }
 
-    static constexpr DeviceMaterialData basic(SpirV frag, bool double_sided = false) {
-        return DeviceMaterialData{frag, SpirV::BasicVert, DepthTestMode::Standard, BlendMode::None,  double_sided ? CullMode::None : CullMode::Back, true};
+    static constexpr DeviceMaterialData screen(std::string_view frag, bool blended = false) {
+        return DeviceMaterialData::screen(frag, blended ? BlendMode::Add : BlendMode::None);
     }
 
-    static constexpr DeviceMaterialData wire(SpirV frag) {
-        return DeviceMaterialData{frag, SpirV::WireFrameVert, DepthTestMode::Standard, BlendMode::None, CullMode::Back, true, PrimitiveType::Lines};
+    static constexpr DeviceMaterialData basic(std::string_view frag, bool double_sided = false) {
+        return DeviceMaterialData{frag, "basic", DepthTestMode::Standard, BlendMode::None,  double_sided ? CullMode::None : CullMode::Back, true};
     }
 
-    static constexpr DeviceMaterialData splat(SpirV frag, SpirV vert) {
+    static constexpr DeviceMaterialData wire(std::string_view frag) {
+        return DeviceMaterialData{frag, "wireframe", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true, PrimitiveType::Lines};
+    }
+
+    static constexpr DeviceMaterialData splat(std::string_view frag, std::string_view vert) {
         return DeviceMaterialData{frag, vert, DepthTestMode::Standard, BlendMode::None, CullMode::Back, true, PrimitiveType::Points};
     }
 };
 
-static constexpr DeviceMaterialData material_datas[] = {
-        DeviceMaterialData::basic(SpirV::TexturedFrag),
-        DeviceMaterialData::basic(SpirV::TexturedAlphaFrag),
-        DeviceMaterialData::basic(SpirV::TexturedAlphaFrag, true),
+static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMaterialTemplates)> material_datas = {
+    DeviceMaterialData::basic("textured"),
+    DeviceMaterialData::basic("textured_ALPHA_TEST"),
+    DeviceMaterialData::basic("textured_ALPHA_TEST", true),
 
-        DeviceMaterialData::basic(SpirV::TexturedSpecularFrag),
-        DeviceMaterialData::basic(SpirV::TexturedSpecularAlphaFrag),
-        DeviceMaterialData::basic(SpirV::TexturedSpecularAlphaFrag, true),
+    DeviceMaterialData::basic("textured_SPECULAR"),
+    DeviceMaterialData::basic("textured_SPECULAR_ALPHA_TEST"),
+    DeviceMaterialData::basic("textured_SPECULAR_ALPHA_TEST", true),
 
-        DeviceMaterialData{SpirV::DeferredPointFrag, SpirV::DeferredPointVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
-        DeviceMaterialData{SpirV::DeferredSpotFrag, SpirV::DeferredSpotVert, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
-        DeviceMaterialData::screen(SpirV::DeferredAmbientFrag, true),
-        DeviceMaterialData::screen(SpirV::AtmosphereFrag, false),
-        DeviceMaterialData::screen(SpirV::ToneMapFrag),
-        DeviceMaterialData::screen(SpirV::PassthroughFrag),
-        DeviceMaterialData::screen(SpirV::PassthroughFrag, true),
-        DeviceMaterialData::screen(SpirV::DownsampleFrag),
-        DeviceMaterialData{SpirV::BloomUpscaleFrag, SpirV::ScreenVert, DepthTestMode::None, BlendMode::SrcAlpha, CullMode::None, false},
-        DeviceMaterialData::screen(SpirV::BloomDownscaleFrag),
-        DeviceMaterialData::screen(SpirV::HBlurFrag, true),
-        DeviceMaterialData::screen(SpirV::VBlurFrag, true),
-        DeviceMaterialData::wire(SpirV::WireFrameFrag),
-        DeviceMaterialData::screen(SpirV::TAAResolveFrag),
-        DeviceMaterialData::basic(SpirV::IdFrag),
-    };
+    DeviceMaterialData{"deferred_light_POINT", "deferred_light_POINT", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
+    DeviceMaterialData{"deferred_light_SPOT", "deferred_light_SPOT", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
+    DeviceMaterialData::screen("deferred_ambient", true),
+    DeviceMaterialData::screen("atmosphere", false),
+    DeviceMaterialData::screen("tonemap"),
+    DeviceMaterialData::screen("passthrough"),
+    DeviceMaterialData::screen("passthrough", true),
+    DeviceMaterialData::screen("downsample"),
+    DeviceMaterialData::screen("bloom_upscale", BlendMode::SrcAlpha),
+    DeviceMaterialData::screen("bloom_downscale"),
+    DeviceMaterialData::screen("blur_HORIZONTAL", true),
+    DeviceMaterialData::screen("blur_VERTICAL", true),
+    DeviceMaterialData::wire("wireframe"),
+    DeviceMaterialData::screen("taa_resolve"),
+    DeviceMaterialData::basic("id"),
+};
 
-static constexpr const char* spirv_names[] = {
-        "equirec_convolution.comp",
-        "cubemap_convolution.comp",
-        "brdf_integrator.comp",
-        "deferred_locals.comp",
-        "deferred_locals_DEBUG.comp",
-        "linearize_depth.comp",
-        "ssao.comp",
-        "ssao_upsample.comp",
-        "ssao_upsample_COMBINE_HIGH.comp",
-        "copy.comp",
-        "histogram.comp",
-        "exposure_params.comp",
-        "exposure_debug.comp",
-        "depth_bounds.comp",
-        "atmosphere_integrator.comp",
-        "prev_camera.comp",
-        "update_transforms.comp",
+static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputePrograms)> compute_datas = {
+    "equirec_convolution",
+    "cubemap_convolution",
+    "brdf_integrator",
+    "deferred_locals",
+    "deferred_locals_DEBUG",
+    "linearize_depth",
+    "ssao",
+    "ssao_upsample",
+    "ssao_upsample_COMBINE_HIGH",
+    "copy",
+    "histogram",
+    "exposure_params",
+    "exposure_debug",
+    "depth_bounds",
+    "atmosphere_integrator",
+    "prev_camera",
+    "update_transforms",
+};
 
-        "textured.frag",
-        "textured_ALPHA_TEST.frag",
-        "textured_SPECULAR.frag",
-        "textured_SPECULAR_ALPHA_TEST.frag",
-        "deferred_light_POINT.frag",
-        "deferred_light_SPOT.frag",
-        "deferred_ambient.frag",
-        "atmosphere.frag",
-        "tonemap.frag",
-        "passthrough.frag",
-        "downsample.frag",
-        "bloom_upscale.frag",
-        "bloom_downscale.frag",
-        "blur_HORIZONTAL.frag",
-        "blur_VERTICAL.frag",
-        "wireframe.frag",
-        "taa_resolve.frag",
-        "id.frag",
-
-        "deferred_light_POINT.vert",
-        "deferred_light_SPOT.vert",
-        "basic.vert",
-        "screen.vert",
-        "wireframe.vert",
-    };
 
 // ABGR
-static constexpr std::array<u32, 6> texture_colors[] = {
-        {0, 0, 0, 0},
-        {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF},
-        {0xFF7F7F7F, 0xFF7F7F7F, 0xFF7F7F7F, 0xFF7F7F7F},
-        {0xFF0000FF, 0xFF0000FF, 0xFF0000FF, 0xFF0000FF},
-        {0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F},
-        {0xFFFFE5A6, 0xFFFFE5A6, 0xFF475163, 0xFF475163}
-    };
+static constexpr std::array<math::Vec4ui, usize(Textures::MaxTextures)> texture_colors = {
+    math::Vec4ui{0u, 0u, 0u, 0u},
+    math::Vec4ui{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF},
+    math::Vec4ui{0xFF7F7F7F, 0xFF7F7F7F, 0xFF7F7F7F, 0xFF7F7F7F},
+    math::Vec4ui{0xFF0000FF, 0xFF0000FF, 0xFF0000FF, 0xFF0000FF},
+    math::Vec4ui{0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F},
+    math::Vec4ui{0xFFFFE5A6, 0xFFFFE5A6, 0xFF475163, 0xFF475163},
+};
 
-static constexpr usize spirv_count = usize(SpirV::MaxSpirV);
-static constexpr usize compute_count = usize(ComputePrograms::MaxComputePrograms);
-static constexpr usize template_count = usize(MaterialTemplates::MaxMaterialTemplates);
-static constexpr usize texture_count = usize(Textures::MaxTextures);
-
-static_assert(sizeof(spirv_names) / sizeof(spirv_names[0]) == spirv_count);
-static_assert(sizeof(material_datas) / sizeof(material_datas[0]) == template_count);
-static_assert(sizeof(texture_colors) / sizeof(texture_colors[0]) == texture_count);
 
 // implemented in DeviceResourcesData.cpp
 MeshData cube_mesh_data();
@@ -207,10 +179,9 @@ static Texture create_white_noise(usize size = 256) {
 DeviceResources::DeviceResources() {
     y_profile();
 
-    _spirv = std::make_unique<SpirVData[]>(spirv_count);
-    _computes = std::make_unique<ComputeProgram[]>(compute_count);
-    _material_templates = std::make_unique<MaterialTemplate[]>(template_count);
-    _textures = std::make_unique<AssetPtr<Texture>[]>(texture_count);
+    _computes = std::make_unique<ComputeProgram[]>(compute_datas.size());
+    _material_templates = std::make_unique<MaterialTemplate[]>(material_datas.size());
+    _textures = std::make_unique<AssetPtr<Texture>[]>(texture_colors.size());
 
     const auto set_name = [debug = debug_utils()](auto handle, const char* name) {
         if(debug) {
@@ -220,7 +191,7 @@ DeviceResources::DeviceResources() {
 
     {
         y_profile_zone("Images");
-        for(usize i = 0; i != texture_count; ++i) {
+        for(usize i = 0; i != texture_colors.size(); ++i) {
             const u8* data = reinterpret_cast<const u8*>(texture_colors[i].data());
             _textures[i] = make_asset<Texture>(ImageData(math::Vec2ui(2), data, VK_FORMAT_R8G8B8A8_UNORM));
 
@@ -229,34 +200,58 @@ DeviceResources::DeviceResources() {
         }
     }
 
+    core::FlatHashMap<std::string_view, SpirVData> comp_spirv;
+    core::FlatHashMap<std::string_view, SpirVData> frag_spirv;
+    core::FlatHashMap<std::string_view, SpirVData> vert_spirv;
     {
-        y_profile_zone("Shaders");
-        for(usize i = 0; i != spirv_count; ++i) {
-            const auto file_name = fmt("{}.spv", spirv_names[i]);
-            _spirv[i] = SpirVData::deserialized(io2::File::open(file_name).expected(fmt_c_str("Unable to open SPIR-V file ({}).", file_name)));
+        for(const std::string_view name : compute_datas) {
+            if(SpirVData& spirv = comp_spirv[name]; spirv.is_empty()) {
+                const core::String filename = fmt_to_owned("{}.comp.spv", name);
+                spirv = SpirVData::deserialized(io2::File::open(filename).expected(fmt_c_str("Unable to open SPIR-V file ({})", filename)));
+            }
         }
 
-        for(usize i = 0; i != compute_count; ++i) {
-            _computes[i] = ComputeProgram(ComputeShader(_spirv[i]));
-            set_name(_computes[i].vk_pipeline(), spirv_names[i]);
+        for(const DeviceMaterialData& material : material_datas) {
+            if(SpirVData& spirv = frag_spirv[material.frag]; spirv.is_empty()) {
+                const core::String filename = fmt_to_owned("{}.frag.spv", material.frag);
+                spirv = SpirVData::deserialized(io2::File::open(filename).expected(fmt_c_str("Unable to open SPIR-V file ({})", filename)));
+            }
+            if(SpirVData& spirv = vert_spirv[material.vert]; spirv.is_empty()) {
+                const core::String filename = fmt_to_owned("{}.vert.spv", material.vert);
+                spirv = SpirVData::deserialized(io2::File::open(filename).expected(fmt_c_str("Unable to open SPIR-V file ({})", filename)));
+            }
+        }
+    }
+
+    auto spirv = [&](const auto& map, std::string_view name) -> const SpirVData& {
+        const auto it = map.find(name);
+        y_always_assert(!name.empty(), "Invalid shader name");
+        y_always_assert(it != map.end(), "Shader \"{}\" not found", name);
+        return it->second;
+    };
+
+    {
+        for(usize i = 0; i != compute_datas.size(); ++i) {
+            _computes[i] = ComputeProgram(ComputeShader(spirv(comp_spirv, compute_datas[i])));
+            set_name(_computes[i].vk_pipeline(), fmt_c_str("{}", compute_datas[i]));
         }
     }
 
     {
         y_profile_zone("Material templates");
-        for(usize i = 0; i != template_count; ++i) {
+        for(usize i = 0; i != material_datas.size(); ++i) {
             const auto& data = material_datas[i];
             auto template_data = MaterialTemplateData()
-                    .set_frag_data(_spirv[data.frag])
-                    .set_vert_data(_spirv[data.vert])
-                    .set_depth_mode(data.depth_test)
-                    .set_cull_mode(data.cull_mode)
-                    .set_blend_mode(data.blend_mode)
-                    .set_depth_write(data.depth_write)
-                    .set_primitive_type(data.primitive_type);
-                ;
+                .set_frag_data(spirv(frag_spirv, data.frag))
+                .set_vert_data(spirv(vert_spirv, data.vert))
+                .set_depth_mode(data.depth_test)
+                .set_cull_mode(data.cull_mode)
+                .set_blend_mode(data.blend_mode)
+                .set_depth_write(data.depth_write)
+                .set_primitive_type(data.primitive_type);
+            ;
             _material_templates[i] = MaterialTemplate(std::move(template_data));
-            _material_templates[i].set_name(fmt_c_str("{} | {}", spirv_names[data.vert], spirv_names[data.frag]));
+            _material_templates[i].set_name(fmt_c_str("{} | {}", data.vert, data.frag));
         }
     }
 
@@ -318,11 +313,6 @@ const AssetPtr<IBLProbe>& DeviceResources::ibl_probe() const {
 
 const AssetPtr<IBLProbe>& DeviceResources::empty_probe() const {
     return _empty_probe;
-}
-
-const SpirVData& DeviceResources::operator[](SpirV i) const {
-    y_debug_assert(usize(i) < usize(MaxSpirV));
-    return _spirv[usize(i)];
 }
 
 const ComputeProgram& DeviceResources::operator[](ComputePrograms i) const {

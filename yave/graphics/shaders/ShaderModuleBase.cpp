@@ -39,15 +39,17 @@ static void merge(M& into, const M& other) {
     }
 }
 
-static VkHandle<VkShaderModule> create_shader_module(const SpirVData& data) {
+static VkHandle<VkShaderModule> create_shader_module(const SpirVData& spirv) {
     VkHandle<VkShaderModule> shader;
-    if(data.is_empty()) {
+    if(spirv.is_empty()) {
         return shader;
     }
 
+    const core::Span<u32> data = spirv.data();
+
     VkShaderModuleCreateInfo create_info = vk_struct();
     {
-        create_info.codeSize = data.size();
+        create_info.codeSize = data.size() * sizeof(u32);
         create_info.pCode = data.data();
     }
 
@@ -193,13 +195,15 @@ static core::ScratchPad<ShaderModuleBase::Attribute> create_attribs(const spirv_
 }
 
 
-ShaderType ShaderModuleBase::shader_type(const SpirVData& data) {
-    const spirv_cross::Compiler compiler(std::vector<u32>(data.data(), data.data() + data.size() / 4));
+ShaderType ShaderModuleBase::shader_type(const SpirVData& spirv) {
+    const core::Span<u32> data = spirv.data();
+    const spirv_cross::Compiler compiler(std::vector<u32>(data.begin(), data.end()));
     return module_type(compiler);
 }
 
-ShaderModuleBase::ShaderModuleBase(const SpirVData& data) : _module(create_shader_module(data)) {
-    const spirv_cross::Compiler compiler(std::vector<u32>(data.data(), data.data() + data.size() / 4));
+ShaderModuleBase::ShaderModuleBase(const SpirVData& spirv) : _module(create_shader_module(spirv)) {
+    const core::Span<u32> data = spirv.data();
+    const spirv_cross::Compiler compiler(std::vector<u32>(data.begin(), data.end()));
 
     _type = module_type(compiler);
 

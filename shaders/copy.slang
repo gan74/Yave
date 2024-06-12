@@ -10,7 +10,7 @@ RWTexture2D out_color;
 
 [shader("compute")]
 [numthreads(8, 8)]
-void main() {
+void comp_main() {
     const float2 uv = float2(gl_GlobalInvocationID.xy) / float2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
 
     const float4 color = in_color.SampleLevel(uv, 0.0);
