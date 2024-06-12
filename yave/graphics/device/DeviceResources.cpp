@@ -67,6 +67,10 @@ struct DeviceMaterialData {
         return DeviceMaterialData::screen(frag, blended ? BlendMode::Add : BlendMode::None);
     }
 
+    static constexpr DeviceMaterialData mesh(std::string_view frag, bool double_sided = false) {
+        return DeviceMaterialData{frag, "mesh", DepthTestMode::Standard, BlendMode::None,  double_sided ? CullMode::None : CullMode::Back, true};
+    }
+
     static constexpr DeviceMaterialData basic(std::string_view frag, bool double_sided = false) {
         return DeviceMaterialData{frag, "basic", DepthTestMode::Standard, BlendMode::None,  double_sided ? CullMode::None : CullMode::Back, true};
     }
@@ -81,7 +85,7 @@ struct DeviceMaterialData {
 };
 
 static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMaterialTemplates)> material_datas = {
-    DeviceMaterialData::basic("textured"),
+    DeviceMaterialData::basic("mesh"),
     DeviceMaterialData::basic("textured_ALPHA_TEST"),
     DeviceMaterialData::basic("textured_ALPHA_TEST", true),
 

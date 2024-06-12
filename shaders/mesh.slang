@@ -46,9 +46,6 @@ struct MaterialData {
 
 
 
-struct InOutVertex {
-
-};
 
 struct VertexStageIn {
     float3 position;
@@ -56,8 +53,8 @@ struct VertexStageIn {
     float2 uv;
 };
 
-struct VertexStageOut {
-    float4 position  : SV_Position;
+
+struct PixelStageIn {
     float3 normal;
     float2 uv;
 
@@ -68,6 +65,12 @@ struct VertexStageOut {
     float3 last_screen_pos;
 
     uint instance_index;
+};
+
+
+struct VertexStageOut {
+    float4 sv_position  : SV_Position;
+    PixelStageIn vert  : PixelStageIn;
 };
 
 
@@ -85,6 +88,10 @@ StructuredBuffer<MaterialData> materials;
 [[vk::binding(2, 1)]]
 StructuredBuffer<uint2> transform_material_indices;
 
+[[vk::binding(0, 2)]]
+Sampler2D ttttt_Variable[];
+
+
 [shader("vertex")]
 VertexStageOut vert_main(VertexStageIn in) {
     const TransformableData transformable = transformables[transform_material_indices[gl_InstanceIndex].x];
@@ -99,22 +106,26 @@ VertexStageOut vert_main(VertexStageIn in) {
 
     VertexStageOut out;
     {
-        out.position = camera.view_proj * transformable.current * float4(in.position, 1.0);
-        out.normal = normalize(model * in_normal);
-        out.uv = in.uv;
+        out.sv_position = camera.view_proj * transformable.current * float4(in.position, 1.0);
 
-        out.tangent = normalize(model * in_tangent_sign.xyz);
-        out.bitangent = cross(out.tangent, out.normal) * in_tangent_sign.w;
-
-        out.screen_pos = current_position.xyw;
-        out.last_screen_pos = last_position.xyw;
-
-        out.instance_index = gl_InstanceIndex;
+        out.vert.normal = normalize(model * in_normal);
+        out.vert.uv = in.uv;
+        out.vert.tangent = normalize(model * in_tangent_sign.xyz);
+        out.vert.bitangent = cross(out.vert.tangent, out.vert.normal) * in_tangent_sign.w;
+        out.vert.screen_pos = current_position.xyw;
+        out.vert.last_screen_pos = last_position.xyw;
+        out.vert.instance_index = gl_InstanceIndex;
     }
     return out;
 }
 
+
+
+[[vk::binding(0, 3)]]
+Sampler2D xxx_Variable[];
+
 [shader("fragment")]
-float4 frag_main(VertexStageOut in : VertexStageOut) : SV_Target {
-    return float4(in.uv, 0.0, 1.0);
+float4 frag_main(PixelStageIn in : PixelStageIn) : SV_Target {
+    //return float4(in.uv, 0.0, 1.0);
+    return ttttt_Variable[0].Sample(in.uv);
 }
