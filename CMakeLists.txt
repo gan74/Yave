@@ -92,8 +92,9 @@ function(setup_slang)
     # https://stackoverflow.com/questions/16384831/externalproject-add-doesnt-install-the-release-configuration-of-the-project
     ExternalProject_Add(slang
         SOURCE_DIR "${CMAKE_SOURCE_DIR}/external/slang"
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install --config Release
+        CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release
+        INSTALL_COMMAND cmake -E echo "Skipping install step."
+        EXCLUDE_FROM_ALL true
     )
     ExternalProject_Get_Property(slang BINARY_DIR)
     set_property(GLOBAL PROPERTY SLANG_EXECUTABLE ${BINARY_DIR}/Release/bin/slangc)
@@ -276,6 +277,7 @@ if(YAVE_BUILD_YAVE)
     build_engine_shaders(shaders)
 	
     add_custom_target(slang_shaders)
+    add_dependencies(slang_shaders slang)
     add_slang_shader(slang_shaders "copy.comp.slang")
 
     add_dependencies(yave shaders slang_shaders)
