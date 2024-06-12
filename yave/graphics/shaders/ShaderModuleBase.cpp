@@ -136,13 +136,6 @@ static auto find_variable_size_bindings(const spirv_cross::Compiler& compiler, c
     return variable_bindings;
 }
 
-template<typename R>
-static void fail_not_empty(const R& res) {
-    if(!res.empty()) {
-        y_fatal("Unsupported resource type.");
-    }
-}
-
 static u32 component_size(spirv_cross::SPIRType::BaseType type) {
     switch(type) {
         case spirv_cross::SPIRType::Float:
@@ -197,13 +190,13 @@ static core::ScratchPad<ShaderModuleBase::Attribute> create_attribs(const spirv_
 
 ShaderType ShaderModuleBase::shader_type(const SpirVData& spirv) {
     const core::Span<u32> data = spirv.data();
-    const spirv_cross::Compiler compiler(std::vector<u32>(data.begin(), data.end()));
+    const spirv_cross::Compiler compiler(data.data(), data.size());
     return module_type(compiler);
 }
 
 ShaderModuleBase::ShaderModuleBase(const SpirVData& spirv) : _module(create_shader_module(spirv)) {
     const core::Span<u32> data = spirv.data();
-    const spirv_cross::Compiler compiler(std::vector<u32>(data.begin(), data.end()));
+    const spirv_cross::Compiler compiler(data.data(), data.size());
 
     _type = module_type(compiler);
 
@@ -235,9 +228,11 @@ ShaderModuleBase::ShaderModuleBase(const SpirVData& spirv) : _module(create_shad
     _attribs = create_attribs(compiler, resources.stage_inputs);
 
     // these are attribs & other stages stuff
-    fail_not_empty(resources.atomic_counters);
-    fail_not_empty(resources.separate_images);
-    fail_not_empty(resources.separate_samplers);
+    y_always_assert(resources.atomic_counters.empty(), "Unsupported resource type");
+    y_always_assert(resources.separate_images.empty(), "Unsupported resource type");
+    y_always_assert(resources.separate_samplers.empty(), "Unsupported resource type");
+    y_always_assert(resources.gl_plain_uniforms.empty(), "Unsupported resource type");
+
 
     for(const auto& res : resources.stage_outputs) {
         _stage_output << compiler.get_decoration(res.id, spv::DecorationLocation);
