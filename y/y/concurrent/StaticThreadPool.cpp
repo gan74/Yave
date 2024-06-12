@@ -101,17 +101,17 @@ StaticThreadPool::StaticThreadPool(usize thread_count) {
 }
 
 StaticThreadPool::~StaticThreadPool() {
-    for(;;) {
+    process_until_empty();
+
+    y_debug_assert([&] {
         std::unique_lock lock(_lock);
-        if(!process_one(lock)) {
-            break;
-        }
-    }
+        return _queue.is_empty();
+    }());
 
     {
+        const std::unique_lock lock(_lock);
         _run = false;
         ++_generation;
-        const std::unique_lock lock(_lock);
         _condition.notify_all();
     }
 
@@ -139,6 +139,17 @@ usize StaticThreadPool::pending_tasks() const {
 void StaticThreadPool::cancel_pending_tasks() {
     const std::unique_lock lock(_lock);
     _queue.clear();
+}
+
+
+void StaticThreadPool::process_until_empty() {
+    for(;;) {
+        std::unique_lock lock(_lock);
+        if(!process_one(lock) && _queue.is_empty()) {
+            y_debug_assert(lock.owns_lock());
+            break;
+        }
+    }
 }
 
 void StaticThreadPool::process_until_complete(core::Span<DependencyGroup> wait_for) {
@@ -224,8 +235,11 @@ void StaticThreadPool::worker() {
     while(_run) {
         std::unique_lock lock(_lock);
         if(!process_one(lock)) {
+            y_debug_assert(lock.owns_lock());
             const u64 gen = _generation;
-            _condition.wait(lock, [&] { return (!_queue.is_empty() || !_run) && gen != _generation; });
+            _condition.wait(lock, [&] { 
+                return (!_queue.is_empty() && gen != _generation) || !_run; 
+            });
         }
     }
 }
