@@ -118,6 +118,11 @@ set(TRACY_FILES
     "external/tracy/public/TracyClient.cpp"
 )
 
+set(SPIRV_REFLECT_FILES
+    "external/spirv_reflect/spirv_reflect.c"
+    "external/spirv_reflect/spirv_reflect.h"
+)
+
 # Editor files
 file(GLOB_RECURSE EDITOR_FILES
     "editor/*.cpp"
@@ -215,9 +220,7 @@ if(YAVE_UNITY_BUILD)
 endif()
 
 if(YAVE_BUILD_YAVE)
-    add_subdirectory(external/spirv_cross)
-
-    add_library(yave STATIC ${YAVE_FILES} ${SHADER_FILES} ${SHADER_LIBS})
+    add_library(yave STATIC ${YAVE_FILES} ${SPIRV_REFLECT_FILES} ${SHADER_FILES} ${SHADER_LIBS})
 
     if(UNIX)
         target_link_libraries(yave xcb)
@@ -232,13 +235,11 @@ if(YAVE_BUILD_YAVE)
         target_link_libraries(yave tracy)
     endif()
 
-    target_link_libraries(yave y spirv-cross-core)
+    target_link_libraries(yave y luajit)
 
     if(NOT MSVC)
         target_link_libraries(yave stdc++fs)
     endif()
-
-    target_link_libraries(yave luajit)
 
     add_custom_target(shaders)
     build_engine_shaders(shaders)

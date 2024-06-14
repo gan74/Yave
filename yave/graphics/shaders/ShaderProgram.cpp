@@ -30,10 +30,6 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
-#include <external/spirv_cross/spirv.hpp>
-#include <external/spirv_cross/spirv_cross.hpp>
-#include <external/spirv_cross/spirv_glsl.hpp>
-
 #include <numeric>
 
 namespace yave {
@@ -53,26 +49,6 @@ static void merge(T& into, const S& other) {
     for(const auto& e : other) {
         into.push_back(e);
     }
-}
-
-static VkFormat attrib_format(const ShaderModuleBase::Attribute& attr) {
-    static_assert(VK_FORMAT_R32G32B32A32_SFLOAT == VK_FORMAT_R32G32B32A32_UINT + uenum(ShaderModuleBase::AttribType::Float));
-
-    const usize type = usize(attr.type);
-    switch(attr.vec_size) {
-        case 1:
-            return VkFormat(VK_FORMAT_R32_UINT + type);
-        case 2:
-            return VkFormat(VK_FORMAT_R32G32_UINT + type);
-        case 3:
-            return VkFormat(VK_FORMAT_R32G32B32_UINT + type);
-        case 4:
-            return VkFormat(VK_FORMAT_R32G32B32A32_UINT + type);
-
-        default:
-            break;
-    }
-    y_fatal("Unsupported vec format.");
 }
 
 static auto create_stage_info(core::Vector<VkPipelineShaderStageCreateInfo>& stages, const ShaderModuleBase& mod) {
@@ -100,7 +76,6 @@ static void create_vertex_attribs(core::Span<ShaderModuleBase::Attribute> vertex
         const bool is_packed = attr.is_packed && !attribs.is_empty();
         const bool per_instance = attr.location >= ShaderProgram::per_instance_location;
         const VkVertexInputRate input_rate = per_instance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
-        const auto format = attrib_format(attr);
 
         if(per_instance && !per_instance_offset) {
             per_instance_offset = ShaderProgram::per_instance_binding - bindings.size();
@@ -113,9 +88,10 @@ static void create_vertex_attribs(core::Span<ShaderModuleBase::Attribute> vertex
             --binding;
         }
 
-        for(u32 i = 0; i != attr.columns; ++i) {
-            attribs << VkVertexInputAttributeDescription{attr.location + i, binding, format, offset};
-            offset += attr.vec_size * attr.component_size;
+        const u32 component_size = u32(ImageFormat(attr.format).bit_per_pixel() / 8);
+        for(u32 i = 0; i != attr.component_count; ++i) {
+            attribs << VkVertexInputAttributeDescription{attr.location + i, binding, attr.format, offset};
+            offset += component_size;
         }
 
         if(is_packed) {
