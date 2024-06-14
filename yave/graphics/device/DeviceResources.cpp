@@ -85,7 +85,7 @@ struct DeviceMaterialData {
 };
 
 static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMaterialTemplates)> material_datas = {
-    DeviceMaterialData::basic("mesh"),
+    DeviceMaterialData::mesh("mesh"),
     DeviceMaterialData::basic("textured_ALPHA_TEST"),
     DeviceMaterialData::basic("textured_ALPHA_TEST", true),
 

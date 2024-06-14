@@ -41,8 +41,14 @@ struct MaterialData {
     float3 specular_color_factor;
     float specular_factor;
 
-    uint texture_indices[8];
+    uint albedo_texture_index;
+    uint normal_texture_index;
+    uint emissive_texture_index;
+    uint metallic_roughness_texture_index;
+
+    uvec4 padding;
 };
+
 
 
 
@@ -67,11 +73,17 @@ struct PixelStageIn {
     uint instance_index;
 };
 
-
 struct VertexStageOut {
     float4 sv_position  : SV_Position;
     PixelStageIn vert  : PixelStageIn;
 };
+
+struct PixelStageOut {
+    float2 motion;
+    RawGBuffer gbuffer;
+    float3 emissive;
+};
+
 
 
 
@@ -89,7 +101,9 @@ StructuredBuffer<MaterialData> materials;
 StructuredBuffer<uint2> transform_material_indices;
 
 [[vk::binding(0, 2)]]
-Sampler2D ttttt_Variable[];
+Sampler2D all_textures[];
+
+
 
 
 [shader("vertex")]
@@ -98,19 +112,19 @@ VertexStageOut vert_main(VertexStageIn in) {
 
     const float3x3 model = float3x3(transformable.current);
 
-    const float4 current_position = (camera.unjittered_view_proj * transformable.current * float4(in.position, 1.0));
-    const float4 last_position = (camera.prev_unjittered_view_proj * transformable.last * float4(in.position, 1.0));
+    const float4 current_position = mul(camera.unjittered_view_proj, mul(transformable.current, float4(in.position, 1.0)));
+    const float4 last_position = mul(camera.prev_unjittered_view_proj, mul(transformable.last, float4(in.position, 1.0)));
 
     const float3 in_normal = unpack_2_10_10_10(in.packed_normal_tangent_sign.x).xyz;
     const float4 in_tangent_sign = unpack_2_10_10_10(in.packed_normal_tangent_sign.y);
 
     VertexStageOut out;
     {
-        out.sv_position = camera.view_proj * transformable.current * float4(in.position, 1.0);
+        out.sv_position = mul(camera.view_proj, mul(transformable.current, float4(in.position, 1.0)));
 
-        out.vert.normal = normalize(model * in_normal);
+        out.vert.normal = normalize(mul(model, in_normal));
         out.vert.uv = in.uv;
-        out.vert.tangent = normalize(model * in_tangent_sign.xyz);
+        out.vert.tangent = normalize(mul(model, in_tangent_sign.xyz));
         out.vert.bitangent = cross(out.vert.tangent, out.vert.normal) * in_tangent_sign.w;
         out.vert.screen_pos = current_position.xyw;
         out.vert.last_screen_pos = last_position.xyw;
@@ -121,11 +135,38 @@ VertexStageOut vert_main(VertexStageIn in) {
 
 
 
-[[vk::binding(0, 3)]]
-Sampler2D xxx_Variable[];
+
 
 [shader("fragment")]
-float4 frag_main(PixelStageIn in : PixelStageIn) : SV_Target {
-    //return float4(in.uv, 0.0, 1.0);
-    return ttttt_Variable[0].Sample(in.uv);
+PixelStageOut frag_main(PixelStageIn in : PixelStageIn) {
+    const MaterialData material = materials[transform_material_indices[in.instance_index].y];
+
+    const Sampler2D albedo_tex = all_textures[material.albedo_texture_index];
+    const Sampler2D normal_tex = all_textures[material.normal_texture_index];
+    const Sampler2D emissive_tex = all_textures[material.emissive_texture_index];
+    const Sampler2D metal_rough_tex = all_textures[material.metallic_roughness_texture_index];
+
+
+    const vec3 normal = unpack_normal_map(normal_tex.Sample(in.uv).xy);
+    const vec3 mapped_front_face_normal = normal.x * in.tangent + normal.y * in.bitangent + normal.z * in.normal;
+    const vec3 mapped_normal = gl_FrontFacing ? mapped_front_face_normal : -mapped_front_face_normal;
+
+    const vec4 metallic_roughness = metal_rough_tex.Sample(in.uv);
+
+
+    SurfaceInfo surface;
+    {
+        surface.albedo = albedo_tex.Sample(in.uv).rgb * material.base_color_factor;
+        surface.normal = mapped_normal;
+
+        surface.perceptual_roughness = metallic_roughness.g * material.roughness_factor;
+        surface.metallic = metallic_roughness.b * material.metallic_factor;
+    }
+
+
+    PixelStageOut out;
+    out.gbuffer = encode_gbuffer(surface);
+    out.motion = ((in.last_screen_pos.xy / in.last_screen_pos.z) - (in.screen_pos.xy / in.screen_pos.z)) * 0.5;
+    out.emissive = emissive_tex.Sample(in.uv).rgb * material.emissive_factor;
+    return out;
 }
