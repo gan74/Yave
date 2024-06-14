@@ -1,6 +1,8 @@
 #ifndef DEBUG_GLSL
 #define DEBUG_GLSL
 
+#ifdef DEBUG
+
 // 4 * 5 bitmaps
 #define CHAR_MINUS      1792
 #define CHAR_DOT        2
@@ -134,6 +136,8 @@ void next_line() {
 float print() {
     return _print;
 }
+#endif
+
 #endif
 
 #endif

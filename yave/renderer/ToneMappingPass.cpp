@@ -39,7 +39,10 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
     struct ShaderSettings {
         float exposure;
         u32 tone_mapper;
-    } shader_settings{settings.exposure, u32(settings.tone_mapper)};
+    } shader_settings {
+        settings.exposure,
+        u32(settings.tone_mapper),
+    };
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Tone mapping pass");
 

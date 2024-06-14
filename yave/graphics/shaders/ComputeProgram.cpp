@@ -33,7 +33,7 @@ SOFTWARE.
 
 namespace yave {
 
-ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationData& data) : _local_size(comp.local_size()) {
+ComputeProgram::ComputeProgram(const ComputeShader& comp) : _local_size(comp.local_size()) {
     const auto& bindings = comp.bindings();
 
     const u32 max_set = std::accumulate(bindings.begin(), bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
@@ -51,26 +51,11 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp, const SpecializationDa
 
     vk_check(vkCreatePipelineLayout(vk_device(), &layout_create_info, vk_allocation_callbacks(), _layout.get_ptr_for_init()));
 
-    if(data.size() && data.size() != comp.specialization_data_size()) {
-        y_fatal("Incompatible specialization data.");
-    }
-
-    const auto entries = data.size() ? comp.specialization_entries() : core::Span<VkSpecializationMapEntry>();
-
-    VkSpecializationInfo spec_info = {};
-    {
-        spec_info.mapEntryCount = u32(entries.size());
-        spec_info.pMapEntries = entries.data();
-        spec_info.dataSize = u32(data.size());
-        spec_info.pData = data.data();
-    }
-
     VkPipelineShaderStageCreateInfo stage = vk_struct();
     {
         stage.module = comp.vk_shader_module();
         stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
         stage.pName = "main";
-        stage.pSpecializationInfo = &spec_info;
     }
 
     VkComputePipelineCreateInfo create_info = vk_struct();
