@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "ImGuiRenderer.h"
 
+#include <editor/EditorResources.h>
+
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/images/ImageData.h>
 #include <yave/graphics/buffers/Buffer.h>
@@ -68,21 +70,11 @@ static ImageData load_font() {
     return ImageData(math::Vec2ui(width, height), font_data, ImageFormat(VK_FORMAT_R8G8B8A8_UNORM));
 }
 
-static MaterialTemplateData create_imgui_material_data() {
-    return MaterialTemplateData()
-            .set_frag_data(SpirVData::deserialized(io2::File::open("imgui.frag.spv").expected("Unable to open SPIR-V file.")))
-            .set_vert_data(SpirVData::deserialized(io2::File::open("imgui.vert.spv").expected("Unable to open SPIR-V file.")))
-            .set_depth_mode(DepthTestMode::None)
-            .set_cull_mode(CullMode::None)
-            .set_blend_mode(BlendMode::SrcAlpha)
-        ;
-}
 
 
 ImGuiRenderer::ImGuiRenderer() :
         _font(load_font()),
-        _font_view(_font),
-        _material(create_imgui_material_data()) {
+        _font_view(_font) {
 }
 
 
@@ -126,7 +118,8 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
     const DescriptorSetBase default_set = create_descriptor_set(&_font_view);
 
     const auto setup_state = [&](const TextureView* tex) {
-        recorder.bind_material_template(&_material, tex ? create_descriptor_set(tex) : default_set);
+        const MaterialTemplate* material = resources()[EditorResources::ImGuiMaterialTemplate];
+        recorder.bind_material_template(material, tex ? create_descriptor_set(tex) : default_set);
     };
 
     usize index_offset = 0;

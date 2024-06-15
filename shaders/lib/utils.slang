@@ -37,6 +37,15 @@ struct SurfaceInfo {
 struct RawGBuffer {
     float4 rt0;
     float4 rt1;
+
+    __init() {
+        rt0 = rt1 = 0.0;
+    }
+
+    __init(float4 r0, float4 r1) {
+        rt0 = r0;
+        rt1 = r1;
+    }
 }
 
 
@@ -49,7 +58,15 @@ struct RawGBuffer {
 
 
 
+void unpack_gbuffer_color(float4 buff, out float3 color, out float metallic) {
+    color = buff.rgb;
+    metallic = buff.a;
+}
 
+void unpack_gbuffer_normal(float4 buff, out float3 normal, out float roughness) {
+    normal = octahedron_decode(buff.xy);
+    roughness = max(0.05, buff.z);
+}
 
 float4 pack_gbuffer_color(float3 color, float metallic) {
     return float4(color, metallic);
@@ -62,12 +79,18 @@ float4 pack_gbuffer_normal(float3 normal, float roughness) {
 
 RawGBuffer encode_gbuffer(SurfaceInfo info) {
     RawGBuffer raw;
-
     raw.rt0 = pack_gbuffer_color(info.albedo, info.metallic);
     raw.rt1 = pack_gbuffer_normal(info.normal, info.perceptual_roughness);
-
     return raw;
 }
+
+SurfaceInfo decode_gbuffer(RawGBuffer raw) {
+    SurfaceInfo surface;
+    unpack_gbuffer_color(raw.rt0, surface.albedo, surface.metallic);
+    unpack_gbuffer_normal(raw.rt1, surface.normal, surface.perceptual_roughness);
+    return surface;
+}
+
 
 
 
@@ -197,5 +220,27 @@ float4 unpack_color(uint packed) {
         (packed >> 24) & 0xFF
     ) / 255.0;
 }
+
+bool is_depth_OOB(float z) {
+    return z <= 0.0; // reversed Z
+}
+
+
+
+
+
+
+uint2 sampler_size<T>(Sampler2D<T> smp) {
+    uint2 size;
+    smp.GetDimensions(size.x, size.y);
+    return size;
+}
+
+
+
+
+
+
+
 
 #endif

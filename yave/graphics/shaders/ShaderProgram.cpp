@@ -116,6 +116,8 @@ static void validate_bindings(core::Span<VkDescriptorSetLayoutBinding> bindings)
 }
 
 ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom) {
+    y_profile();
+
     {
         merge_bindings(_bindings, frag.bindings());
         merge_bindings(_bindings, vert.bindings());

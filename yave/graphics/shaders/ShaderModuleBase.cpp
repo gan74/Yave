@@ -104,6 +104,8 @@ static const SpvReflectEntryPoint& find_entry_point(const SpvReflectShaderModule
 
 
 ShaderModuleBase::ShaderModuleBase(const SpirVData& spirv, ShaderType type) : _module(create_shader_module(spirv)), _type(type) {
+    y_profile();
+
     y_debug_assert(_type != ShaderType::None);
 
     SpvReflectShaderModule module = {};

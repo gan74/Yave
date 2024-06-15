@@ -50,15 +50,15 @@ struct DeviceMaterialData {
 
 
 static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMaterialTemplates)> material_datas = {
-    DeviceMaterialData{"imgui.frag",        "imgui.vert",       {},                 false,  false,  true,   PrimitiveType::Triangles},
+    DeviceMaterialData{"imgui",             "imgui",            {},                 false,  false,  true,   PrimitiveType::Triangles},
     DeviceMaterialData{"imgui_billboard",   "imgui_billboard",  "imgui_billboard",  true,   false,  false,  PrimitiveType::Points},
-    DeviceMaterialData{"engine_view.frag",  "screen",           {},                 false,  false,  false,  PrimitiveType::Triangles},
-    DeviceMaterialData{"selection.frag",    "screen",           {},                 false,  false,  true,   PrimitiveType::Triangles},
+    DeviceMaterialData{"engine_view",       "screen",           {},                 false,  false,  false,  PrimitiveType::Triangles},
+    DeviceMaterialData{"selection",         "screen",           {},                 false,  false,  true,   PrimitiveType::Triangles},
 };
 
 static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputePrograms)> compute_datas = {
-    "depth_alpha.comp",
-    "picking.comp",
+    "depth_alpha",
+    "picking",
 };
 
 
