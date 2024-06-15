@@ -52,7 +52,6 @@ using Textures = DeviceResources::Textures;
 struct DeviceMaterialData {
     const std::string_view frag;
     const std::string_view vert;
-    const std::string_view frag_and_vert;
 
     const DepthTestMode depth_test;
     const BlendMode blend_mode;
@@ -60,16 +59,8 @@ struct DeviceMaterialData {
     const bool depth_write;
     const PrimitiveType primitive_type = PrimitiveType::Triangles;
 
-    core::String frag_file() const {
-        return frag.empty() ? frag_and_vert : frag;
-    }
-
-    core::String vert_file() const {
-        return vert.empty() ? frag_and_vert : vert;
-    }
-
     static constexpr DeviceMaterialData screen(std::string_view frag, BlendMode mode) {
-        return DeviceMaterialData{frag, "screen", {}, DepthTestMode::None, mode, CullMode::None, false};
+        return DeviceMaterialData{frag, "screen", DepthTestMode::None, mode, CullMode::None, false};
     }
 
     static constexpr DeviceMaterialData screen(std::string_view frag, bool blended = false) {
@@ -77,21 +68,21 @@ struct DeviceMaterialData {
     }
 
     static constexpr DeviceMaterialData basic(std::string_view frag, bool double_sided = false) {
-        return DeviceMaterialData{frag, "basic.vert", {}, DepthTestMode::Standard, BlendMode::None, double_sided ? CullMode::None : CullMode::Back, true};
+        return DeviceMaterialData{frag, "basic.vert", DepthTestMode::Standard, BlendMode::None, double_sided ? CullMode::None : CullMode::Back, true};
     }
 };
 
 static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMaterialTemplates)> material_datas = {
-    DeviceMaterialData{{}, {}, "opaque", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
-    DeviceMaterialData{{}, {}, "opaque_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
-    DeviceMaterialData{{}, {}, "opaque_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
+    DeviceMaterialData{"opaque", "opaque", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{"opaque_ALPHA_TEST", "opaque_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{"opaque_ALPHA_TEST", "opaque_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
 
     DeviceMaterialData::basic("textured_SPECULAR.frag"),
     DeviceMaterialData::basic("textured_SPECULAR_ALPHA_TEST.frag"),
     DeviceMaterialData::basic("textured_SPECULAR_ALPHA_TEST.frag", true),
 
-    DeviceMaterialData{"deferred_light_POINT.frag", "deferred_light_POINT.vert", {}, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
-    DeviceMaterialData{"deferred_light_SPOT.frag", "deferred_light_SPOT.vert", {}, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
+    DeviceMaterialData{"deferred_light_POINT.frag", "deferred_light_POINT.vert", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
+    DeviceMaterialData{"deferred_light_SPOT.frag", "deferred_light_SPOT.vert", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
     DeviceMaterialData::screen("deferred_ambient.frag", true),
     DeviceMaterialData::screen("atmosphere.frag", false),
     DeviceMaterialData::screen("tonemap"),
@@ -102,7 +93,7 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData::screen("bloom_downscale.frag"),
     DeviceMaterialData::screen("blur_HORIZONTAL.frag", true),
     DeviceMaterialData::screen("blur_VERTICAL.frag", true),
-    DeviceMaterialData{{}, {}, "wireframe", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true, PrimitiveType::Lines},
+    DeviceMaterialData{"wireframe", "wireframe", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true, PrimitiveType::Lines},
     DeviceMaterialData::screen("taa_resolve.frag"),
     DeviceMaterialData::basic("id.frag"),
 };
@@ -224,8 +215,8 @@ DeviceResources::DeviceResources() {
         for(usize i = 0; i != material_datas.size(); ++i) {
             const auto& data = material_datas[i];
             auto template_data = MaterialTemplateData()
-                .set_frag_data(load_spirv(data.frag_file()))
-                .set_vert_data(load_spirv(data.vert_file()))
+                .set_frag_data(load_spirv(data.frag))
+                .set_vert_data(load_spirv(data.vert))
                 .set_depth_mode(data.depth_test)
                 .set_cull_mode(data.cull_mode)
                 .set_blend_mode(data.blend_mode)
@@ -233,7 +224,7 @@ DeviceResources::DeviceResources() {
                 .set_primitive_type(data.primitive_type);
             ;
             _material_templates[i] = MaterialTemplate(std::move(template_data));
-            _material_templates[i].set_name(data.frag_and_vert.empty() ? fmt_c_str("{} | {}", data.vert, data.frag) : fmt_c_str("{}", data.frag_and_vert));
+            _material_templates[i].set_name(fmt_c_str("{} | {}", data.vert, data.frag));
         }
     }
 
