@@ -1,8 +1,3 @@
-#version 450
-
-
-
-
 struct VertexStageIn {
     float3 position;
     float2 uv_Packed;
@@ -41,12 +36,10 @@ Sampler2D font_texture;
 
 [[vk::binding(1)]]
 cbuffer Buffer {
-    mat4 view_proj;
-    vec2 viewport_size;
+    float4x4 view_proj;
+    float2 viewport_size;
     float billboard_size;
 };
-
-
 
 
 
@@ -63,8 +56,6 @@ GeomStageIn vert_main(VertexStageIn in) {
     }
     return out;
 }
-
-
 
 
 static const float2 uvs[] = {
@@ -93,7 +84,6 @@ void geom_main(point GeomStageIn in[1], inout TriangleStream<GeomStageOut> out_s
     }
 }
 
-
 [shader("fragment")]
 PixelStageOut frag_main(PixelStageIn in) {
     const float smoothing = 1.0 / 16.0;
@@ -108,7 +98,7 @@ PixelStageOut frag_main(PixelStageIn in) {
 
     PixelStageOut out;
     {
-        out.color = vec4(color.rgb, alpha_step);
+        out.color = float4(color.rgb, alpha_step);
         out.id = in.id + 1;
     }
     return out;

@@ -78,7 +78,7 @@ endfunction(add_shader_variation)
 
 
 
-function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_STAGES SHADER_DEFINES)
+function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
     get_filename_component(SHADER_NAME ${SHADER_FILE} NAME_WE)
     get_property(SLANGC GLOBAL PROPERTY SLANG_EXECUTABLE)
 
@@ -194,11 +194,8 @@ file(GLOB_RECURSE SHADER_FILES
 
 function(build_engine_shaders SHADER_TARGET)
     add_shader_variation(${SHADER_TARGET} "basic.vert" "")
-    add_shader_variation(${SHADER_TARGET} "screen.vert" "")
-    add_shader_variation(${SHADER_TARGET} "wireframe.vert" "")
 
     add_shader_variation(${SHADER_TARGET} "id.frag" "")
-    add_shader_variation(${SHADER_TARGET} "tonemap.frag" "")
     add_shader_variation(${SHADER_TARGET} "taa_resolve.frag" "")
     add_shader_variation(${SHADER_TARGET} "passthrough.frag" "")
     add_shader_variation(${SHADER_TARGET} "atmosphere.frag" "")
@@ -206,7 +203,6 @@ function(build_engine_shaders SHADER_TARGET)
     add_shader_variation(${SHADER_TARGET} "bloom_upscale.frag" "")
     add_shader_variation(${SHADER_TARGET} "bloom_downscale.frag" "")
     add_shader_variation(${SHADER_TARGET} "deferred_ambient.frag" "")
-    add_shader_variation(${SHADER_TARGET} "wireframe.frag" "")
 
     add_shader_variation(${SHADER_TARGET} "ssao.comp" "")
     add_shader_variation(${SHADER_TARGET} "histogram.comp" "")
@@ -239,8 +235,11 @@ function(build_engine_shaders SHADER_TARGET)
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "")
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "COMBINE_HIGH")
 
-    add_slang_shader(${SHADER_TARGET} "copy.slang" "comp" "")
-    add_slang_shader(${SHADER_TARGET} "mesh.slang" "vert;frag" "")
+    add_slang_shader(${SHADER_TARGET} "wireframe.slang" "")
+    add_slang_shader(${SHADER_TARGET} "copy.slang" "")
+    add_slang_shader(${SHADER_TARGET} "mesh.slang" "")
+    add_slang_shader(${SHADER_TARGET} "screen.slang" "")
+    add_slang_shader(${SHADER_TARGET} "tonemap.slang" "")
 endfunction(build_engine_shaders)
 
 function(build_editor_shaders SHADER_TARGET)
@@ -253,7 +252,7 @@ function(build_editor_shaders SHADER_TARGET)
     add_shader_variation(${SHADER_TARGET} "editor/picking.comp" "")
     add_shader_variation(${SHADER_TARGET} "editor/depth_alpha.comp" "")
 
-    add_slang_shader(${SHADER_TARGET} "editor/imgui_billboard.slang" "vert;geom;frag" "")
+    add_slang_shader(${SHADER_TARGET} "editor/imgui_billboard.slang" "")
 endfunction(build_editor_shaders)
 
 

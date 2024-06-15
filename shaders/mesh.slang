@@ -4,10 +4,6 @@ import "glsl";
 
 
 
-
-
-
-
 struct VertexStageIn {
     float3 position;
     uint2 packed_normal_tangent_sign;

@@ -57,7 +57,7 @@ static bool is_inline(const SpvReflectDescriptorBinding& binding) {
     return
         binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER &&
         binding.type_description->type_name &&
-        std::string_view(binding.type_description->type_name).ends_with("_Inline") ;
+        (std::string_view(binding.type_description->type_name).ends_with("_Inline") || std::string_view(binding.name).ends_with("_Inline"));
 }
 
 static ShaderType shader_exec_model(SpvExecutionModel exec_model) {
