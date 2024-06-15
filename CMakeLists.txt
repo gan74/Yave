@@ -214,8 +214,6 @@ function(build_engine_shaders SHADER_TARGET)
     add_shader_variation(${SHADER_TARGET} "linearize_depth.comp" "")
     add_shader_variation(${SHADER_TARGET} "exposure_params.comp" "")
     add_shader_variation(${SHADER_TARGET} "exposure_debug.comp" "")
-    add_shader_variation(${SHADER_TARGET} "equirec_convolution.comp" "")
-    add_shader_variation(${SHADER_TARGET} "cubemap_convolution.comp" "")
     add_shader_variation(${SHADER_TARGET} "atmosphere_integrator.comp" "")
     add_shader_variation(${SHADER_TARGET} "brdf_integrator.comp" "")
 
@@ -233,6 +231,9 @@ function(build_engine_shaders SHADER_TARGET)
 
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "")
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "COMBINE_HIGH")
+
+    add_slang_shader(${SHADER_TARGET} "ibl_convolution.slang" "EQUIREC")
+    add_slang_shader(${SHADER_TARGET} "ibl_convolution.slang" "CUBE")
 
     add_slang_shader(${SHADER_TARGET} "opaque.slang" "")
     add_slang_shader(${SHADER_TARGET} "opaque.slang" "ALPHA_TEST")

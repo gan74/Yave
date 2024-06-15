@@ -37,7 +37,7 @@ static VkHandle<VkImageView> create_view(VkImage image, ImageFormat format, usiz
     VkImageViewCreateInfo create_info = vk_struct();
     {
         create_info.image = image;
-        create_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+        create_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
         create_info.format = format.vk_format();
         create_info.subresourceRange.aspectMask = format.vk_aspect();
         create_info.subresourceRange.layerCount = 6;
@@ -64,7 +64,7 @@ static usize mipmap_count(usize size) {
 
 
 
-using ViewBase = ImageView<ImageUsage::ColorBit | ImageUsage::StorageBit, ImageType::Cube>;
+using ViewBase = ImageView<ImageUsage::ColorBit | ImageUsage::StorageBit, ImageType::Layered>;
 
 struct ProbeBase : ImageBase {
     ProbeBase(usize size, ImageFormat format = VK_FORMAT_R8G8B8A8_UNORM) :
@@ -118,7 +118,7 @@ static void fill_probe(core::MutableSpan<ProbeBaseView> views, const Image<Image
     {
         const auto region = recorder.region("IBL probe generation");
         for(usize i = 0; i != views.size(); ++i) {
-            ImageView<ImageUsage::StorageBit, ImageType::Cube> z = views[i];
+            ImageView<ImageUsage::StorageBit, ImageType::Layered> z = views[i];
             const float roughness = (i * roughness_step);
             const auto ds = DescriptorSet(
                 Descriptor(texture, SamplerType::LinearClamp),

@@ -54,6 +54,29 @@ struct RawGBuffer {
 
 
 
+uint2 sampler_size<T>(Sampler2D<T> smp) {
+    uint2 size;
+    smp.GetDimensions(size.x, size.y);
+    return size;
+}
+
+uint3 sampler_size<T>(RWTexture3D<T> smp) {
+    uint3 size;
+    smp.GetDimensions(size.x, size.y, size.z);
+    return size;
+}
+
+uint3 sampler_size<T>(RWTexture2DArray<T> smp) {
+    uint3 size;
+    smp.GetDimensions(size.x, size.y, size.z);
+    return size;
+}
+
+T sqr<T: IArithmetic>(T t) {
+    return t * t;
+}
+
+
 
 
 
@@ -221,6 +244,16 @@ float4 unpack_color(uint packed) {
     ) / 255.0;
 }
 
+float2 hammersley(uint i, uint N) {
+    uint bits = (i << 16u) | (i >> 16u);
+    bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+    bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+    bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+    bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+    const float radical_inverse = float(bits) * 2.3283064365386963e-10;
+    return float2(float(i) / float(N), radical_inverse);
+}
+
 bool is_depth_OOB(float z) {
     return z <= 0.0; // reversed Z
 }
@@ -230,14 +263,95 @@ bool is_depth_OOB(float z) {
 
 
 
-uint2 sampler_size<T>(Sampler2D<T> smp) {
-    uint2 size;
-    smp.GetDimensions(size.x, size.y);
-    return size;
+
+struct CubeMap : IEnvmap {
+    SamplerCube sampler;
+
+    float4 SampleCube(float3 dir, float level = 0.0) {
+        return sampler.SampleLevel(dir, level);
+    }
+};
+
+struct EquirecMap : IEnvmap {
+    Sampler2D sampler;
+
+    float4 SampleCube(float3 dir, float level = 0.0) {
+        return sampler.SampleLevel(to_equirec(dir), level);
+    }
+};
+
+
+interface IEnvmap {
+    float4 SampleCube(float3 dir, float level = 0.0);
 }
 
 
 
+
+
+float2 to_equirec(float3 v) {
+    return -float2(atan2(-v.y, v.x), asin(v.z)) * float2(0.1591, 0.3183) + 0.5;
+}
+
+
+float3 importance_sample_GGX(float2 Xi, float3 N, float roughness) {
+    const float sqr_alpha = sqr(sqr(roughness));
+
+    const float phi = 2.0 * pi * Xi.x;
+    const float cos_theta = sqrt((1.0 - Xi.y) / (1.0 + (sqr_alpha - 1.0) * Xi.y));
+    const float sin_theta = sqrt(1.0 - sqr(cos_theta));
+
+    const float3 H = float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+
+    const float3 up = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
+    const float3 T = normalize(cross(up, N));
+    const float3 B = cross(N, T);
+
+    return normalize(T * H.x + B * H.y + N * H.z);
+}
+
+float3 diffuse_convolution<T: IEnvmap>(T envmap, float3 N) {
+    float3 up = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
+    const float3 right = normalize(cross(up, N));
+    up = cross(N, right);
+
+    float3 acc = float3(0.0);
+    float samples = 0.0;
+
+    const float sample_delta = 0.05;
+    for(float phi = 0.0; phi < 2.0 * pi; phi += sample_delta) {
+        for(float theta = 0.0; theta < 0.5 * pi; theta += sample_delta) {
+            const float3 T = float3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+            const float3 sample_dir = T.x * right + T.y * up + T.z * N;
+
+            acc += envmap.SampleCube(sample_dir).rgb * cos(theta) * sin(theta);
+            ++samples;
+        }
+    }
+    return (acc / samples) * pi;
+}
+
+float3 specular_convolution<T: IEnvmap>(T envmap, float3 N, float roughness) {
+    const float3 V = N;
+
+    float total = 0.0;
+    float3 acc = float3(0.0);
+
+    const uint sample_count = 1024;
+    for(uint i = 0; i != sample_count; ++i) {
+        const float2 Xi = hammersley(i, sample_count);
+        const float3 H  = importance_sample_GGX(Xi, N, roughness);
+        const float3 L  = normalize(2.0 * dot(V, H) * H - V);
+
+        const float NdotL = max(0.0, dot(N, L));
+
+        if(NdotL > 0.0) {
+            acc += envmap.SampleCube(L).rgb * NdotL;
+            total += NdotL;
+        }
+    }
+    return acc / total;
+}
 
 
 

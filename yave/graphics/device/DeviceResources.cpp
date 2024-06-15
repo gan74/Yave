@@ -99,8 +99,8 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
 };
 
 static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputePrograms)> compute_datas = {
-    "equirec_convolution.comp",
-    "cubemap_convolution.comp",
+    "ibl_convolution_EQUIREC",
+    "ibl_convolution_CUBE",
     "brdf_integrator.comp",
     "deferred_locals.comp",
     "deferred_locals_DEBUG.comp",
