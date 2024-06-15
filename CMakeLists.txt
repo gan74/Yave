@@ -243,16 +243,14 @@ endfunction(build_engine_shaders)
 function(build_editor_shaders SHADER_TARGET)
     add_shader_variation(${SHADER_TARGET} "editor/engine_view.frag" "")
     add_shader_variation(${SHADER_TARGET} "editor/imgui.frag" "")
-    add_shader_variation(${SHADER_TARGET} "editor/imgui_billboard.frag" "")
     add_shader_variation(${SHADER_TARGET} "editor/selection.frag" "")
 
-    add_shader_variation(${SHADER_TARGET} "editor/imgui_billboard.geom" "")
-
     add_shader_variation(${SHADER_TARGET} "editor/imgui.vert" "")
-    add_shader_variation(${SHADER_TARGET} "editor/imgui_billboard.vert" "")
 
     add_shader_variation(${SHADER_TARGET} "editor/picking.comp" "")
     add_shader_variation(${SHADER_TARGET} "editor/depth_alpha.comp" "")
+
+    add_slang_shader(${SHADER_TARGET} "editor/imgui_billboard.slang" "vert;geom;frag" "")
 endfunction(build_editor_shaders)
 
 
