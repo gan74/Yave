@@ -97,17 +97,23 @@ PixelStageOut frag_main(PixelStageIn in) {
     const Sampler2D emissive_tex = all_textures[material.emissive_texture_index];
     const Sampler2D metal_rough_tex = all_textures[material.metallic_roughness_texture_index];
 
+    const float3 normal = unpack_normal_map(normal_tex.Sample(in.uv).xy);
+    const float3 mapped_front_face_normal = normal.x * in.tangent + normal.y * in.bitangent + normal.z * in.normal;
+    const float3 mapped_normal = gl_FrontFacing ? mapped_front_face_normal : -mapped_front_face_normal;
 
-    const vec3 normal = unpack_normal_map(normal_tex.Sample(in.uv).xy);
-    const vec3 mapped_front_face_normal = normal.x * in.tangent + normal.y * in.bitangent + normal.z * in.normal;
-    const vec3 mapped_normal = gl_FrontFacing ? mapped_front_face_normal : -mapped_front_face_normal;
+    const float4 albedo = albedo_tex.Sample(in.uv);
 
-    const vec4 metallic_roughness = metal_rough_tex.Sample(in.uv);
+#ifdef ALPHA_TEST
+    if(albedo.a < 0.5) {
+        discard;
+    }
+#endif
 
+    const float4 metallic_roughness = metal_rough_tex.Sample(in.uv);
 
     SurfaceInfo surface;
     {
-        surface.albedo = albedo_tex.Sample(in.uv).rgb * material.base_color_factor;
+        surface.albedo = albedo.rgb * material.base_color_factor;
         surface.normal = mapped_normal;
 
         surface.perceptual_roughness = metallic_roughness.g * material.roughness_factor;

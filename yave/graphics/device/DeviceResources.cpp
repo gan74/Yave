@@ -76,19 +76,15 @@ struct DeviceMaterialData {
         return DeviceMaterialData::screen(frag, blended ? BlendMode::Add : BlendMode::None);
     }
 
-    static constexpr DeviceMaterialData mesh(std::string_view shader, bool double_sided = false) {
-        return DeviceMaterialData{{}, {}, shader, DepthTestMode::Standard, BlendMode::None, double_sided ? CullMode::None : CullMode::Back, true};
-    }
-
     static constexpr DeviceMaterialData basic(std::string_view frag, bool double_sided = false) {
         return DeviceMaterialData{frag, "basic.vert", {}, DepthTestMode::Standard, BlendMode::None, double_sided ? CullMode::None : CullMode::Back, true};
     }
 };
 
 static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMaterialTemplates)> material_datas = {
-    DeviceMaterialData::mesh("mesh"),
-    DeviceMaterialData::basic("textured_ALPHA_TEST.frag"),
-    DeviceMaterialData::basic("textured_ALPHA_TEST.frag", true),
+    DeviceMaterialData{{}, {}, "opaque", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{{}, {}, "opaque_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{{}, {}, "opaque_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
 
     DeviceMaterialData::basic("textured_SPECULAR.frag"),
     DeviceMaterialData::basic("textured_SPECULAR_ALPHA_TEST.frag"),

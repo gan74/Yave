@@ -83,20 +83,22 @@ function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
     get_property(SLANGC GLOBAL PROPERTY SLANG_EXECUTABLE)
 
     foreach(DEF ${SHADER_DEFINES})
-        set(COMPILE_ARGS "${COMPILE_ARGS} -D${DEF}")
+        set(COMPILE_ARGS "${COMPILE_ARGS} -D${DEF}=1")
         set(NAME_SUFFIX "${NAME_SUFFIX}_${DEF}")
     endforeach()
-
+    string(STRIP "${COMPILE_ARGS}" COMPILE_ARGS)
     set(SHADER_BIN "${SHADER_NAME}${NAME_SUFFIX}.spv")
     add_custom_command(
         TARGET ${SHADER_TARGET}
         COMMAND ${SLANGC}
+            ${COMPILE_ARGS}
             -target spirv
             -matrix-layout-column-major
             -fvk-use-entrypoint-name
             -preserve-params
             -O0
-            ${COMPILE_ARGS} "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}" -o ${SHADER_BIN}
+            -o ${SHADER_BIN}
+            "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}"
     )
     optimize_shader(${SHADER_TARGET} ${SHADER_BIN})
 endfunction(add_slang_shader)
@@ -226,18 +228,17 @@ function(build_engine_shaders SHADER_TARGET)
 
     add_shader_variation(${SHADER_TARGET} "blur.frag" "HORIZONTAL")
     add_shader_variation(${SHADER_TARGET} "blur.frag" "VERTICAL")
-
-    add_shader_variation(${SHADER_TARGET} "textured.frag" "")
-    add_shader_variation(${SHADER_TARGET} "textured.frag" "ALPHA_TEST")
     add_shader_variation(${SHADER_TARGET} "textured.frag" "SPECULAR")
     add_shader_variation(${SHADER_TARGET} "textured.frag" "SPECULAR;ALPHA_TEST")
 
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "")
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "COMBINE_HIGH")
 
+    add_slang_shader(${SHADER_TARGET} "opaque.slang" "")
+    add_slang_shader(${SHADER_TARGET} "opaque.slang" "ALPHA_TEST")
+
     add_slang_shader(${SHADER_TARGET} "wireframe.slang" "")
     add_slang_shader(${SHADER_TARGET} "copy.slang" "")
-    add_slang_shader(${SHADER_TARGET} "mesh.slang" "")
     add_slang_shader(${SHADER_TARGET} "screen.slang" "")
     add_slang_shader(${SHADER_TARGET} "tonemap.slang" "")
 endfunction(build_engine_shaders)
