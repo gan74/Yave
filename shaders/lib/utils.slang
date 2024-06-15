@@ -57,7 +57,7 @@ struct MaterialData {
     uint emissive_texture_index;
     uint metallic_roughness_texture_index;
 
-    uvec4 padding;
+    uint4 padding;
 };
 
 
@@ -111,8 +111,8 @@ float3 octahedron_decode(float2 f) {
 
 
 float3 unpack_normal_map(float2 normal) {
-    normal = normal * 2.0 - vec2(1.0);
-    return vec3(normal, 1.0 - sqrt(dot(normal, normal)));
+    normal = normal * 2.0 - 1.0;
+    return float3(normal, 1.0 - sqrt(dot(normal, normal)));
 }
 
 
@@ -125,4 +125,13 @@ float4 unpack_2_10_10_10(uint packed) {
         ) / float(0x03FF)) * 2.0 - 1.0,
         (packed >> 30 == 0) ? 1.0 : -1.0
     );
+}
+
+float4 unpack_color(uint packed) {
+    return float4(
+        (packed >> 0) & 0xFF,
+        (packed >> 8) & 0xFF,
+        (packed >> 16) & 0xFF,
+        (packed >> 24) & 0xFF
+    ) / 255.0;
 }

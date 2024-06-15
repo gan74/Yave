@@ -110,7 +110,7 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData::screen("bloom_downscale"),
     DeviceMaterialData::screen("blur_HORIZONTAL", true),
     DeviceMaterialData::screen("blur_VERTICAL", true),
-    DeviceMaterialData::wire("wireframe"),
+    DeviceMaterialData{{}, {}, "wireframe", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true, PrimitiveType::Lines},
     DeviceMaterialData::screen("taa_resolve"),
     DeviceMaterialData::basic("id"),
 };
@@ -241,7 +241,7 @@ DeviceResources::DeviceResources() {
                 .set_primitive_type(data.primitive_type);
             ;
             _material_templates[i] = MaterialTemplate(std::move(template_data));
-            _material_templates[i].set_name(fmt_c_str("{} | {}", data.vert, data.frag));
+            _material_templates[i].set_name(data.frag_and_vert.empty() ? fmt_c_str("{} | {}", data.vert, data.frag) : fmt_c_str("{}", data.frag_and_vert));
         }
     }
 
