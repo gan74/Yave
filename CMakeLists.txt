@@ -299,6 +299,7 @@ if(YAVE_BUILD_EDITOR)
 
     add_custom_target(editor_shaders)
     build_editor_shaders(editor_shaders)
+    add_dependencies(editor_shaders slang)
     add_dependencies(editor editor_shaders)
 
     target_link_libraries(editor yave)
