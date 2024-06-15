@@ -27,6 +27,7 @@ SOFTWARE.
 #include <y/reflect/reflect.h>
 #include <y/core/Vector.h>
 #include <y/core/Span.h>
+#include <y/core/String.h>
 
 #include <y/io2/io.h>
 

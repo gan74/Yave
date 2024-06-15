@@ -55,7 +55,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp) : _local_size(comp.loc
     {
         stage.module = comp.vk_shader_module();
         stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-        stage.pName = "main";
+        stage.pName = comp.entry_point().data();
     }
 
     VkComputePipelineCreateInfo create_info = vk_struct();

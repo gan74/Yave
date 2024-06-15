@@ -51,16 +51,18 @@ static void merge(T& into, const S& other) {
     }
 }
 
-static auto create_stage_info(core::Vector<VkPipelineShaderStageCreateInfo>& stages, const ShaderModuleBase& mod) {
-    if(mod.vk_shader_module()) {
-        VkPipelineShaderStageCreateInfo create_info = vk_struct();
-        {
-            create_info.module = mod.vk_shader_module();
-            create_info.stage = VkShaderStageFlagBits(mod.type());
-            create_info.pName = "main";
-        }
-        stages << create_info;
+static void create_stage_info(core::Vector<VkPipelineShaderStageCreateInfo>& stages, const ShaderModuleBase& module) {
+    if(!module.vk_shader_module()) {
+        return;
     }
+
+    VkPipelineShaderStageCreateInfo create_info = vk_struct();
+    {
+        create_info.module = module.vk_shader_module();
+        create_info.stage = VkShaderStageFlagBits(module.type());
+        create_info.pName = module.entry_point().data();
+    }
+    stages << create_info;
 }
 
 // Takes a SORTED (by location) Attribute list

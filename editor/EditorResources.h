@@ -30,25 +30,6 @@ namespace editor {
 
 class EditorResources final : NonMovable {
     public:
-        enum SpirV {
-            DepthAlphaComp,
-            PickingComp,
-
-            ImGuiFrag,
-            ImGuiBillBoardFrag,
-            EngineViewFrag,
-            SelectionFrag,
-
-            ScreenVert,
-            ImGuiVert,
-            ImGuiBillBoardVert,
-            BasicVert,
-
-            ImGuiBillBoardGeom,
-
-            MaxSpirV
-        };
-
         enum ComputePrograms {
             DepthAlphaProgram,
             PickingProgram,
@@ -80,7 +61,6 @@ class EditorResources final : NonMovable {
     private:
         void load_resources();
 
-        std::unique_ptr<SpirVData[]> _spirv;
         std::unique_ptr<ComputeProgram[]> _computes;
         std::unique_ptr<MaterialTemplate[]> _material_templates;
 

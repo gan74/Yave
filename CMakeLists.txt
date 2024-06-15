@@ -87,15 +87,18 @@ function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_STAGES SHADER_DEFINES
         set(NAME_SUFFIX "${NAME_SUFFIX}_${DEF}")
     endforeach()
 
-    foreach(STAGE ${SHADER_STAGES})
-        set(SHADER_BIN "${SHADER_NAME}${NAME_SUFFIX}.${STAGE}.spv")
-        add_custom_command(
-            TARGET ${SHADER_TARGET}
-            COMMAND ${SLANGC} -target spirv -matrix-layout-column-major -preserve-params -O0 -entry "${STAGE}_main" ${COMPILE_ARGS} "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}" -o ${SHADER_BIN}
-        )
-        optimize_shader(${SHADER_TARGET} ${SHADER_BIN})
-    endforeach()
-
+    set(SHADER_BIN "${SHADER_NAME}${NAME_SUFFIX}.spv")
+    add_custom_command(
+        TARGET ${SHADER_TARGET}
+        COMMAND ${SLANGC}
+            -target spirv
+            -matrix-layout-column-major
+            -fvk-use-entrypoint-name
+            -preserve-params
+            -O0
+            ${COMPILE_ARGS} "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}" -o ${SHADER_BIN}
+    )
+    optimize_shader(${SHADER_TARGET} ${SHADER_BIN})
 endfunction(add_slang_shader)
 
 

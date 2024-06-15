@@ -52,6 +52,7 @@ using Textures = DeviceResources::Textures;
 struct DeviceMaterialData {
     const std::string_view frag;
     const std::string_view vert;
+    const std::string_view frag_and_vert;
 
     const DepthTestMode depth_test;
     const BlendMode blend_mode;
@@ -59,28 +60,32 @@ struct DeviceMaterialData {
     const bool depth_write;
     const PrimitiveType primitive_type = PrimitiveType::Triangles;
 
+    core::String frag_file() const {
+        return frag.empty() ? fmt_to_owned("{}", frag_and_vert) : fmt_to_owned("{}.frag", frag);
+    }
+
+    core::String vert_file() const {
+        return vert.empty() ? fmt_to_owned("{}", frag_and_vert) : fmt_to_owned("{}.vert", vert);
+    }
+
     static constexpr DeviceMaterialData screen(std::string_view frag, BlendMode mode) {
-        return DeviceMaterialData{frag, "screen", DepthTestMode::None, mode, CullMode::None, false};
+        return DeviceMaterialData{frag, "screen", {}, DepthTestMode::None, mode, CullMode::None, false};
     }
 
     static constexpr DeviceMaterialData screen(std::string_view frag, bool blended = false) {
         return DeviceMaterialData::screen(frag, blended ? BlendMode::Add : BlendMode::None);
     }
 
-    static constexpr DeviceMaterialData mesh(std::string_view frag, bool double_sided = false) {
-        return DeviceMaterialData{frag, "mesh", DepthTestMode::Standard, BlendMode::None,  double_sided ? CullMode::None : CullMode::Back, true};
+    static constexpr DeviceMaterialData mesh(std::string_view shader, bool double_sided = false) {
+        return DeviceMaterialData{{}, {}, shader, DepthTestMode::Standard, BlendMode::None, double_sided ? CullMode::None : CullMode::Back, true};
     }
 
     static constexpr DeviceMaterialData basic(std::string_view frag, bool double_sided = false) {
-        return DeviceMaterialData{frag, "basic", DepthTestMode::Standard, BlendMode::None,  double_sided ? CullMode::None : CullMode::Back, true};
+        return DeviceMaterialData{frag, "basic", {}, DepthTestMode::Standard, BlendMode::None, double_sided ? CullMode::None : CullMode::Back, true};
     }
 
     static constexpr DeviceMaterialData wire(std::string_view frag) {
-        return DeviceMaterialData{frag, "wireframe", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true, PrimitiveType::Lines};
-    }
-
-    static constexpr DeviceMaterialData splat(std::string_view frag, std::string_view vert) {
-        return DeviceMaterialData{frag, vert, DepthTestMode::Standard, BlendMode::None, CullMode::Back, true, PrimitiveType::Points};
+        return DeviceMaterialData{frag, "wireframe", {}, DepthTestMode::Standard, BlendMode::None, CullMode::Back, true, PrimitiveType::Lines};
     }
 };
 
@@ -93,8 +98,8 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData::basic("textured_SPECULAR_ALPHA_TEST"),
     DeviceMaterialData::basic("textured_SPECULAR_ALPHA_TEST", true),
 
-    DeviceMaterialData{"deferred_light_POINT", "deferred_light_POINT", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
-    DeviceMaterialData{"deferred_light_SPOT", "deferred_light_SPOT", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
+    DeviceMaterialData{"deferred_light_POINT", "deferred_light_POINT", {}, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
+    DeviceMaterialData{"deferred_light_SPOT", "deferred_light_SPOT", {}, DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
     DeviceMaterialData::screen("deferred_ambient", true),
     DeviceMaterialData::screen("atmosphere", false),
     DeviceMaterialData::screen("tonemap"),
@@ -111,23 +116,23 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
 };
 
 static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputePrograms)> compute_datas = {
-    "equirec_convolution",
-    "cubemap_convolution",
-    "brdf_integrator",
-    "deferred_locals",
-    "deferred_locals_DEBUG",
-    "linearize_depth",
-    "ssao",
-    "ssao_upsample",
-    "ssao_upsample_COMBINE_HIGH",
+    "equirec_convolution.comp",
+    "cubemap_convolution.comp",
+    "brdf_integrator.comp",
+    "deferred_locals.comp",
+    "deferred_locals_DEBUG.comp",
+    "linearize_depth.comp",
+    "ssao.comp",
+    "ssao_upsample.comp",
+    "ssao_upsample_COMBINE_HIGH.comp",
     "copy",
-    "histogram",
-    "exposure_params",
-    "exposure_debug",
-    "depth_bounds",
-    "atmosphere_integrator",
-    "prev_camera",
-    "update_transforms",
+    "histogram.comp",
+    "exposure_params.comp",
+    "exposure_debug.comp",
+    "depth_bounds.comp",
+    "atmosphere_integrator.comp",
+    "prev_camera.comp",
+    "update_transforms.comp",
 };
 
 
@@ -204,39 +209,20 @@ DeviceResources::DeviceResources() {
         }
     }
 
-    core::FlatHashMap<std::string_view, SpirVData> comp_spirv;
-    core::FlatHashMap<std::string_view, SpirVData> frag_spirv;
-    core::FlatHashMap<std::string_view, SpirVData> vert_spirv;
-    {
-        for(const std::string_view name : compute_datas) {
-            if(SpirVData& spirv = comp_spirv[name]; spirv.is_empty()) {
-                const core::String filename = fmt_to_owned("{}.comp.spv", name);
-                spirv = SpirVData::deserialized(io2::File::open(filename).expected(fmt_c_str("Unable to open SPIR-V file ({})", filename)));
-            }
+    core::FlatHashMap<core::String, SpirVData> spirvs;
+    auto load_spirv = [&](std::string_view name) -> const SpirVData& {
+        y_debug_assert(!name.empty());
+        const core::String filename = fmt_to_owned("{}.spv", name);
+        auto& spirv = spirvs[filename];
+        if(spirv.is_empty()) {
+            spirv = SpirVData::deserialized(io2::File::open(filename).expected(fmt_c_str("Unable to open SPIR-V file ({})", filename)));
         }
-
-        for(const DeviceMaterialData& material : material_datas) {
-            if(SpirVData& spirv = frag_spirv[material.frag]; spirv.is_empty()) {
-                const core::String filename = fmt_to_owned("{}.frag.spv", material.frag);
-                spirv = SpirVData::deserialized(io2::File::open(filename).expected(fmt_c_str("Unable to open SPIR-V file ({})", filename)));
-            }
-            if(SpirVData& spirv = vert_spirv[material.vert]; spirv.is_empty()) {
-                const core::String filename = fmt_to_owned("{}.vert.spv", material.vert);
-                spirv = SpirVData::deserialized(io2::File::open(filename).expected(fmt_c_str("Unable to open SPIR-V file ({})", filename)));
-            }
-        }
-    }
-
-    auto spirv = [&](const auto& map, std::string_view name) -> const SpirVData& {
-        const auto it = map.find(name);
-        y_always_assert(!name.empty(), "Invalid shader name");
-        y_always_assert(it != map.end(), "Shader \"{}\" not found", name);
-        return it->second;
+        return spirv;
     };
 
     {
         for(usize i = 0; i != compute_datas.size(); ++i) {
-            _computes[i] = ComputeProgram(ComputeShader(spirv(comp_spirv, compute_datas[i])));
+            _computes[i] = ComputeProgram(ComputeShader(load_spirv(compute_datas[i])));
             set_name(_computes[i].vk_pipeline(), fmt_c_str("{}", compute_datas[i]));
         }
     }
@@ -246,8 +232,8 @@ DeviceResources::DeviceResources() {
         for(usize i = 0; i != material_datas.size(); ++i) {
             const auto& data = material_datas[i];
             auto template_data = MaterialTemplateData()
-                .set_frag_data(spirv(frag_spirv, data.frag))
-                .set_vert_data(spirv(vert_spirv, data.vert))
+                .set_frag_data(load_spirv(data.frag_file()))
+                .set_vert_data(load_spirv(data.vert_file()))
                 .set_depth_mode(data.depth_test)
                 .set_cull_mode(data.cull_mode)
                 .set_blend_mode(data.blend_mode)
