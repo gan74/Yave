@@ -73,7 +73,7 @@ function(add_shader_variation SHADER_TARGET SHADER_FILE SHADER_DEFINES)
         TARGET ${SHADER_TARGET}
         COMMAND ${Vulkan_GLSLC_EXECUTABLE} -c --target-env=vulkan1.2 ${COMPILE_ARGS} "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}" -o ${SHADER_BIN}
     )
-    optimize_shader(${SHADER_TARGET} ${SHADER_BIN})
+    optimize_shader(${SHADER_TARGET}_optim ${SHADER_BIN})
 endfunction(add_shader_variation)
 
 
@@ -100,7 +100,7 @@ function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
             -o ${SHADER_BIN}
             "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}"
     )
-    optimize_shader(${SHADER_TARGET} ${SHADER_BIN})
+    optimize_shader(${SHADER_TARGET}_optim ${SHADER_BIN})
 endfunction(add_slang_shader)
 
 
@@ -285,20 +285,20 @@ if(YAVE_BUILD_YAVE)
     endif()
 
     add_custom_target(shaders)
+    add_custom_target(shaders_optim)
     build_engine_shaders(shaders)
     add_dependencies(shaders slang)
+    add_dependencies(shaders_optim shaders)
 
-    add_dependencies(yave shaders)
+    add_dependencies(yave shaders_optim)
 endif()
 
 if(YAVE_BUILD_EDITOR)
     add_executable(editor ${EDITOR_FILES} ${EDITOR_EXTERNAL_FILES})
     target_include_directories(editor PRIVATE external/imgui)
 
-    add_custom_target(editor_shaders)
-    build_editor_shaders(editor_shaders)
-    add_dependencies(editor_shaders slang)
-    add_dependencies(editor editor_shaders)
+    build_editor_shaders(shaders)
+    add_dependencies(editor shaders)
 
     target_link_libraries(editor yave)
 endif()
