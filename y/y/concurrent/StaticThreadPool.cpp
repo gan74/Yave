@@ -175,7 +175,6 @@ void StaticThreadPool::process_until_complete(core::Span<DependencyGroup> wait_f
 
 void StaticThreadPool::schedule(Func&& func, DependencyGroup* signal, core::Span<DependencyGroup> wait_for, std::source_location loc) {
     y_debug_assert(_run);
-    y_debug_assert(std::none_of(wait_for.begin(), wait_for.end(), [](const auto& d) { return d.is_empty(); }));
 
     std::shared_ptr<DependencyGroup::Data> signal_data;
     if(signal) {
