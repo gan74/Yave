@@ -58,7 +58,7 @@ float3 cube_dir(float2 tex_coord, uint side) {
 [numthreads(8, 8)]
 void comp_main() {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const float2 uv = (gl_GlobalInvocationID.xy + 0.5) / float2(sampler_size(out_image).xy);
+    const float2 uv = (gl_GlobalInvocationID.xy + 0.5) / float2(image_size(out_image).xy);
 
     for(uint i = 0; i != 6; ++i) {
         const float3 local_dir = normalize(cube_dir(uv, i));

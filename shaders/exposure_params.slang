@@ -1,30 +1,31 @@
-#version 450
+import "glsl";
 
-#include "lib/hdr.glsl"
+#include "lib/utils.slang"
 
-layout(local_size_x = lum_histogram_size, local_size_y = 1) in;
+[[vk::binding(0)]]
+RWStructuredBuffer<ExposureParams> exposure_params;
 
-layout(set = 0, binding = 0) writeonly buffer Exposure {
-    ExposureParams params;
-};
+[[vk::binding(1)]]
+Sampler2D<uint> in_histogram;
 
-layout(set = 0, binding = 1) uniform usampler2D in_histogram;
+groupshared uint histogram[lum_histogram_size];
+groupshared uint total;
 
-shared uint histogram[lum_histogram_size];
-shared uint total;
 
-// https://bruop.github.io/exposure/
-void main() {
-    const uint index = gl_LocalInvocationIndex;
-    uint bin_size = texelFetch(in_histogram, ivec2(index, 0), 0).x;
+
+[shader("compute")]
+[numthreads(lum_histogram_size)]
+void comp_main() {
+    const uint index = LocalInvocationIndex;
+    uint bin_size = in_histogram[int2(index, 0)];
 
     if(index == 0) {
         total = 0;
     }
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
-    atomicAdd(total, bin_size);
+    InterlockedAdd(total, bin_size);
     histogram[index] = bin_size;
 
     barrier();
@@ -36,7 +37,7 @@ void main() {
         }
     }
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     const uint total = uint(total * 0.95); // Kill the top 5% of brightest pixels
     const uint less_eq = histogram[index];
@@ -45,11 +46,11 @@ void main() {
         bin_size = total - min(total, less_than_bin);
     }
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     histogram[index] = bin_size * index;
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     // Make this not serial
     if(index == 0) {
@@ -58,7 +59,7 @@ void main() {
         }
     }
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     if(index == 0) {
         const uint weighted = histogram[0];
@@ -68,11 +69,15 @@ void main() {
         const float log_avg = (weighted / (lum_histogram_mul * non_black)) - lum_histogram_offset;
         const float avg = exp2(log_avg);
 
-        const float EV100 = avg_to_EV100(params.avg_lum);
+        const float EV100 = avg_to_EV100(exposure_params[0].avg_lum);
 
-        params.exposure = EV100_to_exposure(EV100);
-        params.avg_lum = avg;
-        params.max_lum = avg * 9.6;
+        ExposureParams params;
+        {
+            params.exposure = EV100_to_exposure(EV100);
+            params.avg_lum = avg;
+            params.max_lum = avg * 9.6;
+        }
+        exposure_params[0] = params;
     }
 }
 

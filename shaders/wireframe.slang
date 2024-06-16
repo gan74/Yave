@@ -20,7 +20,7 @@ cbuffer Buffer_Inline {
 
 
 [shader("vertex")]
-VertexStageOut vert_main____(VertexStageIn in) {
+VertexStageOut vert_main(VertexStageIn in) {
     VertexStageOut out;
     {
         out.sv_position = mul(view_proj, float4(in.position, 1.0));

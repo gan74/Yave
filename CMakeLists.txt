@@ -100,7 +100,7 @@ function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
             -o ${SHADER_BIN}
             "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}"
     )
-    optimize_shader(${SHADER_TARGET}_optim ${SHADER_BIN})
+    # optimize_shader(${SHADER_TARGET}_optim ${SHADER_BIN})
 endfunction(add_slang_shader)
 
 
@@ -197,9 +197,7 @@ file(GLOB_RECURSE SHADER_FILES
 function(build_engine_shaders SHADER_TARGET)
     add_shader_variation(${SHADER_TARGET} "basic.vert" "")
 
-    add_shader_variation(${SHADER_TARGET} "id.frag" "")
     add_shader_variation(${SHADER_TARGET} "taa_resolve.frag" "")
-    add_shader_variation(${SHADER_TARGET} "passthrough.frag" "")
     add_shader_variation(${SHADER_TARGET} "atmosphere.frag" "")
     add_shader_variation(${SHADER_TARGET} "downsample.frag" "")
     add_shader_variation(${SHADER_TARGET} "bloom_upscale.frag" "")
@@ -207,15 +205,7 @@ function(build_engine_shaders SHADER_TARGET)
     add_shader_variation(${SHADER_TARGET} "deferred_ambient.frag" "")
 
     add_shader_variation(${SHADER_TARGET} "ssao.comp" "")
-    add_shader_variation(${SHADER_TARGET} "histogram.comp" "")
-    add_shader_variation(${SHADER_TARGET} "prev_camera.comp" "")
-    add_shader_variation(${SHADER_TARGET} "depth_bounds.comp" "")
-    add_shader_variation(${SHADER_TARGET} "update_transforms.comp" "")
-    add_shader_variation(${SHADER_TARGET} "linearize_depth.comp" "")
-    add_shader_variation(${SHADER_TARGET} "exposure_params.comp" "")
-    add_shader_variation(${SHADER_TARGET} "exposure_debug.comp" "")
     add_shader_variation(${SHADER_TARGET} "atmosphere_integrator.comp" "")
-    add_shader_variation(${SHADER_TARGET} "brdf_integrator.comp" "")
 
     add_shader_variation(${SHADER_TARGET} "deferred_locals.comp" "")
     add_shader_variation(${SHADER_TARGET} "deferred_locals.comp" "DEBUG")
@@ -231,6 +221,19 @@ function(build_engine_shaders SHADER_TARGET)
 
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "")
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "COMBINE_HIGH")
+
+    add_slang_shader(${SHADER_TARGET} "passthrough.slang" "")
+    add_slang_shader(${SHADER_TARGET} "id.slang" "")
+
+    add_slang_shader(${SHADER_TARGET} "prev_camera.slang" "")
+    add_slang_shader(${SHADER_TARGET} "depth_bounds.slang" "")
+    add_slang_shader(${SHADER_TARGET} "histogram.slang" "")
+    add_slang_shader(${SHADER_TARGET} "exposure_params.slang" "")
+    add_slang_shader(${SHADER_TARGET} "exposure_debug.slang" "")
+    add_slang_shader(${SHADER_TARGET} "update_transforms.slang" "")
+
+    add_slang_shader(${SHADER_TARGET} "brdf_integrator.slang" "")
+    add_slang_shader(${SHADER_TARGET} "linearize_depth.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "ibl_convolution.slang" "EQUIREC")
     add_slang_shader(${SHADER_TARGET} "ibl_convolution.slang" "CUBE")

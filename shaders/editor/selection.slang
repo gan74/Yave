@@ -4,10 +4,10 @@ import "glsl";
 
 
 [[vk::binding(0)]]
-Sampler2D in_depth;
+Sampler2D<float> in_depth;
 
 [[vk::binding(1)]]
-Sampler2D in_seletion_depth;
+Sampler2D<float> in_seletion_depth;
 
 [[vk::binding(2)]]
 Sampler2D<uint> in_seletion_id;

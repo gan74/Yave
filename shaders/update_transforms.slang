@@ -1,29 +1,25 @@
-#version 450
+import "glsl";
 
+#include "lib/utils.slang"
 
-#include "lib/utils.glsl"
+[[vk::binding(0)]]
+RWStructuredBuffer<TransformableData> out_transformables;
 
-layout(local_size_x = 64) in;
+[[vk::binding(1)]]
+StructuredBuffer<float4x4> in_transforms;
 
-layout(set = 0, binding = 0) buffer OutTransformables {
-    TransformableData out_transformables[];
-};
+[[vk::binding(2)]]
+StructuredBuffer<uint> in_indices;
 
-layout(set = 0, binding = 1) readonly buffer InTransforms {
-    mat4 in_transforms[];
-};
-
-layout(set = 0, binding = 2) readonly buffer InIndices {
-    uint in_indices[];
-};
-
-layout(set = 0, binding = 3) uniform Params_Inline {
+[[vk::binding(3)]]
+cbuffer Params_Inline {
     uint transform_count;
 };
 
 
-
-void main() {
+[shader("compute")]
+[numthreads(64)]
+void comp_main() {
     const uint id = uint(gl_GlobalInvocationID.x);
     if(id >= transform_count) {
         return;

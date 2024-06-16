@@ -6,7 +6,7 @@ import "glsl";
 Sampler2D in_color;
 
 [[vk::binding(1)]]
-RWTexture2D out_color;
+RWTexture2D<float4> out_color;
 
 [shader("compute")]
 [numthreads(8, 8)]

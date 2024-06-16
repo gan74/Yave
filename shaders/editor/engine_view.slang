@@ -12,10 +12,10 @@ cbuffer Target_Inline {
 Sampler2D in_final;
 
 [[vk::binding(2)]]
-Sampler2D in_depth;
+Sampler2D<float> in_depth;
 
 [[vk::binding(3)]]
-Sampler2D in_motion;
+Sampler2D<float2> in_motion;
 
 [[vk::binding(4)]]
 Sampler2D in_rt0;
@@ -24,7 +24,7 @@ Sampler2D in_rt0;
 Sampler2D in_rt1;
 
 [[vk::binding(6)]]
-Sampler2D in_ao;
+Sampler2D<float> in_ao;
 
 
 [shader("fragment")]
@@ -48,13 +48,13 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     } else if(target_index == 4) {
         color = float3(surface.perceptual_roughness);
     } else if(target_index == 5) {
-        const float depth = in_depth[coord].r;
+        const float depth = in_depth[coord];
         color = float3(pow(depth, 0.35));
     } else if(target_index == 6) {
-        const vec2 motion = in_motion[coord].xy;
+        const vec2 motion = in_motion[coord];
         color = float3(clamp(motion * 10.0, -0.5, 0.5) + 0.5, 0.5);
     } else if(target_index == 7) {
-        const float ao = in_ao.Sample(in_uv).r;
+        const float ao = in_ao.Sample(in_uv);
         color = float3(ao);
     }
 

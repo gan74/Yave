@@ -35,7 +35,7 @@ cbuffer Buffer {
 
 
 float sampling_factor(Sampler2D tex, float2 uv) {
-    const float2 size = float2(sampler_size(tex).xy);
+    const float2 size = float2(image_size(tex).xy);
     const float2 coord = uv * size;
 
     const float x_factor = max(abs(ddx(coord).x), abs(ddx(coord).y));
@@ -45,7 +45,7 @@ float sampling_factor(Sampler2D tex, float2 uv) {
 }
 
 float4 texture_min_filter(Sampler2D tex, float2 uv) {
-    const float2 size = float2(sampler_size(tex).xy);
+    const float2 size = float2(image_size(tex).xy);
     const float2 inv_size = 1.0 / size;
 
     return (

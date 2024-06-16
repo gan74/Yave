@@ -1,14 +1,8 @@
 import "glsl";
 
+#include "lib/std_bindings.slang"
 #include "lib/utils.slang"
 
-
-
-struct VertexStageIn {
-    float3 position;
-    uint2 packed_normal_tangent_sign;
-    float2 uv;
-};
 
 
 struct PixelStageIn {
@@ -39,17 +33,6 @@ struct PixelStageOut {
 
 
 
-[[vk::binding(0, 0)]]
-ConstantBuffer<Camera> camera;
-
-[[vk::binding(0, 1)]]
-StructuredBuffer<TransformableData> transformables;
-
-[[vk::binding(1, 1)]]
-StructuredBuffer<MaterialData> materials;
-
-[[vk::binding(2, 1)]]
-StructuredBuffer<uint2> transform_material_indices;
 
 [[vk::binding(0, 2)]]
 Sampler2D all_textures[];
@@ -58,7 +41,7 @@ Sampler2D all_textures[];
 
 
 [shader("vertex")]
-VertexStageOut vert_main(VertexStageIn in) {
+VertexStageOut vert_main(StdVertexStageIn in) {
     const TransformableData transformable = transformables[transform_material_indices[gl_InstanceIndex].x];
 
     const float3x3 model = float3x3(transformable.current);

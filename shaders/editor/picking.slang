@@ -7,7 +7,7 @@ struct PickingOutput {
 
 
 [[vk::binding(0, 0)]]
-Sampler2D in_depth;
+Sampler2D<float> in_depth;
 
 [[vk::binding(1, 0)]]
 Sampler2D<uint> in_id;
@@ -25,8 +25,8 @@ cbuffer Data_Inline {
 [numthreads(1, 1)]
 void comp_main() {
     const PickingOutput pick = {
-        in_depth.SampleLevel(uv, 0).r,
-        in_id[int2(sampler_size(in_id) * uv)] - 1,
+        in_depth.SampleLevel(uv, 0),
+        in_id[int2(image_size(in_id) * uv)] - 1,
     };
 
     out[0] = pick;

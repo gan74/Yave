@@ -5,6 +5,11 @@
 #include "structs.slang"
 
 
+// gl_LocalInvocationIndex is currently borked, see https://github.com/shader-slang/slang/issues/4402
+[require(compute)]
+in uint LocalInvocationIndex : SV_GroupIndex;
+
+
 static const float pi = 3.1415926535897932384626433832795;
 static const float inv_pi = 1.0 / pi;
 static const float euler = 2.7182818284590452353602874713526;
@@ -22,7 +27,11 @@ static const uint lum_histogram_size = 256;
 
 
 
-
+struct StdVertexStageIn {
+    float3 position;
+    uint2 packed_normal_tangent_sign;
+    float2 uv;
+};
 
 
 struct SurfaceInfo {
@@ -54,19 +63,19 @@ struct RawGBuffer {
 
 
 
-uint2 sampler_size<T>(Sampler2D<T> smp) {
+uint2 image_size<T>(Sampler2D<T> smp) {
     uint2 size;
     smp.GetDimensions(size.x, size.y);
     return size;
 }
 
-uint3 sampler_size<T>(RWTexture3D<T> smp) {
-    uint3 size;
-    smp.GetDimensions(size.x, size.y, size.z);
+uint2 image_size<T>(RWTexture2D<T> smp) {
+    uint2 size;
+    smp.GetDimensions(size.x, size.y);
     return size;
 }
 
-uint3 sampler_size<T>(RWTexture2DArray<T> smp) {
+uint3 image_size<T>(RWTexture2DArray<T> smp) {
     uint3 size;
     smp.GetDimensions(size.x, size.y, size.z);
     return size;
@@ -121,8 +130,9 @@ SurfaceInfo decode_gbuffer(RawGBuffer raw) {
 
 
 
-
-
+float luminance(float3 rgb) {
+    return dot(rgb, float3(0.2126, 0.7152, 0.0722));
+}
 
 float avg_to_EV100(float avg) {
     return log2(avg * 100.0 / 12.5);
@@ -260,12 +270,23 @@ bool is_depth_OOB(float z) {
 
 
 
+float3 unproject_ndc(float3 ndc, float4x4 inv_matrix) {
+    const float4 p = mul(inv_matrix, float4(ndc, 1.0));
+    return p.xyz / p.w;
+}
+
+float3 unproject(float2 uv, float depth, float4x4 inv_matrix) {
+    const float3 ndc = float3(uv * 2.0 - 1.0, depth);
+    return unproject_ndc(ndc, inv_matrix);
+}
+
+
 
 
 
 
 struct CubeMap : IEnvmap {
-    SamplerCube sampler;
+    SamplerCube<float4> sampler;
 
     float4 SampleCube(float3 dir, float level = 0.0) {
         return sampler.SampleLevel(dir, level);
@@ -353,7 +374,49 @@ float3 specular_convolution<T: IEnvmap>(T envmap, float3 N, float roughness) {
     return acc / total;
 }
 
+float2 integrate_brdf(float NdotV, float roughness) {
+    const float3 V = float3(sqrt(1.0 - sqr(NdotV)), 0.0, NdotV);
 
+    float A = 0.0;
+    float B = 0.0;
+
+    const float3 N = float3(0.0, 0.0, 1.0);
+    const uint SAMPLE_COUNT = 1024;
+    for(uint i = 0; i != SAMPLE_COUNT; ++i) {
+        const float2 Xi = hammersley(i, SAMPLE_COUNT);
+        const float3 H  = importance_sample_GGX(Xi, N, roughness);
+        const float3 L  = normalize(2.0 * dot(V, H) * H - V);
+
+        const float NdotL = max(0.0, L.z);
+        const float NdotH = max(0.0, H.z);
+        const float VdotH = max(0.0, dot(V, H));
+
+        if(NdotL > 0.0) {
+            float G = G_Smith(NdotV, NdotL, roughness);
+            float G_Vis = (G * VdotH) / (NdotH * NdotV);
+            float Fc = pow(1.0 - VdotH, 5.0);
+
+            A += (1.0 - Fc) * G_Vis;
+            B += Fc * G_Vis;
+        }
+    }
+    return float2(A, B) / SAMPLE_COUNT;
+}
+
+
+
+
+
+
+float G_Schlick_GGX(float NdotV, float alpha) {
+    const float k = alpha * 0.5;
+    const float denom = NdotV * (1.0 - k) + k;
+    return NdotV / denom;
+}
+
+float G_Smith(float NdotV, float NdotL, float alpha) {
+    return G_Schlick_GGX(NdotV, alpha) * G_Schlick_GGX(NdotL, alpha);
+}
 
 
 

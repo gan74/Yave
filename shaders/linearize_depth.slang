@@ -1,24 +1,24 @@
 import "glsl";
 
-#include "../lib/utils.slang"
+#include "lib/utils.slang"
 
 [[vk::binding(0)]]
-Sampler2D in_color;
-
-[[vk::binding(1)]]
 Sampler2D<float> in_depth;
 
+[[vk::binding(1)]]
+ConstantBuffer<Camera> camera;
+
 [[vk::binding(2)]]
-RWTexture2D<float4> out_color;
+RWTexture2D<float> out_depth;
 
 [shader("compute")]
 [numthreads(8, 8)]
 void comp_main() {
     const int2 coord = int2(gl_GlobalInvocationID.xy);
 
-    const float4 color = in_color[coord];
     const float depth = in_depth[coord];
+    const float linear_depth = -unproject(vec2(0.5), depth, camera.inv_proj).z;
 
-    out_color[coord] = (is_depth_OOB(depth) ? float4(0.0) : color);
+    out_depth[coord] = linear_depth;
 }
 
