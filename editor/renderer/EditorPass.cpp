@@ -158,10 +158,8 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& scene_vie
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Editor entity pass");
 
-    const EcsScene* ecs_scene = dynamic_cast<const EcsScene*>(scene_view.scene());
-    const ecs::EntityWorld* world = ecs_scene->world();
-
-    const usize buffer_size = world->entity_count();
+    const Scene* scene = scene_view.scene();
+    const usize buffer_size = scene->transform_manager().transform_buffer().size();
 
     auto pass_buffer = builder.declare_typed_buffer<EditorPassData>();
     const auto vertex_buffer = builder.declare_typed_buffer<ImGuiBillboardVertex>(buffer_size);

@@ -130,6 +130,13 @@ void EntityWorld::tick(concurrent::StaticThreadPool& thread_pool) {
 }
 
 void EntityWorld::process_deferred_changes() {
+    _groups.locked([&](auto&& groups) {
+        y_profile_zone("Clear removed groups");
+        for(auto& group : groups) {
+            group->_removed.make_empty();
+        }
+    });
+
     for(auto& container : _containers) {
         if(container) {
             container->process_deferred_changes();
@@ -141,12 +148,12 @@ void EntityWorld::process_deferred_changes() {
         _entities.remove(id);
     }
 
-
     _to_delete.make_empty();
 
     _groups.locked([&](auto&& groups) {
+        y_profile_zone("Clear added groups");
         for(auto& group : groups) {
-            group->clear_id_lists();
+            group->_added.make_empty();
         }
     });
 

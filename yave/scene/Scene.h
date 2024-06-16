@@ -86,6 +86,7 @@ class Scene : NonMovable {
 
         virtual ~Scene();
 
+        const TransformManager& transform_manager() const;
 
         const math::Transform<>& transform(const TransformableSceneObjectData& obj) const;
 

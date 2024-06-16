@@ -32,6 +32,10 @@ Scene::Scene() {
 Scene::~Scene() {
 }
 
+const TransformManager& Scene::transform_manager() const {
+    return _transform_manager;
+}
+
 const math::Transform<>& Scene::transform(const TransformableSceneObjectData& obj) const {
     return _transform_manager.transform(obj.transform_index);
 }
