@@ -56,4 +56,26 @@ struct ExposureParams {
     uint padding_0;
 };
 
+struct DirectionalLight {
+    float3 direction;
+    float cos_disk;
+
+    float3 color;
+    uint padding_1;
+
+    uint4 shadow_map_indices;
+};
+
+struct ShadowMapInfo {
+    float4x4 view_proj;
+
+    float2 uv_offset;
+    float2 uv_mul;
+
+    float size;
+    float texel_size;
+    uint padding_0;
+    uint padding_1;
+};
+
 #endif

@@ -1,8 +1,11 @@
 #ifndef UTILS_SLANG
 #define UTILS_SLANG
 
+import "glsl";
 
 #include "structs.slang"
+
+typealias Sampler2DShadow = sampler2DShadow;
 
 
 static const float pi = 3.1415926535897932384626433832795;
@@ -35,6 +38,22 @@ struct SurfaceInfo {
 
     float metallic;
     float3 normal;
+
+    float alpha() {
+        return sqr(perceptual_roughness);
+    }
+
+    float alpha2() {
+        return sqr(alpha());
+    }
+
+    float3 f0() {
+        return approx_F0(metallic, albedo);
+    }
+
+    float3 f90() {
+        return F90_from_F0(f0());
+    }
 };
 
 
@@ -56,7 +75,19 @@ struct RawGBuffer {
 
 
 
+uint image_mips<T>(Sampler2D<T> smp) {
+    uint mip;
+    uint2 size;
+    smp.GetDimensions(0, size.x, size.y, mip);
+    return 0;
+}
 
+uint image_mips<T>(SamplerCube<T> smp) {
+    uint mip;
+    uint2 size;
+    smp.GetDimensions(0, size.x, size.y, mip);
+    return 0;
+}
 
 uint2 image_size<T>(Sampler2D<T> smp) {
     uint2 size;
@@ -197,6 +228,15 @@ float histogram_bin_to_lum(uint bin) {
 
 
 
+float3 uv_debug_color(float2 p) {
+    float3 p3 = fract(p.xyx * float3(0.1031, 0.1030, 0.0973));
+    p3 += dot(p3, p3.yxz + 33.33);
+    return fract((p3.xxy + p3.yzz) * p3.zyx);
+}
+
+
+
+
 
 
 
@@ -263,8 +303,6 @@ bool is_depth_OOB(float z) {
     return z <= 0.0; // reversed Z
 }
 
-
-
 float3 unproject_ndc(float3 ndc, float4x4 inv_matrix) {
     const float4 p = mul(inv_matrix, float4(ndc, 1.0));
     return p.xyz / p.w;
@@ -273,6 +311,12 @@ float3 unproject_ndc(float3 ndc, float4x4 inv_matrix) {
 float3 unproject(float2 uv, float depth, float4x4 inv_matrix) {
     const float3 ndc = float3(uv * 2.0 - 1.0, depth);
     return unproject_ndc(ndc, inv_matrix);
+}
+
+float3 project(float3 pos, float4x4 proj_matrix) {
+    const float4 p = mul(proj_matrix, float4(pos, 1.0));
+    const float3 p3 = p.xyz / p.w;
+    return float3(p3.xy * 0.5 + float2(0.5), p3.z);
 }
 
 
@@ -398,10 +442,117 @@ float2 integrate_brdf(float NdotV, float roughness) {
     return float2(A, B) / SAMPLE_COUNT;
 }
 
+float roughness_to_mip(float roughness, uint mip) {
+    return roughness * mip;
+}
+
+float3 eval_ibl(SamplerCube probe, Sampler2D<float2> brdf_lut, float3 V, SurfaceInfo info) {
+    const uint probe_mips = image_mips(probe);
+
+    const float3 N = info.normal;
+    const float3 R = reflect(-V, N);
+
+    const float NdotV = max(0.0, dot(N, V));
+
+    const float3 F = F_Schlick(info.f0(), info.f90(), NdotV);
+
+    const float3 kS = F;
+    const float3 kD = (1.0 - kS) * (1.0 - info.metallic);
+
+    const float3 irradiance = probe.SampleLevel(N, probe_mips - 1).rgb;
+    const float3 diffuse = kD * irradiance * info.albedo;
+
+    const vec2 brdf = brdf_lut.Sample(float2(NdotV, info.perceptual_roughness)).xy;
+    const float3 prefiltered = probe.SampleLevel(R, roughness_to_mip(info.perceptual_roughness, probe_mips - 1)).rgb;
+    const float3 specular = prefiltered * (kS * brdf.x + brdf.y);
+
+    return diffuse + specular;
+}
 
 
 
 
+
+
+float2 atlas_uv(ShadowMapInfo info, float2 uv) {
+    return info.uv_offset + uv * info.uv_mul;
+}
+
+float sample_shadow(Sampler2DShadow shadow_map, float3 proj, ShadowMapInfo info, float bias) {
+    const float2 uv = atlas_uv(info, proj.xy);
+    return texture(shadow_map, float3(uv, proj.z + bias)).x;
+}
+
+float compute_shadow_hard(Sampler2DShadow shadow_map, ShadowMapInfo info, float3 world_pos, float bias) {
+    const float3 proj = project(world_pos, info.view_proj);
+
+    if(saturate(proj) != proj) {
+        return 1.0;
+    }
+
+    return sample_shadow(shadow_map, proj, info, bias);
+}
+
+float compute_shadow_pcf(Sampler2DShadow shadow_map, ShadowMapInfo info, float3 world_pos, float bias) {
+    const float3 proj = project(world_pos, info.view_proj);
+
+    if(saturate(proj) != proj) {
+        return 1.0;
+    }
+
+    const float2 offset = float2(0.5);
+    const float2 tx = proj.xy * info.size + offset;
+    const float2 base = (floor(tx) - offset) * info.texel_size;
+    const float2 st = fract(tx);
+
+#if 0
+    const float2 uw = float2(3.0 - 2.0 * st.x, 1.0 + 2.0 * st.x);
+    const float2 vw = float2(3.0 - 2.0 * st.y, 1.0 + 2.0 * st.y);
+
+    const float2 u = float2((2.0 - st.x) / uw.x - 1.0, st.x / uw.y + 1.0) * info.texel_size;
+    const float2 v = float2((2.0 - st.y) / vw.x - 1.0, st.y / vw.y + 1.0) * info.texel_size;
+
+    float sum = 0.0;
+    sum += uw.x * vw.x * sample_shadow(shadow_map, float3(base + float2(u.x, v.x), proj.z), info, bias);
+    sum += uw.y * vw.x * sample_shadow(shadow_map, float3(base + float2(u.y, v.x), proj.z), info, bias);
+    sum += uw.x * vw.y * sample_shadow(shadow_map, float3(base + float2(u.x, v.y), proj.z), info, bias);
+    sum += uw.y * vw.y * sample_shadow(shadow_map, float3(base + float2(u.y, v.y), proj.z), info, bias);
+    return sum / 16.0;
+#else
+    const float3 uw = float3(4.0 - 3.0 * st.x, 7.0, 1.0 + 3.0 * st.x);
+    const float3 vw = float3(4.0 - 3.0 * st.y, 7.0, 1.0 + 3.0 * st.y);
+
+    const float3 u = float3((3.0 - 2.0 * st.x) / uw.x - 2.0, (3.0 + st.x) / uw.y, st.x / uw.z + 2.0) * info.texel_size;
+    const float3 v = float3((3.0 - 2.0 * st.y) / vw.x - 2.0, (3.0 + st.y) / vw.y, st.y / vw.z + 2.0) * info.texel_size;
+
+    float sum = 0.0;
+    sum += uw.x * vw.x * sample_shadow(shadow_map, float3(base + float2(u.x, v.x), proj.z), info, bias);
+    sum += uw.y * vw.x * sample_shadow(shadow_map, float3(base + float2(u.y, v.x), proj.z), info, bias);
+    sum += uw.z * vw.x * sample_shadow(shadow_map, float3(base + float2(u.z, v.x), proj.z), info, bias);
+    sum += uw.x * vw.y * sample_shadow(shadow_map, float3(base + float2(u.x, v.y), proj.z), info, bias);
+    sum += uw.y * vw.y * sample_shadow(shadow_map, float3(base + float2(u.y, v.y), proj.z), info, bias);
+    sum += uw.z * vw.y * sample_shadow(shadow_map, float3(base + float2(u.z, v.y), proj.z), info, bias);
+    sum += uw.x * vw.z * sample_shadow(shadow_map, float3(base + float2(u.x, v.z), proj.z), info, bias);
+    sum += uw.y * vw.z * sample_shadow(shadow_map, float3(base + float2(u.y, v.z), proj.z), info, bias);
+    sum += uw.z * vw.z * sample_shadow(shadow_map, float3(base + float2(u.z, v.z), proj.z), info, bias);
+    return sum / 144.0;
+#endif
+}
+
+
+float compute_shadow_hard(sampler2DShadow shadow_map, ShadowMapInfo info, float3 world_pos) {
+    return compute_shadow_hard(shadow_map, info, world_pos, 0.0);
+}
+
+float compute_shadow_pcf(sampler2DShadow shadow_map, ShadowMapInfo info, float3 world_pos) {
+    return compute_shadow_pcf(shadow_map, info, world_pos, 0.0);
+}
+
+
+
+T F_Schlick<T: IFloat>(T f0, T f90, float VdotH) {
+    return f0 + (f90 - f0) * T(pow(saturate(1.0 - VdotH), 5.0));
+}
 
 float G_Schlick_GGX(float NdotV, float alpha) {
     const float k = alpha * 0.5;
@@ -411,6 +562,15 @@ float G_Schlick_GGX(float NdotV, float alpha) {
 
 float G_Smith(float NdotV, float NdotL, float alpha) {
     return G_Schlick_GGX(NdotV, alpha) * G_Schlick_GGX(NdotL, alpha);
+}
+
+float3 approx_F0(float metallic, float3 albedo) {
+    return mix(float3(0.04), albedo, metallic);
+}
+
+float3 F90_from_F0(float3 f0) {
+    const float reflectance = max(max(f0.r, f0.g), f0.b);
+    return saturate(reflectance * 50.0);
 }
 
 

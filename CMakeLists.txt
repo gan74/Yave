@@ -198,10 +198,6 @@ function(build_engine_shaders SHADER_TARGET)
     add_shader_variation(${SHADER_TARGET} "basic.vert" "")
 
     add_shader_variation(${SHADER_TARGET} "atmosphere.frag" "")
-    add_shader_variation(${SHADER_TARGET} "bloom_upscale.frag" "")
-    add_shader_variation(${SHADER_TARGET} "bloom_downscale.frag" "")
-    add_shader_variation(${SHADER_TARGET} "deferred_ambient.frag" "")
-
     add_shader_variation(${SHADER_TARGET} "ssao.comp" "")
     add_shader_variation(${SHADER_TARGET} "atmosphere_integrator.comp" "")
 
@@ -212,13 +208,19 @@ function(build_engine_shaders SHADER_TARGET)
     add_shader_variation(${SHADER_TARGET} "deferred_light.vert" "POINT")
     add_shader_variation(${SHADER_TARGET} "deferred_light.vert" "SPOT")
 
-    add_shader_variation(${SHADER_TARGET} "blur.frag" "HORIZONTAL")
-    add_shader_variation(${SHADER_TARGET} "blur.frag" "VERTICAL")
     add_shader_variation(${SHADER_TARGET} "textured.frag" "SPECULAR")
     add_shader_variation(${SHADER_TARGET} "textured.frag" "SPECULAR;ALPHA_TEST")
 
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "")
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "COMBINE_HIGH")
+
+    add_slang_shader(${SHADER_TARGET} "deferred_ambient.slang" "")
+
+    add_slang_shader(${SHADER_TARGET} "blur.slang" "HORIZONTAL")
+    add_slang_shader(${SHADER_TARGET} "blur.slang" "VERTICAL")
+
+    add_slang_shader(${SHADER_TARGET} "bloom_upscale.slang" "")
+    add_slang_shader(${SHADER_TARGET} "bloom_downscale.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "passthrough.slang" "")
     add_slang_shader(${SHADER_TARGET} "downsample.slang" "")
