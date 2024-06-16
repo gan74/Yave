@@ -28,9 +28,6 @@ SOFTWARE.
 #include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/device/DeviceResources.h>
 
-#include <y/utils/log.h>
-#include <y/utils/format.h>
-
 namespace yave {
 
 u32 TransformManager::alloc_transform() {
