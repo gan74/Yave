@@ -251,6 +251,12 @@ static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_pa
                 }
             break;
 
+            case WM_SETCURSOR:
+                if(LOWORD(l_param) == HTCLIENT) {
+                    return 1;
+                }
+            break;
+
             default:
             break;
         }
