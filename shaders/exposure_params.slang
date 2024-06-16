@@ -16,7 +16,7 @@ groupshared uint total;
 [shader("compute")]
 [numthreads(lum_histogram_size)]
 void comp_main() {
-    const uint index = LocalInvocationIndex;
+    const uint index = gl_LocalInvocationIndex;
     uint bin_size = in_histogram[int2(index, 0)];
 
     if(index == 0) {

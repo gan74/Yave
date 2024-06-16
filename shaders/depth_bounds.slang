@@ -16,7 +16,7 @@ groupshared uint shared_max;
 [shader("compute")]
 [numthreads(8, 8)]
 void comp_main() {
-    if(LocalInvocationIndex == 0) {
+    if(gl_LocalInvocationIndex == 0) {
         shared_min = 0xFFFFFFFF;
         shared_max = 0x00000000;
     }
@@ -36,7 +36,7 @@ void comp_main() {
 
     GroupMemoryBarrierWithGroupSync();
 
-    if(LocalInvocationIndex == 0) {
+    if(gl_LocalInvocationIndex == 0) {
         out_min_max[int2(gl_WorkGroupID.xy)] = float2(asfloat(shared_min), asfloat(shared_max));
     }
 

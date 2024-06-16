@@ -1,47 +1,53 @@
-#version 450
+import "glsl";
 
-#include "lib/utils.glsl"
+#include "lib/utils.slang"
 
 
 // -------------------------------- I/O --------------------------------
 
-layout(set = 0, binding = 0) uniform sampler2D in_depth;
-layout(set = 0, binding = 1) uniform sampler2D in_color;
-layout(set = 0, binding = 2) uniform sampler2D in_prev;
-layout(set = 0, binding = 3) uniform sampler2D in_motion;
-layout(set = 0, binding = 4) uniform sampler2D in_prev_motion;
+[[vk::binding(0)]]
+Sampler2D in_depth;
 
-layout(set = 0, binding = 5) uniform CameraData {
-    Camera camera;
-};
+[[vk::binding(1)]]
+Sampler2D in_color;
 
-layout(set = 0, binding = 6) uniform Settings_Inline {
+[[vk::binding(2)]]
+Sampler2D in_prev;
+
+[[vk::binding(3)]]
+Sampler2D in_motion;
+
+[[vk::binding(4)]]
+Sampler2D in_prev_motion;
+
+[[vk::binding(5)]]
+ConstantBuffer<Camera> camera;
+
+[[vk::binding(6)]]
+cbuffer Settings_Inline {
     uint flags;
     uint weighting_mode;
     float blending_factor;
 };
 
-layout(location = 0) in vec2 in_uv;
-
-layout(location = 0) out vec4 out_color;
 
 
 
 // -------------------------------- Utils --------------------------------
 
 struct ClampingInfo {
-    vec3 max_color;
-    vec3 min_color;
+    float3 max_color;
+    float3 min_color;
 };
 
-ClampingInfo gather_clamping_info(sampler2D color, ivec2 coord) {
+ClampingInfo gather_clamping_info(Sampler2D color, int2 coord) {
     ClampingInfo info;
-    info.max_color = vec3(0.0);
-    info.min_color = vec3(999999.0);
+    info.max_color = float3(0.0);
+    info.min_color = float3(999999.0);
 
     for(int x = -1; x <= 1; ++x) {
         for(int y = -1; y <= 1; ++y) {
-            const vec3 smp = max(vec3(0.0), texelFetch(color, coord + ivec2(x, y), 0).rgb);
+            const float3 smp = max(float3(0.0), color[coord + int2(x, y)].rgb);
             info.max_color = max(info.max_color, smp);
             info.min_color = min(info.min_color, smp);
         }
@@ -53,10 +59,10 @@ ClampingInfo gather_clamping_info(sampler2D color, ivec2 coord) {
 
 
 
-vec3 blend_weighted(vec3 curr, vec3 prev, float factor) {
+float3 blend_weighted(float3 curr, float3 prev, float factor) {
     switch(weighting_mode) {
         case 0:     // None
-            return mix(curr, prev, factor);
+            return lerp(curr, prev, factor);
 
         case 1: {   // Lum
             const float curr_weight = (1.0 - factor) / luminance(curr);
@@ -66,9 +72,9 @@ vec3 blend_weighted(vec3 curr, vec3 prev, float factor) {
         }
 
         case 2: {   // Log
-            const vec3 log_curr = log(max(curr, epsilon));
-            const vec3 log_prev = log(max(prev, epsilon));
-            return exp(mix(log_curr, log_prev, factor));
+            const float3 log_curr = log(max(curr, epsilon));
+            const float3 log_prev = log(max(prev, epsilon));
+            return exp(lerp(log_curr, log_prev, factor));
         }
 
         default:
@@ -78,11 +84,11 @@ vec3 blend_weighted(vec3 curr, vec3 prev, float factor) {
     return curr;
 }
 
-vec3 clamp_weighted(vec3 color, ClampingInfo info) {
+float3 clamp_weighted(float3 color, ClampingInfo info) {
     // Always use log
-    const vec3 log_color = log(max(color, epsilon));
-    const vec3 log_min = log(max(info.min_color, epsilon));
-    const vec3 log_max = log(max(info.max_color, epsilon));
+    const float3 log_color = log(max(color, epsilon));
+    const float3 log_min = log(max(info.min_color, epsilon));
+    const float3 log_max = log(max(info.max_color, epsilon));
     return exp(clamp(log_color, log_min, log_max));
 }
 
@@ -108,15 +114,15 @@ float filter_weight(float x) {
 
 
 // https://github.com/TheRealMJP/MSAAFilter/blob/master/MSAAFilter/Resolve.hlsl
-vec3 sample_prev(vec2 prev_coord) {
-    vec3 sum = vec3(0.0);
+float3 sample_prev(float2 prev_coord) {
+    float3 sum = float3(0.0);
     float total = 0.0;
     for(int x = -1; x <= 2; ++x) {
         for(int y = -1; y <= 2; ++y) {
-            const vec2 sample_coord = floor(prev_coord + vec2(x, y)) + 0.5;
-            const vec3 prev_sample = texelFetch(in_prev, ivec2(sample_coord), 0).rgb;
+            const float2 sample_coord = floor(prev_coord + float2(x, y)) + 0.5;
+            const float3 prev_sample = in_prev[int2(sample_coord)].rgb;
 
-            const vec2 sample_delta = abs(sample_coord - prev_coord);
+            const float2 sample_delta = abs(sample_coord - prev_coord);
             const float weight = filter_weight(sample_delta.x) * filter_weight(sample_delta.y);
 
             sum += prev_sample * weight;
@@ -130,27 +136,28 @@ vec3 sample_prev(vec2 prev_coord) {
 
 // -------------------------------- Main --------------------------------
 
-const uint clamping_bit                  = 0x01;
-const uint motion_rejection_bit          = 0x02;
-const uint match_prev_bit                = 0x04;
-const uint weighted_clamp_bit            = 0x08;
+static const uint clamping_bit                  = 0x01;
+static const uint motion_rejection_bit          = 0x02;
+static const uint match_prev_bit                = 0x04;
+static const uint weighted_clamp_bit            = 0x08;
 
 
 // https://www.elopezr.com/temporal-aa-and-the-quest-for-the-holy-trail/
-void main() {
-    const ivec2 coord = ivec2(gl_FragCoord.xy);
+[shader("fragment")]
+float4 frag_main(float2 in_uv) : SV_Target0 {
+    const int2 coord = int2(gl_FragCoord.xy);
 
-    const vec2 size = vec2(textureSize(in_color, 0).xy);
-    const vec2 inv_size = 1.0 / size;
+    const float2 size = float2(image_size(in_color).xy);
+    const float2 inv_size = 1.0 / size;
     const float y_ratio = size.y * inv_size.x;
 
-    const vec2 motion = texelFetch(in_motion, coord, 0).xy;
-    const bool has_moved = any(greaterThan(abs(motion), inv_size * 2.0));
-    const vec2 uv = gl_FragCoord.xy * inv_size;
-    const vec2 prev_uv = uv + motion;
+    const float2 motion = in_motion[coord].xy;
+    const bool has_moved = any(abs(motion) > inv_size);
+    const float2 uv = gl_FragCoord.xy * inv_size;
+    const float2 prev_uv = uv + motion;
 
-    const vec3 current = texelFetch(in_color, coord, 0).rgb;
-    vec3 prev = current;
+    const float3 current = in_color[coord].rgb;
+    float3 prev = current;
 
 
     bool sample_valid = saturate(prev_uv) == prev_uv;
@@ -158,8 +165,8 @@ void main() {
 
     // Motion rejection
     if(sample_valid && (flags & motion_rejection_bit) != 0) {
-        const vec2 ratio = vec2(1.0, y_ratio);
-        const vec2 prev_motion = texture(in_prev_motion, prev_uv).xy;
+        const float2 ratio = float2(1.0, y_ratio);
+        const float2 prev_motion = in_prev_motion.Sample(prev_uv).xy;
         sample_valid = (length((prev_motion - motion) * ratio) < (length(motion * ratio) * 0.2 + 0.05));
     }
 
@@ -169,7 +176,7 @@ void main() {
         if((flags & match_prev_bit) != 0) {
             prev = sample_prev(prev_uv * size);
         } else {
-            prev = texture(in_prev, prev_uv).rgb;
+            prev = in_prev.Sample(prev_uv).rgb;
         }
 
         if((flags & clamping_bit) != 0) {
@@ -178,23 +185,21 @@ void main() {
                 prev = clamp_weighted(prev, clamping_info);
             } else {
                 prev = clamp(prev, clamping_info.min_color, clamping_info.max_color);
-            };
+            }
         }
     }
 
 
+#if 0
+    if(!sample_valid) {
+        return float4(1, 0, 0, 1);
+    }
+#endif
 
 
     if(sample_valid) {
-        out_color = vec4(blend_weighted(current, prev, blending_factor), 1.0);
-    } else {
-        out_color = vec4(current, 1.0);
+        return float4(blend_weighted(current, prev, blending_factor), 1.0);
     }
-
-#if 0
-    if(has_moved) {
-        out_color = vec4(1, 0, 0, 1);
-    }
-#endif
+    return float4(current, 1.0);
 }
 

@@ -19,7 +19,7 @@ groupshared uint histogram[lum_histogram_size];
 
 
 uint compute_index(uint i) {
-    return LocalInvocationIndex * bin_per_thread + i;
+    return gl_LocalInvocationIndex * bin_per_thread + i;
 }
 
 [shader("compute")]

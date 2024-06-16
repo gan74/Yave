@@ -88,13 +88,13 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData::screen("tonemap"),
     DeviceMaterialData::screen("passthrough"),
     DeviceMaterialData::screen("passthrough", true),
-    DeviceMaterialData::screen("downsample.frag"),
+    DeviceMaterialData::screen("downsample"),
     DeviceMaterialData::screen("bloom_upscale.frag", BlendMode::SrcAlpha),
     DeviceMaterialData::screen("bloom_downscale.frag"),
     DeviceMaterialData::screen("blur_HORIZONTAL.frag", true),
     DeviceMaterialData::screen("blur_VERTICAL.frag", true),
     DeviceMaterialData{"wireframe", "wireframe", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true, PrimitiveType::Lines},
-    DeviceMaterialData::screen("taa_resolve.frag"),
+    DeviceMaterialData::screen("taa_resolve"),
     DeviceMaterialData{"id", "id", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
 };
 

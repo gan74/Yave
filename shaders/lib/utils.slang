@@ -5,11 +5,6 @@
 #include "structs.slang"
 
 
-// gl_LocalInvocationIndex is currently borked, see https://github.com/shader-slang/slang/issues/4402
-[require(compute)]
-in uint LocalInvocationIndex : SV_GroupIndex;
-
-
 static const float pi = 3.1415926535897932384626433832795;
 static const float inv_pi = 1.0 / pi;
 static const float euler = 2.7182818284590452353602874713526;

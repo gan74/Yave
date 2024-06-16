@@ -197,9 +197,7 @@ file(GLOB_RECURSE SHADER_FILES
 function(build_engine_shaders SHADER_TARGET)
     add_shader_variation(${SHADER_TARGET} "basic.vert" "")
 
-    add_shader_variation(${SHADER_TARGET} "taa_resolve.frag" "")
     add_shader_variation(${SHADER_TARGET} "atmosphere.frag" "")
-    add_shader_variation(${SHADER_TARGET} "downsample.frag" "")
     add_shader_variation(${SHADER_TARGET} "bloom_upscale.frag" "")
     add_shader_variation(${SHADER_TARGET} "bloom_downscale.frag" "")
     add_shader_variation(${SHADER_TARGET} "deferred_ambient.frag" "")
@@ -223,7 +221,7 @@ function(build_engine_shaders SHADER_TARGET)
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "COMBINE_HIGH")
 
     add_slang_shader(${SHADER_TARGET} "passthrough.slang" "")
-    add_slang_shader(${SHADER_TARGET} "id.slang" "")
+    add_slang_shader(${SHADER_TARGET} "downsample.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "prev_camera.slang" "")
     add_slang_shader(${SHADER_TARGET} "depth_bounds.slang" "")
@@ -238,6 +236,7 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "ibl_convolution.slang" "EQUIREC")
     add_slang_shader(${SHADER_TARGET} "ibl_convolution.slang" "CUBE")
 
+    add_slang_shader(${SHADER_TARGET} "id.slang" "")
     add_slang_shader(${SHADER_TARGET} "opaque.slang" "")
     add_slang_shader(${SHADER_TARGET} "opaque.slang" "ALPHA_TEST")
 
@@ -245,6 +244,7 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "copy.slang" "")
     add_slang_shader(${SHADER_TARGET} "screen.slang" "")
     add_slang_shader(${SHADER_TARGET} "tonemap.slang" "")
+    add_slang_shader(${SHADER_TARGET} "taa_resolve.slang" "")
 endfunction(build_engine_shaders)
 
 function(build_editor_shaders SHADER_TARGET)
