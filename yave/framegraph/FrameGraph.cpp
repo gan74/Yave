@@ -403,12 +403,12 @@ void FrameGraph::alloc_resources() {
         _resources->create_volume(res, info.format, info.size, info.usage, info.persistent);
     }
 
-    for(auto&& [res, info] : _buffers) {
+
+    auto init_buffer = [&](FrameGraphMutableBufferId& res, BufferCreateInfo& info, bool exact) {
         if(info.is_prev()) {
             y_debug_assert(_resources->is_alive(res));
-            continue;
+            return true;
         }
-
         if(info.last_read < info.last_write) {
             log_msg(fmt("Buffer written by {} is never consumed", pass_name(info.last_write)), Log::Warning);
         }
@@ -416,7 +416,20 @@ void FrameGraph::alloc_resources() {
             log_msg("Unused frame graph buffer resource", Log::Warning);
             info.usage = info.usage | BufferUsage::StorageBit;
         }
-        _resources->create_buffer(res, info.byte_size, info.usage, info.memory_type, info.persistent);
+        return _resources->create_buffer(res, info.byte_size, info.usage, info.memory_type, info.persistent, exact);
+    };
+
+    core::ScratchVector<usize> not_exact(_buffers.size());
+    for(usize i = 0; i != _buffers.size(); ++i) {
+        auto& [res, info] = _buffers[i];
+        if(!init_buffer(res, info, true)) {
+            not_exact.push_back(i);
+        }
+    }
+
+    for(usize i : not_exact) {
+        auto& [res, info] = _buffers[i];
+        y_always_assert(init_buffer(res, info, false), "Unable to allocate buffer");
     }
 
     _resources->init_staging_buffer();

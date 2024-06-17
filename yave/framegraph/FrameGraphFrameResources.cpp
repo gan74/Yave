@@ -65,6 +65,8 @@ u32 FrameGraphFrameResources::create_buffer_id() {
 }
 
 void FrameGraphFrameResources::init_staging_buffer() {
+    y_profile();
+    
     if(_staging_buffer_len) {
         _staging_buffer = StagingBuffer(_staging_buffer_len);
 
@@ -119,14 +121,22 @@ void FrameGraphFrameResources::create_volume(FrameGraphVolumeId res, ImageFormat
     create_volume(res, _pool->create_volume(format, size, usage), persistent_id);
 }
 
-void FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory, FrameGraphPersistentResourceId persistent_id) {
-    BufferData& buffer = create_buffer(res, _pool->create_buffer(byte_size, usage, MemoryType::DeviceLocal), persistent_id);
+bool FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory, FrameGraphPersistentResourceId persistent_id, bool exact) {
+    TransientBuffer transient = _pool->create_buffer(byte_size, usage, MemoryType::DeviceLocal, exact);
+    if(transient.is_null()) {
+        return false;
+    }
+
+    const u64 transient_byte_size = transient.byte_size();
+    BufferData& buffer = create_buffer(res, std::move(transient), persistent_id);
 
     if(is_cpu_visible(memory)) {
         y_debug_assert(_staging_buffer.is_null());
         buffer.staging_buffer_offset = _staging_buffer_len;
-        _staging_buffer_len += align_up_to(byte_size, device_properties().non_coherent_atom_size);
+        _staging_buffer_len += align_up_to(transient_byte_size, device_properties().non_coherent_atom_size);
     }
+
+    return true;
 }
 
 void FrameGraphFrameResources::create_prev_image(FrameGraphImageId res, FrameGraphPersistentResourceId persistent_id) {
