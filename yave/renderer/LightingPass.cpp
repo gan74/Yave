@@ -154,26 +154,18 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 
 
 
-static u32 fill_point_light_buffer(shader::PointLight* points, const SceneView& scene_view) {
+static u32 fill_point_light_buffer(shader::PointLight* points, const SceneVisibilitySubPass& visibility) {
     y_profile();
 
-    Y_TODO(Use visibility)
-    const Frustum frustum = scene_view.camera().frustum();
-    const Scene* scene = scene_view.scene();
+    const Scene* scene = visibility.scene_view.scene();
 
     u32 count = 0;
-
-    for(const auto& obj : scene->point_lights()) {
-
-        const math::Transform<> transform = scene->transform(obj);
-        const auto& light = obj.component;
+    for(const PointLightObject* obj : visibility.visible->point_lights) {
+        const math::Transform<> transform = scene->transform(*obj);
+        const auto& light = obj->component;
 
         const float scale = transform.scale().max_component();
         const float scaled_range = light.range() * scale;
-
-        if(!frustum.is_inside(transform.position(), scaled_range)) {
-            continue;
-        }
 
         points[count++] = {
             transform.position(),
@@ -196,23 +188,15 @@ static u32 fill_point_light_buffer(shader::PointLight* points, const SceneView& 
 
 
 template<bool SetTransform>
-static u32 fill_spot_light_buffer(
-        shader::SpotLight* spots,
-        const SceneView& scene_view, bool render_shadows,
-        const ShadowMapPass& shadow_pass) {
-
+static u32 fill_spot_light_buffer(shader::SpotLight* spots, const SceneVisibilitySubPass& visibility, const ShadowMapPass& shadow_pass) {
     y_profile();
 
-    Y_TODO(Use visibiltiy)
-    const Frustum frustum = scene_view.camera().frustum();
-    const Scene* scene = scene_view.scene();
+    const Scene* scene = visibility.scene_view.scene();
 
     u32 count = 0;
-
-    for(const auto& obj : scene->spot_lights()) {
-
-        const math::Transform<> transform = scene->transform(obj);
-        const auto& light = obj.component;
+    for(const SpotLightObject* obj : visibility.visible->spot_lights) {
+        const math::Transform<> transform = scene->transform(*obj);
+        const auto& light = obj->component;
 
         const math::Vec3 forward = transform.forward().normalized();
         const float scale = transform.scale().max_component();
@@ -225,12 +209,9 @@ static u32 fill_spot_light_buffer(
         }
 
         const math::Vec3 encl_sphere_center =  transform.position() + forward * enclosing_sphere.dist_to_center;
-        if(!frustum.is_inside(encl_sphere_center, enclosing_sphere.radius)) {
-            continue;
-        }
 
         auto shadow_indices = math::Vec4ui(u32(-1));
-        if(light.cast_shadow() && render_shadows) {
+        if(light.cast_shadow()) {
             if(const auto it = shadow_pass.shadow_indices->find(&light); it != shadow_pass.shadow_indices->end()) {
                 shadow_indices = it->second;
             }
@@ -278,10 +259,8 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
                               const ShadowMapPass& shadow_pass,
                               bool debug_tiles = false) {
 
-    const bool render_shadows = true;
-
     const math::Vec2ui size = framegraph.image_size(lit);
-    const SceneView& scene = gbuffer.scene_pass.scene_view;
+    const SceneVisibilitySubPass visibility = gbuffer.scene_pass.visibility;
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Lighting pass");
 
@@ -303,8 +282,8 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
         auto points = self->resources().map_buffer(point_buffer);
         auto spots = self->resources().map_buffer(spot_buffer);
 
-        const u32 point_count = fill_point_light_buffer(points.data(), scene);
-        const u32 spot_count = fill_spot_light_buffer<false>(spots.data(), scene, render_shadows, shadow_pass);
+        const u32 point_count = fill_point_light_buffer(points.data(), visibility);
+        const u32 spot_count = fill_spot_light_buffer<false>(spots.data(), visibility, shadow_pass);
 
         if(point_count || spot_count) {
             const auto& program = device_resources()[debug_tiles ? DeviceResources::DeferredLocalsDebugProgram : DeviceResources::DeferredLocalsProgram];
@@ -322,8 +301,7 @@ static void local_lights_pass(FrameGraph& framegraph,
                               const GBufferPass& gbuffer,
                               const ShadowMapPass& shadow_pass) {
 
-    const bool render_shadows = true;
-    const SceneView& scene = gbuffer.scene_pass.scene_view;
+    const SceneVisibilitySubPass visibility = gbuffer.scene_pass.visibility;
 
     FrameGraphMutableImageId copied_depth;
 
@@ -345,7 +323,7 @@ static void local_lights_pass(FrameGraph& framegraph,
         builder.map_buffer(point_buffer);
         builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
             auto points = self->resources().map_buffer(point_buffer);
-            const u32 point_count = fill_point_light_buffer(points.data(), scene);
+            const u32 point_count = fill_point_light_buffer(points.data(), visibility);
 
             if(!point_count) {
                 return;
@@ -377,8 +355,7 @@ static void local_lights_pass(FrameGraph& framegraph,
         builder.map_buffer(spot_buffer);
         builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
             auto spots = self->resources().map_buffer(spot_buffer);
-
-            const u32 spot_count = fill_spot_light_buffer<true>(spots.data(), scene, render_shadows, shadow_pass);
+            const u32 spot_count = fill_spot_light_buffer<true>(spots.data(), visibility, shadow_pass);
 
             if(!spot_count) {
                 return;
