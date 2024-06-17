@@ -210,6 +210,7 @@ static u32 fill_spot_light_buffer(
     u32 count = 0;
 
     for(const auto& obj : scene->spot_lights()) {
+
         const math::Transform<> transform = scene->transform(obj);
         const auto& light = obj.component;
 
