@@ -54,7 +54,7 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
 
     const math::Vec4 params(
         sun.color() * sun.intensity(),
-        1.0f / (atmosphere.density_falloff() * 1000.0f)
+        atmosphere.density_falloff() / 1000.0f
     );
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Atmosphere pass");
