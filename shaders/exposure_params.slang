@@ -25,10 +25,10 @@ void comp_main() {
 
     GroupMemoryBarrierWithGroupSync();
 
-    InterlockedAdd(total, bin_size);
+    atomicAdd(total, bin_size);
     histogram[index] = bin_size;
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
     // Make this not serial
     if(index == 0) {

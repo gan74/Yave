@@ -3,12 +3,7 @@ import "glsl";
 
 #include "lib/utils.slang"
 #include "lib/lighting.slang"
-
-/*#include "lib/lighting.glsl"
-#include "lib/area_light.glsl"
-#include "lib/gbuffer.glsl"
-#include "lib/shadow.glsl"
-#include "lib/debug.glsl"*/
+#include "lib/debug.slang"
 
 
 // -------------------------------- DEFINES --------------------------------
@@ -300,7 +295,7 @@ void comp_main() {
     {
         const float total_lights = float(tile_point_count + tile_spot_count);
         float3 heat = heat_spectrum(total_lights / 16.0f);
-        // heat = mix(heat, float3(1.0) - heat, print_value(gl_LocalInvocationID.xy * 2.0, float2(0.0), float2(8.0, 15.0), total_lights, 2.0, 0.0));
+        heat = mix(heat, float3(1.0) - heat, print_value(gl_LocalInvocationID.xy * 2.0, float2(0.0), float2(8.0, 15.0), total_lights, 2.0, 0.0));
         irradiance = mix(heat, irradiance, 0.8);
     }
 #endif
