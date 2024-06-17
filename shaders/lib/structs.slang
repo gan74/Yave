@@ -30,6 +30,14 @@ struct Camera {
     uint padding_2;
 };
 
+enum TextureSlots : uint32_t {
+    Albedo                      = 0,
+    Normal                      = 1,
+    Emissive                    = 2,
+    MetallicRoughnessSpecular   = 3,
+    SpecularColor               = 4,
+};
+
 struct MaterialData {
     float3 emissive_factor;
     float roughness_factor;
@@ -40,15 +48,7 @@ struct MaterialData {
     float3 specular_color_factor;
     float specular_factor;
 
-    uint albedo_texture_index;
-    uint normal_texture_index;
-    uint emissive_texture_index;
-    uint metallic_roughness_specular_texture_index;
-
-    uint specular_color_texture_index;
-    uint padding_0;
-    uint padding_1;
-    uint padding_2;
+    uint texture_indices[8];
 };
 
 struct ExposureParams {
@@ -96,6 +96,8 @@ struct SpotLight {
 
     float3 encl_sphere_center;
     float encl_sphere_radius;
+
+    float4x4 draw_model; // TODO remove
 };
 
 struct ShadowMapInfo {

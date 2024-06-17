@@ -73,12 +73,12 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData{"opaque_ALPHA_TEST", "opaque_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
     DeviceMaterialData{"opaque_ALPHA_TEST", "opaque_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
 
-    DeviceMaterialData{"opaque_SPECULAR", "opaque", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{"opaque_SPECULAR", "opaque_SPECULAR", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
     DeviceMaterialData{"opaque_SPECULAR_ALPHA_TEST", "opaque_SPECULAR_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
     DeviceMaterialData{"opaque_SPECULAR_ALPHA_TEST", "opaque_SPECULAR_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
 
-    DeviceMaterialData{"deferred_light_POINT.frag", "deferred_light_POINT.vert", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
-    DeviceMaterialData{"deferred_light_SPOT.frag", "deferred_light_SPOT.vert", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
+    DeviceMaterialData{"deferred_light_POINT", "deferred_light_POINT", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
+    DeviceMaterialData{"deferred_light_SPOT", "deferred_light_SPOT", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
     DeviceMaterialData::screen("deferred_ambient", true),
     DeviceMaterialData::screen("atmosphere"),
     DeviceMaterialData::screen("tonemap"),

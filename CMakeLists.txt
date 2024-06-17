@@ -61,22 +61,6 @@ function(optimize_shader SHADER_TARGET SHADER_BIN)
     add_custom_command(TARGET ${SHADER_TARGET} POST_BUILD COMMAND spirv-opt ${SHADER_BIN} -O --preserve-bindings -o ${SHADER_BIN})
 endfunction(optimize_shader)
 
-function(add_shader_variation SHADER_TARGET SHADER_FILE SHADER_DEFINES)
-    foreach(DEF ${SHADER_DEFINES})
-        set(COMPILE_ARGS ${COMPILE_ARGS} -D${DEF})
-        set(NAME_SUFFIX "${NAME_SUFFIX}_${DEF}")
-    endforeach()
-    get_filename_component(SHADER_NAME ${SHADER_FILE} NAME_WE)
-    get_filename_component(SHADER_EXT ${SHADER_FILE} EXT)
-    set(SHADER_BIN "${CMAKE_CURRENT_BINARY_DIR}/${SHADER_NAME}${NAME_SUFFIX}${SHADER_EXT}.spv")
-    add_custom_command(
-        TARGET ${SHADER_TARGET}
-        COMMAND ${Vulkan_GLSLC_EXECUTABLE} -c --target-env=vulkan1.2 ${COMPILE_ARGS} "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}" -o ${SHADER_BIN}
-    )
-    optimize_shader(${SHADER_TARGET}_optim ${SHADER_BIN})
-endfunction(add_shader_variation)
-
-
 
 function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
     get_filename_component(SHADER_NAME ${SHADER_FILE} NAME_WE)
@@ -195,10 +179,8 @@ file(GLOB_RECURSE SHADER_FILES
 
 
 function(build_engine_shaders SHADER_TARGET)
-    add_shader_variation(${SHADER_TARGET} "deferred_light.frag" "POINT")
-    add_shader_variation(${SHADER_TARGET} "deferred_light.frag" "SPOT")
-    add_shader_variation(${SHADER_TARGET} "deferred_light.vert" "POINT")
-    add_shader_variation(${SHADER_TARGET} "deferred_light.vert" "SPOT")
+    add_slang_shader(${SHADER_TARGET} "deferred_light.slang" "POINT")
+    add_slang_shader(${SHADER_TARGET} "deferred_light.slang" "SPOT")
 
     add_slang_shader(${SHADER_TARGET} "deferred_locals.slang" "")
     add_slang_shader(${SHADER_TARGET} "deferred_locals.slang" "DEBUG")

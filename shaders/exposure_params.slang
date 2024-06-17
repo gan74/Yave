@@ -25,7 +25,7 @@ void comp_main() {
 
     GroupMemoryBarrierWithGroupSync();
 
-    InterlockedAdd(total, bin_size);
+    atomicAdd(total, bin_size);
     histogram[index] = bin_size;
 
     GroupMemoryBarrierWithGroupSync();
