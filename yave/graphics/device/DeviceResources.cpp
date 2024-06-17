@@ -66,10 +66,6 @@ struct DeviceMaterialData {
     static constexpr DeviceMaterialData screen(std::string_view frag, bool blended = false) {
         return DeviceMaterialData::screen(frag, blended ? BlendMode::Add : BlendMode::None);
     }
-
-    static constexpr DeviceMaterialData basic(std::string_view frag, bool double_sided = false) {
-        return DeviceMaterialData{frag, "basic.vert", DepthTestMode::Standard, BlendMode::None, double_sided ? CullMode::None : CullMode::Back, true};
-    }
 };
 
 static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMaterialTemplates)> material_datas = {
@@ -77,9 +73,9 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData{"opaque_ALPHA_TEST", "opaque_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
     DeviceMaterialData{"opaque_ALPHA_TEST", "opaque_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
 
-    DeviceMaterialData::basic("textured_SPECULAR.frag"),
-    DeviceMaterialData::basic("textured_SPECULAR_ALPHA_TEST.frag"),
-    DeviceMaterialData::basic("textured_SPECULAR_ALPHA_TEST.frag", true),
+    DeviceMaterialData{"opaque_SPECULAR", "opaque", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{"opaque_SPECULAR_ALPHA_TEST", "opaque_SPECULAR_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{"opaque_SPECULAR_ALPHA_TEST", "opaque_SPECULAR_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
 
     DeviceMaterialData{"deferred_light_POINT.frag", "deferred_light_POINT.vert", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
     DeviceMaterialData{"deferred_light_SPOT.frag", "deferred_light_SPOT.vert", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
@@ -102,8 +98,8 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "ibl_convolution_EQUIREC",
     "ibl_convolution_CUBE",
     "brdf_integrator",
-    "deferred_locals.comp",
-    "deferred_locals_DEBUG.comp",
+    "deferred_locals",
+    "deferred_locals_DEBUG",
     "linearize_depth",
     "ssao",
     "ssao_upsample",

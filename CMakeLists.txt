@@ -195,18 +195,13 @@ file(GLOB_RECURSE SHADER_FILES
 
 
 function(build_engine_shaders SHADER_TARGET)
-    add_shader_variation(${SHADER_TARGET} "basic.vert" "")
-
-
-    add_shader_variation(${SHADER_TARGET} "deferred_locals.comp" "")
-    add_shader_variation(${SHADER_TARGET} "deferred_locals.comp" "DEBUG")
     add_shader_variation(${SHADER_TARGET} "deferred_light.frag" "POINT")
     add_shader_variation(${SHADER_TARGET} "deferred_light.frag" "SPOT")
     add_shader_variation(${SHADER_TARGET} "deferred_light.vert" "POINT")
     add_shader_variation(${SHADER_TARGET} "deferred_light.vert" "SPOT")
 
-    add_shader_variation(${SHADER_TARGET} "textured.frag" "SPECULAR")
-    add_shader_variation(${SHADER_TARGET} "textured.frag" "SPECULAR;ALPHA_TEST")
+    add_slang_shader(${SHADER_TARGET} "deferred_locals.slang" "")
+    add_slang_shader(${SHADER_TARGET} "deferred_locals.slang" "DEBUG")
 
     add_slang_shader(${SHADER_TARGET} "ssao.slang" "")
     add_slang_shader(${SHADER_TARGET} "ssao_upsample.slang" "")
@@ -239,8 +234,11 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "ibl_convolution.slang" "CUBE")
 
     add_slang_shader(${SHADER_TARGET} "id.slang" "")
+
     add_slang_shader(${SHADER_TARGET} "opaque.slang" "")
     add_slang_shader(${SHADER_TARGET} "opaque.slang" "ALPHA_TEST")
+    add_slang_shader(${SHADER_TARGET} "opaque.slang" "SPECULAR")
+    add_slang_shader(${SHADER_TARGET} "opaque.slang" "SPECULAR;ALPHA_TEST")
 
     add_slang_shader(${SHADER_TARGET} "wireframe.slang" "")
     add_slang_shader(${SHADER_TARGET} "copy.slang" "")

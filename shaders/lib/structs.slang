@@ -43,9 +43,12 @@ struct MaterialData {
     uint albedo_texture_index;
     uint normal_texture_index;
     uint emissive_texture_index;
-    uint metallic_roughness_texture_index;
+    uint metallic_roughness_specular_texture_index;
 
-    uint4 padding;
+    uint specular_color_texture_index;
+    uint padding_0;
+    uint padding_1;
+    uint padding_2;
 };
 
 struct ExposureParams {
@@ -64,6 +67,35 @@ struct DirectionalLight {
     uint padding_1;
 
     uint4 shadow_map_indices;
+};
+
+struct PointLight {
+    float3 position;
+    float range;
+
+    float3 color;
+    float falloff;
+
+    float3 padding_0;
+    float min_radius;
+};
+
+struct SpotLight {
+    float3 position;
+    float range;
+
+    float3 color;
+    float falloff;
+
+    float3 forward;
+    float min_radius;
+
+    float2 att_scale_offset;
+    float sin_angle;
+    uint shadow_map_index;
+
+    float3 encl_sphere_center;
+    float encl_sphere_radius;
 };
 
 struct ShadowMapInfo {

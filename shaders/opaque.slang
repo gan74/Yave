@@ -71,6 +71,34 @@ VertexStageOut vert_main(StdVertexStageIn in) {
 
 
 
+// https://github.com/nvpro-samples/vk_raytrace/blob/master/shaders/gltf_material.glsl
+float perceived_brightness(float3 color) {
+    return sqrt(dot(float3(0.299, 0.587, 0.114), color * color));
+}
+
+float metalic_from_specular(float3 diffuse, float3 specular) {
+    const float min_reflectance = 0.04;
+
+    const float reflectance = max(max(specular.r, specular.g), specular.b);
+    const float one_minus_spec_strength = saturate(1.0 - reflectance);
+
+    const float specular_brightness = perceived_brightness(specular);
+    const float diffuse_brightness = perceived_brightness(diffuse);
+
+    if(specular_brightness < min_reflectance) {
+        return 0.0;
+    }
+
+    const float a = min_reflectance;
+    const float b = diffuse_brightness * one_minus_spec_strength / (1.0 - min_reflectance) + specular_brightness - 2.0 * min_reflectance;
+    const float c = min_reflectance - specular_brightness;
+    const float D = max(b * b - 4.0 * min_reflectance * c, 0.0);
+
+    return saturate((-b + sqrt(D)) / (2.0 * a));
+}
+
+
+
 [shader("fragment")]
 PixelStageOut frag_main(PixelStageIn in) {
     const MaterialData material = materials[transform_material_indices[in.instance_index].y];
@@ -78,29 +106,41 @@ PixelStageOut frag_main(PixelStageIn in) {
     const Sampler2D albedo_tex = all_textures[material.albedo_texture_index];
     const Sampler2D normal_tex = all_textures[material.normal_texture_index];
     const Sampler2D emissive_tex = all_textures[material.emissive_texture_index];
-    const Sampler2D metal_rough_tex = all_textures[material.metallic_roughness_texture_index];
+    const Sampler2D metal_rough_spec_tex = all_textures[material.metallic_roughness_specular_texture_index];
+    const Sampler2D spec_color_tex = all_textures[material.specular_color_texture_index];
 
     const float3 normal = unpack_normal_map(normal_tex.Sample(in.uv).xy);
     const float3 mapped_front_face_normal = normal.x * in.tangent + normal.y * in.bitangent + normal.z * in.normal;
     const float3 mapped_normal = gl_FrontFacing ? mapped_front_face_normal : -mapped_front_face_normal;
 
-    const float4 albedo = albedo_tex.Sample(in.uv);
+    const float4 albedo_alpha = albedo_tex.Sample(in.uv);
+    const float3 albedo = albedo_alpha.rgb * material.base_color_factor;
 
 #ifdef ALPHA_TEST
-    if(albedo.a < 0.5) {
+    if(albedo_alpha.a < 0.5) {
         discard;
     }
 #endif
 
-    const float4 metallic_roughness = metal_rough_tex.Sample(in.uv);
+
+#ifdef SPECULAR
+    const float gloss = metal_rough_spec_tex.Sample(in.uv).a * material.specular_factor;
+    const float3 specular = spec_color_tex.Sample(in.uv).rgb * material.specular_color_factor;
+    const float roughness = saturate(1.0 - gloss);
+    const float metallic = metalic_from_specular(albedo, specular);
+#else
+    const float4 metallic_roughness = metal_rough_spec_tex.Sample(in.uv);
+    const float roughness = metallic_roughness.g * material.roughness_factor;
+    const float metallic = metallic_roughness.b * material.metallic_factor;
+#endif
 
     SurfaceInfo surface;
     {
-        surface.albedo = albedo.rgb * material.base_color_factor;
+        surface.albedo = albedo;
         surface.normal = mapped_normal;
 
-        surface.perceptual_roughness = metallic_roughness.g * material.roughness_factor;
-        surface.metallic = metallic_roughness.b * material.metallic_factor;
+        surface.perceptual_roughness = roughness;
+        surface.metallic = metallic;
     }
 
 

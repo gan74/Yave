@@ -228,14 +228,22 @@ float histogram_bin_to_lum(uint bin) {
 
 
 
+
+
 float3 uv_debug_color(float2 p) {
     float3 p3 = fract(p.xyx * float3(0.1031, 0.1030, 0.0973));
     p3 += dot(p3, p3.yxz + 33.33);
     return fract((p3.xxy + p3.yzz) * p3.zyx);
 }
 
-
-
+float3 heat_spectrum(float x) {
+    x *= 4.0;
+    float3 color = lerp(float3(0, 0, 1), float3(0, 1, 0), saturate(x));
+    color = lerp(color, float3(1, 1, 0), saturate(x - 1.0));
+    color = lerp(color, float3(1, 0, 0), saturate(x - 2.0));
+    color = lerp(color, float3(1, 1, 1), saturate(x - 3.0));
+    return color / max(color.x, max(color.y, color.z));
+}
 
 
 
@@ -480,7 +488,7 @@ float2 atlas_uv(ShadowMapInfo info, float2 uv) {
 
 float sample_shadow(Sampler2DShadow shadow_map, float3 proj, ShadowMapInfo info, float bias) {
     const float2 uv = atlas_uv(info, proj.xy);
-    return texture(shadow_map, float3(uv, proj.z + bias)).x;
+    return shadow_map.SampleCmpLevelZero(uv, proj.z + bias);
 }
 
 float compute_shadow_hard(Sampler2DShadow shadow_map, ShadowMapInfo info, float3 world_pos, float bias) {
@@ -550,6 +558,51 @@ float compute_shadow_pcf(sampler2DShadow shadow_map, ShadowMapInfo info, float3 
 
 
 
+
+
+
+
+
+
+struct AreaLightInfo {
+    float3 light_dir;
+    float orig_light_dist;
+    float light_dist;
+    float sqr_alpha;
+};
+
+// https://alextardif.com/arealights.html
+AreaLightInfo karis_area_light(SurfaceInfo surface, float3 light_pos, float source_radius, float3 world_pos, float3 view_dir) {
+    const float3 refl = reflect(-view_dir, surface.normal);
+    const float3 to_light = light_pos - world_pos;
+    const float3 center = (dot(to_light, refl) * refl) - to_light;
+    const float3 closest_point = to_light + center * saturate(source_radius / length(center));
+
+    AreaLightInfo info;
+    info.light_dir = normalize(closest_point);
+    info.orig_light_dist = length(to_light);
+    info.light_dist = length(closest_point);
+    info.sqr_alpha = saturate(source_radius / (info.light_dist * 2.0) + surface.alpha()) * surface.alpha();
+    return info;
+}
+
+AreaLightInfo karis_area_light(SurfaceInfo surface, PointLight light, float3 world_pos, float3 view_dir) {
+    return karis_area_light(surface, light.position, light.min_radius, world_pos, view_dir);
+}
+
+AreaLightInfo karis_area_light(SurfaceInfo surface, SpotLight light, float3 world_pos, float3 view_dir) {
+    return karis_area_light(surface, light.position, light.min_radius, world_pos, view_dir);
+}
+
+SurfaceInfo alpha_corrected_surface(SurfaceInfo surface, AreaLightInfo area) {
+    surface.perceptual_roughness = pow(area.sqr_alpha, 1.0 / 4.0);
+    return surface;
+}
+
+
+
+
+
 T F_Schlick<T: IFloat>(T f0, T f90, float VdotH) {
     return f0 + (f90 - f0) * T(pow(saturate(1.0 - VdotH), 5.0));
 }
@@ -565,7 +618,7 @@ float G_Smith(float NdotV, float NdotL, float alpha) {
 }
 
 float3 approx_F0(float metallic, float3 albedo) {
-    return mix(float3(0.04), albedo, metallic);
+    return lerp(float3(0.04), albedo, metallic);
 }
 
 float3 F90_from_F0(float3 f0) {
