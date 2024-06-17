@@ -197,9 +197,7 @@ file(GLOB_RECURSE SHADER_FILES
 function(build_engine_shaders SHADER_TARGET)
     add_shader_variation(${SHADER_TARGET} "basic.vert" "")
 
-    add_shader_variation(${SHADER_TARGET} "atmosphere.frag" "")
     add_shader_variation(${SHADER_TARGET} "ssao.comp" "")
-    add_shader_variation(${SHADER_TARGET} "atmosphere_integrator.comp" "")
 
     add_shader_variation(${SHADER_TARGET} "deferred_locals.comp" "")
     add_shader_variation(${SHADER_TARGET} "deferred_locals.comp" "DEBUG")
@@ -213,6 +211,9 @@ function(build_engine_shaders SHADER_TARGET)
 
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "")
     add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "COMBINE_HIGH")
+
+
+    add_slang_shader(${SHADER_TARGET} "atmosphere.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "deferred_ambient.slang" "")
 

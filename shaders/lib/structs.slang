@@ -78,4 +78,18 @@ struct ShadowMapInfo {
     uint padding_1;
 };
 
+struct AtmosphereParams {
+    float3 center;
+    float planet_radius;
+
+    float3 scattering_coeffs;
+    float atmosphere_height;
+
+    float3 sun_dir;
+    float radius; // planet_radius + atmosphere_height
+
+    float3 sun_color;
+    float density_falloff;
+};
+
 #endif

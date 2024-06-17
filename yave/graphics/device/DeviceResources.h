@@ -55,7 +55,6 @@ class DeviceResources final : NonMovable {
             ExposureParamsProgram,
             ExposureDebugProgram,
             DepthBoundProgram,
-            AtmosphereIntergratorProgram,
             PrevCameraProgram,
             UpdateTransformsProgram,
 

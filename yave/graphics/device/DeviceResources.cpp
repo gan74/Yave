@@ -84,7 +84,7 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData{"deferred_light_POINT.frag", "deferred_light_POINT.vert", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
     DeviceMaterialData{"deferred_light_SPOT.frag", "deferred_light_SPOT.vert", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
     DeviceMaterialData::screen("deferred_ambient", true),
-    DeviceMaterialData::screen("atmosphere.frag", false),
+    DeviceMaterialData::screen("atmosphere"),
     DeviceMaterialData::screen("tonemap"),
     DeviceMaterialData::screen("passthrough"),
     DeviceMaterialData::screen("passthrough", true),
@@ -113,7 +113,6 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "exposure_params",
     "exposure_debug",
     "depth_bounds",
-    "atmosphere_integrator.comp",
     "prev_camera",
     "update_transforms",
 };
