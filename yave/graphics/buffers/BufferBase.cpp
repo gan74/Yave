@@ -50,13 +50,13 @@ static VkBuffer create_buffer(u64 byte_size, VkBufferUsageFlags usage) {
     return buffer;
 }
 
-static std::tuple<VkBuffer, DeviceMemory> alloc_buffer(u64 buffer_size, VkBufferUsageFlags usage, MemoryType type) {
+static std::tuple<VkBuffer, DeviceMemory> alloc_buffer(u64 buffer_size, VkBufferUsageFlags usage, MemoryType type, MemoryAllocFlags flags) {
     y_profile();
 
     y_debug_assert(buffer_size);
 
     const auto buffer = create_buffer(buffer_size, usage);
-    auto memory = device_allocator().alloc(buffer, type);
+    auto memory = device_allocator().alloc(buffer, type, flags);
 
     vk_check(vkBindBufferMemory(vk_device(), buffer, memory.vk_memory(), memory.vk_offset()));
 
@@ -147,8 +147,8 @@ bool SubBufferBase::operator!=(const SubBufferBase& other) const {
 }
 
 
-BufferBase::BufferBase(u64 byte_size, BufferUsage usage, MemoryType type) : _size(byte_size), _usage(usage) {
-    std::tie(*_buffer.get_ptr_for_init(), _memory) = alloc_buffer(byte_size, VkBufferUsageFlagBits(usage), type);
+BufferBase::BufferBase(u64 byte_size, BufferUsage usage, MemoryType type, MemoryAllocFlags alloc_flags) : _size(byte_size), _usage(usage) {
+    std::tie(*_buffer.get_ptr_for_init(), _memory) = alloc_buffer(byte_size, VkBufferUsageFlagBits(usage), type, alloc_flags);
 }
 
 BufferBase::~BufferBase() {

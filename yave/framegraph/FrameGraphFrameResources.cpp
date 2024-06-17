@@ -68,7 +68,7 @@ void FrameGraphFrameResources::init_staging_buffer() {
     y_profile();
     
     if(_staging_buffer_len) {
-        _staging_buffer = StagingBuffer(_staging_buffer_len);
+        _staging_buffer = StagingBuffer(_staging_buffer_len, MemoryAllocFlags::NoDedicatedAllocBit);
 
 #ifdef Y_DEBUG
         if(const auto* debug = debug_utils()) {
