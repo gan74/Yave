@@ -27,24 +27,24 @@ SOFTWARE.
 namespace yave {
 
 MaterialData::MaterialData(MetallicRoughnessMaterialData data) : MaterialData(Type::MetallicRoughness, std::move(data.common)) {
-    _textures[shader::metallic_roughness_texture_index] = std::move(data.metallic_roughness);
+    _textures[shader::TextureSlots::MetallicRoughnessSpecular] = std::move(data.metallic_roughness);
 
     _metallic_factor = data.metallic_factor;
     _roughness_factor = data.roughness_factor;
 }
 
 MaterialData::MaterialData(SpecularMaterialData data) : MaterialData(Type::Specular, std::move(data.common)) {
-    _textures[shader::specular_texture_index] = std::move(data.specular);
-    _textures[shader::specular_color_texture_index] = std::move(data.specular_color);
+    _textures[shader::TextureSlots::MetallicRoughnessSpecular] = std::move(data.specular);
+    _textures[shader::TextureSlots::SpecularColor] = std::move(data.specular_color);
 
     _specular_color_factor = data.specular_color_factor;
     _specular_factor = data.specular_factor;
 }
 
 MaterialData::MaterialData(Type type, CommonMaterialData data) : _type(type) {
-    _textures[shader::diffuse_texture_index] = std::move(data.diffuse);
-    _textures[shader::normal_texture_index] = std::move(data.normal);
-    _textures[shader::emissive_texture_index] = std::move(data.emissive);
+    _textures[shader::TextureSlots::Albedo] = std::move(data.diffuse);
+    _textures[shader::TextureSlots::Normal] = std::move(data.normal);
+    _textures[shader::TextureSlots::Emissive] = std::move(data.emissive);
 
     _base_color_factor = data.color_factor;
     _emissive_factor = data.emissive_factor;
@@ -104,7 +104,7 @@ bool MaterialData::double_sided() const {
 }
 
 bool MaterialData::has_emissive() const {
-    return !_textures[shader::emissive_texture_index].is_empty() || !_emissive_factor.is_zero();
+    return !_textures[shader::TextureSlots::Emissive].is_empty() || !_emissive_factor.is_zero();
 }
 
 }

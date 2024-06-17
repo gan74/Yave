@@ -227,18 +227,6 @@ void RenderPassRecorder::bind_attrib_buffers(core::Span<AttribSubBuffer> attribs
     vkCmdBindVertexBuffers(vk_cmd_buffer(), 0, attrib_count, buffers.data(), offsets.data());
 }
 
-void RenderPassRecorder::bind_per_instance_attrib_buffers(core::Span<AttribSubBuffer> per_instance) {
-    const u32 attrib_count = u32(per_instance.size());
-
-    auto offsets = core::ScratchPad<VkDeviceSize>(attrib_count);
-    auto buffers = core::ScratchPad<VkBuffer>(attrib_count);
-
-    std::transform(per_instance.begin(), per_instance.end(), offsets.begin(), [](const auto& buffer) { return buffer.byte_offset(); });
-    std::transform(per_instance.begin(), per_instance.end(), buffers.begin(), [](const auto& buffer) { return buffer.vk_buffer(); });
-
-    vkCmdBindVertexBuffers(vk_cmd_buffer(), ShaderProgram::per_instance_binding, attrib_count, buffers.data(), offsets.data());
-}
-
 CmdBufferRegion RenderPassRecorder::region(const char* name, CmdTimingRecorder* time_rec, const math::Vec4& color) {
     return _cmd_buffer.region(name, time_rec, color);
 }

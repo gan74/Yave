@@ -157,7 +157,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
 static u32 fill_point_light_buffer(shader::PointLight* points, const SceneView& scene_view) {
     y_profile();
 
-    Y_TODO(Use octree)
+    Y_TODO(Use visibility)
     const Frustum frustum = scene_view.camera().frustum();
     const Scene* scene = scene_view.scene();
 
@@ -194,25 +194,22 @@ static u32 fill_point_light_buffer(shader::PointLight* points, const SceneView& 
     return count;
 }
 
-template<bool Transforms>
+
+template<bool SetTransform>
 static u32 fill_spot_light_buffer(
         shader::SpotLight* spots,
-        math::Transform<>* transforms,
         const SceneView& scene_view, bool render_shadows,
         const ShadowMapPass& shadow_pass) {
 
     y_profile();
 
-    y_debug_assert(Transforms == !!transforms);
-
-    Y_TODO(Use octree)
+    Y_TODO(Use visibiltiy)
     const Frustum frustum = scene_view.camera().frustum();
     const Scene* scene = scene_view.scene();
 
     u32 count = 0;
 
     for(const auto& obj : scene->spot_lights()) {
-
         const math::Transform<> transform = scene->transform(obj);
         const auto& light = obj.component;
 
@@ -238,10 +235,11 @@ static u32 fill_spot_light_buffer(
             }
         }
 
-        if constexpr(Transforms) {
+        math::Transform<> draw_model;
+        if constexpr(SetTransform) {
             const float geom_radius = scaled_range * 1.1f;
             const float two_tan_angle = std::tan(light.half_angle()) * 2.0f;
-            transforms[count] = transform.non_uniformly_scaled(math::Vec3(two_tan_angle, 1.0f, two_tan_angle) * geom_radius);
+            draw_model = transform.non_uniformly_scaled(math::Vec3(two_tan_angle, 1.0f, two_tan_angle) * geom_radius);
         }
 
         spots[count++] = {
@@ -260,6 +258,8 @@ static u32 fill_spot_light_buffer(
 
             encl_sphere_center,
             enclosing_sphere.radius,
+
+            draw_model,
         };
 
         if(count == max_spot_lights) {
@@ -303,7 +303,7 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
         auto spots = self->resources().map_buffer(spot_buffer);
 
         const u32 point_count = fill_point_light_buffer(points.data(), scene);
-        const u32 spot_count = fill_spot_light_buffer<false>(spots.data(), nullptr, scene, render_shadows, shadow_pass);
+        const u32 spot_count = fill_spot_light_buffer<false>(spots.data(), scene, render_shadows, shadow_pass);
 
         if(point_count || spot_count) {
             const auto& program = device_resources()[debug_tiles ? DeviceResources::DeferredLocalsDebugProgram : DeviceResources::DeferredLocalsProgram];
@@ -363,25 +363,21 @@ static void local_lights_pass(FrameGraph& framegraph,
         FrameGraphPassBuilder builder = framegraph.add_pass("Spot light pass");
 
         const auto spot_buffer = builder.declare_typed_buffer<shader::SpotLight>(max_spot_lights);
-        const auto transform_buffer = builder.declare_typed_buffer<math::Transform<>>(max_spot_lights);
 
-        builder.add_uniform_input(gbuffer.scene_pass.camera, PipelineStage::VertexBit);
-        builder.add_storage_input(spot_buffer, PipelineStage::VertexBit);
+        builder.add_uniform_input(gbuffer.scene_pass.camera);
+        builder.add_storage_input(spot_buffer);
         builder.add_uniform_input(gbuffer.depth);
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
         builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow);
         builder.add_storage_input(shadow_pass.shadow_infos);
-        builder.add_attrib_input(transform_buffer);
         builder.add_depth_output(copied_depth);
         builder.add_color_output(lit);
         builder.map_buffer(spot_buffer);
-        builder.map_buffer(transform_buffer);
         builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
             auto spots = self->resources().map_buffer(spot_buffer);
-            auto transforms = self->resources().map_buffer(transform_buffer);
 
-            const u32 spot_count = fill_spot_light_buffer<true>(spots.data(), transforms.data(), scene, render_shadows, shadow_pass);
+            const u32 spot_count = fill_spot_light_buffer<true>(spots.data(), scene, render_shadows, shadow_pass);
 
             if(!spot_count) {
                 return;
@@ -390,12 +386,8 @@ static void local_lights_pass(FrameGraph& framegraph,
             const auto* material = device_resources()[DeviceResources::DeferredSpotLightMaterialTemplate];
             render_pass.bind_material_template(material, self->descriptor_sets());
 
-            {
-                render_pass.bind_per_instance_attrib_buffers(self->resources().buffer<BufferUsage::AttributeBit>(transform_buffer));
-
-                const StaticMesh& cone = *device_resources()[DeviceResources::ConeMesh];
-                render_pass.draw(cone.draw_data(), spot_count);
-            }
+            const StaticMesh& cone = *device_resources()[DeviceResources::ConeMesh];
+            render_pass.draw(cone.draw_data(), spot_count);
         });
     }
 }

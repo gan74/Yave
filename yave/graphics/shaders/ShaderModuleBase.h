@@ -72,12 +72,14 @@ class ShaderModuleBase : NonMovable {
             return _stage_output;
         }
 
-        static ShaderType shader_type(const SpirVData& data);
+        const core::String& entry_point() const {
+            return _entry_point;
+        }
 
     protected:
         ShaderModuleBase() = default;
 
-        ShaderModuleBase(const SpirVData& data);
+        ShaderModuleBase(const SpirVData& data, ShaderType type);
 
     private:
         friend class ShaderProgram;
@@ -93,6 +95,7 @@ class ShaderModuleBase : NonMovable {
 
     private:
         VkHandle<VkShaderModule> _module;
+        core::String _entry_point = "main";
         ShaderType _type = ShaderType::None;
         core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
         core::Vector<u32> _variable_size_bindings;

@@ -55,21 +55,51 @@ function(enable_unity_build UB_SUFFIX SOURCE_VARIABLE_NAME)
     set(${SOURCE_VARIABLE_NAME} ${${SOURCE_VARIABLE_NAME}} ${UNIT_BUILD_FILE} PARENT_SCOPE)
 endfunction(enable_unity_build)
 
-function(add_shader_variation SHADER_TARGET SHADER_FILE SHADER_DEFINES)
-    foreach(DEF ${SHADER_DEFINES})
-        set(COMPILE_ARGS ${COMPILE_ARGS} -D${DEF})
-        set(NAME_SUFFIX "${NAME_SUFFIX}_${DEF}")
-    endforeach()
-    get_filename_component(SHADER_NAME ${SHADER_FILE} NAME_WE)
-    get_filename_component(SHADER_EXT ${SHADER_FILE} EXT)
-    set(SHADER_BIN "${CMAKE_CURRENT_BINARY_DIR}/${SHADER_NAME}${NAME_SUFFIX}${SHADER_EXT}.spv")
-    add_custom_command(
-        TARGET ${SHADER_TARGET}
-        COMMAND ${Vulkan_GLSLC_EXECUTABLE} -c --target-env=vulkan1.2 ${COMPILE_ARGS} "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}" -o ${SHADER_BIN}
-    )
+
+function(optimize_shader SHADER_TARGET SHADER_BIN)
     # add_custom_command(TARGET ${SHADER_TARGET} POST_BUILD COMMAND echo optimizing ${SHADER_BIN})
     add_custom_command(TARGET ${SHADER_TARGET} POST_BUILD COMMAND spirv-opt ${SHADER_BIN} -O --preserve-bindings -o ${SHADER_BIN})
-endfunction(add_shader_variation)
+endfunction(optimize_shader)
+
+
+function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
+    get_filename_component(SHADER_NAME ${SHADER_FILE} NAME_WE)
+    get_property(SLANGC GLOBAL PROPERTY SLANG_EXECUTABLE)
+
+    foreach(DEF ${SHADER_DEFINES})
+        set(COMPILE_ARGS "${COMPILE_ARGS} -D${DEF}=1")
+        set(NAME_SUFFIX "${NAME_SUFFIX}_${DEF}")
+    endforeach()
+    string(STRIP "${COMPILE_ARGS}" COMPILE_ARGS)
+    set(SHADER_BIN "${SHADER_NAME}${NAME_SUFFIX}.spv")
+    add_custom_command(
+        TARGET ${SHADER_TARGET}
+        COMMAND ${SLANGC}
+            ${COMPILE_ARGS}
+            -target spirv
+            -matrix-layout-column-major
+            -fvk-use-entrypoint-name
+            -preserve-params
+            -O0
+            -o ${SHADER_BIN}
+            "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}"
+    )
+    # optimize_shader(${SHADER_TARGET}_optim ${SHADER_BIN})
+endfunction(add_slang_shader)
+
+
+function(setup_slang)
+    include(ExternalProject)
+    # https://stackoverflow.com/questions/16384831/externalproject-add-doesnt-install-the-release-configuration-of-the-project
+    ExternalProject_Add(slang
+        SOURCE_DIR "${CMAKE_SOURCE_DIR}/external/slang"
+        CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release
+        INSTALL_COMMAND cmake -E echo "Skipping install step."
+        EXCLUDE_FROM_ALL true
+    )
+    ExternalProject_Get_Property(slang BINARY_DIR)
+    set_property(GLOBAL PROPERTY SLANG_EXECUTABLE ${BINARY_DIR}/Release/bin/slangc)
+endfunction(setup_slang)
 
 
 option(YAVE_BUILD_YAVE "Build yave" ON)
@@ -144,76 +174,74 @@ file(GLOB_RECURSE SHADER_FILES
     "shaders/*.geom"
     "shaders/*.comp"
     "shaders/*.glsl"
+    "shaders/*.slang"
 )
 
 
 function(build_engine_shaders SHADER_TARGET)
-    add_shader_variation(${SHADER_TARGET} "basic.vert" "")
-    add_shader_variation(${SHADER_TARGET} "screen.vert" "")
-    add_shader_variation(${SHADER_TARGET} "wireframe.vert" "")
+    add_slang_shader(${SHADER_TARGET} "deferred_light.slang" "POINT")
+    add_slang_shader(${SHADER_TARGET} "deferred_light.slang" "SPOT")
 
-    add_shader_variation(${SHADER_TARGET} "id.frag" "")
-    add_shader_variation(${SHADER_TARGET} "tonemap.frag" "")
-    add_shader_variation(${SHADER_TARGET} "taa_resolve.frag" "")
-    add_shader_variation(${SHADER_TARGET} "passthrough.frag" "")
-    add_shader_variation(${SHADER_TARGET} "atmosphere.frag" "")
-    add_shader_variation(${SHADER_TARGET} "downsample.frag" "")
-    add_shader_variation(${SHADER_TARGET} "bloom_upscale.frag" "")
-    add_shader_variation(${SHADER_TARGET} "bloom_downscale.frag" "")
-    add_shader_variation(${SHADER_TARGET} "deferred_ambient.frag" "")
-    add_shader_variation(${SHADER_TARGET} "wireframe.frag" "")
+    add_slang_shader(${SHADER_TARGET} "deferred_locals.slang" "")
+    add_slang_shader(${SHADER_TARGET} "deferred_locals.slang" "DEBUG")
 
-    add_shader_variation(${SHADER_TARGET} "copy.comp" "")
-    add_shader_variation(${SHADER_TARGET} "ssao.comp" "")
-    add_shader_variation(${SHADER_TARGET} "histogram.comp" "")
-    add_shader_variation(${SHADER_TARGET} "prev_camera.comp" "")
-    add_shader_variation(${SHADER_TARGET} "depth_bounds.comp" "")
-    add_shader_variation(${SHADER_TARGET} "update_transforms.comp" "")
-    add_shader_variation(${SHADER_TARGET} "linearize_depth.comp" "")
-    add_shader_variation(${SHADER_TARGET} "exposure_params.comp" "")
-    add_shader_variation(${SHADER_TARGET} "exposure_debug.comp" "")
-    add_shader_variation(${SHADER_TARGET} "equirec_convolution.comp" "")
-    add_shader_variation(${SHADER_TARGET} "cubemap_convolution.comp" "")
-    add_shader_variation(${SHADER_TARGET} "atmosphere_integrator.comp" "")
-    add_shader_variation(${SHADER_TARGET} "brdf_integrator.comp" "")
+    add_slang_shader(${SHADER_TARGET} "ssao.slang" "")
+    add_slang_shader(${SHADER_TARGET} "ssao_upsample.slang" "")
+    add_slang_shader(${SHADER_TARGET} "ssao_upsample.slang" "COMBINE_HIGH")
 
-    add_shader_variation(${SHADER_TARGET} "deferred_locals.comp" "")
-    add_shader_variation(${SHADER_TARGET} "deferred_locals.comp" "DEBUG")
-    add_shader_variation(${SHADER_TARGET} "deferred_light.frag" "POINT")
-    add_shader_variation(${SHADER_TARGET} "deferred_light.frag" "SPOT")
-    add_shader_variation(${SHADER_TARGET} "deferred_light.vert" "POINT")
-    add_shader_variation(${SHADER_TARGET} "deferred_light.vert" "SPOT")
+    add_slang_shader(${SHADER_TARGET} "atmosphere.slang" "")
 
-    add_shader_variation(${SHADER_TARGET} "blur.frag" "HORIZONTAL")
-    add_shader_variation(${SHADER_TARGET} "blur.frag" "VERTICAL")
+    add_slang_shader(${SHADER_TARGET} "deferred_ambient.slang" "")
 
-    add_shader_variation(${SHADER_TARGET} "textured.frag" "")
-    add_shader_variation(${SHADER_TARGET} "textured.frag" "ALPHA_TEST")
-    add_shader_variation(${SHADER_TARGET} "textured.frag" "SPECULAR")
-    add_shader_variation(${SHADER_TARGET} "textured.frag" "SPECULAR;ALPHA_TEST")
+    add_slang_shader(${SHADER_TARGET} "blur.slang" "HORIZONTAL")
+    add_slang_shader(${SHADER_TARGET} "blur.slang" "VERTICAL")
 
-    add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "")
-    add_shader_variation(${SHADER_TARGET} "ssao_upsample.comp" "COMBINE_HIGH")
+    add_slang_shader(${SHADER_TARGET} "bloom_upscale.slang" "")
+    add_slang_shader(${SHADER_TARGET} "bloom_downscale.slang" "")
+
+    add_slang_shader(${SHADER_TARGET} "passthrough.slang" "")
+    add_slang_shader(${SHADER_TARGET} "downsample.slang" "")
+
+    add_slang_shader(${SHADER_TARGET} "prev_camera.slang" "")
+    add_slang_shader(${SHADER_TARGET} "depth_bounds.slang" "")
+    add_slang_shader(${SHADER_TARGET} "histogram.slang" "")
+    add_slang_shader(${SHADER_TARGET} "exposure_params.slang" "")
+    add_slang_shader(${SHADER_TARGET} "exposure_debug.slang" "")
+    add_slang_shader(${SHADER_TARGET} "update_transforms.slang" "")
+
+    add_slang_shader(${SHADER_TARGET} "brdf_integrator.slang" "")
+    add_slang_shader(${SHADER_TARGET} "linearize_depth.slang" "")
+
+    add_slang_shader(${SHADER_TARGET} "ibl_convolution.slang" "EQUIREC")
+    add_slang_shader(${SHADER_TARGET} "ibl_convolution.slang" "CUBE")
+
+    add_slang_shader(${SHADER_TARGET} "id.slang" "")
+
+    add_slang_shader(${SHADER_TARGET} "opaque.slang" "")
+    add_slang_shader(${SHADER_TARGET} "opaque.slang" "ALPHA_TEST")
+    add_slang_shader(${SHADER_TARGET} "opaque.slang" "SPECULAR")
+    add_slang_shader(${SHADER_TARGET} "opaque.slang" "SPECULAR;ALPHA_TEST")
+
+    add_slang_shader(${SHADER_TARGET} "wireframe.slang" "")
+    add_slang_shader(${SHADER_TARGET} "copy.slang" "")
+    add_slang_shader(${SHADER_TARGET} "screen.slang" "")
+    add_slang_shader(${SHADER_TARGET} "tonemap.slang" "")
+    add_slang_shader(${SHADER_TARGET} "taa_resolve.slang" "")
 endfunction(build_engine_shaders)
 
 function(build_editor_shaders SHADER_TARGET)
-    add_shader_variation(${SHADER_TARGET} "editor/engine_view.frag" "")
-    add_shader_variation(${SHADER_TARGET} "editor/imgui.frag" "")
-    add_shader_variation(${SHADER_TARGET} "editor/imgui_billboard.frag" "")
-    add_shader_variation(${SHADER_TARGET} "editor/selection.frag" "")
-
-    add_shader_variation(${SHADER_TARGET} "editor/imgui_billboard.geom" "")
-
-    add_shader_variation(${SHADER_TARGET} "editor/imgui.vert" "")
-    add_shader_variation(${SHADER_TARGET} "editor/imgui_billboard.vert" "")
-
-    add_shader_variation(${SHADER_TARGET} "editor/picking.comp" "")
-    add_shader_variation(${SHADER_TARGET} "editor/depth_alpha.comp" "")
+    add_slang_shader(${SHADER_TARGET} "editor/depth_alpha.slang" "")
+    add_slang_shader(${SHADER_TARGET} "editor/picking.slang" "")
+    add_slang_shader(${SHADER_TARGET} "editor/imgui.slang" "")
+    add_slang_shader(${SHADER_TARGET} "editor/selection.slang" "")
+    add_slang_shader(${SHADER_TARGET} "editor/engine_view.slang" "")
+    add_slang_shader(${SHADER_TARGET} "editor/imgui_billboard.slang" "")
 endfunction(build_editor_shaders)
 
 
 
 build_luajit(luajit)
+setup_slang()
 
 if(YAVE_UNITY_BUILD)
     enable_unity_build(yave YAVE_FILES)
@@ -242,18 +270,20 @@ if(YAVE_BUILD_YAVE)
     endif()
 
     add_custom_target(shaders)
+    add_custom_target(shaders_optim)
     build_engine_shaders(shaders)
+    add_dependencies(shaders slang)
+    add_dependencies(shaders_optim shaders)
 
-    add_dependencies(yave shaders)
+    add_dependencies(yave shaders_optim)
 endif()
 
 if(YAVE_BUILD_EDITOR)
     add_executable(editor ${EDITOR_FILES} ${EDITOR_EXTERNAL_FILES})
     target_include_directories(editor PRIVATE external/imgui)
 
-    add_custom_target(editor_shaders)
-    build_editor_shaders(editor_shaders)
-    add_dependencies(editor editor_shaders)
+    build_editor_shaders(shaders)
+    add_dependencies(editor shaders)
 
     target_link_libraries(editor yave)
 endif()

@@ -26,12 +26,16 @@ SOFTWARE.
 
 #include <y/core/ScratchPad.h>
 
-#include <external/spirv_reflect/spirv_reflect.h>
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
+#include <external/spirv_reflect/spirv_reflect.h>
 
 namespace yave {
 
-static VkHandle<VkShaderModule> create_shader_module(const SpirVData& data) {
+static VkHandle<VkShaderModule> create_shader_module(const SpirVData& spirv) {
+    const core::Span<u32> data = spirv.data();
+
     VkHandle<VkShaderModule> shader;
     if(data.is_empty()) {
         return shader;
@@ -39,7 +43,7 @@ static VkHandle<VkShaderModule> create_shader_module(const SpirVData& data) {
 
     VkShaderModuleCreateInfo create_info = vk_struct();
     {
-        create_info.codeSize = data.size();
+        create_info.codeSize = data.size() * sizeof(u32);
         create_info.pCode = data.data();
     }
 
@@ -53,10 +57,10 @@ static bool is_inline(const SpvReflectDescriptorBinding& binding) {
     return
         binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER &&
         binding.type_description->type_name &&
-        std::string_view(binding.type_description->type_name).ends_with("_Inline") ;
+        (std::string_view(binding.type_description->type_name).ends_with("_Inline") || std::string_view(binding.name).ends_with("_Inline"));
 }
 
-static ShaderType module_type(SpvExecutionModel exec_model) {
+static ShaderType shader_exec_model(SpvExecutionModel exec_model) {
     switch(exec_model) {
         case SpvExecutionModelVertex:       return ShaderType::Vertex;
         case SpvExecutionModelGeometry:     return ShaderType::Geomery;
@@ -73,27 +77,47 @@ static void spv_check(SpvReflectResult result) {
     y_always_assert(result == SPV_REFLECT_RESULT_SUCCESS, "SpirV-Reflect error");
 }
 
+[[maybe_unused]]
+static const SpvReflectEntryPoint& find_entry_point(const SpvReflectShaderModule& module, const core::String& name) {
+    for(u32 i = 0; i != module.entry_point_count; ++i) {
+        if(name == module.entry_points[i].name) {
+            return module.entry_points[i];
+        }
+    }
 
-ShaderType ShaderModuleBase::shader_type(const SpirVData& data) {
-    SpvReflectShaderModule module = {};
-    spv_check(spvReflectCreateShaderModule(data.size(), data.data(), &module));
-    y_defer(spvReflectDestroyShaderModule(&module));
-    return module_type(module.spirv_execution_model);
+    y_fatal("SpirV entry point not found");
 }
 
-ShaderModuleBase::ShaderModuleBase(const SpirVData& data) : _module(create_shader_module(data)) {
+[[maybe_unused]]
+static const SpvReflectEntryPoint& find_entry_point(const SpvReflectShaderModule& module, ShaderType type) {
+    y_debug_assert(type != ShaderType::None);
+    for(u32 i = 0; i != module.entry_point_count; ++i) {
+        if(shader_exec_model(module.entry_points[i].spirv_execution_model) == type) {
+            return module.entry_points[i];
+        }
+    }
+
+    y_fatal("SpirV entry point not found for shader type");
+}
+
+
+
+
+ShaderModuleBase::ShaderModuleBase(const SpirVData& spirv, ShaderType type) : _module(create_shader_module(spirv)), _type(type) {
+    y_profile();
+
+    y_debug_assert(_type != ShaderType::None);
+
     SpvReflectShaderModule module = {};
 
-    spv_check(spvReflectCreateShaderModule(data.size(), data.data(), &module));
+    const core::Span<u32> data = spirv.data();
+    spv_check(spvReflectCreateShaderModule(data.size() * sizeof(u32), data.data(), &module));
     y_defer(spvReflectDestroyShaderModule(&module));
 
+    const SpvReflectEntryPoint& entry_point = find_entry_point(module, type);
 
-    y_always_assert(module.entry_point_count == 1, "Shader module expected exactly one entry point");
-    const SpvReflectEntryPoint& entry_point = module.entry_points[0];
-    y_always_assert(std::string_view(entry_point.name) == "main", "Entry point should be called \"main\"");
+    _entry_point = entry_point.name;
 
-
-    _type = module_type(module.spirv_execution_model);
     _local_size = {
         entry_point.local_size.x,
         entry_point.local_size.y,
@@ -152,10 +176,10 @@ ShaderModuleBase::ShaderModuleBase(const SpirVData& data) : _module(create_shade
 
     {
         u32 attrib_count = 0;
-        spv_check(spvReflectEnumerateEntryPointInputVariables(&module, "main", &attrib_count, nullptr));
+        spv_check(spvReflectEnumerateEntryPointInputVariables(&module, entry_point.name, &attrib_count, nullptr));
 
         core::ScratchPad<SpvReflectInterfaceVariable*> attribs(attrib_count);
-        spv_check(spvReflectEnumerateEntryPointInputVariables(&module, "main", &attrib_count, attribs.data()));
+        spv_check(spvReflectEnumerateEntryPointInputVariables(&module, entry_point.name, &attrib_count, attribs.data()));
 
         for(const SpvReflectInterfaceVariable* variable : attribs) {
             if(variable->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
@@ -174,10 +198,10 @@ ShaderModuleBase::ShaderModuleBase(const SpirVData& data) : _module(create_shade
 
     {
         u32 out_count = 0;
-        spv_check(spvReflectEnumerateEntryPointOutputVariables(&module, "main", &out_count, nullptr));
+        spv_check(spvReflectEnumerateEntryPointOutputVariables(&module, entry_point.name, &out_count, nullptr));
 
         core::ScratchPad<SpvReflectInterfaceVariable*> outputs(out_count);
-        spv_check(spvReflectEnumerateEntryPointOutputVariables(&module, "main", &out_count, outputs.data()));
+        spv_check(spvReflectEnumerateEntryPointOutputVariables(&module, entry_point.name, &out_count, outputs.data()));
 
         for(const SpvReflectInterfaceVariable* variable : outputs) {
             if(variable->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {

@@ -39,32 +39,11 @@ SOFTWARE.
 
 namespace yave {
 
-static FrameGraphVolumeId integrate_atmosphere(FrameGraph& framegraph, const shader::AtmosphereParams& params, const GBufferPass& gbuffer, const AtmosphereSettings& settings) {
-    const math::Vec3ui size = settings.lut_size;
-    const ImageFormat format = VK_FORMAT_R16G16B16A16_SFLOAT;
-    //const ImageFormat format = VK_FORMAT_R32G32B32A32_SFLOAT;
-
-    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Atmosphere integration pass");
-
-    const FrameGraphMutableVolumeId scattering = builder.declare_volume(format, size);
-
-    builder.add_storage_output(scattering);
-    builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_inline_input(InlineDescriptor(params));
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources()[DeviceResources::AtmosphereIntergratorProgram];
-        recorder.dispatch_size(program, size.to<2>(), self->descriptor_sets());
-    });
-
-    return scattering;
-}
-
-AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const AtmosphereSettings& settings) {
+AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const AtmosphereSettings&) {
     const Scene* scene = gbuffer.scene_pass.scene_view.scene();
 
     const AtmosphereObject* atmo_object = scene->atmosphere();
     if(!atmo_object) {
-
         AtmospherePass pass;
         pass.lit = lit;
         return pass;
@@ -73,33 +52,10 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
     const AtmosphereComponent& atmosphere = atmo_object->component;
     const DirectionalLightComponent& sun = atmo_object->sun;
 
-    const auto region = framegraph.region("Atmosphere");
-
-    static constexpr math::Vec3 wavelengths(700.0f, 530.0f, 440.0f);
-    auto rayleigh = [](float scattering_strength) {
-        math::Vec3 v = wavelengths;
-        for(auto& x : v) {
-            x = std::pow(400.0f / x, 4.0f) * scattering_strength;
-        }
-        return v;
-    };
-
-    const shader::AtmosphereParams params {
-        math::Vec3(0.0f, 0.0f, -atmosphere.zero_altitude()),
-        atmosphere.planet_radius(),
-
-        rayleigh(atmosphere.scattering_strength()),
-        atmosphere.atmosphere_height(),
-
-        -sun.direction().normalized(),
-        atmosphere.planet_radius() + atmosphere.atmosphere_height(),
-
+    const math::Vec4 params(
         sun.color() * sun.intensity(),
-        atmosphere.density_falloff(),
-    };
-
-
-    const auto scattering = integrate_atmosphere(framegraph, params, gbuffer, settings);
+        atmosphere.density_falloff() / 1000.0f
+    );
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Atmosphere pass");
 
@@ -107,10 +63,9 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
 
     builder.add_uniform_input(gbuffer.depth);
     builder.add_uniform_input(lit);
-    builder.add_uniform_input(scattering, SamplerType::LinearClamp);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_inline_input(InlineDescriptor(params));
     builder.add_color_output(atmo);
+    builder.add_inline_input(InlineDescriptor(params));
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::AtmosphereMaterialTemplate];
         render_pass.bind_material_template(material, self->descriptor_sets());
