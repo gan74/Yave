@@ -23,7 +23,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     const float3 color = in_color[coord].rgb;
 
     if(is_depth_OOB(depth)) {
-        return float4(color, 1.0);
+        return float4(sun_color, 1.0);
     }
 
     const float3 view_vec = unproject(in_uv, max(epsilon, depth), camera.inv_view_proj) - camera.position;

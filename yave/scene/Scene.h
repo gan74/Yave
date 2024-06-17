@@ -105,12 +105,11 @@ class Scene : NonMovable {
 
 
         template<typename T>
-        static auto gather_visible(core::Span<TransformableSceneObject<T>> objects, const Camera& cam, u32 visibility_mask = u32(-1)) {
+        static void gather_visible(core::Vector<const TransformableSceneObject<T>*>& visible, core::Span<TransformableSceneObject<T>> objects, const Camera& cam, u32 visibility_mask = u32(-1)) {
             y_profile();
 
             const Frustum frustum = cam.frustum();
 
-            core::Vector<const TransformableSceneObject<T>*> visible;
             for(const auto& obj : objects) {
                 if((obj.visibility_mask & visibility_mask) == 0) {
                     continue;
@@ -120,8 +119,6 @@ class Scene : NonMovable {
                 }
                 visible << &obj;
             }
-
-            return visible;
         }
 
     protected:

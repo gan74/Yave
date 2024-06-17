@@ -29,6 +29,7 @@ SOFTWARE.
 #include <yave/graphics/device/MeshAllocator.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/renderer/SceneVisibilitySubPass.h>
 
 #include <y/core/Chrono.h>
 
@@ -108,6 +109,31 @@ class MemoryDebug : public Widget {
 };
 
 
+class CullingDebug : public Widget {
+    editor_widget(CullingDebug, "View", "Debug")
+
+    public:
+        CullingDebug() : Widget("Culling debug", ImGuiWindowFlags_AlwaysAutoResize) {
+        }
+
+    protected:
+        void on_gui() override {
+            const core::Chrono timer;
+            const SceneVisibilitySubPass visibility = SceneVisibilitySubPass::create(scene_view());
+            const core::Duration durr = timer.elapsed();
+
+            ImGui::TextUnformatted("Visible for current camera:");
+            ImGui::TextUnformatted(fmt_c_str("{} meshes", visibility.visible->meshes.size()));
+            ImGui::TextUnformatted(fmt_c_str("{} point lights", visibility.visible->point_lights.size()));
+            ImGui::TextUnformatted(fmt_c_str("{} spot lights", visibility.visible->spot_lights.size()));
+
+            ImGui::Separator();
+
+            ImGui::TextUnformatted(fmt_c_str("visibility time: {:.2}ms", durr.to_millis()));
+        }
+};
+
+
 static void busy_sleep(core::Duration dur) {
     core::Chrono timer;
     while(timer.elapsed() < dur) {
@@ -136,7 +162,7 @@ class EcsDebug : public Widget {
     editor_widget(EcsDebug, "View", "Debug")
 
     public:
-        EcsDebug() : Widget("ECS Debug") {
+        EcsDebug() : Widget("ECS debug") {
         }
 
     protected:
