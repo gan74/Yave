@@ -100,7 +100,7 @@ static void add_debug_lights() {
 }
 
 
-static void add_debug_cubes() {
+static void add_debug_cubes(bool animate) {
     y_profile();
 
     EditorWorld& world = current_world();
@@ -122,14 +122,18 @@ static void add_debug_cubes() {
         const math::Vec3 pos = center + math::Vec3(i / (side * side), (i / side) % side, i % side) - (side * 0.5f);
         world.get_or_add_component<TransformableComponent>(entity)->set_position(pos * spacing);
         world.add_or_replace_component<StaticMeshComponent>(entity, device_resources()[DeviceResources::CubeMesh], device_resources()[DeviceResources::EmptyMaterial]);
-        world.get_or_add_component<DebugAnimateComponent>(entity);
+
+        if(animate) {
+            world.get_or_add_component<DebugAnimateComponent>(entity);
+        }
     }
 }
 
 
 
 editor_action("Add debug lights", add_debug_lights)
-editor_action("Add debug cubes", add_debug_cubes)
+editor_action("Add debug cubes", [] { add_debug_cubes(false); })
+editor_action("Add animated debug cubes", [] { add_debug_cubes(true); })
 
 editor_action_contextual(ICON_FA_TRASH " Delete selected",
     [] { add_child_widget<DeletionDialog>(current_world().selected_entities()); },
