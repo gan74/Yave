@@ -57,8 +57,8 @@ float3 cube_dir(float2 tex_coord, uint side) {
 [shader("compute")]
 [numthreads(8, 8)]
 void comp_main() {
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
-    const float2 uv = (gl_GlobalInvocationID.xy + 0.5) / float2(image_size(out_image).xy);
+    const int2 coord = int2(semantics.global_id.xy);
+    const float2 uv = (semantics.global_id.xy + 0.5) / float2(image_size(out_image).xy);
 
     for(uint i = 0; i != 6; ++i) {
         const float3 local_dir = normalize(cube_dir(uv, i));

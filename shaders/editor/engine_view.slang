@@ -29,7 +29,7 @@ Sampler2D<float> in_ao;
 
 [shader("fragment")]
 float4 frag_main(float2 in_uv) : SV_Target0 {
-    const int2 coord = int2(gl_FragCoord.xy);
+    const int2 coord = int2(semantics.frag_coord.xy);
 
     const SurfaceInfo surface = decode_gbuffer({
         in_rt0[coord],

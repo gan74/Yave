@@ -12,12 +12,12 @@ struct VertexStageOut {
 
 [shader("vertex")]
 VertexStageOut vert_main(StdVertexStageIn in) {
-    const TransformableData transformable = transformables[transform_material_indices[gl_InstanceIndex].x];
+    const TransformableData transformable = transformables[transform_material_indices[semantics.instance_index].x];
 
     VertexStageOut out;
     {
         out.sv_position = mul(camera.view_proj, mul(transformable.current, float4(in.position, 1.0)));
-        out.instance_index = gl_InstanceIndex;
+        out.instance_index = semantics.instance_index;
     }
     return out;
 }

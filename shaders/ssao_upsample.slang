@@ -176,21 +176,21 @@ void comp_main() {
     const float2 inv_lo_res = 1.0 / float2(image_size(in_lo_depth).xy);
     const float2 inv_hi_res = 1.0 / float2(image_size(in_hi_depth).xy);
 
-    prefetch(gl_LocalInvocationID.x << 1 | gl_LocalInvocationID.y << 5, int2(gl_GlobalInvocationID.xy + gl_LocalInvocationID.xy - 2) * inv_lo_res);
+    prefetch(gl_LocalInvocationID.x << 1 | gl_LocalInvocationID.y << 5, int2(semantics.global_id.xy + gl_LocalInvocationID.xy - 2) * inv_lo_res);
 
     GroupMemoryBarrierWithGroupSync();
 
     // Goal:  End up with a 9x9 patch that is blurred so we can upsample.  Blur radius is 2 pixels, so start with 13x13 area.
     // Horizontally blur the pixels.    13x13 -> 9x13
-    if(gl_LocalInvocationIndex < 39) {
-        horizontal_blur((gl_LocalInvocationIndex / 3) * 16 + (gl_LocalInvocationIndex % 3) * 3);
+    if(semantics.local_index < 39) {
+        horizontal_blur((semantics.local_index / 3) * 16 + (semantics.local_index % 3) * 3);
     }
 
     GroupMemoryBarrierWithGroupSync();
 
     // Vertically blur the pixels.        9x13 -> 9x9
-    if(gl_LocalInvocationIndex < 45) {
-        vertical_blur((gl_LocalInvocationIndex / 9) * 32 + gl_LocalInvocationIndex % 9);
+    if(semantics.local_index < 45) {
+        vertical_blur((semantics.local_index / 9) * 32 + semantics.local_index % 9);
     }
 
     GroupMemoryBarrierWithGroupSync();
@@ -200,7 +200,7 @@ void comp_main() {
     const float4 lo_samples = float4(ao_samples0[id + 16], ao_samples0[id + 17], ao_samples0[id + 1], ao_samples0[id]);
 
     // We work on a quad of pixels at once because then we can gather 4 each of high and low-res depth values
-    const float2 uv = gl_GlobalInvocationID.xy * inv_lo_res;
+    const float2 uv = semantics.global_id.xy * inv_lo_res;
 
 #ifdef COMBINE_HIGH
     const float4 hi_samples = in_hi_ao.Gather(uv);
@@ -210,7 +210,7 @@ void comp_main() {
     const float4 lo_depths = in_lo_depth.Gather(uv);
     const float4 hi_depths = in_hi_depth.Gather(uv);
 
-    const int2 out_coord = int2(gl_GlobalInvocationID.xy) << 1;
+    const int2 out_coord = int2(semantics.global_id.xy) << 1;
     out_ao[out_coord + int2(-1,  0)] = bilateral_upsample(hi_depths.x, hi_samples.x, lo_depths.xyzw, lo_samples.xyzw);
     out_ao[out_coord + int2( 0,  0)] = bilateral_upsample(hi_depths.y, hi_samples.y, lo_depths.yzwx, lo_samples.yzwx);
     out_ao[out_coord + int2( 0, -1)] = bilateral_upsample(hi_depths.z, hi_samples.z, lo_depths.zwxy, lo_samples.zwxy);

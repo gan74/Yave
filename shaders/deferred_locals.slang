@@ -62,9 +62,9 @@ groupshared uint2 tile_dist_bounds;
 // -------------------------------- HELPERS --------------------------------
 
 uint2 dispatch_range(uint num) {
-    const uint thread_count = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    const uint thread_count = semantics.work_group_size.x * semantics.work_group_size.y;
     const uint range = 1 + (num / thread_count);
-    const uint begin = min(gl_LocalInvocationIndex * range, num);
+    const uint begin = min(semantics.local_index * range, num);
     const uint end = min(begin + range, num);
     return uint2(begin, end);
 }
@@ -73,12 +73,12 @@ uint2 dispatch_range(uint num) {
 // -------------------------------- TILE INFOS --------------------------------
 
 void compute_tile_culling_info(float2 image_size) {
-    const float2 corner_uv = (gl_WorkGroupID.xy * gl_WorkGroupSize.xy) / image_size;
+    const float2 corner_uv = (semantics.work_group_id.xy * semantics.work_group_size.xy) / image_size;
     const float3 corner_unproj = unproject_ndc(float3(corner_uv * 2.0 - 1.0, 1.0), camera.inv_view_proj);
     const float3 corner_dir = normalize(corner_unproj - camera.position);
 
 
-    const float2 center_uv = ((gl_WorkGroupID.xy + 0.5) * gl_WorkGroupSize.xy) / image_size;
+    const float2 center_uv = ((semantics.work_group_id.xy + 0.5) * semantics.work_group_size.xy) / image_size;
     const float3 unproj = unproject_ndc(float3(center_uv * 2.0 - 1.0, 1.0), camera.inv_view_proj);
     tile_dir = normalize(unproj - camera.position);
 
@@ -87,7 +87,7 @@ void compute_tile_culling_info(float2 image_size) {
 }
 
 void compute_tile_infos(float2 image_size, float view_dist, bool is_oob) {
-    if(gl_LocalInvocationIndex == 0) {
+    if(semantics.local_index == 0) {
         compute_tile_culling_info(image_size);
         tile_point_count = 0;
         tile_spot_count = 0;
@@ -225,9 +225,9 @@ void cull_lights() {
 [shader("compute")]
 [numthreads(16, 16)]
 void comp_main() {
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
+    const int2 coord = int2(semantics.global_id.xy);
     const float2 image_size = float2(image_size(out_color).xy);
-    const float2 uv = float2(gl_GlobalInvocationID.xy) / image_size;
+    const float2 uv = float2(semantics.global_id.xy) / image_size;
 
     const float depth = in_depth[coord];
 

@@ -14,7 +14,7 @@ RWTexture2D<float4> out_color;
 [shader("compute")]
 [numthreads(8, 8)]
 void comp_main() {
-    const int2 coord = int2(gl_GlobalInvocationID.xy);
+    const int2 coord = int2(semantics.global_id.xy);
 
     const float4 color = in_color[coord];
     const float depth = in_depth[coord];

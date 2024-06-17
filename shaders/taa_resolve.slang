@@ -145,7 +145,7 @@ static const uint weighted_clamp_bit            = 0x08;
 // https://www.elopezr.com/temporal-aa-and-the-quest-for-the-holy-trail/
 [shader("fragment")]
 float4 frag_main(float2 in_uv) : SV_Target0 {
-    const int2 coord = int2(gl_FragCoord.xy);
+    const int2 coord = int2(semantics.frag_coord.xy);
 
     const float2 size = float2(image_size(in_color).xy);
     const float2 inv_size = 1.0 / size;
@@ -153,7 +153,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
 
     const float2 motion = in_motion[coord].xy;
     const bool has_moved = any(abs(motion) > inv_size);
-    const float2 uv = gl_FragCoord.xy * inv_size;
+    const float2 uv = semantics.frag_coord.xy * inv_size;
     const float2 prev_uv = uv + motion;
 
     const float3 current = in_color[coord].rgb;

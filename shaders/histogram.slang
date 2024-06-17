@@ -19,13 +19,13 @@ groupshared uint histogram[lum_histogram_size];
 
 
 uint compute_index(uint i) {
-    return gl_LocalInvocationIndex * bin_per_thread + i;
+    return semantics.local_index * bin_per_thread + i;
 }
 
 [shader("compute")]
 [numthreads(thread_count)]
 void comp_main() {
-    const uint2 base_coord = uint2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y * thread_count);
+    const uint2 base_coord = uint2(semantics.global_id.x, semantics.global_id.y * thread_count);
     const uint2 size = image_size(in_color);
 
     for(uint i = 0; i != bin_per_thread; ++i) {

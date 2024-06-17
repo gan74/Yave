@@ -42,7 +42,7 @@ Sampler2D all_textures[];
 
 [shader("vertex")]
 VertexStageOut vert_main(StdVertexStageIn in) {
-    const TransformableData transformable = transformables[transform_material_indices[gl_InstanceIndex].x];
+    const TransformableData transformable = transformables[transform_material_indices[semantics.instance_index].x];
 
     const float3x3 model = float3x3(transformable.current);
 
@@ -62,7 +62,7 @@ VertexStageOut vert_main(StdVertexStageIn in) {
         out.vert.bitangent = cross(out.vert.tangent, out.vert.normal) * in_tangent_sign.w;
         out.vert.screen_pos = current_position.xyw;
         out.vert.last_screen_pos = last_position.xyw;
-        out.vert.instance_index = gl_InstanceIndex;
+        out.vert.instance_index = semantics.instance_index;
     }
     return out;
 }

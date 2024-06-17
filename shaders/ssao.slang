@@ -81,8 +81,8 @@ float test_samples(uint center_index, int x, int y, float inv_depth, float inv_t
 [numthreads(THREAD_COUNT, THREAD_COUNT)]
 void comp_main() {
     const float2 image_size = float2(image_size(in_depth).xy);
-    //const float2 image_size = float2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
-    const int2 center_coord = int2(gl_GlobalInvocationID.xy + gl_LocalInvocationID.xy) - CENTER_OFFSET;
+    //const float2 image_size = float2(semantics.work_group_count.xy * semantics.work_group_size.xy);
+    const int2 center_coord = int2(semantics.global_id.xy + gl_LocalInvocationID.xy) - CENTER_OFFSET;
     const float2 center_uv = float2(center_coord) / image_size;
 
     const float4 depths = in_depth.Gather(center_uv);
@@ -124,6 +124,6 @@ void comp_main() {
     ao += weights[2].z * test_samples(index, 2, 4, inv_depth, inv_thickness[2].z);
 #endif
 
-    out_ao[int2(gl_GlobalInvocationID.xy)] = ao;
+    out_ao[int2(semantics.global_id.xy)] = ao;
 }
 

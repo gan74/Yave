@@ -22,8 +22,8 @@ groupshared uint total;
 groupshared uint max_bin;
 
 void draw_line(float lum, int x_offset, int image_height, float3 color) {
-    const float min_lum = histogram_bin_to_lum(gl_LocalInvocationIndex);
-    const float max_lum = histogram_bin_to_lum(gl_LocalInvocationIndex + 1);
+    const float min_lum = histogram_bin_to_lum(semantics.local_index);
+    const float max_lum = histogram_bin_to_lum(semantics.local_index + 1);
 
     if(lum > min_lum && lum < max_lum) {
         const float t = (lum - min_lum) / (max_lum - min_lum);
@@ -37,9 +37,9 @@ void draw_line(float lum, int x_offset, int image_height, float3 color) {
 [shader("compute")]
 [numthreads(lum_histogram_size)]
 void comp_main() {
-    const uint bin_size = in_histogram[int2(gl_LocalInvocationIndex, 0)];
+    const uint bin_size = in_histogram[int2(semantics.local_index, 0)];
 
-    if(gl_LocalInvocationIndex == 0) {
+    if(semantics.local_index == 0) {
         total = 0;
         max_bin = 0;
     }
@@ -52,7 +52,7 @@ void comp_main() {
     GroupMemoryBarrierWithGroupSync();
 
     const int bar = int(max(1, (bin_size * bar_height) / max_bin));
-    const int x_offset = int(gl_LocalInvocationIndex * (bar_width + 1));
+    const int x_offset = int(semantics.local_index * (bar_width + 1));
     const int image_height = int(image_size(out_color).y);
 
     for(int x = 0; x != bar_width; ++x) {

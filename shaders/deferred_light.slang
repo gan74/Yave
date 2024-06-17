@@ -49,12 +49,12 @@ struct VertexStageOut {
 
 [shader("vertex")]
 VertexStageOut vert_main(StdVertexStageIn in) {
-    const Light light = lights[gl_InstanceIndex];
+    const Light light = lights[semantics.instance_index];
 
     VertexStageOut out;
     {
 
-        out.instance_index = gl_InstanceIndex;
+        out.instance_index = semantics.instance_index;
 
 #ifdef SPOT
         out.sv_position = mul(camera.view_proj, mul(light.draw_model, float4(in.position, 1.0)));
@@ -70,8 +70,8 @@ VertexStageOut vert_main(StdVertexStageIn in) {
 
 [shader("fragment")]
 float4 frag_main(uint in_instance_index) : SV_Target0 {
-    const int2 coord = int2(gl_FragCoord.xy);
-    const vec2 uv = gl_FragCoord.xy / vec2(image_size(in_depth).xy);
+    const int2 coord = int2(semantics.frag_coord.xy);
+    const vec2 uv = semantics.frag_coord.xy / vec2(image_size(in_depth).xy);
 
     const float depth = in_depth[coord];
 

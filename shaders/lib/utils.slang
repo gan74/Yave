@@ -1,11 +1,8 @@
 #ifndef UTILS_SLANG
 #define UTILS_SLANG
 
-import "glsl";
-
+#include "semantics.slang"
 #include "structs.slang"
-
-typealias Sampler2DShadow = sampler2DShadow;
 
 
 static const float pi = 3.1415926535897932384626433832795;
@@ -74,38 +71,6 @@ struct RawGBuffer {
 
 
 
-
-uint image_mips<T>(Sampler2D<T> smp) {
-    uint mip;
-    uint2 size;
-    smp.GetDimensions(0, size.x, size.y, mip);
-    return 0;
-}
-
-uint image_mips<T>(SamplerCube<T> smp) {
-    uint mip;
-    uint2 size;
-    smp.GetDimensions(0, size.x, size.y, mip);
-    return 0;
-}
-
-uint2 image_size<T>(Sampler2D<T> smp) {
-    uint2 size;
-    smp.GetDimensions(size.x, size.y);
-    return size;
-}
-
-uint2 image_size<T>(RWTexture2D<T> smp) {
-    uint2 size;
-    smp.GetDimensions(size.x, size.y);
-    return size;
-}
-
-uint3 image_size<T>(RWTexture2DArray<T> smp) {
-    uint3 size;
-    smp.GetDimensions(size.x, size.y, size.z);
-    return size;
-}
 
 T sqr<T: IArithmetic>(T t) {
     return t * t;
@@ -470,7 +435,7 @@ float3 eval_ibl(SamplerCube probe, Sampler2D<float2> brdf_lut, float3 V, Surface
     const float3 irradiance = probe.SampleLevel(N, probe_mips - 1).rgb;
     const float3 diffuse = kD * irradiance * info.albedo;
 
-    const vec2 brdf = brdf_lut.Sample(float2(NdotV, info.perceptual_roughness)).xy;
+    const float2 brdf = brdf_lut.Sample(float2(NdotV, info.perceptual_roughness)).xy;
     const float3 prefiltered = probe.SampleLevel(R, roughness_to_mip(info.perceptual_roughness, probe_mips - 1)).rgb;
     const float3 specular = prefiltered * (kS * brdf.x + brdf.y);
 
@@ -494,7 +459,7 @@ float sample_shadow(Sampler2DShadow shadow_map, float3 proj, ShadowMapInfo info,
 float compute_shadow_hard(Sampler2DShadow shadow_map, ShadowMapInfo info, float3 world_pos, float bias) {
     const float3 proj = project(world_pos, info.view_proj);
 
-    if(saturate(proj) != proj) {
+    if(any(saturate(proj) != proj)) {
         return 1.0;
     }
 
@@ -504,7 +469,7 @@ float compute_shadow_hard(Sampler2DShadow shadow_map, ShadowMapInfo info, float3
 float compute_shadow_pcf(Sampler2DShadow shadow_map, ShadowMapInfo info, float3 world_pos, float bias) {
     const float3 proj = project(world_pos, info.view_proj);
 
-    if(saturate(proj) != proj) {
+    if(any(saturate(proj) != proj)) {
         return 1.0;
     }
 
@@ -548,11 +513,11 @@ float compute_shadow_pcf(Sampler2DShadow shadow_map, ShadowMapInfo info, float3 
 }
 
 
-float compute_shadow_hard(sampler2DShadow shadow_map, ShadowMapInfo info, float3 world_pos) {
+float compute_shadow_hard(Sampler2DShadow shadow_map, ShadowMapInfo info, float3 world_pos) {
     return compute_shadow_hard(shadow_map, info, world_pos, 0.0);
 }
 
-float compute_shadow_pcf(sampler2DShadow shadow_map, ShadowMapInfo info, float3 world_pos) {
+float compute_shadow_pcf(Sampler2DShadow shadow_map, ShadowMapInfo info, float3 world_pos) {
     return compute_shadow_pcf(shadow_map, info, world_pos, 0.0);
 }
 

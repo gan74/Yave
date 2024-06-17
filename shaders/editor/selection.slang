@@ -17,14 +17,14 @@ static const int size = 2;
 
 [shader("fragment")]
 float4 frag_main(float2 in_uv) : SV_Target0 {
-    const int2 coord = int2(gl_FragCoord.xy);
+    const int2 coord = int2(semantics.frag_coord.xy);
     const uint base_id = in_seletion_id[coord].r;
 
     float min_depth = 1.0;
     float alpha = 0.0;
     if(base_id != 0) {
         min_depth = in_seletion_depth[coord].r;
-        // alpha = max(0.0, sin(dot(float2(1.0, 1.0), gl_FragCoord.xy)) * 0.5);
+        // alpha = max(0.0, sin(dot(float2(1.0, 1.0), semantics.frag_coord.xy)) * 0.5);
     } else {
         float sum = 0.0;
         float total = 0.0;
