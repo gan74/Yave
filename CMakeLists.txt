@@ -84,7 +84,7 @@ function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
             -o ${SHADER_BIN}
             "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}"
     )
-    # optimize_shader(${SHADER_TARGET}_optim ${SHADER_BIN})
+    optimize_shader(${SHADER_TARGET}_optim ${SHADER_BIN})
 endfunction(add_slang_shader)
 
 
