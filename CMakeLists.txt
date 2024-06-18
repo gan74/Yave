@@ -93,8 +93,8 @@ function(setup_slang)
     # https://stackoverflow.com/questions/16384831/externalproject-add-doesnt-install-the-release-configuration-of-the-project
     ExternalProject_Add(slang
         SOURCE_DIR "${CMAKE_SOURCE_DIR}/external/slang"
-        CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release
-        INSTALL_COMMAND cmake -E echo "Skipping install step."
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install --config Release
         EXCLUDE_FROM_ALL true
     )
     ExternalProject_Get_Property(slang BINARY_DIR)
