@@ -22,7 +22,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     const float depth = in_depth[coord];
     const float3 color = in_color[coord].rgb;
 
-    if(is_depth_OOB(depth)) {
+    if(is_depth_far(depth)) {
         return float4(sun_color, 1.0);
     }
 

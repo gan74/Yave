@@ -272,8 +272,12 @@ float2 hammersley(uint i, uint N) {
     return float2(float(i) / float(N), radical_inverse);
 }
 
-bool is_depth_OOB(float z) {
+bool is_depth_far(float z) {
     return z <= 0.0; // reversed Z
+}
+
+bool is_depth_near(float z) {
+    return z >= 1.0; // reversed Z
 }
 
 float3 unproject_ndc(float3 ndc, float4x4 inv_matrix) {

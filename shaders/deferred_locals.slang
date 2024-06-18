@@ -237,11 +237,11 @@ void comp_main() {
     const float view_dist = length(view_dir);
     view_dir /= view_dist;
 
-    compute_tile_infos(image_size, view_dist, is_depth_OOB(depth));
+    compute_tile_infos(image_size, view_dist, is_depth_far(depth) || is_depth_near(depth));
 
     cull_lights();
 
-    if(is_depth_OOB(depth)) {
+    if(is_depth_far(depth)) {
         return;
     }
 

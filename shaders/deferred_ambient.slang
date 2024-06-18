@@ -122,7 +122,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     const float depth = in_depth[coord].x;
     float3 irradiance = float3(0.0);
 
-    if(is_depth_OOB(depth)) {
+    if(is_depth_far(depth)) {
         const float3 view_dir = -view_direction(camera, in_uv);
 
 #if defined(USE_IBL)

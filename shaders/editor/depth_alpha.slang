@@ -19,6 +19,6 @@ void comp_main() {
     const float4 color = in_color[coord];
     const float depth = in_depth[coord];
 
-    out_color[coord] = (is_depth_OOB(depth) ? float4(0.0) : color);
+    out_color[coord] = (is_depth_far(depth) ? float4(0.0) : color);
 }
 
