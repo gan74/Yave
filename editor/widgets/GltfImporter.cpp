@@ -88,7 +88,6 @@ static std::pair<std::unique_ptr<ecs::EntityPrefab>, core::String> create_prefab
 
     auto& node = scene.nodes[index];
 
-    core::String name = node.name;
     auto prefab = std::make_unique<ecs::EntityPrefab>(ecs::EntityId::dummy(u32(index)));
 
     if(node.mesh_index >= 0) {
@@ -102,8 +101,6 @@ static std::pair<std::unique_ptr<ecs::EntityPrefab>, core::String> create_prefab
             });
 
             prefab->add(StaticMeshComponent(make_asset_with_id<StaticMesh>(mesh.asset_id), std::move(materials)));
-
-            name = mesh.name;
         }
     }
 
@@ -116,8 +113,6 @@ static std::pair<std::unique_ptr<ecs::EntityPrefab>, core::String> create_prefab
         component.color() = light.color;
 
         prefab->add(component);
-
-        name = light.name;
     }
 
     for(const int child_index : node.children) {
@@ -133,9 +128,9 @@ static std::pair<std::unique_ptr<ecs::EntityPrefab>, core::String> create_prefab
     }
 
     prefab->add(TransformableComponent(node.transform));
-    prefab->add(EditorComponent(name));
+    prefab->add(EditorComponent(node.name));
 
-    return {std::move(prefab), name};
+    return {std::move(prefab), node.name};
 }
 
 static AssetId import_node(import::ParsedScene& scene, int index, bool import_child_prefabs_as_assets, const core::String& import_path) {
