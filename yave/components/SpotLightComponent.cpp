@@ -73,7 +73,7 @@ u32 SpotLightComponent::shadow_lod() const {
 
 AABB SpotLightComponent::aabb() const {
     const auto sphere = enclosing_sphere();
-    return AABB::from_center_extent(math::Vec3(0.0f, sphere.dist_to_center, 0.0f), math::Vec3(sphere.radius));
+    return AABB::from_center_extent(math::Vec3(0.0f, sphere.dist_to_center, 0.0f), math::Vec3(sphere.radius * 2.0f));
 }
 
 math::Vec2 SpotLightComponent::attenuation_scale_offset() const {

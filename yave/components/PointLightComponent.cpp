@@ -25,7 +25,7 @@ SOFTWARE.
 namespace yave {
 
 AABB PointLightComponent::aabb() const {
-    return AABB::from_center_extent({}, math::Vec3(_range));
+    return AABB::from_center_extent({}, math::Vec3(_range * 2.0f));
 }
 
 }
