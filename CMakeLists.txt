@@ -65,7 +65,6 @@ endfunction(optimize_shader)
 function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
     get_filename_component(SHADER_NAME ${SHADER_FILE} NAME_WE)
     get_property(SLANGC GLOBAL PROPERTY SLANG_EXECUTABLE)
-
     foreach(DEF ${SHADER_DEFINES})
         set(COMPILE_ARGS "${COMPILE_ARGS} -D${DEF}=1")
         set(NAME_SUFFIX "${NAME_SUFFIX}_${DEF}")
@@ -91,14 +90,13 @@ endfunction(add_slang_shader)
 function(setup_slang)
     include(ExternalProject)
     # https://stackoverflow.com/questions/16384831/externalproject-add-doesnt-install-the-release-configuration-of-the-project
+    set(SLANG_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/slangc")
     ExternalProject_Add(slang
         SOURCE_DIR "${CMAKE_SOURCE_DIR}/external/slang"
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install --config Release
+        CMAKE_ARGS "-DCMAKE_BUILD_TYPE=Release;-DCMAKE_INSTALL_PREFIX=${SLANG_INSTALL_DIR}"
         EXCLUDE_FROM_ALL true
     )
-    ExternalProject_Get_Property(slang BINARY_DIR)
-    set_property(GLOBAL PROPERTY SLANG_EXECUTABLE ${BINARY_DIR}/Release/bin/slangc)
+    set_property(GLOBAL PROPERTY SLANG_EXECUTABLE "${SLANG_INSTALL_DIR}/bin/slangc")
 endfunction(setup_slang)
 
 
