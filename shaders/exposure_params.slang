@@ -1,5 +1,3 @@
-import "glsl";
-
 #include "lib/utils.slang"
 
 [[vk::binding(0)]]
@@ -25,7 +23,7 @@ void comp_main() {
 
     GroupMemoryBarrierWithGroupSync();
 
-    atomicAdd(total, bin_size);
+    InterlockedAdd(total, bin_size);
     histogram[index] = bin_size;
 
     GroupMemoryBarrierWithGroupSync();

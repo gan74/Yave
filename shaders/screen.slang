@@ -1,4 +1,4 @@
-import "glsl";
+#include "lib/utils.slang"
 
 static const float2 uvs[] = {
     float2(0.0, 0.0),
@@ -15,7 +15,7 @@ struct VertexStageOut {
 
 [shader("vertex")]
 VertexStageOut vert_main() {
-    const float2 uv = uvs[gl_VertexIndex];
+    const float2 uv = uvs[semantics.vertex_index];
 
     VertexStageOut out;
     {

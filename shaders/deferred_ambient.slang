@@ -1,5 +1,3 @@
-import "glsl";
-
 #include "lib/utils.slang"
 #include "lib/lighting.slang"
 
@@ -101,7 +99,7 @@ float4 cascade_debug_color(float3 world_pos) {
             const ShadowMapInfo sm_info = shadow_infos[shadow_map_index];
             const float3 proj = project(world_pos, sm_info.view_proj);
             const float2 texel = floor(atlas_uv(sm_info, proj.xy) * sm_info.size);
-            const float3 color = mix(uv_debug_color(texel), cascade_debug_color(shadow_map_index, indices), 0.25);
+            const float3 color = lerp(uv_debug_color(texel), cascade_debug_color(shadow_map_index, indices), 0.25);
             return float4(color, 1.0);
         }
     }
@@ -175,7 +173,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
 
 #if defined(DEBUG_CASCADES)
         const float4 debug_color = cascade_debug_color(world_pos);
-        irradiance = mix(irradiance, debug_color.rgb, debug_color.a);
+        irradiance = lerp(irradiance, debug_color.rgb, debug_color.a);
 #endif
     }
 

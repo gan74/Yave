@@ -1,5 +1,3 @@
-import "glsl";
-
 #include "lib/utils.slang"
 #include "lib/std_bindings.slang"
 

@@ -1,5 +1,3 @@
-import "glsl";
-
 #include "lib/utils.slang"
 
 [[vk::binding(0)]]
@@ -17,7 +15,7 @@ void comp_main() {
     const int2 coord = int2(semantics.global_id.xy);
 
     const float depth = in_depth[coord];
-    const float linear_depth = -unproject(vec2(0.5), depth, camera.inv_proj).z;
+    const float linear_depth = -unproject(float2(0.5), depth, camera.inv_proj).z;
 
     out_depth[coord] = linear_depth;
 }

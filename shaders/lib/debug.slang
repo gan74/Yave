@@ -78,7 +78,7 @@ float print_value(float2 pos, float value, float max_digits, float decimals) {
                     index += 1.0;
                 }
                 const float digit_value = abs(reduced_range_value / pow(10.0, index));
-                char_bits = digit_bits(int(floor(mod(digit_value, 10.0))));
+                char_bits = digit_bits(int(floor(fmod(digit_value, 10.0))));
             }
         }
     }

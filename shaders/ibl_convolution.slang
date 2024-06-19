@@ -1,5 +1,3 @@
-import "glsl";
-
 #include "lib/utils.slang"
 
 

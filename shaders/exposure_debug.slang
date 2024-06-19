@@ -1,5 +1,3 @@
-import "glsl";
-
 #include "lib/utils.slang"
 
 
@@ -46,8 +44,8 @@ void comp_main() {
 
     GroupMemoryBarrierWithGroupSync();
 
-    atomicAdd(total, bin_size);
-    atomicMax(max_bin, bin_size);
+    InterlockedAdd(total, bin_size);
+    InterlockedMax(max_bin, bin_size);
 
     GroupMemoryBarrierWithGroupSync();
 

@@ -1,5 +1,3 @@
-import "glsl";
-
 #include "lib/utils.slang"
 
 // https://64.github.io/tonemapping/

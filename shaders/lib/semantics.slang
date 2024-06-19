@@ -10,6 +10,8 @@ namespace semantics {
 
 in float4 frag_coord : SV_Position;
 in uint instance_index : SV_InstanceID;
+in bool is_front_face : SV_IsFrontFace;
+in int vertex_index : SV_VertexID;
 
 in uint3 global_id : SV_DispatchThreadID;
 in uint3 work_group_id : SV_GroupID;
@@ -32,6 +34,17 @@ property uint3 work_group_count {
 
 
 
+
+[ForceInline]
+uint InterlockedAddRet(inout uint mem, uint data) {
+    uint prev;
+    InterlockedAdd(mem, data, prev);
+    return prev;   
+}
+
+
+
+[ForceInline]
 uint image_mips<T>(Sampler2D<T> smp) {
     uint mip;
     uint2 size;
@@ -39,6 +52,7 @@ uint image_mips<T>(Sampler2D<T> smp) {
     return 0;
 }
 
+[ForceInline]
 uint image_mips<T>(SamplerCube<T> smp) {
     uint mip;
     uint2 size;
@@ -46,18 +60,21 @@ uint image_mips<T>(SamplerCube<T> smp) {
     return 0;
 }
 
+[ForceInline]
 uint2 image_size<T>(Sampler2D<T> smp) {
     uint2 size;
     smp.GetDimensions(size.x, size.y);
     return size;
 }
 
+[ForceInline]
 uint2 image_size<T>(RWTexture2D<T> smp) {
     uint2 size;
     smp.GetDimensions(size.x, size.y);
     return size;
 }
 
+[ForceInline]
 uint3 image_size<T>(RWTexture2DArray<T> smp) {
     uint3 size;
     smp.GetDimensions(size.x, size.y, size.z);

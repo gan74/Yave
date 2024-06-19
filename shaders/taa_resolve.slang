@@ -1,5 +1,3 @@
-import "glsl";
-
 #include "lib/utils.slang"
 
 
@@ -160,7 +158,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     float3 prev = current;
 
 
-    bool sample_valid = saturate(prev_uv) == prev_uv;
+    bool sample_valid = all(saturate(prev_uv) == prev_uv);
 
 
     // Motion rejection

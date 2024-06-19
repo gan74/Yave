@@ -1,5 +1,3 @@
-import "glsl";
-
 #include "lib/utils.slang"
 
 // Based on MiniEngine's implementation
@@ -176,7 +174,7 @@ void comp_main() {
     const float2 inv_lo_res = 1.0 / float2(image_size(in_lo_depth).xy);
     const float2 inv_hi_res = 1.0 / float2(image_size(in_hi_depth).xy);
 
-    prefetch(gl_LocalInvocationID.x << 1 | gl_LocalInvocationID.y << 5, int2(semantics.global_id.xy + gl_LocalInvocationID.xy - 2) * inv_lo_res);
+    prefetch(semantics.local_id.x << 1 | semantics.local_id.y << 5, int2(semantics.global_id.xy + semantics.local_id.xy - 2) * inv_lo_res);
 
     GroupMemoryBarrierWithGroupSync();
 
@@ -196,7 +194,7 @@ void comp_main() {
     GroupMemoryBarrierWithGroupSync();
 
     // Bilateral upsample
-    const uint id = gl_LocalInvocationID.x + gl_LocalInvocationID.y * 16;
+    const uint id = semantics.local_id.x + semantics.local_id.y * 16;
     const float4 lo_samples = float4(ao_samples0[id + 16], ao_samples0[id + 17], ao_samples0[id + 1], ao_samples0[id]);
 
     // We work on a quad of pixels at once because then we can gather 4 each of high and low-res depth values

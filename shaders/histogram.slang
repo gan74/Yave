@@ -1,5 +1,3 @@
-import "glsl";
-
 #include "lib/utils.slang"
 
 
@@ -40,7 +38,7 @@ void comp_main() {
             if(coord.y < size.y) {
                 const float lum = luminance(in_color[coord].rgb);
                 const uint bin = lum_to_histogram_bin(lum);
-                atomicAdd(histogram[bin], 1);
+                InterlockedAdd(histogram[bin], 1);
             }
         }
     }
@@ -50,7 +48,7 @@ void comp_main() {
     for(uint i = 0; i != bin_per_thread; ++i) {
         const uint index = compute_index(i);
         if(histogram[index] != 0) {
-            imageAtomicAdd(out_histogram, int2(index, 0), histogram[index]);
+            InterlockedMax(out_histogram[int2(index, 0)], histogram[index]);
         }
     }
 }

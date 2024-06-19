@@ -1,5 +1,3 @@
-import "glsl";
-
 #include "lib/utils.slang"
 
 // Based on MiniEngine's implementation
@@ -82,12 +80,12 @@ float test_samples(uint center_index, int x, int y, float inv_depth, float inv_t
 void comp_main() {
     const float2 image_size = float2(image_size(in_depth).xy);
     //const float2 image_size = float2(semantics.work_group_count.xy * semantics.work_group_size.xy);
-    const int2 center_coord = int2(semantics.global_id.xy + gl_LocalInvocationID.xy) - CENTER_OFFSET;
+    const int2 center_coord = int2(semantics.global_id.xy + semantics.local_id.xy) - CENTER_OFFSET;
     const float2 center_uv = float2(center_coord) / image_size;
 
     const float4 depths = in_depth.Gather(center_uv);
 
-    const uint dst_index = gl_LocalInvocationID.x * 2 + gl_LocalInvocationID.y * 2 * TILE_DIM;
+    const uint dst_index = semantics.local_id.x * 2 + semantics.local_id.y * 2 * TILE_DIM;
     depth_samples[dst_index]                = depths.w;
     depth_samples[dst_index + 1]            = depths.z;
     depth_samples[dst_index + TILE_DIM]     = depths.x;
@@ -95,7 +93,7 @@ void comp_main() {
 
     GroupMemoryBarrierWithGroupSync();
 
-    const uint index = gl_LocalInvocationID.x + gl_LocalInvocationID.y * TILE_DIM + (TILE_DIM / 4) * TILE_DIM + (TILE_DIM / 4);
+    const uint index = semantics.local_id.x + semantics.local_id.y * TILE_DIM + (TILE_DIM / 4) * TILE_DIM + (TILE_DIM / 4);
     const float inv_depth = 1.0 / depth_samples[index];
 
     float ao = 0.0;

@@ -1,5 +1,3 @@
-import "glsl";
-
 #include "lib/utils.slang"
 #include "lib/lighting.slang"
 
@@ -71,7 +69,7 @@ VertexStageOut vert_main(StdVertexStageIn in) {
 [shader("fragment")]
 float4 frag_main(uint in_instance_index) : SV_Target0 {
     const int2 coord = int2(semantics.frag_coord.xy);
-    const vec2 uv = semantics.frag_coord.xy / vec2(image_size(in_depth).xy);
+    const float2 uv = semantics.frag_coord.xy / float2(image_size(in_depth).xy);
 
     const float depth = in_depth[coord];
 

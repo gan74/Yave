@@ -1,6 +1,3 @@
-import "glsl";
-
-
 #include "lib/utils.slang"
 #include "lib/lighting.slang"
 #include "lib/debug.slang"
@@ -98,8 +95,8 @@ void compute_tile_infos(float2 image_size, float view_dist, bool is_oob) {
 
     if(!is_oob) {
         const uint ui_dist = asuint(view_dist);
-        atomicMin(tile_dist_bounds.x, ui_dist);
-        atomicMax(tile_dist_bounds.y, ui_dist);
+        InterlockedMin(tile_dist_bounds.x, ui_dist);
+        InterlockedMax(tile_dist_bounds.y, ui_dist);
     }
 
     GroupMemoryBarrierWithGroupSync();
@@ -185,7 +182,7 @@ void cull_points() {
 
     for(uint i = range.x; i != range.y; ++i) {
         if(is_inside(point_lights[i])) {
-            const uint light_index = atomicAdd(tile_point_count, 1);
+            const uint light_index = InterlockedAddRet(tile_point_count, 1);
             if(light_index >= max_tile_lights) {
                 break;
             }
@@ -199,7 +196,7 @@ void cull_spots() {
 
     for(uint i = range.x; i != range.y; ++i) {
         if(is_inside(spot_lights[i])) {
-            const uint light_index = atomicAdd(tile_spot_count, 1) + tile_point_count;
+            const uint light_index = InterlockedAddRet(tile_spot_count, 1) + tile_point_count;
             if(light_index >= max_tile_lights) {
                 break;
             }
@@ -295,8 +292,8 @@ void comp_main() {
     {
         const float total_lights = float(tile_point_count + tile_spot_count);
         float3 heat = heat_spectrum(total_lights / 16.0f);
-        heat = mix(heat, float3(1.0) - heat, print_value(gl_LocalInvocationID.xy * 2.0, float2(0.0), float2(8.0, 15.0), total_lights, 2.0, 0.0));
-        irradiance = mix(heat, irradiance, 0.8);
+        heat = lerp(heat, float3(1.0) - heat, print_value(semantics.local_id.xy * 2.0, float2(0.0), float2(8.0, 15.0), total_lights, 2.0, 0.0));
+        irradiance = lerp(heat, irradiance, 0.8);
     }
 #endif
 

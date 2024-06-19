@@ -1,5 +1,3 @@
-import "glsl";
-
 #include "lib/utils.slang"
 
 [[vk::binding(0)]]
@@ -30,8 +28,8 @@ void comp_main() {
     const uint udepth = asuint(depth);
 
     if(coord.x < size.x && coord.y < size.y) {
-        atomicMin(shared_min, udepth);
-        atomicMax(shared_max, udepth);
+        InterlockedMin(shared_min, udepth);
+        InterlockedMax(shared_max, udepth);
     }
 
     GroupMemoryBarrierWithGroupSync();
