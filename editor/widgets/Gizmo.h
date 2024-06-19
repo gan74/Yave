@@ -61,6 +61,8 @@ class TranslationGizmo final : public GizmoBase {
 
         u32 _hover_mask = 0;
         math::Vec2 _dragging_offset;
+        
+        bool _use_object_space = false;
 };
 
 
@@ -73,7 +75,6 @@ class RotationGizmo final : public GizmoBase {
     private:
         usize _rotation_axis = usize(-1);
         float _angle_offset = 0.0f;
-
 };
 
 
