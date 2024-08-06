@@ -38,6 +38,7 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
 
     y_profile();
 
+    y_debug_assert(raytracing_enabled());
     y_debug_assert(geometries.size() == prim_counts.size());
     y_debug_assert(geometries.size() == ranges.size());
 

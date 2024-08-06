@@ -141,7 +141,9 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
         recorder.submit_async();
     }
 
-    mesh_data._blas = BLAS(mesh_data);
+    if(raytracing_enabled()) {
+        mesh_data._blas = BLAS(mesh_data);
+    }
 
     return mesh_data;
 }

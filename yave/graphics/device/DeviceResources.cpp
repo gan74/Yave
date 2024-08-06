@@ -212,8 +212,10 @@ DeviceResources::DeviceResources() {
 
     {
         for(usize i = 0; i != compute_datas.size(); ++i) {
-            _computes[i] = ComputeProgram(ComputeShader(load_spirv(compute_datas[i])));
-            set_name(_computes[i].vk_pipeline(), fmt_c_str("{}", compute_datas[i]));
+            if(i < MaxNonRTComputePrograms || raytracing_enabled()) {
+                _computes[i] = ComputeProgram(ComputeShader(load_spirv(compute_datas[i])));
+                set_name(_computes[i].vk_pipeline(), fmt_c_str("{}", compute_datas[i]));
+            }
         }
     }
 
