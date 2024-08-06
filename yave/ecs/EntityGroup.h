@@ -369,7 +369,8 @@ class EntityGroup final : NonCopyable {
 
                 y_profile_msg(fmt_c_str("{} entities found", _ids.size()));
             } else {
-                // This can be expensive. Find a way to avoid copying everything?
+                // This can be expensive. Find a thread-safe way to avoid copying everything?
+                y_profile_zone("copying ids");
                 _ids = _base->ids().ids();
             }
 
