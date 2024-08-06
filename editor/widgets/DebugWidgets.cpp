@@ -304,6 +304,11 @@ class RaytracingDebug : public Widget {
 
     protected:
         void on_gui() override {
+            if(!raytracing_enabled()) {
+                ImGui::TextColored(imgui::error_text_color, ICON_FA_EXCLAMATION_TRIANGLE " Ray-tracing disabled");
+                return;
+            }
+
             TLAS tlas = current_scene().create_tlas();
 
             const std::array descriptors = {Descriptor(tlas)};

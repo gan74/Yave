@@ -31,6 +31,8 @@ namespace yave {
 struct AOSettings {
     enum class AOMethod {
         MiniEngine,
+
+        RTAOFallback = MiniEngine,
         RTAO,
 
         None,

@@ -162,8 +162,8 @@ static FrameGraphMutableImageId upsample_mini_ao(FrameGraph& framegraph,
     builder.add_uniform_input(hi_ao);
     builder.add_uniform_input(lo_depth);
     builder.add_uniform_input(hi_depth);
-    builder.add_inline_input(InlineDescriptor(UpsampleParams{step_size, noise_filter_weight, blur_tolerance, upsample_tolerance}));
     builder.add_storage_output(upsampled);
+    builder.add_inline_input(InlineDescriptor(UpsampleParams{step_size, noise_filter_weight, blur_tolerance, upsample_tolerance}));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[merge ? DeviceResources::SSAOUpsampleMergeProgram : DeviceResources::SSAOUpsampleProgram];
         recorder.dispatch_size(program, lo_size + math::Vec2ui(2), self->descriptor_sets());
@@ -180,8 +180,8 @@ static FrameGraphImageId compute_mini_ao(FrameGraph& framegraph, FrameGraphImage
     const auto ao = builder.declare_image(VK_FORMAT_R8_UNORM, size);
 
     builder.add_uniform_input(linear_depth);
-    builder.add_inline_input(InlineDescriptor(compute_ao_params(tan_half_fov, size.x())));
     builder.add_storage_output(ao);
+    builder.add_inline_input(InlineDescriptor(compute_ao_params(tan_half_fov, size.x())));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::SSAOProgram];
         recorder.dispatch_size(program, size, self->descriptor_sets());
@@ -242,9 +242,12 @@ static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass&
 AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const AOSettings& settings) {
     const auto region = framegraph.region("AO");
 
+    const AOSettings::AOMethod method = (settings.method == AOSettings::AOMethod::RTAO && !raytracing_enabled())
+        ? AOSettings::AOMethod::RTAOFallback
+        : settings.method;
 
     FrameGraphImageId ao;
-    switch(settings.method) {
+    switch(method) {
         case AOSettings::AOMethod::MiniEngine: {
             y_always_assert(settings.mini_engine.level_count > 1, "AOSettings::level_count needs to be at least 2");
             const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
@@ -258,7 +261,7 @@ AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const 
             }
         } break;
 
-        case yave::AOSettings::AOMethod::RTAO: {
+        case AOSettings::AOMethod::RTAO: {
             if(raytracing_enabled()) {
                 ao = compute_rtao(framegraph, gbuffer);
             }
