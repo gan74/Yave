@@ -125,17 +125,39 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
     }
 }
 
-static void render_bbox(DirectDraw& draw, const SceneView& scene_view) {
+static void render_selection(DirectDraw& draw, const SceneView& scene_view) {
     const EditorWorld& world = current_world();
     const EcsScene* scene = dynamic_cast<const EcsScene*>(scene_view.scene());
 
-    if(!scene || !app_settings().debug.display_selected_bbox) {
+    if(!scene) {
         return;
     }
 
     if(const ecs::EntityId selected = world.selected_entity(); selected.is_valid()) {
-        if(const StaticMeshObject* mesh = scene->mesh(selected)) {
-            draw.add_primitive("selected bbox")->add_box(mesh->global_aabb);
+
+        if(const PointLightObject* obj = scene->point_light(selected)) {
+            const math::Transform<> tr = scene->transform(*obj);
+            draw.add_primitive("selected light")->add_sphere_3circles(tr.position(), tr.scale().max_component() * obj->component.range());
+        }
+
+        if(const SpotLightObject* obj = scene->spot_light(selected)) {
+            const math::Transform<> tr = scene->transform(*obj);
+            const float scale = tr.scale().max_component();
+            const auto sphere = obj->component.enclosing_sphere();
+            draw.add_primitive("selected light")->add_cone(tr.position(), tr.forward(), tr.up(), obj->component.range() * scale, obj->component.half_angle());
+            // draw.add_primitive("selected light sphere")->add_sphere_3circles(tr.transform_point(math::Vec3(0.0f, sphere.dist_to_center, 0.0f)), sphere.radius * scale);
+        }
+
+        if(app_settings().debug.display_selected_bbox) {
+            if(const StaticMeshObject* obj = scene->mesh(selected)) {
+                draw.add_primitive("selected bbox")->add_box(obj->global_aabb);
+            }
+            if(const PointLightObject* obj = scene->point_light(selected)) {
+                draw.add_primitive("selected bbox")->add_box(obj->global_aabb);
+            }
+            if(const SpotLightObject* obj = scene->spot_light(selected)) {
+                draw.add_primitive("selected bbox")->add_box(obj->global_aabb);
+            }
         }
     }
 }
@@ -158,10 +180,8 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& scene_vie
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Editor entity pass");
 
-    const EcsScene* ecs_scene = dynamic_cast<const EcsScene*>(scene_view.scene());
-    const ecs::EntityWorld* world = ecs_scene->world();
-
-    const usize buffer_size = world->entity_count();
+    const Scene* scene = scene_view.scene();
+    const usize buffer_size = scene->transform_manager().transform_buffer().size();
 
     auto pass_buffer = builder.declare_typed_buffer<EditorPassData>();
     const auto vertex_buffer = builder.declare_typed_buffer<ImGuiBillboardVertex>(buffer_size);
@@ -184,7 +204,7 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& scene_vie
         render_editor_entities(render_pass, self, scene_view, visibility, pass_buffer, vertex_buffer);
 
         DirectDraw direct;
-        render_bbox(direct, scene_view);
+        render_selection(direct, scene_view);
         direct.render(render_pass, scene_view.camera().view_proj_matrix());
     });
 

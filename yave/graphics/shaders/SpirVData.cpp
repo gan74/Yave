@@ -26,17 +26,13 @@ SOFTWARE.
 namespace yave {
 
 SpirVData::SpirVData(core::Span<u8> data) {
-    if(data.size() % 4) {
-        y_fatal("Invalid SPIR-V data.");
-    }
+    y_always_assert(data.size() % 4 == 0, "Invalid SPIR-V data");
     _data = core::Vector<u32>(data.size() / 4, 0);
     std::memcpy(_data.begin(), data.begin(), data.size());
 }
 
 SpirVData::SpirVData(core::Span<u32> data) : _data(data) {
-    if(data.is_empty()) {
-        y_fatal("Invalid SPIR-V data.");
-    }
+    y_always_assert(!data.is_empty(), "Invalid SPIR-V data");
 }
 
 SpirVData SpirVData::deserialized(io2::Reader& reader) {
@@ -45,12 +41,8 @@ SpirVData SpirVData::deserialized(io2::Reader& reader) {
     return SpirVData(data);
 }
 
-usize SpirVData::size() const {
-    return _data.size() * 4;
-}
-
-const u32* SpirVData::data() const {
-    return _data.begin();
+core::Span<u32> SpirVData::data() const {
+    return _data;
 }
 
 bool SpirVData::is_empty() const {

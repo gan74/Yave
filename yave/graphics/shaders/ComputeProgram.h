@@ -32,7 +32,7 @@ class ComputeProgram final {
         ComputeProgram(ComputeProgram&&) = default;
         ComputeProgram& operator=(ComputeProgram&&) = default;
 
-        explicit ComputeProgram(const ComputeShader& comp, const SpecializationData& data = SpecializationData());
+        explicit ComputeProgram(const ComputeShader& comp);
         ~ComputeProgram();
 
         bool is_null() const;

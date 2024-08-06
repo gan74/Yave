@@ -53,9 +53,12 @@ void TransformManager::set_transform(u32 index, const math::Transform<>& tr) {
     auto& data = _transforms[index];
 
     if(!data.is_dirty) {
-        _dirty << index;
+        if(data.to_reset) {
+            data.to_reset = false;
+        } else {
+            _dirty << index;
+        }
         data.is_dirty = true;
-        data.to_reset = false;
     }
 
     data.transform = tr;
@@ -129,12 +132,12 @@ void TransformManager::update_buffer(ComputeCapableCmdBufferRecorder& recorder) 
         y_debug_assert(_transforms[index].is_valid);
 
         auto& data = _transforms[index];
-        y_debug_assert(data.is_dirty);
-        if(data.to_reset) {
-            data.to_reset = false;
-            data.is_dirty = true;
+        if(!data.to_reset) {
+            data.to_reset = true;
+            data.is_dirty = false;
             next_dirty << index;
         } else {
+            data.to_reset = false;
             data.is_dirty = false;
         }
     }

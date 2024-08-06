@@ -27,7 +27,6 @@ SOFTWARE.
 namespace yave {
 
 struct AtmosphereSettings {
-    math::Vec3ui lut_size = math::Vec3ui(64, 64, 16);
 };
 
 struct AtmospherePass {

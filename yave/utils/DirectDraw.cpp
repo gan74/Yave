@@ -101,6 +101,12 @@ void DirectDrawPrimitive::add_box(const AABB& aabb, const math::Transform<>& tra
     }
 }
 
+void DirectDrawPrimitive::add_sphere_3circles(const math::Vec3& position, float radius, usize divs) {
+    add_circle(position, math::Vec3(1.0f, 0.0f, 0.0f), math::Vec3(0.0f, 1.0f, 0.0f), radius, divs);
+    add_circle(position, math::Vec3(0.0f, 1.0f, 0.0f), math::Vec3(0.0f, 0.0f, 1.0f), radius, divs);
+    add_circle(position, math::Vec3(0.0f, 0.0f, 1.0f), math::Vec3(1.0f, 0.0f, 0.0f), radius, divs);
+}
+
 void DirectDrawPrimitive::add_marker(const math::Vec3& position, float size) {
     for(usize i = 0; i != 3; ++i) {
         math::Vec3 dir;

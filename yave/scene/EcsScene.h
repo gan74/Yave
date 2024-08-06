@@ -45,6 +45,8 @@ class EcsScene : public Scene {
         void update_from_world();
 
         const StaticMeshObject* mesh(ecs::EntityId id) const;
+        const PointLightObject* point_light(ecs::EntityId id) const;
+        const SpotLightObject* spot_light(ecs::EntityId id) const;
 
         ecs::EntityId id_from_index(u32 index) const;
 

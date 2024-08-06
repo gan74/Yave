@@ -129,6 +129,7 @@ class EntityGroupBase final : NonMovable {
                 y_debug_assert(!_ids.contains(id));
                 _ids.insert(id);
                 _added.insert(id);
+                Y_TODO(if we add an entity immediatly after removing anothe we might have conflicts)
                 _removed.erase(id);
             }
         }
@@ -142,12 +143,6 @@ class EntityGroupBase final : NonMovable {
                 _added.erase(id);
                 _removed.insert(id);
             }
-        }
-
-        void clear_id_lists() {
-            y_profile();
-            _added.make_empty();
-            _removed.make_empty();
         }
 
         SparseIdSet _ids;
@@ -374,7 +369,8 @@ class EntityGroup final : NonCopyable {
 
                 y_profile_msg(fmt_c_str("{} entities found", _ids.size()));
             } else {
-                // This can be expensive. Find a way to avoid copying everything?
+                // This can be expensive. Find a thread-safe way to avoid copying everything?
+                y_profile_zone("copying ids");
                 _ids = _base->ids().ids();
             }
 

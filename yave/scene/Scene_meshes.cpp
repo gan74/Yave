@@ -48,6 +48,7 @@ struct StaticMeshBatch {
 static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Vector<StaticMeshBatch>& batches) {
     y_profile();
 
+    batches.set_min_capacity(meshes.size() * 4);
     for(const StaticMeshObject* mesh : meshes) {
         const u32 transform_index = mesh->transform_index;
 

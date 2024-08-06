@@ -33,16 +33,17 @@ namespace yave {
 class ShaderProgramBase : NonCopyable {
     public:
         ShaderProgramBase() = default;
-        ShaderProgramBase(ShaderProgramBase&& other);
-        ShaderProgramBase& operator=(ShaderProgramBase&& other);
 
         core::Span<VkPipelineShaderStageCreateInfo> vk_pipeline_stage_info() const;
         core::Span<VkDescriptorSetLayout> vk_descriptor_layouts() const;
 
-        void swap(ShaderProgramBase& other);
-
     protected:
-        ShaderProgramBase(core::Span<const ShaderModuleBase *> shaders);
+        ShaderProgramBase(core::Span<const ShaderModuleBase*> shaders);
+
+        ShaderProgramBase(ShaderProgramBase&& other);
+        ShaderProgramBase& operator=(ShaderProgramBase&& other);
+
+        void swap(ShaderProgramBase& other);
 
         core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
         core::Vector<VkDescriptorSetLayout> _layouts;

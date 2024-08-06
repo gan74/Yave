@@ -40,60 +40,6 @@ class IBLProbe;
 
 class DeviceResources final : NonMovable {
     public:
-        enum SpirV {
-            EquirecConvolutionComp,
-            CubemapConvolutionComp,
-            BRDFIntegratorComp,
-            DeferredLocalsComp,
-            DeferredLocalsDebugComp,
-            LinearizeDepthComp,
-            SSAOComp,
-            SSAOUpsampleComp,
-            SSAOUpsampleMergeComp,
-            CopyComp,
-            HistogramComp,
-            ExposureParamsComp,
-            ExposureDebugComp,
-            DepthBoundComp,
-            AtmosphereIntergratorComp,
-            PrevCameraComp,
-            UpdateTransformsComp,
-            RTAOComp,
-
-            TexturedFrag,
-            TexturedAlphaFrag,
-            TexturedSpecularFrag,
-            TexturedSpecularAlphaFrag,
-            DeferredPointFrag,
-            DeferredSpotFrag,
-            DeferredAmbientFrag,
-            AtmosphereFrag,
-            ToneMapFrag,
-            PassthroughFrag,
-            DownsampleFrag,
-            BloomUpscaleFrag,
-            BloomDownscaleFrag,
-            HBlurFrag,
-            VBlurFrag,
-            WireFrameFrag,
-            TAAResolveFrag,
-            IdFrag,
-
-            DeferredPointVert,
-            DeferredSpotVert,
-            BasicVert,
-            ScreenVert,
-            WireFrameVert,
-
-            BasicRayGen,
-
-            BasicMiss,
-
-            BasicClosestHit,
-
-            MaxSpirV
-        };
-
         enum ComputePrograms {
             EquirecConvolutionProgram,
             CubemapConvolutionProgram,
@@ -109,13 +55,9 @@ class DeviceResources final : NonMovable {
             ExposureParamsProgram,
             ExposureDebugProgram,
             DepthBoundProgram,
-            AtmosphereIntergratorProgram,
             PrevCameraProgram,
             UpdateTransformsProgram,
-
-            MaxNonRaytracingComputePrograms,
-
-            RTAOProgram = MaxNonRaytracingComputePrograms,
+            RTAOProgram,
 
             MaxComputePrograms
         };
@@ -161,6 +103,7 @@ class DeviceResources final : NonMovable {
             MaxRaytracingPrograms
         };
 
+
         enum Materials {
             EmptyMaterial,
 
@@ -201,7 +144,6 @@ class DeviceResources final : NonMovable {
         const AssetPtr<IBLProbe>& ibl_probe() const;
         const AssetPtr<IBLProbe>& empty_probe() const;
 
-        const SpirVData& operator[](SpirV i) const;
         const ComputeProgram& operator[](ComputePrograms i) const;
         const MaterialTemplate* operator[](MaterialTemplates i) const;
         const RaytracingProgram& operator[](RaytracingPrograms i) const;
@@ -211,7 +153,6 @@ class DeviceResources final : NonMovable {
         const AssetPtr<StaticMesh>& operator[](Meshes i) const;
 
     private:
-        std::unique_ptr<SpirVData[]> _spirv;
         std::unique_ptr<ComputeProgram[]> _computes;
         std::unique_ptr<MaterialTemplate[]> _material_templates;
         std::unique_ptr<RaytracingProgram[]> _raytracing_programs;

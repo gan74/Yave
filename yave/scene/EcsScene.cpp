@@ -222,6 +222,24 @@ const StaticMeshObject* EcsScene::mesh(ecs::EntityId id) const {
     return nullptr;
 }
 
+const PointLightObject* EcsScene::point_light(ecs::EntityId id) const {
+    if(const ObjectIndices* indices = _indices.try_get(id)) {
+        if(indices->point_light != u32(-1)) {
+            return &_point_lights[indices->point_light];
+        }
+    }
+    return nullptr;
+}
+
+const SpotLightObject* EcsScene::spot_light(ecs::EntityId id) const {
+    if(const ObjectIndices* indices = _indices.try_get(id)) {
+        if(indices->spot_light != u32(-1)) {
+            return &_spot_lights[indices->spot_light];
+        }
+    }
+    return nullptr;
+}
+
 ecs::EntityId EcsScene::id_from_index(u32 index) const {
     return _indices.id_from_index(index);
 }

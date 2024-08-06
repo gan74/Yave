@@ -1,10 +1,7 @@
-#version 460
+#include "lib/utils.slang"
 
 // Based on MiniEngine's implementation
 // see: https://github.com/microsoft/DirectX-Graphics-Samples/blob/master/MiniEngine/Core/Shaders/AoRenderCS.hlsli
-
-#include "lib/utils.glsl"
-
 
 // 16x16 cache size:  the 8x8 in the center forms the area of focus with the 4-pixel perimeter used for gathering.
 #define THREAD_COUNT 8
@@ -14,19 +11,22 @@
 #define TILE_DIM (THREAD_COUNT * 2)
 
 
-layout(local_size_x = THREAD_COUNT, local_size_y = THREAD_COUNT) in;
+[[vk::binding(0)]]
+Sampler2D<float> in_depth;
 
-layout(set = 0, binding = 0) uniform sampler2D in_depth;
+[[vk::binding(1)]]
+RWTexture2D<float> out_ao;
 
-layout(set = 0, binding =  1) uniform Params_Inline {
-    vec4 inv_thickness[3];
-    vec4 weights[3];
+[[vk::binding(2)]]
+cbuffer Params_Inline {
+    float4 inv_thickness[3];
+    float4 weights[3];
 };
 
-layout(r8, set = 0, binding = 2) uniform writeonly image2D out_ao;
 
 
-shared float depth_samples[TILE_DIM * TILE_DIM];
+
+groupshared float depth_samples[TILE_DIM * TILE_DIM];
 
 float test_sample_pair(float front_depth, float inv_range, uint base, int offset) {
     // "Disocclusion" measures the penetration distance of the depth sample within the sphere.
@@ -75,23 +75,25 @@ float test_samples(uint center_index, int x, int y, float inv_depth, float inv_t
     }
 }
 
-void main() {
-    const vec2 image_size = vec2(textureSize(in_depth, 0).xy);
-    //const vec2 image_size = vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
-    const ivec2 center_coord = ivec2(gl_GlobalInvocationID.xy + gl_LocalInvocationID.xy) - CENTER_OFFSET;
-    const vec2 center_uv = vec2(center_coord) / image_size;
+[shader("compute")]
+[numthreads(THREAD_COUNT, THREAD_COUNT)]
+void comp_main() {
+    const float2 image_size = float2(image_size(in_depth).xy);
+    //const float2 image_size = float2(semantics.work_group_count.xy * semantics.work_group_size.xy);
+    const int2 center_coord = int2(semantics.global_id.xy + semantics.local_id.xy) - CENTER_OFFSET;
+    const float2 center_uv = float2(center_coord) / image_size;
 
-    const vec4 depths = textureGather(in_depth, center_uv);
+    const float4 depths = in_depth.Gather(center_uv);
 
-    const uint dst_index = gl_LocalInvocationID.x * 2 + gl_LocalInvocationID.y * 2 * TILE_DIM;
+    const uint dst_index = semantics.local_id.x * 2 + semantics.local_id.y * 2 * TILE_DIM;
     depth_samples[dst_index]                = depths.w;
     depth_samples[dst_index + 1]            = depths.z;
     depth_samples[dst_index + TILE_DIM]     = depths.x;
     depth_samples[dst_index + TILE_DIM + 1] = depths.y;
 
-    barrier();
+    GroupMemoryBarrierWithGroupSync();
 
-    const uint index = gl_LocalInvocationID.x + gl_LocalInvocationID.y * TILE_DIM + (TILE_DIM / 4) * TILE_DIM + (TILE_DIM / 4);
+    const uint index = semantics.local_id.x + semantics.local_id.y * TILE_DIM + (TILE_DIM / 4) * TILE_DIM + (TILE_DIM / 4);
     const float inv_depth = 1.0 / depth_samples[index];
 
     float ao = 0.0;
@@ -120,6 +122,6 @@ void main() {
     ao += weights[2].z * test_samples(index, 2, 4, inv_depth, inv_thickness[2].z);
 #endif
 
-    imageStore(out_ao, ivec2(gl_GlobalInvocationID.xy), vec4(ao));
+    out_ao[int2(semantics.global_id.xy)] = ao;
 }
 

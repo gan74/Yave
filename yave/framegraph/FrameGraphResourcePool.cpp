@@ -68,7 +68,7 @@ TransientVolume FrameGraphResourcePool::FrameGraphResourcePool::create_volume(Im
     return TransientVolume(format, usage, size);
 }
 
-TransientBuffer FrameGraphResourcePool::create_buffer(u64 byte_size, BufferUsage usage, MemoryType memory) {
+TransientBuffer FrameGraphResourcePool::create_buffer(u64 byte_size, BufferUsage usage, MemoryType memory, bool exact) {
     y_profile();
 
     check_usage(usage);
@@ -78,8 +78,12 @@ TransientBuffer FrameGraphResourcePool::create_buffer(u64 byte_size, BufferUsage
     }
 
     TransientBuffer buffer;
-    if(create_buffer_from_pool(buffer, byte_size, usage, memory)) {
+    if(create_buffer_from_pool(buffer, byte_size, usage, memory, exact)) {
         return buffer;
+    }
+
+    if(exact) {
+        return {};
     }
 
     y_profile_zone("create buffer");
@@ -124,12 +128,17 @@ bool FrameGraphResourcePool::create_volume_from_pool(TransientVolume& res, Image
     });
 }
 
-bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory) {
+bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory, bool exact) {
     return _buffers.locked([&](auto&& buffers) {
         for(auto it = buffers.begin(); it != buffers.end(); ++it) {
             auto& buffer = it->first;
 
-            if(buffer.byte_size() == byte_size &&
+            bool matches_size = buffer.byte_size() == byte_size;
+            if(!exact) {
+                matches_size |= buffer.byte_size() >= byte_size && buffer.byte_size() <= byte_size * 2;
+            }
+
+            if(matches_size &&
                buffer.usage() == usage &&
                (buffer.memory_type() == memory || memory == MemoryType::DontCare)) {
 

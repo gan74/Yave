@@ -31,17 +31,17 @@ namespace shader {
 
 using uint = u32;
 
-using vec2 = math::Vec2;
-using vec3 = math::Vec3;
-using vec4 = math::Vec4;
+using float2 = math::Vec2;
+using float3 = math::Vec3;
+using float4 = math::Vec4;
 
-using uvec2 = math::Vec2ui;
-using uvec3 = math::Vec3ui;
-using uvec4 = math::Vec4ui;
+using uint2 = math::Vec2ui;
+using uint3 = math::Vec3ui;
+using uint4 = math::Vec4ui;
 
-using mat4 = math::Matrix4<>;
+using float4x4 = math::Matrix4<>;
 
-#include <shaders/lib/structs.glsl>
+#include <shaders/lib/structs.slang>
 
 }
 

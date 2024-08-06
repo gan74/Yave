@@ -247,7 +247,9 @@ void FileSystemView::on_gui() {
                 const Entry& entry = _entries[i];
                 if(imgui::selectable_icon(entry.icon, fmt_c_str("{}##{}", entry.name, i), _hovered == i, ImGuiSelectableFlags_SpanAllColumns)) {
                     entry_clicked(entry);
-                    break;
+                    if(_refresh) {
+                        break;
+                    }
                 }
 
                 post_draw_entry(i);

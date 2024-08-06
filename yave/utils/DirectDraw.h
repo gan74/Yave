@@ -55,6 +55,8 @@ class DirectDrawPrimitive {
         void add_cone(const math::Vec3& position, math::Vec3 x, math::Vec3 y, float len, float angle, usize divs = 8, usize circle_subdivs = 8);
         void add_box(const AABB& aabb, const math::Transform<>& transform = {});
 
+        void add_sphere_3circles(const math::Vec3& position, float radius = 1.0f, usize divs = 64);
+
         void add_marker(const math::Vec3& position, float size = 1.0f);
 
         core::Span<DirectVertex> vertices() const;

@@ -251,11 +251,14 @@ void TranslationGizmo::draw() {
     const float perspective = (view_proj * math::Vec4(obj_pos, 1.0f)).w() * gizmo_size;
     const math::Vec2 gizmo_screen_center = to_window_pos(obj_pos);
 
+    auto transform_to_local = [&](const math::Vec3& v) {
+        return _use_object_space ? obj_rot(v) : v;
+    };
 
     const std::array basis = {
-        obj_rot(math::Vec3(1.0f, 0.0f, 0.0f)).normalized(),
-        obj_rot(math::Vec3(0.0f, 1.0f, 0.0f)).normalized(),
-        obj_rot(math::Vec3(0.0f, 0.0f, 1.0f)).normalized()
+        transform_to_local(math::Vec3(1.0f, 0.0f, 0.0f)).normalized(),
+        transform_to_local(math::Vec3(0.0f, 1.0f, 0.0f)).normalized(),
+        transform_to_local(math::Vec3(0.0f, 0.0f, 1.0f)).normalized()
     };
 
     const std::array end_point_factors = {

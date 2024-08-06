@@ -78,8 +78,6 @@ class RenderPassRecorder final : NonMovable {
         void bind_attrib_buffers(core::Span<AttribSubBuffer> attribs);
 
 
-        void bind_per_instance_attrib_buffers(core::Span<AttribSubBuffer> per_instance);
-
         // proxies from _cmd_buffer
         CmdBufferRegion region(const char* name, CmdTimingRecorder* time_rec = nullptr, const math::Vec4& color = math::Vec4());
 

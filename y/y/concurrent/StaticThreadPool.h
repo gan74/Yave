@@ -95,6 +95,7 @@ class StaticThreadPool : NonMovable {
         void cancel_pending_tasks();
 
         void process_until_complete(core::Span<DependencyGroup> wait_for);
+        void process_until_empty();
 
         void schedule(Func&& func, DependencyGroup* signal = nullptr, core::Span<DependencyGroup> wait_for = {}, std::source_location loc = std::source_location::current());
 

@@ -21,21 +21,16 @@ SOFTWARE.
 **********************************/
 
 #include "ShaderProgram.h"
-#include "yave/graphics/device/deviceutils.h"
 
-#include <yave/graphics/graphics.h>
+#include <yave/graphics/device/deviceutils.h>
 #include <yave/graphics/device/DeviceProperties.h>
 #include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 #include <yave/graphics/images/TextureLibrary.h>
 
-#include <y/core/ScratchPad.h>
 
+#include <y/core/ScratchPad.h>
 #include <y/utils/log.h>
 #include <y/utils/format.h>
-
-#include <external/spirv_cross/spirv.hpp>
-#include <external/spirv_cross/spirv_cross.hpp>
-#include <external/spirv_cross/spirv_glsl.hpp>
 
 #include <numeric>
 
@@ -43,7 +38,6 @@ namespace yave {
 
 using Attribs = core::Vector<VkVertexInputAttributeDescription>;
 using Bindings = core::Vector<VkVertexInputBindingDescription>;
-
 
 template<typename... Ts>
 static auto make_shader_array(const Ts&... args) {
@@ -64,36 +58,18 @@ static void merge(T& into, const S& other) {
     }
 }
 
-static VkFormat attrib_format(const ShaderModuleBase::Attribute& attr) {
-    static_assert(VK_FORMAT_R32G32B32A32_SFLOAT == VK_FORMAT_R32G32B32A32_UINT + uenum(ShaderModuleBase::AttribType::Float));
-
-    const usize type = usize(attr.type);
-    switch(attr.vec_size) {
-        case 1:
-            return VkFormat(VK_FORMAT_R32_UINT + type);
-        case 2:
-            return VkFormat(VK_FORMAT_R32G32_UINT + type);
-        case 3:
-            return VkFormat(VK_FORMAT_R32G32B32_UINT + type);
-        case 4:
-            return VkFormat(VK_FORMAT_R32G32B32A32_UINT + type);
-
-        default:
-            break;
+static void create_stage_info(core::Vector<VkPipelineShaderStageCreateInfo>& stages, const ShaderModuleBase& module) {
+    if(!module.vk_shader_module()) {
+        return;
     }
-    y_fatal("Unsupported vec format.");
-}
 
-static auto create_stage_info(core::Vector<VkPipelineShaderStageCreateInfo>& stages, const ShaderModuleBase& mod) {
-    if(mod.vk_shader_module()) {
-        VkPipelineShaderStageCreateInfo create_info = vk_struct();
-        {
-            create_info.module = mod.vk_shader_module();
-            create_info.stage = VkShaderStageFlagBits(mod.type());
-            create_info.pName = "main";
-        }
-        stages << create_info;
+    VkPipelineShaderStageCreateInfo create_info = vk_struct();
+    {
+        create_info.module = module.vk_shader_module();
+        create_info.stage = VkShaderStageFlagBits(module.type());
+        create_info.pName = module.entry_point().data();
     }
+    stages << create_info;
 }
 
 // Takes a SORTED (by location) Attribute list
@@ -109,7 +85,6 @@ static void create_vertex_attribs(core::Span<ShaderModuleBase::Attribute> vertex
         const bool is_packed = attr.is_packed && !attribs.is_empty();
         const bool per_instance = attr.location >= ShaderProgram::per_instance_location;
         const VkVertexInputRate input_rate = per_instance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
-        const auto format = attrib_format(attr);
 
         if(per_instance && !per_instance_offset) {
             per_instance_offset = ShaderProgram::per_instance_binding - bindings.size();
@@ -122,9 +97,10 @@ static void create_vertex_attribs(core::Span<ShaderModuleBase::Attribute> vertex
             --binding;
         }
 
-        for(u32 i = 0; i != attr.columns; ++i) {
-            attribs << VkVertexInputAttributeDescription{attr.location + i, binding, format, offset};
-            offset += attr.vec_size * attr.component_size;
+        const u32 component_size = u32(ImageFormat(attr.format).bit_per_pixel() / 8);
+        for(u32 i = 0; i != attr.component_count; ++i) {
+            attribs << VkVertexInputAttributeDescription{attr.location + i, binding, attr.format, offset};
+            offset += component_size;
         }
 
         if(is_packed) {
@@ -134,8 +110,6 @@ static void create_vertex_attribs(core::Span<ShaderModuleBase::Attribute> vertex
         }
     }
 }
-
-
 
 static void validate_bindings(core::Span<VkDescriptorSetLayoutBinding> bindings) {
     u32 max = 0;
@@ -152,11 +126,10 @@ static void validate_bindings(core::Span<VkDescriptorSetLayoutBinding> bindings)
 
 
 
-
 ShaderProgramBase::ShaderProgramBase(core::Span<const ShaderModuleBase*> shaders) {
+    y_profile();
+
     for(const ShaderModuleBase* shader : shaders) {
-        merge_bindings(_bindings, shader->bindings());
-        merge_bindings(_bindings, shader->bindings());
         merge_bindings(_bindings, shader->bindings());
     }
 
@@ -172,15 +145,15 @@ ShaderProgramBase::ShaderProgramBase(core::Span<const ShaderModuleBase*> shaders
 
     const u32 max_set = std::accumulate(_bindings.begin(), _bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
 
-    const usize max_variable_binding = std::accumulate(shaders.begin(), shaders.end(), 0_uu, [](usize val, const ShaderModuleBase* shader) { return val + shader->variable_size_bindings().size(); });
+    const usize max_variable_binding = std::accumulate(shaders.begin(), shaders.end(), 0_uu, [](usize sum, const ShaderModuleBase* s) { return sum + s->variable_size_bindings().size(); });
     core::ScratchVector<u32> variable_bindings(max_variable_binding);
-
     for(const ShaderModuleBase* shader : shaders) {
         merge(variable_bindings, shader->variable_size_bindings());
     }
 
     std::sort(variable_bindings.begin(), variable_bindings.end());
     const auto variable_bindings_end = std::unique(variable_bindings.begin(), variable_bindings.end());
+
 
     if(!_bindings.is_empty()) {
         _layouts = core::Vector<VkDescriptorSetLayout>(max_set + 1, VkDescriptorSetLayout{});
@@ -195,7 +168,6 @@ ShaderProgramBase::ShaderProgramBase(core::Span<const ShaderModuleBase*> shaders
         }
     }
 }
-
 
 ShaderProgramBase::ShaderProgramBase(ShaderProgramBase&& other) {
     swap(other);
@@ -226,7 +198,7 @@ core::Span<VkDescriptorSetLayout> ShaderProgramBase::vk_descriptor_layouts() con
 
 
 ShaderProgram::ShaderProgram(const FragmentShader& frag, const VertexShader& vert, const GeometryShader& geom) :
-        ShaderProgramBase(make_shader_array(frag, vert, geom)) {
+    ShaderProgramBase(make_shader_array(frag, vert, geom)) {
 
     {
         auto vertex_attribs = core::ScratchPad<ShaderModuleBase::Attribute>(vert.attributes());
@@ -255,8 +227,12 @@ core::Span<u32> ShaderProgram::fragment_outputs() const {
 
 
 
+
+
+
+
 RaytracingProgram::RaytracingProgram(const RayGenShader& gen, const MissShader& miss, const ClosestHitShader& chit) :
-        ShaderProgramBase(make_shader_array(gen, miss, chit)) {
+    ShaderProgramBase(make_shader_array(gen, miss, chit)) {
 
     const auto shaders = make_shader_array(gen, miss, chit);
 
@@ -316,7 +292,7 @@ RaytracingProgram::RaytracingProgram(const RayGenShader& gen, const MissShader& 
                 table_data.data() + i * device_properties().shader_group_handle_size_aligned,
                 device_properties().shader_group_handle_size,
                 mapping.data() + i * device_properties().shader_group_handle_size_base_aligned
-            );
+                );
         }
     }
 }

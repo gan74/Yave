@@ -184,7 +184,7 @@ static ShadowCastingLights collect_shadow_casting_lights(const SceneView& scene_
 
     shadow_casters.directionals.set_min_capacity(scene->directionals().size());
     for(const DirectionalLightObject& light : scene->directionals()) {
-        if(!light.component.cast_shadow()) {
+        if(light.component.cast_shadow()) {
             shadow_casters.directionals.push_back(&light.component);
         }
     }

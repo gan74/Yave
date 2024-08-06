@@ -43,55 +43,13 @@ enum class ShaderType : u32 {
     ClosestHit = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
 };
 
-class SpecializationData : NonCopyable {
-        template<typename... Args>
-        static std::true_type is_tuple(const std::tuple<Args...>&);
-
-        template<typename T>
-        static std::false_type is_tuple(const T&);
-
-    public:
-        SpecializationData() = default;
-
-        template<typename T>
-        SpecializationData(const T& data) : _data(&data), _size(sizeof(T)) {
-            static_assert(!decltype(is_tuple(data))::value, "std::tuple is not standard layout");
-        }
-
-        template<typename T>
-        SpecializationData(core::Span<T> arr) : _data(arr.data()), _size(arr.size(), sizeof(T)) {
-            static_assert(!decltype(is_tuple(*arr.data()))::value, "std::tuple is not standard layout");
-        }
-
-        const void* data() const {
-            return _data;
-        }
-
-        usize size() const {
-            return _size;
-        }
-
-    private:
-        const void* _data = nullptr;
-        usize _size = 0;
-};
 
 class ShaderModuleBase : NonMovable {
-
     public:
-        enum class AttribType : u16 {
-            Uint = 0,
-            Int = 1,
-            Float = 2,
-            Char = 3
-        };
-
         struct Attribute {
             u32 location;
-            u32 columns;
-            u32 vec_size;
-            u32 component_size;
-            AttribType type;
+            u32 component_count;
+            VkFormat format;
             bool is_packed;
         };
 
@@ -117,20 +75,14 @@ class ShaderModuleBase : NonMovable {
             return _stage_output;
         }
 
-        usize specialization_data_size() const {
-            return _spec_constants.is_empty() ? 0 : (_spec_constants.last().offset + _spec_constants.last().size);
+        const core::String& entry_point() const {
+            return _entry_point;
         }
-
-        core::Span<VkSpecializationMapEntry> specialization_entries() const {
-            return _spec_constants;
-        }
-
-        static ShaderType shader_type(const SpirVData& data);
 
     protected:
         ShaderModuleBase() = default;
 
-        ShaderModuleBase(const SpirVData& data);
+        ShaderModuleBase(const SpirVData& data, ShaderType type);
 
     private:
         friend class ShaderProgramBase;
@@ -144,13 +96,12 @@ class ShaderModuleBase : NonMovable {
             return _variable_size_bindings;
         }
 
-
     private:
         VkHandle<VkShaderModule> _module;
+        core::String _entry_point = "main";
         ShaderType _type = ShaderType::None;
         core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
         core::Vector<u32> _variable_size_bindings;
-        core::Vector<VkSpecializationMapEntry> _spec_constants;
         core::Vector<Attribute> _attribs;
         core::Vector<u32> _stage_output;
         math::Vec3ui _local_size;

@@ -30,6 +30,7 @@ SOFTWARE.
 #include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/renderer/SceneVisibilitySubPass.h>
 
 #include <y/core/Chrono.h>
 
@@ -106,6 +107,31 @@ class MemoryDebug : public Widget {
 
     private:
         u64 _last_total = 0;
+};
+
+
+class CullingDebug : public Widget {
+    editor_widget(CullingDebug, "View", "Debug")
+
+    public:
+        CullingDebug() : Widget("Culling debug", ImGuiWindowFlags_AlwaysAutoResize) {
+        }
+
+    protected:
+        void on_gui() override {
+            const core::Chrono timer;
+            const SceneVisibilitySubPass visibility = SceneVisibilitySubPass::create(scene_view());
+            const core::Duration durr = timer.elapsed();
+
+            ImGui::TextUnformatted("Visible for current camera:");
+            ImGui::TextUnformatted(fmt_c_str("{} meshes", visibility.visible->meshes.size()));
+            ImGui::TextUnformatted(fmt_c_str("{} point lights", visibility.visible->point_lights.size()));
+            ImGui::TextUnformatted(fmt_c_str("{} spot lights", visibility.visible->spot_lights.size()));
+
+            ImGui::Separator();
+
+            ImGui::TextUnformatted(fmt_c_str("visibility time: {:.2}ms", durr.to_millis()));
+        }
 };
 
 

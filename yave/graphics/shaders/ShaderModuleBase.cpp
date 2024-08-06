@@ -26,20 +26,16 @@ SOFTWARE.
 
 #include <y/core/ScratchPad.h>
 
-#include <external/spirv_cross/spirv.hpp>
-#include <external/spirv_cross/spirv_cross.hpp>
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
+#include <external/spirv_reflect/spirv_reflect.h>
 
 namespace yave {
 
-template<typename M>
-static void merge(M& into, const M& other) {
-    for(const auto& p : other) {
-        into[p.first].push_back(p.second.begin(), p.second.end());
-    }
-}
+static VkHandle<VkShaderModule> create_shader_module(const SpirVData& spirv) {
+    const core::Span<u32> data = spirv.data();
 
-static VkHandle<VkShaderModule> create_shader_module(const SpirVData& data) {
     VkHandle<VkShaderModule> shader;
     if(data.is_empty()) {
         return shader;
@@ -47,7 +43,7 @@ static VkHandle<VkShaderModule> create_shader_module(const SpirVData& data) {
 
     VkShaderModuleCreateInfo create_info = vk_struct();
     {
-        create_info.codeSize = data.size();
+        create_info.codeSize = data.size() * sizeof(u32);
         create_info.pCode = data.data();
     }
 
@@ -55,208 +51,170 @@ static VkHandle<VkShaderModule> create_shader_module(const SpirVData& data) {
     return shader;
 }
 
-static ShaderType module_type(const spirv_cross::Compiler& compiler) {
-    switch(compiler.get_execution_model()) {
-        case spv::ExecutionModelVertex:
-            return ShaderType::Vertex;
-        case spv::ExecutionModelFragment:
-            return ShaderType::Fragment;
-        case spv::ExecutionModelGeometry:
-            return ShaderType::Geomery;
-        case spv::ExecutionModelGLCompute:
-            return ShaderType::Compute;
-        case spv::ExecutionModelRayGenerationKHR:
-            return ShaderType::RayGen;
-        case spv::ExecutionModelMissKHR:
-            return ShaderType::Miss;
-        case spv::ExecutionModelClosestHitKHR:
-            return ShaderType::ClosestHit;
+
+static bool is_inline(const SpvReflectDescriptorBinding& binding) {
+    Y_TODO(check if inline descriptors are always at the end)
+    return
+        binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER &&
+        binding.type_description->type_name &&
+        (std::string_view(binding.type_description->type_name).ends_with("_Inline") || std::string_view(binding.name).ends_with("_Inline"));
+}
+
+static ShaderType shader_exec_model(SpvExecutionModel exec_model) {
+    switch(exec_model) {
+        case SpvExecutionModelVertex:               return ShaderType::Vertex;
+        case SpvExecutionModelGeometry:             return ShaderType::Geomery;
+        case SpvExecutionModelFragment:             return ShaderType::Fragment;
+        case SpvExecutionModelGLCompute:            return ShaderType::Compute;
+        case SpvExecutionModelRayGenerationKHR:     return ShaderType::RayGen;
+        case SpvExecutionModelMissKHR:              return ShaderType::Miss;
+        case SpvExecutionModelClosestHitKHR:        return ShaderType::ClosestHit;
 
         default:
-            break;
+        break;
     }
-    y_fatal("Unknown shader execution model.");
+    y_fatal("Unknown shader execution model");
 }
 
-static bool is_variable(const spirv_cross::Resource& res) {
-    const std::string_view name = std::string_view(res.name);
-    if(name.size() > 9 && name.substr(name.size() - 9) == "_Variable") {
-        return true;
-    }
-    return false;
+static void spv_check(SpvReflectResult result) {
+    y_always_assert(result == SPV_REFLECT_RESULT_SUCCESS, "SpirV-Reflect error");
 }
 
-Y_TODO(check if inline descriptors are always at the end)
-static bool is_inline(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& res) {
-    if(compiler.get_type(res.type_id).storage != spv::StorageClass::StorageClassUniform) {
-        return false;
-    }
-    const std::string_view name = std::string_view(res.name);
-    if(name.ends_with("_Inline")) {
-        return true;
-    }
-    return false;
-}
-
-static VkDescriptorSetLayoutBinding create_binding(const spirv_cross::Compiler& compiler, const spirv_cross::Resource& res, VkDescriptorType type) {
-    usize size = 1;
-    if(is_inline(compiler, res)) {
-        type = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
-        size = compiler.get_declared_struct_size(compiler.get_type(res.type_id));
-    }
-
-    VkDescriptorSetLayoutBinding binding = {};
-    {
-        binding.binding = compiler.get_decoration(res.id, spv::DecorationBinding);
-        binding.descriptorCount = u32(size);
-        binding.descriptorType = type;
-        binding.stageFlags = VK_SHADER_STAGE_ALL;
-    }
-    return binding;
-}
-
-
-
-template<typename R>
-static auto create_bindings(const spirv_cross::Compiler& compiler, const R& resources, ShaderType, VkDescriptorType type) {
-    core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> bindings;
-    for(const auto& res : resources) {
-        const u32 set_index = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
-        bindings[set_index] << create_binding(compiler, res, type);
-    }
-    return bindings;
-}
-
-template<typename R>
-static auto find_variable_size_bindings(const spirv_cross::Compiler& compiler, const R& resources) {
-    core::Vector<u32> variable_bindings;
-    for(const auto& res : resources) {
-        if(is_variable(res)) {
-            const u32 set_index = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
-            //const u32 binding_index = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
-            variable_bindings << set_index;
+[[maybe_unused]]
+static const SpvReflectEntryPoint& find_entry_point(const SpvReflectShaderModule& module, const core::String& name) {
+    for(u32 i = 0; i != module.entry_point_count; ++i) {
+        if(name == module.entry_points[i].name) {
+            return module.entry_points[i];
         }
     }
-    return variable_bindings;
+
+    y_fatal("SpirV entry point not found");
 }
 
-template<typename R>
-static void fail_not_empty(const R& res) {
-    if(!res.empty()) {
-        y_fatal("Unsupported resource type.");
-    }
-}
-
-static u32 component_size(spirv_cross::SPIRType::BaseType type) {
-    switch(type) {
-        case spirv_cross::SPIRType::Float:
-        case spirv_cross::SPIRType::Int:
-        case spirv_cross::SPIRType::UInt:
-            return 4;
-
-        case spirv_cross::SPIRType::Char:
-            return 1;
-
-        default:
-            break;
-    }
-    y_fatal("Unsupported attribute type.");
-}
-
-static ShaderModuleBase::AttribType component_type(spirv_cross::SPIRType::BaseType type) {
-    switch(type) {
-        case spirv_cross::SPIRType::Float:
-            return ShaderModuleBase::AttribType::Float;
-
-        case spirv_cross::SPIRType::Int:
-            return ShaderModuleBase::AttribType::Int;
-
-        case spirv_cross::SPIRType::UInt:
-            return ShaderModuleBase::AttribType::Uint;
-
-        case spirv_cross::SPIRType::Char:
-            return ShaderModuleBase::AttribType::Char;
-
-        default:
-            break;
-    }
-    y_fatal("Unsupported attribute type");
-}
-
-template<typename R>
-static core::ScratchPad<ShaderModuleBase::Attribute> create_attribs(const spirv_cross::Compiler& compiler, const R& resources) {
-    usize attrib_count = 0;
-    core::ScratchPad<ShaderModuleBase::Attribute> attribs(resources.size());
-    for(const auto& res : resources) {
-        const auto location = compiler.get_decoration(res.id, spv::DecorationLocation);
-        const auto& type = compiler.get_type(res.type_id);
-
-        const std::string_view name = std::string_view(res.name);
-        const bool packed = name.ends_with("_Packed");
-        attribs[attrib_count++] = ShaderModuleBase::Attribute{location, type.columns, type.vecsize, component_size(type.basetype), component_type(type.basetype), packed};
-    }
-    return attribs;
-}
-
-
-ShaderType ShaderModuleBase::shader_type(const SpirVData& data) {
-    const spirv_cross::Compiler compiler(std::vector<u32>(data.data(), data.data() + data.size() / 4));
-    return module_type(compiler);
-}
-
-ShaderModuleBase::ShaderModuleBase(const SpirVData& data) : _module(create_shader_module(data)) {
-    const spirv_cross::Compiler compiler(std::vector<u32>(data.data(), data.data() + data.size() / 4));
-
-    _type = module_type(compiler);
-
-    auto resources = compiler.get_shader_resources();
-    merge(_bindings, create_bindings(compiler, resources.uniform_buffers, _type, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER));
-    merge(_bindings, create_bindings(compiler, resources.storage_buffers, _type, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER));
-    merge(_bindings, create_bindings(compiler, resources.sampled_images, _type, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER));
-    merge(_bindings, create_bindings(compiler, resources.storage_images, _type, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE));
-    merge(_bindings, create_bindings(compiler, resources.acceleration_structures, _type, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR));
-
-    _variable_size_bindings = find_variable_size_bindings(compiler, resources.sampled_images);
-
-    /*auto print_resources = [&](auto resources) {
-        for(const auto& buffer : resources) {
-            const auto& type = compiler.get_type(buffer.base_type_id);
-            log_msg(fmt("{}:", buffer.name.data()), Log::Warning);
-            log_msg(fmt("   storage: {}", compiler.get_storage_class(buffer.id)), Log::Warning);
-            log_msg(fmt("   type base: {}", type.basetype), Log::Warning);
-            log_msg(fmt("   type storage: {}", type.storage), Log::Warning);
-            const auto& bitset = compiler.get_decoration_bitset(buffer.id);
-            bitset.for_each_bit([](u32 bit) {
-                log_msg(fmt("   decoration: {}", bit), Log::Warning);
-            });
+[[maybe_unused]]
+static const SpvReflectEntryPoint& find_entry_point(const SpvReflectShaderModule& module, ShaderType type) {
+    y_debug_assert(type != ShaderType::None);
+    for(u32 i = 0; i != module.entry_point_count; ++i) {
+        if(shader_exec_model(module.entry_points[i].spirv_execution_model) == type) {
+            return module.entry_points[i];
         }
+    }
+
+    y_fatal("SpirV entry point not found for shader type");
+}
+
+
+
+
+ShaderModuleBase::ShaderModuleBase(const SpirVData& spirv, ShaderType type) : _module(create_shader_module(spirv)), _type(type) {
+    y_profile();
+
+    y_debug_assert(_type != ShaderType::None);
+
+    SpvReflectShaderModule module = {};
+
+    const core::Span<u32> data = spirv.data();
+    spv_check(spvReflectCreateShaderModule(data.size() * sizeof(u32), data.data(), &module));
+    y_defer(spvReflectDestroyShaderModule(&module));
+
+    const SpvReflectEntryPoint& entry_point = find_entry_point(module, type);
+
+    _entry_point = entry_point.name;
+
+    _local_size = {
+        entry_point.local_size.x,
+        entry_point.local_size.y,
+        entry_point.local_size.z,
     };
 
-    print_resources(resources.uniform_buffers);
-    print_resources(resources.storage_buffers);*/
+    {
+        u32 ds_count = 0;
+        spv_check(spvReflectEnumerateDescriptorSets(&module, &ds_count, nullptr));
 
-    _attribs = create_attribs(compiler, resources.stage_inputs);
+        core::ScratchPad<SpvReflectDescriptorSet*> sets(ds_count);
+        spv_check(spvReflectEnumerateDescriptorSets(&module, &ds_count, sets.data()));
 
-    // these are attribs & other stages stuff
-    fail_not_empty(resources.atomic_counters);
-    fail_not_empty(resources.separate_images);
-    fail_not_empty(resources.separate_samplers);
+        for(const SpvReflectDescriptorSet* set : sets) {
+            auto& set_bindings = _bindings[set->set];
+            for(u32 i = 0; i != set->binding_count; ++i) {
+                const SpvReflectDescriptorBinding& refl_binding = *set->bindings[i];
 
-    for(const auto& res : resources.stage_outputs) {
-        _stage_output << compiler.get_decoration(res.id, spv::DecorationLocation);
+                y_always_assert(refl_binding.block.size == refl_binding.block.padded_size, "Invalid block size");
+                y_debug_assert(refl_binding.count <= 1);
+
+                if(!refl_binding.count) {
+                    _variable_size_bindings << set->set;
+                }
+
+                VkDescriptorSetLayoutBinding& binding = set_bindings.emplace_back();
+                {
+                    binding.stageFlags = VK_SHADER_STAGE_ALL;
+                    binding.binding = refl_binding.binding;
+                    binding.descriptorCount = 1;
+                    binding.descriptorType = VkDescriptorType(refl_binding.descriptor_type);
+                }
+
+                if(is_inline(refl_binding)) {
+                    // For some reason refl_binding.block.padded_size gives 16 bytes blocks when the shader could do with 4 or 8
+                    // We recompute size for blocks with members
+                    if(refl_binding.block.members) {
+                        u32 desc_size = 0;
+                        for(u32 k = 0; k != refl_binding.block.member_count; ++k) {
+                            const SpvReflectBlockVariable& member = refl_binding.block.members[k];
+                            desc_size = std::max(desc_size, member.offset + member.size);
+                        }
+                        binding.descriptorCount *= desc_size;
+                    } else {
+                        binding.descriptorCount *= refl_binding.block.padded_size;
+                    }
+
+                    binding.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
+                }
+            }
+
+            std::sort(set_bindings.begin(), set_bindings.end(), [](const auto& a, const auto& b) { return a.binding < b.binding; });
+        }
     }
 
-    u32 spec_offset = 0;
-    for(const auto& cst : compiler.get_specialization_constants()) {
-        const auto& type = compiler.get_type(compiler.get_constant(cst.id).constant_type);
-        const u32 size = type.width / 8;
-        _spec_constants << VkSpecializationMapEntry{cst.constant_id, spec_offset, size};
-        spec_offset += size;
+
+    {
+        u32 attrib_count = 0;
+        spv_check(spvReflectEnumerateEntryPointInputVariables(&module, entry_point.name, &attrib_count, nullptr));
+
+        core::ScratchPad<SpvReflectInterfaceVariable*> attribs(attrib_count);
+        spv_check(spvReflectEnumerateEntryPointInputVariables(&module, entry_point.name, &attrib_count, attribs.data()));
+
+        for(const SpvReflectInterfaceVariable* variable : attribs) {
+            if(variable->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
+                continue;
+            }
+
+            Attribute& attrib = _attribs.emplace_back();
+            {
+                attrib.component_count = std::max(1u, variable->numeric.matrix.column_count);
+                attrib.location = variable->location;
+                attrib.format = VkFormat(variable->format);
+                attrib.is_packed = std::string_view(variable->name).ends_with("_Packed");
+            }
+        }
     }
 
-    for(u32 i = 0; i != 3; ++i) {
-        _local_size[i] = compiler.get_execution_mode_argument(spv::ExecutionMode::ExecutionModeLocalSize, i);
+    {
+        u32 out_count = 0;
+        spv_check(spvReflectEnumerateEntryPointOutputVariables(&module, entry_point.name, &out_count, nullptr));
+
+        core::ScratchPad<SpvReflectInterfaceVariable*> outputs(out_count);
+        spv_check(spvReflectEnumerateEntryPointOutputVariables(&module, entry_point.name, &out_count, outputs.data()));
+
+        for(const SpvReflectInterfaceVariable* variable : outputs) {
+            if(variable->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
+                continue;
+            }
+
+            _stage_output.emplace_back(variable->location);
+        }
     }
+
 }
 
 ShaderModuleBase::~ShaderModuleBase() {

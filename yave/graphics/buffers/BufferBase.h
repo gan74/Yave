@@ -84,7 +84,7 @@ class BufferBase : NonCopyable {
         BufferBase(BufferBase&&) = default;
         BufferBase& operator=(BufferBase&&) = default;
 
-        BufferBase(u64 byte_size, BufferUsage usage, MemoryType type);
+        BufferBase(u64 byte_size, BufferUsage usage, MemoryType type, MemoryAllocFlags alloc_flags = MemoryAllocFlags::None);
 
     private:
         u64 _size = 0;
