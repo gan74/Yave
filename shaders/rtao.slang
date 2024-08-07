@@ -1,5 +1,3 @@
-import "glsl";
-
 #include "lib/utils.slang"
 
 
@@ -24,27 +22,26 @@ ConstantBuffer<Camera> camera;
 
 [[vk::binding(4)]]
 cbuffer SampleDirData {
-    vec4 sample_dirs[SAMPLE_BUFFER_SIZE];
+    float4 sample_dirs[SAMPLE_BUFFER_SIZE];
 };
 
 [[vk::binding(5)]]
 RaytracingAccelerationStructure tlas;
 
 
-static const uint sample_count = 64;
+static const uint sample_count = 16;
 static const float max_dist = 1.0;
 
 
 
 
-uint hash_1_2(uvec2 x) {
-    uvec2 q = 1103515245U * ((x >> 1U) ^ x.yx);
-    uint n = 1103515245U * (q.x ^ (q.y >> 3U));
-    return n;
+uint hash_1_2(uint2 x) {
+    uint2 q = 1103515245U * ((x >> 1U) ^ x.yx);
+    return 1103515245U * (q.x ^ (q.y >> 3U));
 }
 
-vec3 compute_sample_dir(vec3 normal, uint i) {
-    const vec3 s = sample_dirs[i % SAMPLE_BUFFER_SIZE].xyz;
+float3 compute_sample_dir(float3 normal, uint i) {
+    const float3 s = sample_dirs[i % SAMPLE_BUFFER_SIZE].xyz;
     return dot(normal, s) < 0.0 ? -s : s;
 }
 
@@ -68,42 +65,39 @@ float trace_first_hit(RaytracingAccelerationStructure accel, float3 origin, floa
         return query.CommittedRayT();
     }
 
-    return -1.0;
+    return max_dist;
 }
 
 
 [shader("compute")]
 [numthreads(8, 8)]
 void main() {
-    const ivec2 coord = ivec2(gl_GlobalInvocationID.xy * 2);
-    const ivec2 image_size = textureSize(in_depth, 0).xy;
+    const uint2 coord = semantics.global_id.xy * 2;
+    const uint2 size = image_size(in_depth);
 
-    if(any(greaterThan(coord, image_size))) {
+    if(any(coord >= size)) {
         return;
     }
 
-    const float depth = texelFetch(in_depth, coord, 0).x;
+    const float depth = in_depth[coord].x;
 
     float ao = 0;
     if(!is_depth_far(depth)) {
-        const vec2 uv = (coord + 0.5) / vec2(image_size);
-        const vec3 world_pos = unproject(uv, depth, camera.inv_view_proj);
-        const vec3 normal = decode_gbuffer({vec4(0.0), texelFetch(in_rt1, coord, 0)}).normal;
+        const float2 uv = (coord + 0.5) / float2(size);
+        const float3 world_pos = unproject(uv, depth, camera.inv_view_proj);
+        const float3 normal = decode_gbuffer({float4(0.0), in_rt1[coord]}).normal;
 
-        const uint sample_index_offset = hash_1_2(gl_GlobalInvocationID.xy);
+        const uint sample_index_offset = hash_1_2(semantics.global_id.xy);
 
         for(uint i = 0; i != sample_count; ++i) {
-            const vec3 sample_dir = compute_sample_dir(normal, i + sample_index_offset);
+            const float3 sample_dir = compute_sample_dir(normal, i + sample_index_offset);
 
             const float t = trace_first_hit(tlas, world_pos, sample_dir, max_dist);
-
-            if(t >= 0) {
-                ao += 1.0;
-            }
+            ao += sqr(t / max_dist);
         }
 
-        ao = 1.0 - sqr(ao / sample_count);
+        ao /= sample_count;
     }
 
-    out_ao[ivec2(gl_GlobalInvocationID.xy)] =  ao;
+    out_ao[semantics.global_id.xy] =  ao;
 }
