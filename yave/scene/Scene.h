@@ -124,6 +124,18 @@ class Scene : NonMovable {
             }
         }
 
+        template<typename T>
+        static void gather_visible(core::Vector<const SceneObject<T>*>& visible, core::Span<SceneObject<T>> objects, u32 visibility_mask = u32(-1)) {
+            y_profile();
+            
+            for(const auto& obj : objects) {
+                if((obj.visibility_mask & visibility_mask) == 0) {
+                    continue;
+                }
+                visible << &obj;
+            }
+        }
+
     protected:
         core::Vector<StaticMeshObject> _meshes;
         core::Vector<PointLightObject> _point_lights;

@@ -45,7 +45,7 @@ struct ShadowMapPass {
 
     std::shared_ptr<core::FlatHashMap<const void*, math::Vec4ui>> shadow_indices;
 
-    static ShadowMapPass create(FrameGraph& framegraph, const SceneView& scene, const ShadowMapSettings& settings = ShadowMapSettings());
+    static ShadowMapPass create(FrameGraph& framegraph, const SceneVisibilitySubPass& visibility, const ShadowMapSettings& settings = ShadowMapSettings());
 };
 
 

@@ -373,10 +373,8 @@ static void local_lights_pass(FrameGraph& framegraph,
 LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId ao, const LightingSettings& settings) {
     const auto region = framegraph.region("Lighting");
 
-    const SceneView& scene = gbuffer.scene_pass.scene_view;
-
     LightingPass pass;
-    pass.shadow_pass = ShadowMapPass::create(framegraph, scene, settings.shadow_settings);
+    pass.shadow_pass = ShadowMapPass::create(framegraph, gbuffer.scene_pass.visibility, settings.shadow_settings);
 
     const auto lit = ambient_pass(framegraph, gbuffer, pass.shadow_pass, ao);
 

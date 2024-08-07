@@ -177,22 +177,23 @@ struct ShadowCastingLights {
     core::Vector<std::tuple<math::Transform<>, const SpotLightComponent*>> spots;
 };
 
-static ShadowCastingLights collect_shadow_casting_lights(const SceneView& scene_view) {
+static ShadowCastingLights collect_shadow_casting_lights(const SceneVisibilitySubPass& visibility) {
     ShadowCastingLights shadow_casters;
 
-    const Scene* scene = scene_view.scene();
+    const SceneVisibility& visible = *visibility.visible;
+    const Scene* scene = visibility.scene_view.scene();
 
-    shadow_casters.directionals.set_min_capacity(scene->directionals().size());
-    for(const DirectionalLightObject& light : scene->directionals()) {
-        if(light.component.cast_shadow()) {
-            shadow_casters.directionals.push_back(&light.component);
+    shadow_casters.directionals.set_min_capacity(visible.directional_lights.size());
+    for(const DirectionalLightObject* light : visible.directional_lights) {
+        if(light->component.cast_shadow()) {
+            shadow_casters.directionals.push_back(&light->component);
         }
     }
 
-    shadow_casters.spots.set_min_capacity(scene->spot_lights().size());
-    for(const SpotLightObject& light : scene->spot_lights()) {
-        if(light.component.cast_shadow()) {
-            shadow_casters.spots.emplace_back(scene->transform(light), &light.component);
+    shadow_casters.spots.set_min_capacity(visible.spot_lights.size());
+    for(const SpotLightObject* light : visible.spot_lights) {
+        if(light->component.cast_shadow()) {
+            shadow_casters.spots.emplace_back(scene->transform(*light), &light->component);
         }
     }
 
@@ -218,7 +219,7 @@ static float total_occupancy(const ShadowCastingLights& lights) {
 
 
 
-ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& scene_view, const ShadowMapSettings& settings) {
+ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneVisibilitySubPass& visibility, const ShadowMapSettings& settings) {
     y_profile();
 
     const auto region = framegraph.region("Shadows");
@@ -238,7 +239,8 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneView& sce
 
     const auto shadow_map = builder.declare_image(shadow_format, shadow_map_size);
 
-    const ShadowCastingLights lights = collect_shadow_casting_lights(scene_view);
+    const SceneView& scene_view = visibility.scene_view;
+    const ShadowCastingLights lights = collect_shadow_casting_lights(visibility);
 
     const float downsample_factor = settings.spill_policy == ShadowMapSpillPolicy::DownSample
         ? total_occupancy(lights) / settings.shadow_atlas_size

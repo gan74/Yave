@@ -30,6 +30,7 @@ struct SceneVisibility {
     core::Vector<const StaticMeshObject*> meshes;
     core::Vector<const PointLightObject*> point_lights;
     core::Vector<const SpotLightObject*> spot_lights;
+    core::Vector<const DirectionalLightObject*> directional_lights;
 };
 
 
