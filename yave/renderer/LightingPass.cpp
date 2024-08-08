@@ -75,7 +75,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                                              FrameGraphImageId ao) {
 
     const SceneView& scene_view = gbuffer.scene_pass.scene_view;
-    const Scene* scene = scene_view.scene();
+    const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
 
     auto [ibl_probe, intensity, sky] = find_probe(scene_view);
     const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
@@ -108,7 +108,9 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
         u32 count = 0;
         auto mapping = self->resources().map_buffer(directional_buffer);
 
-        for(const auto& [light, id, _] : scene->directionals()) {
+        for(const DirectionalLightObject* obj : visibility.directional_lights) {
+            const auto& [light, id, _] = *obj;
+
             auto shadow_indices = math::Vec4ui(u32(-1));
             if(light.cast_shadow()) {
                 if(const auto it = shadow_pass.shadow_indices->find(&light); it != shadow_pass.shadow_indices->end()) {
