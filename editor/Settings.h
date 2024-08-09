@@ -49,7 +49,7 @@ struct CameraSettings {
     // Other camera
     Key center_on_obj = Key::H;
 
-    y_reflect(CameraSettings, trackball_sensitivity, dolly_sensitivity, center_on_obj)
+    y_reflect(CameraSettings, trackball_sensitivity, dolly_sensitivity, center_on_obj, z_near, fov)
 
 };
 
