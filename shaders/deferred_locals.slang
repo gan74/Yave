@@ -224,7 +224,7 @@ void cull_lights() {
 void comp_main() {
     const int2 coord = int2(semantics.global_id.xy);
     const float2 image_size = float2(image_size(out_color).xy);
-    const float2 uv = float2(semantics.global_id.xy) / image_size;
+    const float2 uv = (semantics.global_id.xy + 0.5) / image_size;
 
     const float depth = in_depth[coord];
 

@@ -13,10 +13,10 @@ Sampler2D in_color;
 Sampler2D in_prev;
 
 [[vk::binding(3)]]
-Sampler2D in_motion;
+Sampler2D<float2> in_motion;
 
 [[vk::binding(4)]]
-Sampler2D in_prev_motion;
+Sampler2D<float2> in_prev_motion;
 
 [[vk::binding(5)]]
 ConstantBuffer<Camera> camera;
@@ -149,7 +149,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     const float2 inv_size = 1.0 / size;
     const float y_ratio = size.y * inv_size.x;
 
-    const float2 motion = in_motion[coord].xy;
+    const float2 motion = in_motion[coord];
     const bool has_moved = any(abs(motion) > inv_size);
     const float2 uv = semantics.frag_coord.xy * inv_size;
     const float2 prev_uv = uv + motion;
@@ -164,7 +164,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     // Motion rejection
     if(sample_valid && (flags & motion_rejection_bit) != 0) {
         const float2 ratio = float2(1.0, y_ratio);
-        const float2 prev_motion = in_prev_motion.Sample(prev_uv).xy;
+        const float2 prev_motion = in_prev_motion.Sample(prev_uv);
         sample_valid = (length((prev_motion - motion) * ratio) < (length(motion * ratio) * 0.2 + 0.05));
     }
 
