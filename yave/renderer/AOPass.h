@@ -41,11 +41,18 @@ struct AOSettings {
     AOMethod method = AOMethod::RTAO;
 
     struct {
-        usize level_count = 2;
+        u32 level_count = 2;
         float blur_tolerance = 4.6f;
         float upsample_tolerance = 12.0f;
         float noise_filter_tolerance = 0.0f;
     } mini_engine;
+
+    struct {
+        u32 ray_count = 4;
+        float max_dist = 1.0f;
+
+        float filter_sigma = 4.0f;
+    } rtao;
 };
 
 struct AOPass {

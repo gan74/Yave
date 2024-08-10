@@ -29,30 +29,12 @@ SOFTWARE.
 
 namespace yave {
 
-static constexpr usize sample_count = 8;
-
-static std::array<float, sample_count> compute_gaussian_weights(float sigma) {
-    const float denom = 2.0f * sigma * sigma;
-
-    float total = 0.0f;
-    std::array<float, sample_count> weights = {};
-    for(usize i = 0; i != weights.size(); ++i) {
-        const float w = std::exp(-float(i * i) / denom);
-        weights[i] = w;
-        total += i == 0 ? 2.0f * w : w;
-    }
-    for(usize i = 0; i != sample_count; ++i) {
-        weights[i] /= total;
-    }
-    return weights;
-}
-
 static BlurPass create_blur(FrameGraph& framegraph, FrameGraphImageId in_image, const math::Vec2ui& in_size, const math::Vec2ui& out_size, const BlurSettings& settings) {
     const auto region = framegraph.region("Blur");
 
     const ImageFormat format = framegraph.image_format(in_image);
 
-    const auto weights = compute_gaussian_weights(settings.sigma);
+    const auto weights = math::compute_gaussian_weights<float, 8>(settings.sigma);
 
     auto blur_sub_pass = [&](FrameGraphPassBuilder builder, const math::Vec2ui& target_size, FrameGraphImageId in, DeviceResources::MaterialTemplates mat) -> FrameGraphMutableImageId {
         const auto blurred = builder.declare_image(format, target_size);

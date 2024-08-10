@@ -299,11 +299,14 @@ const SceneView& scene_view() {
 
 
 
+DebugValues& debug_values() {
+    static DebugValues values = {};
+    return values;
+}
+
 DirectDraw& debug_drawer() {
     return *application::debug_drawer;
 }
-
-
 
 
 

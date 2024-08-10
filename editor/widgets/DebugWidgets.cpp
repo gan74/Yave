@@ -295,6 +295,45 @@ class UiDebug : public Widget {
 };
 
 
+class DebugValueEditor : public Widget {
+    editor_widget(DebugValueEditor, "View", "Debug")
+
+    public:
+        DebugValueEditor() : Widget("Debug values") {
+        }
+
+
+    protected:
+        void on_gui() override {
+            DebugValues& values = debug_values();
+
+            for(usize i = 0; i != 4; ++i) {
+                if(i) {
+                    ImGui::SameLine();
+                }
+                ImGui::Checkbox(fmt_c_str("Bool (f) #{}", i), &values.bool_f[i]);
+            }
+
+            for(usize i = 0; i != 4; ++i) {
+                if(i) {
+                    ImGui::SameLine();
+                }
+                ImGui::Checkbox(fmt_c_str("Bool (t) #{}", i), &values.bool_t[i]);
+            }
+
+            for(usize i = 0; i != 4; ++i) {
+                ImGui::InputFloat(fmt_c_str("Float (0.0) #{}", i), &values.float_0[i]);
+            }
+
+            for(usize i = 0; i != 4; ++i) {
+                ImGui::InputFloat(fmt_c_str("Float (1.0) #{}", i), &values.float_1[i]);
+            }
+        }
+};
+
+
+
+
 class RaytracingDebug : public Widget {
     editor_widget_open(RaytracingDebug, "View", "Debug")
 

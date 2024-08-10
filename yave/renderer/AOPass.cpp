@@ -192,6 +192,10 @@ static FrameGraphImageId compute_mini_ao(FrameGraph& framegraph, FrameGraphImage
 
 
 
+
+
+
+
 static auto generate_sample_dirs(u64 seed) {
     y_profile();
 
@@ -210,8 +214,8 @@ static auto generate_sample_dirs(u64 seed) {
     return dirs;
 }
 
-static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass& gbuffer) {
-    const std::array sample_dirs = generate_sample_dirs(framegraph.frame_id());
+static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass& gbuffer, u32 ray_count, float max_dist) {
+    const auto sample_dirs = generate_sample_dirs(framegraph.frame_id());
 
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth) / 2;
 
@@ -229,6 +233,7 @@ static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass&
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_uniform_input(sample_dir_buffer);
+    builder.add_inline_input(InlineDescriptor(std::pair<u32, float>{ray_count, max_dist}));
     builder.add_descriptor_binding(Descriptor(tlas));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         recorder.dispatch_size(device_resources()[DeviceResources::RTAOProgram], size, self->descriptor_sets());
@@ -236,6 +241,31 @@ static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass&
 
     return ao;
 }
+
+
+static FrameGraphImageId filter_rtao(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_ao, bool vertical, float sigma) {
+    const math::Vec2ui full_size = framegraph.image_size(gbuffer.depth);
+    const math::Vec2ui size = vertical ? full_size : math::Vec2ui(full_size.x(), framegraph.image_size(in_ao).y());
+
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Filter RTAO pass");
+
+    const auto filtered = builder.declare_image(VK_FORMAT_R8_UNORM, size);
+
+    const auto weights = math::compute_gaussian_weights<float, 4>(sigma);
+
+    builder.add_uniform_input(in_ao);
+    builder.add_uniform_input(gbuffer.depth);
+    builder.add_uniform_input(gbuffer.normal);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
+    builder.add_inline_input(InlineDescriptor(weights));
+    builder.add_storage_output(filtered);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        recorder.dispatch_size(device_resources()[vertical ? DeviceResources::VFilterRTAOProgram : DeviceResources::HFilterRTAOProgram], size, self->descriptor_sets());
+    });
+
+    return filtered;
+}
+
 
 
 
@@ -263,7 +293,13 @@ AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const 
 
         case AOSettings::AOMethod::RTAO: {
             if(raytracing_enabled()) {
-                ao = compute_rtao(framegraph, gbuffer);
+                ao = compute_rtao(framegraph, gbuffer, settings.rtao.ray_count, settings.rtao.max_dist);
+
+                if(settings.rtao.filter_sigma > 0.0f) {
+                    const auto filter_region = framegraph.region("Filter");
+                    ao = filter_rtao(framegraph, gbuffer, ao, false, settings.rtao.filter_sigma);
+                    ao = filter_rtao(framegraph, gbuffer, ao, true, settings.rtao.filter_sigma);
+                }
             }
         } break;
 

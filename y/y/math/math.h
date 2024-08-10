@@ -182,6 +182,24 @@ Vec<2, T> weyl_2d(I n) {
     return Vec<2, T>(std::fmod(px, T(1.0)), std::fmod(py, T(1.0)));
 }
 
+
+template<typename T, usize N>
+static std::array<T, N> compute_gaussian_weights(T sigma) {
+    const T denom = T(2.0) * sigma * sigma;
+
+    T total = 0.0f;
+    std::array<T, N> weights = {};
+    for(usize i = 0; i != weights.size(); ++i) {
+        const T w = std::exp(-T(i * i) / denom);
+        weights[i] = w;
+        total += i == 0 ? T(2.0) * w : w;
+    }
+    for(T& w : weights) {
+        w /= total;
+    }
+    return weights;
+}
+
 }
 }
 

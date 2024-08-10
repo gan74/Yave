@@ -74,10 +74,8 @@ const SceneView& scene_view();
 
 
 
+DebugValues& debug_values();
 DirectDraw& debug_drawer();
-
-
-
 
 
 
