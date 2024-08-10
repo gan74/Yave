@@ -193,6 +193,23 @@ float histogram_bin_to_lum(uint bin) {
 
 
 
+uint hash(uint x) {
+    x += (x << 10u);
+    x ^= (x >>  6u);
+    x += (x <<  3u);
+    x ^= (x >> 11u);
+    x += (x << 15u);
+    return x;
+}
+
+uint hash(uint2 x) {
+    const uint2 q = 1103515245u * ((x >> 1u) ^ x.yx);
+    return 1103515245u * (q.x ^ (q.y >> 3u));
+}
+
+
+
+
 
 
 float3 uv_debug_color(float2 p) {
@@ -296,7 +313,10 @@ float3 project(float3 pos, float4x4 proj_matrix) {
     return float3(p3.xy * 0.5 + float2(0.5), p3.z);
 }
 
-
+float3 build_orthogonal(float3 v) {
+    const float3 t = abs(v.x) > 0.9 ? float3(0, 1, 0) : float3(1, 0, 0);
+    return normalize(cross(v, t));
+}
 
 
 

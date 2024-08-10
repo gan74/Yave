@@ -4,7 +4,7 @@
 // -------------------------------- I/O --------------------------------
 
 [[vk::binding(0)]]
-Sampler2D in_depth;
+Sampler2D<float> in_depth;
 
 [[vk::binding(1)]]
 Sampler2D in_color;

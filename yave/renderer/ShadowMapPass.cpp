@@ -79,14 +79,14 @@ class SubAtlasAllocator {
 
 
 
-struct SubPass {
+struct ShadowSubPass {
     SceneRenderSubPass scene_pass;
     math::Vec2ui viewport_offset;
     u32 viewport_size;
     shader::ShadowMapInfo info;
 };
 
-static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
+static ShadowSubPass create_sub_pass(FrameGraphPassBuilder& builder,
                               math::Vec2ui offset, u32 size, // from allocator
                               const SceneView& light_view,
                               const math::Vec2& uv_mul) {
@@ -106,7 +106,7 @@ static SubPass create_sub_pass(FrameGraphPassBuilder& builder,
         0, 0,
     };
 
-    return SubPass {
+    return ShadowSubPass {
         SceneRenderSubPass::create(builder, light_view, SceneVisibilitySubPass::create(light_view), PassType::Depth),
         offset, size,
         info
@@ -222,7 +222,6 @@ static float total_occupancy(const ShadowCastingLights& lights) {
 ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneVisibilitySubPass& visibility, const ShadowMapSettings& settings) {
     y_profile();
 
-    const auto region = framegraph.region("Shadows");
 
     static constexpr ImageFormat shadow_format = VK_FORMAT_D32_SFLOAT;
 
@@ -251,7 +250,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneVisibilit
     pass.shadow_map = shadow_map;
     pass.shadow_indices = std::make_shared<core::FlatHashMap<const void*, math::Vec4ui>>();
 
-    core::Vector<SubPass> sub_passes;
+    core::Vector<ShadowSubPass> sub_passes;
     {
         SubAtlasAllocator allocator(first_level_size);
 
@@ -301,9 +300,10 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneVisibilit
         auto shadow_infos = self->resources().map_buffer(shadow_buffer);
 
         for(usize i = 0; i != passes.size(); ++i) {
-            const auto& pass = passes[i];
+            const ShadowSubPass& pass = passes[i];
             shadow_infos[i] = pass.info;
 
+            const auto region = render_pass.region(pass.scene_pass.scene_view.camera().is_orthographic() ? "Directional cascade" : "Spot light");
             render_pass.set_viewport(Viewport(math::Vec2(float(pass.viewport_size)), pass.viewport_offset));
             pass.scene_pass.render(render_pass, self);
         }

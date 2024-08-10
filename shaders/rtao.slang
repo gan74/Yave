@@ -1,4 +1,5 @@
 #include "lib/utils.slang"
+#include "lib/rt.slang"
 
 
 // -------------------------------- DEFINES --------------------------------
@@ -12,7 +13,7 @@
 RWTexture2D<float> out_ao;
 
 [[vk::binding(1)]]
-Sampler2D in_depth;
+Sampler2D<float> in_depth;
 
 [[vk::binding(2)]]
 Sampler2D in_rt1;
@@ -34,38 +35,9 @@ static const float max_dist = 1.0;
 
 
 
-
-uint hash_1_2(uint2 x) {
-    uint2 q = 1103515245U * ((x >> 1U) ^ x.yx);
-    return 1103515245U * (q.x ^ (q.y >> 3U));
-}
-
 float3 compute_sample_dir(float3 normal, uint i) {
     const float3 s = sample_dirs[i % SAMPLE_BUFFER_SIZE].xyz;
     return dot(normal, s) < 0.0 ? -s : s;
-}
-
-
-
-float trace_first_hit(RaytracingAccelerationStructure accel, float3 origin, float3 dir, float min_dist, float max_dist) {
-    RayDesc ray;
-    {
-        ray.Origin = origin;
-        ray.Direction = dir;
-        ray.TMin = min_dist;
-        ray.TMax = max_dist;
-    }
-
-    RayQuery<RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH> query;
-    query.TraceRayInline(accel, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xff, ray);
-
-    query.Proceed();
-
-    if(query.CommittedStatus() == COMMITTED_TRIANGLE_HIT) {
-        return query.CommittedRayT();
-    }
-
-    return max_dist;
 }
 
 
@@ -79,7 +51,7 @@ void main() {
         return;
     }
 
-    const float depth = in_depth[coord].x;
+    const float depth = in_depth[coord];
 
     float ao = 0;
     if(!is_depth_far(depth)) {
@@ -89,7 +61,7 @@ void main() {
         const float view_dist = length(world_pos - camera.position);
         const float min_dist = lerp(0.001, 0.01, view_dist / (view_dist + 10.0));
 
-        const uint sample_index_offset = hash_1_2(semantics.global_id.xy);
+        const uint sample_index_offset = hash(semantics.global_id.xy);
 
         for(uint i = 0; i != sample_count; ++i) {
             const float3 sample_dir = compute_sample_dir(normal, i + sample_index_offset);
@@ -101,5 +73,5 @@ void main() {
         ao /= sample_count;
     }
 
-    out_ao[semantics.global_id.xy] =  ao;
+    out_ao[semantics.global_id.xy] = ao;
 }
