@@ -40,6 +40,9 @@ const math::Transform<>& Scene::transform(const TransformableSceneObjectData& ob
     return _transform_manager.transform(obj.transform_index);
 }
 
+const TLAS& Scene::tlas() const {
+    return _tlas;
+}
 
 }
 

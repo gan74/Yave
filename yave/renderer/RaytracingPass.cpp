@@ -35,7 +35,7 @@ RaytracingPass RaytracingPass::create(FrameGraph& framegraph, const CameraBuffer
 
     const auto raytraced = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, size);
 
-    const auto tlas = camera.view.scene()->create_tlas();
+    const TLAS& tlas = camera.view.scene()->tlas();
 
     builder.add_descriptor_binding(Descriptor(tlas));
     builder.add_uniform_input(camera.camera);

@@ -262,6 +262,8 @@ void EcsScene::update_from_world() {
         ComputeCmdBufferRecorder recorder = create_disposable_compute_cmd_buffer();
         _transform_manager.update_buffer(recorder);
         recorder.submit_async();
+
+        update_tlas();
     }
 
 

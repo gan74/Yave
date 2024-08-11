@@ -92,7 +92,7 @@ class Scene : NonMovable {
 
         const math::Transform<>& transform(const TransformableSceneObjectData& obj) const;
 
-        TLAS create_tlas() const;
+        const TLAS& tlas() const;
 
         RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneVisibility& visibility, PassType pass_type) const;
 
@@ -137,6 +137,9 @@ class Scene : NonMovable {
         }
 
     protected:
+        void update_tlas();
+
+    protected:
         core::Vector<StaticMeshObject> _meshes;
         core::Vector<PointLightObject> _point_lights;
         core::Vector<SpotLightObject> _spot_lights;
@@ -147,6 +150,7 @@ class Scene : NonMovable {
         std::unique_ptr<AtmosphereObject> _atmosphere;
 
         TransformManager _transform_manager;
+        TLAS _tlas;
 };
 
 }

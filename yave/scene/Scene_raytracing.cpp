@@ -24,7 +24,11 @@ SOFTWARE.
 
 namespace yave {
 
-TLAS Scene::create_tlas() const {
+void Scene::update_tlas() {
+    if(!raytracing_enabled()) {
+        return;
+    }
+
     y_profile();
 
     auto instances = core::Vector<BLASInstance>::with_capacity(_meshes.size());
@@ -38,7 +42,7 @@ TLAS Scene::create_tlas() const {
         }
     }
 
-    return TLAS(instances);
+    _tlas = TLAS(instances);
 }
 
 }

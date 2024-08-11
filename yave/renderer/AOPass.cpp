@@ -227,7 +227,7 @@ static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass&
 
     builder.map_buffer(sample_dir_buffer, sample_dirs);
 
-    const auto tlas = gbuffer.scene_pass.scene_view.scene()->create_tlas();
+    const TLAS& tlas = gbuffer.scene_pass.scene_view.scene()->tlas();
 
     builder.add_storage_output(ao);
     builder.add_uniform_input(gbuffer.depth);

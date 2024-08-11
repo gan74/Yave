@@ -348,11 +348,7 @@ class RaytracingDebug : public Widget {
                 return;
             }
 
-            TLAS tlas = current_scene().create_tlas();
-
-            const std::array descriptors = {Descriptor(tlas)};
-            const DescriptorSet set(descriptors);
-
+            const TLAS& tlas = current_scene().tlas();
             ImGui::Text("TLAS size = %uKB", u32(tlas.buffer().byte_size() / 1024));
         }
 };
