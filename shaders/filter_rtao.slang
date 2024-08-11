@@ -1,5 +1,9 @@
 #include "lib/utils.slang"
 
+// -------------------------------- DEFINES --------------------------------
+
+#define KERNEL_SIZE 4
+
 // -------------------------------- I/O --------------------------------
 
 
@@ -16,14 +20,12 @@ Sampler2D in_rt1;
 ConstantBuffer<Camera> camera;
 
 [[vk::binding(4)]]
-cbuffer Weights_Inline {
-    float4 weights;
-};
-
-[[vk::binding(5)]]
 RWTexture2D<float> out_ao;
 
-
+[[vk::binding(5)]]
+cbuffer Weights_Inline {
+    float4 weights[KERNEL_SIZE / 4];
+};
 
 
 
@@ -37,38 +39,9 @@ int2 make_offset(int i) {
 #endif
 }
 
-int2 to_sample_coord(int2 c) {
-#if defined(HORIZONTAL)
-    return c / int2(2, 1);
-#else
-    return c / int2(1, 2);
-#endif
-}
-
-int2 from_sample_coord(int2 c) {
-#if defined(HORIZONTAL)
-    return c * 2;
-#else
-    return c * int2(1, 2);
-#endif
-
-}
-
-int2 to_base_coord(int2 c) {
-#if defined(HORIZONTAL)
-    return c * int2(1, 2);
-#else
-    return c;
-#endif
-}
-
-
-
-
-
 float gaussian_weight(int i) {
     const uint index = abs(i);
-    return weights[index];
+    return weights[index / 4][index % 4];
 }
 
 bool is_valid(float sample_depth, float depth, float3 sample_normal, float3 normal, float dot_view_normal) {
@@ -90,32 +63,36 @@ bool is_valid(float sample_depth, float depth, float3 sample_normal, float3 norm
 [numthreads(8, 8)]
 void main() {
     const int2 coord = int2(semantics.global_id.xy);
-    const float2 image_size = float2(image_size(out_ao).xy);
+    const float2 image_size = float2(image_size(in_depth).xy);
 
-    const float depth = in_depth[to_base_coord(coord)].x;
-    const float3 normal = decode_gbuffer({float4(0.0), in_rt1[to_base_coord(coord)]}).normal;
+    const float depth = in_depth[coord].x;
+    const float3 normal = decode_gbuffer({float4(0.0), in_rt1[coord]}).normal;
 
-    const float3 world_pos = unproject(coord / image_size, depth, camera.inv_view_proj);
+    const float3 world_pos = unproject((coord + 0.5) / image_size, depth, camera.inv_view_proj);
     const float3 view_dir = normalize(camera.position - world_pos);
 
     const float dot_view_normal = dot(view_dir, normal);
 
     float ao = 0.0;
     float weight = 0.0;
-    for (int i = -3; i <= 3; ++i) {
-        const int2 sample_coord = to_sample_coord(coord) + make_offset(i);
+    for (int i = -(KERNEL_SIZE - 1); i <= (KERNEL_SIZE - 1); ++i) {
+        const int2 sample_coord = coord + make_offset(i);
 
-        const float sample_depth = in_depth[from_sample_coord(sample_coord)];
-        const float3 sample_normal = decode_gbuffer({float4(0.0), in_rt1[from_sample_coord(sample_coord)]}).normal;
-        const float sample = in_ao[sample_coord];
+        const float sample_depth = in_depth[sample_coord];
+        const float3 sample_normal = decode_gbuffer({float4(0.0), in_rt1[sample_coord]}).normal;
 
         const float w = gaussian_weight(i);
 
-        if(i == 0 || is_valid(sample_depth, depth, sample_normal, normal, dot_view_normal)) {
+        if(is_valid(sample_depth, depth, sample_normal, normal, dot_view_normal)) {
+            const float sample = in_ao[sample_coord];
             ao += sample * w;
             weight += w;
         }
     }
 
-    out_ao[semantics.global_id.xy] = ao / weight;
+    if(weight > 0.0) {
+        ao /= weight;
+    }
+
+    out_ao[semantics.global_id.xy] = ao;
 }

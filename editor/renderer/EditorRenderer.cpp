@@ -129,9 +129,10 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
     }
 
     if(settings.show_selection) {
+        static const FrameGraphPersistentResourceId persistent_id = FrameGraphPersistentResourceId::create();
         const IdBufferPass id_pass = IdBufferPass::create(
             framegraph,
-            CameraBufferPass::create_no_jitter(framegraph, scene_view),
+            CameraBufferPass::create_no_jitter(framegraph, scene_view, persistent_id),
             filter_selected(renderer.renderer.visibility),
             size
         );

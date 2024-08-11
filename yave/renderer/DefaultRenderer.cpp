@@ -31,10 +31,12 @@ namespace yave {
 DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView& scene_view, const math::Vec2ui& size, const RendererSettings& settings) {
     y_profile();
 
+    static const FrameGraphPersistentResourceId persistent_id = FrameGraphPersistentResourceId::create();
+
     DefaultRenderer renderer;
 
     renderer.visibility     = SceneVisibilitySubPass::create(scene_view);
-    renderer.camera         = CameraBufferPass::create(framegraph, scene_view, size, settings.taa);
+    renderer.camera         = CameraBufferPass::create(framegraph, scene_view, size, persistent_id, settings.taa);
     renderer.gbuffer        = GBufferPass::create(framegraph, renderer.camera, renderer.visibility, size);
     renderer.ao             = AOPass::create(framegraph, renderer.gbuffer, settings.ao);
     renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ao.ao, settings.lighting);

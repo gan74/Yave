@@ -61,8 +61,9 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
     FrameGraph framegraph(std::make_shared<FrameGraphResourcePool>());
 
     Y_TODO(Take editor renderer settings into account for picking)
+    static const FrameGraphPersistentResourceId persistent_id = FrameGraphPersistentResourceId::create();
     const SceneVisibilitySubPass visibility = SceneVisibilitySubPass::create(scene_view);
-    const IdBufferPass scene_pass = IdBufferPass::create(framegraph, CameraBufferPass::create_no_jitter(framegraph, scene_view), visibility, size);
+    const IdBufferPass scene_pass = IdBufferPass::create(framegraph, CameraBufferPass::create_no_jitter(framegraph, scene_view, persistent_id), visibility, size);
     const EditorPass entity_pass = EditorPass::create(framegraph, scene_view, visibility, scene_pass.depth, FrameGraphImageId(), scene_pass.id);
 
     {

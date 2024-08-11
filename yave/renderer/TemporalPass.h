@@ -19,50 +19,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_AOPASS_H
-#define YAVE_RENDERER_AOPASS_H
+#ifndef YAVE_RENDERER_TEMPORALPASS_H
+#define YAVE_RENDERER_TEMPORALPASS_H
 
 #include "GBufferPass.h"
 
-#include <y/core/Vector.h>
-
 namespace yave {
 
-struct AOSettings {
-    enum class AOMethod {
-        MiniEngine,
+struct TemporalPass {
+    FrameGraphImageId out;
 
-        RTAOFallback = MiniEngine,
-        RTAO,
-
-        None,
-    };
-
-    AOMethod method = AOMethod::RTAO;
-
-    struct {
-        u32 level_count = 2;
-        float blur_tolerance = 4.6f;
-        float upsample_tolerance = 12.0f;
-        float noise_filter_tolerance = 0.0f;
-    } mini_engine;
-
-    struct {
-        u32 ray_count = 1;
-        float max_dist = 1.0f;
-
-        float filter_sigma = 4.0f;
-    } rtao;
+    static TemporalPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_color, FrameGraphPersistentResourceId persistent_id);
 };
-
-struct AOPass {
-    FrameGraphImageId ao;
-
-    static AOPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const AOSettings& settings = AOSettings());
-};
-
 
 }
 
-#endif // YAVE_RENDERER_AOPASS_H
+#endif // YAVE_RENDERER_TEMPORALPASS_H
 

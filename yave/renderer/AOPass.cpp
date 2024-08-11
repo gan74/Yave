@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include "AOPass.h"
 #include "DownsamplePass.h"
+#include "TemporalPass.h"
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -217,7 +218,7 @@ static auto generate_sample_dirs(u64 seed) {
 static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass& gbuffer, u32 ray_count, float max_dist) {
     const auto sample_dirs = generate_sample_dirs(framegraph.frame_id());
 
-    const math::Vec2ui size = framegraph.image_size(gbuffer.depth) / 2;
+    const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("RTAO pass");
 
@@ -244,10 +245,9 @@ static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass&
 
 
 static FrameGraphImageId filter_rtao(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_ao, bool vertical, float sigma) {
-    const math::Vec2ui full_size = framegraph.image_size(gbuffer.depth);
-    const math::Vec2ui size = vertical ? full_size : math::Vec2ui(full_size.x(), framegraph.image_size(in_ao).y());
+    const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
-    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Filter RTAO pass");
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass(vertical ? "Filter RTAO vertical pass" : "Filter RTAO horizontal pass");
 
     const auto filtered = builder.declare_image(VK_FORMAT_R8_UNORM, size);
 
@@ -257,8 +257,8 @@ static FrameGraphImageId filter_rtao(FrameGraph& framegraph, const GBufferPass& 
     builder.add_uniform_input(gbuffer.depth);
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_inline_input(InlineDescriptor(weights));
     builder.add_storage_output(filtered);
+    builder.add_inline_input(InlineDescriptor(weights));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         recorder.dispatch_size(device_resources()[vertical ? DeviceResources::VFilterRTAOProgram : DeviceResources::HFilterRTAOProgram], size, self->descriptor_sets());
     });
@@ -296,10 +296,12 @@ AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const 
                 ao = compute_rtao(framegraph, gbuffer, settings.rtao.ray_count, settings.rtao.max_dist);
 
                 if(settings.rtao.filter_sigma > 0.0f) {
-                    const auto filter_region = framegraph.region("Filter");
                     ao = filter_rtao(framegraph, gbuffer, ao, false, settings.rtao.filter_sigma);
                     ao = filter_rtao(framegraph, gbuffer, ao, true, settings.rtao.filter_sigma);
                 }
+
+                static const FrameGraphPersistentResourceId persistent_id = FrameGraphPersistentResourceId::create();
+                ao = TemporalPass::create(framegraph, gbuffer, ao, persistent_id).out;
             }
         } break;
 

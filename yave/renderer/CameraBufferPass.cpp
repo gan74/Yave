@@ -49,27 +49,19 @@ static math::Vec2 compute_jitter(TAASettings::JitterSeq jitter, u64 jitter_index
 }
 
 
-CameraBufferPass CameraBufferPass::create_no_jitter(FrameGraph& framegraph, const SceneView& view) {
-    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Camera buffer pass");
-
-    const auto camera = builder.declare_typed_buffer<shader::Camera>();
-    builder.map_buffer(camera, shader::Camera(view.camera()));
-
-    CameraBufferPass pass;
-    pass.taa_settings.enable = false;
-    pass.view = view;
-    pass.unjittered_view = view;
-    pass.camera = camera;
-    return pass;
-}
-
-CameraBufferPass CameraBufferPass::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const TAASettings& settings) {
-    if(!settings.enable) {
-        return create_no_jitter(framegraph, view);
+CameraBufferPass CameraBufferPass::create_no_jitter(FrameGraph& framegraph, const SceneView& view, FrameGraphPersistentResourceId persistent_id) {
+    TAASettings settings;
+    {
+        settings.enable = false;
     }
 
+    return create(framegraph, view, {}, persistent_id, settings);
+}
+
+CameraBufferPass CameraBufferPass::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, FrameGraphPersistentResourceId persistent_id, const TAASettings& settings) {
     const u64 jitter_index = framegraph.frame_id() % 1024;
-    const SceneView jittered_view = SceneView(view.scene(), view.camera().jittered(compute_jitter(settings.jitter, jitter_index), size, settings.jitter_intensity));
+    const Camera jittered_camera = settings.enable ? view.camera().jittered(compute_jitter(settings.jitter, jitter_index), size, settings.jitter_intensity) : view.camera();
+    const SceneView jittered_view = SceneView(view.scene(), jittered_camera);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Camera buffer pass");
 
@@ -78,8 +70,7 @@ CameraBufferPass CameraBufferPass::create(FrameGraph& framegraph, const SceneVie
 
     builder.add_input_usage(camera, BufferUsage::UniformBit);
 
-    static const FrameGraphPersistentResourceId camera_id = FrameGraphPersistentResourceId::create();
-    const FrameGraphBufferId prev_camera = framegraph.make_persistent_and_get_prev(camera, camera_id);
+    const FrameGraphBufferId prev_camera = framegraph.make_persistent_and_get_prev(camera, persistent_id);
 
     if(prev_camera.is_valid()) {
         builder.add_storage_output(camera);

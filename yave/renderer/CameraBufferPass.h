@@ -61,8 +61,8 @@ struct CameraBufferPass {
 
     TAASettings taa_settings;
 
-    static CameraBufferPass create_no_jitter(FrameGraph&, const SceneView& view);
-    static CameraBufferPass create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, const TAASettings& settings = {});
+    static CameraBufferPass create_no_jitter(FrameGraph&, const SceneView& view, FrameGraphPersistentResourceId persistent_id);
+    static CameraBufferPass create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, FrameGraphPersistentResourceId persistent_id, const TAASettings& settings = {});
 };
 
 }
