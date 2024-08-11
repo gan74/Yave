@@ -301,7 +301,8 @@ AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const 
                 }
 
                 static const FrameGraphPersistentResourceId persistent_id = FrameGraphPersistentResourceId::create();
-                ao = TemporalPass::create(framegraph, gbuffer, ao, persistent_id).out;
+                static const FrameGraphPersistentResourceId depth_persistent_id = FrameGraphPersistentResourceId::create();
+                ao = TemporalPass::create(framegraph, gbuffer, ao, persistent_id, depth_persistent_id).out;
             }
         } break;
 

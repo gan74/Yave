@@ -31,7 +31,13 @@ SOFTWARE.
 
 namespace yave {
 
-TemporalPass TemporalPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_color, FrameGraphPersistentResourceId persistent_id) {
+TemporalPass TemporalPass::create(
+        FrameGraph& framegraph,
+        const GBufferPass& gbuffer,
+        FrameGraphImageId in_color,
+        FrameGraphPersistentResourceId persistent_id,
+        FrameGraphPersistentResourceId depth_persistent_id) {
+
     const math::Vec2ui size = framegraph.image_size(in_color);
     const ImageFormat format = framegraph.image_format(in_color);
 
@@ -40,8 +46,9 @@ TemporalPass TemporalPass::create(FrameGraph& framegraph, const GBufferPass& gbu
     const auto out = builder.declare_image(format, size);
     builder.add_input_usage(out, ImageUsage::TextureBit);
 
+    const FrameGraphImageId prev_depth = framegraph.make_persistent_and_get_prev(gbuffer.depth, depth_persistent_id);
     const FrameGraphImageId prev = framegraph.make_persistent_and_get_prev(out, persistent_id);
-    if(!prev.is_valid()) {
+    if(!prev.is_valid() || !prev_depth.is_valid()) {
         TemporalPass pass;
         pass.out = in_color;
         return pass;
@@ -49,7 +56,10 @@ TemporalPass TemporalPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
     builder.add_uniform_input(in_color);
     builder.add_uniform_input(prev);
+    builder.add_uniform_input(gbuffer.depth);
+    builder.add_uniform_input(prev_depth);
     builder.add_uniform_input(gbuffer.motion);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_color_output(out);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::TemporalMaterialTemplate];

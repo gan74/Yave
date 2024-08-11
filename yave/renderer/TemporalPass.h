@@ -29,7 +29,7 @@ namespace yave {
 struct TemporalPass {
     FrameGraphImageId out;
 
-    static TemporalPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_color, FrameGraphPersistentResourceId persistent_id);
+    static TemporalPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_color, FrameGraphPersistentResourceId persistent_id, FrameGraphPersistentResourceId depth_persistent_id);
 };
 
 }

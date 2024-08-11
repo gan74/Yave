@@ -4,10 +4,19 @@
 Sampler2D in_color;
 
 [[vk::binding(1)]]
-Sampler2D in_prev;
+Sampler2D in_prev_color;
 
 [[vk::binding(2)]]
+Sampler2D<float> in_depth;
+
+[[vk::binding(3)]]
+Sampler2D<float> in_prev_depth;
+
+[[vk::binding(4)]]
 Sampler2D<float2> in_motion;
+
+[[vk::binding(5)]]
+ConstantBuffer<Camera> camera;
 
 
 
@@ -25,10 +34,24 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
 
     const float4 current = in_color[coord];
 
-    if(all(saturate(prev_uv) == prev_uv)) {
-        const float4 prev = in_prev.SampleLevel(prev_uv, 0.0);
-        return lerp(current, prev, 0.9);
+    if(any(saturate(prev_uv) != prev_uv)) {
+        return current;
     }
 
-    return current;
+    const float depth = in_depth.Sample(uv);
+    const float prev_depth = in_prev_depth.Sample(prev_uv);
+
+    if(is_depth_far(depth) || is_depth_far(prev_depth)) {
+        return current;
+    }
+
+    const float3 world_pos = unproject(uv, depth, camera.inv_unjittered_view_proj);
+    const float3 prev_pos = project(world_pos, camera.prev_unjittered_view_proj);
+
+    if(length(prev_pos - float3(prev_uv, prev_depth)) > 0.01) {
+        return current;
+    }
+
+    const float4 prev = in_prev_color.SampleLevel(prev_uv, 0.0);
+    return lerp(current, prev, 0.9);
 }
