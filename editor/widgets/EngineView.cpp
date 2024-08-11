@@ -520,6 +520,8 @@ void EngineView::draw_settings_menu() {
             ImGui::SliderInt("Ray count", &ray, 1, 16);
             ImGui::SliderFloat("Max ray length", &settings.rtao.max_dist, 0.25f, 8.0f);
             ImGui::Separator();
+            ImGui::Checkbox("Temporal stabilisation", &settings.rtao.temporal);
+            ImGui::Separator();
             ImGui::SliderFloat("Filter sigma", &settings.rtao.filter_sigma, 0.0f, 8.0f);
             settings.rtao.ray_count = ray;
             ImGui::EndMenu();

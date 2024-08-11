@@ -52,6 +52,8 @@ struct AOSettings {
         float max_dist = 1.0f;
 
         float filter_sigma = 4.0f;
+
+        bool temporal = true;
     } rtao;
 };
 

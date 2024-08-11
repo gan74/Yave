@@ -53,5 +53,5 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     }
 
     const float4 prev = in_prev_color.SampleLevel(prev_uv, 0.0);
-    return lerp(current, prev, 0.9);
+    return lerp(current, prev, 0.75);
 }

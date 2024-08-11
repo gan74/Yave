@@ -300,9 +300,11 @@ AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const 
                     ao = filter_rtao(framegraph, gbuffer, ao, true, settings.rtao.filter_sigma);
                 }
 
-                static const FrameGraphPersistentResourceId persistent_id = FrameGraphPersistentResourceId::create();
-                static const FrameGraphPersistentResourceId depth_persistent_id = FrameGraphPersistentResourceId::create();
-                ao = TemporalPass::create(framegraph, gbuffer, ao, persistent_id, depth_persistent_id).out;
+                if(settings.rtao.temporal) {
+                    static const FrameGraphPersistentResourceId persistent_id = FrameGraphPersistentResourceId::create();
+                    static const FrameGraphPersistentResourceId depth_persistent_id = FrameGraphPersistentResourceId::create();
+                    ao = TemporalPass::create(framegraph, gbuffer, ao, persistent_id, depth_persistent_id).out;
+                }
             }
         } break;
 
