@@ -90,7 +90,7 @@ static Texture render_scene(const Scene& scene) {
             builder.add_uniform_input(renderer.gbuffer.depth);
             builder.add_external_input(StorageView(out));
             builder.set_render_func([size = out.size()](CmdBufferRecorder& rec, const FrameGraphPass* self) {
-                rec.dispatch_size(resources()[EditorResources::DepthAlphaProgram], size, self->descriptor_sets());
+                rec.dispatch_threads(resources()[EditorResources::DepthAlphaProgram], size, self->descriptor_sets());
             });
         }
 
@@ -188,7 +188,7 @@ static Texture render_texture(const AssetPtr<Texture>& tex) {
     StorageTexture out = StorageTexture(ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));
     {
         const auto ds = DescriptorSet(Descriptor(*tex, SamplerType::LinearClamp), StorageView(out));
-        recorder.dispatch_size(device_resources()[DeviceResources::CopyProgram],  out.size(), ds);
+        recorder.dispatch_threads(device_resources()[DeviceResources::CopyProgram],  out.size(), ds);
     }
     recorder.submit().wait();
     return out;

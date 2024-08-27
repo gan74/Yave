@@ -152,7 +152,7 @@ static Texture create_brdf_lut(const ComputeProgram& brdf_integrator, usize size
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     {
         const auto region = recorder.region("create_brdf_lut");
-        recorder.dispatch_size(brdf_integrator, image.size(), DescriptorSet(StorageView(image)));
+        recorder.dispatch_threads(brdf_integrator, image.size(), DescriptorSet(StorageView(image)));
     }
     recorder.submit().wait();
 

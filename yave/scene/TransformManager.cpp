@@ -123,7 +123,7 @@ void TransformManager::update_buffer(ComputeCapableCmdBufferRecorder& recorder) 
         }
 
         const auto& program = device_resources()[DeviceResources::UpdateTransformsProgram];
-        recorder.dispatch_size(program, math::Vec2ui(u32(update_count), 1), DescriptorSet(_transform_buffer, transform_staging, index_staging, InlineDescriptor(u32(update_count))));
+        recorder.dispatch_threads(program, math::Vec2ui(u32(update_count), 1), DescriptorSet(_transform_buffer, transform_staging, index_staging, InlineDescriptor(u32(update_count))));
     }
 
 

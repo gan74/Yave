@@ -125,7 +125,7 @@ static void fill_probe(core::MutableSpan<ProbeBaseView> views, const Image<Image
                 z,
                 InlineDescriptor(roughness)
             );
-            recorder.dispatch_size(conv_program, size, ds);
+            recorder.dispatch_threads(conv_program, size, ds);
 
             size /= 2;
         }

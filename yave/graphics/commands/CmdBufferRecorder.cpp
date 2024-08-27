@@ -502,17 +502,17 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
     vkCmdDispatch(vk_cmd_buffer(), size.x(), size.y(), size.z());
 }
 
-void CmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
-    math::Vec3ui dispatch_size;
+void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+    math::Vec3ui dispatch_threads;
     const math::Vec3ui program_size = program.local_size();
     for(usize i = 0; i != 3; ++i) {
-        dispatch_size[i] = size[i] / program_size[i] + !!(size[i] % program_size[i]);
+        dispatch_threads[i] = size[i] / program_size[i] + !!(size[i] % program_size[i]);
     }
-    dispatch(program, dispatch_size, descriptor_sets);
+    dispatch(program, dispatch_threads, descriptor_sets);
 }
 
-void CmdBufferRecorderBase::dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
-    dispatch_size(program, math::Vec3ui(size, 1), descriptor_sets);
+void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+    dispatch_threads(program, math::Vec3ui(size, 1), descriptor_sets);
 }
 
 

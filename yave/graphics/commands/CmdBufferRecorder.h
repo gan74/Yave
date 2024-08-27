@@ -137,8 +137,8 @@ class CmdBufferRecorderBase : NonMovable {
 
     protected:
         void dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
-        void dispatch_size(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
-        void dispatch_size(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+        void dispatch_threads(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+        void dispatch_threads(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
 
         void raytrace(const RaytracingProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
 
@@ -181,7 +181,7 @@ class ComputeCapableCmdBufferRecorder : public CmdBufferRecorderBase {
 
     public:
         using CmdBufferRecorderBase::dispatch;
-        using CmdBufferRecorderBase::dispatch_size;
+        using CmdBufferRecorderBase::dispatch_threads;
 };
 
 class TransferCmdBufferRecorder final : public CmdBufferRecorderBase {

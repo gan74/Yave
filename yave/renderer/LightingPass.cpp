@@ -293,7 +293,7 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
             const math::Vec2ui light_count(point_count, spot_count);
             const auto light_count_set = DescriptorSet(InlineDescriptor(light_count));
             const std::array<DescriptorSetBase, 2> descriptor_sets = {self->descriptor_sets()[0], light_count_set};
-            recorder.dispatch_size(program, size, descriptor_sets);
+            recorder.dispatch_threads(program, size, descriptor_sets);
         }
     });
 }
