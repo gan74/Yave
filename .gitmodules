@@ -4,6 +4,3 @@
 [submodule "external/spirv_reflect"]
 	path = external/spirv_reflect
 	url = https://github.com/KhronosGroup/SPIRV-Reflect.git
-[submodule "external/slang"]
-	path = external/slang
-	url = https://github.com/gan74/slang.git
