@@ -96,6 +96,7 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData::screen("temporal"),
     DeviceMaterialData::screen("taa_resolve"),
     DeviceMaterialData{"id", "id", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{"debug_probes", "debug_probes", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
 };
 
 static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputePrograms)> compute_datas = {
@@ -115,9 +116,12 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "depth_bounds",
     "prev_camera",
     "update_transforms",
+    "place_probes",
     "filter_rtao_HORIZONTAL",
     "filter_rtao_VERTICAL",
+    "debug_gi",
     "rtao",
+    "trace_probes",
 };
 
 

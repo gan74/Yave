@@ -27,6 +27,7 @@ SOFTWARE.
 #include "ExposurePass.h"
 #include "ToneMappingPass.h"
 #include "AOPass.h"
+#include "GIPass.h"
 #include "BloomPass.h"
 #include "TAAPass.h"
 
@@ -50,6 +51,7 @@ struct DefaultRenderer {
     BloomPass bloom;
     ToneMappingPass tone_mapping;
     AOPass ao;
+    GIPass gi;
     TAAPass taa;
 
 

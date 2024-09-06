@@ -57,11 +57,14 @@ class DeviceResources final : NonMovable {
             DepthBoundProgram,
             PrevCameraProgram,
             UpdateTransformsProgram,
+            PlaceProbesProgram,
             HFilterRTAOProgram,
             VFilterRTAOProgram,
+            DebugGIprogram,
 
             MaxNonRTComputePrograms,
             RTAOProgram = MaxNonRTComputePrograms,
+            TraceProbesProgram,
 
             MaxComputePrograms
         };
@@ -98,6 +101,7 @@ class DeviceResources final : NonMovable {
             TAAResolveMaterialTemplate,
 
             IdMaterialTemplate,
+            ProbeDebugTemplate,
 
             MaxMaterialTemplates
         };

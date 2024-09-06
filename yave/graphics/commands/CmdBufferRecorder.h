@@ -31,6 +31,16 @@ SOFTWARE.
 
 namespace yave {
 
+template<usize N>
+math::Vec<N, u32> divide_align(math::Vec<N, u32> size, math::Vec<N, u32> up_to) {
+    math::Vec<N, u32> aligned;
+    for(usize i = 0; i != N; ++i) {
+        aligned[i] = size[i] / up_to[i] + !!(size[i] % up_to[i]);
+    }
+    return aligned;
+}
+
+
 class CmdBufferRegion : NonCopyable {
     public:
         CmdBufferRegion() = default;

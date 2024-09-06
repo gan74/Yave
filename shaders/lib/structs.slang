@@ -1,6 +1,13 @@
 #ifndef STRUCT_SLANG
 #define STRUCT_SLANG
 
+#ifdef __cplusplus
+#define STATIC_ASSERT(cond) static_assert(cond);
+#else
+#define STATIC_ASSERT(cond)
+#endif
+
+
 struct TransformableData {
     float4x4 current;
     float4x4 last;
@@ -125,5 +132,28 @@ struct AtmosphereParams {
     float3 sun_color;
     float density_falloff;
 };
+
+struct SHBase {
+    float Y00, Y11, Y10, Y1_1, Y21, Y2_1, Y2_2, Y20, Y22;
+
+#ifndef __cplusplus
+    __init() {
+        Y00 = Y11 = Y10 = Y1_1 = Y21 = Y2_1 = Y2_2 = Y20 = Y22 = 0.0;
+    }
+#endif
+};
+
+struct GIProbe {
+    float3 position;
+    uint padding_0;
+
+    SHBase sh_r;
+    SHBase sh_g;
+    SHBase sh_b;
+    float padding_1;
+};
+
+STATIC_ASSERT(sizeof(GIProbe) % 16 == 0)
+
 
 #endif
