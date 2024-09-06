@@ -6,4 +6,4 @@
 	url = https://github.com/KhronosGroup/SPIRV-Reflect.git
 [submodule "external/slang"]
 	path = external/slang
-	url = https://github.com/gan74/slang.git
+	url = https://github.com/shader-slang/slang.git

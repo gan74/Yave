@@ -25,6 +25,11 @@ struct PixelStageOut {
     float2 motion;
     RawGBuffer gbuffer;
     float3 emissive;
+
+    __init() {
+        motion = 0.0;
+        emissive = 0.0;
+    }
 };
 
 
