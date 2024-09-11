@@ -35,17 +35,14 @@ SOFTWARE.
 namespace yave {
 
 struct DirectVertex {
-    math::Vec3 pos;
-    u32 color;
+        math::Vec3 pos;
+        u32 color;
 };
 
 class DirectDrawPrimitive {
     public:
-        const u32 default_color = 0xFFFF00FF;
-
         DirectDrawPrimitive(std::string_view name);
 
-        void set_color(const math::Vec3& color);
         void set_color(u32 color);
 
         u32 color() const;
@@ -66,7 +63,7 @@ class DirectDrawPrimitive {
 
         void push_vertex(const math::Vec3& v);
 
-        u32 _color = default_color;
+        u32 _color = 0xFFFFFFFF;
 
         core::Vector<DirectVertex> _vertices;
         core::String _name;
@@ -77,7 +74,7 @@ class DirectDraw : NonCopyable {
     public:
         void clear();
 
-        DirectDrawPrimitive* add_primitive(std::string_view name, const math::Vec3& color = math::Vec3(0, 0, 1));
+        DirectDrawPrimitive* add_primitive(std::string_view name, u32 color = 0xFFFF0000);
 
         core::Span<std::unique_ptr<DirectDrawPrimitive>> primtitives() const;
 

@@ -31,6 +31,7 @@ SOFTWARE.
 namespace yave {
 
 core::Span<const char*> raytracing_extensions();
+core::Span<const char*> validation_extensions();
 
 float device_score(const PhysicalDevice& device);
 

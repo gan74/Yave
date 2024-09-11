@@ -40,6 +40,8 @@ SOFTWARE.
 #include <y/concurrent/Mutexed.h>
 #include <y/core/ScratchPad.h>
 
+#include <y/utils/log.h>
+
 
 namespace yave {
 namespace device {
@@ -73,8 +75,6 @@ std::atomic<bool> destroying = false;
 static void init_vk_device() {
     y_profile();
 
-    const DebugParams& debug = device::instance->debug_params();
-
     const core::Vector<VkQueueFamilyProperties> queue_families = enumerate_family_properties(vk_physical_device());
 
     const VkQueueFlags graphic_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
@@ -86,7 +86,7 @@ static void init_vk_device() {
     auto extensions = core::Vector<const char*>::with_capacity(4);
     extensions << VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 
-    if(device::device_properties.has_raytracing) {
+    if(raytracing_enabled()) {
         for(const char* ext_name : raytracing_extensions()) {
             extensions << ext_name;
         }
@@ -111,7 +111,6 @@ static void init_vk_device() {
     print_physical_properties(physical_device().vk_properties());
     print_enabled_extensions(extensions);
 
-
     core::ScratchPad<float> queue_priorities(queue_count);
     std::fill_n(queue_priorities.data(), queue_priorities.size(), 0.0f);
     queue_priorities[0] = 1.0f;
@@ -131,7 +130,7 @@ static void init_vk_device() {
         required_features_1_2.pNext = &required_features_1_3;
     }
 
-    if(device::device_properties.has_raytracing) {
+    if(raytracing_enabled()) {
         required_features_ray_query.pNext = &required_features_accel;
         required_features_accel.pNext = &required_features_raytracing;
         required_features_raytracing.pNext = features.pNext;
@@ -144,10 +143,14 @@ static void init_vk_device() {
         create_info.pNext = &features;
         create_info.enabledExtensionCount = u32(extensions.size());
         create_info.ppEnabledExtensionNames = extensions.data();
-        create_info.enabledLayerCount = u32(debug.device_layers().size());
-        create_info.ppEnabledLayerNames = debug.device_layers().data();
         create_info.queueCreateInfoCount = 1;
         create_info.pQueueCreateInfos = &queue_create_info;
+    }
+
+    if(instance_params().validation_layers) {
+        const auto ext = validation_extensions();
+        create_info.enabledLayerCount = u32(ext.size());
+        create_info.ppEnabledLayerNames = ext.data();
     }
 
     {
@@ -157,6 +160,10 @@ static void init_vk_device() {
     }
 
     print_properties(device::device_properties);
+
+    if(device::device_properties.has_raytracing && !raytracing_enabled()) {
+        log_msg("Raytracing disabled", Log::Warning);
+    }
 
     device::queue.init(main_queue_index, create_queue(device::vk_device, main_queue_index, 0));
 }
@@ -235,8 +242,8 @@ bool device_initialized() {
 
 
 
-const DebugParams& debug_params() {
-    return device::instance->debug_params();
+const InstanceParams& instance_params() {
+    return device::instance->instance_params();
 }
 
 
@@ -307,7 +314,7 @@ const DeviceProperties& device_properties() {
 }
 
 bool raytracing_enabled() {
-    return device_properties().has_raytracing;
+    return device_properties().has_raytracing && instance_params().raytracing;
 }
 
 LifetimeManager& lifetime_manager() {

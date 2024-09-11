@@ -45,6 +45,14 @@ core::Span<const char*> raytracing_extensions() {
     return extensions;
 }
 
+core::Span<const char*> validation_extensions() {
+    static constexpr std::array extensions = {
+        "VK_LAYER_KHRONOS_validation", "VK_LAYER_LUNARG_monitor"
+    };
+
+    return extensions;
+}
+
 float device_score(const PhysicalDevice& device) {
     if(!has_required_features(device)) {
         return -std::numeric_limits<float>::max();
@@ -211,8 +219,9 @@ void print_physical_properties(const VkPhysicalDeviceProperties& properties) {
 }
 
 void print_enabled_extensions(core::Span<const char*> extensions) {
+    log_msg(fmt("{} extension enabled", extensions.size()));
     for(const char* ext : extensions) {
-        log_msg(fmt("{} enabled", ext));
+        log_msg(fmt("  - {}", ext));
     }
 }
 
@@ -220,7 +229,7 @@ void print_properties(const DeviceProperties& properties) {
     log_msg(fmt("max_memory_allocations = {}", properties.max_memory_allocations));
     log_msg(fmt("max_inline_uniform_size = {}", properties.max_inline_uniform_size));
     log_msg(fmt("max_uniform_buffer_size = {}", properties.max_uniform_buffer_size));
-    log_msg(fmt("raytracing = {}", properties.has_raytracing));
+    log_msg(fmt("raytracing support = {}", properties.has_raytracing));
 }
 
 

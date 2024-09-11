@@ -23,6 +23,8 @@ SOFTWARE.
 #include "Instance.h"
 #include "DebugUtils.h"
 
+#include "deviceutils.h"
+
 #include <yave/graphics/graphics.h>
 
 #include <y/core/Span.h>
@@ -53,25 +55,24 @@ static bool try_enable_extension(core::Vector<const char*>& exts, const char* na
     return false;
 }
 
-Instance::Instance(DebugParams debug) : _debug_params(debug) {
+Instance::Instance(InstanceParams params) : _params(params) {
     initialize_volk();
 
-    auto extention_names = core::Vector<const char*>::with_capacity(4);
-    extention_names = {
+    auto extension_names = core::Vector<const char*>::with_capacity(8);
+    extension_names = {
         VK_KHR_SURFACE_EXTENSION_NAME,
     };
 
 #ifdef Y_OS_WIN
-    extention_names << VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+    extension_names << VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 #endif
 
 #ifdef Y_OS_LINUX
-    extention_names << VK_KHR_XCB_SURFACE_EXTENSION_NAME;
+    extension_names << VK_KHR_XCB_SURFACE_EXTENSION_NAME;
 #endif
 
-
-    if(_debug_params.debug_features_enabled()) {
-        _debug_params.set_enabled(try_enable_extension(extention_names, DebugUtils::extension_name()));
+    if(_params.validation_layers) {
+        _params.validation_layers = try_enable_extension(extension_names, DebugUtils::extension_name());
     }
 
     VkApplicationInfo app_info = vk_struct();
@@ -83,19 +84,23 @@ Instance::Instance(DebugParams debug) : _debug_params(debug) {
 
     VkInstanceCreateInfo create_info = vk_struct();
     {
-        create_info.enabledExtensionCount = u32(extention_names.size());
-        create_info.ppEnabledExtensionNames = extention_names.data();
-        create_info.enabledLayerCount = u32(_debug_params.instance_layers().size());
-        create_info.ppEnabledLayerNames = _debug_params.instance_layers().data();
+        create_info.enabledExtensionCount = u32(extension_names.size());
+        create_info.ppEnabledExtensionNames = extension_names.data();
         create_info.pApplicationInfo = &app_info;
+    }
+
+    if(_params.validation_layers) {
+        const auto ext = validation_extensions();
+        create_info.enabledLayerCount = u32(ext.size());
+        create_info.ppEnabledLayerNames = ext.data();
     }
 
     vk_check(vkCreateInstance(&create_info, vk_allocation_callbacks(), &_instance));
 
     volkLoadInstance(_instance);
 
-    if(_debug_params.debug_features_enabled()) {
-        log_msg("Vulkan debugging enabled");
+    if(_params.validation_layers) {
+        log_msg("Vulkan validation enabled");
         _extensions.debug_utils = std::make_unique<DebugUtils>(_instance);
     }
 }
@@ -106,8 +111,8 @@ Instance::~Instance() {
     vkDestroyInstance(_instance, vk_allocation_callbacks());
 }
 
-const DebugParams& Instance::debug_params() const {
-    return _debug_params;
+const InstanceParams& Instance::instance_params() const {
+    return _params;
 }
 
 const DebugUtils* Instance::debug_utils() const {

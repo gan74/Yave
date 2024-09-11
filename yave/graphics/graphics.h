@@ -37,9 +37,7 @@ void destroy_device();
 
 bool device_initialized();
 
-
-
-const DebugParams& debug_params();
+const InstanceParams& instance_params();
 
 VkDevice vk_device();
 VkInstance vk_device_instance();

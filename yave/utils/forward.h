@@ -52,7 +52,6 @@ class CmdTimingRecorder;
 class ComputeCapableCmdBufferRecorder;
 class ComputeCmdBufferRecorder;
 class ComputeProgram;
-class DebugParams;
 class DebugUtils;
 class DedicatedDeviceMemoryAllocator;
 class Descriptor;
@@ -134,7 +133,6 @@ class ShaderProgramBase;
 class Skeleton;
 class SkeletonInstance;
 class SkyLightComponent;
-class SpecializationData;
 class SpirVData;
 class SpotLightComponent;
 class StaticMesh;
@@ -154,6 +152,8 @@ class TransformManager;
 class TransformableComponent;
 class TransientBuffer;
 class Window;
+struct AOPass;
+struct AOSettings;
 struct Allocator;
 struct AssetData;
 struct AssetDesc;
@@ -208,6 +208,7 @@ struct ImageCreateInfo;
 struct ImageSampler;
 struct InlineBlock;
 struct InlineStorage;
+struct InstanceParams;
 struct KeyEqual;
 struct KeyHash;
 struct LayoutPools;
@@ -223,12 +224,11 @@ struct ObjectIndices;
 struct PackedVertex;
 struct Plane;
 struct Pool;
+struct RaytracingPass;
 struct Region;
 struct RendererSettings;
 struct ResourceCreateInfo;
 struct ResourceUsageInfo;
-struct AOPass;
-struct AOSettings;
 struct SceneRenderSubPass;
 struct SceneVisibility;
 struct SceneVisibilitySubPass;
@@ -241,12 +241,18 @@ struct SpecularMaterialData;
 struct SubMesh;
 struct TAAPass;
 struct TAASettings;
+struct TemporalPass;
 struct ToneMappingPass;
 struct ToneMappingSettings;
 struct TransformData;
 struct TransformableSceneObjectData;
 struct Viewport;
 struct VolumeSampler;
+}
+
+
+namespace editor {
+struct DebugValues;
 }
 
 

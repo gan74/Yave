@@ -23,7 +23,6 @@ SOFTWARE.
 #define YAVE_DEVICE_INSTANCE_H
 
 #include "PhysicalDevice.h"
-#include "DebugParams.h"
 
 #include <y/core/Vector.h>
 
@@ -33,12 +32,18 @@ namespace yave {
 
 class DebugUtils;
 
+struct InstanceParams {
+    bool validation_layers = false;
+    bool raytracing = true;
+
+};
+
 class Instance : NonMovable {
     public:
-        Instance(DebugParams debug);
+        Instance(InstanceParams params);
         ~Instance();
 
-        const DebugParams& debug_params() const;
+        const InstanceParams& instance_params() const;
 
         const DebugUtils* debug_utils() const;
 
@@ -51,8 +56,9 @@ class Instance : NonMovable {
             std::unique_ptr<DebugUtils> debug_utils;
         } _extensions;
 
-        DebugParams _debug_params;
         VkInstance _instance = {};
+
+        InstanceParams _params;
 
 };
 
