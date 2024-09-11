@@ -130,15 +130,15 @@ SH operator*(SH a, float b) {
 }
 
 SHRgb operator*(SH a, float3 b) {
-    return SHRgb(a * b.r, a * b.g, a * b.g);
+    return SHRgb(a * b.r, a * b.g, a * b.b);
 }
 
 SHRgb operator+(SHRgb a, SHRgb b) {
-    return SHRgb(a.r + b.r, a.g + b.g, a.g + b.g);
+    return SHRgb(a.r + b.r, a.g + b.g, a.b + b.b);
 }
 
 SHRgb operator*(SHRgb a, float b) {
-    return SHRgb(a.r * b, a.g * b, a.g * b);
+    return SHRgb(a.r * b, a.g * b, a.b * b);
 }
 
 #endif // SH
