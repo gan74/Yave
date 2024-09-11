@@ -58,6 +58,7 @@ class DeviceResources final : NonMovable {
             PrevCameraProgram,
             UpdateTransformsProgram,
             PlaceProbesProgram,
+            PropagateProbesProgram,
             HFilterRTAOProgram,
             VFilterRTAOProgram,
             DebugGIprogram,

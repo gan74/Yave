@@ -32,21 +32,58 @@ SOFTWARE.
 
 namespace yave {
 
+static const IBLProbe* find_probe(const SceneView& scene_view) {
+    for(const SkyLightObject& obj : scene_view.scene()->sky_lights()) {
+        if((obj.visibility_mask & scene_view.visibility_mask()) == 0) {
+            continue;
+        }
+
+        const SkyLightComponent& sky = obj.component;
+        if(const IBLProbe* probe = sky.probe().get()) {
+            y_debug_assert(!probe->is_null());
+            return probe;
+        }
+    }
+
+    return device_resources().empty_probe().get();
+}
+
+static math::Vec2ui probe_grid_size(FrameGraph& framegraph, const GBufferPass& gbuffer) {
+    const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
+    return divide_align(size, device_resources()[DeviceResources::PlaceProbesProgram].local_size().to<2>());
+}
 
 static FrameGraphMutableTypedBufferId<shader::GIProbe> place_probes(FrameGraph& framegraph, const GBufferPass& gbuffer) {
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Place probes pass");
 
-    const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
-    const math::Vec2ui probes = divide_align(size, device_resources()[DeviceResources::PlaceProbesProgram].local_size().to<2>());
+    const math::Vec2ui probe_grid = probe_grid_size(framegraph, gbuffer);
 
-    const auto probe_buffer = builder.declare_typed_buffer<shader::GIProbe>(probes.x() * probes.y());
+    const auto probe_buffer = builder.declare_typed_buffer<shader::GIProbe>(probe_grid.x() * probe_grid.y());
 
-    builder.add_uniform_input(gbuffer.depth);
+    builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_storage_output(probe_buffer);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const ComputeProgram& program = device_resources()[DeviceResources::PlaceProbesProgram];
-        recorder.dispatch(program, math::Vec3ui(probes, 1), self->descriptor_sets());
+        recorder.dispatch(program, math::Vec3ui(probe_grid, 1), self->descriptor_sets());
+    });
+
+    return probe_buffer;
+}
+
+static FrameGraphMutableTypedBufferId<shader::GIProbe> propagate_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphMutableTypedBufferId<shader::GIProbe> probes) {
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Propagate probes pass");
+
+    const math::Vec2ui probe_grid = probe_grid_size(framegraph, gbuffer);
+
+    const auto probe_buffer = builder.declare_typed_buffer<shader::GIProbe>(probe_grid.x() * probe_grid.y());
+    y_debug_assert(framegraph.buffer_size(probes) == framegraph.buffer_size(probe_buffer));
+
+    builder.add_storage_input(probes);
+    builder.add_storage_output(probe_buffer);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        const ComputeProgram& program = device_resources()[DeviceResources::PropagateProbesProgram];
+        recorder.dispatch(program, math::Vec3ui(probe_grid, 1), self->descriptor_sets());
     });
 
     return probe_buffer;
@@ -61,8 +98,11 @@ static void trace_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, Fra
 
     builder.add_storage_output(probes);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_uniform_input(gbuffer.depth);
+    builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
+    builder.add_uniform_input(gbuffer.color, SamplerType::PointClamp);
+    builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
     builder.add_uniform_input(lit);
+    builder.add_external_input(*find_probe(gbuffer.scene_pass.scene_view));
     builder.add_descriptor_binding(Descriptor(tlas));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const ComputeProgram& program = device_resources()[DeviceResources::TraceProbesProgram];
@@ -72,7 +112,7 @@ static void trace_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, Fra
 
 
 static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, FrameGraphTypedBufferId<shader::GIProbe> probes) {
-#if 1
+#if 0
     const usize probe_count = framegraph.buffer_size(probes);
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Probe debug pass");
@@ -100,7 +140,7 @@ static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass&
 
     const auto color = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, size);
 
-    builder.add_uniform_input(gbuffer.depth);
+    builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.color);
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
@@ -117,14 +157,18 @@ static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass&
 
 
 GIPass GIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit) {
-    if(!raytracing_enabled()) {
-        return {lit};
-    }
+    return {lit};
 
     const auto region = framegraph.region("GI");
 
-    const auto probes = place_probes(framegraph, gbuffer);
-    trace_probes(framegraph, gbuffer, lit, probes);
+    auto probes = place_probes(framegraph, gbuffer);
+    probes = propagate_probes(framegraph, gbuffer, probes);
+
+    if(raytracing_enabled()) {
+        trace_probes(framegraph, gbuffer, lit, probes);
+    } else {
+        log_msg("No ray tracing: GI probe update disabled", Log::Warning);
+    }
 
     GIPass pass;
     pass.lit = debug_probes(framegraph, gbuffer, lit, probes);

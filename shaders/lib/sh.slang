@@ -137,6 +137,9 @@ SHRgb operator+(SHRgb a, SHRgb b) {
     return SHRgb(a.r + b.r, a.g + b.g, a.g + b.g);
 }
 
+SHRgb operator*(SHRgb a, float b) {
+    return SHRgb(a.r * b, a.g * b, a.g * b);
+}
 
 #endif // SH
 

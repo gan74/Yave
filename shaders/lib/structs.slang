@@ -150,7 +150,7 @@ struct GIProbe {
     SHBase sh_r;
     SHBase sh_g;
     SHBase sh_b;
-    float padding_1;
+    float hits;
 };
 
 STATIC_ASSERT(sizeof(GIProbe) % 16 == 0)
