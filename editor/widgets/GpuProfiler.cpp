@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdTimingRecorder.h>
 #include <yave/graphics/device/DeviceProperties.h>
-#include <yave/graphics/device/DebugParams.h>
+#include <yave/graphics/device/Instance.h>
 
 #include <editor/UiManager.h>
 
@@ -238,7 +238,7 @@ void GpuProfiler::on_gui() {
         _history.clear();
     }
 
-    if(debug_params().debug_features_enabled()) {
+    if(instance_params().validation_layers) {
         ImGui::SameLine();
         ImGui::TextColored(imgui::error_text_color, "(Debug layers enabled)");
     }

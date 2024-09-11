@@ -35,10 +35,6 @@ namespace yave {
 DirectDrawPrimitive::DirectDrawPrimitive(std::string_view name) : _name(name) {
 }
 
-void DirectDrawPrimitive::set_color(const math::Vec3& color) {
-    set_color(pack_to_u32(math::Vec4(color, 1.0f)));
-}
-
 void DirectDrawPrimitive::set_color(u32 color) {
     _color = color;
 }
@@ -126,7 +122,7 @@ void DirectDraw::clear() {
     _primitives.clear();
 }
 
-DirectDrawPrimitive* DirectDraw::add_primitive(std::string_view name, const math::Vec3& color) {
+DirectDrawPrimitive* DirectDraw::add_primitive(std::string_view name, u32 color) {
     auto& prim = _primitives.emplace_back(std::make_unique<DirectDrawPrimitive>(name));
     prim->set_color(color);
 

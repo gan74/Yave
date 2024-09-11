@@ -39,16 +39,18 @@ SOFTWARE.
 
 using namespace editor;
 
-static bool debug_instance = is_debug_defined;
 static bool multi_viewport = false;
+static InstanceParams params = { .validation_layers = is_debug_defined };
 
 
 static void parse_args(int argc, char** argv) {
     for(std::string_view arg : core::Span<const char*>(argv + 1, argc - 1)) {
         if(arg == "--nodebug") {
-            debug_instance = false;
+            params.validation_layers = false;
         } else if(arg == "--debug") {
-            debug_instance = true;
+            params.validation_layers = true;
+        } else if(arg == "--nort") {
+            params.raytracing = false;
         } else if(arg == "--nomv") {
             multi_viewport = false;
         } else if(arg == "--mv") {
@@ -76,11 +78,10 @@ static void parse_args(int argc, char** argv) {
 }
 
 static Instance create_instance() {
-    y_profile();
-    if(!debug_instance) {
-        log_msg("Vulkan debugging disabled.", Log::Warning);
+    if(!params.validation_layers) {
+        log_msg("Vulkan validation disabled.", Log::Warning);
     }
-    return Instance(debug_instance ? DebugParams::debug() : DebugParams::none());
+    return Instance(params);
 }
 
 
