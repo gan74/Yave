@@ -158,25 +158,29 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
         multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     }
 
-    VkPipelineColorBlendAttachmentState color_blend_attachment = {};
-    {
-        const VkBlendFactor src_blend = src_blend_factor(mat_data._blend_mode);
-        const VkBlendFactor dst_blend = dst_blend_factor(mat_data._blend_mode);
+    auto attachment_blend = [](BlendMode blend_mode) -> VkPipelineColorBlendAttachmentState {
+        const VkBlendFactor src_blend = src_blend_factor(blend_mode);
+        const VkBlendFactor dst_blend = dst_blend_factor(blend_mode);
 
-        color_blend_attachment.blendEnable = mat_data._blend_mode != BlendMode::None;
-        color_blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
-        color_blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
-        color_blend_attachment.dstColorBlendFactor = dst_blend;
-        color_blend_attachment.dstAlphaBlendFactor = dst_blend;
-        color_blend_attachment.srcColorBlendFactor = src_blend;
-        color_blend_attachment.srcAlphaBlendFactor = src_blend;
-    }
+        VkPipelineColorBlendAttachmentState blend = {};
+        {
+            blend.blendEnable = blend_mode != BlendMode::None;
+            blend.colorBlendOp = VK_BLEND_OP_ADD;
+            blend.alphaBlendOp = VK_BLEND_OP_ADD;
+            blend.dstColorBlendFactor = dst_blend;
+            blend.dstAlphaBlendFactor = dst_blend;
+            blend.srcColorBlendFactor = src_blend;
+            blend.srcAlphaBlendFactor = src_blend;
+        }
+        return blend;
+    };
 
-    auto att_blends = core::Vector<VkPipelineColorBlendAttachmentState>(render_pass.attachment_count(), color_blend_attachment);
+    auto att_blends = core::ScratchPad<VkPipelineColorBlendAttachmentState>(render_pass.attachment_count());
     {
         usize index = 0;
         const auto& outputs = program.fragment_outputs();
         for(u32 i = 0; i != att_blends.size(); ++i) {
+            att_blends[i] = i ? attachment_blend(mat_data._blend_mode_other) : attachment_blend(mat_data._blend_mode_0);
             if(index < outputs.size() && outputs[index] == i) {
                 att_blends[i].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
                 ++index;
@@ -191,9 +195,6 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
         color_blending.logicOp = VK_LOGIC_OP_COPY;
         color_blending.attachmentCount = u32(att_blends.size());
         color_blending.pAttachments = att_blends.data();
-        for(usize i = 0; i != 4; ++i) {
-            color_blending.blendConstants[i] = 0.0f;
-        }
     }
 
     VkPipelineDepthStencilStateCreateInfo depth_testing = vk_struct();

@@ -56,8 +56,9 @@ MaterialTemplateData& MaterialTemplateData::set_depth_write(bool write) {
     return *this;
 }
 
-MaterialTemplateData& MaterialTemplateData::set_blend_mode(BlendMode blend) {
-    _blend_mode = blend;
+MaterialTemplateData& MaterialTemplateData::set_blend_mode(BlendMode blend_0, BlendMode others) {
+    _blend_mode_0 = blend_0;
+    _blend_mode_other = others;
     return *this;
 }
 

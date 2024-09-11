@@ -142,7 +142,7 @@ static void render_selection(DirectDraw& draw, const SceneView& scene_view) {
 
         if(const SpotLightObject* obj = scene->spot_light(selected)) {
             const math::Transform<> tr = scene->transform(*obj);
-            const u32 inner_color = pack_to_u32(math::Vec4(1.0f, 1.0f, 0.0f, 0.5f));
+            const u32 inner_color = pack_to_u32(math::Vec4(1.0f, 1.0f, 0.0f, 0.25f));
             const float scale = tr.scale().max_component();
             const auto sphere = obj->component.enclosing_sphere();
             draw.add_primitive("selected light outer")->add_cone(tr.position(), tr.forward(), tr.up(), obj->component.range() * scale, obj->component.half_angle());
