@@ -41,11 +41,9 @@ void comp_main() {
     const GIProbe probe = probes[semantics.work_group_index];
     const SHRgb sh = SHRgb(SH(probe.sh_r), SH(probe.sh_g), SH(probe.sh_b));
 
+    // float3 heat = sh.unproject(surface.normal); //heat_spectrum(probe.hits / PROBE_SAMPLE_COUNT);
+    // heat = lerp(heat, float3(1.0) - heat, print_value(semantics.local_id.xy * 2.0, float2(0.0), float2(PROBE_PIXEL_SIZE / 2, PROBE_PIXEL_SIZE - 1), uint(probe.hits), 2.0, 0.0));
 
-
-    float3 heat = sh.unproject(surface.normal); //heat_spectrum(probe.hits / PROBE_SAMPLE_COUNT);
-    heat = lerp(heat, float3(1.0) - heat, print_value(semantics.local_id.xy * 2.0, float2(0.0), float2(PROBE_PIXEL_SIZE / 2, PROBE_PIXEL_SIZE - 1), uint(probe.hits), 2.0, 0.0));
-
-    out_color[coord] = float4(heat, 1.0);  //float4(sh.unproject(surface.normal), 1.0);
+    out_color[coord] = float4(sh.unproject(surface.normal), 1.0);
 }
 

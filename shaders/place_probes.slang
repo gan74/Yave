@@ -39,7 +39,8 @@ void comp_main() {
     const float3 normal = normalize(cross(world_pos - world_pos_y, world_pos - world_pos_x));
 
     if(semantics.local_index == (semantics.work_group_size.x + 1) * (semantics.work_group_size.y / 2)) {
-        out_probes[semantics.work_group_index] = {world_pos + normal * 0.1};
+        out_probes[semantics.work_group_index].position = world_pos + normal * 0.2;
+        out_probes[semantics.work_group_index].normal = normal;
     }
 }
 

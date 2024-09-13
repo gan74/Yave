@@ -49,6 +49,8 @@ static const IBLProbe* find_probe(const SceneView& scene_view) {
 }
 
 static math::Vec2ui probe_grid_size(FrameGraph& framegraph, const GBufferPass& gbuffer) {
+    //return math::Vec2ui(1, 1);
+
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
     return divide_align(size, device_resources()[DeviceResources::PlaceProbesProgram].local_size().to<2>());
 }
@@ -84,6 +86,7 @@ static FrameGraphMutableTypedBufferId<shader::GIProbe> propagate_probes(FrameGra
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const ComputeProgram& program = device_resources()[DeviceResources::PropagateProbesProgram];
         recorder.dispatch(program, math::Vec3ui(probe_grid, 1), self->descriptor_sets());
+
     });
 
     return probe_buffer;
@@ -157,15 +160,15 @@ static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass&
 
 
 GIPass GIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit) {
-    return {lit};
+    // return {lit};
 
     const auto region = framegraph.region("GI");
 
     auto probes = place_probes(framegraph, gbuffer);
-    probes = propagate_probes(framegraph, gbuffer, probes);
 
     if(raytracing_enabled()) {
         trace_probes(framegraph, gbuffer, lit, probes);
+        // probes = propagate_probes(framegraph, gbuffer, probes);
     } else {
         log_msg("No ray tracing: GI probe update disabled", Log::Warning);
     }

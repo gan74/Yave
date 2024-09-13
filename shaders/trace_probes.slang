@@ -33,7 +33,7 @@ RaytracingAccelerationStructure tlas;
 
 
 static const float min_dist = 0.001;
-static const float max_dist = 10.0;
+static const float max_dist = 100.0;
 
 
 groupshared SHRgb all_samples[PROBE_SAMPLE_COUNT];
@@ -64,12 +64,13 @@ void main() {
             const float3 gbuffer_pos = unproject(hit_proj_pos.xy, in_depth.SampleLevel(hit_proj_pos.xy, 0), camera.inv_view_proj);
             if(distance(gbuffer_pos, hit_world_pos) < 0.01) {
                 const SurfaceInfo surface = decode_gbuffer({
-                    in_rt0.SampleLevel(hit_proj_pos.xy, 0),
+                    float4(0.0),
                     in_rt1.SampleLevel(hit_proj_pos.xy, 0)
                 });
 
                 const float NoL = saturate(dot(surface.normal, sample_dir));
-                const float3 lit_color = in_lit.SampleLevel(hit_proj_pos.xy, 0).rgb * (NoL / (sqr(dist) * PROBE_SAMPLE_COUNT));
+                const float3 lit_color = in_lit.SampleLevel(hit_proj_pos.xy, 0).rgb * (1.0 / PROBE_SAMPLE_COUNT); //(NoL / PROBE_SAMPLE_COUNT);
+
 
                 sh = sh_base * lit_color;
                 InterlockedAdd(total_hits, 1);

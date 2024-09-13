@@ -3,7 +3,7 @@
 
 // -------------------------------- DEFINES --------------------------------
 
-#define USE_IBL
+// #define USE_IBL
 #define USE_AO
 
 // #define DEBUG_CASCADES

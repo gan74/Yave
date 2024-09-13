@@ -147,6 +147,9 @@ struct GIProbe {
     float3 position;
     uint padding_0;
 
+    float3 normal;
+    uint padding_1;
+
     SHBase sh_r;
     SHBase sh_g;
     SHBase sh_b;
