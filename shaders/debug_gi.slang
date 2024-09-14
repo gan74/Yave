@@ -34,6 +34,9 @@ cbuffer Params_Inline {
 [numthreads(8, 8)]
 void comp_main() {
     const int2 coord = int2(semantics.global_id.xy);
+    const float2 uv = (semantics.global_id.xy + 0.5) / float2(image_size(in_depth).xy);
+    const float3 world_pos = unproject(uv, in_depth[coord], camera.inv_view_proj);
+
     const int2 probe_coord = coord / PROBE_PIXEL_SIZE;
     const uint probe_index = probe_coord.x + grid_size.x * probe_coord.y;
 
@@ -42,25 +45,28 @@ void comp_main() {
         in_rt1[coord],
     });
 
-#if 0
+#if 1
+    static const int kernel_size = 1;
+    static const float max_dist = 2.0;
+
     float3 acc = float3(0.0);
     float weight = 0.0;
-    static const int kernel_size = 1;
     for(int x = -kernel_size; x <= kernel_size; ++x) {
         for(int y = -kernel_size; y <= kernel_size; ++y) {
             const int index = probe_index + y * grid_size.x + x;
             if(index >= 0 && index < grid_size.x * grid_size.y) {
                 const GIProbe probe = in_probes[index];
-                const SHRgb sh = SHRgb(SH(probe.sh_r), SH(probe.sh_g), SH(probe.sh_b));
-
-                const float dist = distance(probe.position, probe.position);
-                const float w = (1.0 / (dist + 1.0));
-                acc += sh.unproject(surface.normal) * w;
-                weight += w;
+                const float dist = distance(probe.position, world_pos);
+                if(dist < max_dist) {
+                    const float w = 1.0 / (dist + 1.0);
+                    const SHRgb sh = SHRgb(SH(probe.sh_r), SH(probe.sh_g), SH(probe.sh_b));
+                    acc += sh.unproject(surface.normal) * w;
+                    weight += w;
+                }
             }
         }
     }
-    out_color[coord] = float4(acc / weight, 1.0);
+    out_color[coord] = float4(weight <= 0.0 ? float3(0.0) : acc / weight, 1.0);
 #else
     const GIProbe probe = in_probes[probe_index];
     const SHRgb sh = SHRgb(SH(probe.sh_r), SH(probe.sh_g), SH(probe.sh_b));
