@@ -49,8 +49,6 @@ static const IBLProbe* find_probe(const SceneView& scene_view) {
 }
 
 static math::Vec2ui probe_grid_size(FrameGraph& framegraph, const GBufferPass& gbuffer) {
-    //return math::Vec2ui(1, 1);
-
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
     return divide_align(size, device_resources()[DeviceResources::PlaceProbesProgram].local_size().to<2>());
 }
@@ -149,6 +147,7 @@ static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass&
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_storage_input(probes);
     builder.add_storage_output(color);
+    builder.add_inline_input(InlineDescriptor(probe_grid_size(framegraph, gbuffer)));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const ComputeProgram& program = device_resources()[DeviceResources::DebugGIprogram];
         recorder.dispatch_threads(program, size, self->descriptor_sets());

@@ -69,7 +69,7 @@ void main() {
                 });
 
                 const float NoL = saturate(dot(surface.normal, sample_dir));
-                const float3 lit_color = in_lit.SampleLevel(hit_proj_pos.xy, 0).rgb * (1.0 / PROBE_SAMPLE_COUNT); //(NoL / PROBE_SAMPLE_COUNT);
+                const float3 lit_color = in_lit.SampleLevel(hit_proj_pos.xy, 0).rgb * (1.0 / PROBE_SAMPLE_COUNT);
 
 
                 sh = sh_base * lit_color;

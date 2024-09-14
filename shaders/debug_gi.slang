@@ -2,8 +2,6 @@
 #include "lib/sh.slang"
 #include "lib/gi.slang"
 
-#define DEBUG
-#include "lib/debug.slang"
 
 // -------------------------------- I/O --------------------------------
 
@@ -20,30 +18,53 @@ Sampler2D in_rt1;
 ConstantBuffer<Camera> camera;
 
 [[vk::binding(4)]]
-StructuredBuffer<GIProbe> probes;
+StructuredBuffer<GIProbe> in_probes;
 
 [[vk::binding(5)]]
 RWTexture2D out_color;
 
+[[vk::binding(6)]]
+cbuffer Params_Inline {
+    uint2 grid_size;
+}
 
 // -------------------------------- MAIN --------------------------------
 
 [shader("compute")]
-[numthreads(PROBE_PIXEL_SIZE, PROBE_PIXEL_SIZE)]
+[numthreads(8, 8)]
 void comp_main() {
     const int2 coord = int2(semantics.global_id.xy);
+    const int2 probe_coord = coord / PROBE_PIXEL_SIZE;
+    const uint probe_index = probe_coord.x + grid_size.x * probe_coord.y;
+
     const SurfaceInfo surface = decode_gbuffer({
         in_rt0[coord],
         in_rt1[coord],
     });
 
+#if 0
+    float3 acc = float3(0.0);
+    float weight = 0.0;
+    static const int kernel_size = 1;
+    for(int x = -kernel_size; x <= kernel_size; ++x) {
+        for(int y = -kernel_size; y <= kernel_size; ++y) {
+            const int index = probe_index + y * grid_size.x + x;
+            if(index >= 0 && index < grid_size.x * grid_size.y) {
+                const GIProbe probe = in_probes[index];
+                const SHRgb sh = SHRgb(SH(probe.sh_r), SH(probe.sh_g), SH(probe.sh_b));
 
-    const GIProbe probe = probes[semantics.work_group_index];
+                const float dist = distance(probe.position, probe.position);
+                const float w = (1.0 / (dist + 1.0));
+                acc += sh.unproject(surface.normal) * w;
+                weight += w;
+            }
+        }
+    }
+    out_color[coord] = float4(acc / weight, 1.0);
+#else
+    const GIProbe probe = in_probes[probe_index];
     const SHRgb sh = SHRgb(SH(probe.sh_r), SH(probe.sh_g), SH(probe.sh_b));
-
-    // float3 heat = sh.unproject(surface.normal); //heat_spectrum(probe.hits / PROBE_SAMPLE_COUNT);
-    // heat = lerp(heat, float3(1.0) - heat, print_value(semantics.local_id.xy * 2.0, float2(0.0), float2(PROBE_PIXEL_SIZE / 2, PROBE_PIXEL_SIZE - 1), uint(probe.hits), 2.0, 0.0));
-
     out_color[coord] = float4(sh.unproject(surface.normal), 1.0);
+#endif
 }
 
