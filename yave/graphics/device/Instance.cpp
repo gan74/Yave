@@ -56,6 +56,8 @@ static bool try_enable_extension(core::Vector<const char*>& exts, const char* na
 }
 
 Instance::Instance(InstanceParams params) : _params(params) {
+    _params.debug_utils |= _params.validation_layers;
+
     initialize_volk();
 
     auto extension_names = core::Vector<const char*>::with_capacity(8);
@@ -71,7 +73,7 @@ Instance::Instance(InstanceParams params) : _params(params) {
     extension_names << VK_KHR_XCB_SURFACE_EXTENSION_NAME;
 #endif
 
-    if(_params.validation_layers) {
+    if(_params.debug_utils) {
         _params.validation_layers = try_enable_extension(extension_names, DebugUtils::extension_name());
     }
 
@@ -90,6 +92,7 @@ Instance::Instance(InstanceParams params) : _params(params) {
     }
 
     if(_params.validation_layers) {
+        log_msg("Vulkan validation enabled");
         const auto ext = validation_extensions();
         create_info.enabledLayerCount = u32(ext.size());
         create_info.ppEnabledLayerNames = ext.data();
@@ -99,8 +102,8 @@ Instance::Instance(InstanceParams params) : _params(params) {
 
     volkLoadInstance(_instance);
 
-    if(_params.validation_layers) {
-        log_msg("Vulkan validation enabled");
+    if(_params.debug_utils) {
+        log_msg("Vulkan debug utils enabled");
         _extensions.debug_utils = std::make_unique<DebugUtils>(_instance);
     }
 }

@@ -34,6 +34,7 @@ class DebugUtils;
 
 struct InstanceParams {
     bool validation_layers = false;
+    bool debug_utils = true;
     bool raytracing = true;
 
 };

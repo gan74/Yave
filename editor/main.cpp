@@ -40,7 +40,10 @@ SOFTWARE.
 using namespace editor;
 
 static bool multi_viewport = false;
-static InstanceParams params = { .validation_layers = is_debug_defined };
+static InstanceParams params = {
+    .validation_layers = is_debug_defined,
+    .debug_utils = is_debug_defined,
+};
 
 
 static void parse_args(int argc, char** argv) {
