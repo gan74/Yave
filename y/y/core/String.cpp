@@ -120,6 +120,7 @@ String::String(String&& str) {
 
     if(str.is_long()) {
         ::new(&_l) LongData(std::move(str._l));
+        ::new(&str._s) ShortData();
     } else {
         ::new(&_s) ShortData(str._s);
     }
@@ -186,10 +187,10 @@ void String::clear() {
 
 void String::make_empty() {
     if(is_long()) {
+        y_debug_assert(_l.data);
+        y_debug_assert(_l.capacity > max_short_size);
         _l.length = 0;
-        if(_l.capacity) {
-            _l.data[0] = 0;
-        }
+        _l.data[0] = 0;
     } else {
         _s.length = 0;
         _s.data[0] = 0;
