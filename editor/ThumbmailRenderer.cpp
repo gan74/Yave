@@ -172,8 +172,10 @@ static Texture render_prefab(const AssetPtr<ecs::EntityPrefab>& prefab) {
     {
         const ecs::EntityId entity = world.create_entity(*prefab);
         if(const StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity)) {
-            if(TransformableComponent* trans_comp = world.component_mut<TransformableComponent>(entity)) {
-                trans_comp->set_transform(center_to_camera(mesh_comp->mesh()->aabb()));
+            if(const StaticMesh* mesh = mesh_comp->mesh().get()) {
+                if(TransformableComponent* trans_comp = world.component_mut<TransformableComponent>(entity)) {
+                    trans_comp->set_transform(center_to_camera(mesh->aabb()));
+                }
             }
         }
     }
