@@ -56,6 +56,12 @@ float4 texture_min_filter(Sampler2D tex, float2 uv) {
     ) * 0.25;
 }
 
+float sharpen_alpha(float a) {
+    a = smoothstep(0.0, 1.0, a);
+    a = smoothstep(0.0, 1.0, a);
+    a = smoothstep(0.0, 1.0, a);
+    return a;
+}
 
 
 
@@ -87,17 +93,11 @@ VertexStageOut vert_main(VertexStageIn in) {
 
 [shader("fragment")]
 float4 frag_main(PixelStageIn in) : SV_Target {
-    float4 color = in.color;
+    float4 color = in.color * font_texture.Sample(in.uv);
 
-#if 1
-    if(sampling_factor(font_texture, in.uv) > 2.0) {
-        color *= texture_min_filter(font_texture, in.uv);
-    } else {
-        color *= font_texture.Sample(in.uv);
+    if(color.a < 1.0 && sampling_factor(font_texture, in.uv) < 1.0) {
+        color.a = sharpen_alpha(color.a);
     }
-#else
-    color *= font_texture.Sample(in.uv);
-#endif
 
 
     // We can't do linear to sRGB conversion here, since this shader is used to render

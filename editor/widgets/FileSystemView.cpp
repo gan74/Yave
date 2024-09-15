@@ -290,7 +290,7 @@ void FileSystemView::on_gui() {
         ImGui::SameLine();
 
         if(ImGui::BeginChild("##fileentriespanel")) {
-            const float icon_size = 80.0f;
+            const float icon_size = 60.0f;
             for(usize i = 0; i != _entries.size(); ++i) {
                 const Entry& entry = _entries[i];
 

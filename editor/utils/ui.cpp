@@ -355,8 +355,7 @@ bool id_selector(ecs::EntityId& id, const EditorWorld& world, ecs::ComponentType
 
     if(!has_component) {
         ImGui::PopStyleColor();
-        if(ImGui::IsItemHovered()) {
-            ImGui::BeginTooltip();
+        if(ImGui::BeginItemTooltip()) {
             ImGui::TextUnformatted(fmt_c_str("Entity does not have the required component ({})", world.component_type_name(with_component)));
             ImGui::EndTooltip();
         }
@@ -581,11 +580,17 @@ bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, floa
     const bool activated = ImGui::Selectable(str_id, selected, 0, math::Vec2(size));
     ImGui::PopStyleVar();
 
+    if(ImGui::BeginItemTooltip()) {
+        ImGui::TextUnformatted(str_id);
+        ImGui::EndTooltip();
+    }
+
     {
         const auto [uv, uv_size] = compute_glyph_uv_size(fmt_c_str("{}", icon.icon));
         const float text_height = ImGui::CalcTextSize(str_id).y;
-        ImGui::SetCursorPos(cursor_pos + math::Vec2(text_height * 0.5f, 0.0f));
-        ImGui::Image({}, math::Vec2(size - text_height), uv, uv + uv_size, ImGui::ColorConvertU32ToFloat4(icon.color));
+        const math::Vec2 padding = ImGui::GetStyle().FramePadding;
+        ImGui::SetCursorPos(cursor_pos + math::Vec2(text_height * 0.5f, 0.0f) + padding * 0.5f);
+        ImGui::Image({}, math::Vec2(size - text_height) - padding, uv, uv + uv_size, ImGui::ColorConvertU32ToFloat4(icon.color));
     }
 
     ImGui::EndGroup();

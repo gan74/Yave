@@ -46,21 +46,23 @@ static ImageData load_font() {
     y_profile();
 
     ImFontAtlas* fonts = ImGui::GetIO().Fonts;
+    fonts->AddFontFromMemoryCompressedTTF(jetbrains_mono_compressed_data, font_awesome_compressed_size, 15.0f);
 
-    {
-        fonts->AddFontFromMemoryCompressedTTF(jetbrains_mono_compressed_data, font_awesome_compressed_size, 15.0f);
-    }
 
+
+    const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
+
+    ImFontConfig config;
     {
-        ImFontConfig config;
         config.MergeMode = true;
         config.PixelSnapH = true;
         config.OversampleV = 2;
         config.OversampleH = 2;
-
-        const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
-        fonts->AddFontFromMemoryCompressedTTF(font_awesome_compressed_data, font_awesome_compressed_size, 13.0f, &config, icon_ranges);
+        config.FontDataOwnedByAtlas = false;
     }
+
+    fonts->AddFontFromMemoryCompressedTTF(font_awesome_compressed_data, font_awesome_compressed_size, 13.0f, &config, icon_ranges);
+
 
     u8* font_data = nullptr;
     int width = 0;
