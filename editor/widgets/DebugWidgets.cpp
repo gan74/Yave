@@ -290,7 +290,11 @@ class UiDebug : public Widget {
 
     protected:
         void on_gui() override {
-            ImGui::Text("%u cached thumbmails", u32(thumbmail_renderer().cached_thumbmails()));
+            ThumbmailRenderer& tb = thumbmail_renderer();
+            ImGui::TextUnformatted(fmt_c_str("{} cached thumbmails", tb.cached_thumbmails()));
+            ImGui::Separator();
+            ImGui::TextUnformatted(fmt_c_str("Thumbmail size: {}x{}", tb.thumbmail_size, tb.thumbmail_size));
+            ImGui::TextUnformatted(fmt_c_str("Total thumbmail memory: {}KB", (tb.cached_thumbmails() * tb.thumbmail_size * tb.thumbmail_size * 4) / 1024));
         }
 };
 

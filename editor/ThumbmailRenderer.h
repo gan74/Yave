@@ -46,7 +46,7 @@ class ThumbmailRenderer : NonMovable {
     };
 
     public:
-        static constexpr usize thumbmail_size = 256;
+        static constexpr usize thumbmail_size = 128;
 
         ThumbmailRenderer(AssetLoader& loader);
 

@@ -230,7 +230,7 @@ const TextureView* ThumbmailRenderer::thumbmail(AssetId id) {
     });
 }
 
-usize ThumbmailRenderer::cached_thumbmails()  {
+usize ThumbmailRenderer::cached_thumbmails() {
     return _thumbmails.locked([&](auto&& thumbmails) { return thumbmails.size(); });
 }
 
