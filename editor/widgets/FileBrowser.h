@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace editor {
 
-class FileBrowser final : public FileSystemView {
+class FileBrowser final : public Widget {
     public:
         enum class FilterFlags : u32 {
             None            = 0x00,
@@ -38,6 +38,8 @@ class FileBrowser final : public FileSystemView {
 
 
         FileBrowser(const FileSystemModel* filesystem = nullptr);
+
+        const FileSystemModel* filesystem() const;
 
         template<typename F>
         void set_selected_callback(F&& func) {
@@ -54,10 +56,6 @@ class FileBrowser final : public FileSystemView {
     protected:
         void on_gui() override;
 
-        void path_changed() override;
-        core::Result<UiIcon> entry_icon(const core::String &name, EntryType type) const override;
-        void entry_clicked(const Entry& entry) override;
-
     private:
         bool has_valid_extension(std::string_view filename) const;
         bool done(const core::String& filename);
@@ -65,7 +63,7 @@ class FileBrowser final : public FileSystemView {
 
         core::String full_path() const;
 
-        const FileSystemModel* _filesystem = nullptr;
+        FileSystemView _filesystem_view;
 
         bool _dirs = false;
         bool _allow_new = false;

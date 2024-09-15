@@ -24,11 +24,9 @@ SOFTWARE.
 
 #include "ResourceBrowser.h"
 
-#include <functional>
-
 namespace editor {
 
-class AssetSelector final : public ResourceBrowser {
+class AssetSelector final : public Widget {
     public:
         AssetSelector(AssetType filter, const char* name = nullptr);
 
@@ -38,12 +36,12 @@ class AssetSelector final : public ResourceBrowser {
         }
 
     protected:
-        void asset_selected(AssetId id) override;
-
-        core::Result<UiIcon> entry_icon(const core::String& full_name, EntryType type) const override;
+        void on_gui() override;
 
     private:
         AssetType _filter;
+        ResourceBrowser _browser;
+
         std::function<bool(AssetId)> _selected = [](const auto&) { return false; };
 };
 

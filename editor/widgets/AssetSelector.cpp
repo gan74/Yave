@@ -29,35 +29,38 @@ SOFTWARE.
 namespace editor {
 
 AssetSelector::AssetSelector(AssetType filter, const char* name) :
-        ResourceBrowser(name ? std::string_view(name) : fmt("Select {}", asset_type_name(filter, false, true))),
+        Widget(name ? std::string_view(name) : fmt("Select {}", asset_type_name(filter, false, true))),
         _filter(filter) {
-    set_modal(true);
-}
 
-void AssetSelector::asset_selected(AssetId id) {
-    if(id != AssetId::invalid_id()) {
-        if(read_file_type(id) == _filter) {
-            if(_selected(id)) {
-                close();
-                return;
+    set_modal(true);
+
+    _browser.set_filter_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+        if(type == FileSystemModel::EntryType::Directory) {
+            return true;
+        }
+        if(const AssetId id = _browser.asset_id(full_name); id != AssetId::invalid_id()) {
+            return _filter == AssetType::Unknown || _browser.asset_type(id) == _filter;
+        }
+        return false;
+    });
+
+    _browser.set_selected_delegate([this](AssetId id) {
+        if(id != AssetId::invalid_id()) {
+            if(_browser.asset_type(id) == _filter) {
+                if(_selected(id)) {
+                    close();
+                    return true;
+                }
             }
         }
-    }
+        return false;
+    });
 }
 
-core::Result<UiIcon> AssetSelector::entry_icon(const core::String& full_name, EntryType type) const {
-    if(type == EntryType::Directory) {
-        return FileSystemView::entry_icon(full_name, type);
-    }
-    if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
-        const AssetType asset = read_file_type(id);
-        if(_filter == AssetType::Unknown || asset == _filter) {
-            return core::Ok(UiIcon{asset_type_icon(asset), 0xFFFFFFFF});
-        }
-    }
-    return core::Err();
-}
 
+void AssetSelector::on_gui() {
+    _browser.draw_gui_inside();
+}
 
 }
 

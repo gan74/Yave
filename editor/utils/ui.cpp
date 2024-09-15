@@ -573,8 +573,26 @@ void table_begin_next_row(int col_index) {
     ImGui::TableSetColumnIndex(col_index);
 }
 
+bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, float size) {
+    ImGui::BeginGroup();
 
-bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGuiSelectableFlags flags) {
+    const math::Vec2 cursor_pos = ImGui::GetCursorPos();
+    ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
+    const bool activated = ImGui::Selectable(str_id, selected, 0, math::Vec2(size));
+    ImGui::PopStyleVar();
+
+    {
+        const auto [uv, uv_size] = compute_glyph_uv_size(fmt_c_str("{}", icon.icon));
+        const float text_height = ImGui::CalcTextSize(str_id).y;
+        ImGui::SetCursorPos(cursor_pos + math::Vec2(text_height * 0.5f, 0.0f));
+        ImGui::Image({}, math::Vec2(size - text_height), uv, uv + uv_size, ImGui::ColorConvertU32ToFloat4(icon.color));
+    }
+
+    ImGui::EndGroup();
+    return activated;
+}
+
+bool selectable_with_icon(const UiIcon& icon, const char* str_id, bool selected, ImGuiSelectableFlags flags) {
     ImGui::PushStyleColor(ImGuiCol_Text, icon.color);
     const bool activated = ImGui::Selectable(fmt_c_str("{}##{}", icon.icon, str_id), selected, flags);
     ImGui::PopStyleColor();

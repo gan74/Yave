@@ -38,8 +38,8 @@ float sampling_factor(Sampler2D tex, float2 uv) {
     const float2 size = float2(image_size(tex).xy);
     const float2 coord = uv * size;
 
-    const float x_factor = max(abs(ddx(coord).x), abs(ddx(coord).y));
-    const float y_factor = max(abs(ddy(coord).x), abs(ddy(coord).y));
+    const float x_factor = max(abs(ddx(coord.x)), abs(ddx(coord.y)));
+    const float y_factor = max(abs(ddy(coord.x)), abs(ddy(coord.y)));
 
     return max(x_factor, y_factor);
 }
@@ -96,8 +96,9 @@ float4 frag_main(PixelStageIn in) : SV_Target {
         color *= font_texture.Sample(in.uv);
     }
 #else
-    color *= font_texture.Sample(in._uv);
+    color *= font_texture.Sample(in.uv);
 #endif
+
 
     // We can't do linear to sRGB conversion here, since this shader is used to render
     // images that are already in sRGB in the UI

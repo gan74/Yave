@@ -35,8 +35,30 @@ SOFTWARE.
 
 namespace editor {
 
-FileBrowser::FileBrowser(const FileSystemModel* fs) : FileSystemView(fs) {
-    path_changed();
+FileBrowser::FileBrowser(const FileSystemModel* fs) : Widget("File Browser"), _filesystem_view(fs) {
+    _filesystem_view.set_filter_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+        if(type == FileSystemModel::EntryType::Directory) {
+            return true;
+        }
+        if(_extensions.is_empty()) {
+            return false;
+        }
+        return has_valid_extension(full_name);
+    });
+
+    _filesystem_view.set_clicked_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+        if(!_dirs) {
+            if(type == FileSystemModel::EntryType::File) {
+                done(full_name);
+                return true;
+            }
+        }
+        return false;
+    });
+}
+
+const FileSystemModel* FileBrowser::filesystem() const {
+    return _filesystem_view.filesystem();
 }
 
 void FileBrowser::set_selection_filter(std::string_view exts, FilterFlags flags) {
@@ -51,34 +73,6 @@ void FileBrowser::set_selection_filter(std::string_view exts, FilterFlags flags)
         }
     }
     std::sort(_extensions.begin(), _extensions.end());
-    // refresh();
-}
-
-
-void FileBrowser::path_changed() {
-    _path_buffer = path();
-}
-
-core::Result<UiIcon> FileBrowser::entry_icon(const core::String& name, EntryType type) const {
-    if(type == EntryType::Directory) {
-        return core::Ok(UiIcon{ICON_FA_FOLDER, imgui::folder_icon_color});
-    }
-    if(_extensions.is_empty()) {
-        return core::Err();
-    }
-    if(has_valid_extension(name)) {
-        return core::Ok(UiIcon{ICON_FA_FILE_ALT, 0xFFFFFFFF});
-    }
-    return core::Err();
-}
-
-void FileBrowser::entry_clicked(const Entry& entry) {
-    if(!_dirs) {
-        if(entry.type == EntryType::File) {
-            done(entry_full_name(entry));
-        }
-    }
-    FileSystemView::entry_clicked(entry);
 }
 
 bool FileBrowser::has_valid_extension(std::string_view filename) const {
@@ -98,12 +92,12 @@ bool FileBrowser::done(const core::String& filename) {
     if((valid_dir && _dirs) || valid_file) {
         set_visible(!_callbacks.selected(filename));
     } else if(valid_dir) {
-        set_path(filename);
+        _filesystem_view.set_path(filename);
     } else {
         changed = false;
     }
 
-    update();
+    _filesystem_view.refresh();
     return changed;
 }
 
@@ -112,7 +106,7 @@ void FileBrowser::cancel() {
 }
 
 core::String FileBrowser::full_path() const {
-    return filesystem()->join(path(), _name_buffer.data());
+    return filesystem()->join(_filesystem_view.path(), _name_buffer.data());
 }
 
 void FileBrowser::on_gui() {
@@ -123,7 +117,7 @@ void FileBrowser::on_gui() {
         const float buttons_size = _extensions.is_empty() ? (button_width * 2) : button_width;
         ImGui::SetNextItemWidth(-buttons_size);
         if(imgui::text_input("##path", _path_buffer, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            set_path(_path_buffer);
+            _filesystem_view.set_path(_path_buffer);
         }
 
         ImGui::SameLine();
@@ -146,7 +140,7 @@ void FileBrowser::on_gui() {
         }
     }
 
-    FileSystemView::on_gui();
+    _filesystem_view.draw_gui_inside();
 }
 
 }

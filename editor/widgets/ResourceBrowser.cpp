@@ -49,6 +49,7 @@ editor_action("Import glTF", add_detached_widget<GltfImporter>)
 editor_action("Import image", add_detached_widget<ImageImporter>)
 
 
+#if 0
 ResourceBrowser::ResourceBrowser() : ResourceBrowser(ICON_FA_FOLDER_OPEN " Resource Browser") {
 }
 
@@ -65,14 +66,7 @@ AssetType ResourceBrowser::read_file_type(AssetId id) const {
     return asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
 }
 
-void ResourceBrowser::draw_import_menu() {
-    if(ImGui::Selectable("Import glTF")) {
-        add_detached_widget<GltfImporter>(path());
-    }
-    if(ImGui::Selectable("Import image")) {
-        add_detached_widget<ImageImporter>(path());
-    }
-}
+
 
 void ResourceBrowser::draw_context_menu() {
     FileSystemView::draw_context_menu();
@@ -144,6 +138,112 @@ void ResourceBrowser::entry_clicked(const Entry& entry) {
     }
     FileSystemView::entry_clicked(entry);
 }
+#else
+
+ResourceBrowser::ResourceBrowser() : ResourceBrowser(ICON_FA_FOLDER_OPEN " Resource Browser") {
+}
+
+ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _filesystem_view(asset_store().filesystem()) {
+    _filesystem_view.set_split_mode(true);
+
+    _filesystem_view.set_clicked_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+        if(type == FileSystemModel::EntryType::File) {
+            if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
+                return _selected_delegate(id);
+            }
+        }
+        return false;
+    });
+
+    /*_filesystem_view.set_filter_delegate([this](const core::String&, FileSystemModel::EntryType type) {
+        return type == FileSystemModel::EntryType::Directory;
+    });*/
+
+    /*_filesystem_view.set_on_update([this] {
+        _entries.make_empty();
+        const core::String path = _filesystem_view.path();
+        const FileSystemModel* fs = _filesystem_view.filesystem();
+
+        fs->for_each(path, [&](const auto& info) {
+            if(info.type == FileSystemModel::EntryType::File) {
+                const core::String full_name = fs->join(path, info.name);
+                if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
+                    _entries.emplace_back(
+                        id,
+                        asset_type(id),
+                        info.name
+                    );
+                }
+            }
+        }).ignore();
+        std::sort(_entries.begin(), _entries.end());
+    });*/
+}
+
+AssetId ResourceBrowser::asset_id(std::string_view name) const {
+    return asset_store().id(name).unwrap_or(AssetId());
+}
+
+AssetType ResourceBrowser::asset_type(AssetId id) const {
+    return asset_store().asset_type(id).unwrap_or(AssetType::Unknown);
+}
+
+void ResourceBrowser::draw_import_menu() {
+    if(ImGui::Selectable("Import glTF")) {
+        add_detached_widget<GltfImporter>(_filesystem_view.path());
+    }
+    if(ImGui::Selectable("Import image")) {
+        add_detached_widget<ImageImporter>(_filesystem_view.path());
+    }
+}
+
+void ResourceBrowser::on_gui() {
+    {
+        ImGui::PushID("##pathbar");
+
+        if(ImGui::Button(ICON_FA_PLUS " Import")) {
+            ImGui::OpenPopup("##importmenu");
+        }
+
+        if(ImGui::BeginPopup("##importmenu")) {
+            draw_import_menu();
+            ImGui::EndPopup();
+        }
+
+        ImGui::PopID();
+
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+
+        imgui::text_read_only("##currentpath", fmt("/{}", _filesystem_view.path()));
+    }
+
+    _filesystem_view.draw_gui_inside();
+
+    /*{
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyleColorVec4(ImGuiCol_FrameBg));
+        if(ImGui::BeginChild("##filesystem", ImVec2(200.0f, -1.0f))) {
+            _filesystem_view.draw_gui_inside();
+        }
+        ImGui::EndChild();
+        ImGui::PopStyleColor();
+    }
+
+    ImGui::SameLine();
+    {
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyleColorVec4(ImGuiCol_FrameBg));
+        if(ImGui::BeginChild("##assets")) {
+            for(const Entry& entry : _entries) {
+                ImGui::Selectable(fmt_c_str("{} {}", asset_type_icon(entry.type), entry.name.data()));
+            }
+        }
+        ImGui::EndChild();
+        ImGui::PopStyleColor();
+    }*/
+}
+
+
+#endif
 
 }
 

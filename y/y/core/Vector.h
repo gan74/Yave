@@ -471,8 +471,6 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
             return false;
         }
 
-        static constexpr bool is_data_trivial = std::is_trivial_v<data_type>;
-
         inline bool is_sbo_active() {
             if constexpr(has_sbo) {
                 return _data == this->sbo_buffer();
@@ -489,7 +487,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
         }
 
         inline void move_range(data_type* dst, data_type* src, usize n) {
-            if constexpr(is_data_trivial) {
+            if constexpr(std::is_trivial_v<data_type>) {
                 std::copy_n(src, n, dst);
             } else {
                 for(usize i = 0; i != n; ++i) {
@@ -499,7 +497,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
         }
 
         inline void clear(data_type* beg, data_type* en) {
-            if(!is_data_trivial) {
+            if(!std::is_trivial_v<data_type>) {
                 for(data_type* e = en; e != beg;) {
                     (--e)->~data_type();
                 }

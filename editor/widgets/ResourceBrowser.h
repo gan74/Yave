@@ -31,6 +31,7 @@ SOFTWARE.
 
 namespace editor {
 
+#if 0
 class ResourceBrowser : public FileSystemView {
 
     editor_widget(ResourceBrowser, "View")
@@ -64,6 +65,51 @@ class ResourceBrowser : public FileSystemView {
 
         core::String _set_path_deferred;
 };
+#else
+class ResourceBrowser : public Widget {
+
+    editor_widget(ResourceBrowser, "View")
+
+    struct Entry {
+        AssetId id;
+        AssetType type;
+        core::String name;
+
+        inline std::weak_ordering operator<=>(const Entry& other) const {
+            return id <=> other.id;
+        }
+    };
+
+    public:
+        ResourceBrowser();
+        ResourceBrowser(std::string_view title);
+
+        AssetId asset_id(std::string_view name) const;
+        AssetType asset_type(AssetId id) const;
+
+        template<typename F>
+        void set_filter_delegate(F&& f) {
+            _filesystem_view.set_filter_delegate(y_fwd(f));
+        }
+
+        template<typename F>
+        void set_selected_delegate(F&& f) {
+            _selected_delegate = y_fwd(f);
+        }
+
+    protected:
+        void on_gui() override;
+
+    private:
+        void draw_import_menu();
+
+        FileSystemView _filesystem_view;
+        core::Vector<Entry> _entries;
+
+        std::function<bool(AssetId)> _selected_delegate = [](AssetId) { return false; };
+};
+
+#endif
 
 }
 

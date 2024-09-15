@@ -34,45 +34,73 @@ SOFTWARE.
 namespace editor {
 
 class FileSystemView : public Widget {
+    using EntryType = FileSystemModel::EntryType;
+
+    struct Entry {
+        core::String full_name;
+        core::String name;
+        EntryType type;
+        UiIcon icon;
+
+        inline std::weak_ordering operator<=>(const Entry& other) const {
+            return std::tie(type, name) <=> std::tie(other.type, other.name);
+        }
+    };
+
+    struct TreeNode {
+        core::String full_name;
+        core::String name;
+        core::Vector<TreeNode> children;
+
+        bool expanded = false;
+        bool to_delete = false;
+
+        inline std::weak_ordering operator<=>(const TreeNode& other) const {
+            return name.view() <=> other.name.view();
+        }
+    };
+
     public:
+        FileSystemView(const FileSystemModel* fs = nullptr, std::string_view name = "File browser");
+
         void refresh() override;
 
+        void set_allow_modify(bool modify);
+        void set_split_mode(bool split);
+
         const FileSystemModel* filesystem() const;
+
+        core::String root_path() const;
 
         void set_path(const core::String& path);
         const core::String& path() const;
 
-    protected:
-        using EntryType = FileSystemModel::EntryType;
+        template<typename F>
+        void set_filter_delegate(F&& f) {
+            _filter_delegate = y_fwd(f);
+            _need_update = true;
+        }
 
-        struct Entry {
-            core::String name;
-            EntryType type;
-            UiIcon icon;
+        template<typename F>
+        void set_icon_delegate(F&& f) {
+            _icon_delegate = y_fwd(f);
+            _need_update = true;
+        }
 
-            usize file_size;
+        template<typename F>
+        void set_hoverred_delegate(F&& f) {
+            _hoverred_delegate = y_fwd(f);
+        }
 
-            bool operator<(const Entry& other) const {
-                return std::tie(type, name) < std::tie(other.type, other.name);
-            }
-        };
+        template<typename F>
+        void set_clicked_delegate(F&& f) {
+            _clicked_delegate = y_fwd(f);
+        }
 
-        FileSystemView(const FileSystemModel* fs = nullptr, std::string_view name = "File browser");
-        void set_filesystem(const FileSystemModel* model);
-
-        usize hoverred_index() const;
-        const Entry* entry(usize index) const;
-        core::String entry_full_name(const Entry& entry) const;
-
-        virtual void update();
-        virtual void draw_context_menu();
-        virtual core::Result<UiIcon> entry_icon(const core::String&, EntryType type) const;
-        virtual UiTexture entry_thumbmail(const core::String&, EntryType) const;
-
-        virtual void path_changed() {}
-        virtual void entry_hoverred(const Entry*) {}
-        virtual void entry_clicked(const Entry& entry);
-        virtual bool allow_modify() const;
+        template<typename F>
+        void set_on_update(F&& f) {
+            _on_update = y_fwd(f);
+        }
 
     protected:
         void on_gui() override;
@@ -80,19 +108,42 @@ class FileSystemView : public Widget {
     private:
         bool process_context_menu();
 
-        static constexpr auto update_duration = core::Duration::seconds(1.0);
+        void update();
+        void set_filesystem(const FileSystemModel* fs);
+
+        void update_nodes(std::string_view path, core::Vector<TreeNode>& nodes);
+        void expand_node_path(std::string_view path, core::Vector<TreeNode>& nodes);
+        void draw_node(TreeNode &node);
+
+        usize hoverred_index() const;
+        const Entry* entry(usize index) const;
+
+        void draw_context_menu();
+
+        void entry_clicked(const Entry& entry);
+
+        static constexpr auto update_duration = core::Duration::seconds(2.0);
 
         const FileSystemModel* _filesystem = nullptr;
+        core::String _current_path;
+
+        std::function<bool(const core::String&, EntryType)> _filter_delegate;
+        std::function<UiIcon(const core::String&, EntryType)> _icon_delegate;
+
+        std::function<bool(const core::String&, EntryType)> _clicked_delegate   = [](const core::String&, EntryType) { return false; };
+        std::function<void(const core::String&, EntryType)> _hoverred_delegate  = [](const core::String&, EntryType) {};
+
+        std::function<void()> _on_update = [] {};
 
         usize _hovered = usize(-1);
         core::Vector<Entry> _entries;
-
-        core::String _current_path;
+        core::Vector<TreeNode> _cached_nodes;
 
         core::Chrono _update_chrono;
 
-        bool _refresh = false;
-        bool _display_thumbmails = false;
+        bool _need_update = true;
+        bool _allow_modify = true;
+        bool _split_mode = false;
 };
 
 }
