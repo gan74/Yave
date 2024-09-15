@@ -164,7 +164,7 @@ void FileSystemView::update_nodes(std::string_view path, core::Vector<TreeNode>&
 
 void FileSystemView::expand_node_path(std::string_view path, core::Vector<TreeNode>& nodes) {
     for(TreeNode& node : nodes) {
-        if(path.starts_with(node.full_name)) {
+        if(node.full_name.size() < path.size() && path.starts_with(node.full_name)) {
             node.expanded = true;
             update_nodes(node.full_name, node.children);
             expand_node_path(path, node.children);
