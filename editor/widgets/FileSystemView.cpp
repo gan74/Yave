@@ -301,7 +301,7 @@ void FileSystemView::on_gui() {
                     }
                 }
 
-                if(imgui::selectable_icon(entry.icon, entry.name.data(), _hovered == i, icon_size)) {
+                if(imgui::icon_button(entry.icon, entry.name.data(), _hovered == i, icon_size)) {
                     entry_clicked(entry);
                     if(_need_update) {
                         break;
@@ -337,7 +337,7 @@ void FileSystemView::on_gui() {
                     imgui::table_begin_next_row();
 
                     const Entry& entry = _entries[i];
-                    if(imgui::selectable_with_icon(entry.icon, fmt_c_str("{}##{}", entry.name, i), _hovered == i, ImGuiSelectableFlags_SpanAllColumns)) {
+                    if(imgui::selectable_icon(entry.icon, fmt_c_str("{}##{}", entry.name, i), _hovered == i, ImGuiSelectableFlags_SpanAllColumns)) {
                         entry_clicked(entry);
                         if(_need_update) {
                             break;

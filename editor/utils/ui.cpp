@@ -572,7 +572,18 @@ void table_begin_next_row(int col_index) {
     ImGui::TableSetColumnIndex(col_index);
 }
 
-bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, float size) {
+
+bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGuiSelectableFlags flags) {
+    ImGui::PushStyleColor(ImGuiCol_Text, icon.color);
+    const bool activated = ImGui::Selectable(fmt_c_str("{}##{}", icon.icon, str_id), selected, flags);
+    ImGui::PopStyleColor();
+    ImGui::SameLine();
+    return ImGui::Selectable(str_id, selected, flags) || activated;
+}
+
+
+
+/*bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, float size) {
     ImGui::BeginGroup();
 
     const math::Vec2 cursor_pos = ImGui::GetCursorPos();
@@ -595,33 +606,32 @@ bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, floa
 
     ImGui::EndGroup();
     return activated;
-}
-
-bool selectable_with_icon(const UiIcon& icon, const char* str_id, bool selected, ImGuiSelectableFlags flags) {
-    ImGui::PushStyleColor(ImGuiCol_Text, icon.color);
-    const bool activated = ImGui::Selectable(fmt_c_str("{}##{}", icon.icon, str_id), selected, flags);
-    ImGui::PopStyleColor();
-    ImGui::SameLine();
-    return ImGui::Selectable(str_id, selected, flags) || activated;
-}
-
+}*/
 
 static bool icon_button(const UiIcon& icon, const UiTexture& tex_icon, const char* str_id, bool selected, float icon_size) {
-    const ImVec2 cursor = ImGui::GetCursorPos();
-    if(tex_icon) {
-        ImGui::Image(tex_icon.to_imgui(), math::Vec2(icon_size));
-    } else {
-        const auto [uv, uv_size] = imgui::compute_glyph_uv_size(icon.icon.data());
-        const ImVec4 color = ImGui::ColorConvertU32ToFloat4(icon.color);
-        ImGui::Image({}, math::Vec2(icon_size), uv, uv + uv_size, color, ImVec4(1.0f, 0, 0, 1.0f));
-    }
+    ImGui::BeginGroup();
 
-    ImGui::SetCursorPos(cursor);
-    ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
+    const math::Vec2 cursor = ImGui::GetCursorPos();
     const float text_height = ImGui::CalcTextSize(str_id).y;
+    const math::Vec2 padding = ImGui::GetStyle().FramePadding;
+    const math::Vec2 padded_size = math::Vec2(icon_size) - padding * 2.0f;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
     const bool activated = ImGui::Selectable(str_id, selected, 0, math::Vec2(icon_size, icon_size + text_height));
     ImGui::PopStyleVar();
 
+    ImGui::SetCursorPos(cursor + padding);
+
+    if(tex_icon) {
+        ImGui::Image(tex_icon.to_imgui(), padded_size);
+    } else {
+        const auto [uv, uv_size] = imgui::compute_glyph_uv_size(icon.icon.data());
+        const ImVec4 color = ImGui::ColorConvertU32ToFloat4(icon.color);
+        ImGui::Image({}, padded_size, uv, uv + uv_size, color, {});
+    }
+
+
+    ImGui::EndGroup();
     return activated;
 }
 
