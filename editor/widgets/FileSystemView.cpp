@@ -167,7 +167,7 @@ void FileSystemView::expand_node_path(std::string_view path, core::Vector<TreeNo
         if(path.starts_with(node.full_name)) {
             node.expanded = true;
             update_nodes(node.full_name, node.children);
-            expand_node_path(node.full_name, node.children);
+            expand_node_path(path, node.children);
         }
     }
 }
@@ -385,14 +385,13 @@ void FileSystemView::on_gui() {
 }
 
 void FileSystemView::draw_node(TreeNode& node) {
-    const bool selected = _current_path.starts_with(node.full_name);
+    const bool selected = node.expanded ? _current_path == node.full_name : _current_path.starts_with(node.full_name);
     const int flags = (node.expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0) | (selected ? ImGuiTreeNodeFlags_Selected : 0);
 
     const bool opened = ImGui::TreeNodeEx(fmt_c_str("{} {}###{}", node.expanded ? ICON_FA_FOLDER_OPEN : ICON_FA_FOLDER, node.name, node.full_name), ImGuiTreeNodeFlags_OpenOnArrow | flags);
     if(node.expanded != opened) {
         if((node.expanded = opened)) {
             _need_update = true;
-            log_msg(fmt("update {}", node.full_name));
         }
     }
 
