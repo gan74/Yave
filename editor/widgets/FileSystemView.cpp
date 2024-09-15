@@ -278,7 +278,13 @@ void FileSystemView::on_gui() {
 
     if(_split_mode) {
         if(ImGui::BeginChild("##treepanel", ImVec2(200.0f, -1.0))) {
-            if(ImGui::TreeNodeEx(ICON_FA_DATABASE " root", ImGuiTreeNodeFlags_DefaultOpen)) {
+            const bool root_open = ImGui::TreeNodeEx(ICON_FA_DATABASE " root", ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen);
+
+            if(!ImGui::IsItemToggledOpen() && ImGui::IsItemActivated()) {
+                set_path(root_path());
+            }
+
+            if(root_open) {
                 for(TreeNode& child : _cached_nodes) {
                     draw_node(child);
                 }
@@ -291,20 +297,42 @@ void FileSystemView::on_gui() {
 
         if(ImGui::BeginChild("##fileentriespanel")) {
             const float icon_size = 60.0f;
-            for(usize i = 0; i != _entries.size(); ++i) {
-                const Entry& entry = _entries[i];
+            const usize entry_per_row = std::max(1_uu, usize(ImGui::GetContentRegionAvail().x / icon_size));
 
-                if(i) {
-                    ImGui::SameLine();
-                    if(ImGui::GetContentRegionAvail().x < icon_size) {
-                        ImGui::NewLine();
-                    }
-                }
 
-                if(imgui::icon_button(entry.icon, entry.name.data(), _hovered == i, icon_size)) {
-                    entry_clicked(entry);
-                    if(_need_update) {
-                        break;
+            ImGuiListClipper clipper;
+            clipper.Begin(int(_entries.size() / entry_per_row) + 1);
+
+            bool done = false;
+            while(!done && clipper.Step()) {
+                for(usize row = clipper.DisplayStart; !done && row < clipper.DisplayEnd; ++row) {
+                    for(usize i = 0; i != entry_per_row; ++i) {
+                        const usize index = row * entry_per_row + i;
+                        if(index >= _entries.size()) {
+                            done = true;
+                            break;
+                        }
+
+                        const Entry& entry = _entries[index];
+
+                        bool clicked = false;
+                        if(UiTexture preview = _preview_delegate(entry.full_name, entry.type)) {
+                            clicked = imgui::icon_button(preview, entry.name.data(), _hovered == index, icon_size);
+                        } else {
+                            clicked = imgui::icon_button(entry.icon, entry.name.data(), _hovered == index, icon_size);
+                        }
+
+                        if(i + 1 < entry_per_row) {
+                            ImGui::SameLine();
+                        }
+
+                        if(clicked) {
+                            entry_clicked(entry);
+                            if(_need_update) {
+                                done = true;
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -357,11 +385,15 @@ void FileSystemView::on_gui() {
 }
 
 void FileSystemView::draw_node(TreeNode& node) {
-    const int flags = node.expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0;
+    const bool selected = _current_path.starts_with(node.full_name);
+    const int flags = (node.expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0) | (selected ? ImGuiTreeNodeFlags_Selected : 0);
 
     const bool opened = ImGui::TreeNodeEx(fmt_c_str("{} {}###{}", node.expanded ? ICON_FA_FOLDER_OPEN : ICON_FA_FOLDER, node.name, node.full_name), ImGuiTreeNodeFlags_OpenOnArrow | flags);
-    if(!std::exchange(node.expanded, opened)) {
-        _need_update = true;
+    if(node.expanded != opened) {
+        if((node.expanded = opened)) {
+            _need_update = true;
+            log_msg(fmt("update {}", node.full_name));
+        }
     }
 
     if(!ImGui::IsItemToggledOpen() && ImGui::IsItemActivated()) {

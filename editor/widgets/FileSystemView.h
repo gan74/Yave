@@ -88,6 +88,13 @@ class FileSystemView : public Widget {
         }
 
         template<typename F>
+        void set_preview_delegate(F&& f) {
+            _preview_delegate = y_fwd(f);
+            _need_update = true;
+        }
+
+
+        template<typename F>
         void set_hoverred_delegate(F&& f) {
             _hoverred_delegate = y_fwd(f);
         }
@@ -129,6 +136,7 @@ class FileSystemView : public Widget {
 
         std::function<bool(const core::String&, EntryType)> _filter_delegate;
         std::function<UiIcon(const core::String&, EntryType)> _icon_delegate;
+        std::function<UiTexture(const core::String&, EntryType)> _preview_delegate = [](const core::String&, EntryType) { return UiTexture{}; };
 
         std::function<bool(const core::String&, EntryType)> _clicked_delegate   = [](const core::String&, EntryType) { return false; };
         std::function<void(const core::String&, EntryType)> _hoverred_delegate  = [](const core::String&, EntryType) {};

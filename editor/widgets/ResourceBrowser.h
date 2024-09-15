@@ -26,59 +26,13 @@ SOFTWARE.
 
 #include <yave/assets/AssetId.h>
 
-#include <y/core/FixedArray.h>
-
 
 namespace editor {
 
-#if 0
-class ResourceBrowser : public FileSystemView {
 
-    editor_widget(ResourceBrowser, "View")
-
-    public:
-        ResourceBrowser();
-
-    protected:
-        ResourceBrowser(std::string_view title);
-
-        void on_gui() override;
-
-        AssetId asset_id(std::string_view name) const;
-        AssetType read_file_type(AssetId id) const;
-
-        virtual void asset_selected(AssetId) {}
-
-    protected:
-        void update() override;
-
-        void draw_context_menu() override;
-        void path_changed() override;
-
-        core::Result<UiIcon> entry_icon(const core::String& name, EntryType type) const override;
-        void entry_clicked(const Entry& entry) override;
-
-    private:
-        void draw_search_results();
-        void draw_top_bar();
-        void draw_import_menu();
-
-        core::String _set_path_deferred;
-};
-#else
 class ResourceBrowser : public Widget {
 
     editor_widget(ResourceBrowser, "View")
-
-    struct Entry {
-        AssetId id;
-        AssetType type;
-        core::String name;
-
-        inline std::weak_ordering operator<=>(const Entry& other) const {
-            return id <=> other.id;
-        }
-    };
 
     public:
         ResourceBrowser();
@@ -104,12 +58,9 @@ class ResourceBrowser : public Widget {
         void draw_import_menu();
 
         FileSystemView _filesystem_view;
-        core::Vector<Entry> _entries;
 
         std::function<bool(AssetId)> _selected_delegate = [](AssetId) { return false; };
 };
-
-#endif
 
 }
 
