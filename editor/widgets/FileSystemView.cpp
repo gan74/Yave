@@ -315,12 +315,13 @@ void FileSystemView::on_gui() {
 
                         const Entry& entry = _entries[index];
 
-                        bool clicked = false;
+                        bool clicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
                         if(UiTexture preview = _preview_delegate(entry.full_name, entry.type)) {
-                            clicked = imgui::icon_button(preview, entry.name.data(), _hovered == index, icon_size);
+                            clicked &= imgui::icon_button(preview, entry.name.data(), _hovered == index, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
                         } else {
-                            clicked = imgui::icon_button(entry.icon, entry.name.data(), _hovered == index, icon_size);
+                            clicked &= imgui::icon_button(entry.icon, entry.name.data(), _hovered == index, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
                         }
+
 
                         if(i + 1 < entry_per_row) {
                             ImGui::SameLine();

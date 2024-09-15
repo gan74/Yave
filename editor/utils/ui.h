@@ -142,8 +142,8 @@ bool suggestion_item(const char* name, const char* shortcut = nullptr);
 void table_begin_next_row(int col_index = 0);
 
 bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGuiSelectableFlags flags = 0);
-bool icon_button(const UiIcon& icon, const char* str_id, bool selected, float icon_size);
-bool icon_button(const UiTexture& icon, const char* str_id, bool selected, float icon_size);
+bool icon_button(const UiIcon& icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags = 0);
+bool icon_button(const UiTexture& icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags = 0);
 
 bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_size);
 

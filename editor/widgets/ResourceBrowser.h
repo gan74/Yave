@@ -43,7 +43,7 @@ class ResourceBrowser : public Widget {
 
         template<typename F>
         void set_filter_delegate(F&& f) {
-            _filesystem_view.set_filter_delegate(y_fwd(f));
+            _fs_view.set_filter_delegate(y_fwd(f));
         }
 
         template<typename F>
@@ -57,7 +57,7 @@ class ResourceBrowser : public Widget {
     private:
         void draw_import_menu();
 
-        FileSystemView _filesystem_view;
+        FileSystemView _fs_view;
 
         std::function<bool(AssetId)> _selected_delegate = [](AssetId) { return false; };
 };

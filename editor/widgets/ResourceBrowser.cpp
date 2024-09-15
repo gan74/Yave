@@ -54,10 +54,10 @@ editor_action("Import image", add_detached_widget<ImageImporter>)
 ResourceBrowser::ResourceBrowser() : ResourceBrowser(ICON_FA_FOLDER_OPEN " Resource Browser") {
 }
 
-ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _filesystem_view(asset_store().filesystem()) {
-    _filesystem_view.set_split_mode(true);
+ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _fs_view(asset_store().filesystem()) {
+    _fs_view.set_split_mode(true);
 
-    _filesystem_view.set_clicked_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+    _fs_view.set_clicked_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
         if(type == FileSystemModel::EntryType::File) {
             if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
                 return _selected_delegate(id);
@@ -66,7 +66,7 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _files
         return false;
     });
 
-    _filesystem_view.set_preview_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) -> UiTexture {
+    _fs_view.set_preview_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) -> UiTexture {
         if(type == FileSystemModel::EntryType::File) {
             if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
                 if(const TextureView* tex = thumbmail_renderer().thumbmail(id)) {
@@ -89,10 +89,10 @@ AssetType ResourceBrowser::asset_type(AssetId id) const {
 
 void ResourceBrowser::draw_import_menu() {
     if(ImGui::Selectable("Import glTF")) {
-        add_detached_widget<GltfImporter>(_filesystem_view.path());
+        add_detached_widget<GltfImporter>(_fs_view.path());
     }
     if(ImGui::Selectable("Import image")) {
-        add_detached_widget<ImageImporter>(_filesystem_view.path());
+        add_detached_widget<ImageImporter>(_fs_view.path());
     }
 }
 
@@ -112,12 +112,18 @@ void ResourceBrowser::on_gui() {
         ImGui::PopID();
 
         ImGui::SameLine();
+        if(ImGui::Button(ICON_FA_ARROW_UP)) {
+            const FileSystemModel* fs = _fs_view.filesystem();
+            _fs_view.set_path(fs->parent_path(_fs_view.path()).unwrap_or(_fs_view.root_path()));
+        }
+
+        ImGui::SameLine();
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
 
-        imgui::text_read_only("##currentpath", fmt("/{}", _filesystem_view.path()));
+        imgui::text_read_only("##currentpath", fmt("/{}", _fs_view.path()));
     }
 
-    _filesystem_view.draw_gui_inside();
+    _fs_view.draw_gui_inside();
 }
 
 }

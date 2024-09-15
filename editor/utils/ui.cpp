@@ -608,7 +608,7 @@ bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGu
     return activated;
 }*/
 
-static bool icon_button(const UiIcon& icon, const UiTexture& tex_icon, const char* str_id, bool selected, float icon_size) {
+static bool icon_button(const UiIcon& icon, const UiTexture& tex_icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags) {
     ImGui::BeginGroup();
 
     const math::Vec2 cursor = ImGui::GetCursorPos();
@@ -617,7 +617,7 @@ static bool icon_button(const UiIcon& icon, const UiTexture& tex_icon, const cha
     const math::Vec2 padded_size = math::Vec2(icon_size) - padding * 2.0f;
 
     ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
-    const bool activated = ImGui::Selectable(str_id, selected, 0, math::Vec2(icon_size, icon_size + text_height));
+    const bool activated = ImGui::Selectable(str_id, selected, flags, math::Vec2(icon_size, icon_size + text_height));
     ImGui::PopStyleVar();
 
     ImGui::SetCursorPos(cursor + padding);
@@ -635,12 +635,12 @@ static bool icon_button(const UiIcon& icon, const UiTexture& tex_icon, const cha
     return activated;
 }
 
-bool icon_button(const UiIcon& icon, const char* str_id, bool selected, float icon_size) {
-    return icon_button(icon, {}, str_id, selected, icon_size);
+bool icon_button(const UiIcon& icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags) {
+    return icon_button(icon, {}, str_id, selected, icon_size, flags);
 }
 
-bool icon_button(const UiTexture& icon, const char* str_id, bool selected, float icon_size) {
-    return icon_button({}, icon, str_id, selected, icon_size);
+bool icon_button(const UiTexture& icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags) {
+    return icon_button({}, icon, str_id, selected, icon_size, flags);
 }
 
 // https://github.com/ocornut/imgui/issues/2718

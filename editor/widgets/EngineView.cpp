@@ -197,8 +197,8 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     }
 
     {
-        CmdTimingRecorder* time_rec = _time_recs.emplace_back(std::make_unique<CmdTimingRecorder>(recorder)).get();
-        graph.render(recorder, time_rec);
+        //CmdTimingRecorder* time_rec = _time_recs.emplace_back(std::make_unique<CmdTimingRecorder>(recorder)).get();
+        graph.render(recorder/*, time_rec*/);
     }
 
     if(output) {
