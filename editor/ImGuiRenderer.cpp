@@ -46,7 +46,7 @@ static ImageData load_font() {
     y_profile();
 
     ImFontAtlas* fonts = ImGui::GetIO().Fonts;
-    fonts->AddFontFromMemoryCompressedTTF(jetbrains_mono_compressed_data, font_awesome_compressed_size, 15.0f);
+    fonts->AddFontFromMemoryCompressedTTF(jetbrains_mono_compressed_data, jetbrains_mono_compressed_size, 15.0f);
 
 
 
