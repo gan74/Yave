@@ -55,7 +55,7 @@ static bool try_enable_extension(core::Vector<const char*>& exts, const char* na
     return false;
 }
 
-Instance::Instance(InstanceParams params) : _params(params) {
+Instance::Instance(const InstanceParams& params) : _params(params) {
     _params.debug_utils |= _params.validation_layers;
 
     initialize_volk();
@@ -74,7 +74,7 @@ Instance::Instance(InstanceParams params) : _params(params) {
 #endif
 
     if(_params.debug_utils) {
-        _params.validation_layers = try_enable_extension(extension_names, DebugUtils::extension_name());
+        _params.debug_utils = try_enable_extension(extension_names, DebugUtils::extension_name());
     }
 
     VkApplicationInfo app_info = vk_struct();
