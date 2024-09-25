@@ -61,7 +61,7 @@ class EcsScene : public Scene {
         void process_component_visibility(u32 ObjectIndices::* index_ptr, S& storage);
 
         template<typename T, typename S>
-        void process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage);
+        bool process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage);
 
         template<typename T, typename S>
         void process_components(u32 ObjectIndices::* index_ptr, S& storage);
