@@ -4,28 +4,28 @@
 #ifdef DEBUG
 
 // 4 * 5 bitmaps
-#define CHAR_MINUS      1792
-#define CHAR_DOT        2
-#define CHAR_COLON      8224
+#define CHAR_MINUS      0x000700
+#define CHAR_DOT        0x000002
+#define CHAR_COLON      0x002020
 
-#define CHAR_A          481109
-#define CHAR_E          464663
-#define CHAR_G          463191
-#define CHAR_P          481041
-#define CHAR_M          357717
-#define CHAR_V          349522
-#define CHAR_X          348757
+#define CHAR_A          0x075755
+#define CHAR_E          0x071717
+#define CHAR_G          0x071157
+#define CHAR_P          0x075711
+#define CHAR_M          0x057555
+#define CHAR_V          0x055552
+#define CHAR_X          0x055255
 
-#define CHAR_0          480599
-#define CHAR_1          139810
-#define CHAR_2          476951
-#define CHAR_3          476999
-#define CHAR_4          350020
-#define CHAR_5          464711
-#define CHAR_6          464727
-#define CHAR_7          476228
-#define CHAR_8          481111
-#define CHAR_9          481095
+#define CHAR_0          0x075557
+#define CHAR_1          0x022222
+#define CHAR_2          0x074717
+#define CHAR_3          0x074747
+#define CHAR_4          0x055744
+#define CHAR_5          0x071747
+#define CHAR_6          0x071757
+#define CHAR_7          0x074444
+#define CHAR_8          0x075757
+#define CHAR_9          0x075747
 
 
 // https://www.shadertoy.com/view/4sBSWW

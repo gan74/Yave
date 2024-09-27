@@ -41,7 +41,7 @@ struct InstanceParams {
 
 class Instance : NonMovable {
     public:
-        Instance(InstanceParams params);
+        Instance(const InstanceParams& params);
         ~Instance();
 
         const InstanceParams& instance_params() const;
