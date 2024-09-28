@@ -35,6 +35,7 @@ SOFTWARE.
 #include <y/core/Chrono.h>
 
 #include <editor/utils/ui.h>
+#include <editor/utils/imp.h>
 
 #include <y/utils/format.h>
 
@@ -336,8 +337,6 @@ class DebugValueEditor : public Widget {
 };
 
 
-
-
 class RaytracingDebug : public Widget {
     editor_widget_open(RaytracingDebug, "View", "Debug")
 
@@ -354,6 +353,25 @@ class RaytracingDebug : public Widget {
 
             const TLAS& tlas = current_scene().tlas();
             ImGui::Text("TLAS size = %uKB", u32(tlas.buffer().byte_size() / 1024));
+        }
+};
+
+
+
+
+class ImpDebug : public Widget {
+    editor_widget_open(ImpDebug, "View", "Debug")
+
+    public:
+        ImpDebug() : Widget("IMP debug") {
+        }
+
+    protected:
+        void on_gui() override {
+            if(auto _ = imp::header("header", {{ImGuiCol_CheckMark, 0xFF00FF00}})) {
+                bool checked = true;
+                imp::checkbox("oof", checked, {{ImGuiCol_Text, 0xFF0000FF}});
+            }
         }
 };
 
