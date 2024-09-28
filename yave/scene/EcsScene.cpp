@@ -99,7 +99,7 @@ void EcsScene::process_component_visibility(u32 ObjectIndices::* index_ptr, S& s
 }
 
 template<typename T, typename S>
-void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage) {
+bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage) {
     y_profile();
 
     auto update_transform = [this](auto& obj, const TransformableComponent& tr, const auto& comp) {
@@ -153,6 +153,8 @@ void EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
     }
 
     process_component_visibility<T>(index_ptr, storage);
+
+    return !group_base->removed_ids().is_empty();
 }
 
 
@@ -249,23 +251,28 @@ void EcsScene::update_from_world() {
 
     y_debug_assert(_world);
 
-    process_transformable_components<StaticMeshComponent>(&ObjectIndices::mesh, _meshes);
+
+    bool need_tlas_rebuild = false;
+    need_tlas_rebuild |= process_transformable_components<StaticMeshComponent>(&ObjectIndices::mesh, _meshes);
+
     process_transformable_components<PointLightComponent>(&ObjectIndices::point_light, _point_lights);
     process_transformable_components<SpotLightComponent>(&ObjectIndices::spot_light, _spot_lights);
+
     process_components<DirectionalLightComponent>(&ObjectIndices::directional_light, _directionals);
     process_components<SkyLightComponent>(&ObjectIndices::sky_light, _sky_lights);
 
     process_atmosphere();
 
-
     if(_transform_manager.need_update()) {
         ComputeCmdBufferRecorder recorder = create_disposable_compute_cmd_buffer();
         _transform_manager.update_buffer(recorder);
         recorder.submit_async();
-
-        update_tlas();
+        need_tlas_rebuild |= true;
     }
 
+    if(need_tlas_rebuild) {
+       update_tlas();
+    }
 
     audit();
 }

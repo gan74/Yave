@@ -29,7 +29,6 @@ SOFTWARE.
 #include <yave/assets/AssetLoader.h>
 #include <y/core/HashMap.h>
 
-#include <regex>
 #include <tuple>
 
 namespace editor {
@@ -47,6 +46,27 @@ static core::String shortcut_text(KeyCombination shortcut) {
         }
     }
     return text;
+}
+
+static core::Vector<std::string_view> split_words(std::string_view str) {
+    core::Vector<std::string_view> words(1_uu, std::string_view{});
+    for(usize i = 0; i != str.size(); ++i) {
+        const char c = str[i];
+        if(std::isspace(c)) {
+            if(words.is_empty() || !words.last().empty()) {
+                words.emplace_back();
+            }
+        } else {
+            auto& last = words.last();
+            last = last.empty() ? std::string_view(str.data() + i, 1) : std::string_view(last.data(), last.size() + 1);
+        }
+    }
+
+    if(!words.is_empty() && words.last().empty()) {
+        words.pop();
+    }
+
+    return words;
 }
 
 
@@ -217,13 +237,22 @@ void UiManager::draw_menu_bar() {
                 imgui::search_bar(ICON_FA_SEARCH "##searchbar", _search_pattern.data(), _search_pattern.size());
 
                 if(imgui::begin_suggestion_popup()) {
-                    const std::regex regex(_search_pattern.data(), std::regex::icase);
+                    const core::Vector words = split_words(_search_pattern.data());
                     for(const EditorAction* action : _actions) {
                         if(action->enabled && !(action->enabled()) || (action->flags & EditorAction::Contextual) == EditorAction::Contextual) {
                             continue;
                         }
 
-                        if(std::regex_search(action->name.data(), regex)) {
+                        bool match = true;
+                        for(const std::string_view word : words) {
+                            const auto it = std::search(action->name.begin(), action->name.end(), word.begin(), word.end(), [](char a, char b) { return std::tolower(a) == std::tolower(b); });
+                            if(it == action->name.end()) {
+                                match = false;
+                                break;
+                            }
+                        }
+
+                        if(match) {
                             const core::String shortcut = shortcut_text(action->shortcut);
                             if(imgui::suggestion_item(action->name.data(), shortcut.is_empty() ? nullptr : shortcut.data())) {
                                 action->function();

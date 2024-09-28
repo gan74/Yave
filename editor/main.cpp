@@ -40,7 +40,7 @@ SOFTWARE.
 using namespace editor;
 
 static bool multi_viewport = false;
-static InstanceParams params = {
+static InstanceParams inst_params = {
     .validation_layers = is_debug_defined,
     .debug_utils = is_debug_defined,
 };
@@ -49,11 +49,11 @@ static InstanceParams params = {
 static void parse_args(int argc, char** argv) {
     for(std::string_view arg : core::Span<const char*>(argv + 1, argc - 1)) {
         if(arg == "--nodebug") {
-            params.validation_layers = false;
+            inst_params.validation_layers = false;
         } else if(arg == "--debug") {
-            params.validation_layers = true;
+            inst_params.validation_layers = true;
         } else if(arg == "--nort") {
-            params.raytracing = false;
+            inst_params.raytracing = false;
         } else if(arg == "--nomv") {
             multi_viewport = false;
         } else if(arg == "--mv") {
@@ -73,18 +73,18 @@ static void parse_args(int argc, char** argv) {
             log_msg(fmt("{} is not supported outside of Windows", arg), Log::Error);
 #endif
         } else {
-            log_msg(fmt("Unknown argumeent: {}", arg), Log::Error);
+            log_msg(fmt("Unknown command line argument: {}", arg), Log::Error);
         }
     }
 
-    y_debug_assert([] { log_msg("Debug asserts enabled."); return true; }());
+    y_debug_assert([] { log_msg("Debug asserts enabled"); return true; }());
 }
 
 static Instance create_instance() {
-    if(!params.validation_layers) {
-        log_msg("Vulkan validation disabled.", Log::Warning);
+    if(!inst_params.validation_layers) {
+        log_msg("Vulkan validation disabled", Log::Warning);
     }
-    return Instance(params);
+    return Instance(inst_params);
 }
 
 
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
     parse_args(argc, argv);
 
     if(!crashhandler::setup_handler()) {
-        log_msg("Unable to setup crash handler.", Log::Warning);
+        log_msg("Unable to setup crash handler", Log::Warning);
     }
 
     Instance instance = create_instance();
