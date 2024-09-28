@@ -252,7 +252,7 @@ void EcsScene::update_from_world() {
     y_debug_assert(_world);
 
 
-    bool need_tlas_rebuild = false;
+    bool need_tlas_rebuild = _tlas.is_null();
     need_tlas_rebuild |= process_transformable_components<StaticMeshComponent>(&ObjectIndices::mesh, _meshes);
 
     process_transformable_components<PointLightComponent>(&ObjectIndices::point_light, _point_lights);
