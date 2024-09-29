@@ -360,7 +360,7 @@ class RaytracingDebug : public Widget {
 
 
 class ImpDebug : public Widget {
-    editor_widget_open(ImpDebug, "View", "Debug")
+    editor_widget(ImpDebug, "View", "Debug")
 
     public:
         ImpDebug() : Widget("IMP debug") {
