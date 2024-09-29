@@ -64,7 +64,7 @@ class EngineView final : public Widget {
         EngineView();
         ~EngineView() override;
 
-        CmdTimingRecorder* timing_recorder() const;
+        CmdTimestampPool* timestamp_pool() const;
 
     protected:
         void on_gui() override;
@@ -98,7 +98,7 @@ class EngineView final : public Widget {
         RenderView _view = RenderView::Lit;
 
         std::shared_ptr<FrameGraphResourcePool> _resource_pool;
-        core::RingQueue<std::unique_ptr<CmdTimingRecorder>> _time_recs;
+        core::RingQueue<std::unique_ptr<CmdTimestampPool>> _timestamp_pools;
 
         EditorRendererSettings _settings;
 

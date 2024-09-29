@@ -44,10 +44,11 @@ class CmdBufferRegion : NonCopyable {
     private:
         friend class CmdBufferRecorderBase;
 
-        CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTimingRecorder* time_rec, CmdQueue* queue, const char* name, const math::Vec4& color);
+        CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTimestampPool* ts_pool, CmdQueue* queue, const char* name, const math::Vec4& color);
 
         VkCommandBuffer _buffer = {};
-        CmdTimingRecorder* _time_recorder = nullptr;
+        CmdTimestampPool* _timestamp_pool = nullptr;
+        u32 _timestamp_index = u32(-1);
 
 #ifdef YAVE_GPU_PROFILING
         u64 _profiling_scope[3] = {};
@@ -79,7 +80,7 @@ class RenderPassRecorder final : NonMovable {
 
 
         // proxies from _cmd_buffer
-        CmdBufferRegion region(const char* name, CmdTimingRecorder* time_rec = nullptr, const math::Vec4& color = math::Vec4());
+        CmdBufferRegion region(const char* name, CmdTimestampPool *ts_pool = nullptr, const math::Vec4& color = math::Vec4());
 
         VkCommandBuffer vk_cmd_buffer() const;
 
@@ -121,7 +122,7 @@ class CmdBufferRecorderBase : NonMovable {
 
         bool is_inside_renderpass() const;
 
-        CmdBufferRegion region(const char* name, CmdTimingRecorder* time_rec = nullptr, const math::Vec4& color = math::Vec4());
+        CmdBufferRegion region(const char* name, CmdTimestampPool *ts_pool = nullptr, const math::Vec4& color = math::Vec4());
 
         void barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images);
         void barriers(core::Span<BufferBarrier> buffers);

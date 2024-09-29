@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "CmdBufferRecorder.h"
-#include "CmdTimingRecorder.h"
+#include "CmdTimestampPool.h"
 #include "CmdQueue.h"
 
 #include <yave/material/Material.h>
@@ -43,37 +43,22 @@ namespace yave {
 
 // -------------------------------------------------- CmdBufferRegion --------------------------------------------------
 
-CmdBufferRegion::~CmdBufferRegion() {
-    if(_buffer) {
-        if(const DebugUtils* debug = debug_utils()) {
-            debug->end_region(_buffer);
-        }
-        if(_time_recorder) {
-            y_debug_assert(_time_recorder->vk_cmd_buffer() == _buffer);
-            _time_recorder->end_zone();
-        }
-
-#ifdef YAVE_GPU_PROFILING
-        reinterpret_cast<tracy::VkCtxScope*>(&_profiling_scope)->~VkCtxScope();
-#endif
-    }
-}
-
-CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTimingRecorder* time_rec, CmdQueue* queue, const char* name, const math::Vec4& color) :
+CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTimestampPool *ts_pool, CmdQueue* queue, const char* name, const math::Vec4& color) :
         _buffer(cmd_buffer.vk_cmd_buffer()),
-        _time_recorder(time_rec) {
+        _timestamp_pool(ts_pool) {
 
     if(const DebugUtils* debug = debug_utils()) {
         debug->begin_region(_buffer, name, color);
     }
 
-    if(_time_recorder) {
-        y_debug_assert(_time_recorder->vk_cmd_buffer() == _buffer);
-        _time_recorder->begin_zone(name);
+    if(_timestamp_pool) {
+        y_debug_assert(_timestamp_pool->vk_cmd_buffer() == _buffer);
+        _timestamp_index = _timestamp_pool->begin_zone(name);
     }
 
     unused(queue);
 #ifdef YAVE_GPU_PROFILING
+    static_assert(sizeof(_profiling_scope) <= sizeof(tracy::VkCtxScope));
     new(&_profiling_scope) tracy::VkCtxScope(
         queue->profiling_context(),
         TracyLine, TracyFile, std::strlen(TracyFile),
@@ -82,6 +67,22 @@ CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTim
         _buffer, true
     );
 #endif
+}
+
+CmdBufferRegion::~CmdBufferRegion() {
+    if(_buffer) {
+        if(const DebugUtils* debug = debug_utils()) {
+            debug->end_region(_buffer);
+        }
+        if(_timestamp_pool) {
+            y_debug_assert(_timestamp_pool->vk_cmd_buffer() == _buffer);
+            _timestamp_pool->end_zone(_timestamp_index);
+        }
+
+#ifdef YAVE_GPU_PROFILING
+        reinterpret_cast<tracy::VkCtxScope*>(&_profiling_scope)->~VkCtxScope();
+#endif
+    }
 }
 
 CmdBufferRegion::CmdBufferRegion(CmdBufferRegion&& other) {
@@ -95,7 +96,8 @@ CmdBufferRegion& CmdBufferRegion::operator=(CmdBufferRegion&& other) {
 
 void CmdBufferRegion::swap(CmdBufferRegion& other) {
     std::swap(_buffer, other._buffer);
-    std::swap(_time_recorder, other._time_recorder);
+    std::swap(_timestamp_pool, other._timestamp_pool);
+    std::swap(_timestamp_index, other._timestamp_index);
 #ifdef YAVE_GPU_PROFILING
     std::swap(_profiling_scope, other._profiling_scope);
 #endif
@@ -227,8 +229,8 @@ void RenderPassRecorder::bind_attrib_buffers(core::Span<AttribSubBuffer> attribs
     vkCmdBindVertexBuffers(vk_cmd_buffer(), 0, attrib_count, buffers.data(), offsets.data());
 }
 
-CmdBufferRegion RenderPassRecorder::region(const char* name, CmdTimingRecorder* time_rec, const math::Vec4& color) {
-    return _cmd_buffer.region(name, time_rec, color);
+CmdBufferRegion RenderPassRecorder::region(const char* name, CmdTimestampPool* ts_pool, const math::Vec4& color) {
+    return _cmd_buffer.region(name, ts_pool, color);
 }
 
 VkCommandBuffer RenderPassRecorder::vk_cmd_buffer() const {
@@ -306,8 +308,8 @@ bool CmdBufferRecorderBase::is_inside_renderpass() const {
     return _render_pass;
 }
 
-CmdBufferRegion CmdBufferRecorderBase::region(const char* name, CmdTimingRecorder* time_rec, const math::Vec4& color) {
-    return CmdBufferRegion(*this, time_rec, _data->queue(), name, color);
+CmdBufferRegion CmdBufferRecorderBase::region(const char* name, CmdTimestampPool* ts_pool, const math::Vec4& color) {
+    return CmdBufferRegion(*this, ts_pool, _data->queue(), name, color);
 }
 
 void CmdBufferRecorderBase::end_renderpass() {

@@ -323,8 +323,9 @@ inline constexpr bool is_incomplete(VkResult result) {
 
 const char* vk_result_str(VkResult result);
 
-inline void vk_check(VkResult result) {
+inline VkResult vk_check(VkResult result) {
     y_always_assert(!is_error(result), vk_result_str(result));
+    return result;
 }
 
 [[nodiscard]] inline bool vk_swapchain_out_of_date(VkResult result) {
@@ -335,8 +336,9 @@ inline void vk_check(VkResult result) {
     return false;
 }
 
-inline void vk_check_or_incomplete(VkResult result) {
+inline VkResult vk_check_or_incomplete(VkResult result) {
     y_always_assert(is_incomplete(result) || !is_error(result), vk_result_str(result));
+    return result;
 }
 
 

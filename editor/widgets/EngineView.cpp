@@ -36,7 +36,7 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/framegraph/FrameGraphResourcePool.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/graphics/commands/CmdTimingRecorder.h>
+#include <yave/graphics/commands/CmdTimestampPool.h>
 #include <yave/graphics/device/DeviceResources.h>
 
 #include <yave/utils/color.h>
@@ -88,9 +88,9 @@ EngineView::~EngineView() {
     unset_scene_view(&_scene_view);
 }
 
-CmdTimingRecorder* EngineView::timing_recorder() const {
-    if(!_time_recs.is_empty() && _time_recs.first()->is_data_ready()) {
-        return _time_recs.first().get();
+CmdTimestampPool* EngineView::timestamp_pool() const {
+    if(!_timestamp_pools.is_empty() && _timestamp_pools.first()->is_ready()) {
+        return _timestamp_pools.first().get();
     }
     return nullptr;
 }
@@ -106,8 +106,8 @@ bool EngineView::is_focussed() const {
 }
 
 bool EngineView::should_keep_alive() const {
-    for(const auto& t : _time_recs) {
-        if(!t->is_data_ready()) {
+    for(const auto& t : _timestamp_pools) {
+        if(!t->is_ready()) {
             return true;
         }
     }
@@ -144,9 +144,9 @@ void EngineView::after_gui() {
 }
 
 void EngineView::draw(CmdBufferRecorder& recorder) {
-    while(_time_recs.size() >= 2) {
-        if(_time_recs[0]->is_data_ready() && _time_recs[1]->is_data_ready()) {
-            _time_recs.pop_front();
+    while(_timestamp_pools.size() >= 2) {
+        if(_timestamp_pools[0]->is_ready() && _timestamp_pools[1]->is_ready()) {
+            _timestamp_pools.pop_front();
         } else {
             break;
         }
@@ -197,8 +197,8 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     }
 
     {
-        //CmdTimingRecorder* time_rec = _time_recs.emplace_back(std::make_unique<CmdTimingRecorder>(recorder)).get();
-        graph.render(recorder/*, time_rec*/);
+        CmdTimestampPool* ts_pool = _timestamp_pools.emplace_back(std::make_unique<CmdTimestampPool>(recorder)).get();
+        graph.render(recorder, ts_pool);
     }
 
     if(output) {

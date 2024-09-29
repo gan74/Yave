@@ -48,6 +48,7 @@ class CmdBufferRecorder;
 class CmdBufferRecorderBase;
 class CmdBufferRegion;
 class CmdQueue;
+class CmdTimestampPool;
 class CmdTimingRecorder;
 class ComputeCapableCmdBufferRecorder;
 class ComputeCmdBufferRecorder;
@@ -242,12 +243,14 @@ struct SubMesh;
 struct TAAPass;
 struct TAASettings;
 struct TemporalPass;
+struct TimedZone;
 struct ToneMappingPass;
 struct ToneMappingSettings;
 struct TransformData;
 struct TransformableSceneObjectData;
 struct Viewport;
 struct VolumeSampler;
+struct Zone;
 }
 
 

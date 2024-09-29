@@ -231,7 +231,7 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
 
                 next_fence = submit_data.next_fence;
 
-                y_profile_zone("submit async");
+                y_profile_zone("vkQueueSubmit async");
                 vk_check(vkQueueSubmit(queue, 1, &submit_info, fence));
             });
         });
@@ -295,7 +295,7 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
                 submit_info.pSignalSemaphores = signal_semaphores.data();
             }
 
-            y_profile_zone("submit");
+            y_profile_zone("vkQueueSubmit");
             vk_check(vkQueueSubmit(queue, 1, &submit_info, fence));
         });
     }

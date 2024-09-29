@@ -59,7 +59,7 @@ class GpuProfiler final : public Widget {
 
     private:
         core::FlatHashMap<i64, ZoneHistory> _history;
-        bool _tree = true;
+        bool _display_tree = true;
 };
 
 }
