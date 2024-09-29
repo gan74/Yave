@@ -41,9 +41,9 @@ namespace editor {
 ImageImporter::ImageImporter() : ImageImporter(asset_store().filesystem()->current_path().unwrap_or(".")) {
 }
 
-ImageImporter::ImageImporter(std::string_view import_path) :
+ImageImporter::ImageImporter(core::String dst_import_path) :
         Widget("Image importer"),
-        _import_path(import_path) {
+        _import_path(std::move(dst_import_path)) {
 
     _browser.set_selection_filter(import::supported_image_extensions());
     _browser.set_selected_callback([this](const auto& filename) { import(filename); return true; });

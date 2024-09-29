@@ -44,7 +44,7 @@ class GltfImporter final : public Widget {
 
     public:
         GltfImporter();
-        GltfImporter(std::string_view import_dst_path);
+        GltfImporter(core::String dst_import_path);
 
     protected:
         void on_gui() override;
@@ -52,14 +52,13 @@ class GltfImporter final : public Widget {
         bool should_keep_alive() const override;
 
     private:
-        core::String _import_path;
         State _state = State::Browsing;
 
         FileBrowser _browser;
         core::Result<import::ParsedScene> _scene = core::Err();
 
         struct {
-            core::String import_path = "import/";
+            core::String import_path;
             bool import_child_prefabs_as_assets = false;
         } _settings;
 

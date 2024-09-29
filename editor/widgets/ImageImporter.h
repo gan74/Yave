@@ -40,7 +40,7 @@ class ImageImporter final : public Widget {
 
     public:
         ImageImporter();
-        ImageImporter(std::string_view import_path);
+        ImageImporter(core::String dst_import_path);
 
         ~ImageImporter();
 

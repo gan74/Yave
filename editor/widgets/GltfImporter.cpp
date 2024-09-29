@@ -193,11 +193,11 @@ static void import_all(concurrent::StaticThreadPool& thread_pool, import::Parsed
 GltfImporter::GltfImporter() : GltfImporter(asset_store().filesystem()->current_path().unwrap_or(".")) {
 }
 
-GltfImporter::GltfImporter(std::string_view import_dst_path) :
+GltfImporter::GltfImporter(core::String dst_import_path) :
         Widget("glTF importer"),
-        _import_path(import_dst_path),
         _thread_pool(4_uu) {
 
+    _settings.import_path = std::move(dst_import_path);
     _browser.set_selection_filter(import::supported_scene_extensions());
     _browser.set_canceled_callback([this] { close(); return true; });
     _browser.set_selected_callback([this](const auto& filename) {
