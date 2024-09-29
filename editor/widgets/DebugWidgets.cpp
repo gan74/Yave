@@ -338,7 +338,7 @@ class DebugValueEditor : public Widget {
 
 
 class RaytracingDebug : public Widget {
-    editor_widget_open(RaytracingDebug, "View", "Debug")
+    editor_widget(RaytracingDebug, "View", "Debug")
 
     public:
         RaytracingDebug() : Widget("Raytracing debug") {

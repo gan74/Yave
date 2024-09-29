@@ -66,7 +66,7 @@ class FileSystemView : public Widget {
         void refresh() override;
 
         void set_allow_modify(bool modify);
-        void set_split_mode(bool split);
+        void set_split_mode_enabled(bool split);
 
         const FileSystemModel* filesystem() const;
 
@@ -95,11 +95,6 @@ class FileSystemView : public Widget {
 
 
         template<typename F>
-        void set_hoverred_delegate(F&& f) {
-            _hoverred_delegate = y_fwd(f);
-        }
-
-        template<typename F>
         void set_clicked_delegate(F&& f) {
             _clicked_delegate = y_fwd(f);
         }
@@ -113,8 +108,6 @@ class FileSystemView : public Widget {
         void on_gui() override;
 
     private:
-        bool process_context_menu();
-
         void update();
         void set_filesystem(const FileSystemModel* fs);
 
@@ -122,7 +115,6 @@ class FileSystemView : public Widget {
         void expand_node_path(std::string_view path, core::Vector<TreeNode>& nodes);
         void draw_node(TreeNode &node);
 
-        usize hoverred_index() const;
         const Entry* entry(usize index) const;
 
         void draw_context_menu();
@@ -139,11 +131,10 @@ class FileSystemView : public Widget {
         std::function<UiTexture(const core::String&, EntryType)> _preview_delegate = [](const core::String&, EntryType) { return UiTexture{}; };
 
         std::function<bool(const core::String&, EntryType)> _clicked_delegate   = [](const core::String&, EntryType) { return false; };
-        std::function<void(const core::String&, EntryType)> _hoverred_delegate  = [](const core::String&, EntryType) {};
 
         std::function<void()> _on_update = [] {};
 
-        usize _hovered = usize(-1);
+        usize _selected_index = usize(-1);
         core::Vector<Entry> _entries;
         core::Vector<TreeNode> _cached_nodes;
 

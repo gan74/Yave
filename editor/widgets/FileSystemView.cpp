@@ -77,7 +77,7 @@ void FileSystemView::set_allow_modify(bool modify) {
     _allow_modify = modify;
 }
 
-void FileSystemView::set_split_mode(bool split) {
+void FileSystemView::set_split_mode_enabled(bool split) {
     _split_mode = split;
 }
 
@@ -106,10 +106,6 @@ void FileSystemView::set_path(const core::String& path) {
 
 const core::String& FileSystemView::path() const {
     return _current_path;
-}
-
-usize FileSystemView::hoverred_index() const {
-    return _hovered;
 }
 
 const FileSystemView::Entry* FileSystemView::entry(usize index) const {
@@ -176,11 +172,11 @@ void FileSystemView::update() {
     y_profile();
 
     core::String hoverred_name;
-    if(_hovered < _entries.size()) {
-        hoverred_name = _entries[_hovered].name;
+    if(_selected_index < _entries.size()) {
+        hoverred_name = _entries[_selected_index].name;
     }
 
-    _hovered = usize(-1);
+    _selected_index = usize(-1);
     _entries.clear();
 
     const std::string_view path = _current_path;
@@ -211,7 +207,7 @@ void FileSystemView::update() {
 
     for(usize i = 0; i != _entries.size(); ++i) {
         if(_entries[i].name == hoverred_name) {
-            _hovered = i;
+            _selected_index = i;
             break;
         }
     }
@@ -242,7 +238,6 @@ void FileSystemView::on_gui() {
         }
     };
 
-    usize new_hovered_index = usize(-1);
     auto post_draw_entry = [&](usize index) {
         const Entry& entry = _entries[index];
         if(_allow_modify) {
@@ -254,21 +249,17 @@ void FileSystemView::on_gui() {
                 ImGui::EndDragDropSource();
             }
         }
-
-        if(ImGui::IsItemHovered()) {
-            new_hovered_index = index;
-        }
     };
 
     auto open_menu_if_needed = [&] {
-        const bool menu_openned = process_context_menu();
-        if(!menu_openned && _hovered != new_hovered_index) {
-            if(const Entry* hoverred = entry(new_hovered_index)) {
-                _hoverred_delegate(hoverred->full_name, hoverred->type);
-            }
-            _hovered = new_hovered_index;
+        if(imgui::should_open_context_menu()) {
+            ImGui::OpenPopup("##contextmenu");
         }
 
+        if(ImGui::BeginPopup("##contextmenu")) {
+            draw_context_menu();
+            ImGui::EndPopup();
+        }
     };
 
 
@@ -314,20 +305,27 @@ void FileSystemView::on_gui() {
                         }
 
                         const Entry& entry = _entries[index];
+                        const bool selected = (_selected_index == index);
 
-                        bool clicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
+                        bool clicked = false;
+                        bool double_clicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
                         if(UiTexture preview = _preview_delegate(entry.full_name, entry.type)) {
-                            clicked &= imgui::icon_button(preview, entry.name.data(), _hovered == index, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
+                            clicked = imgui::icon_button(preview, entry.name.data(), selected, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
                         } else {
-                            clicked &= imgui::icon_button(entry.icon, entry.name.data(), _hovered == index, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
+                            clicked = imgui::icon_button(entry.icon, entry.name.data(), selected, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
                         }
+                        double_clicked &= clicked;
+                        const bool is_right_clicked = ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right);
 
+                        if((clicked || is_right_clicked) && !double_clicked) {
+                            _selected_index = index;
+                        }
 
                         if(i + 1 < entry_per_row) {
                             ImGui::SameLine();
                         }
 
-                        if(clicked) {
+                        if(double_clicked) {
                             entry_clicked(entry);
                             if(_need_update) {
                                 done = true;
@@ -366,7 +364,7 @@ void FileSystemView::on_gui() {
                     imgui::table_begin_next_row();
 
                     const Entry& entry = _entries[i];
-                    if(imgui::selectable_icon(entry.icon, fmt_c_str("{}##{}", entry.name, i), _hovered == i, ImGuiSelectableFlags_SpanAllColumns)) {
+                    if(imgui::selectable_icon(entry.icon, fmt_c_str("{}##{}", entry.name, i), _selected_index == i, ImGuiSelectableFlags_SpanAllColumns)) {
                         entry_clicked(entry);
                         if(_need_update) {
                             break;
@@ -408,19 +406,6 @@ void FileSystemView::draw_node(TreeNode& node) {
     }
 }
 
-bool FileSystemView::process_context_menu() {
-    bool menu_openned = false;
-    if(imgui::should_open_context_menu()) {
-        ImGui::OpenPopup("##contextmenu");
-    }
-
-    if(ImGui::BeginPopup("##contextmenu")) {
-        menu_openned = true;
-        draw_context_menu();
-        ImGui::EndPopup();
-    }
-    return menu_openned;
-}
 
 void FileSystemView::draw_context_menu() {
     if(ImGui::Selectable("New folder")) {
@@ -430,10 +415,10 @@ void FileSystemView::draw_context_menu() {
         refresh_all();
     }
 
-    if(_allow_modify && _hovered < _entries.size()) {
+    if(_allow_modify && _selected_index < _entries.size()) {
         ImGui::Separator();
 
-        const auto& entry = _entries[_hovered];
+        const auto& entry = _entries[_selected_index];
         const core::String full_name = filesystem()->join(_current_path, entry.name);
 
         if(ImGui::MenuItem("Rename")) {

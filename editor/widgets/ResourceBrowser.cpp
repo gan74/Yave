@@ -55,7 +55,7 @@ ResourceBrowser::ResourceBrowser() : ResourceBrowser(ICON_FA_FOLDER_OPEN " Resou
 }
 
 ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _fs_view(asset_store().filesystem()) {
-    _fs_view.set_split_mode(true);
+    _fs_view.set_split_mode_enabled(true);
 
     _fs_view.set_clicked_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
         if(type == FileSystemModel::EntryType::File) {
