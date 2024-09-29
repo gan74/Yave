@@ -59,8 +59,7 @@ LifetimeManager::LifetimeManager() {
                 wait_info.semaphoreCount = 1;
             }
 
-            const VkResult result = vkWaitSemaphores(device, &wait_info, u64(100'000'000)); // 100ms
-            vk_check(result);
+            const VkResult result = vk_check(vkWaitSemaphores(device, &wait_info, u64(100'000'000))); // 100ms
 
             if(result == VK_TIMEOUT) {
                 --semaphore_value;
