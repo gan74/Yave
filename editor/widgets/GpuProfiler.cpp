@@ -138,7 +138,7 @@ void GpuProfiler::on_gui() {
             }*/
 
 
-            const u32 color_u32 = ImGui::GetColorU32(ImGuiCol_PlotHistogram, 0.25f);
+            const u32 color_u32 = ImGui::GetColorU32(ImGuiCol_PlotHistogram, 0.4f);
             auto draw_bg = [=](float ratio) {
                 const float width = ImGui::GetContentRegionAvail().x * std::min(1.0f, ratio);
                 if(width <= 0.5f) {
@@ -178,8 +178,6 @@ void GpuProfiler::on_gui() {
                         ImGui::Text("max: %.2f ms", zone_history.gpu_ms_max);
                         ImGui::EndTooltip();
                     }*/
-                } else {
-                    ImGui::TextUnformatted("<unavailable>");
                 }
 
                 ImGui::TableSetColumnIndex(2);

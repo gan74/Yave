@@ -70,10 +70,7 @@ class CmdTimestampPool : NonMovable {
 
             const double timestamp_to_ns = device_properties().timestamp_period;
             for(const Zone& zone : _zones) {
-                const double gpu_nanos = (zone.start_query != u32(-1) && zone.end_query != u32(-1))
-                    ? (_results[zone.end_query] - _results[zone.start_query]) * timestamp_to_ns
-                    : -1.0;
-
+                const double gpu_nanos = (_results[zone.end_query] - _results[zone.start_query]) * timestamp_to_ns;
                 const TimedZone tz{zone.name, zone.contained_zones, zone.cpu_nanos, gpu_nanos};
                 func(tz);
             }
@@ -91,14 +88,14 @@ class CmdTimestampPool : NonMovable {
     private:
         u32 alloc_query(PipelineStage stage);
 
-        VkHandle<VkQueryPool> _pool;
+        core::SmallVector<VkHandle<VkQueryPool>, 2> _pools;
         VkCommandBuffer _cmd_buffer = {};
         u32 _query_index = 0;
 
         core::Chrono _chrono;
         core::Vector<Zone> _zones;
 
-        std::unique_ptr<u64[]> _results;
+        core::Vector<u64> _results;
 };
 
 }

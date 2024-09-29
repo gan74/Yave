@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace yave {
 
-static constexpr u32 timestamp_pool_size = 1 << 10;
+static constexpr u32 timestamp_pool_size = 256;
 
 static VkHandle<VkQueryPool> create_pool(VkCommandBuffer cmd_buffer) {
     VkQueryPoolCreateInfo create_info = vk_struct();
@@ -48,14 +48,12 @@ static VkHandle<VkQueryPool> create_pool(VkCommandBuffer cmd_buffer) {
 
 
 CmdTimestampPool::CmdTimestampPool(const CmdBufferRecorderBase& recorder) :
-        _pool(create_pool(recorder.vk_cmd_buffer())),
-        _cmd_buffer(recorder.vk_cmd_buffer()),
-        _results(std::make_unique<u64[]>(timestamp_pool_size)) {
+        _cmd_buffer(recorder.vk_cmd_buffer()) {
 }
 
 CmdTimestampPool::~CmdTimestampPool() {
-    if(_pool) {
-        destroy_graphic_resource(std::move(_pool));
+    for(auto& pool : _pools) {
+        destroy_graphic_resource(std::move(pool));
     }
 }
 
@@ -68,23 +66,28 @@ bool CmdTimestampPool::is_empty() const {
 }
 
 bool CmdTimestampPool::is_ready(bool wait) const {
-    if(!_pool) {
-        return true;
-    }
-
     const VkQueryResultFlags flags = VK_QUERY_RESULT_64_BIT | (wait ? VK_QUERY_RESULT_WAIT_BIT : 0);
-    return VK_NOT_READY != vk_check(vkGetQueryPoolResults(vk_device(), _pool, 0, _query_index, sizeof(u64) * _query_index, _results.get(), sizeof(u64), flags));
+    for(usize i = 0; i != _pools.size(); ++i) {
+        const usize pool_index = _pools.size() - i - 1;
+        const VkQueryPool pool = _pools[pool_index];
+        const u32 count = i ? timestamp_pool_size : _query_index % timestamp_pool_size;
+        void* result_ptr = const_cast<u64*>(&_results[pool_index * timestamp_pool_size]);
+        y_debug_assert(count);
+        if(VK_NOT_READY == vk_check(vkGetQueryPoolResults(vk_device(), pool, 0, count, sizeof(u64) * count, result_ptr, sizeof(u64), flags))) {
+            return false;
+        }
+    }
+    return true;
 }
 
 u32 CmdTimestampPool::alloc_query(PipelineStage stage) {
-    y_debug_assert(_pool);
-
-    if(_query_index >= timestamp_pool_size) {
-        return u32(-1);
+    if(_query_index % timestamp_pool_size == 0) {
+        _pools.emplace_back(create_pool(_cmd_buffer));
+        _results.set_min_size(_pools.size() * timestamp_pool_size);
     }
 
     const u32 index = _query_index++;
-    vkCmdWriteTimestamp(_cmd_buffer, VkPipelineStageFlagBits(stage), _pool, index);
+    vkCmdWriteTimestamp(_cmd_buffer, VkPipelineStageFlagBits(stage), _pools.last(), index % timestamp_pool_size);
     return index;
 }
 
