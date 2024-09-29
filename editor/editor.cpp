@@ -75,8 +75,6 @@ std::unique_ptr<EcsScene> scene;
 
 std::unique_ptr<concurrent::StaticThreadPool> thread_pool;
 
-core::String world_file;
-
 ImGuiPlatform* imgui_platform = nullptr;
 
 SceneView default_scene_view;
@@ -107,7 +105,7 @@ static void create_scene() {
 static void save_world_deferred() {
     y_profile();
 
-    auto file = io2::File::create(application::world_file);
+    auto file = io2::File::create(app_settings().editor.world_file);
     if(!file) {
         log_msg("Unable to open file", Log::Error);
         return;
@@ -125,7 +123,7 @@ static void save_world_deferred() {
 static void load_world_deferred() {
     y_profile();
 
-    auto file = io2::File::open(application::world_file);
+    auto file = io2::File::open(app_settings().editor.world_file);
     if(!file) {
         log_msg("Unable to open file", Log::Error);
         return;
@@ -178,7 +176,6 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::thread_pool = std::make_unique<concurrent::StaticThreadPool>();
 
     const auto& store_dir = app_settings().editor.asset_store;
-    application::world_file = app_settings().editor.world_file;
 
     application::undo_stack = std::make_unique<UndoStack>();
     application::resources = std::make_unique<EditorResources>();
