@@ -581,33 +581,6 @@ bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGu
     return ImGui::Selectable(str_id, selected, flags) || activated;
 }
 
-
-
-/*bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, float size) {
-    ImGui::BeginGroup();
-
-    const math::Vec2 cursor_pos = ImGui::GetCursorPos();
-    ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
-    const bool activated = ImGui::Selectable(str_id, selected, 0, math::Vec2(size));
-    ImGui::PopStyleVar();
-
-    if(ImGui::BeginItemTooltip()) {
-        ImGui::TextUnformatted(str_id);
-        ImGui::EndTooltip();
-    }
-
-    {
-        const auto [uv, uv_size] = compute_glyph_uv_size(fmt_c_str("{}", icon.icon));
-        const float text_height = ImGui::CalcTextSize(str_id).y;
-        const math::Vec2 padding = ImGui::GetStyle().FramePadding;
-        ImGui::SetCursorPos(cursor_pos + math::Vec2(text_height * 0.5f, 0.0f) + padding * 0.5f);
-        ImGui::Image({}, math::Vec2(size - text_height) - padding, uv, uv + uv_size, ImGui::ColorConvertU32ToFloat4(icon.color));
-    }
-
-    ImGui::EndGroup();
-    return activated;
-}*/
-
 static bool icon_button(const UiIcon& icon, const UiTexture& tex_icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags) {
     ImGui::BeginGroup();
 

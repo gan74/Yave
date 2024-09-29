@@ -321,6 +321,11 @@ void FileSystemView::on_gui() {
                             _selected_index = index;
                         }
 
+                        if(ImGui::BeginItemTooltip()) {
+                            ImGui::TextUnformatted(entry.name.data(), entry.name.data() + entry.name.size());
+                            ImGui::EndTooltip();
+                        }
+
                         if(i + 1 < entry_per_row) {
                             ImGui::SameLine();
                         }
