@@ -169,7 +169,7 @@ void GpuProfiler::on_gui() {
 
                 ImGui::TableSetColumnIndex(1);
 
-                {
+                if(gpu_ms >= 0.0) {
                     draw_bg(float(gpu_ms / gpu_total_ms));
                     ImGui::Text("%.2f ms", gpu_ms);
 
@@ -178,6 +178,8 @@ void GpuProfiler::on_gui() {
                         ImGui::Text("max: %.2f ms", zone_history.gpu_ms_max);
                         ImGui::EndTooltip();
                     }*/
+                } else {
+                    ImGui::TextUnformatted("<unavailable>");
                 }
 
                 ImGui::TableSetColumnIndex(2);
