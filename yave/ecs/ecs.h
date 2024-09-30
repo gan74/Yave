@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <y/utils/traits.h>
+
 #include <compare>
 
 namespace yave {
@@ -123,6 +125,16 @@ struct RegisterComponent {
     static inline void register_component_type(System*);
 };
 
+template<typename... ComponentTypes>
+struct RequireComponent {
+    static inline const std::array<ComponentTypeIndex, sizeof...(ComponentTypes)> required_component_types = {type_index<ComponentTypes>()... };
+};
+
+
+
+
+
+
 
 template<typename T>
 concept Inspectable = requires(T comp) {
@@ -134,6 +146,10 @@ concept Registerable = requires(T comp) {
     comp.register_component_type(static_cast<System*>(nullptr));
 };
 
+template<typename T>
+concept HasRequiredComponents = requires(T comp) {
+    comp.required_component_types;
+};
 
 }
 }

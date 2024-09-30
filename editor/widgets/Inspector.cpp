@@ -185,9 +185,10 @@ static bool begin_property_table() {
 
 class InspectorPanelInspector : public ecs::ComponentInspector {
     public:
-        InspectorPanelInspector(ecs::EntityId id, EditorComponent* editor) :
+        InspectorPanelInspector(ecs::EntityId id, EditorComponent* editor, EditorWorld* world) :
                 _id(id),
-                _editor(editor) {
+                _editor(editor),
+                _world(world) {
         }
 
         ~InspectorPanelInspector() {
@@ -219,6 +220,16 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             }
 
             _type = info.type_id;
+
+            if(_world) {
+                ImGui::BeginDisabled(_world->is_component_required(_id, info.type_id));
+                if(ImGui::Button(fmt_c_str(ICON_FA_TRASH "##{}", info.type_name))) {
+                    _world->remove_component(_id, info.type_id);
+                }
+                ImGui::EndDisabled();
+
+                ImGui::SameLine();
+            }
 
             if(ImGui::CollapsingHeader(fmt_c_str(ICON_FA_PUZZLE_PIECE " {}", info.clean_component_name()), ImGuiTreeNodeFlags_DefaultOpen)) {
                 if(has_inspect) {
@@ -540,6 +551,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
         bool _in_table = false;
         ecs::EntityId _id;
         EditorComponent* _editor = nullptr;
+        EditorWorld* _world = nullptr;
         ecs::ComponentTypeIndex _type = {};
 };
 
@@ -590,7 +602,7 @@ void Inspector::on_gui() {
         }
     }
 
-    InspectorPanelInspector inspector(id, component);
+    InspectorPanelInspector inspector(id, component, &world);
     world.inspect_components(id, &inspector);
 
 

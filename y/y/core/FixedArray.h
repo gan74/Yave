@@ -49,7 +49,10 @@ class FixedArray {
 
         inline constexpr FixedArray() = default;
 
-        inline FixedArray(usize size) : _data(std::make_unique<data_type[]>(size)), _size(size) {
+        inline FixedArray(usize size) : _size(size) {
+            if(size) {
+                _data = std::make_unique<data_type[]>(size);
+            }
         }
 
         inline FixedArray(Span<value_type> v) : FixedArray(v.size()) {

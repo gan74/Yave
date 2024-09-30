@@ -139,6 +139,8 @@ class EntityGroupProvider final : NonMovable {
             const u8 prev_count = _entity_component_count[id.index()]--;
             if(prev_count == _component_count) {
                 y_debug_assert(_ids.contains(id));
+                y_debug_assert(!_removed.contains(id));
+
                 _ids.erase(id);
                 _added.erase(id);
                 _removed.insert(id);

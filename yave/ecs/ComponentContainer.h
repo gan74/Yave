@@ -29,21 +29,25 @@ SOFTWARE.
 #include <y/serde3/poly.h>
 #include <y/serde3/traits.h>
 
+// #include <y/utils/log.h>
+// #include <y/utils/format.h>
+
 namespace yave {
 namespace ecs {
 
 class ComponentContainerBase : NonMovable {
-    public:
 
+    public:
         virtual ~ComponentContainerBase();
 
         ComponentTypeIndex type_id() const;
 
-
-        virtual ComponentRuntimeInfo runtime_info() const = 0;
+        usize requirements_chain_depth() const;
 
         virtual void remove_later(EntityId id) = 0;
+        virtual void add_if_not_exist(EntityId id) = 0;
 
+        virtual ComponentRuntimeInfo runtime_info() const = 0;
         virtual void inspect_component(EntityId id, ComponentInspector* inspector) = 0;
 
 
@@ -55,8 +59,10 @@ class ComponentContainerBase : NonMovable {
         template<typename... Ts>
         friend class EntityGroup;
 
-        ComponentContainerBase(ComponentTypeIndex type_id) : _type_id(type_id) {
-        }
+        ComponentContainerBase(ComponentTypeIndex type_id);
+
+        void add_required_components(EntityId id) const;
+        bool is_component_required(EntityId id) const;
 
         virtual void register_component_type(System* system) const = 0;
         virtual void post_load() = 0;
@@ -67,6 +73,9 @@ class ComponentContainerBase : NonMovable {
         ComponentMatrix* _matrix = nullptr;
         SparseIdSet _mutated;
         SparseIdSet _to_delete;
+        core::FixedArray<ComponentContainerBase*> _required;
+        core::Vector<ComponentTypeIndex> _required_by;
+
 
         y_profile_shared_lock(std::shared_mutex, _lock);
 
@@ -77,6 +86,7 @@ class ComponentContainerBase : NonMovable {
 
 template<typename T>
 class ComponentContainer final : public ComponentContainerBase {
+
     public:
         using component_type = T;
 
@@ -116,16 +126,18 @@ class ComponentContainer final : public ComponentContainerBase {
             return add(id, y_fwd(args)...);
         }
 
-
-
-        ComponentRuntimeInfo runtime_info() const override {
-            return ComponentRuntimeInfo::create<T>();
-        }
-
         void remove_later(EntityId id) override {
             if(_components.contains(id)) {
                 _to_delete.insert(id);
             }
+        }
+
+        void add_if_not_exist(EntityId id) override {
+            get_or_add(id);
+        }
+
+        ComponentRuntimeInfo runtime_info() const override {
+            return ComponentRuntimeInfo::create<T>();
         }
 
         void inspect_component(EntityId id, ComponentInspector* inspector) override {
@@ -170,10 +182,19 @@ class ComponentContainer final : public ComponentContainerBase {
                 _matrix->add_component<T>(id);
                 _mutated.insert(id);
             }
+
+            for(const EntityId id : _components.ids()) {
+                y_debug_assert(_matrix->has_all_required_components<T>(id));
+            }
         }
 
         void process_deferred_changes() override {
             for(const EntityId id : _to_delete) {
+                if(is_component_required(id)) {
+                    // log_msg(fmt("{} #{} can't be removed as it is required by other components", runtime_info().clean_component_name(), id.index()), Log::Warning);
+                    continue;
+                }
+
                 _matrix->remove_component<T>(id);
                 _components.erase(id);
             }
@@ -185,12 +206,12 @@ class ComponentContainer final : public ComponentContainerBase {
 
         template<typename... Args>
         T* add(EntityId id, Args&... args) {
+            add_required_components(id);
             T* component =  &_components.insert(id, y_fwd(args)...);
             _matrix->add_component<T>(id);
             _mutated.insert(id);
             return component;
         }
-
 
 
         SparseComponentSet<T> _components;

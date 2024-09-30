@@ -43,9 +43,9 @@ static auto create_component_containers() {
             std::unique_ptr<ComponentContainerBase> container = poly_base->create();
             y_debug_assert(container);
 
-            const ComponentTypeIndex id = container->type_id();
-            containers.set_min_size(usize(id) + 1);
-            containers[usize(id)] = std::move(container);
+            const usize index = usize(container->type_id());
+            containers.set_min_size(index + 1);
+            containers[index] = std::move(container);
         }
     }
     return containers;
@@ -110,11 +110,7 @@ static void add_prefab_components(EntityWorld& world, const EntityPrefab& prefab
 
 
 EntityWorld::EntityWorld() : _containers(create_component_containers()), _matrix(_containers.size()), _system_manager(this) {
-    for(auto& container : _containers) {
-        if(container) {
-            container->_matrix = &_matrix;
-        }
-    }
+    register_containers();
 }
 
 EntityWorld::~EntityWorld() {
@@ -137,10 +133,8 @@ void EntityWorld::process_deferred_changes() {
         }
     });
 
-    for(auto& container : _containers) {
-        if(container) {
-            container->process_deferred_changes();
-        }
+    for(auto& container : _ordered_containers) {
+        container->process_deferred_changes();
     }
 
     for(const EntityId id : _to_delete) {
@@ -170,6 +164,10 @@ core::Vector<const EntityGroupProvider*> EntityWorld::group_providers() {
         std::transform(groups.begin(), groups.end(), std::back_inserter(gr), [](const auto& g) { return g.get(); });
     });
     return gr;
+}
+
+core::Span<ComponentContainerBase*> EntityWorld::component_containers() const {
+    return _ordered_containers;
 }
 
 usize EntityWorld::entity_count() const {
@@ -210,10 +208,8 @@ void EntityWorld::remove_entity(EntityId id) {
 void EntityWorld::remove_all_components(EntityId id) {
     y_profile();
 
-    for(auto& container : _containers) {
-        if(container) {
-            container->remove_later(id);
-        }
+    for(auto& container : _ordered_containers) {
+        container->remove_later(id);
     }
 }
 
@@ -291,6 +287,14 @@ bool EntityWorld::has_component(EntityId id, ComponentTypeIndex type) const {
     return _matrix.type_exists(type) && _matrix.has_component(id, type);
 }
 
+bool EntityWorld::is_component_required(EntityId id, ComponentTypeIndex type) const {
+    return find_container(type)->is_component_required(id);
+}
+
+void EntityWorld::remove_component(EntityId id, ComponentTypeIndex type) {
+    return find_container(type)->remove_later(id);
+}
+
 const ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) const {
     y_debug_assert(_containers.size() > usize(type_id));
     return _containers[usize(type_id)].get();
@@ -321,6 +325,46 @@ void EntityWorld::register_component_types(System* system) const {
     }
 }
 
+void EntityWorld::register_containers() {
+    y_profile();
+
+    _ordered_containers.clear();
+    for(auto&& container : _containers) {
+        if(!container) {
+            continue;
+        }
+
+
+        _ordered_containers << container.get();
+
+
+        container->_matrix = &_matrix;
+
+
+        {
+            const core::Span required_types = container->runtime_info().required;
+
+            container->_required = core::FixedArray<ComponentContainerBase*>(required_types.size());
+            for(usize i = 0; i != required_types.size(); ++i) {
+                ComponentContainerBase* req_container = find_container(required_types[i]);
+                container->_required[i] = req_container;
+            }
+
+            y_debug_assert(std::all_of(container->_required.begin(), container->_required.end(), [](auto* p) { return !!p; }));
+
+            for(ComponentContainerBase* req_container : container->_required) {
+                req_container->_required_by << container->type_id();
+            }
+        }
+    }
+
+    {
+        y_profile_zone("sort containers");
+        std::sort(_ordered_containers.begin(), _ordered_containers.end(), [](const auto* a, const auto* b) { return a->requirements_chain_depth() > b->requirements_chain_depth(); });
+    }
+
+}
+
 serde3::Result EntityWorld::save_state(serde3::WritableArchive& arc) const {
     y_profile();
 
@@ -344,12 +388,20 @@ serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
         _matrix.add_entity(id);
     }
 
+    _containers.clear();
     for(auto&& container : containers) {
         if(container) {
-            container->_matrix = &_matrix;
-            container->post_load();
+            const usize index = usize(container->type_id());
+            _containers.set_min_size(index + 1);
+            _containers[index] = std::move(container);
+        }
+    }
 
-            _containers[usize(container->type_id())] = std::move(container);
+    register_containers();
+
+    for(auto&& container : _containers) {
+        if(container) {
+            container->post_load();
         }
     }
 

@@ -53,6 +53,9 @@ class EntityWorld : NonMovable {
 
         core::Vector<const EntityGroupProvider*> group_providers();
 
+        core::Span<ComponentContainerBase*> component_containers() const;
+
+
         usize entity_count() const;
         bool exists(EntityId id) const;
 
@@ -109,6 +112,12 @@ class EntityWorld : NonMovable {
         // ---------------------------------------- Components ----------------------------------------
 
         bool has_component(EntityId id, ComponentTypeIndex type) const;
+
+        bool is_component_required(EntityId id, ComponentTypeIndex type) const;
+        void remove_component(EntityId id, ComponentTypeIndex type);
+
+
+
 
         template<typename T>
         const T* component(EntityId id) const {
@@ -256,6 +265,8 @@ class EntityWorld : NonMovable {
         const ComponentContainerBase* find_container(ComponentTypeIndex type_id) const;
         ComponentContainerBase* find_container(ComponentTypeIndex type_id);
 
+        void register_containers();
+
         void register_component_types(System* system) const;
 
         void check_exists(EntityId id) const;
@@ -274,6 +285,8 @@ class EntityWorld : NonMovable {
         SystemManager _system_manager;
 
         TickId _tick_id;
+
+        core::Vector<ComponentContainerBase*> _ordered_containers;
 };
 
 }

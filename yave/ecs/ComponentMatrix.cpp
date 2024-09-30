@@ -29,8 +29,23 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-ComponentMatrix::ComponentMatrix(usize type_count) : _type_count(std::max(1u, u32(type_count))), _groups(_type_count) {
+ComponentMatrix::ComponentMatrix(usize type_count) :
+        _type_count(std::max(1u, u32(type_count))),
+        _groups(_type_count),
+        _required(std::make_unique<bool[]>(_type_count * _type_count)) {
+
+    std::fill_n(_required.get(), _type_count * _type_count, false);
 }
+
+/*void ComponentMatrix::set_required_components(ComponentTypeIndex type, core::Span<ComponentTypeIndex> required) {
+    y_always_assert(_bits.is_empty(), "Can't set required components after entities have been added");
+    y_debug_assert(type_exists(type));
+
+    const usize start = usize(type) * _type_count;
+    for(ComponentTypeIndex index : required) {
+        _required[start + index] = true;
+    }
+}*/
 
 void ComponentMatrix::clear() {
     _bits.clear();
@@ -92,6 +107,10 @@ void ComponentMatrix::add_entity(EntityId id) {
 
 void ComponentMatrix::remove_entity(EntityId id) {
     y_debug_assert(contains(id));
+    for(u32 i = 0; i != _type_count; ++i) {
+        y_debug_assert(!has_component(id, ComponentTypeIndex(i)));
+    }
+
     _ids[id.index()] = {};
 }
 

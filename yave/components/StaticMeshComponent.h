@@ -33,7 +33,9 @@ SOFTWARE.
 
 namespace yave {
 
-class StaticMeshComponent final : public ecs::RegisterComponent<StaticMeshComponent, AssetLoaderSystem> {
+class StaticMeshComponent final :
+    public ecs::RegisterComponent<StaticMeshComponent, AssetLoaderSystem>,
+    public ecs::RequireComponent<TransformableComponent> {
 
     public:
         StaticMeshComponent() = default;
@@ -63,6 +65,11 @@ class StaticMeshComponent final : public ecs::RegisterComponent<StaticMeshCompon
         AssetPtr<StaticMesh> _mesh;
         core::Vector<AssetPtr<Material>> _materials;
 };
+
+
+static_assert(ecs::HasRequiredComponents<StaticMeshComponent>);
+static_assert(ecs::Registerable<StaticMeshComponent>);
+static_assert(ecs::Inspectable<StaticMeshComponent>);
 
 }
 

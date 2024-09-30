@@ -208,6 +208,13 @@ class EcsDebug : public Widget {
                 }
             }
 
+            if(ImGui::CollapsingHeader("Containers")) {
+                for(const ecs::ComponentContainerBase* cont : world.component_containers()) {
+                    const std::string_view name = cont->runtime_info().clean_component_name();
+                    ImGui::TextUnformatted(name.data(), name.data() + name.size());
+                }
+            }
+
             if(ImGui::CollapsingHeader("Tags")) {
                 if(ImGui::BeginTable("##tags", 3, table_flags)) {
                     ImGui::TableSetupColumn("##tag", ImGuiTableColumnFlags_WidthStretch);

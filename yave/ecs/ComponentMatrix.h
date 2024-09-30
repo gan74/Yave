@@ -80,19 +80,33 @@ class ComponentMatrix {
 
         template<typename T>
         void add_component(EntityId id) {
+            // y_debug_assert(has_all_required_components<T>(id));
             add_component(id, type_index<T>());
         }
 
         template<typename T>
         void remove_component(EntityId id) {
+            // y_debug_assert(!is_component_required<T>(id));
             remove_component(id, type_index<T>());
+        }
+
+
+        template<typename T>
+        bool has_all_required_components(EntityId id) const {
+            if constexpr(HasRequiredComponents<T>) {
+                for(const ComponentTypeIndex r : T::required_component_types) {
+                    if(!has_component(id, r)) {
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
 
 
         auto tags() const {
             return _tags.keys();
         }
-
 
         serde3::Result save_tags(serde3::WritableArchive& arc) const;
         serde3::Result load_tags(serde3::ReadableArchive& arc);
@@ -109,10 +123,12 @@ class ComponentMatrix {
 
         ComponentIndex component_index(EntityId id, ComponentTypeIndex type) const;
 
+
         u32 _type_count = 0;
         core::Vector<u64> _bits;
         core::Vector<EntityId> _ids;
         core::FixedArray<core::Vector<EntityGroupProvider*>> _groups;
+        std::unique_ptr<bool[]> _required;
 
         core::FlatHashMap<core::String, TagSet> _tags;
 };

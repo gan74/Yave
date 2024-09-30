@@ -22,8 +22,12 @@ SOFTWARE.
 
 #include "ComponentContainer.h"
 
+
 namespace yave {
 namespace ecs {
+
+ComponentContainerBase::ComponentContainerBase(ComponentTypeIndex type_id) : _type_id(type_id) {
+}
 
 ComponentContainerBase::~ComponentContainerBase() {
 }
@@ -31,6 +35,30 @@ ComponentContainerBase::~ComponentContainerBase() {
 ComponentTypeIndex ComponentContainerBase::type_id() const {
     return _type_id;
 }
+
+void ComponentContainerBase::add_required_components(EntityId id) const {
+    for(ComponentContainerBase* req : _required) {
+        req->add_if_not_exist(id);
+    }
+}
+
+bool ComponentContainerBase::is_component_required(EntityId id) const {
+    for(const ComponentTypeIndex req : _required_by) {
+        if(_matrix->has_component(id, req)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+usize ComponentContainerBase::requirements_chain_depth() const {
+    usize depth = 0;
+    for(ComponentContainerBase* req : _required) {
+        depth = std::max(req->requirements_chain_depth() + 1, depth);
+    }
+    return depth;
+}
+
 
 }
 }

@@ -39,10 +39,19 @@ std::unique_ptr<ComponentContainerBase> create_container();
 template<typename T>
 void create_or_replace_component(EntityWorld& world, EntityId id);
 
+template<typename T>
+static core::Span<ComponentTypeIndex> required_component_types() {
+    if constexpr(HasRequiredComponents<T>) {
+        return T::required_component_types;
+    }
+    return {};
+}
+
 
 struct ComponentRuntimeInfo {
     ComponentTypeIndex type_id;
     std::string_view type_name;
+    core::Span<ComponentTypeIndex> required;
     std::unique_ptr<ComponentContainerBase> (*create_type_container)() = nullptr;
     void (*add_or_replace_component)(EntityWorld&, EntityId) = nullptr;
 
@@ -55,6 +64,7 @@ struct ComponentRuntimeInfo {
         return ComponentRuntimeInfo {
             type_index<T>(),
             ct_type_name<T>(),
+            required_component_types<T>(),
             create_container<T>,
             create_or_replace_component<T>
         };
@@ -82,7 +92,6 @@ struct ComponentRuntimeInfo {
 
         return name;
     }
-
 
     y_no_serde3()
 };

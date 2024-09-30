@@ -168,6 +168,8 @@ static void setup_style() {
     style.TabBorderSize     = 0;
     style.TabRounding       = 0;
 
+    style.DisabledAlpha     = 0.25f;
+
     style.WindowMenuButtonPosition = ImGuiDir_Right;
 
 
