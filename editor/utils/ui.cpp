@@ -206,33 +206,42 @@ bool position_input(const char* str_id, math::Vec3& position) {
     ImGui::PushID(str_id);
     y_defer(ImGui::PopID());
 
-    const float width = ImGui::CalcItemWidth();
-    bool edited = false;
-
-    const char* input_name[] = {"##x", "##y", "##z"};
+    ImGui::BeginGroup();
+    y_defer(ImGui::EndGroup());
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+    y_defer(ImGui::PopStyleVar());
+
+    const float width = ImGui::CalcItemWidth();
+    const float text_height = ImGui::GetTextLineHeight();
+    const float padding = ImGui::GetStyle().ItemInnerSpacing.x;
+
+    bool edited = false;
+    const char* input_name[] = {"##x", "##y", "##z"};
     for(usize i = 0; i != 3; ++i) {
-        math::Vec4 color = math::Vec4(0.0f, 0.0f, 0.0f, 0.5f);
-        color[i] = 1.0f;
+        if(i) {
+            ImGui::SameLine();
+        }
 
-        ImGui::SameLine();
-
-        ImGui::PushStyleColor(ImGuiCol_Border, color);
+        const math::Vec2 start_pos = ImGui::GetCursorScreenPos();
 
         ImGui::SetNextItemWidth(width / 3.0f);
         edited |= ImGui::DragFloat(input_name[i], &position[i], 1.0f, 0.0f, 0.0f, "%.2f");
 
-        ImGui::PopStyleColor();
-    }
-    ImGui::PopStyleVar();
+        const math::Vec2 end_pos = ImGui::GetCursorScreenPos();
+        const float vertical_padding = ((end_pos - start_pos).y() - text_height) * 0.5f;
 
+        if(vertical_padding > 1.0f) {
+            const math::Vec2 pos = start_pos + math::Vec2(padding, vertical_padding);
+            ImGui::GetWindowDrawList()->AddRectFilled(pos, pos + math::Vec2(4.0f, text_height), 0x80000000 | gizmo_color(i), 0.5f);
+        }
+    }
     return edited;
 }
 
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear) {
     static constexpr math::Vec2 button_size = math::Vec2(64.0f, 64.0f);
-    const math::Vec2 padded_button_size =  button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 2.0f;
+    const math::Vec2 padded_button_size =  button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 4.0f;
 
     ImGui::PushID(fmt_c_str("{}_{}_{}", id.id(), uenum(type), text));
     ImGui::BeginGroup();
