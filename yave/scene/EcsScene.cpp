@@ -72,7 +72,9 @@ u32 EcsScene::unregister_object(const ecs::EntityId id, u32 ObjectIndices::* ind
         }
     }
 
-    _indices.erase(id);
+    if(object->is_empty()) {
+        _indices.erase(id);
+    }
 
     if constexpr(std::is_base_of_v<TransformableSceneObjectData, typename S::value_type>) {
         return storage.pop().transform_index;

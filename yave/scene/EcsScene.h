@@ -35,6 +35,16 @@ class EcsScene : public Scene {
         u32 spot_light = u32(-1);
         u32 directional_light = u32(-1);
         u32 sky_light = u32(-1);
+
+        bool is_empty() const {
+            return
+                mesh == u32(-1) &&
+                point_light == u32(-1) &&
+                spot_light == u32(-1) &&
+                directional_light == u32(-1) &&
+                sky_light == u32(-1)
+            ;
+        }
     };
 
     public:
