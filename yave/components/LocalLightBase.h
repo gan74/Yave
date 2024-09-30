@@ -22,11 +22,14 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_LOCALLIGHTBASE_H
 #define YAVE_COMPONENTS_LOCALLIGHTBASE_H
 
+#include <yave/ecs/ecs.h>
+#include <yave/components/TransformableComponent.h>
+
 #include <yave/utils/pbr.h>
 
 namespace yave {
 
-class LocalLightBase  {
+class LocalLightBase : public ecs::RequireComponent<TransformableComponent> {
 
     public:
         math::Vec3& color() {
