@@ -59,11 +59,11 @@ inline math::Vec3 linear_to_sRGB(const math::Vec3& v) {
 }
 
 inline math::Vec4 sRGB_to_linear(const math::Vec4& v) {
-    return math::Vec4(sRGB_to_linear(v.to<3>()), v.w());
+    return math::Vec4(sRGB_to_linear(v.truncated<3>()), v.w());
 }
 
 inline math::Vec4 linear_to_sRGB(const math::Vec4& v) {
-    return math::Vec4(linear_to_sRGB(v.to<3>()), v.w());
+    return math::Vec4(linear_to_sRGB(v.truncated<3>()), v.w());
 }
 
 
@@ -126,7 +126,7 @@ inline math::Vec3 identifying_color(usize index, float s = 0.5f, float v = 1.0f)
     return hsv_to_rgb(std::fmod(index * 0.618033988749895f, 1.0f), s, v);
 }
 
-inline u32 pack_to_u32(const math::Vec4& color) {
+inline constexpr u32 pack_to_u32(const math::Vec4& color) {
     auto to_u8 = [](float x) -> u32 { return u32(std::clamp(std::round(x * 255.0f), 0.0f, 255.0f)); };
     return
         (to_u8(color.x()) << 0) |
@@ -135,7 +135,7 @@ inline u32 pack_to_u32(const math::Vec4& color) {
         (to_u8(color.w()) << 24);
 }
 
-inline math::Vec4 unpack_from_u32(u32 packed) {
+inline constexpr math::Vec4 unpack_from_u32(u32 packed) {
     return math::Vec4(
         (packed >> 0) & 0xFF,
         (packed >> 8) & 0xFF,

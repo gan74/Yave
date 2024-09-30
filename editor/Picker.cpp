@@ -89,17 +89,17 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
     const ReadBackData read_back = buffer.map(MappingAccess::ReadOnly)[0];
     const float depth = read_back.depth;
 
-    auto inv_matrix = scene_view.camera().inverse_matrix();
+    const math::Matrix4<> inv_matrix = scene_view.camera().inverse_matrix();
     const math::Vec4 p = inv_matrix * math::Vec4(uv * 2.0f - 1.0f, depth, 1.0f);
 
     const PickingResult result {
-            p.to<3>() / p.w(),
-            depth,
-            uv,
-            read_back.id
-        };
+        p.to<3>() / p.w(),
+        depth,
+        uv,
+        read_back.id
+    };
 
-    //log_msg(fmt("picked: {} (depth: {}, id: {})", result.world_pos, result.depth, result.entity_index));
+    // log_msg(fmt("picked: {} (depth: {}, id: {})", result.world_pos, result.depth, result.entity_index));
     return result;
 }
 

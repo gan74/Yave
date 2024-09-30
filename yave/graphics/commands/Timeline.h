@@ -73,7 +73,6 @@ class Timeline : NonMovable {
         const VkSemaphore _semaphore;
 
         std::atomic<u64> _value = 0;
-        mutable std::atomic<u64> _ready = 0;
 };
 
 }

@@ -67,14 +67,6 @@ bool TimelineFence::operator<=(const TimelineFence& other) const {
     return _value <= other._value;
 }
 
-// https://stackoverflow.com/questions/16190078/how-to-atomically-update-a-maximum-value
-template<typename T>
-static void update_maximum(std::atomic<T>& maximum_value, const T& value) noexcept {
-    T prev_value = maximum_value;
-    while(prev_value < value && !maximum_value.compare_exchange_weak(prev_value, value)) {
-    }
-}
-
 
 static VkSemaphore create_timeline_semaphore() {
     VkSemaphoreTypeCreateInfo type_create_info = vk_struct();
@@ -115,17 +107,11 @@ TimelineFence Timeline::current_timeline() const {
 TimelineFence Timeline::last_ready() const {
     u64 value = 0;
     vk_check(vkGetSemaphoreCounterValue(vk_device(), _semaphore, &value));
-    update_maximum(_ready, value);
     return TimelineFence(value, this);
 }
 
 bool Timeline::is_ready(TimelineFence fence) const {
     y_debug_assert(fence._parent == this);
-
-    /*if(fence._value <= _ready) {
-        return true;
-    }*/
-
     return fence <= last_ready();
 }
 
@@ -133,13 +119,10 @@ bool Timeline::is_ready(TimelineFence fence) const {
 void Timeline::wait(TimelineFence fence) const {
     y_profile();
 
-    y_debug_assert(fence._parent == this);
-
     const u64 value = fence.value();
-    /*if(value <= _ready) {
-        return;
-    }*/
 
+    y_debug_assert(fence._parent == this);
+    y_debug_assert(value <= _value);
 
     VkSemaphoreWaitInfo wait_info = vk_struct();
     {
@@ -148,7 +131,6 @@ void Timeline::wait(TimelineFence fence) const {
         wait_info.semaphoreCount = 1;
     }
     vk_check(vkWaitSemaphores(vk_device(), &wait_info, u64(-1)));
-    update_maximum(_ready, value);
 }
 
 void Timeline::wait() const {
