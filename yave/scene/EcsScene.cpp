@@ -87,13 +87,13 @@ void EcsScene::process_component_visibility(u32 ObjectIndices::* index_ptr, S& s
     };
 
     const std::array tag = {ecs::tags::hidden};
-    const ecs::EntityGroupBase* group_base = _world->get_or_create_group_base<T>(tag);
+    const ecs::EntityGroupProvider* group_provider = _world->get_or_create_group_provider<T>(tag);
 
-    for(const ecs::EntityId id : group_base->added_ids()) {
+    for(const ecs::EntityId id : group_provider->added_ids()) {
         update_visibility(id, 0);
     }
 
-    for(const ecs::EntityId id : group_base->removed_ids()) {
+    for(const ecs::EntityId id : group_provider->removed_ids()) {
         update_visibility(id, u32(-1));
     }
 }
@@ -113,11 +113,11 @@ bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
     };
 
 
-    const ecs::EntityGroupBase* group_base = _world->get_or_create_group_base<TransformableComponent, T>();
+    const ecs::EntityGroupProvider* group_provider = _world->get_or_create_group_provider<TransformableComponent, T>();
 
     {
         y_profile_zone("Add new objects");
-        for(const ecs::EntityId id : group_base->added_ids()) {
+        for(const ecs::EntityId id : group_provider->added_ids()) {
             register_object(id, index_ptr, storage);
         }
     }
@@ -145,7 +145,7 @@ bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
 
     {
         y_profile_zone("Delete stale objects");
-        for(const ecs::EntityId id : group_base->removed_ids()) {
+        for(const ecs::EntityId id : group_provider->removed_ids()) {
             if(const u32 transform_index = unregister_object(id, index_ptr, storage).transform_index; transform_index == u32(-1)) {
                 _transform_manager.free_transform(transform_index);
             }
@@ -154,7 +154,7 @@ bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
 
     process_component_visibility<T>(index_ptr, storage);
 
-    return !group_base->removed_ids().is_empty();
+    return !group_provider->removed_ids().is_empty();
 }
 
 

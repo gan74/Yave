@@ -32,7 +32,7 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-class EntityGroupBase final : NonMovable {
+class EntityGroupProvider final : NonMovable {
 
     template<typename... Ts>
     static core::Span<ComponentTypeIndex> type_storage() {
@@ -53,7 +53,7 @@ class EntityGroupBase final : NonMovable {
 
     template<typename... Ts>
     static core::String create_group_name(core::Span<std::string_view> tags) {
-        core::String name = "EntityGroupBase<";
+        core::String name = "EntityGroupProvider<";
         name += ((clean_component_name<Ts>() + ", ") + ...);
         name.resize(name.size() - 2);
         name += ">";
@@ -73,7 +73,7 @@ class EntityGroupBase final : NonMovable {
     }
 
     public:
-        EntityGroupBase(core::Span<ComponentTypeIndex> types, core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> type_filters) :
+        EntityGroupProvider(core::Span<ComponentTypeIndex> types, core::Span<std::string_view> tags, core::Span<ComponentTypeIndex> type_filters) :
                 _types(types),
                 _tags(tags.size()),
                 _type_filters(type_filters),
@@ -286,7 +286,7 @@ class EntityGroup final : NonCopyable {
 
 
         ~EntityGroup() {
-            if(_base) {
+            if(_provider) {
                 unlock_all();
             }
         }
@@ -319,8 +319,8 @@ class EntityGroup final : NonCopyable {
             return _ids.is_empty();
         }
 
-        inline const EntityGroupBase* base() const {
-            return _base;
+        inline const EntityGroupProvider* base() const {
+            return _provider;
         }
 
         void swap(EntityGroup& other) {
@@ -330,13 +330,13 @@ class EntityGroup final : NonCopyable {
             std::swap(_filter, other._filter);
             std::swap(_write_locks, other._write_locks);
             std::swap(_read_locks, other._read_locks);
-            std::swap(_base, other._base);
+            std::swap(_provider, other._provider);
         }
 
     private:
         friend class EntityWorld;
 
-        EntityGroup(const EntityGroupBase* base, const ContainerTuple& containers) : _base(base) {
+        EntityGroup(const EntityGroupProvider* base, const ContainerTuple& containers) : _provider(base) {
             fill_sets(containers, std::make_index_sequence<type_count>{});
 
             lock_all();
@@ -346,7 +346,7 @@ class EntityGroup final : NonCopyable {
 
                 std::array<const SparseIdSet*, filter_count + 1> matches = {};
                 std::copy_n(_filter.begin(), filter_count, matches.begin());
-                matches[filter_count] = &_base->ids();
+                matches[filter_count] = &_provider->ids();
 
                 std::sort(matches.begin(), matches.end(), [](const SparseIdSet* a, const SparseIdSet* b) {
                     return a->size() < b->size();
@@ -371,7 +371,7 @@ class EntityGroup final : NonCopyable {
             } else {
                 // This can be expensive. Find a thread-safe way to avoid copying everything?
                 y_profile_zone("copying ids");
-                _ids = _base->ids().ids();
+                _ids = _provider->ids().ids();
             }
 
 
@@ -445,7 +445,7 @@ class EntityGroup final : NonCopyable {
         std::array<ComponentContainerBase::lock_type*, mutate_count> _write_locks = {};
         std::array<ComponentContainerBase::lock_type*, type_count - mutate_count> _read_locks = {};
 
-        const EntityGroupBase* _base = nullptr;
+        const EntityGroupProvider* _provider = nullptr;
 };
 
 

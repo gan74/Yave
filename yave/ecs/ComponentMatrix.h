@@ -46,7 +46,7 @@ class ComponentMatrix {
 
     struct TagSet {
         SparseIdSet ids;
-        core::Vector<EntityGroupBase*> groups;
+        core::Vector<EntityGroupProvider*> groups;
 
         y_reflect(TagSet, ids)
     };
@@ -102,7 +102,7 @@ class ComponentMatrix {
 
         ComponentMatrix(usize type_count);
 
-        void register_group(EntityGroupBase* group);
+        void register_group(EntityGroupProvider* group);
 
         void add_component(EntityId id, ComponentTypeIndex type);
         void remove_component(EntityId id, ComponentTypeIndex type);
@@ -112,7 +112,7 @@ class ComponentMatrix {
         u32 _type_count = 0;
         core::Vector<u64> _bits;
         core::Vector<EntityId> _ids;
-        core::FixedArray<core::Vector<EntityGroupBase*>> _groups;
+        core::FixedArray<core::Vector<EntityGroupProvider*>> _groups;
 
         core::FlatHashMap<core::String, TagSet> _tags;
 };

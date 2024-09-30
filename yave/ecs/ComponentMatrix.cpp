@@ -45,7 +45,7 @@ bool ComponentMatrix::type_exists(ComponentTypeIndex type) const {
     return u32(type) < _type_count;
 }
 
-void ComponentMatrix::register_group(EntityGroupBase* group) {
+void ComponentMatrix::register_group(EntityGroupProvider* group) {
     y_profile();
 
     for(const ComponentTypeIndex type : group->types()) {
@@ -104,7 +104,7 @@ void ComponentMatrix::add_component(EntityId id, ComponentTypeIndex type) {
 
     {
         y_profile_zone("updating groups");
-        for(EntityGroupBase* group : _groups[usize(type)]) {
+        for(EntityGroupProvider* group : _groups[usize(type)]) {
             group->add_entity_component(id);
         }
     }
@@ -119,7 +119,7 @@ void ComponentMatrix::remove_component(EntityId id, ComponentTypeIndex type) {
 
     {
         y_profile_zone("updating groups");
-        for(EntityGroupBase* group : _groups[usize(type)]) {
+        for(EntityGroupProvider* group : _groups[usize(type)]) {
             group->remove_entity_component(id);
         }
     }
@@ -141,7 +141,7 @@ void ComponentMatrix::add_tag(EntityId id, const core::String& tag) {
     y_debug_assert(contains(id));
     TagSet& set = _tags[tag];
     if(set.ids.insert(id)) {
-        for(EntityGroupBase* group : set.groups) {
+        for(EntityGroupProvider* group : set.groups) {
             group->add_entity_component(id);
         }
     }
@@ -152,7 +152,7 @@ void ComponentMatrix::remove_tag(EntityId id, const core::String& tag) {
     y_debug_assert(contains(id));
     TagSet& set = _tags[tag];
     if(set.ids.erase(id)) {
-        for(EntityGroupBase* group : set.groups) {
+        for(EntityGroupProvider* group : set.groups) {
             group->remove_entity_component(id);
         }
     }
@@ -161,7 +161,7 @@ void ComponentMatrix::remove_tag(EntityId id, const core::String& tag) {
 void ComponentMatrix::clear_tag(const core::String& tag) {
     y_debug_assert(!is_computed_tag(tag));
     TagSet& set = _tags[tag];
-    for(EntityGroupBase* group : set.groups) {
+    for(EntityGroupProvider* group : set.groups) {
         for(EntityId id : set.ids.ids()) {
             group->remove_entity_component(id);
         }

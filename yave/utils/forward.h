@@ -271,7 +271,7 @@ class ComponentBoxBase;
 class ComponentContainerBase;
 class ComponentInspector;
 class ComponentMatrix;
-class EntityGroupBase;
+class EntityGroupProvider;
 class EntityId;
 class EntityPool;
 class EntityPrefab;

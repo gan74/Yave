@@ -179,9 +179,9 @@ class EcsDebug : public Widget {
             const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
 
             if(ImGui::CollapsingHeader("Groups")) {
-                auto groups = world.all_group_bases();
+                auto groups = world.group_providers();
                 std::sort(groups.begin(), groups.end(), [](auto* a, auto* b) { return a->name() < b->name(); });
-                for(const ecs::EntityGroupBase* group : groups) {
+                for(const ecs::EntityGroupProvider* group : groups) {
                     if(ImGui::TreeNode(fmt_c_str("{}###{}", group->name(), static_cast<const void*>(group)))) {
                         ImGui::TextUnformatted(fmt_c_str("{} ids", group->ids().size()));
 
