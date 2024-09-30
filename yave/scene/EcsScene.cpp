@@ -38,7 +38,7 @@ const ecs::EntityWorld* EcsScene::world() const {
 }
 
 template<typename S>
-typename S::value_type& EcsScene::register_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage) {
+void EcsScene::register_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage) {
     u32& index = _indices.get_or_insert(id).*index_ptr;
 
     if(index == u32(-1)) {
@@ -47,32 +47,39 @@ typename S::value_type& EcsScene::register_object(const ecs::EntityId id, u32 Ob
         auto& obj = storage.emplace_back();
         y_debug_assert(obj.entity_index == u32(-1) || obj.entity_index == id.index());
         obj.entity_index = id.index();
-
-        return obj;
     }
-
-    return storage[index];
 }
 
 template<typename S>
-typename S::value_type EcsScene::unregister_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage) {
-    auto& object = _indices[id];
-    const u32 index = std::exchange(object.*index_ptr, u32(-1));
+u32 EcsScene::unregister_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage) {
+    ObjectIndices* object = _indices.try_get(id);
+    if(!object) {
+        return u32(-1);
+    }
+
+    const u32 index = std::exchange(object->*index_ptr, u32(-1));
     const u32 last_index = u32(storage.size() - 1);
-    object.*index_ptr = u32(-1);
+    object->*index_ptr = u32(-1);
 
     y_debug_assert(id.is_valid());
     y_debug_assert(storage[index].entity_index == id.index());
 
     if(index != last_index) {
         const ecs::EntityId last_id = id_from_index(storage[last_index].entity_index);
-        _indices[last_id].*index_ptr = index;
-        std::swap(storage[index], storage[last_index]);
+        if(ObjectIndices* last_object = _indices.try_get(last_id)) {
+            last_object->*index_ptr = index;
+            std::swap(storage[index], storage[last_index]);
+        }
     }
 
     _indices.erase(id);
 
-    return storage.pop();
+    if constexpr(std::is_base_of_v<TransformableSceneObjectData, typename S::value_type>) {
+        return storage.pop().transform_index;
+    } else {
+        storage.pop();
+        return u32(-1);
+    }
 }
 
 template<typename T, typename S>
@@ -146,7 +153,7 @@ bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
     {
         y_profile_zone("Delete stale objects");
         for(const ecs::EntityId id : group_provider->removed_ids()) {
-            if(const u32 transform_index = unregister_object(id, index_ptr, storage).transform_index; transform_index == u32(-1)) {
+            if(const u32 transform_index = unregister_object(id, index_ptr, storage); transform_index == u32(-1)) {
                 _transform_manager.free_transform(transform_index);
             }
         }

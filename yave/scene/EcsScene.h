@@ -52,10 +52,10 @@ class EcsScene : public Scene {
 
     private:
         template<typename S>
-        typename S::value_type& register_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage);
+        void register_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage);
 
         template<typename S>
-        typename S::value_type unregister_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage);
+        u32 unregister_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage);
 
         template<typename T, typename S>
         void process_component_visibility(u32 ObjectIndices::* index_ptr, S& storage);
