@@ -221,17 +221,35 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
             _type = info.type_id;
 
-            if(_world) {
-                ImGui::BeginDisabled(_world->is_component_required(_id, info.type_id));
-                if(ImGui::Button(fmt_c_str(ICON_FA_TRASH "##{}", info.type_name))) {
-                    _world->remove_component(_id, info.type_id);
-                }
-                ImGui::EndDisabled();
+            bool open = false;
+            ImGui::PushID(fmt_c_str("{}", info.type_name));
+            {
+                const float button_size = ImGui::GetFrameHeight();
+                ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x - button_size);
+                const bool can_remove = !_world->is_component_required(_id, info.type_id);
+                const bool remove_component = ImGui::InvisibleButton(ICON_FA_TRASH "###invisible", math::Vec2(button_size));
 
                 ImGui::SameLine();
-            }
+                ImGui::SetCursorPosX(0.0);
+                open = ImGui::CollapsingHeader(fmt_c_str(ICON_FA_PUZZLE_PIECE " {}", info.clean_component_name()), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow);
 
-            if(ImGui::CollapsingHeader(fmt_c_str(ICON_FA_PUZZLE_PIECE " {}", info.clean_component_name()), ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::SameLine();
+                ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x - button_size);
+                ImGui::BeginDisabled(!can_remove);
+                ImGui::Button(ICON_FA_TRASH, math::Vec2(button_size));
+                ImGui::EndDisabled();
+
+                if(remove_component) {
+                    if(!can_remove) {
+                        log_msg(fmt("{} can not be deleted as it is required by some other component", info.clean_component_name()), Log::Warning);
+                    } else {
+                        _world->remove_component(_id, info.type_id);
+                    }
+                }
+            }
+            ImGui::PopID();
+
+            if(open) {
                 if(has_inspect) {
                     begin_table();
                 } else {
@@ -239,6 +257,10 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                     ImGui::TextDisabled("Component is missing inspect()");
                     ImGui::Unindent();
                 }
+            }
+
+            if(false) {
+                _world->remove_component(_id, info.type_id);
             }
 
             return _in_table;
