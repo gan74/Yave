@@ -226,7 +226,7 @@ bool position_input(const char* str_id, math::Vec3& position) {
         const math::Vec2 start_pos = ImGui::GetCursorScreenPos();
 
         ImGui::SetNextItemWidth(width / 3.0f);
-        edited |= ImGui::DragFloat(input_name[i], &position[i], 1.0f, 0.0f, 0.0f, "%.2f");
+        edited |= ImGui::DragFloat(input_name[i], &position[i], 1.0f, 0.0f, 0.0f, " %.2f");
 
         const math::Vec2 end_pos = ImGui::GetCursorScreenPos();
         const float vertical_padding = ((end_pos - start_pos).y() - text_height) * 0.5f;
