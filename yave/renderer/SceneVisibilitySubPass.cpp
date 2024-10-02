@@ -25,6 +25,8 @@ SOFTWARE.
 namespace yave {
 
 SceneVisibilitySubPass SceneVisibilitySubPass::create(const SceneView& scene_view) {
+    y_profile();
+
     const Scene* scene = scene_view.scene();
 
     SceneVisibilitySubPass pass;

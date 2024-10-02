@@ -73,7 +73,7 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
 
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     {
-        const auto region = recorder.region("Build acceleration structurte");
+        const auto region = recorder.region("Build acceleration structure");
         const VkAccelerationStructureBuildRangeInfoKHR* build_range_ptr = ranges.data();
         vkCmdBuildAccelerationStructuresKHR(recorder.vk_cmd_buffer(), 1, &build_info, &build_range_ptr);
     }
