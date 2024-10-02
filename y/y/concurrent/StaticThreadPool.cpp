@@ -44,8 +44,10 @@ DependencyGroup::DependencyGroup() {
 void DependencyGroup::reset() {
     if(_data) {
         y_always_assert(_data->is_ready(), "Dependency group is not ready");
-        _data->max = 0;
+        y_debug_assert(!_data->waiting);
         _data->counter = 0;
+        _data->waiting = 0;
+        _data->max = 0;
     }
 }
 
@@ -66,7 +68,8 @@ bool DependencyGroup::is_ready() const {
 std::shared_ptr<DependencyGroup::Data> DependencyGroup::create_signal() {
     init();
 
-    y_debug_assert(!_data->counter);
+    y_always_assert(!_data->waiting, "Some tasks are already waiting on this denpendenct group. No additional dependencies can be added");
+
     ++(_data->max);
 
     return _data;
@@ -77,11 +80,24 @@ StaticThreadPool::Task::Task(Func func, core::Span<DependencyGroup> wait, std::s
         function(std::move(func)),
         signal(std::move(sig)) {
 
-    std::copy_if(wait.begin(), wait.end(), std::back_inserter(wait_for), [](const auto& dep) { return !dep.is_empty(); });
+    std::copy_if(wait.begin(), wait.end(), std::back_inserter(wait_for), [](const DependencyGroup& dep) {
+        if(dep.is_empty()) {
+            return false;
+        }
+        ++dep._data->waiting;
+        return true;
+    });
 
 #ifdef Y_DEBUG
     location = loc;
 #endif
+}
+
+StaticThreadPool::Task::~Task() {
+    for(DependencyGroup& dep : wait_for) {
+        y_debug_assert(dep._data->waiting);
+        --dep._data->waiting;
+    }
 }
 
 bool StaticThreadPool::Task::is_ready() const {

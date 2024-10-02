@@ -64,12 +64,12 @@ class SystemScheduler : NonMovable {
 
         template<typename Fn>
         DependencyGroup schedule(SystemSchedule sched, core::String name, Fn&& func, core::Span<DependencyGroup> wait = {}) {
-            return schedule_internal<false>(sched, std::move(name), y_fwd(func), wait);
+            return schedule_internal(sched, std::move(name), y_fwd(func), wait, false);
         }
 
         template<typename Fn>
         DependencyGroup schedule_mt(SystemSchedule sched, core::String name, Fn&& func, core::Span<DependencyGroup> wait = {}) {
-            return schedule_internal<true>(sched, std::move(name), y_fwd(func), wait);
+            return schedule_internal(sched, std::move(name), y_fwd(func), wait, true);
         }
 
     private:
@@ -78,7 +78,7 @@ class SystemScheduler : NonMovable {
         class ArgumentResolver {
             public:
                 ArgumentResolver() = default;
-                ArgumentResolver(SystemScheduler* parent, u32 thread, u32 thread_count);
+                ArgumentResolver(SystemScheduler* parent, ThreadId id);
 
                 operator const EntityWorld&() const;
 
@@ -90,40 +90,38 @@ class SystemScheduler : NonMovable {
 
             private:
                 SystemScheduler* _parent = nullptr;
-                u32 _thread = 0;
-                u32 _thread_count = 1;
+                ThreadId _thread_id;
         };
 
         struct Task {
             core::String name;
-            core::Vector<std::function<void()>> funcs;
+            std::function<void(ThreadId)> func;
+            DependencyGroup signal;
+            core::Vector<DependencyGroup> wait;
+            bool multi_thread = false;
         };
 
         struct Schedule {
             core::Vector<Task> tasks;
-            core::Vector<DependencyGroup> signals;
-            core::Vector<core::Vector<DependencyGroup>> wait_groups;
         };
 
 
-        template<bool MT, typename Fn>
-        DependencyGroup schedule_internal(SystemSchedule sched, core::String name, Fn&& func, core::Span<DependencyGroup> wait = {}) {
-            auto& s = _schedules[usize(sched)];
+        template<typename Fn>
+        DependencyGroup schedule_internal(SystemSchedule sched, core::String name, Fn&& func, core::Span<DependencyGroup> wait, bool multi_thread) {
+            auto& schedule = _schedules[usize(sched)];
+            Task& task = schedule.tasks.emplace_back();
 
-            s.wait_groups.emplace_back(wait);
-            Task& task = s.tasks.emplace_back();
             task.name = std::move(name);
-            
-            const u32 thread_count = MT ? 8 : 1;
-            for(u32 i = 0; i != thread_count; ++i) {
-                task.funcs.emplace_back([this, func, i, thread_count]() {
-                    std::array<ArgumentResolver, function_traits<Fn>::arg_count> args;
-                    std::fill(args.begin(), args.end(), ArgumentResolver(this, i, thread_count));
-                    std::apply(func, args);
-                });
-            }
+            task.wait = wait;
+            task.multi_thread = multi_thread;
 
-            return s.signals.emplace_back();
+            task.func = [this, func](ThreadId id) {
+                std::array<ArgumentResolver, function_traits<Fn>::arg_count> args;
+                std::fill(args.begin(), args.end(), ArgumentResolver(this, id));
+                std::apply(func, args);
+            };
+
+            return task.signal;
         }
 
 

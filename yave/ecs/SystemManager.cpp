@@ -35,7 +35,7 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-SystemScheduler::ArgumentResolver::ArgumentResolver(SystemScheduler* parent, u32 thread, u32 thread_count) : _parent(parent), _thread(thread), _thread_count(thread_count) {
+SystemScheduler::ArgumentResolver::ArgumentResolver(SystemScheduler* parent, ThreadId id) : _parent(parent), _thread_id(id) {
 }
 
 SystemScheduler::ArgumentResolver::operator const EntityWorld&() const {
@@ -48,7 +48,7 @@ SystemScheduler::ArgumentResolver::operator SystemScheduler::FirstTime() const {
 }
 
 SystemScheduler::ArgumentResolver::operator SystemScheduler::ThreadId() const {
-    return ThreadId { _thread, _thread_count };
+    return _thread_id;
 }
 
 
@@ -78,34 +78,30 @@ void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) cons
     core::ScratchVector<DependencyGroup> stage_deps(dep_count);
     DependencyGroup previous_stage;
 
-    for(usize i = 0; i != usize(SystemSchedule::Max); ++i) {
+    for(usize k = 0; k != usize(SystemSchedule::Max); ++k) {
         for(const auto& scheduler : _schedulers) {
-
-            SystemScheduler::Schedule& sched = scheduler->_schedules[i];
-
-            for(usize k = 0; k != sched.tasks.size(); ++k) {
-                const auto& to_wait = sched.wait_groups[k];
-
-                core::ScratchVector<DependencyGroup> wait(to_wait.size() + 1);
-                std::copy(to_wait.begin(), to_wait.end(), std::back_inserter(wait));
+            auto& schedule = scheduler->_schedules[k];
+            for(auto& task : schedule.tasks) {
+                core::ScratchVector<DependencyGroup> wait(task.wait.size() + 1);
+                std::copy(task.wait.begin(), task.wait.end(), std::back_inserter(wait));
                 if(!previous_stage.is_empty()) {
                     wait.push_back(previous_stage);
                 }
 
-                DependencyGroup& signal = sched.signals[k];
-                signal.reset();
+                task.signal.reset();
 
-                const SystemScheduler::Task& task = sched.tasks[k];
-                for(const auto& func : task.funcs) {
-                    thread_pool.schedule([&]() {
+                const u32 thread_count = task.multi_thread ? 8 : 1;
+                for(u32 i = 0; i != thread_count; ++i) {
+                    const SystemScheduler::ThreadId thread_id = {i, thread_count};
+                    thread_pool.schedule([&, thread_id] {
                         y_profile_dyn_zone(fmt_c_str("{}: {}", scheduler->_system->name(), task.name));
-                        func();
+                        task.func(thread_id);
                         ++completed;
-                    }, &signal, wait);
+                    }, &task.signal, wait);
+                    ++submitted;
                 }
 
-                stage_deps.push_back(signal);
-                submitted += u32(task.funcs.size());
+                stage_deps.push_back(task.signal);
             }
         }
 

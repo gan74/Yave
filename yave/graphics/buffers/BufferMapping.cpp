@@ -41,6 +41,10 @@ BufferMappingBase::BufferMappingBase(const SubBuffer<BufferUsage::None, MemoryTy
 BufferMappingBase::~BufferMappingBase() {
     if(_mapping) {
         _buffer.device_memory().heap()->unmap(_buffer.vk_memory_range(), _access);
+
+#ifdef Y_DEBUG
+        _mapping = nullptr;
+#endif
     }
 }
 

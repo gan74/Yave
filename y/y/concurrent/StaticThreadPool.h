@@ -41,8 +41,16 @@ namespace concurrent {
 class StaticThreadPool;
 
 class DependencyGroup {
-    struct Data {
+    struct Data : NonMovable {
+#ifdef Y_DEBUG
+        ~Data() {
+            y_debug_assert(is_ready());
+            y_debug_assert(!waiting);
+        }
+#endif
+
         std::atomic<u32> counter = 0;
+        std::atomic<u32> waiting = 0;
         u32 max = 0;
 
         bool is_ready() const;
@@ -70,8 +78,10 @@ class StaticThreadPool : NonMovable {
     private:
         using Func = std::function<void()>;
 
-        struct Task : NonCopyable {
+        struct Task : NonMovable {
+
             Task(Func func, core::Span<DependencyGroup> wait, std::shared_ptr<DependencyGroup::Data> sig, std::source_location loc);
+            ~Task();
 
             bool is_ready() const;
 
