@@ -35,7 +35,7 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-SystemScheduler::ArgumentResolver::ArgumentResolver(SystemScheduler* parent) : _parent(parent) {
+SystemScheduler::ArgumentResolver::ArgumentResolver(SystemScheduler* parent, u32 thread, u32 thread_count) : _parent(parent), _thread(thread), _thread_count(thread_count) {
 }
 
 SystemScheduler::ArgumentResolver::operator const EntityWorld&() const {
@@ -46,6 +46,13 @@ SystemScheduler::ArgumentResolver::operator const EntityWorld&() const {
 SystemScheduler::ArgumentResolver::operator SystemScheduler::FirstTime() const {
     return FirstTime { _parent->_world->tick_id() == _parent->_first_tick };
 }
+
+SystemScheduler::ArgumentResolver::operator SystemScheduler::ThreadId() const {
+    return ThreadId { _thread, _thread_count };
+}
+
+
+
 
 SystemScheduler::SystemScheduler(System* sys, EntityWorld* world) : _system(sys), _world(world), _first_tick(_world->tick_id().next()) {
 }
@@ -89,14 +96,16 @@ void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) cons
                 signal.reset();
 
                 const SystemScheduler::Task& task = sched.tasks[k];
-                thread_pool.schedule([&]() {
-                    y_profile_dyn_zone(fmt_c_str("{}: {}", scheduler->_system->name(), task.name));
-                    task.func();
-                    ++completed;
-                }, &signal, wait);
+                for(const auto& func : task.funcs) {
+                    thread_pool.schedule([&]() {
+                        y_profile_dyn_zone(fmt_c_str("{}: {}", scheduler->_system->name(), task.name));
+                        func();
+                        ++completed;
+                    }, &signal, wait);
+                }
 
                 stage_deps.push_back(signal);
-                ++submitted;
+                submitted += u32(task.funcs.size());
             }
         }
 

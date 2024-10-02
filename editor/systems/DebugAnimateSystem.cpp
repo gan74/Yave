@@ -34,10 +34,13 @@ DebugAnimateSystem::DebugAnimateSystem() : ecs::System("DebugAnimateSystem") {
 }
 
 void DebugAnimateSystem::setup(ecs::SystemScheduler& sched) {
-    sched.schedule(ecs::SystemSchedule::Update, "Update", [this](ecs::EntityGroup<ecs::Mutate<TransformableComponent>, DebugAnimateComponent>&& group) {
-        const float dt = float(_timer.reset().to_secs());
-        for(auto&& [tr, dg] : group) {
-            tr.set_transform(tr.transform() * math::rotation(dg.axis(), dt));
+    sched.schedule_mt(ecs::SystemSchedule::Update, "Update", [this](ecs::EntityGroup<ecs::Mutate<TransformableComponent>, DebugAnimateComponent>&& group, ecs::SystemScheduler::ThreadId thread_id) {
+        y_profile_dyn_zone(fmt_c_str("{} / {}", thread_id.id, thread_id.total));
+        if(thread_id.id == 3) {
+            const float dt = float(_timer.reset().to_secs());
+            for(auto&& [tr, dg] : group) {
+                tr.set_transform(tr.transform() * math::rotation(dg.axis(), dt));
+            }
         }
     });
 }

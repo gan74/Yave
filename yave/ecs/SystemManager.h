@@ -54,20 +54,22 @@ class SystemScheduler : NonMovable {
             bool value = false;
         };
 
+        struct ThreadId {
+            u32 id = 0;
+            u32 total = 1;
+        };
+
     public:
         SystemScheduler(System* sys, EntityWorld* world);
 
         template<typename Fn>
         DependencyGroup schedule(SystemSchedule sched, core::String name, Fn&& func, core::Span<DependencyGroup> wait = {}) {
-            auto& s = _schedules[usize(sched)];
+            return schedule_internal<false>(sched, std::move(name), y_fwd(func), wait);
+        }
 
-            s.wait_groups.emplace_back(wait);
-            s.tasks.emplace_back(std::move(name), [this, func]() {
-                std::array<ArgumentResolver, function_traits<Fn>::arg_count> args;
-                std::fill(args.begin(), args.end(), this);
-                std::apply(func, args);
-            });
-            return s.signals.emplace_back();
+        template<typename Fn>
+        DependencyGroup schedule_mt(SystemSchedule sched, core::String name, Fn&& func, core::Span<DependencyGroup> wait = {}) {
+            return schedule_internal<true>(sched, std::move(name), y_fwd(func), wait);
         }
 
     private:
@@ -76,21 +78,25 @@ class SystemScheduler : NonMovable {
         class ArgumentResolver {
             public:
                 ArgumentResolver() = default;
-                ArgumentResolver(SystemScheduler* parent);
+                ArgumentResolver(SystemScheduler* parent, u32 thread, u32 thread_count);
 
                 operator const EntityWorld&() const;
+
                 operator FirstTime() const;
+                operator ThreadId() const;
 
                 template<typename... Ts>
                 operator EntityGroup<Ts...>() const;
 
             private:
                 SystemScheduler* _parent = nullptr;
+                u32 _thread = 0;
+                u32 _thread_count = 1;
         };
 
         struct Task {
             core::String name;
-            std::function<void()> func;
+            core::Vector<std::function<void()>> funcs;
         };
 
         struct Schedule {
@@ -98,6 +104,28 @@ class SystemScheduler : NonMovable {
             core::Vector<DependencyGroup> signals;
             core::Vector<core::Vector<DependencyGroup>> wait_groups;
         };
+
+
+        template<bool MT, typename Fn>
+        DependencyGroup schedule_internal(SystemSchedule sched, core::String name, Fn&& func, core::Span<DependencyGroup> wait = {}) {
+            auto& s = _schedules[usize(sched)];
+
+            s.wait_groups.emplace_back(wait);
+            Task& task = s.tasks.emplace_back();
+            task.name = std::move(name);
+            
+            const u32 thread_count = MT ? 8 : 1;
+            for(u32 i = 0; i != thread_count; ++i) {
+                task.funcs.emplace_back([this, func, i, thread_count]() {
+                    std::array<ArgumentResolver, function_traits<Fn>::arg_count> args;
+                    std::fill(args.begin(), args.end(), ArgumentResolver(this, i, thread_count));
+                    std::apply(func, args);
+                });
+            }
+
+            return s.signals.emplace_back();
+        }
+
 
         std::array<Schedule, usize(SystemSchedule::Max)> _schedules;
 
