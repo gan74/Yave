@@ -135,9 +135,8 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     const int2 coord = int2(semantics.frag_coord.xy);
 
     const float3 current = in_color[coord].rgb;
-    const uint mask = in_mask[coord];
 
-    if(mask != TAAMask::None && mask != TAAMask::ReprojectionMismatch) {
+    if(in_mask[coord] != TAAMask::None) {
         return float4(current, 1.0);
     }
 

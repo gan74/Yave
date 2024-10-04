@@ -174,7 +174,6 @@ Camera::operator shader::Camera() const {
     camera_data.cur.inv_view_proj = inverse_matrix();
 
     camera_data.cur.unjittered_view_proj = unjittered_view_proj();
-    camera_data.cur.inv_unjittered_view_proj = camera_data.cur.unjittered_view_proj.inverse();
 
     camera_data.prev = camera_data.cur;
 

@@ -32,7 +32,6 @@ uint frag_main(float2 in_uv) : SV_Target0 {
         return TAAMask::UvOutOfBounds;
     }
 
-    // const bool has_moved = any(abs(motion) > inv_size);
     const float2 ratio = float2(1.0, size.y * inv_size.x);
     const float2 prev_motion = in_prev_motion.Sample(prev_uv);
     if(length((prev_motion - motion) * ratio) > (length(motion * ratio) * 0.2 + 0.05)) {
@@ -46,11 +45,10 @@ uint frag_main(float2 in_uv) : SV_Target0 {
         return TAAMask::DepthOutOfBounds;
     }
 
-    const float3 prev_world_pos = unproject(prev_uv, prev_depth, camera.prev.inv_view_proj);
-    const float3 reproj = project(prev_world_pos, camera.cur.view_proj);
-
-    if(any(abs(reproj.xy - uv) > inv_size)) {
-        return TAAMask::ReprojectionMismatch;
+    const float3 reproj_pos = project(unproject(prev_uv, prev_depth, camera.prev.inv_view_proj), camera.cur.view_proj);
+    // const float3 reproj_pos = mul(camera.prev_to_cur, float4(prev_uv, prev_depth, 1.0)).xyz;
+    if(reproj_pos.z > depth + 0.005) {
+        return TAAMask::Deoccluded;
     }
 
     return TAAMask::None;
