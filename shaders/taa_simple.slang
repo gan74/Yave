@@ -21,7 +21,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     const int2 coord = int2(semantics.frag_coord.xy);
 
     const float4 current = in_color[coord];
-    if(in_mask[coord] != 0) {
+    if(in_mask[coord] != TAAMask::None) {
         return current;
     }
 

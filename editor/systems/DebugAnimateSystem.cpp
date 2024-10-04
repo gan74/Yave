@@ -37,7 +37,7 @@ void DebugAnimateSystem::setup(ecs::SystemScheduler& sched) {
     sched.schedule(ecs::SystemSchedule::Update, "Update", [this](ecs::EntityGroup<ecs::Mutate<TransformableComponent>, DebugAnimateComponent>&& group) {
         const float dt = float(_timer.reset().to_secs());
         for(auto&& [tr, dg] : group) {
-            tr.set_transform(tr.transform() * math::rotation(dg.axis(), dt));
+            tr.set_transform(tr.transform() * math::rotation(dg.axis(), dt * dg.speed()));
         }
     });
 }

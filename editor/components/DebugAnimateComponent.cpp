@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "DebugAnimateComponent.h"
 
+#include <yave/ecs/ComponentInspector.h>
+
 #include <y/math/random.h>
 #include <random>
 
@@ -42,9 +44,16 @@ DebugAnimateComponent::DebugAnimateComponent() {
     );
 }
 
-
 const math::Vec3& DebugAnimateComponent::axis() const {
     return _axis;
+}
+
+float DebugAnimateComponent::speed() const {
+    return _speed;
+}
+
+void DebugAnimateComponent::inspect(ecs::ComponentInspector* inspector) {
+    inspector->inspect("Speed", _speed);
 }
 
 }

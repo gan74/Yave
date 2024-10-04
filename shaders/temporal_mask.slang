@@ -29,29 +29,29 @@ uint frag_main(float2 in_uv) : SV_Target0 {
     const float2 prev_uv = uv + motion;
 
     if(any(saturate(prev_uv) != prev_uv)) {
-        return 1;
+        return TAAMask::UvOutOfBounds;
     }
 
     // const bool has_moved = any(abs(motion) > inv_size);
     const float2 ratio = float2(1.0, size.y * inv_size.x);
     const float2 prev_motion = in_prev_motion.Sample(prev_uv);
     if(length((prev_motion - motion) * ratio) > (length(motion * ratio) * 0.2 + 0.05)) {
-        return 2;
+        return TAAMask::MotionMismatch;
     }
 
     const float depth = in_depth.Sample(uv);
     const float prev_depth = in_prev_depth.Sample(prev_uv);
 
     if(is_depth_far(depth) || is_depth_far(prev_depth)) {
-        return 3;
+        return TAAMask::DepthOutOfBounds;
     }
 
     const float3 prev_world_pos = unproject(prev_uv, prev_depth, camera.prev.inv_view_proj);
     const float3 reproj = project(prev_world_pos, camera.cur.view_proj);
 
     if(any(abs(reproj.xy - uv) > inv_size)) {
-        return 4;
+        return TAAMask::ReprojectionMismatch;
     }
 
-    return 0;
+    return TAAMask::None;
 }

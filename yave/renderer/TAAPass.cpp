@@ -45,12 +45,9 @@ static auto make_taa_settings(const TAASettings& settings) {
 
     u32 flag_bits = 0;
     {
-        const u32 clamping_bit                  = 0x01;
-        const u32 match_prev_bitmatch_prev_bit  = 0x02;
-        const u32 weighted_clamp_bit            = 0x04;
-        flag_bits |= (settings.use_clamping ? clamping_bit : 0);
-        flag_bits |= (settings.use_previous_matching ? match_prev_bitmatch_prev_bit : 0);
-        flag_bits |= (settings.use_weighted_clamp ? weighted_clamp_bit : 0);
+        flag_bits |= (settings.use_clamping ? shader::TAAFeatureBits::ClampingBit : 0);
+        flag_bits |= (settings.use_previous_matching ? shader::TAAFeatureBits::MatchPrevBit : 0);
+        flag_bits |= (settings.use_weighted_clamp ? shader::TAAFeatureBits::WeightedClampBit : 0);
     }
 
     return SettingsData {

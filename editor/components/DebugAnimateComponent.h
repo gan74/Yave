@@ -33,9 +33,13 @@ class DebugAnimateComponent {
         DebugAnimateComponent();
 
         const math::Vec3& axis() const;
+        float speed() const;
+
+        void inspect(ecs::ComponentInspector* inspector);
 
     private:
         math::Vec3 _axis;
+        float _speed = 1.0f;
 };
 
 }

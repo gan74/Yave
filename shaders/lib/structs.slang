@@ -1,6 +1,30 @@
 #ifndef STRUCT_SLANG
 #define STRUCT_SLANG
 
+
+enum TextureSlots : uint32_t {
+    Albedo                      = 0,
+    Normal                      = 1,
+    Emissive                    = 2,
+    MetallicRoughnessSpecular   = 3,
+    SpecularColor               = 4,
+};
+
+enum TAAFeatureBits : uint32_t {
+    ClampingBit                 = 0x01,
+    MatchPrevBit                = 0x02,
+    WeightedClampBit            = 0x04,
+};
+
+enum TAAMask : uint32_t {
+    None                        = 0,
+    UvOutOfBounds               = 1,
+    MotionMismatch              = 2,
+    DepthOutOfBounds            = 3,
+    ReprojectionMismatch        = 4,
+};
+
+
 struct TransformableData {
     float4x4 current;
     float4x4 last;
@@ -32,14 +56,6 @@ struct Camera {
 
     float3 up;
     uint padding_2;
-};
-
-enum TextureSlots : uint32_t {
-    Albedo                      = 0,
-    Normal                      = 1,
-    Emissive                    = 2,
-    MetallicRoughnessSpecular   = 3,
-    SpecularColor               = 4,
 };
 
 struct MaterialData {

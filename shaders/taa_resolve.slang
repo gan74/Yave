@@ -21,7 +21,7 @@ ConstantBuffer<Camera> camera;
 
 [[vk::binding(5)]]
 cbuffer Settings_Inline {
-    uint flags;
+    TAAFeatureBits flags;
     uint weighting_mode;
     float blending_factor;
 };
@@ -51,9 +51,6 @@ ClampingInfo gather_clamping_info(Sampler2D color, int2 coord) {
 
     return info;
 }
-
-
-
 
 float3 blend_weighted(float3 curr, float3 prev, float factor) {
     switch(weighting_mode) {
@@ -88,9 +85,6 @@ float3 clamp_weighted(float3 color, ClampingInfo info) {
     return exp(clamp(log_color, log_min, log_max));
 }
 
-
-
-
 float filter_weight(float x) {
     const float B = 0.0;
     const float C = 0.5;
@@ -107,7 +101,6 @@ float filter_weight(float x) {
 
     return y / 6.0f;
 }
-
 
 // https://github.com/TheRealMJP/MSAAFilter/blob/master/MSAAFilter/Resolve.hlsl
 float3 sample_prev(float2 prev_coord) {
@@ -130,12 +123,11 @@ float3 sample_prev(float2 prev_coord) {
 }
 
 
+
+
+
+
 // -------------------------------- Main --------------------------------
-
-static const uint clamping_bit                  = 0x01;
-static const uint match_prev_bit                = 0x02;
-static const uint weighted_clamp_bit            = 0x04;
-
 
 // https://www.elopezr.com/temporal-aa-and-the-quest-for-the-holy-trail/
 [shader("fragment")]
@@ -143,8 +135,9 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     const int2 coord = int2(semantics.frag_coord.xy);
 
     const float3 current = in_color[coord].rgb;
+    const uint mask = in_mask[coord];
 
-    if(in_mask[coord] != 0) {
+    if(mask != TAAMask::None && mask != TAAMask::ReprojectionMismatch) {
         return float4(current, 1.0);
     }
 
@@ -157,17 +150,15 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
 
     float3 prev = current;
 
-    // Clamping
-    if((flags & match_prev_bit) != 0) {
+    if((flags & TAAFeatureBits::MatchPrevBit) != 0) {
         prev = sample_prev(prev_uv * size);
     } else {
         prev = in_prev.Sample(prev_uv).rgb;
     }
 
-    bool sample_valid = true;
-    if((flags & clamping_bit) != 0) {
+    if((flags & TAAFeatureBits::ClampingBit) != 0) {
         const ClampingInfo clamping_info = gather_clamping_info(in_color, coord);
-        if((flags & weighted_clamp_bit) != 0) {
+        if((flags & TAAFeatureBits::WeightedClampBit) != 0) {
             prev = clamp_weighted(prev, clamping_info);
         } else {
             prev = clamp(prev, clamping_info.min_color, clamping_info.max_color);
@@ -175,16 +166,6 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     }
 
 
-#if 0
-    if(!sample_valid) {
-        return float4(1, 0, 0, 1);
-    }
-#endif
-
-
-    if(sample_valid) {
-        return float4(blend_weighted(current, prev, blending_factor), 1.0);
-    }
-    return float4(current, 1.0);
+    return float4(blend_weighted(current, prev, blending_factor), 1.0);
 }
 
