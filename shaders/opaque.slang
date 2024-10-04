@@ -49,15 +49,15 @@ VertexStageOut vert_main(StdVertexStageIn in) {
 
     const float3x3 model = float3x3(transformable.current);
 
-    const float4 current_position = mul(camera.unjittered_view_proj, mul(transformable.current, float4(in.position, 1.0)));
-    const float4 last_position = mul(camera.prev_unjittered_view_proj, mul(transformable.last, float4(in.position, 1.0)));
+    const float4 current_position = mul(camera.cur.unjittered_view_proj, mul(transformable.current, float4(in.position, 1.0)));
+    const float4 last_position = mul(camera.prev.unjittered_view_proj, mul(transformable.last, float4(in.position, 1.0)));
 
     const float3 in_normal = unpack_2_10_10_10(in.packed_normal_tangent_sign.x).xyz;
     const float4 in_tangent_sign = unpack_2_10_10_10(in.packed_normal_tangent_sign.y);
 
     VertexStageOut out;
     {
-        out.sv_position = mul(camera.view_proj, mul(transformable.current, float4(in.position, 1.0)));
+        out.sv_position = mul(camera.cur.view_proj, mul(transformable.current, float4(in.position, 1.0)));
 
         out.vert.normal = normalize(mul(model, in_normal));
         out.vert.uv = in.uv;

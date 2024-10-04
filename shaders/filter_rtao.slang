@@ -68,7 +68,7 @@ void main() {
     const float depth = in_depth[coord].x;
     const float3 normal = decode_gbuffer({float4(0.0), in_rt1[coord]}).normal;
 
-    const float3 world_pos = unproject((coord + 0.5) / image_size, depth, camera.inv_view_proj);
+    const float3 world_pos = unproject((coord + 0.5) / image_size, depth, camera.cur.inv_view_proj);
     const float3 view_dir = normalize(camera.position - world_pos);
 
     const float dot_view_normal = dot(view_dir, normal);

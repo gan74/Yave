@@ -26,7 +26,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
         return float4(sun_color, 1.0);
     }
 
-    const float3 view_vec = unproject(in_uv, max(epsilon, depth), camera.inv_view_proj) - camera.position;
+    const float3 view_vec = unproject(in_uv, max(epsilon, depth), camera.cur.inv_view_proj) - camera.position;
     const float view_dist = length(view_vec);
 
     const float d = saturate(exp(-view_dist * density));

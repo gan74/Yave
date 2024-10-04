@@ -6,13 +6,17 @@ struct TransformableData {
     float4x4 last;
 };
 
-struct Camera {
+struct CameraMatrices {
     float4x4 view_proj;
     float4x4 inv_view_proj;
 
     float4x4 unjittered_view_proj;
     float4x4 inv_unjittered_view_proj;
-    float4x4 prev_unjittered_view_proj;
+};
+
+struct Camera {
+    CameraMatrices cur;
+    CameraMatrices prev;
 
     float4x4 proj;
     float4x4 inv_proj;

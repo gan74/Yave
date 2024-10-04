@@ -45,10 +45,10 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
         return current;
     }
 
-    const float3 world_pos = unproject(uv, depth, camera.inv_unjittered_view_proj);
-    const float3 prev_pos = project(world_pos, camera.prev_unjittered_view_proj);
+    const float3 prev_world_pos = unproject(prev_uv, prev_depth, camera.prev.inv_view_proj);
+    const float3 reproj = project(prev_world_pos, camera.cur.view_proj);
 
-    if(length(prev_pos - float3(prev_uv, prev_depth)) > 0.01) {
+    if(any(abs(reproj.xy - uv) > inv_size)) {
         return current;
     }
 

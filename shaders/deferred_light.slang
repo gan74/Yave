@@ -55,10 +55,10 @@ VertexStageOut vert_main(StdVertexStageIn in) {
         out.instance_index = semantics.instance_index;
 
 #ifdef SPOT
-        out.sv_position = mul(camera.view_proj, mul(light.draw_model, float4(in.position, 1.0)));
+        out.sv_position = mul(camera.cur.view_proj, mul(light.draw_model, float4(in.position, 1.0)));
 #else
         const float scale = light.range * 1.1;
-        out.sv_position = mul(camera.view_proj, float4(in.position * scale + light.position, 1.0));
+        out.sv_position = mul(camera.cur.view_proj, float4(in.position * scale + light.position, 1.0));
 #endif
 
     }
@@ -78,7 +78,7 @@ float4 frag_main(uint in_instance_index) : SV_Target0 {
         in_rt1[coord],
     });
 
-    const float3 world_pos = unproject(uv, depth, camera.inv_view_proj);
+    const float3 world_pos = unproject(uv, depth, camera.cur.inv_view_proj);
     const float3 view_dir = normalize(camera.position - world_pos);
 
     float3 irradiance = float3(0.0);

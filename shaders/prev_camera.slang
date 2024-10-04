@@ -9,6 +9,6 @@ ConstantBuffer<Camera> prev_camera;
 [shader("compute")]
 [numthreads(1)]
 void comp_main() {
-    camera[0].prev_unjittered_view_proj = prev_camera.unjittered_view_proj;
+    camera[0].prev = prev_camera.cur;
 }
 
