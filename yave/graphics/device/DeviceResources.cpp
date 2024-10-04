@@ -93,8 +93,8 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData::screen("blur_HORIZONTAL", true),
     DeviceMaterialData::screen("blur_VERTICAL", true),
     DeviceMaterialData{"wireframe", "wireframe", DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, true, PrimitiveType::Lines},
-    DeviceMaterialData::screen("temporal_desocclusion"),
-    DeviceMaterialData::screen("temporal"),
+    DeviceMaterialData::screen("temporal_mask"),
+    DeviceMaterialData::screen("taa_simple"),
     DeviceMaterialData::screen("taa_resolve"),
     DeviceMaterialData{"id", "id", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
 };

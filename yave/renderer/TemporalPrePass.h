@@ -19,31 +19,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_TEMPORALPASS_H
-#define YAVE_RENDERER_TEMPORALPASS_H
+#ifndef YAVE_RENDERER_TEMPORALPREPASS_H
+#define YAVE_RENDERER_TEMPORALPREPASS_H
 
 #include "GBufferPass.h"
 
 namespace yave {
 
-struct TemporalDesocclusionPass {
+struct TemporalPrePass {
     FrameGraphImageId mask;
     FrameGraphImageId motion;
 
     FrameGraphTypedBufferId<shader::Camera> camera;
 
-    static TemporalDesocclusionPass create(FrameGraph& framegraph, const GBufferPass& gbuffer);
-};
-
-
-
-struct TemporalPass {
-    FrameGraphImageId out;
-
-    static TemporalPass create(FrameGraph& framegraph, const TemporalDesocclusionPass& temp, FrameGraphImageId in_color, FrameGraphPersistentResourceId persistent_id);
+    static TemporalPrePass create(FrameGraph& framegraph, const GBufferPass& gbuffer);
 };
 
 }
 
-#endif // YAVE_RENDERER_TEMPORALPASS_H
+#endif // YAVE_RENDERER_TEMPORALPREPASS_H
 

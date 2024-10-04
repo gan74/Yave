@@ -16,7 +16,6 @@ Sampler2D<uint> in_mask;
 ConstantBuffer<Camera> camera;
 
 
-
 [shader("fragment")]
 float4 frag_main(float2 in_uv) : SV_Target0 {
     const int2 coord = int2(semantics.frag_coord.xy);

@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "TAAPass.h"
+#include "CameraBufferPass.h"
 
 #include <yave/camera/Camera.h>
 
@@ -33,12 +33,12 @@ SOFTWARE.
 
 namespace yave {
 
-static math::Vec2 compute_jitter(TAASettings::JitterSeq jitter, u64 jitter_index) {
+static math::Vec2 compute_jitter(JitterSettings::JitterSeq jitter, u64 jitter_index) {
     switch(jitter) {
-        case TAASettings::JitterSeq::Weyl:
+        case JitterSettings::JitterSeq::Weyl:
             return math::Vec2(math::weyl_2d<double>(jitter_index));
 
-        case TAASettings::JitterSeq::R2:
+        case JitterSettings::JitterSeq::R2:
             return math::Vec2(math::golden_r2_2d<double>(jitter_index));
 
         default:
@@ -50,17 +50,19 @@ static math::Vec2 compute_jitter(TAASettings::JitterSeq jitter, u64 jitter_index
 
 
 CameraBufferPass CameraBufferPass::create_no_jitter(FrameGraph& framegraph, const SceneView& view, FrameGraphPersistentResourceId persistent_id) {
-    TAASettings settings;
+    JitterSettings settings;
     {
-        settings.enable = false;
+        settings.jitter_intensity = 0.0f;
     }
 
     return create(framegraph, view, {}, persistent_id, settings);
 }
 
-CameraBufferPass CameraBufferPass::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, FrameGraphPersistentResourceId persistent_id, const TAASettings& settings) {
+CameraBufferPass CameraBufferPass::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, FrameGraphPersistentResourceId persistent_id, const JitterSettings& settings) {
+    const bool enabled = settings.jitter_intensity > 0.0f;
+
     const u64 jitter_index = framegraph.frame_id() % 1024;
-    const Camera jittered_camera = settings.enable ? view.camera().jittered(compute_jitter(settings.jitter, jitter_index), size, settings.jitter_intensity) : view.camera();
+    const Camera jittered_camera = enabled ? view.camera().jittered(compute_jitter(settings.jitter, jitter_index), size, settings.jitter_intensity) : view.camera();
     const SceneView jittered_view = SceneView(view.scene(), jittered_camera);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Camera buffer pass");
@@ -85,7 +87,6 @@ CameraBufferPass CameraBufferPass::create(FrameGraph& framegraph, const SceneVie
     pass.view = jittered_view;
     pass.unjittered_view = view;
     pass.camera = camera;
-    pass.taa_settings = settings;
     return pass;
 }
 

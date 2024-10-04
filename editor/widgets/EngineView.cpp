@@ -183,7 +183,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.motion);
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
-        builder.add_uniform_input_with_default(renderer.renderer.desocclusion.mask, Descriptor(zero, SamplerType::PointClamp));
+        builder.add_uniform_input_with_default(renderer.renderer.temporal.mask, Descriptor(zero, SamplerType::PointClamp));
         builder.add_uniform_input_with_default(renderer.renderer.ao.ao, Descriptor(white));
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             {
@@ -558,35 +558,36 @@ void EngineView::draw_settings_menu() {
     }
 
     if(ImGui::BeginMenu("TAA")) {
-        TAASettings& settings = _settings.renderer_settings.taa;
+        JitterSettings& jitter = _settings.renderer_settings.jitter;
+        TAASettings& taa = _settings.renderer_settings.taa;
 
-        ImGui::Checkbox("Enable TAA", &settings.enable);
+        ImGui::Checkbox("Enable TAA", &taa.enable);
 
         ImGui::Separator();
 
-        ImGui::Checkbox("Enable clamping", &settings.use_clamping);
-        ImGui::Checkbox("Enable previous sample matching", &settings.use_previous_matching);
-        ImGui::Checkbox("Enable weighted clamp", &settings.use_weighted_clamp);
+        ImGui::Checkbox("Enable clamping", &taa.use_clamping);
+        ImGui::Checkbox("Enable previous sample matching", &taa.use_previous_matching);
+        ImGui::Checkbox("Enable weighted clamp", &taa.use_weighted_clamp);
 
         ImGui::Separator();
 
         const char* weighting_names[] = {"None", "Luminance", "Log"};
-        if(ImGui::BeginCombo("Weighting mode", weighting_names[usize(settings.weighting_mode)])) {
+        if(ImGui::BeginCombo("Weighting mode", weighting_names[usize(taa.weighting_mode)])) {
             for(usize i = 0; i != sizeof(weighting_names) / sizeof(weighting_names[0]); ++i) {
-                const bool selected = usize(settings.weighting_mode) == i;
+                const bool selected = usize(taa.weighting_mode) == i;
                 if(ImGui::Selectable(weighting_names[i], selected)) {
-                    settings.weighting_mode = TAASettings::WeightingMode(i);
+                    taa.weighting_mode = TAASettings::WeightingMode(i);
                 }
             }
             ImGui::EndCombo();
         }
 
         const char* jitter_names[] = {"Weyl", "R2"};
-        if(ImGui::BeginCombo("Jitter", jitter_names[usize(settings.jitter)])) {
+        if(ImGui::BeginCombo("Jitter", jitter_names[usize(jitter.jitter)])) {
             for(usize i = 0; i != sizeof(jitter_names) / sizeof(jitter_names[0]); ++i) {
-                const bool selected = usize(settings.jitter) == i;
+                const bool selected = usize(jitter.jitter) == i;
                 if(ImGui::Selectable(jitter_names[i], selected)) {
-                    settings.jitter = TAASettings::JitterSeq(i);
+                    jitter.jitter = JitterSettings::JitterSeq(i);
                 }
             }
             ImGui::EndCombo();
@@ -595,8 +596,8 @@ void EngineView::draw_settings_menu() {
 
         ImGui::Separator();
 
-        ImGui::SliderFloat("Blending factor", &settings.blending_factor, 0.0f, 1.0f, "%.2f");
-        ImGui::SliderFloat("Jitter intensity", &settings.jitter_intensity, 0.0f, 2.0f, "%.2f");
+        ImGui::SliderFloat("Blending factor", &taa.blending_factor, 0.0f, 1.0f, "%.2f");
+        ImGui::SliderFloat("Jitter intensity", &jitter.jitter_intensity, 0.0f, 2.0f, "%.2f");
 
         ImGui::EndMenu();
     }

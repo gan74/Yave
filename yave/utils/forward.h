@@ -236,7 +236,7 @@ struct SpecularMaterialData;
 struct SubMesh;
 struct TAAPass;
 struct TAASettings;
-struct TemporalDesocclusionPass;
+struct TemporalPrePass;
 struct TemporalPass;
 struct TimedZone;
 struct ToneMappingPass;

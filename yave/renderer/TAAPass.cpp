@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "TAAPass.h"
 
-#include "TemporalPass.h"
+#include "TemporalPrePass.h"
 
 #include <yave/camera/Camera.h>
 
@@ -35,59 +35,64 @@ SOFTWARE.
 
 namespace yave {
 
-TAAPass TAAPass::create(FrameGraph& framegraph, const TemporalDesocclusionPass& temp, FrameGraphImageId in_color, const TAASettings& settings) {
-    if(!settings.enable) {
-        TAAPass pass;
-        pass.anti_aliased = in_color;
-        return pass;
+static auto make_taa_settings(const TAASettings& settings) {
+    struct SettingsData {
+        u32 flags;
+        u32 weighting_mode;
+        float blending_factor;
+    };
+
+
+    u32 flag_bits = 0;
+    {
+        const u32 clamping_bit                  = 0x01;
+        const u32 match_prev_bitmatch_prev_bit  = 0x02;
+        const u32 weighted_clamp_bit            = 0x04;
+        flag_bits |= (settings.use_clamping ? clamping_bit : 0);
+        flag_bits |= (settings.use_previous_matching ? match_prev_bitmatch_prev_bit : 0);
+        flag_bits |= (settings.use_weighted_clamp ? weighted_clamp_bit : 0);
     }
 
+    return SettingsData {
+        flag_bits,
+        u32(settings.weighting_mode),
+        settings.blending_factor,
+    };
+}
+
+template<bool Simple>
+static TAAPass create_taa_pass(FrameGraph& framegraph, const TemporalPrePass& temporal, FrameGraphImageId in_color, FrameGraphPersistentResourceId persistent_id, const TAASettings& settings) {
     const ImageFormat format = framegraph.image_format(in_color);
     const math::Vec2ui size = framegraph.image_size(in_color);
 
-    y_always_assert(!temp.mask.is_valid() || framegraph.image_size(temp.mask) == size, "Invalid temporal mask size");
+    y_always_assert(!temporal.mask.is_valid() || framegraph.image_size(temporal.mask) == size, "Invalid temporal mask size");
 
-    FrameGraphPassBuilder builder = framegraph.add_pass("TAA resolve pass");
+    FrameGraphPassBuilder builder = framegraph.add_pass(Simple ? "TAA pass" : "TAA resolve pass");
 
     const auto aa = builder.declare_image(format, size);
     builder.add_input_usage(aa, ImageUsage::TextureBit);
 
-    static const FrameGraphPersistentResourceId color_id = FrameGraphPersistentResourceId::create();
-    FrameGraphImageId prev_color = framegraph.make_persistent_and_get_prev(aa, color_id);
+    FrameGraphImageId prev_color = framegraph.make_persistent_and_get_prev(aa, persistent_id);
     if(!prev_color.is_valid()) {
         prev_color = builder.declare_copy(aa);
     }
 
     const Texture& zero = *device_resources()[DeviceResources::ZeroTexture];
 
-    const u32 clamping_bit                  = 0x01;
-    const u32 match_prev_bitmatch_prev_bit  = 0x02;
-    const u32 weighted_clamp_bit            = 0x04;
-
-    u32 flag_bits = 0;
-    flag_bits |= (settings.use_clamping ? clamping_bit : 0);
-    flag_bits |= (settings.use_previous_matching ? match_prev_bitmatch_prev_bit : 0);
-    flag_bits |= (settings.use_weighted_clamp ? weighted_clamp_bit : 0);
-
-    struct SettingsData {
-        u32 flags;
-        u32 weighting_mode;
-        float blending_factor;
-    } settings_data {
-        flag_bits,
-        u32(settings.weighting_mode),
-        settings.blending_factor,
-    };
-
     builder.add_uniform_input(in_color, SamplerType::PointClamp);
     builder.add_uniform_input(prev_color);
-    builder.add_uniform_input(temp.motion);
-    builder.add_uniform_input_with_default(temp.mask, Descriptor(zero, SamplerType::PointClamp));
-    builder.add_uniform_input(temp.camera);
-    builder.add_inline_input(InlineDescriptor(settings_data));
+    builder.add_uniform_input(temporal.motion);
+    builder.add_uniform_input_with_default(temporal.mask, Descriptor(zero, SamplerType::PointClamp));
+    builder.add_uniform_input(temporal.camera);
+
+    if constexpr(!Simple) {
+        const auto settings_data = make_taa_settings(settings);
+        builder.add_inline_input(InlineDescriptor(settings_data));
+    }
+
     builder.add_color_output(aa);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        const auto* material = device_resources()[DeviceResources::TAAResolveMaterialTemplate];
+        const auto* material = device_resources()[Simple ? DeviceResources::TAASimpleMaterialTemplate : DeviceResources::TAAResolveMaterialTemplate];
         render_pass.bind_material_template(material, self->descriptor_sets());
         render_pass.draw_array(3);
     });
@@ -96,6 +101,22 @@ TAAPass TAAPass::create(FrameGraph& framegraph, const TemporalDesocclusionPass& 
     TAAPass pass;
     pass.anti_aliased = aa;
     return pass;
+}
+
+
+TAAPass TAAPass::create_simple(FrameGraph& framegraph, const TemporalPrePass& temporal, FrameGraphImageId in_color, FrameGraphPersistentResourceId persistent_id) {
+    return create_taa_pass<true>(framegraph, temporal, in_color, persistent_id, {});
+}
+
+TAAPass TAAPass::create(FrameGraph& framegraph, const TemporalPrePass& temporal, FrameGraphImageId in_color, const TAASettings& settings) {
+    if(!settings.enable) {
+        TAAPass pass;
+        pass.anti_aliased = in_color;
+        return pass;
+    }
+
+    static const FrameGraphPersistentResourceId persistent_id = FrameGraphPersistentResourceId::create();
+    return create_taa_pass<false>(framegraph, temporal, in_color, persistent_id, settings);
 }
 
 }

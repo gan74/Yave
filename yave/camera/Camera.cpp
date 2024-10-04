@@ -89,6 +89,7 @@ void Camera::set_far(float far_dist) {
 
 Camera Camera::jittered(math::Vec2 jitter_seq, const math::Vec2ui& size, float intensity) const {
     y_debug_assert(jitter_seq.saturated() == jitter_seq);
+    y_debug_assert(!size.is_zero());
 
     const math::Vec2 jitter = ((jitter_seq  * 2.0f - 1.0f) / math::Vec2(size)) * intensity;
 

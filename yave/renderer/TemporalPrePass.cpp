@@ -20,20 +20,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "TemporalPass.h"
+#include "TemporalPrePass.h"
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/device/DeviceResources.h>
 
 namespace yave {
 
 
-TemporalDesocclusionPass TemporalDesocclusionPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer) {
-    TemporalDesocclusionPass pass;
+TemporalPrePass TemporalPrePass::create(FrameGraph& framegraph, const GBufferPass& gbuffer) {
+    TemporalPrePass pass;
     {
         pass.motion = gbuffer.motion;
         pass.camera = gbuffer.scene_pass.camera;
@@ -48,7 +47,7 @@ TemporalDesocclusionPass TemporalDesocclusionPass::create(FrameGraph& framegraph
         return pass;
     }
 
-    FrameGraphPassBuilder builder = framegraph.add_pass("Temporal desocclusion pass");
+    FrameGraphPassBuilder builder = framegraph.add_pass("Temporal mask pass");
 
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
     const auto mask = builder.declare_image(VK_FORMAT_R8_UINT, size);
@@ -60,50 +59,12 @@ TemporalDesocclusionPass TemporalDesocclusionPass::create(FrameGraph& framegraph
     builder.add_uniform_input(pass.camera);
     builder.add_color_output(mask);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        const auto* material = device_resources()[DeviceResources::TemporalDesocclusionMaterialTemplate];
+        const auto* material = device_resources()[DeviceResources::TemporalMaskMaterialTemplate];
         render_pass.bind_material_template(material, self->descriptor_sets());
         render_pass.draw_array(3);
     });
 
     pass.mask = mask;
-    return pass;
-}
-
-
-TemporalPass TemporalPass::create(FrameGraph& framegraph, const TemporalDesocclusionPass& temp, FrameGraphImageId in_color, FrameGraphPersistentResourceId persistent_id) {
-    const math::Vec2ui size = framegraph.image_size(in_color);
-    const ImageFormat format = framegraph.image_format(in_color);
-
-    y_always_assert(!temp.mask.is_valid() || framegraph.image_size(temp.mask) == size, "Invalid temporal mask size");
-
-    FrameGraphPassBuilder builder = framegraph.add_pass("Temporal pass");
-
-    const auto out = builder.declare_image(format, size);
-    builder.add_input_usage(out, ImageUsage::TextureBit);
-
-    const FrameGraphImageId prev_color = framegraph.make_persistent_and_get_prev(out, persistent_id);
-    if(!prev_color.is_valid()) {
-        TemporalPass pass;
-        pass.out = in_color;
-        return pass;
-    }
-
-    const Texture& zero = *device_resources()[DeviceResources::ZeroTexture];
-
-    builder.add_uniform_input(in_color, SamplerType::PointClamp);
-    builder.add_uniform_input(prev_color, SamplerType::PointClamp);
-    builder.add_uniform_input(temp.motion, SamplerType::PointClamp);
-    builder.add_uniform_input_with_default(temp.mask, Descriptor(zero, SamplerType::PointClamp));
-    builder.add_uniform_input(temp.camera);
-    builder.add_color_output(out);
-    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        const auto* material = device_resources()[DeviceResources::TemporalMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_sets());
-        render_pass.draw_array(3);
-    });
-
-    TemporalPass pass;
-    pass.out = out;
     return pass;
 }
 

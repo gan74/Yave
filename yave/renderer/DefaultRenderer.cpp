@@ -36,14 +36,17 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     DefaultRenderer renderer;
 
     renderer.visibility     = SceneVisibilitySubPass::create(scene_view);
-    renderer.camera         = CameraBufferPass::create(framegraph, scene_view, size, persistent_id, settings.taa);
+    renderer.camera         = settings.taa.enable
+                                ? CameraBufferPass::create(framegraph, scene_view, size, persistent_id, settings.jitter)
+                                : CameraBufferPass::create_no_jitter(framegraph, scene_view, persistent_id);
+
     renderer.gbuffer        = GBufferPass::create(framegraph, renderer.camera, renderer.visibility, size);
-    renderer.desocclusion   = TemporalDesocclusionPass::create(framegraph, renderer.gbuffer);
-    renderer.ao             = AOPass::create(framegraph, renderer.gbuffer, renderer.desocclusion, settings.ao);
+    renderer.temporal       = TemporalPrePass::create(framegraph, renderer.gbuffer);
+    renderer.ao             = AOPass::create(framegraph, renderer.gbuffer, renderer.temporal, settings.ao);
     renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ao.ao, settings.lighting);
     renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.lighting.lit);
 
-    renderer.taa            = TAAPass::create(framegraph, renderer.desocclusion, renderer.atmosphere.lit, settings.taa);
+    renderer.taa            = TAAPass::create(framegraph, renderer.temporal, renderer.atmosphere.lit, settings.taa);
 
     renderer.exposure       = ExposurePass::create(framegraph, renderer.taa.anti_aliased);
     renderer.bloom          = BloomPass::create(framegraph, renderer.taa.anti_aliased, renderer.exposure.params, settings.bloom);

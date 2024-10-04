@@ -22,13 +22,14 @@ SOFTWARE.
 #ifndef YAVE_RENDERER_DEFAULTRENDERER_H
 #define YAVE_RENDERER_DEFAULTRENDERER_H
 
+#include "CameraBufferPass.h"
 #include "LightingPass.h"
 #include "AtmospherePass.h"
 #include "ExposurePass.h"
 #include "ToneMappingPass.h"
 #include "AOPass.h"
 #include "BloomPass.h"
-#include "TemporalPass.h"
+#include "TemporalPrePass.h"
 #include "TAAPass.h"
 
 namespace yave {
@@ -38,6 +39,7 @@ struct RendererSettings {
     LightingSettings lighting;
     AOSettings ao;
     BloomSettings bloom;
+    JitterSettings jitter;
     TAASettings taa;
 };
 
@@ -45,7 +47,7 @@ struct DefaultRenderer {
     SceneVisibilitySubPass visibility;
     CameraBufferPass camera;
     GBufferPass gbuffer;
-    TemporalDesocclusionPass desocclusion;
+    TemporalPrePass temporal;
     AOPass ao;
     LightingPass lighting;
     AtmospherePass atmosphere;

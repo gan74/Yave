@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "SceneRenderSubPass.h"
-#include "TAAPass.h"
+#include "CameraBufferPass.h"
 
 #include <yave/scene/EcsScene.h>
 

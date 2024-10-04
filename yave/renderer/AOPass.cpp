@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "AOPass.h"
 #include "DownsamplePass.h"
-#include "TemporalPass.h"
+#include "TAAPass.h"
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -269,7 +269,7 @@ static FrameGraphImageId filter_rtao(FrameGraph& framegraph, const GBufferPass& 
 
 
 
-AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const TemporalDesocclusionPass& temp, const AOSettings& settings) {
+AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const TemporalPrePass& temporal, const AOSettings& settings) {
     const auto region = framegraph.region("AO");
 
     const AOSettings::AOMethod method = (settings.method == AOSettings::AOMethod::RTAO && !raytracing_enabled())
@@ -302,7 +302,7 @@ AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const 
 
                 if(settings.rtao.temporal) {
                     static const FrameGraphPersistentResourceId persistent_id = FrameGraphPersistentResourceId::create();
-                    ao = TemporalPass::create(framegraph, temp, ao, persistent_id).out;
+                    ao = TAAPass::create_simple(framegraph, temporal, ao, persistent_id).anti_aliased;
                 }
             }
         } break;

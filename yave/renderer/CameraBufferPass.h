@@ -27,29 +27,14 @@ SOFTWARE.
 
 namespace yave {
 
-struct TAASettings {
-    enum class JitterSeq {
+struct JitterSettings {
+    enum class JitterSeq : u32 {
         Weyl,
         R2,
     };
 
-    enum class WeightingMode : u32 {
-        None,
-        Luminance,
-        Log,
-    };
-
     JitterSeq jitter = JitterSeq::R2;
-    WeightingMode weighting_mode = WeightingMode::Log;
-
-    float blending_factor = 0.9f;
     float jitter_intensity = 1.0f;
-
-    bool use_clamping = true;
-    bool use_previous_matching = true;
-    bool use_weighted_clamp = true;
-
-    bool enable = true;
 };
 
 struct CameraBufferPass {
@@ -58,10 +43,8 @@ struct CameraBufferPass {
 
     FrameGraphTypedBufferId<shader::Camera> camera;
 
-    TAASettings taa_settings;
-
-    static CameraBufferPass create_no_jitter(FrameGraph&, const SceneView& view, FrameGraphPersistentResourceId persistent_id);
-    static CameraBufferPass create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, FrameGraphPersistentResourceId persistent_id, const TAASettings& settings = {});
+    static CameraBufferPass create_no_jitter(FrameGraph& framegraph, const SceneView& view, FrameGraphPersistentResourceId persistent_id);
+    static CameraBufferPass create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, FrameGraphPersistentResourceId persistent_id, const JitterSettings& settings = {});
 };
 
 }
