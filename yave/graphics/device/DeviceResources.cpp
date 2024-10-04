@@ -128,12 +128,23 @@ static constexpr std::array<std::string_view, usize(RaytracingPrograms::MaxRaytr
 
 // ABGR
 static constexpr std::array<math::Vec4ui, usize(Textures::MaxTextures)> texture_colors = {
-    math::Vec4ui{0u, 0u, 0u, 0u},
+    math::Vec4ui{0x00000000, 0x00000000, 0x00000000, 0x00000000},
     math::Vec4ui{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF},
     math::Vec4ui{0xFF7F7F7F, 0xFF7F7F7F, 0xFF7F7F7F, 0xFF7F7F7F},
     math::Vec4ui{0xFF0000FF, 0xFF0000FF, 0xFF0000FF, 0xFF0000FF},
+    math::Vec4ui{0x00000000, 0x00000000, 0x00000000, 0x00000000},
     math::Vec4ui{0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F, 0x00FF7F7F},
     math::Vec4ui{0xFFFFE5A6, 0xFFFFE5A6, 0xFF475163, 0xFF475163},
+};
+
+static constexpr std::array<ImageFormat, usize(Textures::MaxTextures)> texture_formats = {
+    VK_FORMAT_R8G8B8A8_UNORM,
+    VK_FORMAT_R8G8B8A8_UNORM,
+    VK_FORMAT_R8G8B8A8_UNORM,
+    VK_FORMAT_R8G8B8A8_UNORM,
+    VK_FORMAT_R32_UINT,
+    VK_FORMAT_R8G8B8A8_UNORM,
+    VK_FORMAT_R8G8B8A8_UNORM,
 };
 
 
@@ -196,7 +207,7 @@ DeviceResources::DeviceResources() {
         y_profile_zone("Images");
         for(usize i = 0; i != texture_colors.size(); ++i) {
             const u8* data = reinterpret_cast<const u8*>(texture_colors[i].data());
-            _textures[i] = make_asset<Texture>(ImageData(math::Vec2ui(2), data, VK_FORMAT_R8G8B8A8_UNORM));
+            _textures[i] = make_asset<Texture>(ImageData(math::Vec2ui(2), data, texture_formats[i]));
 
             set_name(_textures[i]->vk_image(), "Resource Image");
             set_name(_textures[i]->vk_view(), "Resource Image View");

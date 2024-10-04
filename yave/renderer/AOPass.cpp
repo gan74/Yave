@@ -269,7 +269,7 @@ static FrameGraphImageId filter_rtao(FrameGraph& framegraph, const GBufferPass& 
 
 
 
-AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const AOSettings& settings) {
+AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const TemporalDesocclusionPass& temp, const AOSettings& settings) {
     const auto region = framegraph.region("AO");
 
     const AOSettings::AOMethod method = (settings.method == AOSettings::AOMethod::RTAO && !raytracing_enabled())
@@ -302,8 +302,7 @@ AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const 
 
                 if(settings.rtao.temporal) {
                     static const FrameGraphPersistentResourceId persistent_id = FrameGraphPersistentResourceId::create();
-                    static const FrameGraphPersistentResourceId depth_persistent_id = FrameGraphPersistentResourceId::create();
-                    ao = TemporalPass::create(framegraph, gbuffer, ao, persistent_id, depth_persistent_id).out;
+                    ao = TemporalPass::create(framegraph, temp, ao, persistent_id).out;
                 }
             }
         } break;

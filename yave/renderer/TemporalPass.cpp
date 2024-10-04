@@ -31,35 +31,70 @@ SOFTWARE.
 
 namespace yave {
 
-TemporalPass TemporalPass::create(
-        FrameGraph& framegraph,
-        const GBufferPass& gbuffer,
-        FrameGraphImageId in_color,
-        FrameGraphPersistentResourceId persistent_id,
-        FrameGraphPersistentResourceId depth_persistent_id) {
 
+TemporalDesocclusionPass TemporalDesocclusionPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer) {
+    TemporalDesocclusionPass pass;
+    {
+        pass.motion = gbuffer.motion;
+        pass.camera = gbuffer.scene_pass.camera;
+    }
+
+    static const FrameGraphPersistentResourceId depth_persistent_id = FrameGraphPersistentResourceId::create();
+    static const FrameGraphPersistentResourceId motion_persistent_id = FrameGraphPersistentResourceId::create();
+    const FrameGraphImageId prev_depth = framegraph.make_persistent_and_get_prev(gbuffer.depth, depth_persistent_id);
+    const FrameGraphImageId prev_motion = framegraph.make_persistent_and_get_prev(gbuffer.motion, motion_persistent_id);
+
+    if(!prev_depth.is_valid() || !prev_motion.is_valid()) {
+        return pass;
+    }
+
+    FrameGraphPassBuilder builder = framegraph.add_pass("Temporal desocclusion pass");
+
+    const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
+    const auto mask = builder.declare_image(VK_FORMAT_R8_UINT, size);
+
+    builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
+    builder.add_uniform_input(prev_depth, SamplerType::PointClamp);
+    builder.add_uniform_input(gbuffer.motion, SamplerType::PointClamp);
+    builder.add_uniform_input(prev_motion, SamplerType::PointClamp);
+    builder.add_uniform_input(pass.camera);
+    builder.add_color_output(mask);
+    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
+        const auto* material = device_resources()[DeviceResources::TemporalDesocclusionMaterialTemplate];
+        render_pass.bind_material_template(material, self->descriptor_sets());
+        render_pass.draw_array(3);
+    });
+
+    pass.mask = mask;
+    return pass;
+}
+
+
+TemporalPass TemporalPass::create(FrameGraph& framegraph, const TemporalDesocclusionPass& temp, FrameGraphImageId in_color, FrameGraphPersistentResourceId persistent_id) {
     const math::Vec2ui size = framegraph.image_size(in_color);
     const ImageFormat format = framegraph.image_format(in_color);
+
+    y_always_assert(!temp.mask.is_valid() || framegraph.image_size(temp.mask) == size, "Invalid temporal mask size");
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Temporal pass");
 
     const auto out = builder.declare_image(format, size);
     builder.add_input_usage(out, ImageUsage::TextureBit);
 
-    const FrameGraphImageId prev_depth = framegraph.make_persistent_and_get_prev(gbuffer.depth, depth_persistent_id);
-    const FrameGraphImageId prev = framegraph.make_persistent_and_get_prev(out, persistent_id);
-    if(!prev.is_valid() || !prev_depth.is_valid()) {
+    const FrameGraphImageId prev_color = framegraph.make_persistent_and_get_prev(out, persistent_id);
+    if(!prev_color.is_valid()) {
         TemporalPass pass;
         pass.out = in_color;
         return pass;
     }
 
-    builder.add_uniform_input(in_color);
-    builder.add_uniform_input(prev);
-    builder.add_uniform_input(gbuffer.depth);
-    builder.add_uniform_input(prev_depth);
-    builder.add_uniform_input(gbuffer.motion);
-    builder.add_uniform_input(gbuffer.scene_pass.camera);
+    const Texture& zero = *device_resources()[DeviceResources::ZeroTexture];
+
+    builder.add_uniform_input(in_color, SamplerType::PointClamp);
+    builder.add_uniform_input(prev_color, SamplerType::PointClamp);
+    builder.add_uniform_input(temp.motion, SamplerType::PointClamp);
+    builder.add_uniform_input_with_default(temp.mask, Descriptor(zero, SamplerType::PointClamp));
+    builder.add_uniform_input(temp.camera);
     builder.add_color_output(out);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::TemporalMaterialTemplate];

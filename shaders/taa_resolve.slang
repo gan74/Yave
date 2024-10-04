@@ -3,25 +3,23 @@
 
 // -------------------------------- I/O --------------------------------
 
-[[vk::binding(0)]]
-Sampler2D<float> in_depth;
 
-[[vk::binding(1)]]
+[[vk::binding(0)]]
 Sampler2D in_color;
 
-[[vk::binding(2)]]
+[[vk::binding(1)]]
 Sampler2D in_prev;
 
-[[vk::binding(3)]]
+[[vk::binding(2)]]
 Sampler2D<float2> in_motion;
 
-[[vk::binding(4)]]
-Sampler2D<float2> in_prev_motion;
+[[vk::binding(3)]]
+Sampler2D<uint> in_mask;
 
-[[vk::binding(5)]]
+[[vk::binding(4)]]
 ConstantBuffer<Camera> camera;
 
-[[vk::binding(6)]]
+[[vk::binding(5)]]
 cbuffer Settings_Inline {
     uint flags;
     uint weighting_mode;
@@ -135,9 +133,8 @@ float3 sample_prev(float2 prev_coord) {
 // -------------------------------- Main --------------------------------
 
 static const uint clamping_bit                  = 0x01;
-static const uint motion_rejection_bit          = 0x02;
-static const uint match_prev_bit                = 0x04;
-static const uint weighted_clamp_bit            = 0x08;
+static const uint match_prev_bit                = 0x02;
+static const uint weighted_clamp_bit            = 0x04;
 
 
 // https://www.elopezr.com/temporal-aa-and-the-quest-for-the-holy-trail/
@@ -145,45 +142,35 @@ static const uint weighted_clamp_bit            = 0x08;
 float4 frag_main(float2 in_uv) : SV_Target0 {
     const int2 coord = int2(semantics.frag_coord.xy);
 
+    const float3 current = in_color[coord].rgb;
+
+    if(in_mask[coord] != 0) {
+        return float4(current, 1.0);
+    }
+
     const float2 size = float2(image_size(in_color).xy);
     const float2 inv_size = 1.0 / size;
-    const float y_ratio = size.y * inv_size.x;
 
     const float2 motion = in_motion[coord];
-    const bool has_moved = any(abs(motion) > inv_size);
     const float2 uv = semantics.frag_coord.xy * inv_size;
     const float2 prev_uv = uv + motion;
 
-    const float3 current = in_color[coord].rgb;
     float3 prev = current;
 
-
-    bool sample_valid = all(saturate(prev_uv) == prev_uv);
-
-
-    // Motion rejection
-    if(sample_valid && (flags & motion_rejection_bit) != 0) {
-        const float2 ratio = float2(1.0, y_ratio);
-        const float2 prev_motion = in_prev_motion.Sample(prev_uv);
-        sample_valid = (length((prev_motion - motion) * ratio) < (length(motion * ratio) * 0.2 + 0.05));
+    // Clamping
+    if((flags & match_prev_bit) != 0) {
+        prev = sample_prev(prev_uv * size);
+    } else {
+        prev = in_prev.Sample(prev_uv).rgb;
     }
 
-
-    // Clamping
-    if(sample_valid) {
-        if((flags & match_prev_bit) != 0) {
-            prev = sample_prev(prev_uv * size);
+    bool sample_valid = true;
+    if((flags & clamping_bit) != 0) {
+        const ClampingInfo clamping_info = gather_clamping_info(in_color, coord);
+        if((flags & weighted_clamp_bit) != 0) {
+            prev = clamp_weighted(prev, clamping_info);
         } else {
-            prev = in_prev.Sample(prev_uv).rgb;
-        }
-
-        if((flags & clamping_bit) != 0) {
-            const ClampingInfo clamping_info = gather_clamping_info(in_color, coord);
-            if((flags & weighted_clamp_bit) != 0) {
-                prev = clamp_weighted(prev, clamping_info);
-            } else {
-                prev = clamp(prev, clamping_info.min_color, clamping_info.max_color);
-            }
+            prev = clamp(prev, clamping_info.min_color, clamping_info.max_color);
         }
     }
 

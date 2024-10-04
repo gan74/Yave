@@ -81,6 +81,7 @@ struct Picker;
 struct PickingResult;
 struct PlatformWindow;
 struct ThumbmailData;
+struct TreeNode;
 struct UiIcon;
 struct UiSettings;
 struct WidgetIdStack;
@@ -96,6 +97,12 @@ struct Material;
 struct Mesh;
 struct Node;
 struct ParsedScene;
+}
+
+
+namespace editor::imp {
+struct Obj;
+struct StyleVar;
 }
 
 

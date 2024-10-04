@@ -28,6 +28,7 @@ SOFTWARE.
 #include "ToneMappingPass.h"
 #include "AOPass.h"
 #include "BloomPass.h"
+#include "TemporalPass.h"
 #include "TAAPass.h"
 
 namespace yave {
@@ -44,12 +45,13 @@ struct DefaultRenderer {
     SceneVisibilitySubPass visibility;
     CameraBufferPass camera;
     GBufferPass gbuffer;
+    TemporalDesocclusionPass desocclusion;
+    AOPass ao;
     LightingPass lighting;
     AtmospherePass atmosphere;
     ExposurePass exposure;
     BloomPass bloom;
     ToneMappingPass tone_mapping;
-    AOPass ao;
     TAAPass taa;
 
 

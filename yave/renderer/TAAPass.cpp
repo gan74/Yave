@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "TAAPass.h"
 
+#include "TemporalPass.h"
+
 #include <yave/camera/Camera.h>
 
 #include <yave/framegraph/FrameGraph.h>
@@ -33,14 +35,7 @@ SOFTWARE.
 
 namespace yave {
 
-TAAPass TAAPass::create(FrameGraph& framegraph,
-                        const CameraBufferPass& camera,
-                        FrameGraphImageId in_color,
-                        FrameGraphImageId in_depth,
-                        FrameGraphImageId in_motion) {
-
-    const TAASettings& settings = camera.taa_settings;
-
+TAAPass TAAPass::create(FrameGraph& framegraph, const TemporalDesocclusionPass& temp, FrameGraphImageId in_color, const TAASettings& settings) {
     if(!settings.enable) {
         TAAPass pass;
         pass.anti_aliased = in_color;
@@ -49,6 +44,8 @@ TAAPass TAAPass::create(FrameGraph& framegraph,
 
     const ImageFormat format = framegraph.image_format(in_color);
     const math::Vec2ui size = framegraph.image_size(in_color);
+
+    y_always_assert(!temp.mask.is_valid() || framegraph.image_size(temp.mask) == size, "Invalid temporal mask size");
 
     FrameGraphPassBuilder builder = framegraph.add_pass("TAA resolve pass");
 
@@ -61,20 +58,14 @@ TAAPass TAAPass::create(FrameGraph& framegraph,
         prev_color = builder.declare_copy(aa);
     }
 
-    static const FrameGraphPersistentResourceId motion_id = FrameGraphPersistentResourceId::create();
-    FrameGraphImageId prev_motion = framegraph.make_persistent_and_get_prev(in_motion, motion_id);
-    if(!prev_motion.is_valid()) {
-        prev_motion = builder.declare_copy(in_motion);
-    }
+    const Texture& zero = *device_resources()[DeviceResources::ZeroTexture];
 
     const u32 clamping_bit                  = 0x01;
-    const u32 motion_rejection_bit          = 0x02;
-    const u32 match_prev_bitmatch_prev_bit  = 0x04;
-    const u32 weighted_clamp_bit            = 0x08;
+    const u32 match_prev_bitmatch_prev_bit  = 0x02;
+    const u32 weighted_clamp_bit            = 0x04;
 
     u32 flag_bits = 0;
     flag_bits |= (settings.use_clamping ? clamping_bit : 0);
-    flag_bits |= (settings.use_motion_rejection ? motion_rejection_bit : 0);
     flag_bits |= (settings.use_previous_matching ? match_prev_bitmatch_prev_bit : 0);
     flag_bits |= (settings.use_weighted_clamp ? weighted_clamp_bit : 0);
 
@@ -88,14 +79,13 @@ TAAPass TAAPass::create(FrameGraph& framegraph,
         settings.blending_factor,
     };
 
-    builder.add_color_output(aa);
-    builder.add_uniform_input(in_depth, SamplerType::PointClamp);
     builder.add_uniform_input(in_color, SamplerType::PointClamp);
     builder.add_uniform_input(prev_color);
-    builder.add_uniform_input(in_motion);
-    builder.add_uniform_input(prev_motion);
-    builder.add_uniform_input(camera.camera);
+    builder.add_uniform_input(temp.motion);
+    builder.add_uniform_input_with_default(temp.mask, Descriptor(zero, SamplerType::PointClamp));
+    builder.add_uniform_input(temp.camera);
     builder.add_inline_input(InlineDescriptor(settings_data));
+    builder.add_color_output(aa);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::TAAResolveMaterialTemplate];
         render_pass.bind_material_template(material, self->descriptor_sets());

@@ -26,10 +26,21 @@ SOFTWARE.
 
 namespace yave {
 
+struct TemporalDesocclusionPass {
+    FrameGraphImageId mask;
+    FrameGraphImageId motion;
+
+    FrameGraphTypedBufferId<shader::Camera> camera;
+
+    static TemporalDesocclusionPass create(FrameGraph& framegraph, const GBufferPass& gbuffer);
+};
+
+
+
 struct TemporalPass {
     FrameGraphImageId out;
 
-    static TemporalPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_color, FrameGraphPersistentResourceId persistent_id, FrameGraphPersistentResourceId depth_persistent_id);
+    static TemporalPass create(FrameGraph& framegraph, const TemporalDesocclusionPass& temp, FrameGraphImageId in_color, FrameGraphPersistentResourceId persistent_id);
 };
 
 }

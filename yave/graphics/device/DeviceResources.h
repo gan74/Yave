@@ -122,6 +122,8 @@ class DeviceResources final : NonMovable {
             GreyTexture,
             RedTexture,
 
+            ZeroTexture,
+
             FlatNormalTexture,
 
             SkyIBLTexture,

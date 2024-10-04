@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_RENDERER_AOPASS_H
 
 #include "GBufferPass.h"
+#include "TemporalPass.h"
 
 #include <y/core/Vector.h>
 
@@ -60,7 +61,7 @@ struct AOSettings {
 struct AOPass {
     FrameGraphImageId ao;
 
-    static AOPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const AOSettings& settings = AOSettings());
+    static AOPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const TemporalDesocclusionPass& temp, const AOSettings& settings = AOSettings());
 };
 
 

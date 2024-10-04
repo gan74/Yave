@@ -29,11 +29,7 @@ namespace yave {
 struct TAAPass {
     FrameGraphImageId anti_aliased;
 
-    static TAAPass create(FrameGraph& framegraph,
-                          const CameraBufferPass& camera,
-                          FrameGraphImageId in_color,
-                          FrameGraphImageId in_depth,
-                          FrameGraphImageId in_motion);
+    static TAAPass create(FrameGraph& framegraph, const TemporalDesocclusionPass& temp, FrameGraphImageId in_motion, const TAASettings& settings = {});
 };
 
 

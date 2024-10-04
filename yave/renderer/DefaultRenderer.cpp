@@ -38,11 +38,12 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     renderer.visibility     = SceneVisibilitySubPass::create(scene_view);
     renderer.camera         = CameraBufferPass::create(framegraph, scene_view, size, persistent_id, settings.taa);
     renderer.gbuffer        = GBufferPass::create(framegraph, renderer.camera, renderer.visibility, size);
-    renderer.ao             = AOPass::create(framegraph, renderer.gbuffer, settings.ao);
+    renderer.desocclusion   = TemporalDesocclusionPass::create(framegraph, renderer.gbuffer);
+    renderer.ao             = AOPass::create(framegraph, renderer.gbuffer, renderer.desocclusion, settings.ao);
     renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ao.ao, settings.lighting);
     renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.lighting.lit);
 
-    renderer.taa            = TAAPass::create(framegraph, renderer.camera, renderer.atmosphere.lit, renderer.gbuffer.depth, renderer.gbuffer.motion);
+    renderer.taa            = TAAPass::create(framegraph, renderer.desocclusion, renderer.atmosphere.lit, settings.taa);
 
     renderer.exposure       = ExposurePass::create(framegraph, renderer.taa.anti_aliased);
     renderer.bloom          = BloomPass::create(framegraph, renderer.taa.anti_aliased, renderer.exposure.params, settings.bloom);

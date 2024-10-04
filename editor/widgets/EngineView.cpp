@@ -168,6 +168,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     const EditorRenderer renderer = EditorRenderer::create(graph, _scene_view, output_size, settings);
     {
         const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
+        const Texture& zero = *device_resources()[DeviceResources::ZeroTexture];
 
         FrameGraphComputePassBuilder builder = graph.add_compute_pass("ImGui texture pass");
 
@@ -182,6 +183,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.motion);
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
+        builder.add_uniform_input_with_default(renderer.renderer.desocclusion.mask, Descriptor(zero, SamplerType::PointClamp));
         builder.add_uniform_input_with_default(renderer.renderer.ao.ao, Descriptor(white));
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             {
@@ -410,7 +412,7 @@ void EngineView::draw_menu() {
 
         ImGui::Separator();
         {
-            const char* output_names[] = {"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "AO"};
+            const char* output_names[] = {"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "TAA Mask", "AO"};
             for(usize i = 0; i != usize(RenderView::Max); ++i) {
                 bool selected = usize(_view) == i;
                 ImGui::MenuItem(output_names[i], nullptr, &selected);
@@ -563,7 +565,6 @@ void EngineView::draw_settings_menu() {
         ImGui::Separator();
 
         ImGui::Checkbox("Enable clamping", &settings.use_clamping);
-        ImGui::Checkbox("Enable motion rejection", &settings.use_motion_rejection);
         ImGui::Checkbox("Enable previous sample matching", &settings.use_previous_matching);
         ImGui::Checkbox("Enable weighted clamp", &settings.use_weighted_clamp);
 

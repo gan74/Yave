@@ -77,6 +77,19 @@ class InlineDescriptor {
 
 class Descriptor {
 
+    [[maybe_unused]]
+    static bool is_sampler_compatible(ImageFormat format, SamplerType sampler) {
+        switch(sampler) {
+            case SamplerType::LinearClamp:
+            case SamplerType::LinearRepeat:
+            case SamplerType::Shadow:
+                return format.supports_filtering();
+
+            default:
+                return true;
+        }
+    }
+
     public:
         struct InlineBlock {
             const void* data;
@@ -102,11 +115,13 @@ class Descriptor {
             }
         };
 
+
         template<ImageType Type>
         Descriptor(const ImageView<ImageUsage::TextureBit, Type>& view, SamplerType sampler = SamplerType::LinearRepeat) :
                  _type(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER),
                  _info(view.vk_descriptor_info(sampler)) {
             y_debug_assert(!view.is_null());
+            y_debug_assert(is_sampler_compatible(view.format(), sampler));
         }
 
         template<ImageType Type>

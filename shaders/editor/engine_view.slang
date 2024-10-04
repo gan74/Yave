@@ -22,6 +22,9 @@ Sampler2D in_rt0;
 Sampler2D in_rt1;
 
 [[vk::binding(6)]]
+Sampler2D<uint> in_mask;
+
+[[vk::binding(7)]]
 Sampler2D<float> in_ao;
 
 
@@ -52,6 +55,12 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
         const float2 motion = in_motion[coord];
         color = float3(clamp(motion * 10.0, -0.5, 0.5) + 0.5, length(motion) > epsilon ? 0.75 : 0.5);
     } else if(target_index == 7) {
+        const float3 colors[] = {
+            float3(pow(in_depth[coord], 0.35)),
+            float3(1, 0, 0), float3(0, 1, 0), float3(1, 1, 0), float3(1, 0, 1)
+        };
+        color = colors[in_mask[coord]];
+    } else if(target_index == 8) {
         const float ao = in_ao.Sample(in_uv);
         color = float3(ao);
     }

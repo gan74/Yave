@@ -46,7 +46,6 @@ struct TAASettings {
     float jitter_intensity = 1.0f;
 
     bool use_clamping = true;
-    bool use_motion_rejection = true;
     bool use_previous_matching = true;
     bool use_weighted_clamp = true;
 

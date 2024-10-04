@@ -81,7 +81,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_message_callback(
     log_msg(fmt_to_owned("Vk: @[{}] {}:\n{}\n", src, labels, callback_data->pMessage),  level);
 
     if(severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-        ::MessageBox(nullptr, "Vk error", "Vk error", 0);
         y_breakpoint;
     }
 

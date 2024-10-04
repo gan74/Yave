@@ -56,6 +56,8 @@ class EngineView final : public Widget {
             Depth,
             Motion,
 
+            TAAMask,
+
             AO,
 
             Max,
