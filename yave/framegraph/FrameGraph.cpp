@@ -343,7 +343,7 @@ void FrameGraph::alloc_resources() {
             auto& dst_info = check_exists(_images, cpy.dst);
             auto* src_info = &check_exists(_images, cpy.src);
 
-            y_debug_assert(!dst_info.is_prev());
+            y_debug_assert(!dst_info.is_prev);
 
             while(src_info->alias.is_valid()) {
                 src_info = &check_exists(_images, src_info->alias);
@@ -370,7 +370,7 @@ void FrameGraph::alloc_resources() {
     std::sort(images.begin(), images.end(), [](const auto& a, const auto& b) { return a.second.first_use < b.second.first_use; });
 
     for(auto&& [res, info] : images) {
-        if(info.is_prev()) {
+        if(info.is_prev) {
             y_debug_assert(_resources->is_alive(res));
             continue;
         }
@@ -384,12 +384,12 @@ void FrameGraph::alloc_resources() {
                 // All images should support texturing, hopefully
                 info.usage = info.usage | ImageUsage::TextureBit;
             }
-            _resources->create_image(res, info.format, info.size.to<2>(), info.usage, info.persistent);
+            _resources->create_image(res, info.format, info.size.to<2>(), info.usage, info.persistents);
         }
     }
 
     for(auto&& [res, info] : _volumes) {
-        if(info.is_prev()) {
+        if(info.is_prev) {
             y_debug_assert(_resources->is_alive(res));
             continue;
         }
@@ -400,12 +400,12 @@ void FrameGraph::alloc_resources() {
             // All images should support texturing, hopefully
             info.usage = info.usage | ImageUsage::TextureBit;
         }
-        _resources->create_volume(res, info.format, info.size, info.usage, info.persistent);
+        _resources->create_volume(res, info.format, info.size, info.usage, info.persistents);
     }
 
 
     auto init_buffer = [&](FrameGraphMutableBufferId& res, BufferCreateInfo& info, bool exact) {
-        if(info.is_prev()) {
+        if(info.is_prev) {
             y_debug_assert(_resources->is_alive(res));
             return true;
         }
@@ -416,7 +416,7 @@ void FrameGraph::alloc_resources() {
             log_msg("Unused frame graph buffer resource", Log::Warning);
             info.usage = info.usage | BufferUsage::StorageBit;
         }
-        return _resources->create_buffer(res, info.byte_size, info.usage, info.memory_type, info.persistent, exact);
+        return _resources->create_buffer(res, info.byte_size, info.usage, info.memory_type, info.persistents, exact);
     };
 
     core::ScratchVector<usize> not_exact(_buffers.size());
@@ -516,11 +516,7 @@ const FrameGraph::BufferCreateInfo& FrameGraph::info(FrameGraphBufferId res) con
 }
 
 bool FrameGraph::ResourceCreateInfo::is_persistent() const {
-    return persistent.is_valid();
-}
-
-bool FrameGraph::ResourceCreateInfo::is_prev() const {
-    return persistent_prev.is_valid();
+    return !persistents.is_empty();
 }
 
 usize FrameGraph::ResourceCreateInfo::last_use() const {
@@ -528,7 +524,7 @@ usize FrameGraph::ResourceCreateInfo::last_use() const {
 }
 
 void FrameGraph::ResourceCreateInfo::register_use(usize index, bool is_written) {
-    y_debug_assert(!is_written || !is_prev());
+    y_debug_assert(!is_written || !is_prev);
     usize& last = is_written ? last_write : last_read;
     last = std::max(last, index);
     if(!first_use) {
@@ -546,7 +542,7 @@ void FrameGraph::ImageCreateInfo::register_alias(const ImageCreateInfo& other) {
     last_read = std::max(last_read, other.last_read);
     usage = usage | other.usage;
     last_usage = last_usage | other.last_usage;
-    persistent = other.persistent;
+    persistents = other.persistents;
 }
 
 bool FrameGraph::ImageCreateInfo::is_aliased() const {
@@ -561,7 +557,7 @@ void FrameGraph::register_usage(FrameGraphImageId res, ImageUsage usage, bool is
     check_usage_io(usage, is_written);
     auto& info = check_exists(_images, res);
 
-    y_always_assert(!info.is_prev() || (info.usage & usage) == usage, "Persistent resources from previous frames can not get additional usage flags");
+    y_always_assert(!info.is_prev || (info.usage & usage) == usage, "Persistent resources from previous frames can not get additional usage flags");
     info.usage = info.usage | usage;
 
     const bool is_last = info.last_use() < pass->_index;
@@ -573,7 +569,7 @@ void FrameGraph::register_usage(FrameGraphVolumeId res, ImageUsage usage, bool i
     check_usage_io(usage, is_written);
     auto& info = check_exists(_volumes, res);
 
-    y_always_assert(!info.is_prev() || (info.usage & usage) == usage, "Persistent resources from previous frames can not get additional usage flags");
+    y_always_assert(!info.is_prev || (info.usage & usage) == usage, "Persistent resources from previous frames can not get additional usage flags");
     info.usage = info.usage | usage;
 
     const bool is_last = info.last_use() < pass->_index;
@@ -585,7 +581,7 @@ void FrameGraph::register_usage(FrameGraphBufferId res, BufferUsage usage, bool 
     check_usage_io(usage, is_written);
     auto& info = check_exists(_buffers, res);
 
-    y_always_assert(!info.is_prev() || (info.usage & usage) == usage, "Persistent resources from previous frames can not get additional usage flags");
+    y_always_assert(!info.is_prev || (info.usage & usage) == usage, "Persistent resources from previous frames can not get additional usage flags");
     info.usage = info.usage | usage;
 
     info.register_use(pass->_index, is_written);
@@ -611,8 +607,8 @@ template<typename C, typename P, typename T, typename U>
 static void make_persistent(C& c, P& persistents, T res, U persistent_id) {
     persistent_id.check_valid();
     auto& info = check_exists(c, res);
-    y_always_assert(!info.persistent.is_valid(), "Resource already has a persistent ID");
-    info.persistent = persistent_id;
+    y_debug_assert(std::find(info.persistents.begin(), info.persistents.end(), persistent_id) == info.persistents.end());
+    info.persistents << persistent_id;
 
     persistents.set_min_size(persistent_id.id() + 1);
     auto& p = persistents[persistent_id.id()];
@@ -620,12 +616,12 @@ static void make_persistent(C& c, P& persistents, T res, U persistent_id) {
     p = res;
 }
 
-template<typename C, typename T, typename U>
-static auto& alloc_prev(C& c, T new_res, U persistent_id) {
+template<typename C, typename T>
+static auto& alloc_prev(C& c, T new_res) {
     c.set_min_size(new_res.id() + 1);
     auto& [i, info]  = c[new_res.id()];
     i = new_res;
-    info.persistent_prev = persistent_id;
+    info.is_prev = true;
     return info;
 }
 
@@ -640,7 +636,7 @@ FrameGraphImageId FrameGraph::make_persistent_and_get_prev(FrameGraphImageId res
     id._id = _resources->create_image_id();
 
     _resources->create_prev_image(id, persistent_id);
-    auto& info = alloc_prev(_images, id, persistent_id);
+    auto& info = alloc_prev(_images, id);
 
     const auto& image = _resources->find(id);
     info.format = image.format();
@@ -661,7 +657,7 @@ FrameGraphBufferId FrameGraph::make_persistent_and_get_prev(FrameGraphBufferId r
     id._id = _resources->create_buffer_id();
 
     _resources->create_prev_buffer(id, persistent_id);
-    auto& info = alloc_prev(_buffers, id, persistent_id);
+    auto& info = alloc_prev(_buffers, id);
 
     const auto& buffer = _resources->find(id);
     info.byte_size = buffer.byte_size();

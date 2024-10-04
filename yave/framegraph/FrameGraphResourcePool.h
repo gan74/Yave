@@ -43,9 +43,9 @@ class FrameGraphResourcePool : NonMovable {
         TransientVolume create_volume(ImageFormat format, const math::Vec3ui& size, ImageUsage usage);
         TransientBuffer create_buffer(u64 byte_size, BufferUsage usage, MemoryType memory, bool exact = true);
 
-        void release(TransientImage image, FrameGraphPersistentResourceId persistent_id = {});
-        void release(TransientVolume volume, FrameGraphPersistentResourceId persistent_id = {});
-        void release(TransientBuffer buffer, FrameGraphPersistentResourceId persistent_id = {});
+        void release(TransientImage image, core::Span<FrameGraphPersistentResourceId> persistent_ids = {});
+        void release(TransientVolume volume, core::Span<FrameGraphPersistentResourceId> persistent_ids = {});
+        void release(TransientBuffer buffer, core::Span<FrameGraphPersistentResourceId> persistent_ids = {});
 
         bool has_persistent_image(FrameGraphPersistentResourceId persistent_id) const;
         bool has_persistent_buffer(FrameGraphPersistentResourceId persistent_id) const;

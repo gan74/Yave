@@ -58,11 +58,10 @@ class FrameGraph : NonMovable {
         usize last_write = 0;
         usize first_use = 0;
 
-        FrameGraphPersistentResourceId persistent;  // Persistent
-        FrameGraphPersistentResourceId persistent_prev; // Persistent from previous frame
+        core::SmallVector<FrameGraphPersistentResourceId, 4> persistents;  // Persistent
+        bool is_prev = false;
 
         bool is_persistent() const;
-        bool is_prev() const;
         usize last_use() const;
         void register_use(usize index, bool is_written);
     };

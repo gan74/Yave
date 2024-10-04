@@ -78,33 +78,33 @@ void FrameGraphFrameResources::init_staging_buffer() {
     }
 }
 
-void FrameGraphFrameResources::create_image(FrameGraphImageId res, TransientImage&& image, FrameGraphPersistentResourceId persistent_id) {
+void FrameGraphFrameResources::create_image(FrameGraphImageId res, TransientImage&& image, core::Span<FrameGraphPersistentResourceId> persistent_ids) {
     res.check_valid();
     y_debug_assert(!image.is_null());
 
-    auto* ptr = &_image_storage.emplace_back(std::move(image), persistent_id).first;
+    auto* ptr = &_image_storage.emplace_back(std::move(image), persistent_ids).first;
 
     _images.set_min_size(res.id() + 1);
     y_always_assert(!_images[res.id()], "Image already exists");
     _images[res.id()] = ptr;
 }
 
-void FrameGraphFrameResources::create_volume(FrameGraphVolumeId res, TransientVolume&& volume, FrameGraphPersistentResourceId persistent_id) {
+void FrameGraphFrameResources::create_volume(FrameGraphVolumeId res, TransientVolume&& volume, core::Span<FrameGraphPersistentResourceId> persistent_ids) {
     res.check_valid();
     y_debug_assert(!volume.is_null());
 
-    auto* ptr = &_volume_storage.emplace_back(std::move(volume), persistent_id).first;
+    auto* ptr = &_volume_storage.emplace_back(std::move(volume), persistent_ids).first;
 
     _volumes.set_min_size(res.id() + 1);
     y_always_assert(!_volumes[res.id()], "Volume already exists");
     _volumes[res.id()] = ptr;
 }
 
-FrameGraphFrameResources::BufferData& FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, TransientBuffer&& buffer, FrameGraphPersistentResourceId persistent_id) {
+FrameGraphFrameResources::BufferData& FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, TransientBuffer&& buffer, core::Span<FrameGraphPersistentResourceId> persistent_ids) {
     res.check_valid();
     y_debug_assert(!buffer.is_null());
 
-    auto* ptr = &_buffer_storage.emplace_back(std::move(buffer), persistent_id).first;
+    auto* ptr = &_buffer_storage.emplace_back(std::move(buffer), persistent_ids).first;
 
     _buffers.set_min_size(res.id() + 1);
     y_always_assert(!_buffers[res.id()].buffer, "Buffer already exists");
@@ -113,22 +113,22 @@ FrameGraphFrameResources::BufferData& FrameGraphFrameResources::create_buffer(Fr
     return _buffers[res.id()];
 }
 
-void FrameGraphFrameResources::create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage, FrameGraphPersistentResourceId persistent_id) {
-    create_image(res, _pool->create_image(format, size, usage), persistent_id);
+void FrameGraphFrameResources::create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage, core::Span<FrameGraphPersistentResourceId> persistent_ids) {
+    create_image(res, _pool->create_image(format, size, usage), persistent_ids);
 }
 
-void FrameGraphFrameResources::create_volume(FrameGraphVolumeId res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage, FrameGraphPersistentResourceId persistent_id) {
-    create_volume(res, _pool->create_volume(format, size, usage), persistent_id);
+void FrameGraphFrameResources::create_volume(FrameGraphVolumeId res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage, core::Span<FrameGraphPersistentResourceId> persistent_ids) {
+    create_volume(res, _pool->create_volume(format, size, usage), persistent_ids);
 }
 
-bool FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory, FrameGraphPersistentResourceId persistent_id, bool exact) {
+bool FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory, core::Span<FrameGraphPersistentResourceId> persistent_ids, bool exact) {
     TransientBuffer transient = _pool->create_buffer(byte_size, usage, MemoryType::DeviceLocal, exact);
     if(transient.is_null()) {
         return false;
     }
 
     const u64 transient_byte_size = transient.byte_size();
-    BufferData& buffer = create_buffer(res, std::move(transient), persistent_id);
+    BufferData& buffer = create_buffer(res, std::move(transient), persistent_ids);
 
     if(is_cpu_visible(memory)) {
         y_debug_assert(_staging_buffer.is_null());

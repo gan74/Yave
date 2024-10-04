@@ -154,40 +154,44 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
     });
 }
 
-void FrameGraphResourcePool::release(TransientImage image, FrameGraphPersistentResourceId persistent_id) {
+void FrameGraphResourcePool::release(TransientImage image, core::Span<FrameGraphPersistentResourceId> persistent_ids) {
     y_debug_assert(!image.is_null());
-    if(persistent_id.is_valid()) {
+    if(!persistent_ids.is_empty()) {
         _persistent_images.locked([&](auto&& images) {
-            const usize index = persistent_id.id();
-            images.set_min_size(index + 1);
-            if(!images[index].is_null()) {
-                release(std::move(images[index]));
+            for(FrameGraphPersistentResourceId persistent_id : persistent_ids) {
+                const usize index = persistent_id.id();
+                images.set_min_size(index + 1);
+                if(!images[index].is_null()) {
+                    release(std::move(images[index]));
+                }
+                y_debug_assert(images[index].is_null());
+                images[index] = std::move(image);
             }
-            y_debug_assert(images[index].is_null());
-            images[index] = std::move(image);
         });
     } else {
         _images.locked([&](auto&& images) { images.emplace_back(std::move(image), _frame_id); });
     }
 }
 
-void FrameGraphResourcePool::release(TransientVolume volume, FrameGraphPersistentResourceId persistent_id) {
-    y_always_assert(!persistent_id.is_valid(), "Persistent volumes not supported");
+void FrameGraphResourcePool::release(TransientVolume volume, core::Span<FrameGraphPersistentResourceId> persistent_ids) {
+    y_always_assert(!persistent_ids.is_empty(), "Persistent volumes not supported");
     y_debug_assert(!volume.is_null());
     _volumes.locked([&](auto&& volumes) { volumes.emplace_back(std::move(volume), _frame_id); });
 }
 
-void FrameGraphResourcePool::release(TransientBuffer buffer, FrameGraphPersistentResourceId persistent_id) {
+void FrameGraphResourcePool::release(TransientBuffer buffer, core::Span<FrameGraphPersistentResourceId> persistent_ids) {
     y_debug_assert(!buffer.is_null());
-    if(persistent_id.is_valid()) {
+    if(!persistent_ids.is_empty()) {
         _persistent_buffers.locked([&](auto&& buffers) {
-            const usize index = persistent_id.id();
-            buffers.set_min_size(index + 1);
-            if(!buffers[index].is_null()) {
-                release(std::move(buffers[index]));
+            for(FrameGraphPersistentResourceId persistent_id : persistent_ids) {
+                const usize index = persistent_id.id();
+                buffers.set_min_size(index + 1);
+                if(!buffers[index].is_null()) {
+                    release(std::move(buffers[index]));
+                }
+                y_debug_assert(buffers[index].is_null());
+                buffers[index] = std::move(buffer);
             }
-            y_debug_assert(buffers[index].is_null());
-            buffers[index] = std::move(buffer);
         });
     } else {
         _buffers.locked([&](auto&& buffers) { buffers.emplace_back(std::move(buffer), _frame_id); });

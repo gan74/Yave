@@ -94,6 +94,7 @@ class DeviceResources final : NonMovable {
 
             WireFrameMaterialTemplate,
 
+            TemporalDesocclusionMaterialTemplate,
             TemporalMaterialTemplate,
             TAAResolveMaterialTemplate,
 

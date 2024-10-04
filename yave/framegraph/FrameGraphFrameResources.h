@@ -101,10 +101,10 @@ class FrameGraphFrameResources final : NonMovable {
         u32 create_volume_id();
         u32 create_buffer_id();
 
-        void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage, FrameGraphPersistentResourceId persistent_id);
-        void create_volume(FrameGraphVolumeId res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage, FrameGraphPersistentResourceId persistent_id);
+        void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage, core::Span<FrameGraphPersistentResourceId> persistent_ids);
+        void create_volume(FrameGraphVolumeId res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage, core::Span<FrameGraphPersistentResourceId> persistent_ids);
         
-        [[nodiscard]] bool create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory, FrameGraphPersistentResourceId persistent_id, bool exact);
+        [[nodiscard]] bool create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory, core::Span<FrameGraphPersistentResourceId> persistent_ids, bool exact);
 
         void create_prev_image(FrameGraphImageId res, FrameGraphPersistentResourceId persistent_id);
         void create_prev_buffer(FrameGraphBufferId res, FrameGraphPersistentResourceId persistent_id);
@@ -124,9 +124,9 @@ class FrameGraphFrameResources final : NonMovable {
         const TransientVolume& find(FrameGraphVolumeId res) const;
         const TransientBuffer& find(FrameGraphBufferId res) const;
 
-        void create_image(FrameGraphImageId res, TransientImage&& image, FrameGraphPersistentResourceId persistent_id);
-        void create_volume(FrameGraphVolumeId res, TransientVolume&& volume, FrameGraphPersistentResourceId persistent_id);
-        BufferData& create_buffer(FrameGraphBufferId res, TransientBuffer&& buffer, FrameGraphPersistentResourceId persistent_id);
+        void create_image(FrameGraphImageId res, TransientImage&& image, core::Span<FrameGraphPersistentResourceId> persistent_ids);
+        void create_volume(FrameGraphVolumeId res, TransientVolume&& volume, core::Span<FrameGraphPersistentResourceId> persistent_ids);
+        BufferData& create_buffer(FrameGraphBufferId res, TransientBuffer&& buffer, core::Span<FrameGraphPersistentResourceId> persistent_ids);
 
         StagingSubBuffer staging_buffer(FrameGraphMutableBufferId res) const;
         StagingSubBuffer staging_buffer(const BufferData& buffer) const;
@@ -142,9 +142,9 @@ class FrameGraphFrameResources final : NonMovable {
         std::shared_ptr<FrameGraphResourcePool> _pool;
 
         // We need pointer stability
-        std::deque<std::pair<TransientImage, FrameGraphPersistentResourceId>> _image_storage;
-        std::deque<std::pair<TransientVolume, FrameGraphPersistentResourceId>> _volume_storage;
-        std::deque<std::pair<TransientBuffer, FrameGraphPersistentResourceId>> _buffer_storage;
+        std::deque<std::pair<TransientImage, core::FixedArray<FrameGraphPersistentResourceId>>> _image_storage;
+        std::deque<std::pair<TransientVolume, core::FixedArray<FrameGraphPersistentResourceId>>> _volume_storage;
+        std::deque<std::pair<TransientBuffer, core::FixedArray<FrameGraphPersistentResourceId>>> _buffer_storage;
 
         StagingBuffer _staging_buffer;
         u64 _staging_buffer_len = 0;
