@@ -41,14 +41,16 @@ uint frag_main(float2 in_uv) : SV_Target0 {
     const float depth = in_depth.Sample(uv);
     const float prev_depth = in_prev_depth.Sample(prev_uv);
 
-    if(is_depth_far(depth) || is_depth_far(prev_depth)) {
+    /*if(is_depth_far(depth) || is_depth_far(prev_depth)) {
         return TAAMask::DepthOutOfBounds;
-    }
+    }*/
 
-    const float3 reproj_pos = project(unproject(prev_uv, prev_depth, camera.prev.inv_view_proj), camera.cur.view_proj);
-    // const float3 reproj_pos = mul(camera.prev_to_cur, float4(prev_uv, prev_depth, 1.0)).xyz;
-    if(reproj_pos.z > depth + 0.005) {
-        return TAAMask::Deoccluded;
+    const bool has_moved = any(abs(motion) > 2.0 * inv_size);
+    if(has_moved) {
+        const float3 reproj_pos = project(unproject(prev_uv, prev_depth, camera.prev.inv_view_proj), camera.cur.view_proj);
+        if(reproj_pos.z > depth + 0.005) {
+            return TAAMask::Deoccluded;
+        }
     }
 
     return TAAMask::None;

@@ -63,6 +63,7 @@ static bool keep_taa(EngineView::RenderView view) {
     switch(view) {
         case EngineView::RenderView::Lit:
         case EngineView::RenderView::Motion:
+        case EngineView::RenderView::TAAMask:
             return true;
         break;
 
