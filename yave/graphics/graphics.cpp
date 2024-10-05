@@ -36,6 +36,7 @@ SOFTWARE.
 #include <yave/graphics/device/MeshAllocator.h>
 #include <yave/graphics/device/MaterialAllocator.h>
 #include <yave/graphics/images/TextureLibrary.h>
+#include <yave/graphics/device/DiagnosticCheckpoints.h>
 
 #include <y/concurrent/Mutexed.h>
 #include <y/core/ScratchPad.h>
@@ -65,6 +66,8 @@ VkDevice vk_device;
 
 Uninitialized<CmdQueue> queue;
 
+std::unique_ptr<DiagnosticCheckpoints> diagnostic_checkpoints;
+
 #ifdef Y_DEBUG
 std::atomic<bool> destroying = false;
 #endif
@@ -91,6 +94,8 @@ static void init_vk_device() {
             extensions << ext_name;
         }
     }
+
+    const bool diagnostic_checkpoints = instance_params().debug_utils && try_enable_extension(extensions, DiagnosticCheckpoints::extension_name(), physical_device());
 
     const auto required_features = required_device_features();
     auto required_features_1_1 = required_device_features_1_1();
@@ -161,11 +166,21 @@ static void init_vk_device() {
 
     print_properties(device::device_properties);
 
+
     if(device::device_properties.has_raytracing && !raytracing_enabled()) {
         log_msg("Raytracing disabled", Log::Warning);
     }
 
-    device::queue.init(main_queue_index, create_queue(device::vk_device, main_queue_index, 0));
+    core::SmallVector<VkQueue> queues;
+    device::queue.init(main_queue_index, queues.emplace_back(create_queue(device::vk_device, main_queue_index, 0)));
+
+    if(diagnostic_checkpoints) {
+        log_msg("Vulkan diagnostic checkpoints enabled");
+        device::diagnostic_checkpoints = std::make_unique<DiagnosticCheckpoints>();
+        for(const VkQueue q : queues) {
+            device::diagnostic_checkpoints->register_queue(q);
+        }
+    }
 }
 
 
@@ -216,6 +231,8 @@ void destroy_device() {
     for(auto& sampler : device::samplers) {
         sampler.destroy();
     }
+
+    device::diagnostic_checkpoints = nullptr;
 
     device::texture_library.destroy();
     device::material_allocator.destroy();
@@ -355,6 +372,10 @@ VkSampler vk_sampler(SamplerType type) {
 
 const DebugUtils* debug_utils() {
     return device::instance->debug_utils();
+}
+
+const DiagnosticCheckpoints* diagnostic_checkpoints() {
+    return device::diagnostic_checkpoints.get();
 }
 
 void wait_all_queues() {

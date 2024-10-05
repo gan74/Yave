@@ -97,6 +97,8 @@ VK_STRUCT_TYPE(VkDebugUtilsLabelEXT,                                VK_STRUCTURE
 VK_STRUCT_TYPE(VkDebugUtilsObjectNameInfoEXT,                       VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT)
 VK_STRUCT_TYPE(VkValidationFeaturesEXT,                             VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT)
 
+VK_STRUCT_TYPE(VkCheckpointDataNV,                                  VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV)
+
 
 // Raytracing
 VK_STRUCT_TYPE(VkPhysicalDeviceAccelerationStructureFeaturesKHR,    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR)
@@ -322,9 +324,16 @@ inline constexpr bool is_incomplete(VkResult result) {
 }
 
 const char* vk_result_str(VkResult result);
+void on_vk_device_lost();
 
 inline VkResult vk_check(VkResult result) {
-    y_always_assert(!is_error(result), vk_result_str(result));
+    if(is_error(result)) [[unlikely]] {
+        if(result == VK_ERROR_DEVICE_LOST) {
+            on_vk_device_lost();
+        }
+        y_fatal(vk_result_str(result));
+    }
+
     return result;
 }
 

@@ -64,6 +64,7 @@ const VkAllocationCallbacks* vk_allocation_callbacks();
 VkSampler vk_sampler(SamplerType type);
 
 const DebugUtils* debug_utils();
+const DiagnosticCheckpoints* diagnostic_checkpoints();
 
 void wait_all_queues();
 

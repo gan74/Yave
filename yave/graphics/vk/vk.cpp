@@ -28,6 +28,9 @@ SOFTWARE.
 
 #include <vulkan/vk_enum_string_helper.h>
 
+#include <yave/graphics/graphics.h>
+#include <yave/graphics/device/DiagnosticCheckpoints.h>
+
 namespace yave {
 
 void initialize_volk() {
@@ -40,6 +43,12 @@ void initialize_volk() {
 
 const char* vk_result_str(VkResult result) {
     return string_VkResult(result);
+}
+
+void on_vk_device_lost() {
+    if(const auto* diag = diagnostic_checkpoints()) {
+        diag->dump_checkpoints();
+    }
 }
 
 }

@@ -35,6 +35,7 @@ SOFTWARE.
 #include <yave/meshes/MeshDrawData.h>
 
 #include <yave/graphics/device/DebugUtils.h>
+#include <yave/graphics/device/DiagnosticCheckpoints.h>
 
 #include <y/core/ScratchPad.h>
 
@@ -43,12 +44,16 @@ namespace yave {
 
 // -------------------------------------------------- CmdBufferRegion --------------------------------------------------
 
-CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTimestampPool *ts_pool, CmdQueue* queue, const char* name, const math::Vec4& color) :
+CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTimestampPool* ts_pool, CmdQueue* queue, const char* name, const math::Vec4& color) :
         _buffer(cmd_buffer.vk_cmd_buffer()),
         _timestamp_pool(ts_pool) {
 
     if(const DebugUtils* debug = debug_utils()) {
         debug->begin_region(_buffer, name, color);
+    }
+
+    if(const DiagnosticCheckpoints* diag = diagnostic_checkpoints()) {
+        diag->set_checkpoint(_buffer, name);
     }
 
     if(_timestamp_pool) {

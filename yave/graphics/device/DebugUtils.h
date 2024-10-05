@@ -19,14 +19,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_DEVICE_EXTENSIONS_DEBUGUTILS_H
-#define YAVE_DEVICE_EXTENSIONS_DEBUGUTILS_H
+#ifndef YAVE_DEVICE_DEBUGUTILS_H
+#define YAVE_DEVICE_DEBUGUTILS_H
 
 #include <yave/graphics/vk/vk.h>
 
 namespace yave {
 
-class DebugUtils : NonCopyable {
+class DebugUtils : NonMovable {
     public:
         static const char* extension_name();
 
@@ -88,5 +88,5 @@ class DebugUtils : NonCopyable {
 
 }
 
-#endif // YAVE_DEVICE_EXTENSIONS_DEBUGUTILS_H
+#endif // YAVE_DEVICE_DEBUGUTILS_H
 
