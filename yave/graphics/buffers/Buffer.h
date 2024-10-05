@@ -104,6 +104,10 @@ class SubBuffer : public SubBufferBase {
         explicit SubBuffer(const BufferBase& buffer) : SubBufferBase(buffer) {
         }
 
+        explicit SubBuffer(const SubBufferBase& buffer) : SubBufferBase(buffer) {
+        }
+
+
     public:
         static constexpr BufferUsage usage = Usage;
         static constexpr MemoryType memory_type = Memory;

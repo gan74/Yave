@@ -36,30 +36,41 @@ class TransientBuffer final : public BufferBase {
         TransientBuffer() = default;
 
         TransientBuffer(usize byte_size, BufferUsage usage, MemoryType type = MemoryType::DontCare) :
-                BufferBase(byte_size, usage, memory_type(type, usage)) {
-            _memory_type = type;
+                BufferBase(byte_size, usage, memory_type(type, usage)),
+                _memory_type(type) {
+            set_exposed_byte_size(byte_size);
         }
 
         MemoryType memory_type() const {
             return _memory_type;
         }
 
+        u64 exposed_byte_size() const {
+            return _exposed_byte_size;
+        }
+
+        void set_exposed_byte_size(u64 size) {
+            y_debug_assert(size <= byte_size());
+            _exposed_byte_size = size;
+        }
+
     private:
         MemoryType _memory_type = MemoryType::DeviceLocal;
+        u64 _exposed_byte_size = 0;
 };
 
 
 template<BufferUsage Usage, MemoryType Memory = MemoryType::DontCare>
 class TransientSubBuffer final : public SubBuffer<Usage, Memory> {
     public:
-        TransientSubBuffer(const TransientBuffer& buffer) : SubBuffer<Usage, Memory>(buffer) {
-            y_debug_assert(this->byte_size() == buffer.byte_size() && this->byte_offset() == 0);
+        TransientSubBuffer(const TransientBuffer& buffer) : SubBuffer<Usage, Memory>(SubBufferBase(buffer, buffer.exposed_byte_size(), 0)) {
+            y_debug_assert(this->byte_size() == buffer.exposed_byte_size() && this->byte_offset() == 0);
 
             if(!this->has(buffer.usage(), Usage)) {
-                y_fatal("Invalid subbuffer usage.");
+                y_fatal("Invalid subbuffer usage");
             }
             if(!is_memory_type_compatible(buffer.memory_type(), Memory)) {
-                y_fatal("Invalid subbuffer memory type.");
+                y_fatal("Invalid subbuffer memory type");
             }
         }
 };

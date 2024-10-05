@@ -77,9 +77,11 @@ TransientBuffer FrameGraphResourcePool::create_buffer(u64 byte_size, BufferUsage
         memory = prefered_memory_type(usage);
     }
 
-    TransientBuffer buffer;
-    if(create_buffer_from_pool(buffer, byte_size, usage, memory, exact)) {
-        return buffer;
+    {
+        TransientBuffer buffer;
+        if(create_buffer_from_pool(buffer, byte_size, usage, memory, exact)) {
+            return buffer;
+        }
     }
 
     if(exact) {
@@ -87,7 +89,9 @@ TransientBuffer FrameGraphResourcePool::create_buffer(u64 byte_size, BufferUsage
     }
 
     y_profile_zone("create buffer");
-    return TransientBuffer(byte_size, usage, memory);
+    TransientBuffer buffer(next_pow_of_2(byte_size), usage, memory);
+    buffer.set_exposed_byte_size(byte_size);
+    return buffer;
 }
 
 bool FrameGraphResourcePool::create_image_from_pool(TransientImage& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
@@ -129,7 +133,7 @@ bool FrameGraphResourcePool::create_volume_from_pool(TransientVolume& res, Image
 }
 
 bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory, bool exact) {
-    return _buffers.locked([&](auto&& buffers) {
+    const bool found =_buffers.locked([&](auto&& buffers) {
         for(auto it = buffers.begin(); it != buffers.end(); ++it) {
             auto& buffer = it->first;
 
@@ -152,6 +156,12 @@ bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize
         }
         return false;
     });
+
+    if(found) {
+        res.set_exposed_byte_size(byte_size);
+    }
+
+    return found;
 }
 
 void FrameGraphResourcePool::release(TransientImage image, core::Span<FrameGraphPersistentResourceId> persistent_ids) {

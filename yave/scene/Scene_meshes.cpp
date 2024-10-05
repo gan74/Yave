@@ -209,6 +209,7 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, const Sc
                     indirect_mapping[i] = batch.cmd;
                     indices_mapping[i] = batch.indices;
                 }
+                y_debug_assert(buffer.size() == batch_count);
                 render_pass.bind_material_template(device_resources()[DeviceResources::IdMaterialTemplate], pass_set, true);
                 render_pass.draw_indirect(buffer);
             } break;

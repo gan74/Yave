@@ -39,6 +39,7 @@ SOFTWARE.
 
 #include <y/core/ScratchPad.h>
 
+#define Y_VK_CMD  do {} while(false);
 
 namespace yave {
 
@@ -121,6 +122,8 @@ RenderPassRecorder::~RenderPassRecorder() {
 }
 
 void RenderPassRecorder::bind_material_template(const MaterialTemplate* material_template, core::Span<DescriptorSetBase> sets, bool bind_main_ds) {
+    Y_VK_CMD
+
     if(material_template != _cache.material) {
         const GraphicPipeline& pipeline = material_template->compile(*_cmd_buffer._render_pass);
         vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vk_pipeline());
@@ -161,11 +164,15 @@ void RenderPassRecorder::set_main_descriptor_set(DescriptorSetBase ds_set) {
 }
 
 void RenderPassRecorder::draw(const MeshDrawData& draw_data, u32 instance_count, u32 instance_index) {
+    Y_VK_CMD
+
     bind_mesh_buffers(draw_data.mesh_buffers());
     draw(draw_data.draw_command().vk_indirect_data(instance_index, instance_count));
 }
 
 void RenderPassRecorder::draw(const VkDrawIndexedIndirectCommand& indirect) {
+    Y_VK_CMD
+
     vkCmdDrawIndexed(vk_cmd_buffer(),
         indirect.indexCount,
         indirect.instanceCount,
@@ -176,6 +183,8 @@ void RenderPassRecorder::draw(const VkDrawIndexedIndirectCommand& indirect) {
 }
 
 void RenderPassRecorder::draw(const VkDrawIndirectCommand& indirect) {
+    Y_VK_CMD
+
     vkCmdDraw(vk_cmd_buffer(),
         indirect.vertexCount,
         indirect.instanceCount,
@@ -185,6 +194,8 @@ void RenderPassRecorder::draw(const VkDrawIndirectCommand& indirect) {
 }
 
 void RenderPassRecorder::draw_indirect(TypedSubBuffer<VkDrawIndexedIndirectCommand, BufferUsage::IndirectBit> indirect) {
+    Y_VK_CMD
+
     vkCmdDrawIndexedIndirect(vk_cmd_buffer(),
         indirect.vk_buffer(),
         indirect.byte_offset(),
@@ -216,12 +227,15 @@ void RenderPassRecorder::bind_mesh_buffers(const MeshDrawBuffers& mesh_buffers) 
 }
 
 void RenderPassRecorder::bind_index_buffer(IndexSubBuffer indices) {
-    _cache.mesh_buffers = nullptr;
+    Y_VK_CMD
 
+    _cache.mesh_buffers = nullptr;
     vkCmdBindIndexBuffer(vk_cmd_buffer(), indices.vk_buffer(), indices.byte_offset(), VK_INDEX_TYPE_UINT32);
 }
 
 void RenderPassRecorder::bind_attrib_buffers(core::Span<AttribSubBuffer> attribs) {
+    Y_VK_CMD
+
     _cache.mesh_buffers = nullptr;
 
     const u32 attrib_count = u32(attribs.size());
@@ -247,6 +261,8 @@ const Viewport& RenderPassRecorder::viewport() const {
 }
 
 void RenderPassRecorder::set_viewport(const Viewport& vp) {
+    Y_VK_CMD
+
     y_debug_assert(vp.offset.x() >= 0.0f);
     y_debug_assert(vp.offset.y() >= 0.0f);
 
@@ -260,6 +276,8 @@ void RenderPassRecorder::set_viewport(const Viewport& vp) {
 }
 
 void RenderPassRecorder::set_scissor(const math::Vec2i& offset, const math::Vec2ui& size) {
+    Y_VK_CMD
+
     y_debug_assert(offset.x() >= 0.0f);
     y_debug_assert(offset.y() >= 0.0f);
 
@@ -318,6 +336,8 @@ CmdBufferRegion CmdBufferRecorderBase::region(const char* name, CmdTimestampPool
 }
 
 void CmdBufferRecorderBase::end_renderpass() {
+    Y_VK_CMD
+
     y_debug_assert(_render_pass);
 
     vkCmdEndRenderPass(vk_cmd_buffer());
@@ -329,6 +349,8 @@ void CmdBufferRecorderBase::check_no_renderpass() const {
 }
 
 void CmdBufferRecorderBase::barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images) {
+    Y_VK_CMD
+
     check_no_renderpass();
 
     if(buffers.is_empty() && images.is_empty()) {
@@ -374,6 +396,8 @@ void CmdBufferRecorderBase::barriers(core::Span<ImageBarrier> images) {
 }
 
 void CmdBufferRecorderBase::full_barrier() {
+    Y_VK_CMD
+
     VkMemoryBarrier barrier = vk_struct();
     barrier.srcAccessMask =
         VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
@@ -421,6 +445,8 @@ void CmdBufferRecorderBase::full_barrier() {
 }
 
 void CmdBufferRecorderBase::copy(const ImageBase& src,  const ImageBase& dst) {
+    Y_VK_CMD
+
     y_always_assert((src.usage() & ImageUsage::TransferSrcBit) == ImageUsage::TransferSrcBit, "src should have TransferSrcBit usage");
     y_always_assert((dst.usage() & ImageUsage::TransferDstBit) == ImageUsage::TransferDstBit, "dst should have TransferDstBit usage");
 
@@ -460,6 +486,8 @@ void CmdBufferRecorderBase::copy(const ImageBase& src,  const ImageBase& dst) {
 }
 
 void CmdBufferRecorderBase::clear(const ImageBase& dst) {
+    Y_VK_CMD
+
     y_always_assert((dst.usage() & ImageUsage::TransferDstBit) == ImageUsage::TransferDstBit, "dst should have TransferDstBit usage");
 
     barriers(ImageBarrier::transition_barrier(dst, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL));
@@ -480,6 +508,8 @@ void CmdBufferRecorderBase::clear(const ImageBase& dst) {
 }
 
 void CmdBufferRecorderBase::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuffer dst) {
+    Y_VK_CMD
+
     y_always_assert(src.byte_size() == dst.byte_size(), "Buffer size do not match.");
 
     VkBufferCopy copy = {};
@@ -493,6 +523,8 @@ void CmdBufferRecorderBase::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuf
 }
 
 void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+    Y_VK_CMD
+
     check_no_renderpass();
 
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, program.vk_pipeline());
@@ -524,6 +556,8 @@ void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, cons
 
 
 void CmdBufferRecorderBase::raytrace(const RaytracingProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+    Y_VK_CMD
+
     check_no_renderpass();
 
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, program.vk_pipeline());
@@ -554,6 +588,8 @@ void CmdBufferRecorderBase::submit_async() {
 // -------------------------------------------------- CmdBufferRecorder --------------------------------------------------
 
 RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& framebuffer) {
+    Y_VK_CMD
+
     check_no_renderpass();
 
     auto clear_values = core::ScratchPad<VkClearValue>(framebuffer.attachment_count() + 1);
@@ -584,6 +620,8 @@ RenderPassRecorder CmdBufferRecorder::bind_framebuffer(const Framebuffer& frameb
 }
 
 void CmdBufferRecorder::execute(CmdBufferRecorder&& other) {
+    Y_VK_CMD
+
     y_debug_assert(_data);
     y_debug_assert(other._data);
     y_always_assert(!_data->is_secondary(), "execute should only be called on primary cmd buffers");

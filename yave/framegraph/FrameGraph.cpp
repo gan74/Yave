@@ -660,7 +660,7 @@ FrameGraphBufferId FrameGraph::make_persistent_and_get_prev(FrameGraphBufferId r
     auto& info = alloc_prev(_buffers, id);
 
     const auto& buffer = _resources->find(id);
-    info.byte_size = buffer.byte_size();
+    info.byte_size = buffer.exposed_byte_size();
     info.usage = buffer.usage();
 
     return id;

@@ -127,7 +127,7 @@ bool FrameGraphFrameResources::create_buffer(FrameGraphBufferId res, u64 byte_si
         return false;
     }
 
-    const u64 transient_byte_size = transient.byte_size();
+    const u64 transient_byte_size = transient.exposed_byte_size();
     BufferData& buffer = create_buffer(res, std::move(transient), persistent_ids);
 
     if(is_cpu_visible(memory)) {
@@ -285,7 +285,7 @@ StagingSubBuffer FrameGraphFrameResources::staging_buffer(FrameGraphMutableBuffe
 
 StagingSubBuffer FrameGraphFrameResources::staging_buffer(const BufferData& buffer) const {
     y_debug_assert(buffer.is_mapped());
-    return StagingSubBuffer(_staging_buffer, buffer.buffer->byte_size(), buffer.staging_buffer_offset);
+    return StagingSubBuffer(_staging_buffer, buffer.buffer->exposed_byte_size(), buffer.staging_buffer_offset);
 }
 
 
