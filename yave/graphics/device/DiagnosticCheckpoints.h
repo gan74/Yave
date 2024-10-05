@@ -25,6 +25,11 @@ SOFTWARE.
 #include <yave/graphics/vk/vk.h>
 
 #include <y/core/Vector.h>
+#include <y/core/FixedArray.h>
+#include <y/core/String.h>
+
+#include <utility>
+#include <atomic>
 
 namespace yave {
 
@@ -42,7 +47,10 @@ class DiagnosticCheckpoints : NonMovable {
         void set_checkpoint(VkCommandBuffer cmd_buffer, const char* data) const;
 
     private:
-        mutable core::Vector<VkQueue> _queues;
+        mutable core::FixedArray<std::pair<u32, core::String>> _checkpoints;
+        mutable std::atomic<u32> _count = 0;
+
+        core::Vector<VkQueue> _queues;
 };
 
 }

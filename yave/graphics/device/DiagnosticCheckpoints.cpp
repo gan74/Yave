@@ -36,7 +36,7 @@ const char* DiagnosticCheckpoints::extension_name() {
     return VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME;
 }
 
-DiagnosticCheckpoints::DiagnosticCheckpoints(){
+DiagnosticCheckpoints::DiagnosticCheckpoints() : _checkpoints(1024) {
     y_always_assert(vkCmdSetCheckpointNV, VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME " not loaded");
     y_always_assert(vkGetQueueCheckpointDataNV, VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME " not loaded");
 }
@@ -55,18 +55,28 @@ void DiagnosticCheckpoints::dump_checkpoints() const {
         core::Vector<VkCheckpointDataNV> datas(count, vk_struct());
         vkGetQueueCheckpointDataNV(queue, &count, datas.data());
 
-        log_msg(fmt("    {} events in queue:", count), Log::Error);
+        log_msg(fmt("    {} last checkpoints executed in queue:", count), Log::Error);
         for(const VkCheckpointDataNV& data : datas) {
-            log_msg(fmt("        {}: {}", string_VkPipelineStageFlagBits(data.stage), static_cast<const char*>(data.pCheckpointMarker)), Log::Error);
+            const std::uintptr_t index = reinterpret_cast<std::uintptr_t>(data.pCheckpointMarker);
+            const auto& ck = _checkpoints[index % _checkpoints.size()];
+            if(ck.first != index) {
+                log_msg(fmt("        {}: ???", string_VkPipelineStageFlagBits(data.stage)), Log::Error);
+            } else {
+                log_msg(fmt("        {}: {}", string_VkPipelineStageFlagBits(data.stage), ck.second), Log::Error);
+            }
         }
     }
 }
 
 void DiagnosticCheckpoints::set_checkpoint(VkCommandBuffer cmd_buffer, const char* data) const {
-    const usize len = std::strlen(data);
-    char* owned = new char[len + 1];
-    std::strcpy(owned, data);
-    vkCmdSetCheckpointNV(cmd_buffer, owned);
+    const u32 index = ++_count;
+    auto& ck = _checkpoints[index % _checkpoints.size()];
+    {
+        ck.first = index;
+        ck.second = data;
+    }
+
+    vkCmdSetCheckpointNV(cmd_buffer, reinterpret_cast<const void*>(std::uintptr_t(index)));
 }
 
 DiagnosticCheckpoints::~DiagnosticCheckpoints() {
