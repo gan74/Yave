@@ -22,8 +22,9 @@ SOFTWARE.
 
 #include "Timeline.h"
 
-namespace yave {
+#include <y/utils/log.h>
 
+namespace yave {
 
 TimelineFence::TimelineFence(u64 value, const Timeline* parent) : _value(value), _parent(parent) {
 }
@@ -130,7 +131,10 @@ void Timeline::wait(TimelineFence fence) const {
         wait_info.pValues = &value;
         wait_info.semaphoreCount = 1;
     }
-    vk_check(vkWaitSemaphores(vk_device(), &wait_info, u64(-1)));
+
+    while(VK_TIMEOUT == vk_check(vkWaitSemaphores(vk_device(), &wait_info, u64(100'000'000)))) {
+        log_msg("Waited for semaphore for 100 ms", Log::Warning);
+    }
 }
 
 void Timeline::wait() const {
