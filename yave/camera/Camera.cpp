@@ -86,6 +86,10 @@ void Camera::set_far(float far_dist) {
     _far = far_dist;
 }
 
+math::Vec2 Camera::jitter() const {
+    return _proj[2].to<2>();
+}
+
 
 Camera Camera::jittered(math::Vec2 jitter_seq, const math::Vec2ui& size, float intensity) const {
     y_debug_assert(jitter_seq.saturated() == jitter_seq);
@@ -173,9 +177,10 @@ Camera::operator shader::Camera() const {
     camera_data.cur.view_proj = view_proj_matrix();
     camera_data.cur.inv_view_proj = inverse_matrix();
 
-    camera_data.cur.unjittered_view_proj = unjittered_view_proj();
-
     camera_data.prev = camera_data.cur;
+
+    camera_data.jitter = jitter();
+    camera_data.prev_jitter = camera_data.jitter;
 
     camera_data.proj = proj_matrix();
     camera_data.inv_proj = camera_data.proj.inverse();

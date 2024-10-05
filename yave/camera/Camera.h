@@ -47,6 +47,8 @@ class Camera {
 
         void set_far(float far_dist);
 
+        math::Vec2 jitter() const;
+
         Camera jittered(math::Vec2 jitter_seq, const math::Vec2ui& size, float intensity = 1.0f) const;
         Camera unjittered() const;
 
