@@ -295,14 +295,14 @@ AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const 
             if(raytracing_enabled()) {
                 ao = compute_rtao(framegraph, gbuffer, settings.rtao.ray_count, settings.rtao.max_dist);
 
-                if(settings.rtao.filter_sigma > 0.0f) {
-                    ao = filter_rtao(framegraph, gbuffer, ao, false, settings.rtao.filter_sigma);
-                    ao = filter_rtao(framegraph, gbuffer, ao, true, settings.rtao.filter_sigma);
-                }
-
                 if(settings.rtao.temporal) {
                     static const FrameGraphPersistentResourceId persistent_id = FrameGraphPersistentResourceId::create();
                     ao = TAAPass::create_simple(framegraph, temporal, ao, persistent_id).anti_aliased;
+                }
+
+                if(settings.rtao.filter_sigma > 0.0f) {
+                    ao = filter_rtao(framegraph, gbuffer, ao, false, settings.rtao.filter_sigma);
+                    ao = filter_rtao(framegraph, gbuffer, ao, true, settings.rtao.filter_sigma);
                 }
             }
         } break;
