@@ -47,8 +47,8 @@ class DiagnosticCheckpoints : NonMovable {
         void set_checkpoint(VkCommandBuffer cmd_buffer, const char* data) const;
 
     private:
-        mutable core::FixedArray<std::pair<u32, core::String>> _checkpoints;
-        mutable std::atomic<u32> _count = 0;
+        mutable core::FixedArray<std::pair<usize, core::String>> _checkpoints;
+        mutable std::atomic<usize> _count = 0;
 
         core::Vector<VkQueue> _queues;
 };

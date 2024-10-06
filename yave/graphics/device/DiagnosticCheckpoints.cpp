@@ -55,28 +55,28 @@ void DiagnosticCheckpoints::dump_checkpoints() const {
         core::Vector<VkCheckpointDataNV> datas(count, vk_struct());
         vkGetQueueCheckpointDataNV(queue, &count, datas.data());
 
-        log_msg(fmt("    {} last checkpoints executed in queue:", count), Log::Error);
+        log_msg(fmt("  {} last checkpoints executed in queue:", count), Log::Error);
         for(const VkCheckpointDataNV& data : datas) {
-            const std::uintptr_t index = reinterpret_cast<std::uintptr_t>(data.pCheckpointMarker);
+            const usize index = std::bit_cast<usize>(data.pCheckpointMarker);
             const auto& ck = _checkpoints[index % _checkpoints.size()];
             if(ck.first != index) {
-                log_msg(fmt("        {}: ???", string_VkPipelineStageFlagBits(data.stage)), Log::Error);
+                log_msg(fmt("    {}: ???", string_VkPipelineStageFlagBits(data.stage)), Log::Error);
             } else {
-                log_msg(fmt("        {}: {}", string_VkPipelineStageFlagBits(data.stage), ck.second), Log::Error);
+                log_msg(fmt("    {}: {}", string_VkPipelineStageFlagBits(data.stage), ck.second), Log::Error);
             }
         }
     }
 }
 
 void DiagnosticCheckpoints::set_checkpoint(VkCommandBuffer cmd_buffer, const char* data) const {
-    const u32 index = ++_count;
+    const usize index = ++_count;
     auto& ck = _checkpoints[index % _checkpoints.size()];
     {
         ck.first = index;
         ck.second = data;
     }
 
-    vkCmdSetCheckpointNV(cmd_buffer, reinterpret_cast<const void*>(std::uintptr_t(index)));
+    vkCmdSetCheckpointNV(cmd_buffer, std::bit_cast<const void*>(index));
 }
 
 DiagnosticCheckpoints::~DiagnosticCheckpoints() {

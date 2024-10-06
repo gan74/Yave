@@ -219,7 +219,7 @@ void print_physical_properties(const VkPhysicalDeviceProperties& properties) {
 }
 
 void print_enabled_extensions(core::Span<const char*> extensions) {
-    log_msg(fmt("{} extension enabled", extensions.size()));
+    log_msg(fmt("{} extensions enabled", extensions.size()));
     for(const char* ext : extensions) {
         log_msg(fmt("  - {}", ext));
     }
