@@ -44,7 +44,7 @@ class FrameGraphPassBuilderBase {
         using render_func = std::function<void(RenderPassRecorder&, const FrameGraphPass*)>;
         using compute_render_func = std::function<void(CmdBufferRecorder&, const FrameGraphPass*)>;
 
-        FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
+        FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size, u32 mips = 1);
         FrameGraphMutableVolumeId declare_volume(ImageFormat format, const math::Vec3ui& size);
         FrameGraphMutableBufferId declare_buffer(u64 byte_size);
 
@@ -63,7 +63,7 @@ class FrameGraphPassBuilderBase {
         void add_output_usage(FrameGraphBufferId res, BufferUsage usage);
 
         void add_depth_output(FrameGraphMutableImageId res);
-        void add_color_output(FrameGraphMutableImageId res);
+        void add_color_output(FrameGraphMutableImageId res, u32 mip = 0);
 
         void add_storage_output(FrameGraphMutableImageId res,   PipelineStage stage = PipelineStage::None, i32 ds_index = -1);
         void add_storage_output(FrameGraphMutableVolumeId res,  PipelineStage stage = PipelineStage::None, i32 ds_index = -1);

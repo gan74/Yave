@@ -45,9 +45,9 @@ class ImageBase : NonCopyable {
         const DeviceMemory& device_memory() const;
 
         const math::Vec3ui& image_size() const;
-        usize mipmaps() const;
+        u32 mipmaps() const;
 
-        usize layers() const;
+        u32 layers() const;
 
         ImageFormat format() const;
         ImageUsage usage() const;
@@ -57,7 +57,7 @@ class ImageBase : NonCopyable {
         ImageBase(ImageBase&&) = default;
         ImageBase& operator=(ImageBase&&) = default;
 
-        ImageBase(ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type = ImageType::TwoD, usize layers = 1, usize mips = 1, MemoryAllocFlags alloc_flags = MemoryAllocFlags::None);
+        ImageBase(ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type = ImageType::TwoD, u32 layers = 1, u32 mips = 1, MemoryAllocFlags alloc_flags = MemoryAllocFlags::None);
         ImageBase(ImageUsage usage, ImageType type, const ImageData& data);
 
 
@@ -97,22 +97,27 @@ class Image : public ImageBase {
 
         Image() = default;
 
-        Image(ImageFormat format, const size_type& image_size, MemoryAllocFlags alloc_flags = MemoryAllocFlags::None) : ImageBase(format, Usage, to_3d_size(image_size), Type, 1, 1, alloc_flags) {
+        Image(ImageFormat format, const size_type& image_size, u32 mips, MemoryAllocFlags alloc_flags = MemoryAllocFlags::None) :
+                ImageBase(format, Usage, to_3d_size(image_size), Type, Type == ImageType::Cube ? 6 : 1, mips, alloc_flags) {
+
             static_assert(is_attachment_usage(Usage) || is_storage_usage(Usage), "Texture images must be initilized");
             static_assert(Type == ImageType::TwoD || is_storage_usage(Usage), "Only 2D images can be created empty");
+        }
+
+        Image(ImageFormat format, const size_type& image_size, MemoryAllocFlags alloc_flags = MemoryAllocFlags::None) : Image(format, image_size, 1, alloc_flags) {
         }
 
         Image(const ImageData& data) : ImageBase(Usage, Type, data) {
             static_assert(is_texture_usage(Usage), "Only texture images can be initilized");
         }
 
-        template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
+        template<ImageUsage U> requires(is_compatible(U))
         Image(Image<U, Type>&& other) {
             static_assert(is_compatible(U));
             ImageBase::operator=(std::move(other));
         }
 
-        template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
+        template<ImageUsage U> requires(is_compatible(U))
         Image& operator=(Image<U, Type>&& other) {
             static_assert(is_compatible(U));
             ImageBase::operator=(std::move(other));

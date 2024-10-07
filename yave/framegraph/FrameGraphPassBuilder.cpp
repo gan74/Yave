@@ -62,8 +62,8 @@ PipelineStage FrameGraphPassBuilderBase::or_default(PipelineStage stage) const {
 
 // --------------------------------- Declarations ---------------------------------
 
-FrameGraphMutableImageId FrameGraphPassBuilderBase::declare_image(ImageFormat format, const math::Vec2ui& size) {
-    return parent()->declare_image(format, size);
+FrameGraphMutableImageId FrameGraphPassBuilderBase::declare_image(ImageFormat format, const math::Vec2ui& size, u32 mips) {
+    return parent()->declare_image(format, size, mips);
 }
 
 FrameGraphMutableVolumeId FrameGraphPassBuilderBase::declare_volume(ImageFormat format, const math::Vec3ui& size) {
@@ -131,10 +131,10 @@ void FrameGraphPassBuilderBase::add_depth_output(FrameGraphMutableImageId res) {
     _pass->_depth = FrameGraphPass::Attachment{res};
 }
 
-void FrameGraphPassBuilderBase::add_color_output(FrameGraphMutableImageId res) {
+void FrameGraphPassBuilderBase::add_color_output(FrameGraphMutableImageId res, u32 mip) {
     // transition is done by the renderpass
     add_to_pass(res, ImageUsage::ColorBit, true, PipelineStage::ColorAttachmentOutBit);
-    _pass->_colors << FrameGraphPass::Attachment{res};
+    _pass->_colors << FrameGraphPass::Attachment{res, mip};
 }
 
 

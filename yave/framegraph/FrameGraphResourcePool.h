@@ -39,7 +39,7 @@ class FrameGraphResourcePool : NonMovable {
         FrameGraphResourcePool();
         ~FrameGraphResourcePool();
 
-        TransientImage create_image(ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
+        TransientImage create_image(ImageFormat format, const math::Vec2ui& size, u32 mips, ImageUsage usage);
         TransientVolume create_volume(ImageFormat format, const math::Vec3ui& size, ImageUsage usage);
         TransientBuffer create_buffer(u64 byte_size, BufferUsage usage, MemoryType memory, bool exact = true);
 
@@ -58,7 +58,7 @@ class FrameGraphResourcePool : NonMovable {
         u64 frame_id() const;
 
     private:
-        bool create_image_from_pool(TransientImage& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage);
+        bool create_image_from_pool(TransientImage& res, ImageFormat format, const math::Vec2ui& size, u32 mips, ImageUsage usage);
         bool create_volume_from_pool(TransientVolume& res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage);
         bool create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory, bool exact);
 

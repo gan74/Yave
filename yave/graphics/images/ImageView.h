@@ -36,19 +36,25 @@ class ImageView {
             return (uenum(Usage) & uenum(u)) == uenum(Usage);
         }
 
+        static constexpr bool is_compatible(ImageType t) {
+            return Type == t || (Type == ImageType::Layered && t == ImageType::Cube);
+        }
+
     public:
         using size_type = typename Image<Usage, Type>::size_type;
 
         ImageView() = default;
 
-        template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
-        ImageView(const Image<U, Type>& img) : ImageView(img.size(), img.usage(), img.format(), img.vk_view(), img.vk_image()) {
+        template<ImageUsage U, ImageType T> requires(is_compatible(U) && is_compatible(T))
+        ImageView(const Image<U, T>& img) : ImageView(img.size(), img.usage(), img.format(), img.vk_view(), img.vk_image()) {
             static_assert(is_compatible(U));
+            static_assert(is_compatible(T));
         }
 
-        template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>
-        ImageView(const ImageView<U, Type>& img) : ImageView(img.size(), img.usage(), img.format(), img.vk_view(), img.vk_image()) {
+        template<ImageUsage U, ImageType T> requires(is_compatible(U) && is_compatible(T))
+        ImageView(const ImageView<U, T>& img) : ImageView(img.size(), img.usage(), img.format(), img.vk_view(), img.vk_image()) {
             static_assert(is_compatible(U));
+            static_assert(is_compatible(T));
         }
 
         bool is_null() const {

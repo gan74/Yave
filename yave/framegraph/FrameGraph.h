@@ -68,6 +68,7 @@ class FrameGraph : NonMovable {
 
     struct ImageCreateInfo : ResourceCreateInfo {
         math::Vec3ui size;
+        u32 mips = 1;
         ImageFormat format;
         ImageUsage usage = ImageUsage::None;
         ImageUsage last_usage = ImageUsage::None;
@@ -154,7 +155,7 @@ class FrameGraph : NonMovable {
 
         void end_region(usize index);
 
-        FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size);
+        FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size, u32 mips);
         FrameGraphMutableVolumeId declare_volume(ImageFormat format, const math::Vec3ui& size);
         FrameGraphMutableBufferId declare_buffer(u64 byte_size);
 

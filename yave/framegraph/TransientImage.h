@@ -43,7 +43,7 @@ class TransientImageBase final : public ImageBase {
 
         TransientImageBase() = default;
 
-        TransientImageBase(ImageFormat format, ImageUsage usage, const size_type& image_size) : ImageBase(format, usage, to_3d_size(image_size), Type) {
+        TransientImageBase(ImageFormat format, ImageUsage usage, const size_type& image_size, u32 mips) : ImageBase(format, usage, to_3d_size(image_size), Type, 1, mips) {
         }
 
         TransientImageBase(TransientImageBase&&) = default;

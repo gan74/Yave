@@ -157,10 +157,10 @@ static void check_layer_count(ImageType type, const math::Vec3ui& size, usize la
 }
 
 
-ImageBase::ImageBase(ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type, usize layers, usize mips, MemoryAllocFlags alloc_flags) :
+ImageBase::ImageBase(ImageFormat format, ImageUsage usage, const math::Vec3ui& size, ImageType type, u32 layers, u32 mips, MemoryAllocFlags alloc_flags) :
         _size(size),
-        _layers(u32(layers)),
-        _mips(u32(mips)),
+        _layers(layers),
+        _mips(mips),
         _format(format),
         _usage(usage) {
 
@@ -198,11 +198,11 @@ const math::Vec3ui& ImageBase::image_size() const {
     return _size;
 }
 
-usize ImageBase::mipmaps() const {
+u32 ImageBase::mipmaps() const {
     return _mips;
 }
 
-usize ImageBase::layers() const {
+u32 ImageBase::layers() const {
     return _layers;
 }
 

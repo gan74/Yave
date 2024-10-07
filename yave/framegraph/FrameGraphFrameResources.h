@@ -101,7 +101,7 @@ class FrameGraphFrameResources final : NonMovable {
         u32 create_volume_id();
         u32 create_buffer_id();
 
-        void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage, core::Span<FrameGraphPersistentResourceId> persistent_ids);
+        void create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, u32 mips, ImageUsage usage, core::Span<FrameGraphPersistentResourceId> persistent_ids);
         void create_volume(FrameGraphVolumeId res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage, core::Span<FrameGraphPersistentResourceId> persistent_ids);
         
         [[nodiscard]] bool create_buffer(FrameGraphBufferId res, u64 byte_size, BufferUsage usage, MemoryType memory, core::Span<FrameGraphPersistentResourceId> persistent_ids, bool exact);

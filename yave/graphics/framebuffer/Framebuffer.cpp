@@ -28,17 +28,15 @@ SOFTWARE.
 namespace yave {
 
 static math::Vec2ui compute_size(const Framebuffer::DepthAttachment& depth, core::Span<Framebuffer::ColorAttachment> colors) {
-    math::Vec2ui ref;
-    if(!depth.view.is_null()) {
-        ref = depth.view.size();
-    } else if(!colors.is_empty()) {
-        ref = colors[0].view.size();
-    }
+    const math::Vec2ui ref_size = depth.view.is_null()
+        ? (colors.is_empty() ? math::Vec2ui{} : colors[0].view.size())
+        : depth.view.size();
 
     for(const auto& c : colors) {
-        y_always_assert(c.view.size() == ref, "Invalid attachment size");
+        y_always_assert(c.view.size() == ref_size, "Invalid attachment size");
     }
-    return ref;
+
+    return ref_size;
 }
 
 static core::ScratchPad<Framebuffer::ColorAttachment> color_attachments(core::Span<ColorAttachmentView> color_views, Framebuffer::LoadOp load_op) {

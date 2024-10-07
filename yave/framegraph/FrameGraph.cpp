@@ -384,7 +384,7 @@ void FrameGraph::alloc_resources() {
                 // All images should support texturing, hopefully
                 info.usage = info.usage | ImageUsage::TextureBit;
             }
-            _resources->create_image(res, info.format, info.size.to<2>(), info.usage, info.persistents);
+            _resources->create_image(res, info.format, info.size.to<2>(), info.mips, info.usage, info.persistents);
         }
     }
 
@@ -444,7 +444,7 @@ const core::String& FrameGraph::pass_name(usize pass_index) const {
     y_fatal("Pass index out of bounds ({})", pass_index);
 }
 
-FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size) {
+FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const math::Vec2ui& size, u32 mips) {
     y_debug_assert(size.x() > 0 && size.y() > 0);
     const u32 id = _resources->create_image_id();
 
@@ -452,9 +452,12 @@ FrameGraphMutableImageId FrameGraph::declare_image(ImageFormat format, const mat
 
     auto& [i, r] = _images[id];
     y_always_assert(!i.is_valid(), "Resource already exists");
-    i._id = id;
-    r.size.to<2>() = size;
-    r.format = format;
+    {
+        i._id = id;
+        r.size.to<2>() = size;
+        r.mips = mips;
+        r.format = format;
+    }
 
     return i;
 }
@@ -467,9 +470,11 @@ FrameGraphMutableVolumeId FrameGraph::declare_volume(ImageFormat format, const m
 
     auto& [i, r] = _volumes[id];
     y_always_assert(!i.is_valid(), "Resource already exists");
-    i._id = id;
-    r.size = size;
-    r.format = format;
+    {
+        i._id = id;
+        r.size = size;
+        r.format = format;
+    }
 
     return i;
 }
@@ -482,8 +487,10 @@ FrameGraphMutableBufferId FrameGraph::declare_buffer(u64 byte_size) {
 
     auto& [i, r] = _buffers[id];
     y_always_assert(!i.is_valid(), "Resource already exists");
-    i._id = id;
-    r.byte_size = byte_size;
+    {
+        i._id = id;
+        r.byte_size = byte_size;
+    }
 
     return i;
 }
@@ -534,6 +541,7 @@ void FrameGraph::ResourceCreateInfo::register_use(usize index, bool is_written) 
 
 void FrameGraph::ImageCreateInfo::register_alias(const ImageCreateInfo& other) {
     y_debug_assert(other.size == size);
+    y_debug_assert(other.mips == mips);
     y_debug_assert(other.format == format);
     y_debug_assert(other.first_use > last_write);
     y_debug_assert(!is_persistent());

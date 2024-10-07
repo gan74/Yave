@@ -38,6 +38,7 @@ class FrameGraphPass final : NonMovable {
 
     struct Attachment {
         FrameGraphImageId image;
+        u32 mip = 0;
     };
 
     public:

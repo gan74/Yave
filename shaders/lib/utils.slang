@@ -313,6 +313,12 @@ float3 project(float3 pos, float4x4 proj_matrix) {
     return float3(p3.xy * 0.5 + float2(0.5), p3.z);
 }
 
+float linearize_depth(float depth, float4x4 inv_proj) {
+    const float z =  depth * inv_proj[2].z + inv_proj[2].w;
+    const float w =  depth * inv_proj[3].z + inv_proj[3].w;
+    return -z / w;
+}
+
 float3 build_orthogonal(float3 v) {
     const float3 t = abs(v.x) > 0.9 ? float3(0, 1, 0) : float3(1, 0, 0);
     return normalize(cross(v, t));

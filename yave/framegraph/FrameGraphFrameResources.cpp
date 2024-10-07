@@ -113,8 +113,8 @@ FrameGraphFrameResources::BufferData& FrameGraphFrameResources::create_buffer(Fr
     return _buffers[res.id()];
 }
 
-void FrameGraphFrameResources::create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage, core::Span<FrameGraphPersistentResourceId> persistent_ids) {
-    create_image(res, _pool->create_image(format, size, usage), persistent_ids);
+void FrameGraphFrameResources::create_image(FrameGraphImageId res, ImageFormat format, const math::Vec2ui& size, u32 mips, ImageUsage usage, core::Span<FrameGraphPersistentResourceId> persistent_ids) {
+    create_image(res, _pool->create_image(format, size, mips, usage), persistent_ids);
 }
 
 void FrameGraphFrameResources::create_volume(FrameGraphVolumeId res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage, core::Span<FrameGraphPersistentResourceId> persistent_ids) {

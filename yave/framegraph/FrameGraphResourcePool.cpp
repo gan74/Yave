@@ -40,18 +40,18 @@ FrameGraphResourcePool::FrameGraphResourcePool() {
 FrameGraphResourcePool::~FrameGraphResourcePool() {
 }
 
-TransientImage FrameGraphResourcePool::create_image(ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
+TransientImage FrameGraphResourcePool::create_image(ImageFormat format, const math::Vec2ui& size, u32 mips, ImageUsage usage) {
     y_profile();
 
     check_usage(usage);
 
     TransientImage image;
-    if(create_image_from_pool(image, format, size, usage)) {
+    if(create_image_from_pool(image, format, size, mips, usage)) {
         return image;
     }
 
     y_profile_zone("create image");
-    return TransientImage(format, usage, size);
+    return TransientImage(format, usage, size, mips);
 }
 
 TransientVolume FrameGraphResourcePool::FrameGraphResourcePool::create_volume(ImageFormat format, const math::Vec3ui& size, ImageUsage usage) {
@@ -65,7 +65,7 @@ TransientVolume FrameGraphResourcePool::FrameGraphResourcePool::create_volume(Im
     }
 
     y_profile_zone("create volume");
-    return TransientVolume(format, usage, size);
+    return TransientVolume(format, usage, size, 1);
 }
 
 TransientBuffer FrameGraphResourcePool::create_buffer(u64 byte_size, BufferUsage usage, MemoryType memory, bool exact) {
@@ -94,12 +94,12 @@ TransientBuffer FrameGraphResourcePool::create_buffer(u64 byte_size, BufferUsage
     return buffer;
 }
 
-bool FrameGraphResourcePool::create_image_from_pool(TransientImage& res, ImageFormat format, const math::Vec2ui& size, ImageUsage usage) {
+bool FrameGraphResourcePool::create_image_from_pool(TransientImage& res, ImageFormat format, const math::Vec2ui& size, u32 mips, ImageUsage usage) {
     return _images.locked([&](auto&& images) {
         for(auto it = images.begin(); it != images.end(); ++it) {
-            auto& img = it->first;
+            TransientImage& img = it->first;
 
-            if(img.format() == format && img.size() == size && img.usage() == usage) {
+            if(img.format() == format && img.size() == size && img.mipmaps() == mips && img.usage() == usage) {
 
                 res = std::move(img);
                 images.erase(it);
@@ -116,7 +116,7 @@ bool FrameGraphResourcePool::create_image_from_pool(TransientImage& res, ImageFo
 bool FrameGraphResourcePool::create_volume_from_pool(TransientVolume& res, ImageFormat format, const math::Vec3ui& size, ImageUsage usage) {
     return _volumes.locked([&](auto&& volumes) {
         for(auto it = volumes.begin(); it != volumes.end(); ++it) {
-            auto& vol = it->first;
+            TransientVolume& vol = it->first;
 
             if(vol.format() == format && vol.size() == size && vol.usage() == usage) {
 
@@ -135,7 +135,7 @@ bool FrameGraphResourcePool::create_volume_from_pool(TransientVolume& res, Image
 bool FrameGraphResourcePool::create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory, bool exact) {
     const bool found =_buffers.locked([&](auto&& buffers) {
         for(auto it = buffers.begin(); it != buffers.end(); ++it) {
-            auto& buffer = it->first;
+            TransientBuffer& buffer = it->first;
 
             bool matches_size = buffer.byte_size() == byte_size;
             if(!exact) {
