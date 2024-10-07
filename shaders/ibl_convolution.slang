@@ -19,6 +19,7 @@ RWTexture2DArray out_image;
 [[vk::binding(2)]]
 cbuffer Roughness_Inline {
     float roughness;
+    float size;
 };
 
 
@@ -53,24 +54,22 @@ float3 cube_dir(float2 tex_coord, uint side) {
 
 
 [shader("compute")]
-[numthreads(8, 8)]
+[numthreads(8, 8, 1)]
 void comp_main() {
     const int2 coord = int2(semantics.global_id.xy);
-    const float2 uv = (semantics.global_id.xy + 0.5) / float2(image_size(out_image).xy);
+    const float2 uv = (semantics.global_id.xy + 0.5) / size;
 
-    for(uint i = 0; i != 6; ++i) {
-        const float3 local_dir = normalize(cube_dir(uv, i));
+    const float3 local_dir = normalize(cube_dir(uv, semantics.global_id.z));
 
-        float3 conv;
-        if(roughness <= 0.0) {
-            conv = in_envmap.SampleCube(local_dir).rgb;
-        } else if(roughness >= 1.0) {
-            conv = diffuse_convolution(in_envmap, local_dir);
-        } else {
-            conv = specular_convolution(in_envmap, local_dir, roughness);
-        }
-
-        out_image[int3(coord, i)] = float4(conv, 0.0);
+    float3 conv;
+    if(roughness <= 0.0) {
+        conv = in_envmap.SampleCube(local_dir).rgb;
+    } else if(roughness >= 1.0) {
+        conv = diffuse_convolution(in_envmap, local_dir);
+    } else {
+        conv = specular_convolution(in_envmap, local_dir, roughness);
     }
+
+    out_image[int3(coord, semantics.global_id.z)] = float4(conv, roughness);
 }
 

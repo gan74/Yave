@@ -65,20 +65,18 @@ static void fill_probe(core::MutableSpan<ProbeMipView> views, const Image<ImageU
 
     const float roughness_step = 1.0f / (views.size() - 1);
 
-    math::Vec2ui size = views[0].size();
     {
         const auto region = recorder.region("IBL probe generation");
         for(usize i = 0; i != views.size(); ++i) {
-            ImageView<ImageUsage::StorageBit, ImageType::Layered> z = views[i];
+            ImageView<ImageUsage::StorageBit, ImageType::Layered> out_view = views[i];
+            y_debug_assert(out_view.size().x() == out_view.size().y());
             const float roughness = (i * roughness_step);
             const auto ds = DescriptorSet(
                 Descriptor(texture, SamplerType::LinearClamp),
-                z,
-                InlineDescriptor(roughness)
+                out_view,
+                InlineDescriptor(math::Vec2(roughness, out_view.size().x()))
             );
-            recorder.dispatch_threads(conv_program, size, ds);
-
-            size /= 2;
+            recorder.dispatch_threads(conv_program, math::Vec3ui(out_view.size(), 6), ds);
         }
     }
 
