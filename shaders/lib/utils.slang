@@ -14,7 +14,7 @@ static const uint max_uint = uint(0xFFFFFFFF);
 static const float max_float = 3.402823e+38;
 
 static const uint max_bones = 256;
-static const uint max_tile_lights = 256;
+static const uint max_tile_lights = 32;
 
 static const float lum_histogram_offset = 8.0;
 static const float lum_histogram_mul = 8.0;
