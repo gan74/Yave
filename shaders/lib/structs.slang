@@ -52,7 +52,7 @@ struct Camera {
     float4x4 inv_view;
 
     float3 position;
-    uint padding_0;
+    float aspect;
 
     float3 forward;
     uint padding_1;

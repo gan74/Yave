@@ -86,6 +86,11 @@ void Camera::set_far(float far_dist) {
     _far = far_dist;
 }
 
+
+float Camera::aspect() const {
+    return _proj[1][1] / _proj[0][0];
+}
+
 math::Vec2 Camera::jitter() const {
     return _proj[2].to<2>();
 }
@@ -191,6 +196,8 @@ Camera::operator shader::Camera() const {
     camera_data.position = position();
     camera_data.forward = forward();
     camera_data.up = up();
+
+    camera_data.aspect = aspect();
 
     return camera_data;
 }
