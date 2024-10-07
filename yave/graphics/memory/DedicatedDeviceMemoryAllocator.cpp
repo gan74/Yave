@@ -54,7 +54,7 @@ core::Result<DeviceMemory> DedicatedDeviceMemoryAllocator::alloc(VkMemoryRequire
 void DedicatedDeviceMemoryAllocator::free(const DeviceMemory& memory) {
     y_profile();
 
-    y_always_assert(memory.vk_offset() == 0, "Tried to free memory using non zero offset.");
+    y_always_assert(memory.vk_offset() == 0, "Tried to free memory using non zero offset");
 
     _total_size -= memory.vk_size();
     --_alloc_count;

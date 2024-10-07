@@ -117,14 +117,14 @@ core::Result<ImageData> import_image(const core::String& filename, ImageImportFl
     if(auto file = io2::File::open(filename)) {
         core::Vector<u8> data;
         if(!file.unwrap().read_all(data)) {
-            log_msg(fmt_c_str("Unable to read image \"{}\".", filename), Log::Error);
+            log_msg(fmt_c_str("Unable to read image \"{}\"", filename), Log::Error);
             return core::Err();
         }
 
         return import_image(data, flags);
     }
 
-    log_msg(fmt_c_str("Unable to open image \"{}\".", filename), Log::Error);
+    log_msg(fmt_c_str("Unable to open image \"{}\"", filename), Log::Error);
     return core::Err();
 }
 

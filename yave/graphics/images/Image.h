@@ -98,12 +98,12 @@ class Image : public ImageBase {
         Image() = default;
 
         Image(ImageFormat format, const size_type& image_size, MemoryAllocFlags alloc_flags = MemoryAllocFlags::None) : ImageBase(format, Usage, to_3d_size(image_size), Type, 1, 1, alloc_flags) {
-            static_assert(is_attachment_usage(Usage) || is_storage_usage(Usage), "Texture images must be initilized.");
-            static_assert(Type == ImageType::TwoD || is_storage_usage(Usage), "Only 2D images can be created empty.");
+            static_assert(is_attachment_usage(Usage) || is_storage_usage(Usage), "Texture images must be initilized");
+            static_assert(Type == ImageType::TwoD || is_storage_usage(Usage), "Only 2D images can be created empty");
         }
 
         Image(const ImageData& data) : ImageBase(Usage, Type, data) {
-            static_assert(is_texture_usage(Usage), "Only texture images can be initilized.");
+            static_assert(is_texture_usage(Usage), "Only texture images can be initilized");
         }
 
         template<ImageUsage U, typename = std::enable_if_t<is_compatible(U)>>

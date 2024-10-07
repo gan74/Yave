@@ -241,24 +241,24 @@ class [[nodiscard]] Result : NonCopyable {
 
         inline auto&& ok_object() {
             if(is_error()) {
-                y_fatal("Result is an error.");
+                y_fatal("Result is an error");
             }
             return _value;
         }
 
         inline auto&& err_object() {
             if(is_ok()) {
-                y_fatal("Result is not an error.");
+                y_fatal("Result is not an error");
             }
             return _error;
         }
 
         inline const_value_type_ref unwrap() const {
-            return expected("Unwrap failed.");
+            return expected("Unwrap failed");
         }
 
         inline value_type_ref unwrap() {
-            return expected("Unwrap failed.");
+            return expected("Unwrap failed");
         }
 
         inline const_value_type_ref expected(const char* err_msg) const {
@@ -279,14 +279,14 @@ class [[nodiscard]] Result : NonCopyable {
             /* nothing */
         }
 
-        inline const_value_type_ref or_throw_msg(const char* err_msg = "Unwrap failed.") const {
+        inline const_value_type_ref or_throw_msg(const char* err_msg = "Unwrap failed") const {
             if(is_error()) {
                 y_throw_msg(err_msg);
             }
             return _value.get();
         }
 
-        inline value_type_ref or_throw_msg(const char* err_msg = "Unwrap failed.") {
+        inline value_type_ref or_throw_msg(const char* err_msg = "Unwrap failed") {
             if(is_error()) {
                 y_throw_msg(err_msg);
             }
@@ -309,14 +309,14 @@ class [[nodiscard]] Result : NonCopyable {
 
         inline const_error_type_ref error() const {
             if(is_ok()) {
-                y_fatal("Result is not an error.");
+                y_fatal("Result is not an error");
             }
             return _error.get();
         }
 
         inline error_type_ref error() {
             if(is_ok()) {
-                y_fatal("Result is not an error.");
+                y_fatal("Result is not an error");
             }
             return _error.get();
         }

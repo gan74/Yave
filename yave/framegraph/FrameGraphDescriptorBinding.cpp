@@ -91,7 +91,7 @@ Descriptor FrameGraphDescriptorBinding::create_descriptor(const FrameGraphFrameR
         default:
         break;
     }
-    /*return*/ y_fatal("Invalid descriptor.");
+    /*return*/ y_fatal("Invalid descriptor");
 }
 
 }

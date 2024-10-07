@@ -33,7 +33,7 @@ namespace math {
 template<typename T = float>
 class Quaternion {
 
-    static_assert(std::is_floating_point_v<T>, "Quaternion only support floating point types.");
+    static_assert(std::is_floating_point_v<T>, "Quaternion only support floating point types");
 
     public:
         enum Euler {

@@ -30,7 +30,7 @@ namespace yave {
 template<typename U>
 static void check_usage(U u) {
     if(u == U::None) {
-        y_fatal("Invalid resource usage.");
+        y_fatal("Invalid resource usage");
     }
 }
 

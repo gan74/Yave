@@ -54,10 +54,10 @@ static constexpr usize min_face_size = 8;
 
 static usize mipmap_count(usize size) {
     if(size % min_face_size) {
-        y_fatal("Minimum size does not divide image size.");
+        y_fatal("Minimum size does not divide image size");
     }
     if(size <= min_face_size) {
-        y_fatal("IBL probe is too small.");
+        y_fatal("IBL probe is too small");
     }
     return 1 + usize(std::floor(std::log2(size / min_face_size)));
 }
@@ -139,7 +139,7 @@ static void compute_probe(ProbeBase& probe, const Image<ImageUsage::TextureBit, 
     y_profile();
 
     if(probe.mipmaps() == 1) {
-        y_fatal("IBL probe is too small.");
+        y_fatal("IBL probe is too small");
     }
 
     auto mip_views = core::ScratchVector<ProbeBaseView>(probe.mipmaps());

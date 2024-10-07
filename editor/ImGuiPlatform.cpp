@@ -352,7 +352,7 @@ ImGuiPlatform* ImGuiPlatform::instance() {
 ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
     y_profile();
 
-    y_always_assert(_instance == nullptr, "ImGuiPlatform instance already exists.");
+    y_always_assert(_instance == nullptr, "ImGuiPlatform instance already exists");
     _instance = this;
 
     ImGui::CreateContext();
@@ -360,7 +360,7 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
     setup_style();
 
     auto& io = ImGui::GetIO();
-    y_always_assert(io.BackendPlatformUserData == nullptr, "ImGui already has a platform backend.");
+    y_always_assert(io.BackendPlatformUserData == nullptr, "ImGui already has a platform backend");
     io.BackendPlatformUserData = this;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
 
@@ -403,7 +403,7 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
 }
 
 ImGuiPlatform::~ImGuiPlatform() {
-    y_always_assert(_instance == this, "ImGuiPlatform instance has already been deleted.");
+    y_always_assert(_instance == this, "ImGuiPlatform instance has already been deleted");
 
     ImGui::DestroyContext();
     _instance = nullptr;
@@ -493,7 +493,7 @@ void ImGuiPlatform::close_window(PlatformWindow* window) {
     }
 
     if(window != _main_window.get()) {
-        y_fatal("Window not found.");
+        y_fatal("Window not found");
     }
 }
 

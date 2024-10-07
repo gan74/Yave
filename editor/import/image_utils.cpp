@@ -190,7 +190,7 @@ ImageData compute_mipmaps(const ImageData& image) {
     y_profile();
 
     if(image.size().z() != 1) {
-        log_msg("Unable to generate mipmaps: only one layer is supported.", Log::Error);
+        log_msg("Unable to generate mipmaps: only one layer is supported", Log::Error);
         return copy(image);
     }
 
@@ -200,7 +200,7 @@ ImageData compute_mipmaps(const ImageData& image) {
     const usize mip_count = ImageData::mip_count(image.size());
 
     if(image.format().is_block_format() || image.format().is_depth_format() || image.format().bit_per_pixel() != 8 * components) {
-        log_msg("Unable to generate mipmaps: format is not supported.", Log::Error);
+        log_msg("Unable to generate mipmaps: format is not supported", Log::Error);
         return copy(image);
     }
 

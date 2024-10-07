@@ -138,11 +138,11 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
         const ImDrawList* cmd_list = draw_data->CmdLists[c];
 
         if(cmd_list->IdxBuffer.Size + index_offset >= index_buffer.size()) {
-            y_fatal("Index buffer overflow.");
+            y_fatal("Index buffer overflow");
         }
 
         if(cmd_list->VtxBuffer.Size + vertex_offset >= vertex_buffer.size()) {
-            y_fatal("Vertex buffer overflow.");
+            y_fatal("Vertex buffer overflow");
         }
 
         std::copy(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Data + cmd_list->IdxBuffer.Size, &indices[index_offset]);

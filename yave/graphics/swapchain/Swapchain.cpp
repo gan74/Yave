@@ -135,7 +135,7 @@ static VkHandle<VkSurfaceKHR> create_surface(HINSTANCE_ instance, HWND_ handle) 
     vk_check(vkCreateWin32SurfaceKHR(vk_device_instance(), &create_info, vk_allocation_callbacks(), surface.get_ptr_for_init()));
 
     if(!has_wsi_support(surface)) {
-        y_fatal("No WSI support.");
+        y_fatal("No WSI support");
     }
     log_msg("Vulkan WSI supported!");
 
@@ -155,7 +155,7 @@ static VkSurfaceKHR create_surface(xcb_connection_t* connection, u32 window) {
     vk_check(vkCreateXcbSurfaceKHR(vk_device_instance(), &create_info, vk_allocation_callbacks(), &surface));
 
     if(!has_wsi_support(surface)) {
-        y_fatal("No WSI support.");
+        y_fatal("No WSI support");
     }
     log_msg("Vulkan WSI supported!");
 
@@ -229,7 +229,7 @@ bool Swapchain::build_swapchain() {
 
     const VkImageUsageFlagBits image_usage_flags = VkImageUsageFlagBits(SwapchainImageUsage & ~ImageUsage::SwapchainBit);
     if((capabilities.supportedUsageFlags & image_usage_flags) != image_usage_flags) {
-        y_fatal("Swapchain does not support required usage flags.");
+        y_fatal("Swapchain does not support required usage flags");
     }
 
     {

@@ -47,7 +47,7 @@ DeviceMemory& DeviceMemory::operator=(DeviceMemory&& other) {
 
 DeviceMemory::~DeviceMemory() {
     Y_TODO(right now we have to do device()->destroy to recycle memory properly, maybe we want to change that)
-    y_always_assert(is_null(), "DeviceMemory has not been freed.");
+    y_always_assert(is_null(), "DeviceMemory has not been freed");
 }
 
 bool DeviceMemory::is_null() const {

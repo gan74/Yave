@@ -180,7 +180,7 @@ void AssetStringifier::on_gui() {
 void AssetStringifier::stringify(AssetId id) {
     const auto data = asset_store().data(id);
     if(!data) {
-        log_msg("Unable to find asset.", Log::Error);
+        log_msg("Unable to find asset", Log::Error);
         clear();
         return;
     }
@@ -190,7 +190,7 @@ void AssetStringifier::stringify(AssetId id) {
     MeshData mesh;
     serde3::ReadableArchive arc(*data.unwrap());
     if(!arc.deserialize(mesh)) {
-        log_msg("Unable to load asset.", Log::Error);
+        log_msg("Unable to load asset", Log::Error);
         clear();
         return;
     }

@@ -26,7 +26,7 @@ namespace yave {
 
 AnimationChannel::AnimationChannel(const core::String& name, core::Vector<BoneKey>&& keys) : _name(name), _keys(keys) {
     if(_keys.is_empty()) {
-        y_fatal("Empty animation channel.");
+        y_fatal("Empty animation channel");
     }
 }
 

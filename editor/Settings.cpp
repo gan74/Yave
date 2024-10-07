@@ -35,13 +35,13 @@ Settings Settings::load() {
 
     auto file = io2::File::open(settings_file);
     if(!file) {
-        log_msg("Unable to open settings file.", Log::Error);
+        log_msg("Unable to open settings file", Log::Error);
         return settings;
     }
 
     serde3::ReadableArchive arc(file.unwrap());
     if(!arc.deserialize(settings)) {
-        log_msg("Unable to read settings file.", Log::Error);
+        log_msg("Unable to read settings file", Log::Error);
     }
 
     return settings;
@@ -50,12 +50,12 @@ Settings Settings::load() {
 void Settings::save() const {
     auto file = io2::File::create(settings_file);
     if(!file) {
-        log_msg("Unable to open settings file.", Log::Error);
+        log_msg("Unable to open settings file", Log::Error);
         return;
     }
     serde3::WritableArchive arc(file.unwrap());
     if(!arc.serialize(*this)) {
-        log_msg("Unable to write settings file.", Log::Error);
+        log_msg("Unable to write settings file", Log::Error);
     }
 }
 
