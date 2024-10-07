@@ -125,7 +125,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
 
 #if defined(USE_IBL)
         if(display_sky != 0) {
-            irradiance = in_envmap.Sample(view_dir).rgb;
+            irradiance = in_envmap.SampleLevel(view_dir, 0.0).rgb;
         }
 #endif
 
