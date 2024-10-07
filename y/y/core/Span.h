@@ -34,7 +34,7 @@ template<typename T>
 class MutableSpan {
 
     template<typename U>
-    static constexpr bool is_compat = std::is_constructible_v<T*, U>;
+    static constexpr bool is_compatible = std::is_constructible_v<T*, U>;
 
     template<typename C>
     using data_type = decltype(std::declval<C>().data());
@@ -66,7 +66,7 @@ class MutableSpan {
         inline constexpr MutableSpan(std::array<T, N>& arr) : _data(arr.data()), _size(N) {
         }
 
-        template<typename C, typename = std::enable_if_t<is_compat<data_type<C>>>>
+        template<typename C> requires(is_compatible<data_type<C>>)
         inline constexpr MutableSpan(C&& vec) : _data(vec.data()), _size(std::distance(vec.begin(), vec.end())) {
         }
 

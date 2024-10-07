@@ -45,7 +45,7 @@ float3 compute_sample_dir(float3 normal, uint i) {
 [shader("compute")]
 [numthreads(8, 8)]
 void main() {
-    const uint2 coord = semantics.global_id.xy;
+    const int2 coord = int2(semantics.global_id.xy);
     const uint2 size = image_size(in_depth);
 
     if(any(coord >= size)) {

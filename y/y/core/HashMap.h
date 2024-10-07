@@ -251,12 +251,12 @@ class FlatHashMap : Hasher, Equal {
                 inline IteratorBase(const IteratorBase&) = default;
                 inline IteratorBase& operator=(const IteratorBase&) = default;
 
-                template<bool C, typename T, typename = std::enable_if_t<(Const > C)>>
+                template<bool C, typename T> requires(Const > C)
                 inline IteratorBase(const IteratorBase<C, T>& other) {
                     operator=(other);
                 }
 
-                template<bool C, typename T, typename = std::enable_if_t<(Const > C)>>
+                template<bool C, typename T> requires(Const > C)
                 inline IteratorBase& operator=(const IteratorBase<C, T>& other) {
                     _index = other._index;
                     _parent = other._parent;

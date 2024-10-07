@@ -52,7 +52,7 @@ class Quaternion {
         inline constexpr Quaternion(const Vec<4, X>& q) : _quat(q.normalized()) {
         }
 
-        template<typename... Args, typename = std::enable_if_t<std::is_constructible_v<Vec<4, T>, Args...>>>
+        template<typename... Args> requires(std::is_constructible_v<Vec<4, T>, Args...>)
         inline constexpr /*explicit*/ Quaternion(Args&&... args) : _quat(Vec<4, T>(y_fwd(args)...).normalized()) {
         }
 
