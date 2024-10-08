@@ -11,7 +11,7 @@ namespace semantics {
 in float4 frag_coord : SV_Position;
 in uint instance_index : SV_InstanceID;
 in bool is_front_face : SV_IsFrontFace;
-in int vertex_index : SV_VertexID;
+in uint vertex_index : SV_VertexID;
 
 in uint3 global_id : SV_DispatchThreadID;
 in uint3 work_group_id : SV_GroupID;
