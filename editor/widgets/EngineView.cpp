@@ -50,7 +50,7 @@ static bool is_clicked() {
 }
 
 static auto standard_resolutions() {
-    static std::array<std::pair<const char*, math::Vec2ui>, 3> resolutions = {{
+    static const std::array<std::pair<const char*, math::Vec2ui>, 3> resolutions = {{
         {"1080p",   {1920, 1080}},
         {"1440p",   {2560, 1440}},
         {"4k",      {3840, 2160}}
@@ -497,7 +497,7 @@ void EngineView::draw_settings_menu() {
     if(ImGui::BeginMenu("AO")) {
         AOSettings& settings = _settings.renderer_settings.ao;
 
-        const char* methods[] = {"MiniEngine", "RTAO", "None"};
+        const char* methods[] = {"MiniEngine", "RTAO", "GTAO", "None"};
         if(ImGui::BeginCombo("Method", methods[usize(settings.method)])) {
             for(usize i = 0; i != sizeof(methods) / sizeof(methods[0]); ++i) {
                 const bool selected = usize(settings.method) == i;

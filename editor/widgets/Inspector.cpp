@@ -259,10 +259,6 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                 }
             }
 
-            if(false) {
-                _world->remove_component(_id, info.type_id);
-            }
-
             return _in_table;
         }
 

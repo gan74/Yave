@@ -664,7 +664,7 @@ void OrientationGizmo::draw() {
     if(_allow_dragging) {
         const float full_radius = orientation_gizmo_size + orientation_gizmo_end_point_width * 2.0f;
         if(_is_dragging || (center - mouse_pos).length() < full_radius) {
-            ImGui::GetWindowDrawList()->AddCircle(center, full_radius, orientation_gizmo_alpha | 0x00FFFFFF);
+            ImGui::GetWindowDrawList()->AddCircle(center, full_radius, orientation_gizmo_alpha | 0x00FFFFFF, 0, 1.5f);
             if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                 _is_dragging = true;
             }

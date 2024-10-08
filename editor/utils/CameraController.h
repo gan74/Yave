@@ -55,12 +55,16 @@ class HoudiniCameraController final : public CameraController {
     private:
         math::Vec3 _picked_pos;
         math::Vec3 _target_offset;
-        math::Vec3 _orig_pos;
+
+        math::Vec3 _cam_pos;
+        math::Vec3 _cam_fwd;
+        math::Vec3 _cam_rht;
+        math::Matrix4<> _cam_inv_viewproj;
 
         math::Vec2 _picking_uvs;
         math::Vec2 _cumulated_delta;
 
-        float _picking_depth;
+        float _picking_depth = 0.0f;
 
         bool _init = false;
         int _mouse_button = -1;
