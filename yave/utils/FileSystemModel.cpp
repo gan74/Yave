@@ -65,7 +65,7 @@ FileSystemModel::Result<bool> FileSystemModel::is_parent(std::string_view parent
     if(!f) {
         return core::Err();
     }
-    return core::Ok(f.unwrap().starts_with(par.unwrap()));
+    return core::Ok(f.unwrap().size() > par.unwrap().size() && f.unwrap().starts_with(par.unwrap()));
 }
 
 const FileSystemModel* FileSystemModel::local_filesystem() {
@@ -157,7 +157,7 @@ FileSystemModel::Result<> LocalFileSystemModel::for_each(std::string_view path, 
 
             info.file_size = info.type == EntryType::File ? dir.file_size() : 0;
 
-            func(info);
+            func(std::move(info));
         }
         return core::Ok();
     } catch(...) {
