@@ -93,7 +93,7 @@ class Chrono {
         u64 _counter;
         u64 _freq = 1;
 #else
-        std::chrono::time_point<std::chrono::high_resolution_clock> _time;
+        std::chrono::time_point<std::chrono::steady_clock> _time;
 #endif
 };
 

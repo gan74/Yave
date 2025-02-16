@@ -31,11 +31,12 @@ SOFTWARE.
 namespace editor {
 
 std::string_view asset_type_name(AssetType type, bool plural, bool lowercase) {
-    std::string_view name = asset_type_name(type);
-    if(plural) {
-        return fmt("{}{}{}", lowercase ? name[0] : std::toupper(name[0]), name.substr(1), name[name.size() - 1] == 'h' ? "es" : "s");
-    }
-    return name;
+    const std::string_view name = asset_type_name(type);
+    return fmt("{}{}{}",
+        lowercase ? name[0] : char(std::toupper(name[0])),
+        name.substr(1),
+        plural ? (name.back() == 'h' ? "es" : "s") : ""
+    );
 }
 
 

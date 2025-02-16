@@ -50,6 +50,10 @@ FileSystemView::FileSystemView(const FileSystemModel* fs, std::string_view name)
 
     set_filter_delegate([](const core::String&, EntryType) { return true; });
 
+    set_tooltip_delegate([](const core::String& name, EntryType) {
+        ImGui::TextUnformatted(name.data(), name.data() + name.size());
+    });
+
     set_filesystem(fs);
 }
 
@@ -322,7 +326,7 @@ void FileSystemView::on_gui() {
                         }
 
                         if(ImGui::BeginItemTooltip()) {
-                            ImGui::TextUnformatted(entry.name.data(), entry.name.data() + entry.name.size());
+                            _tooltip_delegate(entry.full_name, entry.type);
                             ImGui::EndTooltip();
                         }
 

@@ -93,6 +93,10 @@ class FileSystemView : public Widget {
             _need_update = true;
         }
 
+        template<typename F>
+        void set_tooltip_delegate(F&& f) {
+            _tooltip_delegate = y_fwd(f);
+        }
 
         template<typename F>
         void set_clicked_delegate(F&& f) {
@@ -128,8 +132,9 @@ class FileSystemView : public Widget {
 
         std::function<bool(const core::String&, EntryType)> _filter_delegate;
         std::function<UiIcon(const core::String&, EntryType)> _icon_delegate;
-        std::function<UiTexture(const core::String&, EntryType)> _preview_delegate = [](const core::String&, EntryType) { return UiTexture{}; };
+        std::function<void(const core::String&, EntryType)> _tooltip_delegate;
 
+        std::function<UiTexture(const core::String&, EntryType)> _preview_delegate = [](const core::String&, EntryType) { return UiTexture{}; };
         std::function<bool(const core::String&, EntryType)> _clicked_delegate   = [](const core::String&, EntryType) { return false; };
 
         std::function<void()> _on_update = [] {};

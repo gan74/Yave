@@ -77,6 +77,18 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _fs_vi
         return {};
     });
 
+    _fs_view.set_tooltip_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+        if(type == FileSystemModel::EntryType::File) {
+            if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
+                const std::string_view type_name = asset_type_name(asset_type(id), false, false);
+                ImGui::TextUnformatted(type_name.data(), type_name.data() + type_name.size());
+                ImGui::Separator();
+            }
+        }
+
+        ImGui::TextUnformatted(full_name.data(), full_name.data() + full_name.size());
+    });
+
 }
 
 AssetId ResourceBrowser::asset_id(std::string_view name) const {

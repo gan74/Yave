@@ -107,7 +107,7 @@ static void save_world_deferred() {
 
     auto file = io2::File::create(app_settings().editor.world_file);
     if(!file) {
-        log_msg("Unable to open file", Log::Error);
+        log_msg("Unable to open world file", Log::Error);
         return;
     }
 
@@ -125,7 +125,7 @@ static void load_world_deferred() {
 
     auto file = io2::File::open(app_settings().editor.world_file);
     if(!file) {
-        log_msg("Unable to open file", Log::Error);
+        log_msg("Unable to open world file", Log::Error);
         return;
     }
 

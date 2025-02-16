@@ -99,7 +99,7 @@ void Chrono::start() {
     QueryPerformanceCounter(&li);
     _counter = li.QuadPart;
 #else
-    _time = std::chrono::high_resolution_clock::now();
+    _time = std::chrono::steady_clock::now();
 #endif
 }
 
@@ -117,7 +117,7 @@ Duration Chrono::elapsed() const {
     return Duration::seconds(diff / double(_freq));
     //return Duration(diff / _freq, u32((double(diff) / _freq) * 1000000000.0));
 #else
-    const auto nanos = u64(std::chrono::duration_cast<Nano>(std::chrono::high_resolution_clock::now() - _time).count());
+    const auto nanos = u64(std::chrono::duration_cast<Nano>(std::chrono::steady_clock::now() - _time).count());
     return Duration(nanos / 1000000000, nanos % 1000000000);
 #endif
 }
