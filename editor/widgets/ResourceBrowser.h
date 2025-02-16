@@ -56,6 +56,8 @@ class ResourceBrowser : public Widget {
 
     private:
         void draw_import_menu();
+        void draw_path_bar();
+        core::Result<core::String> draw_path_bar_element(std::string_view path);
 
         FileSystemView _fs_view;
 

@@ -46,7 +46,7 @@ class FileSystemModel : NonCopyable {
             usize file_size = 0;
         };
 
-        using for_each_f = std::function<void(const EntryInfo&)>;
+        using for_each_f = std::function<void(EntryInfo)>;
 
         template<typename T = void>
         using Result = core::Result<T>;

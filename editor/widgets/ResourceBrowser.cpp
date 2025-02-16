@@ -132,10 +132,52 @@ void ResourceBrowser::on_gui() {
         ImGui::SameLine();
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
 
-        imgui::text_read_only("##currentpath", fmt("/{}", _fs_view.path()));
+        draw_path_bar();
     }
 
     _fs_view.draw_gui_inside();
+}
+
+
+void ResourceBrowser::draw_path_bar() {
+    ImGui::PushStyleColor(ImGuiCol_Button, math::Vec4());
+    const auto res = draw_path_bar_element(_fs_view.path());
+    ImGui::PopStyleColor();
+    if(res) {
+        _fs_view.set_path(res.unwrap());
+    }
+}
+
+core::Result<core::String> ResourceBrowser::draw_path_bar_element(std::string_view path) {
+    if(path.empty()) {
+        if(ImGui::Button("root")) {
+            return core::Ok(_fs_view.root_path());
+        }
+        ImGui::SameLine();
+        ImGui::TextUnformatted(ICON_FA_CHEVRON_RIGHT);
+        return core::Err();
+    }
+
+    const FileSystemModel* fs = _fs_view.filesystem();
+    if(const auto parent = fs->parent_path(path)) {
+        if(auto res = draw_path_bar_element(parent.unwrap())) {
+            return res;
+        }
+        ImGui::SameLine();
+
+        const usize parent_len = parent.unwrap().size();
+        const bool has_seperator = path[parent_len] == '/';
+        if(has_seperator) {
+            ImGui::TextUnformatted(ICON_FA_CHEVRON_RIGHT);
+            ImGui::SameLine();
+        }
+
+        const std::string_view filename = path.substr(has_seperator ? parent_len + 1 : parent_len);
+        if(ImGui::Button(fmt_c_str("{}", filename))) {
+            return core::Ok(core::String(path));
+        }
+    }
+    return core::Err();
 }
 
 }
