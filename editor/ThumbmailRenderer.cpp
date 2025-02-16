@@ -240,34 +240,42 @@ std::unique_ptr<ThumbmailRenderer::ThumbmailData> ThumbmailRenderer::schedule_re
     auto data = std::make_unique<ThumbmailData>();
     _render_thread.schedule([this, data = data.get(), id]() {
         const AssetType asset_type = _loader->store().asset_type(id).unwrap_or(AssetType::Unknown);
+        data->failed = true;
         switch(asset_type) {
-            case AssetType::Mesh: {
-                const auto ptr = _loader->load<StaticMesh>(id);
-                data->asset_ptr = ptr;
-                data->texture = render_object(ptr, device_resources()[DeviceResources::EmptyMaterial]);
-            } break;
+            case AssetType::Mesh:
+                if(const auto ptr = _loader->load<StaticMesh>(id)) {
+                    data->failed = false;
+                    data->asset_ptr = ptr;
+                    data->texture = render_object(ptr, device_resources()[DeviceResources::EmptyMaterial]);
+                }
+            break;
 
-            case AssetType::Image: {
-                const auto ptr = _loader->load<Texture>(id);
-                data->asset_ptr = ptr;
-                data->texture = render_texture(ptr);
-            } break;
+            case AssetType::Image:
+                if(const auto ptr = _loader->load<Texture>(id)) {
+                    data->failed = false;
+                    data->asset_ptr = ptr;
+                    data->texture = render_texture(ptr);
+                }
+            break;
 
-            case AssetType::Material: {
-                const auto ptr = _loader->load<Material>(id);
-                data->asset_ptr = ptr;
-                data->texture = render_object(device_resources()[DeviceResources::SphereMesh], ptr);
-            } break;
+            case AssetType::Material:
+                if(const auto ptr = _loader->load<Material>(id)) {
+                    data->failed = false;
+                    data->asset_ptr = ptr;
+                    data->texture = render_object(device_resources()[DeviceResources::SphereMesh], ptr);
+                }
+            break;
 
-            case AssetType::Prefab: {
-                const auto ptr = _loader->load<ecs::EntityPrefab>(id);
-                data->asset_ptr = ptr;
-                data->texture = render_prefab(ptr);
-            } break;
+            case AssetType::Prefab:
+                if(const auto ptr = _loader->load<ecs::EntityPrefab>(id)) {
+                    data->failed = false;
+                    data->asset_ptr = ptr;
+                    data->texture = render_prefab(ptr);
+                }
+            break;
 
             default:
-                data->failed = true;
-                log_msg(fmt("Unknown asset type {} for {}", asset_type, id.id()), Log::Error);
+                log_msg(fmt("Unknown asset type {} for {}", asset_type, stringify_id(id)), Log::Error);
             break;
         }
 
