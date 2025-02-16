@@ -62,10 +62,10 @@ namespace detail {
 template<typename T>
 struct Ok {
 
-    inline Ok(T&& t) : _value(std::move(t)) {
+    inline explicit Ok(T&& t) : _value(std::move(t)) {
     }
 
-    inline Ok(const T& t) : _value(t) {
+    inline explicit Ok(const T& t) : _value(t) {
     }
 
     inline const T& get() const {
@@ -83,10 +83,10 @@ struct Ok {
 template<typename T>
 struct Err {
 
-    inline Err(T&& t) : _err(std::move(t)) {
+    inline explicit Err(T&& t) : _err(std::move(t)) {
     }
 
-    inline Err(const T& t) : _err(t) {
+    inline explicit Err(const T& t) : _err(t) {
     }
 
     inline const T& get() const {
@@ -107,7 +107,7 @@ struct Ok<void> : NonCopyable {
     }
 
     template<typename T>
-    inline Ok(T&&) {
+    inline explicit Ok(T&&) {
     }
 
     inline void get() const {
@@ -121,7 +121,7 @@ struct Err<void> : NonCopyable {
     }
 
     template<typename T>
-    inline Err(T&&) {
+    inline explicit Err(T&&) {
     }
 
     inline void get() const {
