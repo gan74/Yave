@@ -149,7 +149,7 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
     if(fps) {
         // FPS
         const auto pitch = math::Quaternion<>::from_axis_angle(_cam_rht, _cumulated_delta.y() * settings.trackball_sensitivity);
-        const auto yaw = math::Quaternion<>::from_axis_angle(_cam_fwd.cross(_cam_rht), -_cumulated_delta.x() * settings.trackball_sensitivity);
+        const auto yaw = math::Quaternion<>::from_axis_angle(math::Vec3(0.0f, 0.0f, 1.0f), -_cumulated_delta.x() * settings.trackball_sensitivity);
         out_cam_fwd = yaw(pitch(_cam_fwd));
         out_cam_rht = yaw(_cam_rht);
     } else {
@@ -185,7 +185,7 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
         out_cam_rht.normalize();
     }
 
-    const auto view = math::look_at(out_cam_pos, out_cam_pos + out_cam_fwd, out_cam_fwd.cross(out_cam_rht));
+    const auto view = math::look_at(out_cam_pos, out_cam_pos + out_cam_fwd, out_cam_fwd.cross(out_cam_rht).normalized());
     if(math::all_finite(view)) {
         camera.set_view(view);
     }
