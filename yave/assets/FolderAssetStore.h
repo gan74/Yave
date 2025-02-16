@@ -41,7 +41,7 @@ class FolderAssetStore final : NonMovable, public AssetStore {
         public:
 
             core::String filename(std::string_view path) const override;
-            core::String  join(std::string_view path, std::string_view name) const override;
+            core::String join(std::string_view path, std::string_view name) const override;
 
             Result<core::String> current_path() const override;
             Result<core::String> parent_path(std::string_view path) const override;

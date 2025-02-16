@@ -39,7 +39,7 @@ SOFTWARE.
 
 #include <y/core/ScratchPad.h>
 
-#define Y_VK_CMD  do {} while(false);
+#define Y_VK_CMD    do {} while(false);
 
 namespace yave {
 
