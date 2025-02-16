@@ -139,7 +139,7 @@ static void fill_world(ecs::EntityWorld& world) {
 }
 
 static math::Transform<> center_to_camera(const AABB& box) {
-    const float scale = 0.22f / std::max(math::epsilon<float>, box.radius());
+    const float scale = 0.25f / std::max(math::epsilon<float>, box.radius());
     const float angle = (box.extent().x() > box.extent().y() ? 90.0f : 0.0f) + 30.0f;
     const auto rot = math::Quaternion<>::from_euler(0.0f, math::to_rad(angle), 0.0f);
     const math::Vec3 tr = rot(box.center() * scale);

@@ -81,12 +81,6 @@ class FileSystemModel : NonCopyable {
 };
 
 
-class SearchableFileSystemModel : public FileSystemModel {
-    public:
-        virtual Result<core::Vector<core::String>> search(std::string_view pattern) const = 0;
-};
-
-
 class LocalFileSystemModel : public FileSystemModel {
     public:
         Result<core::String> current_path() const override;

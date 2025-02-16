@@ -56,8 +56,6 @@ static ImageData load_font() {
     {
         config.MergeMode = true;
         config.PixelSnapH = true;
-        config.OversampleV = 2;
-        config.OversampleH = 2;
         config.FontDataOwnedByAtlas = false;
     }
 
