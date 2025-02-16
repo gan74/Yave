@@ -74,6 +74,8 @@ struct AssetId {
 };
 
 core::String stringify_id(AssetId id);
+core::Result<AssetId> parse_id(std::string_view text);
+AssetId make_random_id();
 
 static_assert(sizeof(AssetId) == sizeof(i64));
 static_assert(AssetId() == AssetId::invalid_id());

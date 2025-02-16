@@ -23,13 +23,35 @@ SOFTWARE.
 #include "AssetId.h"
 
 #include <y/core/String.h>
+#include <y/concurrent/SpinLock.h>
 
 #include <y/utils/format.h>
 
+#include <random>
+
 namespace yave {
+
 
 core::String stringify_id(AssetId id) {
     return fmt_to_owned("{:016x}", id.id());
+}
+
+core::Result<AssetId> parse_id(std::string_view text) {
+    u64 uid = 0;
+    if(std::from_chars(text.data(), text.data() + text.size(), uid, 16).ec != std::errc()) {
+        return core::Err();
+    }
+    return core::Ok(AssetId::from_id(uid));
+}
+
+AssetId make_random_id() {
+    static concurrent::SpinLock lock;
+    static std::random_device r;
+    static std::minstd_rand rng(r());
+    static std::uniform_int_distribution<u64> distr;
+
+    const auto _ = std::unique_lock(lock);
+    return AssetId::from_id(distr(rng));
 }
 
 }
