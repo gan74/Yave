@@ -33,8 +33,8 @@ class TextureLibrary final : public DescriptorArray {
     public:
         TextureLibrary();
 
-        u32 add_texture(const TextureView& tex);
-        void remove_texture(const TextureView& tex);
+        u32 add_texture(const TextureView& tex, SamplerType sampler = SamplerType::LinearRepeatAniso);
+        void remove_texture(const TextureView& tex, SamplerType sampler = SamplerType::LinearRepeatAniso);
 };
 
 }

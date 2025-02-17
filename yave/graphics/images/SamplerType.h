@@ -30,6 +30,8 @@ enum class SamplerType {
     LinearRepeat,
     LinearClamp,
 
+    LinearRepeatAniso,
+
     PointRepeat,
     PointClamp,
 
@@ -40,10 +42,21 @@ inline bool is_linear(SamplerType sampler) {
     switch(sampler) {
         case SamplerType::LinearRepeat:
         case SamplerType::LinearClamp:
+        case SamplerType::LinearRepeatAniso:
             return true;
 
         default:
             return false;
+    }
+}
+
+inline float sampler_anisotropy(SamplerType sampler) {
+    switch(sampler) {
+        case SamplerType::LinearRepeatAniso:
+            return 16.0f;
+
+        default:
+            return 1.0f;
     }
 }
 

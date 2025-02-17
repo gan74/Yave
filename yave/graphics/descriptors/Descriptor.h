@@ -80,6 +80,7 @@ class Descriptor {
     [[maybe_unused]]
     static bool is_sampler_compatible(ImageFormat format, SamplerType sampler) {
         switch(sampler) {
+            case SamplerType::LinearRepeatAniso:
             case SamplerType::LinearClamp:
             case SamplerType::LinearRepeat:
             case SamplerType::Shadow:

@@ -83,6 +83,7 @@ bool try_enable_extension(core::Vector<const char*>& exts, const char* name, con
 VkSamplerAddressMode vk_address_mode(SamplerType type) {
     switch(type) {
         case SamplerType::LinearRepeat:
+        case SamplerType::LinearRepeatAniso:
         case SamplerType::PointRepeat:
             return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
@@ -105,6 +106,7 @@ VkFilter vk_filter(SamplerType type) {
         case SamplerType::Shadow:
         case SamplerType::LinearRepeat:
         case SamplerType::LinearClamp:
+        case SamplerType::LinearRepeatAniso:
             return VK_FILTER_LINEAR;
 
         default:
@@ -121,6 +123,7 @@ VkSamplerMipmapMode vk_mip_filter(SamplerType type) {
         case SamplerType::Shadow:
         case SamplerType::LinearRepeat:
         case SamplerType::LinearClamp:
+        case SamplerType::LinearRepeatAniso:
             return VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
         default:
@@ -143,7 +146,7 @@ VkHandle<VkSampler> create_sampler(SamplerType type) {
         const VkFilter filter = vk_filter(type);
         const VkSamplerMipmapMode mip_filter = vk_mip_filter(type);
 
-        const float anisotropy = 1.0f;
+        const float anisotropy = sampler_anisotropy(type);
 
         create_info.addressModeU = address_mode;
         create_info.addressModeV = address_mode;

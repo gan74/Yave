@@ -52,7 +52,7 @@ std::unique_ptr<PhysicalDevice> physical_device;
 
 DeviceProperties device_properties;
 
-std::array<Uninitialized<Sampler>, 5> samplers;
+std::array<Uninitialized<Sampler>, 6> samplers;
 
 Uninitialized<DeviceMemoryAllocator> allocator;
 Uninitialized<LifetimeManager> lifetime_manager;
