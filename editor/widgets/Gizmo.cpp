@@ -648,7 +648,7 @@ void OrientationGizmo::draw() {
         math::Vec4 v;
         v[i] = orientation_gizmo_size + orientation_gizmo_end_point_width;
         const math::Vec2 axis = ((view_proj * v).to<2>() * 0.5f + 0.5f) * math::Vec2(ratio, 1.0f);
-        const math::Vec2 end = center + axis;
+        const math::Vec2 end = center + axis.normalized() * orientation_gizmo_size;
 
         if(axis.length() > orientation_gizmo_end_point_width) {
             const math::Vec2 dir = axis.normalized();
@@ -675,7 +675,7 @@ void OrientationGizmo::draw() {
 
     if(_is_dragging && _allow_dragging) {
         const math::Vec2 raw_mouse_delta = math::Vec2(ImGui::GetIO().MouseDelta);
-        if(raw_mouse_delta.length() > 1.0f) {
+        if(raw_mouse_delta.length2() > 0.0f) {
             const math::Vec2 mouse_delta = raw_mouse_delta / (-0.5f * math::pi<float> * orientation_gizmo_size);
             const math::Vec3 cam_pos = camera.position();
             const math::Vec3 cam_fwd = camera.forward();
