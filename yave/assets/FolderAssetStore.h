@@ -98,11 +98,10 @@ class FolderAssetStore final : NonMovable, public AssetStore {
         Result<AssetType> asset_type(AssetId id) const override;
 
     private:
-        AssetId next_id();
+        AssetId generate_id();
         void rebuild_id_map() const;
 
         core::String tree_file_name() const;
-        core::String next_id_file_name() const;
         core::String asset_data_file_name(AssetId id) const;
         core::String asset_desc_file_name(AssetId id) const;
 
@@ -120,7 +119,6 @@ class FolderAssetStore final : NonMovable, public AssetStore {
 
         core::String _root;
 
-        u64 _next_id = 0;
         std::set<core::String> _folders;
         std::map<core::String, AssetData> _assets;
 

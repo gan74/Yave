@@ -584,6 +584,8 @@ void Inspector::on_gui() {
 
 
     {
+        ImGui::BeginGroup();
+
         core::String name = component->name();
         if(imgui::text_input("Name##name", name)) {
             component->set_name(name);
@@ -596,7 +598,6 @@ void Inspector::on_gui() {
             _locked = locked ? selected : ecs::EntityId();
         }
 
-
         ImGui::SameLine();
 
         ImGui::TextDisabled("(?)");
@@ -604,6 +605,14 @@ void Inspector::on_gui() {
             ImGui::TextUnformatted(fmt_c_str("ID = {:08x}:{:08x}",id.index(), id.version()));
             ImGui::EndTooltip();
         }
+
+        ImGui::EndGroup();
+    }
+
+    if(component->is_prefab()) {
+        ImGui::BeginGroup();
+        imgui::text_read_only("Prefab", fmt("ID = {:08x}:{:08x}",id.index(), id.version()));
+        ImGui::EndGroup();
     }
 
     InspectorPanelInspector inspector(id, component, &world);

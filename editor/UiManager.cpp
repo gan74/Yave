@@ -25,6 +25,7 @@ SOFTWARE.
 #include <editor/Settings.h>
 #include <editor/utils/ui.h>
 #include <editor/widgets/PerformanceMetrics.h>
+#include <yave/graphics/device/Instance.h>
 
 #include <yave/assets/AssetLoader.h>
 #include <y/core/HashMap.h>
@@ -198,6 +199,10 @@ void UiManager::draw_menu_bar() {
 
         if(ImGui::GetIO().WantCaptureKeyboard) {
             ImGui::TextUnformatted(ICON_FA_KEYBOARD);
+        }
+
+        if(instance_params().validation_layers) {
+            ImGui::TextColored(imgui::error_text_color, "(Debug layers enabled)");
         }
 
         for(const EditorAction* action : _actions) {

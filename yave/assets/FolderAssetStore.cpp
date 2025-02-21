@@ -382,11 +382,6 @@ core::String FolderAssetStore::tree_file_name() const {
     return fs->join(_root, ".tree");
 }
 
-core::String FolderAssetStore::next_id_file_name() const {
-    const auto* fs = FileSystemModel::local_filesystem();
-    return fs->join(_root, ".next_id");
-}
-
 AssetStore::Result<FolderAssetStore::AssetDesc> FolderAssetStore::load_desc(AssetId id) const {
     y_profile();
 
@@ -478,7 +473,7 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::str
         return core::Err(ErrorType::NameAlreadyExists);
     }
 
-    const AssetId id = next_id();
+    const AssetId id = generate_id();
     const core::String data_file_name = asset_data_file_name(id);
 
     {
@@ -636,10 +631,14 @@ AssetStore::Result<AssetType> FolderAssetStore::asset_type(AssetId id) const {
 }
 
 
-AssetId FolderAssetStore::next_id() {
+AssetId FolderAssetStore::generate_id() {
     const auto lock = std::unique_lock(_lock);
 
-    return AssetId::from_id(_next_id++);
+    AssetId id;
+    do {
+        id = make_random_id();
+    } while(!_ids->contains(id));
+    return id;
 }
 
 
@@ -852,7 +851,6 @@ FolderAssetStore::Result<> FolderAssetStore::reload_all() {
 
     const auto lock = std::unique_lock(_lock);
 
-    _next_id = u64(std::time(nullptr)) << 32;
     load_tree().unwrap();
     load_asset_descs().unwrap();
 

@@ -52,7 +52,7 @@ constexpr T next_pow_of_2(T n) {
 
 template<typename T>
 constexpr bool is_pow_of_2(T n) {
-    return n == (T(1) << log2ui(n));
+    return (n & (n - 1)) == 0;
 }
 
 
