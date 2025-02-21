@@ -61,6 +61,10 @@ editor_action(ICON_FA_FOLDER " Load", [] { load_world(); }, "File")
 editor_action_shortcut("New", Key::Ctrl + Key::N, [] { new_world(); }, "File")
 
 
+editor_action_shortcut(ICON_FA_UNDO " Undo", Key::Ctrl + Key::Z, [] { undo_stack().undo(); })
+editor_action_shortcut(ICON_FA_REDO " Redo", Key::Ctrl + Key::Y, [] { undo_stack().redo(); })
+
+
 
 namespace application {
 std::unique_ptr<UndoStack> undo_stack;

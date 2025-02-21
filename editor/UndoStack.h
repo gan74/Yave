@@ -35,13 +35,13 @@ class UndoStack : NonMovable {
         struct Item {
             core::String name;
             ecs::EntityId id;
-            std::function<void(EditorWorld&)> undo;
-            std::function<void(EditorWorld&)> redo;
+            std::function<void(EditorWorld&, ecs::EntityId)> undo;
+            std::function<void(EditorWorld&, ecs::EntityId)> redo;
         };
 
         UndoStack();
 
-        void add(Item item);
+        void push(Item item);
 
         void undo();
         void redo();

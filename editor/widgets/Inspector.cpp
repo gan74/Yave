@@ -23,6 +23,7 @@ SOFTWARE.
 #include "Inspector.h"
 
 #include <editor/EditorWorld.h>
+#include <editor/UndoStack.h>
 #include <editor/widgets/AssetSelector.h>
 #include <editor/widgets/EntitySelector.h>
 #include <editor/components/EditorComponent.h>
@@ -41,6 +42,9 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
+
+#include <type_traits>
+
 
 namespace editor {
 
@@ -62,25 +66,94 @@ static core::String clean_type_name(std::string_view name) {
     return cleaned;
 }
 
-class SetterInspectorBase : public ecs::ComponentInspector {
+template<typename T>
+class SetterInspector final : public ecs::ComponentInspector {
     public:
-        SetterInspectorBase(const core::String& name, ecs::ComponentTypeIndex type) :
+        SetterInspector(const core::String& name, ecs::ComponentTypeIndex type, T value) :
                 _name(name),
-                _type(type) {
+                _type(type),
+                _value(value) {
+        }
+
+        ~SetterInspector() {
+            y_debug_assert(_value_set);
         }
 
         bool inspect_component_type(ecs::ComponentRuntimeInfo info, bool) override {
             return _is_type = (info.type_id == _type);
         }
 
-        void inspect(const core::String&, math::Transform<>&)                           override {}
-        void inspect(const core::String&, math::Vec3&, Vec3Role)                        override {}
-        void inspect(const core::String&, float&, FloatRole)                            override {}
-        void inspect(const core::String&, float&, float, float, FloatRole)              override {}
-        void inspect(const core::String&, u32&, u32)                                    override {}
-        void inspect(const core::String&, bool&)                                        override {}
-        void inspect(const core::String&, GenericAssetPtr&)                             override {}
-        void inspect(const core::String&, ecs::EntityId&, ecs::ComponentTypeIndex)      override {}
+        void inspect(const core::String& name, math::Transform<>& tr) override {
+            if constexpr(std::is_same_v<T, math::Transform<>>) {
+                if(is_property(name)) {
+                    tr = _value;
+                    _value_set = true;
+                }
+            }
+        }
+
+        void inspect(const core::String& name, math::Vec3& v, Vec3Role) override {
+            if constexpr(std::is_same_v<T, math::Vec3>) {
+                if(is_property(name)) {
+                    v = _value;
+                    _value_set = true;
+                }
+            }
+        }
+
+        void inspect(const core::String& name, float& f, FloatRole) override {
+            if constexpr(std::is_same_v<T, float>) {
+                if(is_property(name)) {
+                    f = _value;
+                    _value_set = true;
+                }
+            }
+        }
+
+        void inspect(const core::String& name, float& f, float, float, FloatRole) override {
+            if constexpr(std::is_same_v<T, float>) {
+                if(is_property(name)) {
+                    f = _value;
+                    _value_set = true;
+                }
+            }
+        }
+
+        void inspect(const core::String& name, u32& u, u32) override {
+            if constexpr(std::is_same_v<T, u32>) {
+                if(is_property(name)) {
+                    u = _value;
+                    _value_set = true;
+                }
+            }
+        }
+
+        void inspect(const core::String& name, bool& b) override {
+            if constexpr(std::is_same_v<T, bool>) {
+                if(is_property(name)) {
+                    b = _value;
+                    _value_set = true;
+                }
+            }
+        }
+
+        void inspect(const core::String& name, GenericAssetPtr& p) override {
+            if constexpr(std::is_same_v<T, GenericAssetPtr>) {
+                if(is_property(name)) {
+                    p = _value;
+                    _value_set = true;
+                }
+            }
+        }
+
+        void inspect(const core::String& name, ecs::EntityId& id, ecs::ComponentTypeIndex) override {
+            if constexpr(std::is_same_v<T, ecs::EntityId>) {
+                if(is_property(name)) {
+                    id = _value;
+                    _value_set = true;
+                }
+            }
+        }
 
     protected:
         bool is_property(const core::String& name) const {
@@ -90,32 +163,19 @@ class SetterInspectorBase : public ecs::ComponentInspector {
     private:
         core::String _name;
         ecs::ComponentTypeIndex _type = {};
+        T _value;
+
+        bool _value_set = false;
         bool _is_type = false;
 };
 
 static void id_selector(ecs::EntityId& property_id, const core::String& name, ecs::EntityId entity_id, ecs::ComponentTypeIndex comp_type, ecs::ComponentTypeIndex target_type) {
-    class IdSetterInspector : public SetterInspectorBase {
-        public:
-            IdSetterInspector(ecs::EntityId id, const core::String& name, ecs::ComponentTypeIndex type) :
-                    SetterInspectorBase(name, type), _id(id) {
-            }
-
-            void inspect(const core::String& name, ecs::EntityId& id, ecs::ComponentTypeIndex) override {
-                if(is_property(name)) {
-                    id = _id;
-                }
-            }
-
-        private:
-            ecs::EntityId _id;
-    };
-
     bool browse = false;
     imgui::id_selector(property_id, current_world(), target_type, &browse);
     if(browse) {
         add_child_widget<EntitySelector>(target_type)->set_selected_callback(
             [=](ecs::EntityId new_id) {
-                IdSetterInspector setter(new_id, name, comp_type);
+                SetterInspector<ecs::EntityId> setter(name, comp_type, new_id);
                 current_world().inspect_components(entity_id, &setter);
                 return true;
             }
@@ -125,22 +185,6 @@ static void id_selector(ecs::EntityId& property_id, const core::String& name, ec
 
 template<typename T>
 static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, ecs::EntityId id, ecs::ComponentTypeIndex comp_type) {
-    class AssetSetterInspector : public SetterInspectorBase {
-        public:
-            AssetSetterInspector(const AssetPtr<T>& ptr, const core::String& name, ecs::ComponentTypeIndex type) :
-                    SetterInspectorBase(name, type), _ptr(ptr) {
-            }
-
-            void inspect(const core::String& name, GenericAssetPtr& p) override {
-                if(is_property(name)) {
-                    p = _ptr;
-                }
-            }
-
-        private:
-            AssetPtr<T> _ptr;
-    };
-
     y_always_assert(ptr.matches<T>(), "AssetPtr doesn't match given type");
 
     bool clear = false;
@@ -149,7 +193,7 @@ static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, e
         add_child_widget<AssetSelector>(type)->set_selected_callback(
             [=](AssetId asset) {
                 if(const auto loaded = asset_loader().load_res<T>(asset)) {
-                    AssetSetterInspector setter(loaded.unwrap(), name, comp_type);
+                    SetterInspector<GenericAssetPtr> setter(name, comp_type, loaded.unwrap());
                     current_world().inspect_components(id, &setter);
                 }
                 return true;
@@ -551,13 +595,89 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().FramePadding.x * 2.0f);
         }
 
-    private:
-        bool _in_table = false;
+
         ecs::EntityId _id;
         EditorComponent* _editor = nullptr;
         EditorWorld* _world = nullptr;
         ecs::ComponentTypeIndex _type = {};
+
+
+        bool _in_table = false;
 };
+
+
+class UndoRedoInspector final : public InspectorPanelInspector {
+    public:
+        template<typename... Args>
+        UndoRedoInspector(Args&&... args) : InspectorPanelInspector(y_fwd(args)...) {
+        }
+
+        void inspect(const core::String& name, math::Transform<>& tr) override {
+            const auto _ = check_changed(name, tr);
+            InspectorPanelInspector::inspect(name, tr);
+        }
+
+        void inspect(const core::String& name, math::Vec3& v, ecs::ComponentInspector::Vec3Role role) override {
+            const auto _ = check_changed(name, v);
+            InspectorPanelInspector::inspect(name, v, role);
+        }
+
+        void inspect(const core::String& name, float& f, float min, float max, ecs::ComponentInspector::FloatRole role) override {
+            const auto _ = check_changed(name, f);
+            InspectorPanelInspector::inspect(name, f, min, max, role);
+        }
+
+        void inspect(const core::String& name, u32& u, u32 max) override {
+            const auto _ = check_changed(name, u);
+            InspectorPanelInspector::inspect(name, u, max);
+        }
+
+        void inspect(const core::String& name, bool& b) override {
+            const auto _ = check_changed(name, b);
+            InspectorPanelInspector::inspect(name, b);
+        }
+
+        void inspect(const core::String& name, ecs::EntityId& id, ecs::ComponentTypeIndex type) override {
+            const auto _ = check_changed(name, id);
+            InspectorPanelInspector::inspect(name, id, type);
+        }
+
+        void inspect(const core::String& name, GenericAssetPtr& p) override {
+            const auto _ = check_changed(name, p);
+            InspectorPanelInspector::inspect(name, p);
+        }
+
+    private:
+        template<typename T>
+        auto check_changed(const core::String& name, T& t) {
+            return ScopeGuard([this, name, ptr = &t, value = t] {
+                static_assert(!std::is_reference_v<decltype(value)>);
+                const T& new_value = *ptr;
+                if(new_value != value) {
+                    core::String item_name;
+                    if constexpr(is_formattable<T>) {
+                        fmt_into(item_name, "{}.{} changed ({} -> {})", _world->component_type_name(_type), name, value, new_value);
+                    } else {
+                        fmt_into(item_name, "{}.{} changed", _world->component_type_name(_type), name);
+                    }
+                    undo_stack().push({
+                        std::move(item_name),
+                        _id,
+                        [name, value, type = _type](EditorWorld& world, ecs::EntityId id) {
+                            SetterInspector<T> setter(name, type, value);
+                            world.inspect_components(id, &setter);
+                        },
+                        [name, new_value, type = _type](EditorWorld& world, ecs::EntityId id) {
+                            SetterInspector<T> setter(name, type, new_value);
+                            world.inspect_components(id, &setter);
+                        },
+                    });
+                }
+            });
+        }
+};
+
+
 
 
 
@@ -615,7 +735,8 @@ void Inspector::on_gui() {
         ImGui::EndGroup();
     }
 
-    InspectorPanelInspector inspector(id, component, &world);
+
+    UndoRedoInspector inspector(id, component, &world);
     world.inspect_components(id, &inspector);
 
 
