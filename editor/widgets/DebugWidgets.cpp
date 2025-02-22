@@ -36,7 +36,6 @@ SOFTWARE.
 #include <y/core/Chrono.h>
 
 #include <editor/utils/ui.h>
-#include <editor/utils/imp.h>
 
 #include <y/utils/format.h>
 
@@ -396,23 +395,6 @@ class UndoStackDebug : public Widget {
                 }
 
                 ImGui::EndTable();
-            }
-        }
-};
-
-
-class ImpDebug : public Widget {
-    editor_widget(ImpDebug, "View", "Debug")
-
-    public:
-        ImpDebug() : Widget("IMP debug") {
-        }
-
-    protected:
-        void on_gui() override {
-            if(auto _ = imp::header("header", {{ImGuiCol_CheckMark, 0xFF00FF00}})) {
-                bool checked = true;
-                imp::checkbox("oof", checked, {{ImGuiCol_Text, 0xFF0000FF}});
             }
         }
 };
