@@ -24,6 +24,7 @@ SOFTWARE.
 #include <editor/EditorWorld.h>
 #include <editor/utils/memory.h>
 #include <editor/ThumbmailRenderer.h>
+#include <editor/UndoStack.h>
 
 #include <yave/scene/SceneView.h>
 #include <yave/graphics/device/MeshAllocator.h>
@@ -364,6 +365,40 @@ class RaytracingDebug : public Widget {
 };
 
 
+class UndoStackDebug : public Widget {
+
+    editor_widget(UndoStackDebug)
+
+    public:
+        UndoStackDebug() : Widget("Undo stack") {
+        }
+
+        void on_gui() override {
+            const auto items = undo_stack().items();
+            const usize top = undo_stack().stack_top();
+
+            ImGui::Text("%u items in stack", u32(items.size()));
+
+            if(ImGui::BeginTable("##undostack", 2, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV)) {
+                ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableSetupColumn("Entity ID", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableHeadersRow();
+                for(usize i = 0; i != items.size(); ++i) {
+                    const usize index = items.size() - i - 1;
+                    const auto& item = items[index];
+                    const bool is_current =  index + 1 == top;
+
+                    imgui::table_begin_next_row();
+                    ImGui::Selectable(item.name.data(), is_current, ImGuiSelectableFlags_SpanAllColumns);
+
+                    ImGui::TableNextColumn();
+                    ImGui::Selectable(fmt_c_str("{:#08x}", item.id.index()));
+                }
+
+                ImGui::EndTable();
+            }
+        }
+};
 
 
 class ImpDebug : public Widget {

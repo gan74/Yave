@@ -311,11 +311,12 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             y_defer(ImGui::PopID());
 
             auto [pos, rot, scale] = tr.decompose();
+            bool changed = false;
 
             // position
             {
                 begin_property_row("Position");
-                imgui::position_input("##position", pos);
+                changed |= imgui::position_input("##position", pos);
             }
 
 
@@ -374,6 +375,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                     angle = to_rad(angle);
                     euler = angle;
                     rot = math::Quaternion<>::from_euler(angle);
+                    changed = true;
                 }
             }
 
@@ -384,6 +386,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                 float scalar_scale = scale.dot(math::Vec3(1.0f / 3.0f));
                 if(ImGui::DragFloat("##scale", &scalar_scale, 0.1f, 0.0f, 0.0f, "%.3f")) {
                     scale = std::max(0.001f, scalar_scale);
+                    changed = true;
                 }
 
                 const bool is_uniform = (scale.max_component() - scale.min_component()) <= 2 * math::epsilon<float>;
@@ -398,7 +401,9 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                 }
             }
 
-            tr = math::Transform<>(pos, rot, scale);
+            if(changed) {
+                tr = math::Transform<>(pos, rot, scale);
+            }
         }
 
         void inspect(const core::String& name, math::Vec3& v, Vec3Role role) override {
