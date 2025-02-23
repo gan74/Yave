@@ -29,6 +29,7 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 
 #include <editor/utils/ui.h>
+#include <editor/utils/entities.h>
 
 #include <yave/utils/DirectDraw.h>
 
@@ -147,30 +148,6 @@ static bool is_inside(core::Span<math::Vec2> pts, const math::Vec2& p) {
     return true;
 }
 
-static void move_recursive(EditorWorld& world, ecs::EntityId id, math::Transform<> old_parent_transform, math::Transform<> new_parent_transform) {
-    if(TransformableComponent* component = world.component_mut<TransformableComponent>(id)) {
-        const math::Transform<> tr = component->transform();
-        component->set_transform(new_parent_transform * old_parent_transform.inverse() * tr);
-        old_parent_transform = tr;
-        new_parent_transform = component->transform();
-    }
-
-    for(const ecs::EntityId child : world.children(id)) {
-        move_recursive(world, child, old_parent_transform, new_parent_transform);
-    }
-}
-
-
-static void undo_enabled_move_rec(core::String name, ecs::EntityId id, math::Transform<> old_transform, math::Transform<> new_transform) {
-    static const auto undo_id = UndoStack::generate_static_id();
-    undo_stack().push(
-        std::move(name),
-        [=](EditorWorld& w) { move_recursive(w, id, new_transform, old_transform); },
-        [=](EditorWorld& w) { move_recursive(w, id, old_transform, new_transform); },
-        undo_id,
-        true
-    );
-}
 
 
 GizmoBase::GizmoBase(SceneView* view) : _scene_view(view) {
@@ -325,11 +302,9 @@ void TranslationGizmo::draw() {
 
 
     auto set_position = [&](const math::Vec3& pos) {
-        y_profile_zone("move entities");
-        const math::Transform<> old_transform = transformable->transform();
-        math::Transform<> new_transform = old_transform;
+        math::Transform<> new_transform = transformable->transform();
         new_transform.position() = pos;
-        undo_enabled_move_rec("Entity moved", selected, old_transform, new_transform);
+        undo_enabled_move_recursive(selected, new_transform);
     };
 
 
@@ -548,10 +523,9 @@ void RotationGizmo::draw() {
 
 
     auto set_rotation = [transformable, selected, &world](const math::Quaternion<>& quat) {
-        const math::Transform<> old_transform = transformable->transform();
-        const auto [obj_pos, obj_rot, obj_scale] = old_transform.decompose();
+        const auto [obj_pos, obj_rot, obj_scale] = transformable->transform().decompose();
         const math::Transform<> new_transform(obj_pos, quat * obj_rot, obj_scale);
-        undo_enabled_move_rec("Entity rotated", selected, old_transform, new_transform);
+        undo_enabled_move_recursive(selected, new_transform);
     };
 
 

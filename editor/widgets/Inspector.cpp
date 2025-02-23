@@ -29,6 +29,7 @@ SOFTWARE.
 #include <editor/components/EditorComponent.h>
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
+#include <editor/utils/entities.h>
 
 #include <yave/ecs/ComponentInspector.h>
 #include <yave/assets/AssetLoader.h>
@@ -708,7 +709,7 @@ void Inspector::on_gui() {
 
         core::String name = component->name();
         if(imgui::text_input("Name##name", name)) {
-            component->set_name(name);
+            undo_enabled_rename(id, name);
         }
 
         ImGui::SameLine();
