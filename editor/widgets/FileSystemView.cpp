@@ -216,7 +216,7 @@ void FileSystemView::update() {
         }
     }
 
-    _update_chrono.reset();
+    _update_timer.reset();
     _need_update = false;
 
     _on_update();
@@ -226,7 +226,7 @@ void FileSystemView::update() {
 void FileSystemView::on_gui() {
     y_profile();
 
-    if(_need_update || _update_chrono.elapsed() > update_duration) {
+    if(_need_update || _update_timer.elapsed() > update_duration) {
         update();
     }
 

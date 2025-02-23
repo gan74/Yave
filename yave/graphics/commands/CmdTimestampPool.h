@@ -92,7 +92,7 @@ class CmdTimestampPool : NonMovable {
         VkCommandBuffer _cmd_buffer = {};
         u32 _query_index = 0;
 
-        core::Chrono _chrono;
+        core::StopWatch _chrono;
         core::Vector<Zone> _zones;
 
         core::Vector<u64> _results;

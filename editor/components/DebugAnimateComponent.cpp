@@ -30,7 +30,7 @@ SOFTWARE.
 namespace editor {
 
 DebugAnimateComponent::DebugAnimateComponent() {
-    const core::Duration d = core::Chrono::program();
+    const core::Duration d = core::StopWatch::program();
 
     math::FastRandom rng(d.to_nanos());
     std::uniform_real_distribution<float> distrib(0.0f, 1.0f);

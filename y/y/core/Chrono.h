@@ -76,10 +76,10 @@ class Duration {
 };
 
 
-class Chrono {
+class StopWatch {
 
     public:
-        Chrono();
+        StopWatch();
 
         void start();
         Duration reset();
@@ -107,7 +107,7 @@ class DebugTimer : NonCopyable {
 
     private:
         String _msg;
-        Chrono _chrono;
+        StopWatch _chrono;
         Duration _minimum;
 };
 

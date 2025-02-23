@@ -69,7 +69,7 @@ class UndoStack : NonMovable {
         core::Vector<Item> _items;
         usize _top = 0;
         UndoId _last_id;
-        core::Chrono _since_last;
+        core::StopWatch _since_last;
 };
 
 }

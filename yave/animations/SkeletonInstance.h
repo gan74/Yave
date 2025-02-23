@@ -59,7 +59,7 @@ class SkeletonInstance {
         DescriptorSet _descriptor_set;
 
         AssetPtr<Animation> _animation;
-        core::Chrono _anim_timer;
+        core::StopWatch _anim_timer;
 
 };
 

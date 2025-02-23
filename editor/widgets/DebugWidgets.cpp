@@ -120,7 +120,7 @@ class CullingDebug : public Widget {
 
     protected:
         void on_gui() override {
-            const core::Chrono timer;
+            const core::StopWatch timer;
             const SceneVisibilitySubPass visibility = SceneVisibilitySubPass::create(scene_view());
             const core::Duration durr = timer.elapsed();
 
@@ -137,7 +137,7 @@ class CullingDebug : public Widget {
 
 
 static void busy_sleep(core::Duration dur) {
-    core::Chrono timer;
+    core::StopWatch timer;
     while(timer.elapsed() < dur) {
         std::this_thread::yield();
     }

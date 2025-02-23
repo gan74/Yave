@@ -143,7 +143,7 @@ class FileSystemView : public Widget {
         core::Vector<Entry> _entries;
         core::Vector<TreeNode> _cached_nodes;
 
-        core::Chrono _update_chrono;
+        core::StopWatch _update_timer;
 
         bool _need_update = true;
         bool _allow_modify = true;

@@ -74,7 +74,7 @@ class UiManager : NonMovable {
 
         core::FixedArray<char> _search_pattern = core::FixedArray<char>(256);
 
-        core::Chrono _timer;
+        core::StopWatch _timer;
         core::FixedArray<float> _frame_times = core::FixedArray<float>(60);
         float _total_time = 0.0f;
         u64 _frame_number = 0;

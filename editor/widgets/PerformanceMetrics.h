@@ -51,7 +51,7 @@ class PerformanceMetrics : public Widget {
         private:
             void advance();
 
-            core::Chrono _timer;
+            core::StopWatch _timer;
 
             core::FixedArray<float> _data;
             usize _current = 0;
@@ -75,7 +75,7 @@ class PerformanceMetrics : public Widget {
         void draw_timings();
         void draw_memory();
 
-        core::Chrono _timer;
+        core::StopWatch _timer;
 
         PlotData _frames;
         PlotData _average;

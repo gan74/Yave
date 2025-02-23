@@ -84,7 +84,7 @@ void Duration::sleep(const Duration& dur) {
 
 using Nano = std::chrono::nanoseconds;
 
-Chrono::Chrono() {
+StopWatch::StopWatch() {
 #ifdef Y_OS_WIN
     LARGE_INTEGER li;
     QueryPerformanceFrequency(&li);
@@ -93,7 +93,7 @@ Chrono::Chrono() {
     start();
 }
 
-void Chrono::start() {
+void StopWatch::start() {
 #ifdef Y_OS_WIN
     LARGE_INTEGER li;
     QueryPerformanceCounter(&li);
@@ -103,13 +103,13 @@ void Chrono::start() {
 #endif
 }
 
-Duration Chrono::reset() {
+Duration StopWatch::reset() {
     auto e = elapsed();
     start();
     return e;
 }
 
-Duration Chrono::elapsed() const {
+Duration StopWatch::elapsed() const {
 #ifdef Y_OS_WIN
     LARGE_INTEGER li;
     QueryPerformanceCounter(&li);
@@ -122,8 +122,8 @@ Duration Chrono::elapsed() const {
 #endif
 }
 
-Duration Chrono::program() {
-    static Chrono timer;
+Duration StopWatch::program() {
+    static StopWatch timer;
     return timer.elapsed();
 }
 

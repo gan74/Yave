@@ -90,7 +90,7 @@ class ImGuiPlatform : NonMovable {
 
         std::unique_ptr<ImGuiRenderer> _renderer;
 
-        core::Chrono _frame_timer;
+        core::StopWatch _frame_timer;
 
         bool _demo_window = is_debug_defined;
 };

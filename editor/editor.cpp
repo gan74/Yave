@@ -85,7 +85,7 @@ SceneView default_scene_view;
 SceneView* scene_view = nullptr;
 
 Settings settings;
-core::Chrono update_timer;
+core::StopWatch update_timer;
 
 enum DeferredActions : u32 {
     None    = 0x00,
