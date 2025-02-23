@@ -48,6 +48,12 @@ void EntityPool::Entity::make_valid(u32 index) {
     left_sibling = right_sibling = parent = {};
 }
 
+void EntityPool::Entity::make_valid(EntityId new_id) {
+    y_debug_assert(!is_valid());
+    id = new_id;
+    left_sibling = right_sibling = parent = {};
+}
+
 usize EntityPool::size() const {
     return _entities.size() - _free.size();
 }
@@ -76,6 +82,24 @@ EntityId EntityPool::create() {
 
     _entities[index].make_valid(index);
     return _entities[index].id;
+}
+
+EntityId EntityPool::create_with_id(EntityId id) {
+    const u32 index = id.index();
+    if(_entities.size() < index) {
+        _entities.set_min_size(index + 1);
+    } else {
+        if(_entities[index].is_valid()) {
+            return {};
+        }
+
+        const auto it = std::find(_free.begin(), _free.end(), index);
+        y_debug_assert(it != _free.end());
+        _free.erase_unordered(it);
+    }
+
+    _entities[index].make_valid(id);
+    return id;
 }
 
 void EntityPool::reroot_all_children(EntityId id, EntityId new_parent) {

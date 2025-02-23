@@ -54,7 +54,7 @@ class UndoStack : NonMovable {
 
         void clear();
 
-        void push(core::String name, UndoFunc undo, UndoFunc redo, UndoId id);
+        void push(core::String name, UndoFunc undo, UndoFunc redo, UndoId id, bool redo_immediately = false);
 
         void undo(bool merged = true);
         void redo(bool merged = true);

@@ -60,9 +60,12 @@ class EntityWorld : NonMovable {
         bool exists(EntityId id) const;
 
         EntityId create_entity();
-        EntityId create_entity(const EntityPrefab&prefab);
+        EntityId create_entity_with_id(EntityId id);
+        EntityId create_entity(const EntityPrefab&prefab, bool keep_ids = false);
 
-        void add_prefab(EntityId id, const EntityPrefab& prefab);
+        void add_prefab(EntityId id, const EntityPrefab& prefab, bool keep_ids = false);
+
+        EntityPrefab create_prefab_from_entity(EntityId id) const;
 
         void remove_entity(EntityId id);
         void remove_all_components(EntityId id);

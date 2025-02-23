@@ -49,6 +49,7 @@ class EntityPool : NonCopyable {
         void invalidate();
         void invalidate_hierarchy();
         void make_valid(u32 index);
+        void make_valid(EntityId new_id);
 
         y_reflect(Entity, id, parent, first_child, left_sibling, right_sibling)
     };
@@ -64,6 +65,7 @@ class EntityPool : NonCopyable {
         EntityId id_from_index(u32 index) const;
 
         EntityId create();
+        EntityId create_with_id(EntityId id);
         void remove(EntityId id);
 
         EntityId first_child(EntityId id) const;

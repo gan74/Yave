@@ -161,17 +161,14 @@ static void move_recursive(EditorWorld& world, ecs::EntityId id, math::Transform
 }
 
 
-static void undo_enabled_move_rec(core::String name, EditorWorld& world, ecs::EntityId id, math::Transform<> old_transform, math::Transform<> new_transform) {
-    auto redo = [=](EditorWorld& w) { move_recursive(w, id, old_transform, new_transform); };
-
-    redo(world);
-
+static void undo_enabled_move_rec(core::String name, ecs::EntityId id, math::Transform<> old_transform, math::Transform<> new_transform) {
     static const auto undo_id = UndoStack::generate_static_id();
     undo_stack().push(
         std::move(name),
         [=](EditorWorld& w) { move_recursive(w, id, new_transform, old_transform); },
-        std::move(redo),
-        undo_id
+        [=](EditorWorld& w) { move_recursive(w, id, old_transform, new_transform); },
+        undo_id,
+        true
     );
 }
 
@@ -332,7 +329,7 @@ void TranslationGizmo::draw() {
         const math::Transform<> old_transform = transformable->transform();
         math::Transform<> new_transform = old_transform;
         new_transform.position() = pos;
-        undo_enabled_move_rec("Entity moved", world, selected, old_transform, new_transform);
+        undo_enabled_move_rec("Entity moved", selected, old_transform, new_transform);
     };
 
 
@@ -554,7 +551,7 @@ void RotationGizmo::draw() {
         const math::Transform<> old_transform = transformable->transform();
         const auto [obj_pos, obj_rot, obj_scale] = old_transform.decompose();
         const math::Transform<> new_transform(obj_pos, quat * obj_rot, obj_scale);
-        undo_enabled_move_rec("Entity rotated", world, selected, old_transform, new_transform);
+        undo_enabled_move_rec("Entity rotated", selected, old_transform, new_transform);
     };
 
 

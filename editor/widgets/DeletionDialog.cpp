@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include "DeletionDialog.h"
 
+#include <editor/UndoStack.h>
 #include <editor/EditorWorld.h>
 #include <editor/components/EditorComponent.h>
 
@@ -71,15 +72,33 @@ void DeletionDialog::on_gui() {
 
     if(ImGui::Button("Ok")) {
         y_profile_zone("deleting entities");
-        for(const ecs::EntityId id : _ids) {
-            if(!world.exists(id)) {
-                continue;
-            }
-            if(_delete_children) {
-                remove_children(world, id);
-            }
-            world.remove_entity(id);
-        }
+
+        core::FixedArray<ecs::EntityPrefab> prefabs(_ids.size());
+        std::transform(_ids.begin(), _ids.end(), prefabs.begin(), [&](ecs::EntityId id) { return world.create_prefab_from_entity(id); });
+
+        static const auto undo_id = UndoStack::generate_static_id();
+        undo_stack().push(
+            "Entity deleted",
+            [pr = std::make_shared<core::FixedArray<ecs::EntityPrefab>>(std::move(prefabs))](EditorWorld& w) {
+                for(const auto& prefab : *pr) {
+                    w.create_entity(prefab, true);
+                }
+            },
+            [ids = core::Vector<ecs::EntityId>(_ids), del_childs = _delete_children](EditorWorld& w) {
+                for(const ecs::EntityId id : ids) {
+                    if(!w.exists(id)) {
+                        continue;
+                    }
+                    if(del_childs) {
+                        remove_children(w, id);
+                    }
+                    w.remove_entity(id);
+                }
+            },
+            undo_id,
+            true
+        );
+
         close();
     }
 

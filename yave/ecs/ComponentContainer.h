@@ -25,6 +25,7 @@ SOFTWARE.
 #include "ComponentRuntimeInfo.h"
 #include "ComponentMatrix.h"
 #include "ComponentInspector.h"
+#include "ComponentBox.h"
 
 #include <y/serde3/poly.h>
 #include <y/serde3/traits.h>
@@ -49,6 +50,8 @@ class ComponentContainerBase : NonMovable {
 
         virtual ComponentRuntimeInfo runtime_info() const = 0;
         virtual void inspect_component(EntityId id, ComponentInspector* inspector) = 0;
+
+        virtual std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const = 0;
 
 
         y_serde3_poly_abstract_base(ComponentContainerBase)
@@ -155,6 +158,15 @@ class ComponentContainer final : public ComponentContainerBase {
                     _mutated.insert(id);
                 }
             }
+        }
+
+        std::unique_ptr<ComponentBoxBase> create_box(EntityId id) const override {
+            const T* comp = try_get(id);
+            if(!comp) {
+                return nullptr;
+            }
+
+            return std::make_unique<ComponentBox<T>>(*comp);
         }
 
 

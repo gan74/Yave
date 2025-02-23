@@ -26,6 +26,7 @@ SOFTWARE.
 #include "Renamer.h"
 
 #include <editor/Settings.h>
+#include <editor/UndoStack.h>
 #include <editor/EditorWorld.h>
 #include <editor/components/EditorComponent.h>
 
@@ -285,9 +286,28 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
 
         if(ImGui::MenuItem("Rename")) {
             add_child_widget<Renamer>(component->name(), [=](std::string_view name) {
-                if(EditorComponent* comp = current_world().component_mut<EditorComponent>(_context_menu_target)) {
-                    comp->set_name(name);
+                const core::String new_name = name;
+                core::String old_name;
+                if(EditorComponent* comp = current_world().component_mut<EditorComponent>(id)) {
+                    old_name = comp->name();
                 }
+
+                static const auto undo_id = UndoStack::generate_static_id();
+                undo_stack().push(
+                    "Entity renamed",
+                    [id = _context_menu_target, old_name](EditorWorld& w) {
+                        if(EditorComponent* comp = w.component_mut<EditorComponent>(id)) {
+                            comp->set_name(old_name);
+                        }
+                    },
+                    [id = _context_menu_target, new_name](EditorWorld& w) {
+                        if(EditorComponent* comp = w.component_mut<EditorComponent>(id)) {
+                            comp->set_name(new_name);
+                        }
+                    },
+                    undo_id,
+                    true
+                );
                 return true;
             });
         }

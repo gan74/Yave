@@ -77,8 +77,13 @@ void UndoStack::redo(bool merged) {
     }
 }
 
-void UndoStack::push(core::String name, UndoFunc undo, UndoFunc redo, UndoId id) {
+void UndoStack::push(core::String name, UndoFunc undo, UndoFunc redo, UndoId id, bool redo_immediately) {
     y_profile();
+
+    if(redo_immediately) {
+        y_profile_zone("Redo immediate");
+        redo(current_world());
+    }
 
     while(_items.size() != _top) {
         _items.pop();
