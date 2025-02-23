@@ -161,7 +161,19 @@ static void move_recursive(EditorWorld& world, ecs::EntityId id, math::Transform
 }
 
 
+static void undo_enabled_move_rec(core::String name, EditorWorld& world, ecs::EntityId id, math::Transform<> old_transform, math::Transform<> new_transform) {
+    auto redo = [=](EditorWorld& w) { move_recursive(w, id, old_transform, new_transform); };
 
+    redo(world);
+
+    static const auto undo_id = UndoStack::generate_static_id();
+    undo_stack().push(
+        std::move(name),
+        [=](EditorWorld& w) { move_recursive(w, id, new_transform, old_transform); },
+        std::move(redo),
+        undo_id
+    );
+}
 
 
 GizmoBase::GizmoBase(SceneView* view) : _scene_view(view) {
@@ -320,19 +332,7 @@ void TranslationGizmo::draw() {
         const math::Transform<> old_transform = transformable->transform();
         math::Transform<> new_transform = old_transform;
         new_transform.position() = pos;
-
-        auto redo = [=](EditorWorld& w) { move_recursive(w, selected, old_transform, new_transform); };
-
-        redo(world);
-
-        static const auto undo_id = UndoStack::generate_static_id();
-        undo_stack().push(
-            "Entity moved",
-            [=](EditorWorld& w) { move_recursive(w, selected, new_transform, old_transform); },
-            std::move(redo),
-            undo_id
-        );
-
+        undo_enabled_move_rec("Entity moved", world, selected, old_transform, new_transform);
     };
 
 
@@ -553,7 +553,8 @@ void RotationGizmo::draw() {
     auto set_rotation = [transformable, selected, &world](const math::Quaternion<>& quat) {
         const math::Transform<> old_transform = transformable->transform();
         const auto [obj_pos, obj_rot, obj_scale] = old_transform.decompose();
-        move_recursive(world, selected, old_transform, math::Transform<>(obj_pos, quat * obj_rot, obj_scale));
+        const math::Transform<> new_transform(obj_pos, quat * obj_rot, obj_scale);
+        undo_enabled_move_rec("Entity rotated", world, selected, old_transform, new_transform);
     };
 
 
@@ -569,10 +570,10 @@ void RotationGizmo::draw() {
             }
 
             const float angle = compute_angle(_rotation_axis);
-            const math::Quaternion<> quat = math::Quaternion<>::from_axis_angle(basis[_rotation_axis], angle - _angle_offset);
-
-            set_rotation(quat);
-            _angle_offset = angle;
+            if(std::abs(_angle_offset - angle) > 0.001f) {
+                set_rotation(math::Quaternion<>::from_axis_angle(basis[_rotation_axis], angle - _angle_offset));
+                _angle_offset = angle;
+            }
         }
     } else {
         _rotation_axis = usize(-1);
