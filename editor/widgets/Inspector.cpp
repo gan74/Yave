@@ -288,7 +288,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                     if(!can_remove) {
                         log_msg(fmt("{} can not be deleted as it is required by some other component", info.clean_component_name()), Log::Warning);
                     } else {
-                        _world->remove_component(_id, info.type_id);
+                        undo_enabled_remove_component(_id, info);
                     }
                 }
             }
@@ -751,7 +751,7 @@ void Inspector::on_gui() {
         for(const auto& [name, info] : EditorWorld::component_types()) {
             const bool enabled = !name.is_empty() && !world.has_component(id, info.type_id) && info.add_or_replace_component;
             if(ImGui::MenuItem(fmt_c_str(ICON_FA_PUZZLE_PIECE " {}", name), nullptr, nullptr, enabled) && enabled) {
-                info.add_or_replace_component(world, id);
+                undo_enabled_add_component(id, info);
             }
         }
         ImGui::EndPopup();

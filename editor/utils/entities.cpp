@@ -91,5 +91,38 @@ void undo_enabled_move_recursive(ecs::EntityId target_id, const math::Transform<
     );
 }
 
+
+
+void undo_enabled_add_component(ecs::EntityId target_id, ecs::ComponentRuntimeInfo info) {
+    static const auto undo_id = UndoStack::generate_static_id();
+    undo_stack().push(
+        "Added component",
+        [info, target_id](EditorWorld& w) {
+            w.remove_component(target_id, info.type_id);
+        },
+        [info, target_id](EditorWorld& w) {
+            info.add_or_replace_component(w, target_id);
+        },
+        undo_id,
+        true
+    );
+}
+
+
+void undo_enabled_remove_component(ecs::EntityId target_id, ecs::ComponentRuntimeInfo info) {
+    static const auto undo_id = UndoStack::generate_static_id();
+    undo_stack().push(
+        "Remove component",
+        [target_id, box = std::shared_ptr(current_world().create_box_from_component(target_id, info.type_id))](EditorWorld& w) {
+            box->add_or_replace(w, target_id);
+        },
+        [target_id, info](EditorWorld& w) {
+            w.remove_component(target_id, info.type_id);
+        },
+        undo_id,
+        true
+    );
+}
+
 }
 

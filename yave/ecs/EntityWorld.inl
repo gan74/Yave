@@ -88,6 +88,12 @@ void ComponentBox<T>::add_to(EntityWorld& world, EntityId id, const EntityIdMap&
     });
 }
 
+template<typename T>
+void ComponentBox<T>::add_or_replace(EntityWorld& world, EntityId id) const {
+    world.add_or_replace_component<T>(id, _component);
+}
+
+
 }
 }
 

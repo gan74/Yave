@@ -24,10 +24,15 @@ SOFTWARE.
 
 #include <editor/editor.h>
 
+#include <yave/ecs/ecs.h>
+
 namespace editor {
 
 void undo_enabled_rename(ecs::EntityId target_id, const core::String& new_name);
 void undo_enabled_move_recursive(ecs::EntityId target_id,const math::Transform<>& new_transform);
+
+void undo_enabled_add_component(ecs::EntityId target_id, ecs::ComponentRuntimeInfo info);
+void undo_enabled_remove_component(ecs::EntityId target_id, ecs::ComponentRuntimeInfo info);
 
 }
 

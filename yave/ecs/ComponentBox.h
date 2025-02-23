@@ -40,7 +40,7 @@ class ComponentBoxBase : NonMovable {
 
         virtual ComponentRuntimeInfo runtime_info() const = 0;
         virtual void add_to(EntityWorld& world, EntityId id, const EntityIdMap& id_map) const = 0;
-        // virtual void add_or_replace_to(EntityWorld& world, EntityId id) const = 0;
+        virtual void add_or_replace(EntityWorld& world, EntityId id) const = 0;
 
         y_serde3_poly_abstract_base(ComponentBoxBase)
 };
@@ -53,7 +53,7 @@ class ComponentBox final : public ComponentBoxBase {
 
         ComponentRuntimeInfo runtime_info() const override;
         void add_to(EntityWorld& world, EntityId id, const EntityIdMap& id_map) const override;
-        // void add_or_replace_to(EntityWorld& world, EntityId id) const override;
+        void add_or_replace(EntityWorld& world, EntityId id) const override;
 
         const T& component() const {
             return _component;

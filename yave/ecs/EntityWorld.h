@@ -66,6 +66,7 @@ class EntityWorld : NonMovable {
         void add_prefab(EntityId id, const EntityPrefab& prefab, bool keep_ids = false);
 
         EntityPrefab create_prefab_from_entity(EntityId id) const;
+        std::unique_ptr<ComponentBoxBase> create_box_from_component(EntityId id, ComponentTypeIndex type_id) const;
 
         void remove_entity(EntityId id);
         void remove_all_components(EntityId id);

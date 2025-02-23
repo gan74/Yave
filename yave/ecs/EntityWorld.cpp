@@ -233,6 +233,16 @@ EntityPrefab EntityWorld::create_prefab_from_entity(EntityId id) const {
     return prefab;
 }
 
+std::unique_ptr<ComponentBoxBase> EntityWorld::create_box_from_component(EntityId id, ComponentTypeIndex type_id) const {
+    y_profile();
+
+    if(auto container = find_container(type_id)) {
+        return container->create_box(id);
+    }
+
+    return nullptr;
+}
+
 void EntityWorld::remove_entity(EntityId id) {
     if(_to_delete.insert(id)) {
         remove_all_components(id);

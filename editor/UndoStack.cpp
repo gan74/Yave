@@ -49,14 +49,19 @@ void UndoStack::undo(bool merged) {
 
     y_profile();
 
+    const usize prev_top = _top;
     while(_top) {
         --_top;
         _items[_top].undo(current_world());
+
         if(!merged || !_items[_top].merge_with_prev) {
             break;
         }
     }
 
+    if(_top != prev_top) {
+        log_msg(fmt("Undo {} (x{})", _items[prev_top - 1].name, prev_top - _top));
+    }
 }
 
 void UndoStack::redo(bool merged) {
@@ -67,6 +72,7 @@ void UndoStack::redo(bool merged) {
 
     y_profile();
 
+    const usize prev_top = _top;
     while(_top != _items.size()) {
         _items[_top].redo(current_world());
         ++_top;
@@ -74,6 +80,10 @@ void UndoStack::redo(bool merged) {
         if(!merged || _top == _items.size() || !_items[_top].merge_with_prev) {
             break;
         }
+    }
+
+    if(_top != prev_top) {
+        log_msg(fmt("Redo {} (x{})", _items[prev_top].name, _top - prev_top));
     }
 }
 
