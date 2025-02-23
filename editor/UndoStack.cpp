@@ -35,32 +35,68 @@ namespace editor {
 UndoStack::UndoStack() {
 }
 
-void UndoStack::undo() {
+void UndoStack::clear() {
+    _items.clear();
+    _top = 0;
+    _last_id = {};
+}
+
+void UndoStack::undo(bool merged) {
     if(!_top) {
         log_msg("Nothing to undo", Log::Warning);
         return;
     }
 
-    --_top;
-    _items[_top].undo(current_world(), _items[_top].id);
+    y_profile();
+
+    while(_top) {
+        --_top;
+        _items[_top].undo(current_world());
+        if(!merged || !_items[_top].merge_with_prev) {
+            break;
+        }
+    }
 
 }
 
-void UndoStack::redo() {
+void UndoStack::redo(bool merged) {
     if(_top == _items.size()) {
         log_msg("Nothing to redo", Log::Warning);
         return;
     }
 
-    _items[_top].redo(current_world(), _items[_top].id);
-    ++_top;
+    y_profile();
+
+    while(_top != _items.size()) {
+        _items[_top].redo(current_world());
+        ++_top;
+
+        if(!merged || _top == _items.size() || !_items[_top].merge_with_prev) {
+            break;
+        }
+    }
 }
 
-void UndoStack::push(Item item) {
+void UndoStack::push(core::String name, UndoFunc undo, UndoFunc redo, UndoId id) {
+    y_profile();
+
     while(_items.size() != _top) {
         _items.pop();
     }
-    _items.emplace_back(std::move(item));
+
+    y_debug_assert(id.id);
+
+    const bool merge = id.id == _last_id.id && _since_last.elapsed() < merge_time;
+
+    _last_id = id;
+    _since_last.reset();
+
+    _items.emplace_back(Item {
+        std::move(name),
+        std::move(undo),
+        std::move(redo),
+        merge
+    });
     ++_top;
 }
 
@@ -70,6 +106,11 @@ core::Span<UndoStack::Item> UndoStack::items() const {
 
 usize UndoStack::stack_top() const {
     return _top;
+}
+
+UndoStack::UndoId UndoStack::generate_static_id() {
+    static u32 next_id = 0;
+    return { ++next_id };
 }
 
 }

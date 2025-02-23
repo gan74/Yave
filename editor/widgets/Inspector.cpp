@@ -659,24 +659,19 @@ class UndoRedoInspector final : public InspectorPanelInspector {
                 static_assert(!std::is_reference_v<decltype(value)>);
                 const T& new_value = *ptr;
                 if(new_value != value) {
-                    core::String item_name;
-                    if constexpr(is_formattable<T>) {
-                        fmt_into(item_name, "{}.{} changed ({} -> {})", _world->component_type_name(_type), name, value, new_value);
-                    } else {
-                        fmt_into(item_name, "{}.{} changed", _world->component_type_name(_type), name);
-                    }
-                    undo_stack().push({
-                        std::move(item_name),
-                        _id,
-                        [name, value, type = _type](EditorWorld& world, ecs::EntityId id) {
+                    static const auto undo_id = UndoStack::generate_static_id();
+                    undo_stack().push(
+                        fmt_to_owned("{}.{} changed", _world->component_type_name(_type), name),
+                        [name, value, id = _id, type = _type](EditorWorld& world) {
                             SetterInspector<T> setter(name, type, value);
                             world.inspect_components(id, &setter);
                         },
-                        [name, new_value, type = _type](EditorWorld& world, ecs::EntityId id) {
+                        [name, new_value, id = _id, type = _type](EditorWorld& world) {
                             SetterInspector<T> setter(name, type, new_value);
                             world.inspect_components(id, &setter);
                         },
-                    });
+                        undo_id
+                    );
                 }
             });
         }

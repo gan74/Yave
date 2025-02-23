@@ -23,6 +23,7 @@ SOFTWARE.
 
 #include <editor/UndoStack.h>
 #include <editor/EditorWorld.h>
+#include <editor/UndoStack.h>
 
 #include <yave/scene/SceneView.h>
 #include <yave/components/TransformableComponent.h>
@@ -320,7 +321,18 @@ void TranslationGizmo::draw() {
         math::Transform<> new_transform = old_transform;
         new_transform.position() = pos;
 
-        move_recursive(world, selected, old_transform, new_transform);
+        auto redo = [=](EditorWorld& w) { move_recursive(w, selected, old_transform, new_transform); };
+
+        redo(world);
+
+        static const auto undo_id = UndoStack::generate_static_id();
+        undo_stack().push(
+            "Entity moved",
+            [=](EditorWorld& w) { move_recursive(w, selected, new_transform, old_transform); },
+            std::move(redo),
+            undo_id
+        );
+
     };
 
 
@@ -328,20 +340,26 @@ void TranslationGizmo::draw() {
     if(_is_dragging && _allow_dragging) {
         const math::Vec2 target_screen_pos = mouse_pos - _dragging_offset;
 
-        math::Vec3 target_obj_pos = obj_pos;
+        bool pos_changed = false;
+        math::Vec3 offset;
         for(usize i = 0; i != 3; ++i) {
             if(is_hovered(i)) {
                 const math::Vec2 target_axis_screen_pos = closest_to_line(gizmo_screen_center, screen_end_points[i], target_screen_pos);
+
                 math::Vec3 pos;
-                if(intersect_lines(obj_pos, end_points[i], cam_pos, to_world_pos(target_axis_screen_pos), pos)) {
-                    const math::Vec3 axis = basis[i];
-                    target_obj_pos += (pos.dot(basis[i]) * axis) - (target_obj_pos.dot(axis) * axis);
+                const math::Vec3 axis = basis[i];
+                if(intersect_lines(obj_pos, obj_pos + axis, cam_pos, to_world_pos(target_axis_screen_pos), pos)) {
+                    const math::Vec3 v = pos.dot(basis[i]) * axis;
+                    const float dot = _base_pos.dot(axis);
+                    offset += v - (axis * dot);
+                    pos_changed = true;
                 }
             }
         }
 
-
-        set_position(target_obj_pos);
+        if(pos_changed) {
+            set_position(_base_pos + offset);
+        }
     } else {
         _hover_mask = 0;
 
@@ -360,7 +378,10 @@ void TranslationGizmo::draw() {
         }
 
         _is_dragging = is_clicked() && _hover_mask;
-        _dragging_offset = mouse_pos - gizmo_screen_center;
+        if(is_clicked()) {
+            _dragging_offset = mouse_pos - gizmo_screen_center;
+            _base_pos = obj_pos;
+        }
     }
 
 

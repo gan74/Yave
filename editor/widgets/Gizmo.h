@@ -61,7 +61,8 @@ class TranslationGizmo final : public GizmoBase {
 
         u32 _hover_mask = 0;
         math::Vec2 _dragging_offset;
-        
+        math::Vec3 _base_pos;
+
         bool _use_object_space = false;
 };
 

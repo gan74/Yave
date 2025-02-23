@@ -27,33 +27,49 @@ SOFTWARE.
 #include <yave/ecs/ecs.h>
 
 #include <y/io2/Buffer.h>
+#include <y/core/Chrono.h>
+
+#include <source_location>
 
 namespace editor {
 
 class UndoStack : NonMovable {
+    struct UndoId {
+        u32 id = 0;
+    };
+
     public:
+        using UndoFunc = std::function<void(EditorWorld&)>;
+
         struct Item {
             core::String name;
-            ecs::EntityId id;
-            std::function<void(EditorWorld&, ecs::EntityId)> undo;
-            std::function<void(EditorWorld&, ecs::EntityId)> redo;
+            UndoFunc undo;
+            UndoFunc redo;
+            bool merge_with_prev;
         };
+
+        static constexpr auto merge_time = core::Duration::seconds(0.2);
 
         UndoStack();
 
-        void push(Item item);
+        void clear();
 
-        void undo();
-        void redo();
+        void push(core::String name, UndoFunc undo, UndoFunc redo, UndoId id);
+
+        void undo(bool merged = true);
+        void redo(bool merged = true);
 
         core::Span<Item> items() const;
         usize stack_top() const;
 
+        static UndoId generate_static_id();
+
     private:
-        friend class UndoStackWidget;
 
         core::Vector<Item> _items;
         usize _top = 0;
+        UndoId _last_id;
+        core::Chrono _since_last;
 };
 
 }

@@ -378,20 +378,51 @@ class UndoStackDebug : public Widget {
 
             ImGui::Text("%u items in stack", u32(items.size()));
 
-            if(ImGui::BeginTable("##undostack", 2, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV)) {
+            ImGui::SameLine();
+
+            if(ImGui::Button("Clear")) {
+                undo_stack().clear();
+                return;
+            }
+
+            bool tree_open = false;
+            if(ImGui::BeginTable("##undostack", 1, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV)) {
                 ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
-                ImGui::TableSetupColumn("Entity ID", ImGuiTableColumnFlags_WidthFixed);
                 ImGui::TableHeadersRow();
                 for(usize i = 0; i != items.size(); ++i) {
-                    const usize index = items.size() - i - 1;
-                    const auto& item = items[index];
-                    const bool is_current =  index + 1 == top;
+                    const auto& item = items[i];
+                    const bool is_current =  i + 1 == top;
+                    const auto flags = is_current ? ImGuiTreeNodeFlags_Selected : ImGuiTreeNodeFlags_None;
 
-                    imgui::table_begin_next_row();
-                    ImGui::Selectable(item.name.data(), is_current, ImGuiSelectableFlags_SpanAllColumns);
+                    if(item.merge_with_prev) {
+                        if(tree_open) {
+                            imgui::table_begin_next_row();
+                            if(ImGui::TreeNodeEx(fmt_c_str("{}##{}", item.name, i), flags | ImGuiTreeNodeFlags_Leaf)) {
+                                ImGui::TreePop();
+                            }
+                        }
+                    } else {
+                        if(tree_open) {
+                            ImGui::Unindent();
+                            ImGui::TreePop();
+                        }
+                        imgui::table_begin_next_row();
+                        tree_open = ImGui::TreeNodeEx(fmt_c_str("{}##{}", item.name, i), flags);
+                        if(tree_open) {
+                            ImGui::Indent();
+                        }
+                    }
 
-                    ImGui::TableNextColumn();
-                    ImGui::Selectable(fmt_c_str("{:#08x}", item.id.index()));
+                    /*imgui::table_begin_next_row();
+                    ImGui::Selectable(fmt_c_str("{} {}", item.name, item.merge_with_prev), is_current, ImGuiSelectableFlags_SpanAllColumns);*/
+
+                    /*ImGui::TableNextColumn();
+                    ImGui::Selectable(fmt_c_str("{:#08x}", item.id.index()));*/
+                }
+
+                if(tree_open) {
+                    ImGui::Unindent();
+                    ImGui::TreePop();
                 }
 
                 ImGui::EndTable();
