@@ -76,8 +76,6 @@ static void setup_style() {
 
     colors[ImGuiCol_BorderShadow]           = none;
     colors[ImGuiCol_FrameBgActive]          = none;
-    colors[ImGuiCol_Tab]                    = none;
-    colors[ImGuiCol_TabUnfocused]           = none;
     colors[ImGuiCol_DockingEmptyBg]         = none;
     colors[ImGuiCol_ModalWindowDimBg]       = none;
     colors[ImGuiCol_TableRowBg]             = none;
@@ -108,11 +106,11 @@ static void setup_style() {
 
     colors[ImGuiCol_PopupBg]                = stl(30, 0.9f);
 
-    colors[ImGuiCol_TabActive]              = child;
-    colors[ImGuiCol_TabUnfocusedActive]     = child;
     colors[ImGuiCol_ChildBg]                = child;
     colors[ImGuiCol_WindowBg]               = child;
     colors[ImGuiCol_TabHovered]             = child;
+    colors[ImGuiCol_TabSelected]            = child;
+    colors[ImGuiCol_TabDimmedSelected]      = child;
 
     colors[ImGuiCol_ScrollbarBg]            = bg;
     colors[ImGuiCol_Separator]              = bg;
@@ -133,10 +131,17 @@ static void setup_style() {
     colors[ImGuiCol_PlotLinesHovered]       = highlight;
     colors[ImGuiCol_HeaderActive]           = highlight;
     colors[ImGuiCol_SeparatorActive]        = highlight;
+    colors[ImGuiCol_TabSelectedOverline]    = highlight;
 
-    colors[ImGuiCol_HeaderHovered]          = math::lerp(child, highlight, 0.25f);
-    colors[ImGuiCol_SeparatorHovered]       = math::lerp(child, highlight, 0.25f);
-    colors[ImGuiCol_TextSelectedBg]         = math::lerp(child, highlight, 0.25f);
+    colors[ImGuiCol_HeaderHovered]              = math::lerp(child, highlight, 0.25f);
+    colors[ImGuiCol_SeparatorHovered]           = math::lerp(child, highlight, 0.25f);
+    colors[ImGuiCol_TextSelectedBg]             = math::lerp(child, highlight, 0.25f);
+
+    colors[ImGuiCol_TabDimmed]                  = math::lerp(child, bg, 0.75f);
+    colors[ImGuiCol_Tab]                        = math::lerp(child, bg, 0.75f);
+
+    colors[ImGuiCol_TabDimmedSelectedOverline]  = math::lerp(child, highlight, 0.75f);
+
 
 
     // colors[ImGuiCol_NavWindowingHighlight]  = rgb(128, 168, 224);
@@ -181,7 +186,7 @@ static void setup_style() {
 
 static void setup_imgui_dockspace() {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::DockSpaceOverViewport(viewport);
+    ImGui::DockSpaceOverViewport(0, viewport);
 }
 
 static void setup_config_files(ImGuiIO& io) {
@@ -404,6 +409,10 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
 
 ImGuiPlatform::~ImGuiPlatform() {
     y_always_assert(_instance == this, "ImGuiPlatform instance has already been deleted");
+
+    auto& io = ImGui::GetIO();
+    y_debug_assert(io.BackendPlatformUserData == this);
+    io.BackendPlatformUserData = nullptr;
 
     ImGui::DestroyContext();
     _instance = nullptr;

@@ -233,7 +233,8 @@ void UiManager::draw_menu_bar() {
         {
             const float search_bar_size = 250.0;
             const float margin = ImGui::CalcTextSize(ICON_FA_SEARCH " ").x;
-            const float offset = ImGui::GetContentRegionMax().x - (search_bar_size + margin);
+            const float max_x = ImGui::GetContentRegionAvail().x + ImGui::GetCursorScreenPos().x - ImGui::GetWindowPos().x;
+            const float offset = max_x - (search_bar_size + margin);
 
             if(offset > 0.0f) {
                 ImGui::Indent(offset);

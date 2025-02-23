@@ -97,9 +97,9 @@ CmdTimestampPool* EngineView::timestamp_pool() const {
 }
 
 bool EngineView::is_mouse_inside() const {
-    const math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos) - math::Vec2(ImGui::GetWindowPos());
     const auto less = [](const math::Vec2& a, const math::Vec2& b) { return a.x() < b.x() && a.y() < b.y(); };
-    return less(mouse_pos, ImGui::GetWindowContentRegionMax()) && less(ImGui::GetWindowContentRegionMin(), mouse_pos);
+    const math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos);
+    return less(mouse_pos, math::Vec2(ImGui::GetWindowPos()) + math::Vec2(ImGui::GetWindowSize())) && less(ImGui::GetWindowPos(), mouse_pos);
 }
 
 bool EngineView::is_focussed() const {
@@ -260,7 +260,7 @@ void EngineView::update_picking() {
     const math::Vec2ui viewport_size = content_size();
     const math::Vec2 offset = ImGui::GetWindowPos();
     const math::Vec2 mouse = ImGui::GetIO().MousePos;
-    const math::Vec2 uv = (mouse - offset - math::Vec2(ImGui::GetWindowContentRegionMin())) / math::Vec2(viewport_size);
+    const math::Vec2 uv = (mouse - offset) / math::Vec2(viewport_size);
 
     if(uv.x() < 0.0f || uv.y() < 0.0f ||
        uv.x() > 1.0f || uv.y() > 1.0f) {

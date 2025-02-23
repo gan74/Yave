@@ -48,7 +48,6 @@ static Key to_key(WPARAM w_param, LPARAM l_param) {
 
     switch(w_param) {
         case VK_TAB:        return Key::Tab;
-        case VK_CLEAR:      return Key::Clear;
         case VK_BACK:       return Key::Backspace;
         case VK_RETURN:     return Key::Enter;
         case VK_ESCAPE:     return Key::Escape;

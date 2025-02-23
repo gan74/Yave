@@ -29,7 +29,6 @@ namespace yave {
 #define YAVE_KEYS(X_MACRO)              \
     X_MACRO(Key::Unknown)               \
     X_MACRO(Key::Tab)                   \
-    X_MACRO(Key::Clear)                 \
     X_MACRO(Key::Backspace)             \
     X_MACRO(Key::Enter)                 \
     X_MACRO(Key::Escape)                \
@@ -107,7 +106,9 @@ YAVE_KEYS(KEY)
 #undef KEY
 
     };
-    return keys;
+
+    // Skip Key::Unknown
+    return core::Span<Key>(keys.data() + 1, keys.size() - 1);
 }
 
 bool is_character_key(Key key) {

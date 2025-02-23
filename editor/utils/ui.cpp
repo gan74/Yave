@@ -92,7 +92,7 @@ ImGuiKey to_imgui_key(Key k) {
         break;
     }
 
-    //log_msg(fmt("Unknown key pressed: {}", key_name(k)), Log::Warning);
+    log_msg(fmt("Unknown key pressed: {}", key_name(k)), Log::Warning);
     return ImGuiKey_None;
 }
 

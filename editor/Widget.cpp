@@ -147,7 +147,7 @@ void Widget::draw(bool inside) {
 }
 
 math::Vec2ui Widget::content_size() const {
-    return (math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin())).max(math::Vec2(1.0f));
+    return ImGui::GetWindowSize(); //(math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin())).max(math::Vec2(1.0f));
 }
 
 void Widget::set_flags(int flags) {

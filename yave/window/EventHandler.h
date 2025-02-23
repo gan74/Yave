@@ -31,7 +31,6 @@ namespace yave {
 enum class Key : u32 {
     Unknown,
     Tab,
-    Clear,
     Backspace,
     Enter,
     Escape,
