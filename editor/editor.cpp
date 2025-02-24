@@ -158,11 +158,13 @@ void post_tick() {
 
     if(application::deferred_actions & application::Load) {
         load_world_deferred();
+        undo_stack().clear();
     }
 
     if(application::deferred_actions & application::New) {
         application::world = std::make_unique<EditorWorld>(*application::loader);
         create_scene();
+        undo_stack().clear();
     }
 
     application::deferred_actions = application::None;

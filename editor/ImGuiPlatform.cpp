@@ -75,11 +75,9 @@ static void setup_style() {
 
 
     colors[ImGuiCol_BorderShadow]           = none;
-    colors[ImGuiCol_FrameBgActive]          = none;
     colors[ImGuiCol_DockingEmptyBg]         = none;
     colors[ImGuiCol_ModalWindowDimBg]       = none;
     colors[ImGuiCol_TableRowBg]             = none;
-    colors[ImGuiCol_FrameBgHovered]         = none;
     colors[ImGuiCol_TableRowBgAlt]          = none;
     colors[ImGuiCol_Border]                 = none;
 
@@ -119,6 +117,7 @@ static void setup_style() {
     colors[ImGuiCol_TitleBgCollapsed]       = bg;
     colors[ImGuiCol_MenuBarBg]              = bg;
     colors[ImGuiCol_FrameBg]                = bg;
+    colors[ImGuiCol_FrameBgActive]          = bg;
     colors[ImGuiCol_TableHeaderBg]          = bg;
     colors[ImGuiCol_DockingPreview]         = bg;
 
@@ -136,6 +135,8 @@ static void setup_style() {
     colors[ImGuiCol_HeaderHovered]              = math::lerp(child, highlight, 0.25f);
     colors[ImGuiCol_SeparatorHovered]           = math::lerp(child, highlight, 0.25f);
     colors[ImGuiCol_TextSelectedBg]             = math::lerp(child, highlight, 0.25f);
+
+    colors[ImGuiCol_FrameBgHovered]             = math::lerp(child, bg, 0.75f);
 
     colors[ImGuiCol_TabDimmed]                  = math::lerp(child, bg, 0.75f);
     colors[ImGuiCol_Tab]                        = math::lerp(child, bg, 0.75f);
@@ -203,6 +204,8 @@ static void setup_backend_flags(ImGuiIO& io, bool multi_viewport) {
 
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigDockingWithShift = false;
+
+    io.ConfigDebugHighlightIdConflicts = true;
 
     io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports | ImGuiBackendFlags_RendererHasViewports;
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;

@@ -231,7 +231,7 @@ bool position_input(const char* str_id, math::Vec3& position) {
         const math::Vec2 end_pos = ImGui::GetCursorScreenPos();
         const float vertical_padding = ((end_pos - start_pos).y() - text_height) * 0.5f;
 
-        if(vertical_padding > 1.0f) {
+        if(vertical_padding > 1.0f && !ImGui::IsItemActive()) {
             const math::Vec2 pos = start_pos + math::Vec2(padding, vertical_padding);
             ImGui::GetWindowDrawList()->AddRectFilled(pos, pos + math::Vec2(4.0f, text_height), 0x80000000 | gizmo_color(i), 0.5f);
         }
