@@ -45,13 +45,13 @@ class Ray final : public Volume<T> {
         bool intersects(const Vec<3, T>& v, T r) const override {
             const Vec<3, T> p(v - _start);
             const T dot = _direction.dot(p);
-            return dot > T(0) && p.length2() - dot * dot < (r * r);
+            return dot > T(0) && p.sq_length() - dot * dot < (r * r);
         }
 
         T distance(const Vec<3, T>& v) const {
             const Vec<3, T> p(v - _start);
             const T dot = _direction.dot(p);
-            return std::sqrt(p.length2() - dot * dot);
+            return std::sqrt(p.sq_length() - dot * dot);
         }
 
         const Vec<3, T>& direction() const {
@@ -81,7 +81,7 @@ class Sphere final : public Volume<T> {
         }
 
         bool intersects(const Vec<3, T>& v, T rad) const override {
-            return (_position - v).length2() < ((_radius + rad) * (_radius + rad));
+            return (_position - v).sq_length() < ((_radius + rad) * (_radius + rad));
         }
 
         const Vec<3, T>& position() const {

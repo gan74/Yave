@@ -108,12 +108,12 @@ class Vec
         inline constexpr Vec(const Vec&) = default;
         inline constexpr Vec& operator=(const Vec&) = default;
 
-        inline constexpr T length2() const {
+        inline constexpr T sq_length() const {
             return dot(*this);
         }
 
         inline constexpr auto length() const {
-            return std::sqrt(length2());
+            return std::sqrt(sq_length());
         }
 
         inline constexpr T dot(const Vec& o) const {

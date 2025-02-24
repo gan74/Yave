@@ -81,7 +81,7 @@ static bool is_hovering_axis(math::Vec2 a, math::Vec2 b) {
         return false;
     }
 
-    const float d_2 = std::fabs(to_mouse.length2() - (d * d));
+    const float d_2 = std::fabs(to_mouse.sq_length() - (d * d));
     return d_2 < (gizmo_hover_width * gizmo_hover_width);
 }
 
@@ -96,8 +96,8 @@ static [[nodiscard]] bool intersect_lines(const math::Vec3& start_a, const math:
     const math::Vec3 ends = end_b - start_b;
     const math::Vec3 dir_a = end_a - start_a;
 
-    const float ends_sq_len = ends.length2();
-    const float dir_sq_len = dir_a.length2();
+    const float ends_sq_len = ends.sq_length();
+    const float dir_sq_len = dir_a.sq_length();
 
     if(ends_sq_len < math::epsilon<float> || dir_sq_len < math::epsilon<float>) {
         return false;
@@ -269,7 +269,7 @@ void TranslationGizmo::draw() {
     };
 
     std::sort(indices.begin(), indices.end(), [&](usize a, usize b) {
-        return (cam_pos - end_points[a]).length2() > (cam_pos - end_points[b]).length2();
+        return (cam_pos - end_points[a]).sq_length() > (cam_pos - end_points[b]).sq_length();
     });
 
     const std::array rev_indices = {
@@ -463,7 +463,7 @@ void RotationGizmo::draw() {
     };
 
     std::sort(indices.begin(), indices.end(), [&](usize a, usize b) {
-        return (cam_pos - end_points[a]).length2() > (cam_pos - end_points[b]).length2();
+        return (cam_pos - end_points[a]).sq_length() > (cam_pos - end_points[b]).sq_length();
     });
 
 
@@ -668,7 +668,7 @@ void OrientationGizmo::draw() {
 
     if(_is_dragging && _allow_dragging) {
         const math::Vec2 raw_mouse_delta = math::Vec2(ImGui::GetIO().MouseDelta);
-        if(raw_mouse_delta.length2() > 0.0f) {
+        if(raw_mouse_delta.sq_length() > 0.0f) {
             const math::Vec2 mouse_delta = raw_mouse_delta / (-0.5f * math::pi<float> * orientation_gizmo_size);
             const math::Vec3 cam_pos = camera.position();
             const math::Vec3 cam_fwd = camera.forward();

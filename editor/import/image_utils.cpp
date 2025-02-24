@@ -329,9 +329,9 @@ static inline u64 compress_block_bc1(const u8* src) {
     for(usize i = 0; i != 16; ++i) {
         const math::Vec3i color(src[0] & 0xF8, src[1] & 0xFC, src[2] & 0xF8);
         u32 idx = 0;
-        i32 best = (colors[0] - color).length2();
+        i32 best = (colors[0] - color).sq_length();
         for(u32 c = 1; c != 4; ++c) {
-            i32 score = (colors[c] - color).length2();
+            i32 score = (colors[c] - color).sq_length();
             if(score < best) {
                 best = score;
                 idx = c;

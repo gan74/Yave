@@ -97,7 +97,7 @@ class Quaternion {
         inline constexpr Vec<3, T> operator()(const Vec<3, T>& v) const {
             Vec<3, T> u = _quat.template to<3>();
             return u * T(2.0f) * u.dot(v) +
-                   v * (w() * w() - u.length2()) +
+                   v * (w() * w() - u.sq_length()) +
                    u.cross(v) * T(2.0f) * w();
         }
 

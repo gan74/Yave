@@ -50,10 +50,10 @@ y_test_func("Vec zero") {
     v.w() = 1;
     y_test_assert(!v.is_zero());
     y_test_assert(v.length() == 1);
-    y_test_assert(v.length2() == 1);
+    y_test_assert(v.sq_length() == 1);
 
     auto v2 = v.normalized();
-    y_test_assert((v2 - v).length2() < 0.0001);
+    y_test_assert((v2 - v).sq_length() < 0.0001);
 }
 
 y_test_func("Vec cross") {

@@ -332,7 +332,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                     for(usize i = 0; i != 3; ++i) {
                         math::Vec3 v;
                         v[i] = 1.0f;
-                        if((qa(v) - qb(v)).length2() > 0.001f) {
+                        if((qa(v) - qb(v)).sq_length() > 0.001f) {
                             return false;
                         }
                     }

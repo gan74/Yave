@@ -58,7 +58,7 @@ class AABB {
         }
 
         float origin_radius() const {
-            return std::sqrt(std::max(_min.length2(), _max.length2()));
+            return std::sqrt(std::max(_min.sq_length(), _max.sq_length()));
         }
 
         const math::Vec3& min() const {
