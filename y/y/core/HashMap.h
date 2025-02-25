@@ -75,7 +75,7 @@ enum class ProbingStrategy {
     Quadratic
 };
 
-static constexpr ProbingStrategy default_hash_map_probing_strategy = ProbingStrategy::Quadratic;
+static constexpr ProbingStrategy default_hash_map_probing_strategy = ProbingStrategy::Linear;
 
 // http://research.cs.vt.edu/AVresearch/hashing/quadratic.php
 template<ProbingStrategy Strategy = default_hash_map_probing_strategy>
@@ -110,17 +110,20 @@ class FlatHashMap : Hasher, Equal {
             usize hash;
         };
 
-        struct CompactState {
+        struct State {
             static constexpr u8 tombstone_bits  = 0x01;
             static constexpr u8 empty_bits      = 0x00;
             static constexpr u8 has_hash_bit    = 0x80;
 
-            u8 bits = 0;
+            u8 bits = empty_bits;
 
+            static inline u8 stored_bits(usize hash) {
+                return u8(hash & 0xFF) | has_hash_bit;
+            }
 
             inline void set_hash(usize hash) {
                 y_debug_assert(!is_full());
-                bits = u8(hash & 0xFF) | has_hash_bit;
+                bits = stored_bits(hash);
             }
 
             inline void make_empty() {
@@ -132,8 +135,8 @@ class FlatHashMap : Hasher, Equal {
                 return (bits & has_hash_bit) != 0;
             }
 
-            inline bool matches_hash(usize) const {
-                return is_full();
+            inline bool matches_hash(usize hash) const {
+                return bits == stored_bits(hash);
             }
 
             inline bool is_empty_strict() const {
@@ -145,15 +148,14 @@ class FlatHashMap : Hasher, Equal {
             }
         };
 
-        static_assert(sizeof(CompactState) == sizeof(u8));
+        static_assert(sizeof(State) == sizeof(u8));
 
         template<typename K>
-        inline usize retrieve_hash(const K& key, const CompactState&) const {
-            return hash(key);
+        inline usize retrieve_hash(const K& key, [[maybe_unused]] const State& state) const {
+            const usize h = hash(key);
+            y_debug_assert(state.matches_hash(h));
+            return h;
         }
-
-
-        using State = CompactState;
 
         struct Entry : NonMovable {
             union {
