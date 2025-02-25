@@ -22,13 +22,14 @@ SOFTWARE.
 #ifndef Y_CORE_HASHMAP_H
 #define Y_CORE_HASHMAP_H
 
+
 #include "Range.h"
-#include "FixedArray.h"
 
 #include <y/utils/hash.h>
 #include <y/utils/traits.h>
 
 #include <functional>
+#include <memory>
 
 
 Y_TODO("Implement trick from here: https://www.youtube.com/watch?v=ncHmEUmJZf4")
@@ -389,21 +390,19 @@ class FlatHashMap : Hasher, Equal {
         }
 
         void expand(usize new_bucket_count) {
-            const usize pow_2 = detail::ceil_next_power_of_2(new_bucket_count);
-            const usize new_size = pow_2 < min_capacity ? min_capacity : pow_2;
+            y_debug_assert(is_pow_of_2(new_bucket_count));
 
-            y_debug_assert(pow_2 >= new_bucket_count);
-
-            if(new_size <= bucket_count()) {
+            new_bucket_count = new_bucket_count < min_capacity ? min_capacity : new_bucket_count;
+            if(new_bucket_count <= bucket_count()) {
                 return;
             }
 
-            auto old_states = std::exchange(_states, FixedArray<State>(new_size));
-            auto old_entries = std::exchange(_entries, std::make_unique_for_overwrite<Entry[]>(new_size));
+            const usize old_bucket_count = std::exchange(_buckets, new_bucket_count);
+            auto old_states = std::exchange(_states, std::make_unique<State[]>(new_bucket_count));
+            auto old_entries = std::exchange(_entries, std::make_unique_for_overwrite<Entry[]>(new_bucket_count));
             _max_probe_len = 0;
 
             if(_size) {
-                const usize old_bucket_count = old_states.size();
                 for(usize i = 0; i != old_bucket_count; ++i) {
                     if(is_state_full(old_states[i])) {
                         const usize h = retrieve_hash(old_entries[i].key(), old_states[i]);
@@ -425,8 +424,9 @@ class FlatHashMap : Hasher, Equal {
             expand(bucket_count() == 0 ? min_capacity : 2 * bucket_count());
         }
 
-        FixedArray<State> _states;
+        std::unique_ptr<State[]> _states;
         std::unique_ptr<Entry[]> _entries;
+        usize _buckets = 0;
         usize _size = 0;
         usize _max_probe_len = 0;
 
@@ -480,8 +480,9 @@ class FlatHashMap : Hasher, Equal {
 
         inline void clear() {
             make_empty();
-            _states.clear();
+            _states = nullptr;
             _entries = nullptr;
+            _buckets = 0;
         }
 
         inline iterator begin() {
@@ -535,7 +536,7 @@ class FlatHashMap : Hasher, Equal {
         }
 
         inline usize bucket_count() const {
-            return _states.size();
+            return _buckets;
         }
 
         inline usize size() const {

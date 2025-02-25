@@ -31,6 +31,7 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>
+#include <y/core/FixedArray.h>
 
 #include <deque>
 
