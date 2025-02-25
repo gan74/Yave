@@ -146,11 +146,13 @@ static Map fuzz(usize count, u32 seed) {
 Y_TODO(Test with complex objects)
 
 y_test_func("HashMap basics") {
-    static constexpr int max_key = 1000;
+    static constexpr int max_key = 100000;
     DefaultImpl<int, int> map;
 
     for(int i = 0; i != max_key; ++i) {
+        y_debug_assert(!map.contains(i));
         map.emplace(i, i * 2);
+        y_debug_assert(map.contains(i));
     }
 
     y_debug_assert(map.contains(4));
@@ -252,6 +254,12 @@ y_test_func("HashMap value dtors") {
     }
 
     y_test_assert(counter == max_key);
+}
+
+y_test_func("HashMap simple") {
+    DefaultImpl<int, int> map;
+     map.emplace(4, 13);
+    y_test_assert(map.contains(4));
 }
 
 

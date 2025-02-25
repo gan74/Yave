@@ -30,6 +30,14 @@ SOFTWARE.
 
 #include <functional>
 #include <memory>
+#include <bit>
+
+#if __has_include(<immintrin.h>) && __has_include(<emmintrin.h>) && __has_include(<smmintrin.h>)
+#define Y_HASHMAP_SIMD
+#include <immintrin.h>
+#include <emmintrin.h>
+#include <smmintrin.h>
+#endif
 
 
 Y_TODO("Implement trick from here: https://www.youtube.com/watch?v=ncHmEUmJZf4")
@@ -106,26 +114,34 @@ class FlatHashMap : Hasher, Equal {
 
         static constexpr usize invalid_index = usize(-1);
 
+#ifdef Y_HASHMAP_SIMD
+        static constexpr usize simd_width = sizeof(__m128i);
+        static_assert(min_capacity >= simd_width);
+        static_assert(min_capacity % simd_width == 0);
+
+        inline usize group_count() const {
+            return bucket_count() / simd_width;
+        }
+
+#endif
+
+
         struct Bucket {
             usize index;
             usize hash;
         };
 
         using State = u8;
-        static constexpr State tombstone_state  = 0x01;
-        static constexpr State empty_state      = 0x00;
-        static constexpr State state_has_hash_bit     = 0x80;
+        static constexpr State tombstone_state          = 0x01;
+        static constexpr State empty_state              = 0x00;
+        static constexpr State state_has_hash_bit       = 0x80;
 
-        static inline u8 make_state(usize hash) {
+        static inline State make_state(usize hash) {
             return u8(hash & 0xFF) | state_has_hash_bit;
         }
 
         static inline bool is_state_full(State state) {
             return (state & state_has_hash_bit) != 0;
-        }
-
-        static inline bool matches_hash(State state, usize hash) {
-            return state == make_state(hash);
         }
 
         template<typename K>
@@ -327,13 +343,116 @@ class FlatHashMap : Hasher, Equal {
             return find_bucket_for_insert(key, h);
         }
 
+#ifdef Y_HASHMAP_SIMD
+        static inline usize build_group_index(usize h, usize probe, usize mask) {
+            return ((h >> 8) + detail::probing_offset<>(probe)) & mask;
+        }
+
+        template<typename K>
+        Bucket find_bucket_for_insert(const K& key, usize h) {
+            const usize groups = group_count();
+            const usize group_mask = groups - 1;
+
+            const __m128i pattern = _mm_set1_epi8(make_state(h));
+            const __m128i tombstones = _mm_set1_epi8(tombstone_state);
+            const __m128i empties = _mm_setzero_si128();
+            const __m128i* gr = reinterpret_cast<const __m128i*>(_states.get());
+
+            usize best_index = invalid_index;
+            usize probes = 0;
+            for(; probes <= _max_probe_len; ++probes) {
+                const usize group_index = build_group_index(h, probes, group_mask);
+                const __m128i packed_states = _mm_loadu_si128(gr + group_index);
+
+                {
+                    int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, pattern));
+                    while(matches != 0) {
+                        const usize index = group_index * simd_width + std::countr_zero(unsigned(matches));
+                        if(equal(_entries[index].key(), key)) {
+                            return {index, h};
+                        }
+                        matches ^= (matches & -matches);
+                    }
+                }
+
+                if(best_index == invalid_index) {
+                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, tombstones));
+                    if(matches != 0) {
+                        best_index = group_index * simd_width + std::countr_zero(unsigned(matches));
+                    }
+                }
+
+                {
+                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, empties));
+                    if(matches != 0) {
+                        if(best_index != invalid_index) {
+                            return {best_index, h};
+                        }
+                        const usize index = group_index * simd_width + std::countr_zero(unsigned(matches));
+                        return {index, h};
+                    }
+                }
+            }
+
+            for(; probes < groups; ++probes) {
+                const usize group_index = build_group_index(h, probes, group_mask);
+                const __m128i packed_states = _mm_loadu_si128(gr + group_index);
+
+                const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, empties));
+                if(matches != 0) {
+                    _max_probe_len = probes;
+                    const usize index = group_index * simd_width + std::countr_zero(unsigned(matches));
+                    return {index, h};
+                }
+            }
+
+            y_fatal("Internal error: unable to find empty bucket");
+        }
+
+        template<typename K>
+        usize find_bucket(const K& key) const {
+            if(is_empty()) {
+                return invalid_index;
+            }
+
+            const usize h = hash(key);
+
+            const usize groups = group_count();
+            const usize group_mask = groups - 1;
+
+            y_debug_assert(groups);
+
+            const __m128i pattern = _mm_set1_epi8(make_state(h));
+            const __m128i* gr = reinterpret_cast<const __m128i*>(_states.get());
+
+            for(usize i = 0; i <= _max_probe_len; ++i) {
+                const usize group_index = build_group_index(h, i, group_mask);
+                const __m128i packed_states = _mm_loadu_si128(gr + group_index);
+
+                int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, pattern));
+                while(matches != 0) {
+                    const usize index = group_index * simd_width + std::countr_zero(unsigned(matches));
+                    if(equal(_entries[index].key(), key)) {
+                        return index;
+                    }
+                    matches ^= (matches & -matches);
+                }
+
+                if(_mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_setzero_si128()))) {
+                    return invalid_index;
+                }
+            }
+            return invalid_index;
+        }
+#else
         template<typename K>
         Bucket find_bucket_for_insert(const K& key, usize h) {
             const usize buckets = bucket_count();
             const usize hash_mask = buckets - 1;
-            usize probes = 0;
 
             y_debug_assert(buckets);
+
+            usize probes = 0;
             {
                 usize best_index = invalid_index;
                 for(; probes <= _max_probe_len; ++probes) {
@@ -346,7 +465,7 @@ class FlatHashMap : Hasher, Equal {
                         if(best_index == invalid_index) {
                             best_index = index;
                         }
-                    } else if(matches_hash(state, h) && equal(_entries[index].key(), key)) {
+                    } else if(state == make_state(h) && equal(_entries[index].key(), key)) {
                         return {index, h};
                     }
                 }
@@ -375,10 +494,12 @@ class FlatHashMap : Hasher, Equal {
 
             const usize h = hash(key);
             const usize hash_mask = bucket_count() - 1;
+            const State expected_state = make_state(h);
+
             for(usize i = 0; i <= _max_probe_len; ++i) {
                 const usize index = (h + detail::probing_offset<>(i)) & hash_mask;
                 const State& state = _states[index];
-                if(matches_hash(state, h)) {
+                if(state == expected_state) {
                     if(equal(_entries[index].key(), key)) {
                         return index;
                     }
@@ -388,6 +509,7 @@ class FlatHashMap : Hasher, Equal {
             }
             return invalid_index;
         }
+#endif
 
         void expand(usize new_bucket_count) {
             y_debug_assert(is_pow_of_2(new_bucket_count));
@@ -404,6 +526,7 @@ class FlatHashMap : Hasher, Equal {
 
             if(_size) {
                 for(usize i = 0; i != old_bucket_count; ++i) {
+                    y_debug_assert(is_state_full(old_states[i]) == !old_entries[i].empty);
                     if(is_state_full(old_states[i])) {
                         const usize h = retrieve_hash(old_entries[i].key(), old_states[i]);
                         const Bucket bucket = find_bucket_for_insert(old_entries[i].key(), h);
