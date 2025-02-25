@@ -110,51 +110,26 @@ class FlatHashMap : Hasher, Equal {
             usize hash;
         };
 
-        struct State {
-            static constexpr u8 tombstone_bits  = 0x01;
-            static constexpr u8 empty_bits      = 0x00;
-            static constexpr u8 has_hash_bit    = 0x80;
+        using State = u8;
+        static constexpr State tombstone_state  = 0x01;
+        static constexpr State empty_state      = 0x00;
+        static constexpr State state_has_hash_bit     = 0x80;
 
-            u8 bits = empty_bits;
+        static inline u8 make_state(usize hash) {
+            return u8(hash & 0xFF) | state_has_hash_bit;
+        }
 
-            static inline u8 stored_bits(usize hash) {
-                return u8(hash & 0xFF) | has_hash_bit;
-            }
+        static inline bool is_state_full(State state) {
+            return (state & state_has_hash_bit) != 0;
+        }
 
-            inline void set_hash(usize hash) {
-                y_debug_assert(!is_full());
-                bits = stored_bits(hash);
-            }
-
-            inline void make_empty() {
-                y_debug_assert(is_full());
-                bits = tombstone_bits;
-            }
-
-            inline bool is_full() const {
-                return (bits & has_hash_bit) != 0;
-            }
-
-            inline bool matches_hash(usize hash) const {
-                return bits == stored_bits(hash);
-            }
-
-            inline bool is_empty_strict() const {
-                return bits == empty_bits;
-            }
-
-            inline bool is_tombstone() const {
-                return bits == tombstone_bits;
-            }
-        };
-
-        static_assert(sizeof(State) == sizeof(u8));
+        static inline bool matches_hash(State state, usize hash) {
+            return state == make_state(hash);
+        }
 
         template<typename K>
-        inline usize retrieve_hash(const K& key, [[maybe_unused]] const State& state) const {
-            const usize h = hash(key);
-            y_debug_assert(state.matches_hash(h));
-            return h;
+        inline usize retrieve_hash(const K& key, const State&) const {
+            return hash(key);
         }
 
         struct Entry : NonMovable {
@@ -310,11 +285,11 @@ class FlatHashMap : Hasher, Equal {
                 }
 
                 inline void find_next() {
-                    for(;_index < _parent->bucket_count() && !_parent->_states[_index].is_full(); ++_index) {
+                    for(;_index < _parent->bucket_count() && !is_state_full(_parent->_states[_index]); ++_index) {
                         // nothing
                     }
                     y_debug_assert(_index <= _parent->bucket_count());
-                    y_debug_assert(at_end() || _parent->_states[_index].is_full());
+                    y_debug_assert(at_end() || is_state_full(_parent->_states[_index]));
                 }
 
                 Y_TODO(Maybe dont store pointer to parent and use _state directly (starting from the end so we get _index -> 0))
@@ -363,14 +338,14 @@ class FlatHashMap : Hasher, Equal {
                 for(; probes <= _max_probe_len; ++probes) {
                     const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
                     const State& state = _states[index];
-                    if(!state.is_full()) {
-                        if(state.is_empty_strict()) {
+                    if(!is_state_full(state)) {
+                        if(state == empty_state) {
                             return {index, h};
                         }
                         if(best_index == invalid_index) {
                             best_index = index;
                         }
-                    } else if(state.matches_hash(h) && equal(_entries[index].key(), key)) {
+                    } else if(matches_hash(state, h) && equal(_entries[index].key(), key)) {
                         return {index, h};
                     }
                 }
@@ -382,7 +357,7 @@ class FlatHashMap : Hasher, Equal {
 
             for(; probes < buckets; ++probes) {
                 const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
-                if(!_states[index].is_full()) {
+                if(!is_state_full(_states[index])) {
                     _max_probe_len = probes;
                     return {index, h};
                 }
@@ -402,11 +377,11 @@ class FlatHashMap : Hasher, Equal {
             for(usize i = 0; i <= _max_probe_len; ++i) {
                 const usize index = (h + detail::probing_offset<>(i)) & hash_mask;
                 const State& state = _states[index];
-                if(state.matches_hash(h)) {
+                if(matches_hash(state, h)) {
                     if(equal(_entries[index].key(), key)) {
                         return index;
                     }
-                } else if(state.is_empty_strict()) {
+                } else if(state == empty_state) {
                     return invalid_index;
                 }
             }
@@ -430,14 +405,14 @@ class FlatHashMap : Hasher, Equal {
             if(_size) {
                 const usize old_bucket_count = old_states.size();
                 for(usize i = 0; i != old_bucket_count; ++i) {
-                    if(old_states[i].is_full()) {
+                    if(is_state_full(old_states[i])) {
                         const usize h = retrieve_hash(old_entries[i].key(), old_states[i]);
                         const Bucket bucket = find_bucket_for_insert(old_entries[i].key(), h);
                         const usize new_index = bucket.index;
 
-                        y_debug_assert(!_states[new_index].is_full());
+                        y_debug_assert(!is_state_full(_states[new_index]));
 
-                        _states[new_index].set_hash(bucket.hash);
+                        _states[new_index] = make_state(bucket.hash);
                         _entries[new_index].set(std::move(old_entries[i].key_value));
 
                         old_entries[i].clear();
@@ -492,8 +467,8 @@ class FlatHashMap : Hasher, Equal {
         inline void make_empty() {
             const usize len = bucket_count();
             for(usize i = 0; i != len && _size; ++i) {
-                if(_states[i].is_full()) {
-                    _states[i] = State();
+                if(is_state_full(_states[i])) {
+                    _states[i] = empty_state;
                     _entries[i].clear();
                     --_size;
                 }
@@ -627,10 +602,10 @@ class FlatHashMap : Hasher, Equal {
 
             y_debug_assert(index < bucket_count());
             y_debug_assert(it._parent == this);
-            y_debug_assert(_states[index].is_full());
+            y_debug_assert(is_state_full(_states[index]));
 
             _entries[index].clear();
-            _states[index].make_empty();
+            _states[index] = tombstone_state;
 
             --_size;
         }
@@ -649,12 +624,12 @@ class FlatHashMap : Hasher, Equal {
 
             const Bucket bucket = find_bucket_for_insert(p.first);
             const usize index = bucket.index;
-            const bool exists = _states[index].is_full();
+            const bool exists = is_state_full(_states[index]);
 
             y_debug_assert(!exists || _size > 0);
             if(!exists) {
                 _entries[index].set(std::move(p));
-                _states[index].set_hash(bucket.hash);
+                _states[index] = make_state(bucket.hash);
                 ++_size;
             }
 
@@ -677,11 +652,11 @@ class FlatHashMap : Hasher, Equal {
 
             const Bucket bucket = find_bucket_for_insert(key);
             const usize index = bucket.index;
-            const bool exists = _states[index].is_full();
+            const bool exists = is_state_full(_states[index]);
 
             if(!exists) {
                 _entries[index].set_empty(key);
-                _states[index].set_hash(bucket.hash);
+                _states[index] = make_state(bucket.hash);
                 ++_size;
             }
 
