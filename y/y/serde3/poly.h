@@ -144,7 +144,7 @@ struct PolyType {
     y_serde3_poly_qual(base, virtual, /*...*/)
 
 #define y_serde3_poly(base)                                                                                         \
-    y_serde3_poly_qual(base, /*   */, override)
+    y_serde3_poly_qual(base, /*...*/, override)
 
 
 }

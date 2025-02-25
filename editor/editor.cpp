@@ -183,7 +183,6 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
 
     const auto& store_dir = app_settings().editor.asset_store;
 
-    application::undo_stack = std::make_unique<UndoStack>();
     application::resources = std::make_unique<EditorResources>();
     application::ui = std::make_unique<UiManager>();
     application::asset_store = std::make_shared<FolderAssetStore>(store_dir);
@@ -192,6 +191,7 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::world = std::make_unique<EditorWorld>(*application::loader);
     application::scene = std::make_unique<EcsScene>(application::world.get());
     application::debug_drawer = std::make_unique<DirectDraw>();
+    application::undo_stack = std::make_unique<UndoStack>();
 
     create_scene();
 
@@ -202,6 +202,7 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
 
 
 void destroy_editor() {
+    application::undo_stack = nullptr;
     application::thumbmail_renderer = nullptr;
     application::scene = nullptr;
     application::world = nullptr;
@@ -212,7 +213,6 @@ void destroy_editor() {
     application::debug_drawer = nullptr;
     application::resources = nullptr;
     application::ui = nullptr;
-    application::undo_stack = nullptr;
     application::thread_pool = nullptr;
 }
 

@@ -92,7 +92,7 @@ core::Result<core::String> AssetPtr<T>::name() const {
 
 template<typename T>
 AssetLoader::Loader<T>::Loader(AssetLoader* parent) : LoaderBase(parent) {
-    y_always_assert(parent, "Parent should not be null.");
+    y_always_assert(parent, "Parent should not be null");
 }
 
 template<typename T>
@@ -100,7 +100,7 @@ AssetLoader::Loader<T>::~Loader<T>() {
     y_profile();
      _loaded.locked([&](auto&& loaded) {
         for(auto&& [id, ptr] : loaded) {
-            y_always_assert(ptr.expired(), "Asset is still live.");
+            y_always_assert(ptr.expired(), "Asset is still live");
         }
      });
 }
