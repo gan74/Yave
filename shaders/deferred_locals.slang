@@ -253,7 +253,7 @@ void comp_main() {
     // -------------------------------- POINTS --------------------------------
     const uint point_begin = 0;
     const uint point_end = min(max_tile_lights, tile_point_count);
-    for(uint i = point_begin; i != point_end; ++i) {
+    for(uint i = point_begin; i < point_end; ++i) {
         const PointLight light = point_lights[light_indices[i]];
         const AreaLightInfo area = karis_area_light(surface, light, world_pos, view_dir);
         const float att = attenuation(area.orig_light_dist * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
@@ -267,7 +267,7 @@ void comp_main() {
     // -------------------------------- SPOTS --------------------------------
     const uint spot_begin = tile_point_count;
     const uint spot_end = min(max_tile_lights, spot_begin + tile_spot_count);
-    for(uint i = spot_begin; i != spot_end; ++i) {
+    for(uint i = spot_begin; i < spot_end; ++i) {
         const SpotLight light = spot_lights[light_indices[i]];
         const AreaLightInfo area = karis_area_light(surface, light, world_pos, view_dir);
         float att = attenuation(area.orig_light_dist * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
