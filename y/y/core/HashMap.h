@@ -706,7 +706,7 @@ class FlatHashMap : Hasher, Equal {
         }
 
         inline void set_min_capacity(usize cap) {
-            const usize capacity = usize(cap / (max_load_factor * 0.8));
+            const usize capacity = next_pow_of_2(usize(cap / (max_load_factor * 0.8)));
             if(bucket_count() < capacity) {
                 expand(capacity);
             }
