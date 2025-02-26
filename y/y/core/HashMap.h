@@ -84,7 +84,7 @@ enum class ProbingStrategy {
     Quadratic
 };
 
-static constexpr ProbingStrategy default_hash_map_probing_strategy = ProbingStrategy::Linear;
+static constexpr ProbingStrategy default_hash_map_probing_strategy = ProbingStrategy::Quadratic;
 
 // http://research.cs.vt.edu/AVresearch/hashing/quadratic.php
 template<ProbingStrategy Strategy = default_hash_map_probing_strategy>
