@@ -79,6 +79,8 @@ StaticThreadPool::Task::Task(Func func, core::Span<DependencyGroup> wait, std::s
 
     std::copy_if(wait.begin(), wait.end(), std::back_inserter(wait_for), [](const auto& dep) { return !dep.is_empty(); });
 
+    unused(loc);
+
 #ifdef Y_DEBUG
     location = loc;
 #endif
