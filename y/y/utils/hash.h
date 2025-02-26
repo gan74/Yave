@@ -44,18 +44,25 @@ template<typename T>
 using Hash = std::hash<T>;
 #else
 // Custom hash to avoid std::hash implementation that don't do anything for integers
-
+namespace detail {
 template<typename T>
 static constexpr bool use_custom_hash_v = std::is_integral_v<T> && sizeof(T) <= sizeof(u64);
+}
 
 template<typename T>
-struct Hash : std::hash<T> {
+struct Hash{};
+
+template<typename T> requires(!detail::use_custom_hash_v<T>)
+struct Hash<T> : std::hash<T> {
     usize operator()(const T& h) const {
-        if constexpr(use_custom_hash_v<T>) {
-            return hash_u64(static_cast<u64>(h));
-        } else {
-            return std::hash<T>::operator()(h);
-        }
+        return std::hash<T>::operator()(h);
+    }
+};
+
+template<typename T> requires(detail::use_custom_hash_v<T>)
+struct Hash<T> {
+    usize operator()(const T& h) const {
+        return hash_u64(static_cast<u64>(h));
     }
 };
 #endif

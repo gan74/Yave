@@ -28,15 +28,16 @@ SOFTWARE.
 #include <y/utils/hash.h>
 #include <y/utils/traits.h>
 
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 #include <functional>
 #include <memory>
 #include <bit>
 
-#if __has_include(<emmintrin.h>) && (defined(_M_IX86) || defined(_M_X64) || defined(__i386__) || defined(__x86_64__))
+#ifdef Y_SSE
 #define Y_HASHMAP_SIMD
 #include <emmintrin.h>
-#else
-#warning SSE not supported
 #endif
 
 
@@ -98,7 +99,6 @@ inline constexpr usize probing_offset(usize i) {
 }
 
 
-namespace swiss {
 template<typename Key, typename Value, typename Hasher = Hash<Key>, typename Equal = std::equal_to<Key>>
 class FlatHashMap : Hasher, Equal {
     public:
@@ -118,34 +118,53 @@ class FlatHashMap : Hasher, Equal {
         static constexpr usize simd_width = sizeof(__m128i);
         static_assert(min_capacity >= simd_width);
         static_assert(min_capacity % simd_width == 0);
-
-        inline usize group_count() const {
-            return bucket_count() / simd_width;
-        }
-
 #endif
 
-
-        struct Bucket {
-            usize index;
-            usize hash;
-        };
-
         using State = u8;
-        static constexpr State tombstone_state          = 0x01;
-        static constexpr State empty_state              = 0x00;
-        static constexpr State state_has_hash_bit       = 0x80;
+        using State4 = u32;
 
-        static inline State make_state(usize hash) {
-            return u8(hash & 0xFF) | state_has_hash_bit;
+        
+        static constexpr inline State4 to_state_4(State state) {
+            const State4 s = state;
+            return (s << 24) | (s << 16) | (s << 8) | s;
         }
 
-        static inline bool is_state_full(State state) {
-            return (state & state_has_hash_bit) != 0;
+
+        static constexpr State empty_state              = 0x00;
+        static constexpr State tombstone_state          = 0x01;
+            
+        static constexpr State4 tombstone_state_4       = to_state_4(tombstone_state);
+
+        static constexpr auto state_table = [] {
+            std::array<State, 256> table;
+            for(usize i = 0; i != table.size(); ++i) {
+                table[i] = State((i % 253) + 2);
+            }
+            return table;
+        }();
+
+        static constexpr auto state_table_4 = [] {
+            std::array<State4, 256> table;
+            for(usize i = 0; i != table.size(); ++i) {
+                table[i] = to_state_4(state_table[i]);
+            }
+            return table;
+        }();
+
+        static y_force_inline State make_state(usize hash) {
+            return state_table[hash % state_table.size()];
+        }
+
+        static y_force_inline State4 make_state_4(usize hash) {
+            return state_table_4[hash % state_table_4.size()];
+        }
+
+        static y_force_inline bool is_state_full(State state) {
+            return (state != empty_state) && (state != tombstone_state);
         }
 
         template<typename K>
-        inline usize retrieve_hash(const K& key, const State&) const {
+        y_force_inline usize retrieve_hash(const K& key, const State&) const {
             return hash(key);
         }
 
@@ -162,22 +181,22 @@ class FlatHashMap : Hasher, Equal {
             }
 
             template<typename K>
-            inline void set_empty(const K& k) {
+            y_force_inline void set_empty(const K& k) {
                 checked_set_full();
                 ::new(&key_value) pair_type{k, mapped_type{}};
             }
 
-            inline void set(pair_type&& kv) {
+            y_force_inline void set(pair_type&& kv) {
                 checked_set_full();
                 ::new(&key_value) pair_type{std::move(kv)};
             }
 
-            inline void clear() {
+            y_force_inline void clear() {
                 checked_set_empty();
                 key_value.~pair_type();
             }
 
-            inline const key_type& key() const {
+            y_force_inline const key_type& key() const {
                 y_debug_assert(!empty);
                 return key_value.first;
             }
@@ -185,20 +204,20 @@ class FlatHashMap : Hasher, Equal {
 #ifdef Y_DEBUG
             bool empty = true;
 
-            inline void checked_set_full() {
+            y_force_inline void checked_set_full() {
                 y_debug_assert(empty);
                 empty = false;
             }
 
-            inline void checked_set_empty() {
+            y_force_inline void checked_set_empty() {
                 y_debug_assert(!empty);
                 empty = true;
             }
 #else
-            inline void checked_set_full() {
+            y_force_inline void checked_set_full() {
             }
 
-            inline void checked_set_empty() {
+            y_force_inline void checked_set_empty() {
             }
 #endif
         };
@@ -206,11 +225,11 @@ class FlatHashMap : Hasher, Equal {
         struct KeyValueIt {
             using type = value_type;
 
-            inline value_type& operator()(Entry& entry) const {
+            y_force_inline value_type& operator()(Entry& entry) const {
                 return detail::map_entry_to_value_type(entry.key_value);
             }
 
-            inline const value_type& operator()(const Entry& entry) const {
+            y_force_inline const value_type& operator()(const Entry& entry) const {
                 return detail::map_entry_to_value_type(entry.key_value);
             }
         };
@@ -218,7 +237,7 @@ class FlatHashMap : Hasher, Equal {
         struct KeyIt {
             using type = key_type;
 
-            inline const key_type& operator()(const Entry& entry) const {
+            y_force_inline const key_type& operator()(const Entry& entry) const {
                 return entry.key();
             }
         };
@@ -226,11 +245,11 @@ class FlatHashMap : Hasher, Equal {
         struct ValueIt {
             using type = mapped_type;
 
-            inline mapped_type& operator()(Entry& entry) const {
+            y_force_inline mapped_type& operator()(Entry& entry) const {
                 return entry.key_value.second;
             }
 
-            inline const mapped_type& operator()(const Entry& entry) const {
+            y_force_inline const mapped_type& operator()(const Entry& entry) const {
                 return entry.key_value.second;
             }
         };
@@ -301,7 +320,7 @@ class FlatHashMap : Hasher, Equal {
                     find_next();
                 }
 
-                inline void find_next() {
+                y_force_inline void find_next() {
                     for(;_index < _parent->bucket_count() && !is_state_full(_parent->_states[_index]); ++_index) {
                         // nothing
                     }
@@ -328,90 +347,114 @@ class FlatHashMap : Hasher, Equal {
         }
 
         template<typename K>
-        inline usize hash(const K& key) const {
+        y_force_inline usize hash(const K& key) const {
             return Hasher::operator()(key);
         }
 
         template<typename K>
-        inline bool equal(const key_type& a, const K& b) const {
+        y_force_inline bool equal(const key_type& a, const K& b) const {
             return Equal::operator()(a, b);
         }
 
-        template<typename K>
-        inline Bucket find_bucket_for_insert(const K& key) {
-            const usize h = hash(key);
-            return find_bucket_for_insert(key, h);
-        }
-
 #ifdef Y_HASHMAP_SIMD
-        static inline usize build_group_index(usize h, usize probe, usize mask) {
+        static y_force_inline usize build_group_index(usize h, usize probe, usize mask) {
             return ((h >> 8) + detail::probing_offset<>(probe)) & mask;
         }
 
+        static y_force_inline usize countr_zero(int x) {
+            y_assume(x != 0);
+#ifdef Y_MSVC
+          unsigned long r;
+          _BitScanForward(&r, unsigned(x));
+          return r;
+#else
+          return std::countr_zero(unsigned(x));
+#endif
+        }
+
+
         template<typename K>
-        Bucket find_bucket_for_insert(const K& key, usize h) {
+        /*__declspec(noinline)*/ y_force_inline  std::pair<usize, bool> find_bucket_for_insert(const K& key, usize h) {
             const usize groups = group_count();
             const usize group_mask = groups - 1;
-
-            const __m128i pattern = _mm_set1_epi8(make_state(h));
-            const __m128i tombstones = _mm_set1_epi8(tombstone_state);
-            const __m128i empties = _mm_setzero_si128();
+            
+            const __m128i pattern = _mm_set1_epi32(make_state_4(h));
             const __m128i* gr = reinterpret_cast<const __m128i*>(_states.get());
 
             usize best_index = invalid_index;
             usize probes = 0;
-            for(; probes <= _max_probe_len; ++probes) {
+            do {
                 const usize group_index = build_group_index(h, probes, group_mask);
+                const usize group_start_index = group_index * simd_width;
                 const __m128i packed_states = _mm_loadu_si128(gr + group_index);
 
                 {
                     int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, pattern));
-                    while(matches != 0) {
-                        const usize index = group_index * simd_width + std::countr_zero(unsigned(matches));
-                        if(equal(_entries[index].key(), key)) {
-                            return {index, h};
-                        }
-                        matches ^= (matches & -matches);
+                    if(matches != 0) {
+                        do {
+                            const Entry* group_start = _entries.get() + group_start_index;
+                            _mm_prefetch(reinterpret_cast<const char*>(group_start), _MM_HINT_T0);
+                            const usize index_in_group = countr_zero(matches);
+                            if(equal(group_start[index_in_group].key(), key)) {
+                                return {group_start_index + index_in_group, true};
+                            }
+                            matches ^= (matches & -matches);
+                        } while(matches != 0);
                     }
                 }
 
                 if(best_index == invalid_index) {
-                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, tombstones));
+                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_set1_epi32(tombstone_state_4)));
                     if(matches != 0) {
-                        best_index = group_index * simd_width + std::countr_zero(unsigned(matches));
+                        best_index = group_start_index + countr_zero(matches);
                     }
                 }
 
                 {
-                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, empties));
+                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_setzero_si128()));
                     if(matches != 0) {
                         if(best_index != invalid_index) {
-                            return {best_index, h};
+                            return {best_index, false};
                         }
-                        const usize index = group_index * simd_width + std::countr_zero(unsigned(matches));
-                        return {index, h};
+                        return {group_start_index + countr_zero(matches), false};
                     }
                 }
+            } while(++probes <= _max_probe_len);
+
+            if(best_index != invalid_index) {
+                return {best_index, false};
             }
 
             for(; probes < groups; ++probes) {
                 const usize group_index = build_group_index(h, probes, group_mask);
+                const usize group_start_index = group_index * simd_width;
                 const __m128i packed_states = _mm_loadu_si128(gr + group_index);
 
-                const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, empties));
-                if(matches != 0) {
-                    _max_probe_len = probes;
-                    const usize index = group_index * simd_width + std::countr_zero(unsigned(matches));
-                    return {index, h};
+                {
+                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_set1_epi32(tombstone_state_4)));
+                    if(matches != 0) {
+                        _max_probe_len = probes;
+                        const usize index = group_start_index + countr_zero(matches);
+                        return {index, false};
+                    }
+                }
+                
+                {
+                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_setzero_si128()));
+                    if(matches != 0) {
+                        _max_probe_len = probes;
+                        const usize index = group_start_index + countr_zero(matches);
+                        return {index, false};
+                    }
                 }
             }
 
-            y_fatal("Internal error: unable to find empty bucket");
+            y_unreachable();
         }
 
         template<typename K>
-        usize find_bucket(const K& key) const {
-            if(is_empty()) {
+        y_force_inline usize find_bucket(const K& key) const {
+            if(is_empty()) [[unlikely]] {
                 return invalid_index;
             }
 
@@ -422,31 +465,39 @@ class FlatHashMap : Hasher, Equal {
 
             y_debug_assert(groups);
 
-            const __m128i pattern = _mm_set1_epi8(make_state(h));
+            const __m128i pattern = _mm_set1_epi32(make_state_4(h));
             const __m128i* gr = reinterpret_cast<const __m128i*>(_states.get());
 
-            for(usize i = 0; i <= _max_probe_len; ++i) {
-                const usize group_index = build_group_index(h, i, group_mask);
+            usize probe = 0;
+            do {
+                const usize group_index = build_group_index(h, probe, group_mask);
                 const __m128i packed_states = _mm_loadu_si128(gr + group_index);
 
                 int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, pattern));
-                while(matches != 0) {
-                    const usize index = group_index * simd_width + std::countr_zero(unsigned(matches));
-                    if(equal(_entries[index].key(), key)) {
-                        return index;
-                    }
-                    matches ^= (matches & -matches);
+                if(matches != 0) [[likely]] {
+                    const usize group_start_index = group_index * simd_width;
+                    const Entry* group_start = _entries.get() + group_start_index;
+                    _mm_prefetch(reinterpret_cast<const char*>(group_start), _MM_HINT_T0);
+                    do {
+                        const usize index_in_group = countr_zero(matches);
+                        if(equal(group_start[index_in_group].key(), key)) [[likely]] {
+                            return group_start_index + index_in_group;
+                        }
+                        matches ^= (matches & -matches);
+                    } while(matches != 0);
                 }
 
-                if(_mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_setzero_si128()))) {
+                if(_mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_setzero_si128()))) [[likely]] {
                     return invalid_index;
                 }
-            }
+
+            } while(++probe <= _max_probe_len);
+
             return invalid_index;
         }
 #else
         template<typename K>
-        Bucket find_bucket_for_insert(const K& key, usize h) {
+        std::pair<usize, bool> find_bucket_for_insert(const K& key, usize h) {
             const usize buckets = bucket_count();
             const usize hash_mask = buckets - 1;
 
@@ -460,18 +511,18 @@ class FlatHashMap : Hasher, Equal {
                     const State& state = _states[index];
                     if(!is_state_full(state)) {
                         if(state == empty_state) {
-                            return {index, h};
+                            return {index, false};
                         }
                         if(best_index == invalid_index) {
                             best_index = index;
                         }
                     } else if(state == make_state(h) && equal(_entries[index].key(), key)) {
-                        return {index, h};
+                        return {index, true};
                     }
                 }
 
                 if(best_index != invalid_index) {
-                    return {best_index, h};
+                    return {best_index, false};
                 }
             }
 
@@ -479,11 +530,11 @@ class FlatHashMap : Hasher, Equal {
                 const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
                 if(!is_state_full(_states[index])) {
                     _max_probe_len = probes;
-                    return {index, h};
+                    return {index, false};
                 }
             }
 
-            y_fatal("Internal error: unable to find empty bucket");
+            y_unreachable();
         }
 
         template<typename K>
@@ -528,12 +579,12 @@ class FlatHashMap : Hasher, Equal {
                 for(usize i = 0; i != old_bucket_count; ++i) {
                     if(is_state_full(old_states[i])) {
                         const usize h = retrieve_hash(old_entries[i].key(), old_states[i]);
-                        const Bucket bucket = find_bucket_for_insert(old_entries[i].key(), h);
-                        const usize new_index = bucket.index;
-
+                        const auto [new_index, exists] = find_bucket_for_insert(old_entries[i].key(), h);
+                        
+                        y_debug_assert(!exists);
                         y_debug_assert(!is_state_full(_states[new_index]));
 
-                        _states[new_index] = make_state(bucket.hash);
+                        _states[new_index] = make_state(h);
                         _entries[new_index].set(std::move(old_entries[i].key_value));
 
                         old_entries[i].clear();
@@ -657,9 +708,15 @@ class FlatHashMap : Hasher, Equal {
             return !_size;
         }
 
-        inline usize bucket_count() const {
+        y_force_inline usize bucket_count() const {
             return _buckets;
         }
+        
+#ifdef Y_HASHMAP_SIMD
+        y_force_inline usize group_count() const {
+            return _buckets / simd_width;
+        }
+#endif
 
         inline usize max_probe_sequence_len() const {
             return _max_probe_len;
@@ -743,20 +800,20 @@ class FlatHashMap : Hasher, Equal {
         }
 
         inline std::pair<iterator, bool> insert(value_type p) {
-            if(should_expand()) {
+            if(should_expand()) [[unlikely]] {
                 expand();
             }
 
             y_debug_assert(!should_expand());
-
-            const Bucket bucket = find_bucket_for_insert(p.first);
-            const usize index = bucket.index;
-            const bool exists = is_state_full(_states[index]);
+            
+            const usize h = hash(p.first);
+            const auto [index, exists] = find_bucket_for_insert(p.first, h);
 
             y_debug_assert(!exists || _size > 0);
+
             if(!exists) {
                 _entries[index].set(std::move(p));
-                _states[index] = make_state(bucket.hash);
+                _states[index] = make_state(h);
                 ++_size;
             }
 
@@ -773,26 +830,40 @@ class FlatHashMap : Hasher, Equal {
 
         template<typename K>
         inline mapped_type& operator[](const K& key) {
-            if(should_expand()) {
+            if(should_expand()) [[unlikely]] {
                 expand();
             }
 
-            const Bucket bucket = find_bucket_for_insert(key);
-            const usize index = bucket.index;
-            const bool exists = is_state_full(_states[index]);
+            y_debug_assert(!should_expand());
+            
+            const usize h = hash(key);
+            const auto [index, exists] = find_bucket_for_insert(key, h);
 
             if(!exists) {
                 _entries[index].set_empty(key);
-                _states[index] = make_state(bucket.hash);
+                _states[index] = make_state(h);
                 ++_size;
             }
 
             return _entries[index].key_value.second;
         }
-};
-}
 
-using namespace swiss;
+#ifdef Y_HASHMAP_SIMD
+        auto group_occupancy() const {
+            const usize groups = group_count();
+
+            std::array<u32, simd_width + 1> occ = {};
+            const __m128i* gr = reinterpret_cast<const __m128i*>(_states.get());
+            for(usize i = 0; i != groups; ++i) {
+                const __m128i packed_states = _mm_loadu_si128(gr + i);
+                const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_setzero_si128()));
+                occ[std::popcount(unsigned(matches))]++;
+            }
+
+            return occ;
+        }
+#endif
+};
 
 }
 }

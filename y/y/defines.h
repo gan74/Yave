@@ -116,4 +116,45 @@ static constexpr bool is_debug_defined = false;
 #endif
 
 
+#ifdef Y_DEBUG
+#define y_assume(cond) y_debug_assert(cond)
+#else // Y_DEBUG
+#if defined(Y_MSVC)
+#define y_assume(cond) __assume(cond)
+#elif defined(Y_GNU)
+#define y_assume(cond) do { if(!(cond)) { __builtin_unreachable(); } } while(false)
+#else
+#define y_assume(cond) do {} while(false && (cond))
+#endif 
+#endif //Y_DEBUG
+
+#if defined(Y_MSVC)
+#define y_force_inline __forceinline
+#elif defined(Y_GNU)
+#define y_force_inline inline __attribute__((__always_inline__))
+#else
+#define y_force_inline inline
+#endif
+
+
+#ifdef Y_DEBUG
+#define y_unreachable() y_fatal("y_unreachable called")
+#else // Y_DEBUG
+#if defined(Y_MSVC)
+#define y_unreachable() __assume(false)
+#elif defined(Y_GNU)
+#define y_unreachable() __builtin_unreachable()
+#else
+#define y_unreachable() y_fatal("y_unreachable called")
+#endif
+#endif //Y_DEBUG
+
+
+
+#if defined(_M_IX86) || defined(_M_X64) || defined(__i386__) || defined(__x86_64__)
+#define Y_SSE
+#else
+#warning SSE not supported
+#endif
+
 #endif // Y_DEFINES_H
