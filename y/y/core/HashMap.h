@@ -77,7 +77,7 @@ inline constexpr usize ceil_next_power_of_2(usize k) {
 }
 
 
-static constexpr double default_hash_map_max_load_factor = 2.0 / 3.0;
+static constexpr double default_hash_map_max_load_factor = 0.8;
 
 enum class ProbingStrategy {
     Linear,
