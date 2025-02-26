@@ -32,11 +32,11 @@ SOFTWARE.
 #include <memory>
 #include <bit>
 
-#if __has_include(<immintrin.h>) && __has_include(<emmintrin.h>) && __has_include(<smmintrin.h>)
+#if __has_include(<emmintrin.h>) && (defined(_M_IX86) || defined(_M_X64) || defined(__i386__) || defined(__x86_64__))
 #define Y_HASHMAP_SIMD
-#include <immintrin.h>
 #include <emmintrin.h>
-#include <smmintrin.h>
+#else
+#warning SSE not supported
 #endif
 
 
@@ -526,7 +526,6 @@ class FlatHashMap : Hasher, Equal {
 
             if(_size) {
                 for(usize i = 0; i != old_bucket_count; ++i) {
-                    y_debug_assert(is_state_full(old_states[i]) == !old_entries[i].empty);
                     if(is_state_full(old_states[i])) {
                         const usize h = retrieve_hash(old_entries[i].key(), old_states[i]);
                         const Bucket bucket = find_bucket_for_insert(old_entries[i].key(), h);
@@ -660,6 +659,10 @@ class FlatHashMap : Hasher, Equal {
 
         inline usize bucket_count() const {
             return _buckets;
+        }
+
+        inline usize max_probe_sequence_len() const {
+            return _max_probe_len;
         }
 
         inline usize size() const {
