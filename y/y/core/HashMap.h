@@ -96,6 +96,35 @@ inline constexpr usize probing_offset(usize i) {
         return (i * i + i) / 2;
     }
 }
+
+using State = u8;
+using State4 = u32;
+
+static constexpr inline State4 to_state_4(State state) {
+    const State4 s = state;
+    return (s << 24) | (s << 16) | (s << 8) | s;
+}
+
+static constexpr State empty_state              = 0x00;
+static constexpr State tombstone_state          = 0x01;
+    
+static constexpr State4 tombstone_state_4       = to_state_4(tombstone_state);
+
+static constexpr auto state_table = [] {
+    std::array<State, 256> table;
+    for(usize i = 0; i != table.size(); ++i) {
+        table[i] = State((i % 253) + (tombstone_state + 1));
+    }
+    return table;
+}();
+
+static constexpr auto state_table_4 = [] {
+    std::array<State4, 256> table;
+    for(usize i = 0; i != table.size(); ++i) {
+        table[i] = to_state_4(state_table[i]);
+    }
+    return table;
+}();
 }
 
 
@@ -120,47 +149,19 @@ class FlatHashMap : Hasher, Equal {
         static_assert(min_capacity % simd_width == 0);
 #endif
 
-        using State = u8;
-        using State4 = u32;
-
-        
-        static constexpr inline State4 to_state_4(State state) {
-            const State4 s = state;
-            return (s << 24) | (s << 16) | (s << 8) | s;
-        }
-
-
-        static constexpr State empty_state              = 0x00;
-        static constexpr State tombstone_state          = 0x01;
-            
-        static constexpr State4 tombstone_state_4       = to_state_4(tombstone_state);
-
-        static constexpr auto state_table = [] {
-            std::array<State, 256> table;
-            for(usize i = 0; i != table.size(); ++i) {
-                table[i] = State((i % 253) + 2);
-            }
-            return table;
-        }();
-
-        static constexpr auto state_table_4 = [] {
-            std::array<State4, 256> table;
-            for(usize i = 0; i != table.size(); ++i) {
-                table[i] = to_state_4(state_table[i]);
-            }
-            return table;
-        }();
+        using State = detail::State;
+        using State4 = detail::State4;
 
         static y_force_inline State make_state(usize hash) {
-            return state_table[hash % state_table.size()];
+            return detail::state_table[hash % detail::state_table.size()];
         }
 
         static y_force_inline State4 make_state_4(usize hash) {
-            return state_table_4[hash % state_table_4.size()];
+            return detail::state_table_4[hash % detail::state_table_4.size()];
         }
 
         static y_force_inline bool is_state_full(State state) {
-            return (state != empty_state) && (state != tombstone_state);
+            return (state != detail::empty_state) && (state != detail::tombstone_state);
         }
 
         template<typename K>
@@ -404,7 +405,7 @@ class FlatHashMap : Hasher, Equal {
                 }
 
                 if(best_index == invalid_index) {
-                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_set1_epi32(tombstone_state_4)));
+                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_set1_epi32(detail::tombstone_state_4)));
                     if(matches != 0) {
                         best_index = group_start_index + countr_zero(matches);
                     }
@@ -431,7 +432,7 @@ class FlatHashMap : Hasher, Equal {
                 const __m128i packed_states = _mm_loadu_si128(gr + group_index);
 
                 {
-                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_set1_epi32(tombstone_state_4)));
+                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_set1_epi32(detail::tombstone_state_4)));
                     if(matches != 0) {
                         _max_probe_len = probes;
                         const usize index = group_start_index + countr_zero(matches);
@@ -510,7 +511,7 @@ class FlatHashMap : Hasher, Equal {
                     const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
                     const State& state = _states[index];
                     if(!is_state_full(state)) {
-                        if(state == empty_state) {
+                        if(state == detail::empty_state) {
                             return {index, false};
                         }
                         if(best_index == invalid_index) {
@@ -554,7 +555,7 @@ class FlatHashMap : Hasher, Equal {
                     if(equal(_entries[index].key(), key)) {
                         return index;
                     }
-                } else if(state == empty_state) {
+                } else if(state == detail::empty_state) {
                     return invalid_index;
                 }
             }
@@ -641,7 +642,7 @@ class FlatHashMap : Hasher, Equal {
             const usize len = bucket_count();
             for(usize i = 0; i != len && _size; ++i) {
                 if(is_state_full(_states[i])) {
-                    _states[i] = empty_state;
+                    _states[i] = detail::empty_state;
                     _entries[i].clear();
                     --_size;
                 }
@@ -789,7 +790,7 @@ class FlatHashMap : Hasher, Equal {
             y_debug_assert(is_state_full(_states[index]));
 
             _entries[index].clear();
-            _states[index] = tombstone_state;
+            _states[index] = detail::tombstone_state;
 
             --_size;
         }
