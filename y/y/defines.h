@@ -91,6 +91,15 @@ static constexpr bool is_debug_defined = false;
 #endif
 
 
+
+#if defined(_M_IX86) || defined(_M_X64) || defined(__i386__) || defined(__x86_64__)
+#define Y_SSE
+#else
+#warning SSE not supported
+#endif
+
+
+
 /****************** UTILS DEFINE ******************/
 
 #define Y_CREATE_NAME_LINE_HELPER(prefix, LINE) _generated_ ## prefix ## _at_ ## LINE
@@ -149,12 +158,5 @@ static constexpr bool is_debug_defined = false;
 #endif
 #endif //Y_DEBUG
 
-
-
-#if defined(_M_IX86) || defined(_M_X64) || defined(__i386__) || defined(__x86_64__)
-#define Y_SSE
-#else
-#warning SSE not supported
-#endif
 
 #endif // Y_DEFINES_H
