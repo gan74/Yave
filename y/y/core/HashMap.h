@@ -24,6 +24,7 @@ SOFTWARE.
 
 
 #include "Range.h"
+#include "Vector.h"
 
 #include <y/utils/hash.h>
 #include <y/utils/traits.h>
@@ -85,10 +86,8 @@ enum class ProbingStrategy {
     Quadratic
 };
 
-static constexpr ProbingStrategy default_hash_map_probing_strategy = ProbingStrategy::Quadratic;
-
 // http://research.cs.vt.edu/AVresearch/hashing/quadratic.php
-template<ProbingStrategy Strategy = default_hash_map_probing_strategy>
+template<ProbingStrategy Strategy>
 inline constexpr usize probing_offset(usize i) {
     if constexpr(Strategy == ProbingStrategy::Linear) {
         return i;
@@ -140,6 +139,8 @@ class FlatHashMap : Hasher, Equal {
 
     private:
         using pair_type = std::pair<key_type, mapped_type>;
+
+        static constexpr detail::ProbingStrategy probing_strategy = detail::ProbingStrategy::Quadratic;
 
         static constexpr usize invalid_index = usize(-1);
 
@@ -359,7 +360,7 @@ class FlatHashMap : Hasher, Equal {
 
 #ifdef Y_HASHMAP_SIMD
         static y_force_inline usize build_group_index(usize h, usize probe, usize mask) {
-            return ((h >> 8) + detail::probing_offset<>(probe)) & mask;
+            return ((h >> 8) + detail::probing_offset<probing_strategy>(probe)) & mask;
         }
 
         static y_force_inline usize countr_zero(int x) {
@@ -375,15 +376,15 @@ class FlatHashMap : Hasher, Equal {
 
 
         template<typename K>
-        /*__declspec(noinline)*/ y_force_inline  std::pair<usize, bool> find_bucket_for_insert(const K& key, usize h) {
+        y_force_inline std::pair<usize, bool> find_bucket_for_insert(const K& key, usize h) {
             const usize groups = group_count();
             const usize group_mask = groups - 1;
             
             const __m128i pattern = _mm_set1_epi32(make_state_4(h));
             const __m128i* gr = reinterpret_cast<const __m128i*>(_states.get());
 
-            usize best_index = invalid_index;
             usize probes = 0;
+            usize best_index = invalid_index;
             do {
                 const usize group_index = build_group_index(h, probes, group_mask);
                 const usize group_start_index = group_index * simd_width;
@@ -498,37 +499,35 @@ class FlatHashMap : Hasher, Equal {
         }
 #else
         template<typename K>
-        std::pair<usize, bool> find_bucket_for_insert(const K& key, usize h) {
+        y_force_inline std::pair<usize, bool> find_bucket_for_insert(const K& key, usize h) {
             const usize buckets = bucket_count();
             const usize hash_mask = buckets - 1;
 
             y_debug_assert(buckets);
 
             usize probes = 0;
-            {
-                usize best_index = invalid_index;
-                for(; probes <= _max_probe_len; ++probes) {
-                    const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
-                    const State& state = _states[index];
-                    if(!is_state_full(state)) {
-                        if(state == detail::empty_state) {
-                            return {index, false};
-                        }
-                        if(best_index == invalid_index) {
-                            best_index = index;
-                        }
-                    } else if(state == make_state(h) && equal(_entries[index].key(), key)) {
-                        return {index, true};
+            usize best_index = invalid_index;
+            do
+                const usize index = (h + detail::probing_offset<probing_strategy>(probes)) & hash_mask;
+                const State& state = _states[index];
+                if(!is_state_full(state)) {
+                    if(state == detail::empty_state) {
+                        return {index, false};
                     }
+                    if(best_index == invalid_index) {
+                        best_index = index;
+                    }
+                } else if(state == make_state(h) && equal(_entries[index].key(), key)) {
+                    return {index, true};
                 }
+            } while(++probes <= _max_probe_len);
 
-                if(best_index != invalid_index) {
-                    return {best_index, false};
-                }
+            if(best_index != invalid_index) {
+                return {best_index, false};
             }
 
             for(; probes < buckets; ++probes) {
-                const usize index = (h + detail::probing_offset<>(probes)) & hash_mask;
+                const usize index = (h + detail::probing_offset<probing_strategy>(probes)) & hash_mask;
                 if(!is_state_full(_states[index])) {
                     _max_probe_len = probes;
                     return {index, false};
@@ -549,7 +548,7 @@ class FlatHashMap : Hasher, Equal {
             const State expected_state = make_state(h);
 
             for(usize i = 0; i <= _max_probe_len; ++i) {
-                const usize index = (h + detail::probing_offset<>(i)) & hash_mask;
+                const usize index = (h + detail::probing_offset<probing_strategy>(i)) & hash_mask;
                 const State& state = _states[index];
                 if(state == expected_state) {
                     if(equal(_entries[index].key(), key)) {
@@ -563,15 +562,15 @@ class FlatHashMap : Hasher, Equal {
         }
 #endif
 
-        void expand(usize new_bucket_count) {
-            y_debug_assert(is_pow_of_2(new_bucket_count));
+        void expand(usize cap) {
+            y_debug_assert(is_pow_of_2(cap));
 
-            new_bucket_count = new_bucket_count < min_capacity ? min_capacity : new_bucket_count;
+            const usize new_bucket_count = cap < min_capacity ? min_capacity : cap;
             if(new_bucket_count <= bucket_count()) {
                 return;
             }
 
-            const usize old_bucket_count = std::exchange(_buckets, new_bucket_count);
+            const usize old_bucket_count = std::exchange(_metadata, new_bucket_count);
             auto old_states = std::exchange(_states, std::make_unique<State[]>(new_bucket_count));
             auto old_entries = std::exchange(_entries, std::make_unique_for_overwrite<Entry[]>(new_bucket_count));
             _max_probe_len = 0;
@@ -595,12 +594,12 @@ class FlatHashMap : Hasher, Equal {
         }
 
         inline void expand() {
-            expand(bucket_count() == 0 ? min_capacity : 2 * bucket_count());
+            expand(2 * bucket_count());
         }
 
         std::unique_ptr<State[]> _states;
         std::unique_ptr<Entry[]> _entries;
-        usize _buckets = 0;
+        usize _metadata = 0;
         usize _size = 0;
         usize _max_probe_len = 0;
 
@@ -656,7 +655,7 @@ class FlatHashMap : Hasher, Equal {
             make_empty();
             _states = nullptr;
             _entries = nullptr;
-            _buckets = 0;
+            _metadata = 0;
         }
 
         inline iterator begin() {
@@ -710,12 +709,12 @@ class FlatHashMap : Hasher, Equal {
         }
 
         y_force_inline usize bucket_count() const {
-            return _buckets;
+            return _metadata;
         }
         
 #ifdef Y_HASHMAP_SIMD
         y_force_inline usize group_count() const {
-            return _buckets / simd_width;
+            return _metadata / simd_width;
         }
 #endif
 
@@ -757,10 +756,6 @@ class FlatHashMap : Hasher, Equal {
                 return const_iterator(this, index);
             }
             return end();
-        }
-
-        inline void rehash() {
-            expand(bucket_count());
         }
 
         inline void set_min_capacity(usize cap) {
@@ -864,6 +859,266 @@ class FlatHashMap : Hasher, Equal {
             return occ;
         }
 #endif
+};
+
+
+
+template<typename Key, typename Value, typename Hasher = Hash<Key>, typename Equal = std::equal_to<Key>>
+class DenseHashMap : Hasher, Equal {
+    public:
+        using key_type = std::remove_cvref_t<Key>;
+        using mapped_type = std::remove_cvref_t<Value>;
+        using value_type = std::pair<const key_type, mapped_type>;
+
+        static constexpr double max_load_factor = detail::default_hash_map_max_load_factor;
+        static constexpr usize min_capacity = 16;
+        
+        
+        using iterator          = value_type*;
+        using const_iterator    = const value_type*;
+
+    private:
+        using pair_type = std::pair<key_type, mapped_type>;
+        
+        static constexpr detail::ProbingStrategy probing_strategy = detail::ProbingStrategy::Linear;
+        
+        static constexpr u32 invalid_index = u32(-1);
+
+        template<typename K>
+        y_force_inline bool equal(const key_type& a, const K& b) const {
+            return Equal::operator()(a, b);
+        }
+        
+        template<typename K>
+        y_force_inline usize hash(const K& key) const {
+            return Hasher::operator()(key);
+        }
+        
+    public:
+        inline DenseHashMap() {
+        }
+
+        inline DenseHashMap(DenseHashMap&& other) {
+            swap(other);
+        }
+
+        inline DenseHashMap& operator=(DenseHashMap&& other) {
+            swap(other);
+            return *this;
+        }
+
+        inline void swap(DenseHashMap& other) {
+            if(&other != this) {
+                _key_values.swap(other._key_values);
+                std::swap(_metadata, other._metadata);
+                std::swap(_bucket_count, other._bucket_count);
+                std::swap(_max_probe_len, other._max_probe_len);
+            }
+        }
+
+        inline ~DenseHashMap() {
+            clear();
+        }
+
+        inline void make_empty() {
+            _key_values.make_empty();
+            std::fill_n(_metadata.get(), _bucket_count, invalid_index);
+            _max_probe_len = 0;
+        }
+
+        inline void clear() {
+            _key_values.clear();
+            _metadata = nullptr;
+            _bucket_count = 0;
+            _max_probe_len = 0;
+        }
+        
+        inline usize size() const {
+            return _key_values.size();
+        }
+        
+        inline bool is_empty() const {
+            return _key_values.is_empty();
+        }
+        
+        inline usize bucket_count() const {
+            return _bucket_count;
+        }
+        
+        inline usize max_probe_sequence_len() const {
+            return _max_probe_len;
+        }
+        
+        inline iterator begin() {
+            return _key_values.begin();
+        }
+        
+        inline iterator end() {
+            return _key_values.end();
+        }
+        
+        inline const_iterator begin() const {
+            return _key_values.begin();
+        }
+        
+        inline const_iterator end() const {
+            return _key_values.end();
+        }
+        
+        inline void set_min_capacity(usize cap) {
+            const usize capacity = next_pow_of_2(usize(cap / (max_load_factor * 0.8)));
+            if(_bucket_count < capacity) {
+                expand(capacity);
+            }
+        }
+
+        inline void reserve(usize cap) {
+            set_min_capacity(cap);
+        }
+    
+        template<typename K>
+        inline iterator find(const K& key) {
+            const u32 index = find_index(key);
+            return index == invalid_index ? end() : (_key_values.begin() + index);
+        }
+
+        template<typename K>
+        inline const_iterator find(const K& key) const {
+            const u32 index = find_index(key);
+            return index == invalid_index ? end() : (_key_values.begin() + index);
+        }
+        
+        template<typename K>
+        inline bool contains(const K& key) const {
+            return find_index(key) != invalid_index;
+        }
+        
+        inline std::pair<iterator, bool> insert(value_type p) {
+            if(should_expand()) {
+                expand();
+            }
+            
+            const u32 index = find_index_for_insert(p.first);
+            if(index != invalid_index) {
+                return {_key_values.begin() + index, true};
+            }
+            
+            _key_values.emplace_back(std::move(p));
+            return {_key_values.end() - 1, false};
+        }
+        
+        template<typename K>
+        inline mapped_type& operator[](const K& key) {
+            if(should_expand()) {
+                expand();
+            }
+            
+            const u32 index = find_index_for_insert(key);
+            if(index != invalid_index) {
+                return _key_values[index].second;
+            }
+            
+            return _key_values.emplace_back(value_type(key, mapped_type{})).second;
+        }
+        
+    private:
+        template<typename K>
+        inline u32 find_index_for_insert(const K& key) {
+            const usize h = hash(key);
+            const u32 reduced_hash = u32(h);
+            
+            y_debug_assert(is_pow_of_2(_bucket_count));
+            const usize mask = _bucket_count - 1;
+            
+            usize probes = 0;
+            do {
+                const usize index = (h + detail::probing_offset<probing_strategy>(probes)) & mask;
+                
+                u32& bucket_index = _metadata[index];
+                u32& bucket_hash = _metadata[_bucket_count + index];
+                if(bucket_index == invalid_index) {
+                    bucket_index = u32(_key_values.size());
+                    bucket_hash = reduced_hash;
+                    return invalid_index;
+                }
+                
+                if(bucket_hash == reduced_hash) {
+                    if(equal(_key_values[bucket_index].first, key)) {
+                        return bucket_index;
+                    }
+                }
+            } while(++probes <= _max_probe_len);
+            
+            for(; probes != _bucket_count; ++probes) {
+                const usize index = (h + detail::probing_offset<probing_strategy>(probes)) & mask;
+                u32& bucket_index = _metadata[index];
+                if(bucket_index == invalid_index) {
+                    bucket_index = u32(_key_values.size());
+                    _metadata[_bucket_count + index] = reduced_hash;
+                    _max_probe_len = probes;
+                    return invalid_index;
+                }
+            }
+            
+            y_unreachable();
+        }
+        
+        template<typename K>
+        inline u32 find_index(const K& key) const {
+            const usize h = hash(key);
+            const u32 reduced_hash = u32(h);
+            
+            y_debug_assert(is_pow_of_2(_bucket_count));
+            const usize mask = _bucket_count - 1;
+            
+            for(usize i = 0; i <= _max_probe_len; ++i) {
+                const usize index = (h + detail::probing_offset<probing_strategy>(i)) & mask;
+                
+                const u32 bucket_index = _metadata[index];
+                if(bucket_index == invalid_index) {
+                    return invalid_index;
+                }
+                
+                const u32 bucket_hash = _metadata[_bucket_count + index];
+                if(bucket_hash == reduced_hash) {
+                    if(equal(_key_values[bucket_index].first, key)) {
+                        return bucket_index;
+                    }
+                }
+            }
+            
+            return invalid_index;
+        }
+        
+        inline bool should_expand() const {
+            return _bucket_count * max_load_factor <= size();
+        }
+        
+        inline void expand() {
+            expand(2 * _bucket_count);
+        }
+        
+        void expand(usize cap) {
+            y_debug_assert(is_pow_of_2(cap));
+
+            const usize new_bucket_count = cap < min_capacity ? min_capacity : cap;
+            if(new_bucket_count <= _bucket_count) {
+                return;
+            }
+            
+            _key_values.set_min_capacity(usize(new_bucket_count / max_load_factor) + 1);
+            auto old_metadata = std::exchange(_metadata, std::make_unique_for_overwrite<u32[]>(new_bucket_count * 2));
+            std::fill_n(_metadata.get(), new_bucket_count, invalid_index);
+            
+            _bucket_count = new_bucket_count;
+            y_debug_assert(!size());
+        }
+        
+        
+        core::Vector<value_type> _key_values;
+        std::unique_ptr<u32[]> _metadata;
+        usize _bucket_count = 0;
+        usize _max_probe_len = 0;
 };
 
 }
