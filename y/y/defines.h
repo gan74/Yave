@@ -36,6 +36,10 @@ void break_in_debugger();
 #undef Y_DEBUG
 #endif
 
+#if !defined(Y_NO_DEBUG) && !defined(Y_DEBUG)
+#error One of Y_NO_DEBUG or Y_DEBUG must be defined
+#endif
+
 // keep the namespacing ?
 #define y_fatal(msg) y::fatal((msg), __FILE__, __LINE__)
 
