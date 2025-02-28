@@ -570,7 +570,7 @@ class FlatHashMap : Hasher, Equal {
                 return;
             }
 
-            const usize old_bucket_count = std::exchange(_metadata, new_bucket_count);
+            const usize old_bucket_count = std::exchange(_buckets, new_bucket_count);
             auto old_states = std::exchange(_states, std::make_unique<State[]>(new_bucket_count));
             auto old_entries = std::exchange(_entries, std::make_unique_for_overwrite<Entry[]>(new_bucket_count));
             _max_probe_len = 0;
@@ -599,7 +599,7 @@ class FlatHashMap : Hasher, Equal {
 
         std::unique_ptr<State[]> _states;
         std::unique_ptr<Entry[]> _entries;
-        usize _metadata = 0;
+        usize _buckets = 0;
         usize _size = 0;
         usize _max_probe_len = 0;
 
@@ -655,7 +655,7 @@ class FlatHashMap : Hasher, Equal {
             make_empty();
             _states = nullptr;
             _entries = nullptr;
-            _metadata = 0;
+            _buckets = 0;
         }
 
         inline iterator begin() {
@@ -709,12 +709,12 @@ class FlatHashMap : Hasher, Equal {
         }
 
         y_force_inline usize bucket_count() const {
-            return _metadata;
+            return _buckets;
         }
         
 #ifdef Y_HASHMAP_SIMD
         y_force_inline usize group_count() const {
-            return _metadata / simd_width;
+            return _buckets / simd_width;
         }
 #endif
 
@@ -893,6 +893,18 @@ class DenseHashMap : Hasher, Equal {
         y_force_inline usize hash(const K& key) const {
             return Hasher::operator()(key);
         }
+
+        y_force_inline u32 reduce_hash(usize h) const {
+            return u32(h);
+        }
+
+        y_force_inline usize bucket_hash_index(usize index) const {
+            return index * 2;
+        }
+
+        y_force_inline usize bucket_index_index(usize index) const {
+            return index * 2 + 1;
+        }
         
     public:
         inline DenseHashMap() {
@@ -998,7 +1010,7 @@ class DenseHashMap : Hasher, Equal {
                 expand();
             }
             
-            const u32 index = find_index_for_insert(p.first);
+            const u32 index = find_index_for_insert(p.first, u32(_key_values.size()));
             if(index != invalid_index) {
                 return {_key_values.begin() + index, true};
             }
@@ -1013,7 +1025,7 @@ class DenseHashMap : Hasher, Equal {
                 expand();
             }
             
-            const u32 index = find_index_for_insert(key);
+            const u32 index = find_index_for_insert(key, u32(_key_values.size()));
             if(index != invalid_index) {
                 return _key_values[index].second;
             }
@@ -1023,9 +1035,9 @@ class DenseHashMap : Hasher, Equal {
         
     private:
         template<typename K>
-        inline u32 find_index_for_insert(const K& key) {
+        inline u32 find_index_for_insert(const K& key, u32 insert_index) {
             const usize h = hash(key);
-            const u32 reduced_hash = u32(h);
+            const u32 reduced_hash = reduce_hash(h);
             
             y_debug_assert(is_pow_of_2(_bucket_count));
             const usize mask = _bucket_count - 1;
@@ -1034,10 +1046,10 @@ class DenseHashMap : Hasher, Equal {
             do {
                 const usize index = (h + detail::probing_offset<probing_strategy>(probes)) & mask;
                 
-                u32& bucket_index = _metadata[index];
-                u32& bucket_hash = _metadata[_bucket_count + index];
+                u32& bucket_index = _metadata[bucket_index_index(index)];
+                u32& bucket_hash = _metadata[bucket_hash_index(index)];
                 if(bucket_index == invalid_index) {
-                    bucket_index = u32(_key_values.size());
+                    bucket_index = insert_index;
                     bucket_hash = reduced_hash;
                     return invalid_index;
                 }
@@ -1051,10 +1063,10 @@ class DenseHashMap : Hasher, Equal {
             
             for(; probes != _bucket_count; ++probes) {
                 const usize index = (h + detail::probing_offset<probing_strategy>(probes)) & mask;
-                u32& bucket_index = _metadata[index];
+                u32& bucket_index = _metadata[bucket_index_index(index)];
                 if(bucket_index == invalid_index) {
-                    bucket_index = u32(_key_values.size());
-                    _metadata[_bucket_count + index] = reduced_hash;
+                    bucket_index = insert_index;
+                    _metadata[bucket_hash_index(index)] = reduced_hash;
                     _max_probe_len = probes;
                     return invalid_index;
                 }
@@ -1066,7 +1078,7 @@ class DenseHashMap : Hasher, Equal {
         template<typename K>
         inline u32 find_index(const K& key) const {
             const usize h = hash(key);
-            const u32 reduced_hash = u32(h);
+            const u32 reduced_hash = reduce_hash(h);
             
             y_debug_assert(is_pow_of_2(_bucket_count));
             const usize mask = _bucket_count - 1;
@@ -1074,12 +1086,12 @@ class DenseHashMap : Hasher, Equal {
             for(usize i = 0; i <= _max_probe_len; ++i) {
                 const usize index = (h + detail::probing_offset<probing_strategy>(i)) & mask;
                 
-                const u32 bucket_index = _metadata[index];
+                const u32 bucket_index = _metadata[bucket_index_index(index)];
                 if(bucket_index == invalid_index) {
                     return invalid_index;
                 }
                 
-                const u32 bucket_hash = _metadata[_bucket_count + index];
+                const u32 bucket_hash = _metadata[bucket_hash_index(index)];
                 if(bucket_hash == reduced_hash) {
                     if(equal(_key_values[bucket_index].first, key)) {
                         return bucket_index;
@@ -1105,13 +1117,18 @@ class DenseHashMap : Hasher, Equal {
             if(new_bucket_count <= _bucket_count) {
                 return;
             }
-            
-            _key_values.set_min_capacity(usize(new_bucket_count / max_load_factor) + 1);
-            auto old_metadata = std::exchange(_metadata, std::make_unique_for_overwrite<u32[]>(new_bucket_count * 2));
-            std::fill_n(_metadata.get(), new_bucket_count, invalid_index);
-            
+
             _bucket_count = new_bucket_count;
-            y_debug_assert(!size());
+
+            _key_values.set_min_capacity(usize(_bucket_count / max_load_factor) + 1);
+
+            _metadata = std::make_unique_for_overwrite<u32[]>(_bucket_count * 2);
+            std::fill_n(_metadata.get(), _bucket_count * 2, invalid_index);
+
+            for(usize i = 0; i != _key_values.size(); ++i) {
+                [[maybe_unused]] const u32 index = find_index_for_insert(_key_values[i].first, u32(i));
+                y_debug_assert(index == invalid_index);
+            }
         }
         
         
