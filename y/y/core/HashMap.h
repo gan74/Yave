@@ -628,6 +628,7 @@ class FlatHashMap : Hasher, Equal {
             if(&other != this) {
                 std::swap(_states, other._states);
                 std::swap(_entries, other._entries);
+                std::swap(_buckets, other._buckets);
                 std::swap(_size, other._size);
                 std::swap(_max_probe_len, other._max_probe_len);
             }
