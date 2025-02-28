@@ -775,7 +775,6 @@ class FlatHashMap : Hasher, Equal {
             if(const auto it = find(key); it != end()) {
                 erase(it);
             }
-
         }
 
         inline void erase(const iterator& it) {
@@ -844,26 +843,11 @@ class FlatHashMap : Hasher, Equal {
 
             return _entries[index].key_value.second;
         }
-
-#ifdef Y_HASHMAP_SIMD
-        auto group_occupancy() const {
-            const usize groups = group_count();
-
-            std::array<u32, simd_width + 1> occ = {};
-            const __m128i* gr = reinterpret_cast<const __m128i*>(_states.get());
-            for(usize i = 0; i != groups; ++i) {
-                const __m128i packed_states = _mm_loadu_si128(gr + i);
-                const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_setzero_si128()));
-                occ[std::popcount(unsigned(matches))]++;
-            }
-
-            return occ;
-        }
-#endif
 };
 
 
-
+// Very slow
+#if 0
 template<typename Key, typename Value, typename Hasher = Hash<Key>, typename Equal = std::equal_to<Key>>
 class DenseHashMap : Hasher, Equal {
     public:
@@ -896,7 +880,7 @@ class DenseHashMap : Hasher, Equal {
         }
 
         y_force_inline u32 reduce_hash(usize h) const {
-            return u32(h);
+            return u32(h >> ((sizeof(usize) - sizeof(u32)) * 8));
         }
 
         y_force_inline usize bucket_hash_index(usize index) const {
@@ -1138,6 +1122,7 @@ class DenseHashMap : Hasher, Equal {
         usize _bucket_count = 0;
         usize _max_probe_len = 0;
 };
+#endif
 
 }
 }
