@@ -36,19 +36,19 @@ namespace y {
 namespace core {
 
 u64 Duration::to_nanos() const {
-    return _secs * 1000000000 + _subsec_ns;
+    return _secs * 1'000'000'000 + _subsec_ns;
 }
 
 double Duration::to_micros() const {
-    return _secs * 1000000 + _subsec_ns / 1000.0;
+    return _secs * 1'000'000 + _subsec_ns / 1'000.0;
 }
 
 double Duration::to_millis() const {
-    return _secs * 1000 + _subsec_ns / 1000000.0;
+    return _secs * 1000 + _subsec_ns / 1'000'000.0;
 }
 
 double Duration::to_secs() const {
-    return _secs + _subsec_ns / 1000000000.0;
+    return _secs + _subsec_ns / 1'000'000'000.0;
 }
 
 u64 Duration::seconds() const {
@@ -59,20 +59,13 @@ u32 Duration::subsec_nanos() const {
     return _subsec_ns;
 }
 
-bool Duration::operator<(const Duration& other) const {
-    return std::tie(_secs, _subsec_ns) < std::tie(other._secs, other._subsec_ns);
+Duration Duration::operator+(const Duration& other) const {
+    return nanoseconds(to_nanos() + other.to_nanos());
 }
 
-bool Duration::operator<=(const Duration& other) const {
-    return std::tie(_secs, _subsec_ns) <= std::tie(other._secs, other._subsec_ns);
-}
-
-bool Duration::operator>(const Duration& other) const {
-    return std::tie(_secs, _subsec_ns) > std::tie(other._secs, other._subsec_ns);
-}
-
-bool Duration::operator>=(const Duration& other) const {
-    return std::tie(_secs, _subsec_ns) >= std::tie(other._secs, other._subsec_ns);
+Duration& Duration::operator+=(const Duration& other) {
+    *this = (*this + other);
+    return *this;
 }
 
 

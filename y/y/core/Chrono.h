@@ -45,15 +45,14 @@ class Duration {
         }
 
         static constexpr Duration milliseconds(double ms) {
-            return div(ms, 1000.0);
+            return div(ms, 1'000.0);
         }
 
         static constexpr Duration nanoseconds(u64 ns) {
-            return Duration(ns / 100000000, ns % 100000000);
+            return Duration(ns / 1'000'000'000, ns % 1'000'000'000);
         }
 
-        constexpr explicit Duration(u64 seconds = 0, u32 subsec_nanos = 0) : _secs(seconds), _subsec_ns(subsec_nanos) {
-        }
+        explicit Duration() = default;
 
         static void sleep(const Duration& dur);
 
@@ -65,14 +64,18 @@ class Duration {
         u64 seconds() const;
         u32 subsec_nanos() const;
 
-        bool operator<(const Duration& other) const;
-        bool operator<=(const Duration& other) const;
-        bool operator>(const Duration& other) const;
-        bool operator>=(const Duration& other) const;
+        Duration operator+(const Duration& other) const;
+        Duration& operator+=(const Duration& other);
+
+        auto operator<=>(const Duration&) const = default;
 
     private:
-        u64 _secs;
-        u32 _subsec_ns;
+        constexpr explicit Duration(u64 seconds, u32 subsec_nanos) : _secs(seconds), _subsec_ns(subsec_nanos) {
+            y_debug_assert(subsec_nanos < 1'000'000'000);
+        }
+
+        u64 _secs = 0;
+        u32 _subsec_ns = 0;
 };
 
 
