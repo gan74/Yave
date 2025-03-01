@@ -68,7 +68,7 @@ static core::String clean_type_name(std::string_view name) {
 }
 
 template<typename T>
-class SetterInspector final : public ecs::ComponentInspector {
+class SetterInspector final : public ecs::TemplateComponentInspector<SetterInspector<T>> {
     public:
         SetterInspector(const core::String& name, ecs::ComponentTypeIndex type, T value) :
                 _name(name),
@@ -84,81 +84,15 @@ class SetterInspector final : public ecs::ComponentInspector {
             return _is_type = (info.type_id == _type);
         }
 
-        void inspect(const core::String& name, math::Transform<>& tr) override {
-            if constexpr(std::is_same_v<T, math::Transform<>>) {
-                if(is_property(name)) {
-                    tr = _value;
+        template<typename U>
+        void visit(const core::String& name, U& val) {
+            unused(val);
+            if constexpr(std::is_same_v<T, U>) {
+                if(_is_type && name == _name) {
+                    val = _value;
                     _value_set = true;
                 }
             }
-        }
-
-        void inspect(const core::String& name, math::Vec3& v, Vec3Role) override {
-            if constexpr(std::is_same_v<T, math::Vec3>) {
-                if(is_property(name)) {
-                    v = _value;
-                    _value_set = true;
-                }
-            }
-        }
-
-        void inspect(const core::String& name, float& f, FloatRole) override {
-            if constexpr(std::is_same_v<T, float>) {
-                if(is_property(name)) {
-                    f = _value;
-                    _value_set = true;
-                }
-            }
-        }
-
-        void inspect(const core::String& name, float& f, float, float, FloatRole) override {
-            if constexpr(std::is_same_v<T, float>) {
-                if(is_property(name)) {
-                    f = _value;
-                    _value_set = true;
-                }
-            }
-        }
-
-        void inspect(const core::String& name, u32& u, u32) override {
-            if constexpr(std::is_same_v<T, u32>) {
-                if(is_property(name)) {
-                    u = _value;
-                    _value_set = true;
-                }
-            }
-        }
-
-        void inspect(const core::String& name, bool& b) override {
-            if constexpr(std::is_same_v<T, bool>) {
-                if(is_property(name)) {
-                    b = _value;
-                    _value_set = true;
-                }
-            }
-        }
-
-        void inspect(const core::String& name, GenericAssetPtr& p) override {
-            if constexpr(std::is_same_v<T, GenericAssetPtr>) {
-                if(is_property(name)) {
-                    p = _value;
-                    _value_set = true;
-                }
-            }
-        }
-
-        void inspect(const core::String& name, ecs::EntityId& id, ecs::ComponentTypeIndex) override {
-            if constexpr(std::is_same_v<T, ecs::EntityId>) {
-                if(is_property(name)) {
-                    id = _value;
-                    _value_set = true;
-                }
-            }
-        }
-
-    protected:
-        bool is_property(const core::String& name) const {
-            return _is_type && name == _name;
         }
 
     private:
@@ -724,7 +658,7 @@ void Inspector::on_gui() {
 
         ImGui::TextDisabled("(?)");
         if(ImGui::BeginItemTooltip()) {
-            ImGui::TextUnformatted(fmt_c_str("ID = {:08x}:{:08x}",id.index(), id.version()));
+            ImGui::TextUnformatted(fmt_c_str("ID = {:08x}:{:08x}", id.index(), id.version()));
             ImGui::EndTooltip();
         }
 
@@ -733,7 +667,7 @@ void Inspector::on_gui() {
 
     if(component->is_prefab()) {
         ImGui::BeginGroup();
-        imgui::text_read_only("Prefab", fmt("ID = {:08x}:{:08x}",id.index(), id.version()));
+        imgui::text_read_only("Prefab", fmt("ID = {:08x}:{:08x}", id.index(), id.version()));
         ImGui::EndGroup();
     }
 

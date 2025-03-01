@@ -100,6 +100,39 @@ class ComponentInspector : NonCopyable {
         }
 };
 
+
+template<typename Derived>
+class TemplateComponentInspector : public ComponentInspector {
+    public:
+        void inspect(const core::String& name, math::Transform<>& t) {
+            static_cast<Derived*>(this)->visit(name, t);
+        }
+
+        void inspect(const core::String& name, math::Vec3& v, Vec3Role) override {
+            static_cast<Derived*>(this)->visit(name, v);
+        }
+
+        void inspect(const core::String& name, float& f, float, float, FloatRole) override {
+            static_cast<Derived*>(this)->visit(name, f);
+        }
+
+        void inspect(const core::String& name, u32& u, u32) override {
+            static_cast<Derived*>(this)->visit(name, u);
+        }
+
+        void inspect(const core::String& name, bool& b) override {
+            static_cast<Derived*>(this)->visit(name, b);
+        }
+
+        void inspect(const core::String& name, GenericAssetPtr& p) override {
+            static_cast<Derived*>(this)->visit(name, p);
+        }
+
+        void inspect(const core::String& name, EntityId& id, ComponentTypeIndex) override {
+            static_cast<Derived*>(this)->visit(name, id);
+        }
+};
+
 }
 }
 
