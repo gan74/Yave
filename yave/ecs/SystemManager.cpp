@@ -55,7 +55,22 @@ SystemManager::SystemManager(EntityWorld* world) : _world(world) {
     y_debug_assert(_world);
 }
 
-void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) const {
+void SystemManager::run_schedule_seq() const {
+    y_profile();
+
+    for(const auto& scheduler : _schedulers) {
+        SystemScheduler::Schedule& sched = scheduler->_schedules[usize(SystemSchedule::TickSequential)];
+        for(usize i = 0; i != sched.tasks.size(); ++i) {
+            const auto& task = sched.tasks[i];
+            y_always_assert(sched.wait_groups[i].is_empty(), "TickSequential tasks can not have dependencies");
+            y_always_assert(sched.signals[i].is_empty(), "TickSequential tasks can not have signals");
+            y_profile_dyn_zone(fmt_c_str("{}: {}", scheduler->_system->name(), task.name));
+            task.func();
+        }
+    }
+}
+
+void SystemManager::run_schedule_mt(concurrent::StaticThreadPool& thread_pool) const {
     y_profile();
 
     using DepGroups = core::Span<DependencyGroup>;
@@ -71,7 +86,7 @@ void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) cons
     core::ScratchVector<DependencyGroup> stage_deps(dep_count);
     DependencyGroup previous_stage;
 
-    for(usize i = 0; i != usize(SystemSchedule::Max); ++i) {
+    for(usize i = usize(SystemSchedule::Tick); i != usize(SystemSchedule::Max); ++i) {
         for(const auto& scheduler : _schedulers) {
 
             SystemScheduler::Schedule& sched = scheduler->_schedules[i];
@@ -117,6 +132,14 @@ void SystemManager::run_schedule(concurrent::StaticThreadPool& thread_pool) cons
     thread_pool.process_until_complete(previous_stage);
 
     y_debug_assert(completed == submitted);
+}
+
+
+void SystemManager::setup_system(System* system) {
+    SystemScheduler& sched = *_schedulers.emplace_back(std::make_unique<SystemScheduler>(system, _world));
+
+    y_profile_zone("setup");
+    system->setup(sched);
 }
 
 }

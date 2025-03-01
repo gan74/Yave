@@ -35,6 +35,7 @@ class System : NonCopyable {
         virtual ~System() = default;
 
         virtual void setup(SystemScheduler& sched) = 0;
+        virtual void reset() {}
 
         EntityWorld& world();
         const core::String& name() const;

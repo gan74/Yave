@@ -175,10 +175,14 @@ class EntityWorld : NonMovable {
         }
 
         template<typename S>
-        const S* find_system() {
+        const S* find_system() const {
             return _system_manager.find_system<S>();
         }
 
+        template<typename S>
+        S* find_system() {
+            return _system_manager.find_system<S>();
+        }
 
 
 

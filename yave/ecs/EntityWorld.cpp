@@ -128,7 +128,8 @@ TickId EntityWorld::tick_id() const {
 
 void EntityWorld::tick(concurrent::StaticThreadPool& thread_pool) {
     _tick_id = _tick_id.next();
-    _system_manager.run_schedule(thread_pool);
+    _system_manager.run_schedule_seq();
+    _system_manager.run_schedule_mt(thread_pool);
 }
 
 void EntityWorld::process_deferred_changes() {
@@ -421,6 +422,8 @@ serde3::Result EntityWorld::save_state(serde3::WritableArchive& arc) const {
 }
 
 serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
+    y_profile();
+
     y_always_assert(!entity_count(), "World should be empty before loading");
 
     decltype(_containers) containers;
@@ -449,6 +452,8 @@ serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
             container->post_load();
         }
     }
+
+    _system_manager.reset();
 
     return core::Ok(serde3::Success::Full);
 }

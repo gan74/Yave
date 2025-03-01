@@ -33,6 +33,8 @@ namespace ecs {
 
 enum class SystemSchedule {
     // Tick is always first.
+    TickSequential,
+
     // Ticks for different systems might run in parallel
     Tick,
 
@@ -116,7 +118,16 @@ class SystemManager : NonCopyable {
 
         SystemManager(EntityWorld* world);
 
-        void run_schedule(concurrent::StaticThreadPool& thread_pool) const;
+        void run_schedule_seq() const;
+        void run_schedule_mt(concurrent::StaticThreadPool& thread_pool) const;
+
+        void reset() {
+            _schedulers.make_empty();
+            for(const auto& system : _systems) {
+                system->reset();
+                setup_system(system.get());
+            }
+        }
 
         template<typename S, typename... Args>
         S* add_system(Args&&... args) {
@@ -127,13 +138,9 @@ class SystemManager : NonCopyable {
             S* system = s.get();
 
             _systems.emplace_back(std::move(s));
-            SystemScheduler& sched = *_schedulers.emplace_back(std::make_unique<SystemScheduler>(system, _world));
+            system->register_world(_world);
+            setup_system(system);
 
-            {
-                y_profile_zone("setup");
-                system->register_world(_world);
-                system->setup(sched);
-            }
             return system;
         }
 
@@ -147,7 +154,19 @@ class SystemManager : NonCopyable {
             return nullptr;
         }
 
+        template<typename S>
+        S* find_system() {
+            for(auto& system : _systems) {
+                if(S* s = dynamic_cast<S*>(system.get())) {
+                    return s;
+                }
+            }
+            return nullptr;
+        }
+
     private:
+        void setup_system(System *system);
+
         core::Vector<std::unique_ptr<SystemScheduler>> _schedulers;
         core::Vector<std::unique_ptr<System>> _systems;
 
