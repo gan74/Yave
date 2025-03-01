@@ -395,9 +395,7 @@ DescriptorSetData DescriptorSetAllocator::create_descritptor_set(core::Span<Desc
     });
 
     return layout_p->pools.locked([&](auto&& pools) {
-        const auto reversed = core::Range(std::make_reverse_iterator(pools.end()),
-                                          std::make_reverse_iterator(pools.begin()));
-        for(auto& page : reversed) {
+        for(auto& page : core::reversed(pools)) {
             if(!page->is_full()) {
                 return page->alloc(descriptors);
             }

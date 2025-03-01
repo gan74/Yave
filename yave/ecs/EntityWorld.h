@@ -230,7 +230,7 @@ class EntityWorld : NonMovable {
 
         // ---------------------------------------- Misc ----------------------------------------
 
-        void inspect_components(EntityId id, ComponentInspector* inspector);
+        void inspect_components(EntityId id, ComponentInspector* inspector, ComponentTypeIndex type_id = ComponentTypeIndex::invalid_index);
 
         serde3::Result save_state(serde3::WritableArchive& arc) const;
         serde3::Result load_state(serde3::ReadableArchive& arc);

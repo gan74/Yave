@@ -94,6 +94,11 @@ class Range {
         EndIter _end;
 };
 
+template<typename C>
+auto reversed(C&& c) {
+    return Range(std::make_reverse_iterator(c.end()), std::make_reverse_iterator(c.begin()));
+}
+
 template<typename Coll>
 Range(const Coll&) -> Range<typename Coll::const_iterator>;
 

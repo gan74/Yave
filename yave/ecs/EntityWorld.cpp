@@ -355,10 +355,12 @@ void EntityWorld::check_exists(EntityId id) const {
     y_always_assert(exists(id), "Entity doesn't exists");
 }
 
-void EntityWorld::inspect_components(EntityId id, ComponentInspector* inspector) {
+void EntityWorld::inspect_components(EntityId id, ComponentInspector* inspector, ComponentTypeIndex type_id) {
     for(auto& container : _containers) {
         if(container) {
-            container->inspect_component(id, inspector);
+            if(type_id == ComponentTypeIndex::invalid_index || container->type_id() == type_id) {
+                container->inspect_component(id, inspector);
+            }
         }
     }
 }

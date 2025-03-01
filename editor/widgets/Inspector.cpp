@@ -70,25 +70,18 @@ static core::String clean_type_name(std::string_view name) {
 template<typename T>
 class SetterInspector final : public ecs::TemplateComponentInspector<SetterInspector<T>> {
     public:
-        SetterInspector(const core::String& name, ecs::ComponentTypeIndex type, T value) :
-                _name(name),
-                _type(type),
-                _value(value) {
+        SetterInspector(const core::String& name, T value) : _name(name), _value(value) {
         }
 
         ~SetterInspector() {
             y_debug_assert(_value_set);
         }
 
-        bool inspect_component_type(ecs::ComponentRuntimeInfo info, bool) override {
-            return _is_type = (info.type_id == _type);
-        }
-
         template<typename U>
         void visit(const core::String& name, U& val) {
             unused(val);
             if constexpr(std::is_same_v<T, U>) {
-                if(_is_type && name == _name) {
+                if(name == _name) {
                     val = _value;
                     _value_set = true;
                 }
@@ -97,11 +90,9 @@ class SetterInspector final : public ecs::TemplateComponentInspector<SetterInspe
 
     private:
         core::String _name;
-        ecs::ComponentTypeIndex _type = {};
         T _value;
 
         bool _value_set = false;
-        bool _is_type = false;
 };
 
 static void id_selector(ecs::EntityId& property_id, const core::String& name, ecs::EntityId entity_id, ecs::ComponentTypeIndex comp_type, ecs::ComponentTypeIndex target_type) {
@@ -110,8 +101,8 @@ static void id_selector(ecs::EntityId& property_id, const core::String& name, ec
     if(browse) {
         add_child_widget<EntitySelector>(target_type)->set_selected_callback(
             [=](ecs::EntityId new_id) {
-                SetterInspector<ecs::EntityId> setter(name, comp_type, new_id);
-                current_world().inspect_components(entity_id, &setter);
+                SetterInspector<ecs::EntityId> setter(name, new_id);
+                current_world().inspect_components(entity_id, &setter, comp_type);
                 return true;
             }
         );
@@ -128,8 +119,8 @@ static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, e
         add_child_widget<AssetSelector>(type)->set_selected_callback(
             [=](AssetId asset) {
                 if(const auto loaded = asset_loader().load_res<T>(asset)) {
-                    SetterInspector<GenericAssetPtr> setter(name, comp_type, loaded.unwrap());
-                    current_world().inspect_components(id, &setter);
+                    SetterInspector<GenericAssetPtr> setter(name, loaded.unwrap());
+                    current_world().inspect_components(id, &setter, comp_type);
                 }
                 return true;
             });
@@ -599,12 +590,12 @@ class UndoRedoInspector final : public InspectorPanelInspector {
                     undo_stack().push(
                         fmt_to_owned("{}.{} changed", _world->component_type_name(_type), name),
                         [name, value, id = _id, type = _type](EditorWorld& world) {
-                            SetterInspector<T> setter(name, type, value);
-                            world.inspect_components(id, &setter);
+                            SetterInspector<T> setter(name, value);
+                            world.inspect_components(id, &setter, type);
                         },
                         [name, new_value, id = _id, type = _type](EditorWorld& world) {
-                            SetterInspector<T> setter(name, type, new_value);
-                            world.inspect_components(id, &setter);
+                            SetterInspector<T> setter(name, new_value);
+                            world.inspect_components(id, &setter, type);
                         },
                         undo_id
                     );

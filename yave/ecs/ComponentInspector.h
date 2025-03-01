@@ -104,6 +104,10 @@ class ComponentInspector : NonCopyable {
 template<typename Derived>
 class TemplateComponentInspector : public ComponentInspector {
     public:
+        bool ComponentInspector::inspect_component_type(ComponentRuntimeInfo, bool) override {
+            return true;
+        }
+
         void inspect(const core::String& name, math::Transform<>& t) {
             static_cast<Derived*>(this)->visit(name, t);
         }

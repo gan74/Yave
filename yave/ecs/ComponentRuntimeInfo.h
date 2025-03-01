@@ -54,6 +54,7 @@ struct ComponentRuntimeInfo {
     core::Span<ComponentTypeIndex> required;
     std::unique_ptr<ComponentContainerBase> (*create_type_container)() = nullptr;
     void (*add_or_replace_component)(EntityWorld&, EntityId) = nullptr;
+    bool is_inspectable;
 
     std::string_view clean_component_name() const {
         return clean_component_name(type_name);
@@ -66,7 +67,8 @@ struct ComponentRuntimeInfo {
             ct_type_name<T>(),
             required_component_types<T>(),
             create_container<T>,
-            create_or_replace_component<T>
+            create_or_replace_component<T>,
+            Inspectable<T>,
         };
     }
 
