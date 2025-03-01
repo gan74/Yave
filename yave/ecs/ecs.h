@@ -103,12 +103,7 @@ class EntityId {
             return (u64(_index) << 32) | _version;
         }
 
-        std::strong_ordering operator<=>(const EntityId& other) const {
-            return as_u64() <=> other.as_u64();
-        }
-
-        bool operator==(const EntityId&) const = default;
-        bool operator!=(const EntityId&) const = default;
+        auto operator<=>(const EntityId&) const = default;
 
     private:
         static constexpr u32 invalid_index = u32(-1);

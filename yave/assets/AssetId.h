@@ -56,12 +56,7 @@ struct AssetId {
             return _id;
         }
 
-        constexpr std::strong_ordering operator<=>(const AssetId& other) const {
-            return _id <=> other._id;
-        }
-
-        constexpr bool operator==(const AssetId&) const = default;
-        constexpr bool operator!=(const AssetId&) const = default;
+        auto operator<=>(const AssetId&) const = default;
 
     private:
         constexpr AssetId(u64 id) : _id(id) {

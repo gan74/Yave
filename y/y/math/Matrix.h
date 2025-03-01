@@ -151,15 +151,6 @@ class Matrix {
             return tr;
         }
 
-        inline constexpr bool operator==(const Matrix& m) const {
-            for(usize i = 0; i != vec_count; ++i) {
-                if(_vecs[i] != m._vecs[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
         template<usize R, usize C>
         inline constexpr Matrix<R, C, T> to() const {
             static_assert(R <= N && C <= M, "Accessing out of bound member");
@@ -278,6 +269,9 @@ class Matrix {
             }
             return *this;
         }
+
+        inline constexpr bool operator==(const Matrix&) const = default;
+        inline constexpr bool operator!=(const Matrix&) const = default;
 
     private:
         template<usize X, usize Y, typename U>

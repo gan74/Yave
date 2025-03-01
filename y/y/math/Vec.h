@@ -322,20 +322,6 @@ class Vec
             _vec[I] = t;
         }
 
-
-        inline constexpr bool operator!=(const Vec<N, T>& o) const {
-            for(usize i = 0; i != N; ++i) {
-                if(o._vec[i] != _vec[i]) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        inline constexpr bool operator==(const Vec<N, T>& o) const {
-            return !operator!=(o);
-        }
-
         inline constexpr Vec operator-() const {
             Vec t;
             for(usize i = 0; i != N; ++i) {
@@ -402,13 +388,16 @@ class Vec
             return *this;
         }
 
-
         inline constexpr Vec& operator=(const T& v) {
             for(usize i = 0; i != N; ++i) {
                 _vec[i] = v;
             }
             return *this;
         }
+
+        inline constexpr bool operator==(const Vec&) const = default;
+        inline constexpr bool operator!=(const Vec&) const = default;
+
 
     private:
         template<usize M, typename U>

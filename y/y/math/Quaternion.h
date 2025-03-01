@@ -62,14 +62,6 @@ class Quaternion {
             return *this;
         }
 
-        inline constexpr bool operator==(const Quaternion& q) const {
-            return _quat == q._quat || -_quat == q._quat;
-        }
-
-        inline constexpr bool operator!=(const Quaternion& q) const {
-            return !operator==(q);
-        }
-
         inline constexpr auto& as_vec() {
             return _quat;
         }
@@ -268,6 +260,10 @@ class Quaternion {
         inline constexpr static Quaternion from_axis_angle(const Vec<4, T>& v) {
             return from_axis_angle(v.template to<3>(), v.w());
         }
+
+
+        inline constexpr bool operator==(const Quaternion&) const = default;
+        inline constexpr bool operator!=(const Quaternion&) const = default;
 
     private:
         Vec<4, T> _quat;
