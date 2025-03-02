@@ -52,7 +52,11 @@ class UndoRedoSystem::GetterInspector final : public ecs::TemplateComponentInspe
 
         template<typename T>
         void visit(const core::String& name, T& t) {
-            _properties.emplace_back(name, t);
+            if constexpr(std::is_same_v<T, GenericAssetPtr>) {
+                _properties.emplace_back(name, t.unlinked());
+            } else {
+                _properties.emplace_back(name, t);
+            }
         }
 
     private:
@@ -136,6 +140,8 @@ UndoRedoSystem::UndoRedoSystem() : ecs::System("UndoRedoSystem") {
 }
 
 void UndoRedoSystem::reset() {
+    y_profile();
+
     _states.clear();
     _top = 0;
     _do_undo = false;
@@ -268,6 +274,7 @@ void UndoRedoSystem::push_state(UndoState state) {
         };
 
 
+        y_profile_zone("culling useless changes");
         y_debug_assert(state.redo_properties.size() == state.undo_properties.size());
         for(usize k = 0; k < state.redo_properties.size(); ++k) {
             auto&& [key, redo_properties] = state.redo_properties[k];

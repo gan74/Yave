@@ -263,6 +263,7 @@ class GenericAssetPtr {
         inline GenericAssetPtr unlinked() const {
             GenericAssetPtr ptr = *this;
             ptr.unlink();
+            y_debug_assert(ptr == *this);
             return ptr;
         }
 
