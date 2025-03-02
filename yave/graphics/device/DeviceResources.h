@@ -98,6 +98,8 @@ class DeviceResources final : NonMovable {
             TAASimpleMaterialTemplate,
             TAAResolveMaterialTemplate,
 
+            DenoiseMaterialTemplate,
+
             IdMaterialTemplate,
 
             MaxMaterialTemplates
