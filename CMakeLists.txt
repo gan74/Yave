@@ -231,8 +231,7 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "denoise.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "rtao.slang" "")
-    add_slang_shader(${SHADER_TARGET} "filter_rtao.slang" "HORIZONTAL")
-    add_slang_shader(${SHADER_TARGET} "filter_rtao.slang" "VERTICAL")
+    add_slang_shader(${SHADER_TARGET} "filter_ao.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "basic_rt.slang" "")
 endfunction(build_engine_shaders)

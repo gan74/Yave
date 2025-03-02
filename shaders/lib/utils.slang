@@ -78,6 +78,10 @@ T sqr<T: IArithmetic>(T t) {
     return t * t;
 }
 
+float sq_length(float3 v) {
+    return dot(v, v);
+}
+
 
 
 

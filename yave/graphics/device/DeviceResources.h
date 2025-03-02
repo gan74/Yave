@@ -57,8 +57,7 @@ class DeviceResources final : NonMovable {
             DepthBoundProgram,
             PrevCameraProgram,
             UpdateTransformsProgram,
-            HFilterRTAOProgram,
-            VFilterRTAOProgram,
+            FilterAOProgram,
 
             MaxNonRTComputePrograms,
             RTAOProgram = MaxNonRTComputePrograms,

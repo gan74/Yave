@@ -497,7 +497,7 @@ void EngineView::draw_settings_menu() {
     if(ImGui::BeginMenu("AO")) {
         AOSettings& settings = _settings.renderer_settings.ao;
 
-        const char* methods[] = {"MiniEngine", "RTAO", "GTAO", "None"};
+        const char* methods[] = {"MiniEngine", "RTAO", "None"};
         if(ImGui::BeginCombo("Method", methods[usize(settings.method)])) {
             for(usize i = 0; i != sizeof(methods) / sizeof(methods[0]); ++i) {
                 const bool selected = usize(settings.method) == i;

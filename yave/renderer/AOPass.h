@@ -39,7 +39,7 @@ struct AOSettings {
         None,
     };
 
-    AOMethod method = AOMethod::MiniEngine;
+    AOMethod method = AOMethod::RTAO;
 
     struct {
         u32 level_count = 2;
@@ -50,7 +50,7 @@ struct AOSettings {
 
     struct {
         u32 ray_count = 1;
-        float max_dist = 1.0f;
+        float max_dist = 2.0f;
 
         float filter_sigma = 4.0f;
 

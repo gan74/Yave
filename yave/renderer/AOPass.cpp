@@ -244,7 +244,7 @@ static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass&
 }
 
 
-static FrameGraphImageId filter_rtao(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_ao, bool vertical, float sigma) {
+static FrameGraphImageId filter_ao(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_ao, bool vertical, float sigma) {
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass(vertical ? "Filter RTAO vertical pass" : "Filter RTAO horizontal pass");
@@ -253,14 +253,19 @@ static FrameGraphImageId filter_rtao(FrameGraph& framegraph, const GBufferPass& 
 
     const auto weights = math::compute_gaussian_weights<float, 4>(sigma);
 
+    struct Params {
+        std::array<float, 4> weights;
+        math::Vec2i offset;
+    };
+
     builder.add_uniform_input(in_ao);
     builder.add_uniform_input(gbuffer.depth);
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_storage_output(filtered);
-    builder.add_inline_input(InlineDescriptor(weights));
+    builder.add_inline_input(InlineDescriptor(Params{weights, vertical ? math::Vec2i(0, 1) : math::Vec2i(1, 0)}));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        recorder.dispatch_threads(device_resources()[vertical ? DeviceResources::VFilterRTAOProgram : DeviceResources::HFilterRTAOProgram], size, self->descriptor_sets());
+        recorder.dispatch_threads(device_resources()[DeviceResources::FilterAOProgram], size, self->descriptor_sets());
     });
 
     return filtered;
@@ -301,8 +306,8 @@ AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const 
                 }
 
                 if(settings.rtao.filter_sigma > 0.0f) {
-                    ao = filter_rtao(framegraph, gbuffer, ao, false, settings.rtao.filter_sigma);
-                    ao = filter_rtao(framegraph, gbuffer, ao, true, settings.rtao.filter_sigma);
+                    ao = filter_ao(framegraph, gbuffer, ao, false, settings.rtao.filter_sigma);
+                    ao = filter_ao(framegraph, gbuffer, ao, true, settings.rtao.filter_sigma);
                 }
             }
         } break;

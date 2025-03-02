@@ -23,8 +23,9 @@ ConstantBuffer<Camera> camera;
 RWTexture2D<float> out_ao;
 
 [[vk::binding(5)]]
-cbuffer Weights_Inline {
+cbuffer Params_Inline {
     float4 weights[KERNEL_SIZE / 4];
+    int2 offset;
 };
 
 
@@ -32,11 +33,7 @@ cbuffer Weights_Inline {
 
 
 int2 make_offset(int i) {
-#if defined(HORIZONTAL)
-    return int2(i, 0);
-#else
-    return int2(0, i);
-#endif
+    return offset * i;
 }
 
 float gaussian_weight(int i) {

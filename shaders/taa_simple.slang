@@ -31,5 +31,5 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     const float2 prev_uv = uv + in_motion[coord];
 
     const float4 prev = in_prev_color.Sample(prev_uv);
-    return lerp(current, prev, 0.75);
+    return lerp(current, prev, 0.9);
 }

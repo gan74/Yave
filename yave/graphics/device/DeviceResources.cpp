@@ -117,8 +117,7 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "depth_bounds",
     "prev_camera",
     "update_transforms",
-    "filter_rtao_HORIZONTAL",
-    "filter_rtao_VERTICAL",
+    "filter_ao",
     "rtao",
 };
 

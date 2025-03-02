@@ -4,7 +4,7 @@
 Sampler2D in_color;
 
 [[vk::binding(1)]]
-cbuffer Settings_Inline {
+cbuffer Params_Inline {
     float sigma;
     float k_sigma;
     float threshold;
