@@ -244,12 +244,26 @@ void UndoRedoSystem::push_state(UndoState state) {
         }
 
         auto value_equal = [](const PropertyValue& a, const PropertyValue& b) {
-            /*const auto* tra = std::get_if<math::Transform<>>(&a);
+            const auto* tra = std::get_if<math::Transform<>>(&a);
             const auto* trb = std::get_if<math::Transform<>>(&b);
             if(tra && trb) {
-                Y_TODO(better heuristic?)
-                return true;
-            }*/
+                const float epsilon = 0.0001f;
+                const auto [a_pos, a_rot, a_scale] = tra->decompose();
+                const auto [b_pos, b_rot, b_scale] = tra->decompose();
+                if((a_pos - b_pos).sq_length() > epsilon) {
+                    return false;
+                }
+                if((a_scale - b_scale).sq_length() > epsilon) {
+                    return false;
+                }
+                for(usize i = 0; i != 3; ++i) {
+                    math::Vec3 v;
+                    v[i] = 1.0f;
+                    if((a_rot(v) - b_rot(v)).sq_length() > epsilon) {
+                        return false;
+                    }
+                }
+            }
             return a == b;
         };
 
