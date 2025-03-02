@@ -61,6 +61,7 @@ class EntityWorld : NonMovable {
 
         const SparseIdSet& pending_deletions() const;
         core::Span<EntityId> recently_added() const;
+        const SparseIdSet& parent_changed() const;
 
         EntityId create_entity();
         EntityId create_entity_with_id(EntityId id);
@@ -293,6 +294,7 @@ class EntityWorld : NonMovable {
 
         SparseIdSet _to_delete;
         core::Vector<EntityId> _recently_added;
+        SparseIdSet _parent_changed;
 
         SystemManager _system_manager;
 

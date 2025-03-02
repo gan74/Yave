@@ -72,9 +72,6 @@ void DeletionDialog::on_gui() {
     if(ImGui::Button("Ok")) {
         y_profile_zone("deleting entities");
 
-        core::FixedArray<ecs::EntityPrefab> prefabs(_ids.size());
-        std::transform(_ids.begin(), _ids.end(), prefabs.begin(), [&](ecs::EntityId id) { return world.create_prefab_from_entity(id); });
-
         for(const ecs::EntityId id : _ids) {
             if(!world.exists(id)) {
                 continue;

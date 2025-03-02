@@ -312,6 +312,8 @@ void TranslationGizmo::draw() {
 
 
     auto set_position = [&](const math::Vec3& pos) {
+        y_profile_zone("set position");
+
         const math::Transform<> old_transform = transformable->transform();
         math::Transform<> new_transform = old_transform;
         new_transform.position() = pos;
@@ -534,6 +536,8 @@ void RotationGizmo::draw() {
 
 
     auto set_rotation = [transformable, selected, &world](const math::Quaternion<>& quat) {
+        y_profile_zone("set set_rotation");
+
         const math::Transform<> old_transform = transformable->transform();
         const auto [obj_pos, obj_rot, obj_scale] = old_transform.decompose();
         const math::Transform<> new_transform(obj_pos, quat * obj_rot, obj_scale);

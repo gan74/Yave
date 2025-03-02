@@ -151,6 +151,7 @@ void EntityWorld::process_deferred_changes() {
 
     _to_delete.make_empty();
     _recently_added.make_empty();
+    _parent_changed.make_empty();
 
     _groups.locked([&](auto&& groups) {
         y_profile_zone("Clear added groups");
@@ -192,6 +193,10 @@ const SparseIdSet& EntityWorld::pending_deletions() const {
 
 core::Span<EntityId> EntityWorld::recently_added() const {
     return _recently_added;
+}
+
+const SparseIdSet& EntityWorld::parent_changed() const {
+    return _parent_changed;
 }
 
 EntityId EntityWorld::create_entity() {
@@ -325,6 +330,7 @@ void EntityWorld::set_parent(EntityId id, EntityId parent_id) {
     y_profile();
 
     _entities.set_parent(id, parent_id);
+    _parent_changed.insert(id);
 }
 
 bool EntityWorld::has_parent(EntityId id) const {

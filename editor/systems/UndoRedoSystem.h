@@ -57,14 +57,16 @@ class UndoRedoSystem : public ecs::System {
     };
 
     struct UndoState {
-        core::SmallVector<std::pair<ComponentKey, core::SmallVector<Property, 8>>, 4> redo_properties;
-        core::SmallVector<std::pair<ComponentKey, core::SmallVector<Property, 8>>, 4> undo_properties;
+        core::Vector<std::pair<ComponentKey, core::SmallVector<Property, 8>>> redo_properties;
+        core::Vector<std::pair<ComponentKey, core::SmallVector<Property, 8>>> undo_properties;
 
         core::Vector<std::pair<ecs::EntityId, std::unique_ptr<ecs::ComponentBoxBase>>> removed_components;
         core::Vector<std::pair<ecs::EntityId, std::unique_ptr<ecs::ComponentBoxBase>>> added_components;
 
-        core::Vector<ecs::EntityId> removed_entities;
+        core::Vector<std::pair<ecs::EntityId, ecs::EntityId>> removed_entities;
         core::Vector<ecs::EntityId> added_entities;
+
+        core::Vector<std::tuple<ecs::EntityId, ecs::EntityId, ecs::EntityId>> parent_changed;
 
         core::StopWatch created;
 

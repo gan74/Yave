@@ -93,7 +93,7 @@ void UndoRedoSystem::UndoState::undo(ecs::EntityWorld& world) {
         world.inspect_components(key.first, &inspector, key.second);
     }
 
-    for(const ecs::EntityId id : removed_entities) {
+    for(const auto& [id, parent] : removed_entities) {
         world.create_entity_with_id(id);
     }
 
@@ -107,6 +107,14 @@ void UndoRedoSystem::UndoState::undo(ecs::EntityWorld& world) {
 
     for(const auto& [id, comp] : added_components) {
         world.remove_component(id, comp->runtime_info().type_id);
+    }
+
+    for(const auto& [id, parent] : removed_entities) {
+        world.set_parent(id, parent);
+    }
+
+    for(const auto& [id, prev, next] : parent_changed) {
+        world.set_parent(id, prev);
     }
 }
 
@@ -118,7 +126,7 @@ void UndoRedoSystem::UndoState::redo(ecs::EntityWorld& world) {
         world.inspect_components(key.first, &inspector, key.second);
     }
 
-    for(const ecs::EntityId id : removed_entities) {
+    for(const auto& [id, parent] : removed_entities) {
         world.remove_entity(id);
     }
 
@@ -132,6 +140,10 @@ void UndoRedoSystem::UndoState::redo(ecs::EntityWorld& world) {
 
     for(const auto& [id, comp] : added_components) {
         comp->add_or_replace(world, id);
+    }
+
+    for(const auto& [id, prev, next] : parent_changed) {
+        world.set_parent(id, next);
     }
 }
 
@@ -154,11 +166,15 @@ void UndoRedoSystem::setup(ecs::SystemScheduler& sched) {
         if(!_do_undo && !_do_redo) {
             UndoState state;
             for(const ecs::EntityId id : world().pending_deletions()) {
-                state.removed_entities << id;
+                state.removed_entities.emplace_back(id, world().parent(id));
             }
 
             for(const ecs::EntityId id : world().recently_added()) {
-                state.added_entities << id;
+                state.added_entities.emplace_back(id);
+            }
+
+            for(const ecs::EntityId id : world().parent_changed()) {
+                state.parent_changed.emplace_back(id, _snapshot->parent(id), world().parent(id));
             }
 
             for(const ecs::ComponentContainerBase* container : world().component_containers()) {
@@ -307,7 +323,8 @@ void UndoRedoSystem::push_state(UndoState state) {
         !state.added_components.is_empty() ||
         !state.removed_components.is_empty() ||
         !state.added_entities.is_empty() ||
-        !state.removed_entities.is_empty()
+        !state.removed_entities.is_empty() ||
+        !state.parent_changed.is_empty()
     ;
 
     y_debug_assert(state.redo_properties.size() == state.undo_properties.size());
