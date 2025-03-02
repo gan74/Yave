@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/ecs/System.h>
 #include <yave/assets/AssetId.h>
+#include <yave/assets/AssetPtr.h>
 
 #include <y/core/Chrono.h>
 #include <y/core/Vector.h>
@@ -46,7 +47,8 @@ class UndoRedoSystem : public ecs::System {
         u32,
         bool,
         ecs::EntityId,
-        AssetId
+        AssetId,
+        GenericAssetPtr
     >;
 
     struct Property {

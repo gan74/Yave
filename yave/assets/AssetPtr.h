@@ -244,7 +244,7 @@ class GenericAssetPtr {
         }
 
         inline bool operator==(const GenericAssetPtr& other) const {
-            return (_data == other._data && _id == other._id);
+            return (_id == other._id && _type == other._type);
         }
 
         inline bool operator!=(const GenericAssetPtr& other) const {
@@ -258,6 +258,16 @@ class GenericAssetPtr {
         template<typename T>
         bool matches() const {
             return detail::asset_type_index<T>() == _type_index;
+        }
+
+        inline GenericAssetPtr unlinked() const {
+            GenericAssetPtr ptr = *this;
+            ptr.unlink();
+            return ptr;
+        }
+
+        inline void unlink() {
+            _data = nullptr;
         }
 
         template<typename T>

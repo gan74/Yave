@@ -52,10 +52,7 @@ class UndoRedoSystem::GetterInspector final : public ecs::TemplateComponentInspe
 
         template<typename T>
         void visit(const core::String& name, T& t) {
-            // AssetPtr are not supported
-            if constexpr(!std::is_same_v<T, GenericAssetPtr>) {
-                _properties.emplace_back(name, t);
-            }
+            _properties.emplace_back(name, t);
         }
 
     private:
@@ -69,15 +66,12 @@ class UndoRedoSystem::SetterInspector final : public ecs::TemplateComponentInspe
 
         template<typename T>
         void visit(const core::String& name, T& t) {
-            // AssetPtr are not supported
-            if constexpr(!std::is_same_v<T, GenericAssetPtr>) {
-                const auto it = std::find_if(_properties.begin(), _properties.end(), [&](const auto& p) { return p.name == name; });
-                if(it != _properties.end()) {
-                    if(const T* value = std::get_if<std::remove_cvref_t<T>>(&it->value)) {
-                        t = *value;
-                    } else {
-                        log_msg(fmt("Unable to set property \"{}\"", name), Log::Error);
-                    }
+            const auto it = std::find_if(_properties.begin(), _properties.end(), [&](const auto& p) { return p.name == name; });
+            if(it != _properties.end()) {
+                if(const T* value = std::get_if<T>(&it->value)) {
+                    t = *value;
+                } else {
+                    log_msg(fmt("Unable to set property \"{}\"", name), Log::Error);
                 }
             }
         }

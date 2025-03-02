@@ -183,7 +183,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
         bool inspect_component_type(ecs::ComponentRuntimeInfo info, bool has_inspect) override {
             end_table();
 
-            if(info.type_id == ecs::type_index<EditorComponent>()) {
+            if(!info.is_inspectable || info.type_id == ecs::type_index<EditorComponent>()) {
                 return false;
             }
 
