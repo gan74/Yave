@@ -36,6 +36,7 @@ class DebugAnimateSystem : public ecs::System {
         void setup(ecs::SystemScheduler& sched) override;
 
     private:
+        core::StopWatch _dt;
         core::StopWatch _timer;
 };
 

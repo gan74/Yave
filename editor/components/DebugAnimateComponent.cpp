@@ -52,8 +52,19 @@ float DebugAnimateComponent::speed() const {
     return _speed;
 }
 
+bool DebugAnimateComponent::rotate() const {
+    return _rotate;
+}
+
+bool DebugAnimateComponent::translate() const {
+    return _translate;
+}
+
 void DebugAnimateComponent::inspect(ecs::ComponentInspector* inspector) {
     inspector->inspect("Speed", _speed);
+    inspector->inspect("Axis", _axis, ecs::ComponentInspector::Vec3Role::Direction);
+    inspector->inspect("Rotate", _rotate);
+    inspector->inspect("Translate", _translate);
 }
 
 }

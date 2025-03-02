@@ -35,9 +35,15 @@ DebugAnimateSystem::DebugAnimateSystem() : ecs::System("DebugAnimateSystem") {
 
 void DebugAnimateSystem::setup(ecs::SystemScheduler& sched) {
     sched.schedule(ecs::SystemSchedule::Update, "Update", [this](ecs::EntityGroup<ecs::Mutate<TransformableComponent>, DebugAnimateComponent>&& group) {
-        const float dt = float(_timer.reset().to_secs());
+        const float dt = float(_dt.reset().to_secs());
+        const double time = _timer.elapsed().to_secs();
         for(auto&& [tr, dg] : group) {
-            tr.set_transform(tr.transform() * math::rotation(dg.axis(), dt * dg.speed()));
+            if(dg.rotate()) {
+                tr.set_transform(tr.transform() * math::rotation(dg.axis(), dt * dg.speed()));
+            }
+            if(dg.translate()) {
+                tr.set_position(tr.position() + dg.axis() * float(std::sin(time * dg.speed())) * 0.1f);
+            }
         }
     });
 }
