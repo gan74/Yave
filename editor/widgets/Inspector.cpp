@@ -195,7 +195,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             ImGui::PushID(fmt_c_str("{}", info.type_name));
             {
                 const float button_size = ImGui::GetFrameHeight();
-                const math::Vec2 button_pos(ImGui::GetContentRegionAvail().x - button_size, ImGui::GetCursorScreenPos().y);
+                const math::Vec2 button_pos = math::Vec2(ImGui::GetContentRegionAvail().x - button_size, 0.0f) + math::Vec2(ImGui::GetCursorScreenPos());
                 ImGui::SetCursorScreenPos(button_pos);
                 const bool can_remove = !_world->is_component_required(_id, info.type_id);
                 const bool remove_component = ImGui::InvisibleButton(ICON_FA_TRASH "###invisible", math::Vec2(button_size));
