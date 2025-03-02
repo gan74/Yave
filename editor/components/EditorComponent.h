@@ -51,6 +51,8 @@ class EditorComponent {
         AssetId parent_prefab() const;
         bool is_prefab() const;
 
+        void inspect(ecs::ComponentInspector* inspector);
+
         y_reflect(EditorComponent, _name, _prefab, _hide_in_editor)
 
     private:

@@ -59,6 +59,9 @@ class EntityWorld : NonMovable {
         usize entity_count() const;
         bool exists(EntityId id) const;
 
+        const SparseIdSet& pending_deletions() const;
+        core::Span<EntityId> recently_added() const;
+
         EntityId create_entity();
         EntityId create_entity_with_id(EntityId id);
         EntityId create_entity(const EntityPrefab&prefab, bool keep_ids = false);
@@ -289,6 +292,7 @@ class EntityWorld : NonMovable {
         EntityPool _entities;
 
         SparseIdSet _to_delete;
+        core::Vector<EntityId> _recently_added;
 
         SystemManager _system_manager;
 

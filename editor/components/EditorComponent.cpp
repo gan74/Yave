@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "EditorComponent.h"
 
+#include <yave/ecs/ComponentInspector.h>
+
 namespace editor {
 
 EditorComponent::EditorComponent(core::String name) : _name(std::move(name)) {
@@ -58,6 +60,11 @@ AssetId EditorComponent::parent_prefab() const {
 bool EditorComponent::is_prefab() const {
     return _prefab != AssetId::invalid_id();
 }
+
+void EditorComponent::inspect(ecs::ComponentInspector* inspector) {
+    inspector->inspect("Name", _name);
+}
+
 
 }
 

@@ -53,7 +53,6 @@ Settings& app_settings();
 UiManager& ui();
 AssetStore& asset_store();
 AssetLoader& asset_loader();
-UndoStack& undo_stack();
 ThumbmailRenderer& thumbmail_renderer();
 concurrent::StaticThreadPool& thread_pool();
 

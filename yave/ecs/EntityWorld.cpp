@@ -150,6 +150,7 @@ void EntityWorld::process_deferred_changes() {
     }
 
     _to_delete.make_empty();
+    _recently_added.make_empty();
 
     _groups.locked([&](auto&& groups) {
         y_profile_zone("Clear added groups");
@@ -185,9 +186,18 @@ bool EntityWorld::exists(EntityId id) const {
     return _entities.exists(id);
 }
 
+const SparseIdSet& EntityWorld::pending_deletions() const {
+    return _to_delete;
+}
+
+core::Span<EntityId> EntityWorld::recently_added() const {
+    return _recently_added;
+}
+
 EntityId EntityWorld::create_entity() {
     const EntityId id = _entities.create();
     _matrix.add_entity(id);
+    _recently_added << id;
     return id;
 }
 
@@ -195,6 +205,7 @@ EntityId EntityWorld::create_entity_with_id(EntityId id) {
     y_debug_assert(!exists(id));
     y_always_assert(_entities.create_with_id(id).is_valid(), "Entity ID already in use");
     _matrix.add_entity(id);
+    _recently_added << id;
     return id;
 }
 

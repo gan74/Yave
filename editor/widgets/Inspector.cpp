@@ -23,13 +23,11 @@ SOFTWARE.
 #include "Inspector.h"
 
 #include <editor/EditorWorld.h>
-#include <editor/UndoStack.h>
 #include <editor/widgets/AssetSelector.h>
 #include <editor/widgets/EntitySelector.h>
 #include <editor/components/EditorComponent.h>
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
-#include <editor/utils/entities.h>
 
 #include <yave/ecs/ComponentInspector.h>
 #include <yave/assets/AssetLoader.h>
@@ -214,7 +212,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                     if(!can_remove) {
                         log_msg(fmt("{} can not be deleted as it is required by some other component", info.clean_component_name()), Log::Warning);
                     } else {
-                        undo_enabled_remove_component(_id, info);
+                        _world->remove_component(_id, info.type_id);
                     }
                 }
             }
@@ -231,6 +229,10 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             }
 
             return _in_table;
+        }
+
+        void inspect(const core::String&, core::String&) override {
+            log_msg("String property is not supported");
         }
 
         void inspect(const core::String& name, math::Transform<>& tr) override {
@@ -538,76 +540,6 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 };
 
 
-class UndoRedoInspector final : public InspectorPanelInspector {
-    public:
-        template<typename... Args>
-        UndoRedoInspector(Args&&... args) : InspectorPanelInspector(y_fwd(args)...) {
-        }
-
-        void inspect(const core::String& name, math::Transform<>& tr) override {
-            const auto _ = check_changed(name, tr);
-            InspectorPanelInspector::inspect(name, tr);
-        }
-
-        void inspect(const core::String& name, math::Vec3& v, ecs::ComponentInspector::Vec3Role role) override {
-            const auto _ = check_changed(name, v);
-            InspectorPanelInspector::inspect(name, v, role);
-        }
-
-        void inspect(const core::String& name, float& f, float min, float max, ecs::ComponentInspector::FloatRole role) override {
-            const auto _ = check_changed(name, f);
-            InspectorPanelInspector::inspect(name, f, min, max, role);
-        }
-
-        void inspect(const core::String& name, u32& u, u32 max) override {
-            const auto _ = check_changed(name, u);
-            InspectorPanelInspector::inspect(name, u, max);
-        }
-
-        void inspect(const core::String& name, bool& b) override {
-            const auto _ = check_changed(name, b);
-            InspectorPanelInspector::inspect(name, b);
-        }
-
-        void inspect(const core::String& name, ecs::EntityId& id, ecs::ComponentTypeIndex type) override {
-            const auto _ = check_changed(name, id);
-            InspectorPanelInspector::inspect(name, id, type);
-        }
-
-        void inspect(const core::String& name, GenericAssetPtr& p) override {
-            const auto _ = check_changed(name, p);
-            InspectorPanelInspector::inspect(name, p);
-        }
-
-    private:
-        template<typename T>
-        auto check_changed(const core::String& name, T& t) {
-            return ScopeGuard([this, name, ptr = &t, value = t] {
-                static_assert(!std::is_reference_v<decltype(value)>);
-                const T& new_value = *ptr;
-                if(new_value != value) {
-                    static const auto undo_id = UndoStack::generate_static_id();
-                    undo_stack().push(
-                        fmt_to_owned("{}.{} changed", _world->component_type_name(_type), name),
-                        [name, value, id = _id, type = _type](EditorWorld& world) {
-                            SetterInspector<T> setter(name, value);
-                            world.inspect_components(id, &setter, type);
-                        },
-                        [name, new_value, id = _id, type = _type](EditorWorld& world) {
-                            SetterInspector<T> setter(name, new_value);
-                            world.inspect_components(id, &setter, type);
-                        },
-                        undo_id
-                    );
-                }
-            });
-        }
-};
-
-
-
-
-
 
 
 Inspector::Inspector() : Widget(ICON_FA_WRENCH " Inspector") {
@@ -635,7 +567,7 @@ void Inspector::on_gui() {
 
         core::String name = component->name();
         if(imgui::text_input("Name##name", name)) {
-            undo_enabled_rename(id, name);
+            component->set_name(name);
         }
 
         ImGui::SameLine();
@@ -658,12 +590,12 @@ void Inspector::on_gui() {
 
     if(component->is_prefab()) {
         ImGui::BeginGroup();
-        imgui::text_read_only("Prefab", fmt("ID = {:08x}:{:08x}", id.index(), id.version()));
+        ImGui::TextUnformatted(fmt_c_str("Prefab: {:016x}", component->parent_prefab().id()));
         ImGui::EndGroup();
     }
 
 
-    UndoRedoInspector inspector(id, component, &world);
+    InspectorPanelInspector inspector(id, component, &world);
     world.inspect_components(id, &inspector);
 
 
@@ -675,9 +607,12 @@ void Inspector::on_gui() {
 
     if(ImGui::BeginPopup("##addcomponentmenu")) {
         for(const auto& [name, info] : EditorWorld::component_types()) {
+            if(!info.is_inspectable || info.type_id == ecs::type_index<EditorComponent>()) {
+                continue;
+            }
             const bool enabled = !name.is_empty() && !world.has_component(id, info.type_id) && info.add_or_replace_component;
             if(ImGui::MenuItem(fmt_c_str(ICON_FA_PUZZLE_PIECE " {}", name), nullptr, nullptr, enabled) && enabled) {
-                undo_enabled_add_component(id, info);
+                info.add_or_replace_component(world, id);
             }
         }
         ImGui::EndPopup();

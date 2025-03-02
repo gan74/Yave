@@ -26,7 +26,6 @@ SOFTWARE.
 #include "UiManager.h"
 #include "ImGuiPlatform.h"
 #include "ThumbmailRenderer.h"
-#include "UndoStack.h"
 #include "EditorWorld.h"
 
 #include <yave/assets/FolderAssetStore.h>
@@ -61,13 +60,8 @@ editor_action(ICON_FA_FOLDER " Load", [] { load_world(); }, "File")
 editor_action_shortcut("New", Key::Ctrl + Key::N, [] { new_world(); }, "File")
 
 
-editor_action_shortcut(ICON_FA_UNDO " Undo", Key::Ctrl + Key::Z, [] { undo_stack().undo(); })
-editor_action_shortcut(ICON_FA_REDO " Redo", Key::Ctrl + Key::Y, [] { undo_stack().redo(); })
-
-
 
 namespace application {
-std::unique_ptr<UndoStack> undo_stack;
 std::unique_ptr<EditorResources> resources;
 std::shared_ptr<AssetStore> asset_store;
 std::unique_ptr<AssetLoader> loader;
@@ -158,13 +152,11 @@ void post_tick() {
 
     if(application::deferred_actions & application::Load) {
         load_world_deferred();
-        undo_stack().clear();
     }
 
     if(application::deferred_actions & application::New) {
         application::world = std::make_unique<EditorWorld>(*application::loader);
         create_scene();
-        undo_stack().clear();
     }
 
     application::deferred_actions = application::None;
@@ -191,7 +183,6 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::world = std::make_unique<EditorWorld>(*application::loader);
     application::scene = std::make_unique<EcsScene>(application::world.get());
     application::debug_drawer = std::make_unique<DirectDraw>();
-    application::undo_stack = std::make_unique<UndoStack>();
 
     create_scene();
 
@@ -202,7 +193,6 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
 
 
 void destroy_editor() {
-    application::undo_stack = nullptr;
     application::thumbmail_renderer = nullptr;
     application::scene = nullptr;
     application::world = nullptr;
@@ -240,10 +230,6 @@ AssetStore& asset_store() {
 
 AssetLoader& asset_loader() {
     return *application::loader;
-}
-
-UndoStack& undo_stack() {
-    return *application::undo_stack;
 }
 
 ThumbmailRenderer& thumbmail_renderer() {

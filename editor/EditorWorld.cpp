@@ -41,6 +41,7 @@ SOFTWARE.
 #include <yave/systems/AssetLoaderSystem.h>
 
 #include <editor/systems/DebugAnimateSystem.h>
+#include <editor/systems/UndoRedoSystem.h>
 
 #include <y/utils/format.h>
 
@@ -52,9 +53,14 @@ namespace editor {
 
 editor_action("Remove all entities", [] { current_world().remove_all_entities(); })
 
+editor_action_shortcut(ICON_FA_UNDO " Undo", Key::Ctrl + Key::Z, [] { current_world().undo(); })
+editor_action_shortcut(ICON_FA_REDO " Redo", Key::Ctrl + Key::Y, [] { current_world().redo(); })
+
+
 EditorWorld::EditorWorld(AssetLoader& loader) {
     add_system<AssetLoaderSystem>(loader);
     add_system<DebugAnimateSystem>();
+    add_system<UndoRedoSystem>();
 }
 
 bool EditorWorld::set_entity_name(ecs::EntityId id, std::string_view name) {
@@ -196,6 +202,14 @@ void EditorWorld::set_selection(core::Span<ecs::EntityId> selection) {
 void EditorWorld::clear_selection() {
     y_profile();
     clear_tag(ecs::tags::selected);
+}
+
+void EditorWorld::undo() {
+    find_system<UndoRedoSystem>()->undo();
+}
+
+void EditorWorld::redo() {
+    find_system<UndoRedoSystem>()->redo();
 }
 
 core::Span<std::pair<core::String, ecs::ComponentRuntimeInfo>> EditorWorld::component_types() {

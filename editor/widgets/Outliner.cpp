@@ -26,7 +26,6 @@ SOFTWARE.
 #include "Renamer.h"
 
 #include <editor/Settings.h>
-#include <editor/UndoStack.h>
 #include <editor/EditorWorld.h>
 #include <editor/components/EditorComponent.h>
 
@@ -39,7 +38,6 @@ SOFTWARE.
 #include <editor/components/DebugAnimateComponent.h>
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
-#include <editor/utils/entities.h>
 
 #include <y/math/random.h>
 
@@ -286,8 +284,10 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
         ImGui::Separator();
 
         if(ImGui::MenuItem("Rename")) {
-            add_child_widget<Renamer>(component->name(), [=](std::string_view name) {
-                undo_enabled_rename(_context_menu_target, name);
+            add_child_widget<Renamer>(component->name(), [target_id = _context_menu_target](std::string_view name) {
+                if(EditorComponent* comp = current_world().component_mut<EditorComponent>(target_id)) {
+                    comp->set_name(name);
+                }
                 return true;
             });
         }

@@ -24,7 +24,7 @@ SOFTWARE.
 #include <editor/EditorWorld.h>
 #include <editor/utils/memory.h>
 #include <editor/ThumbmailRenderer.h>
-#include <editor/UndoStack.h>
+#include <editor/systems/UndoRedoSystem.h>
 
 #include <yave/scene/SceneView.h>
 #include <yave/graphics/device/MeshAllocator.h>
@@ -364,69 +364,56 @@ class RaytracingDebug : public Widget {
 };
 
 
-class UndoStackDebug : public Widget {
+class UndoRedoDebug : public Widget {
 
-    editor_widget(UndoStackDebug)
+    editor_widget_open(UndoRedoDebug)
 
     public:
-        UndoStackDebug() : Widget("Undo stack") {
+        UndoRedoDebug() : Widget("Undo Redo") {
         }
 
         void on_gui() override {
-            const auto items = undo_stack().items();
-            const usize top = undo_stack().stack_top();
+            UndoRedoSystem* system = current_world().find_system<UndoRedoSystem>();
+            const core::Span states = system->undo_states();
 
-            ImGui::Text("%u items in stack", u32(items.size()));
+            ImGui::Text("%u items in stack (current: %u)", u32(states.size()), u32(system->stack_top()));
 
             ImGui::SameLine();
 
             if(ImGui::Button("Clear")) {
-                undo_stack().clear();
-                return;
+                system->reset();
             }
 
-            bool tree_open = false;
-            if(ImGui::BeginTable("##undostack", 1, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV)) {
-                ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
-                ImGui::TableHeadersRow();
-                for(usize i = 0; i != items.size(); ++i) {
-                    const auto& item = items[i];
-                    const bool is_current =  i + 1 == top;
-                    const auto flags = is_current ? ImGuiTreeNodeFlags_Selected : ImGuiTreeNodeFlags_None;
+            if(ImGui::BeginChild("##undostack")) {
+                for(usize i = 0; i != states.size(); ++i) {
+                    const bool current = (i == system->stack_top() - 1);
+                    if(ImGui::TreeNodeEx(fmt_c_str("State #{}", i), ImGuiTreeNodeFlags_SpanAvailWidth | (current ? ImGuiTreeNodeFlags_Selected : 0)))  {
+                        ImGui::Indent();
 
-                    if(item.merge_with_prev) {
-                        if(tree_open) {
-                            imgui::table_begin_next_row();
-                            if(ImGui::TreeNodeEx(fmt_c_str("{}##{}", item.name, i), flags | ImGuiTreeNodeFlags_Leaf)) {
-                                ImGui::TreePop();
+                        for(const auto& [id, comp] : states[i].removed_components) {
+                            const auto type_name = current_world().component_type_name(comp->runtime_info().type_id);
+                            ImGui::TextUnformatted(fmt_c_str("({:08x}:{:08x}).{} deleted", id.index(), id.version(), type_name));
+                        }
+
+                        for(const auto& [id, comp] : states[i].added_components) {
+                            const auto type_name = current_world().component_type_name(comp->runtime_info().type_id);
+                            ImGui::TextUnformatted(fmt_c_str("({:08x}:{:08x}).{} added", id.index(), id.version(), type_name));
+                        }
+
+                        for(const auto& [key, props] : states[i].undo_properties) {
+                            const auto type_name = current_world().component_type_name(key.second);
+                            for(const auto& prop : props) {
+                                ImGui::TextUnformatted(fmt_c_str("({:08x}:{:08x}).{}.{} changed", key.first.index(), key.first.version(), type_name, prop.name));
                             }
                         }
-                    } else {
-                        if(tree_open) {
-                            ImGui::Unindent();
-                            ImGui::TreePop();
-                        }
-                        imgui::table_begin_next_row();
-                        tree_open = ImGui::TreeNodeEx(fmt_c_str("{}##{}", item.name, i), flags);
-                        if(tree_open) {
-                            ImGui::Indent();
-                        }
+
+                        ImGui::Unindent();
+                        ImGui::TreePop();
                     }
-
-                    /*imgui::table_begin_next_row();
-                    ImGui::Selectable(fmt_c_str("{} {}", item.name, item.merge_with_prev), is_current, ImGuiSelectableFlags_SpanAllColumns);*/
-
-                    /*ImGui::TableNextColumn();
-                    ImGui::Selectable(fmt_c_str("{:#08x}", item.id.index()));*/
                 }
-
-                if(tree_open) {
-                    ImGui::Unindent();
-                    ImGui::TreePop();
-                }
-
-                ImGui::EndTable();
             }
+
+            ImGui::EndChild();
         }
 };
 

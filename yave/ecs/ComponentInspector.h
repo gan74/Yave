@@ -57,6 +57,8 @@ class ComponentInspector : NonCopyable {
 
         virtual bool inspect_component_type(ComponentRuntimeInfo info, bool has_inspect) = 0;
 
+        virtual void inspect(const core::String& name, core::String& str) = 0;
+
         virtual void inspect(const core::String& name, math::Transform<>& t) = 0;
 
         virtual void inspect(const core::String& name, math::Vec3& v, Vec3Role role = Vec3Role::None) = 0;
@@ -108,7 +110,11 @@ class TemplateComponentInspector : public ComponentInspector {
             return true;
         }
 
-        void inspect(const core::String& name, math::Transform<>& t) {
+        void inspect(const core::String& name, core::String& str) override {
+            static_cast<Derived*>(this)->visit(name, str);
+        }
+
+        void inspect(const core::String& name, math::Transform<>& t) override {
             static_cast<Derived*>(this)->visit(name, t);
         }
 

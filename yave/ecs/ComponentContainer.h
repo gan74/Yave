@@ -43,6 +43,9 @@ class ComponentContainerBase : NonMovable {
 
         ComponentTypeIndex type_id() const;
 
+        const SparseIdSet& mutated_ids() const;
+        const SparseIdSet& pending_deletions() const;
+
         usize requirements_chain_depth() const;
 
         virtual void remove_later(EntityId id) = 0;
@@ -124,6 +127,7 @@ class ComponentContainer final : public ComponentContainerBase {
         template<typename... Args>
         T* add_or_replace(EntityId id, Args&... args) {
             if(_components.contains(id)) {
+                _mutated.insert(id);
                 return &(_components[id] = T(y_fwd(args)...));
             }
             return add(id, y_fwd(args)...);
@@ -147,6 +151,8 @@ class ComponentContainer final : public ComponentContainerBase {
             if(!_components.contains(id)) {
                 return;
             }
+
+            Y_TODO(lock??)
 
             if constexpr(Inspectable<T>) {
                 if(inspector->inspect_component_type(runtime_info(), true)) {

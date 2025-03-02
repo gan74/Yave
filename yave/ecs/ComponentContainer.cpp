@@ -36,6 +36,14 @@ ComponentTypeIndex ComponentContainerBase::type_id() const {
     return _type_id;
 }
 
+const SparseIdSet& ComponentContainerBase::mutated_ids() const {
+    return _mutated;
+}
+
+const SparseIdSet& ComponentContainerBase::pending_deletions() const {
+    return _to_delete;
+}
+
 void ComponentContainerBase::add_required_components(EntityId id) const {
     for(ComponentContainerBase* req : _required) {
         req->add_if_not_exist(id);

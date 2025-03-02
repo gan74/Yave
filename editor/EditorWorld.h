@@ -63,6 +63,9 @@ class EditorWorld : public ecs::EntityWorld {
         void set_selection(core::Span<ecs::EntityId> selection);
         void clear_selection();
 
+        void undo();
+        void redo();
+
         static core::Span<std::pair<core::String, ecs::ComponentRuntimeInfo>> component_types();
 
     private:

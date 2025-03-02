@@ -21,16 +21,12 @@ SOFTWARE.
 **********************************/
 #include "Gizmo.h"
 
-#include <editor/UndoStack.h>
 #include <editor/EditorWorld.h>
-#include <editor/UndoStack.h>
 
 #include <yave/scene/SceneView.h>
 #include <yave/components/TransformableComponent.h>
 
 #include <editor/utils/ui.h>
-#include <editor/utils/entities.h>
-
 #include <yave/utils/DirectDraw.h>
 
 #include <y/utils/log.h>
@@ -61,6 +57,20 @@ static constexpr u32 orientation_gizmo_alpha = 0xB0000000;
 
 
 
+
+
+static void move_recursive(EditorWorld& world, ecs::EntityId id, math::Transform<> old_parent_transform, math::Transform<> new_parent_transform) {
+    if(TransformableComponent* component = world.component_mut<TransformableComponent>(id)) {
+        const math::Transform<> tr = component->transform();
+        component->set_transform(new_parent_transform * old_parent_transform.inverse() * tr);
+        old_parent_transform = tr;
+        new_parent_transform = component->transform();
+    }
+
+    for(const ecs::EntityId child : world.children(id)) {
+        move_recursive(world, child, old_parent_transform, new_parent_transform);
+    }
+}
 
 
 static bool is_clicked() {
@@ -302,9 +312,10 @@ void TranslationGizmo::draw() {
 
 
     auto set_position = [&](const math::Vec3& pos) {
-        math::Transform<> new_transform = transformable->transform();
+        const math::Transform<> old_transform = transformable->transform();
+        math::Transform<> new_transform = old_transform;
         new_transform.position() = pos;
-        undo_enabled_move_recursive(selected, new_transform);
+        move_recursive(world, selected, old_transform, new_transform);
     };
 
 
@@ -523,9 +534,10 @@ void RotationGizmo::draw() {
 
 
     auto set_rotation = [transformable, selected, &world](const math::Quaternion<>& quat) {
-        const auto [obj_pos, obj_rot, obj_scale] = transformable->transform().decompose();
+        const math::Transform<> old_transform = transformable->transform();
+        const auto [obj_pos, obj_rot, obj_scale] = old_transform.decompose();
         const math::Transform<> new_transform(obj_pos, quat * obj_rot, obj_scale);
-        undo_enabled_move_recursive(selected, new_transform);
+        move_recursive(world, selected, old_transform, new_transform);
     };
 
 
