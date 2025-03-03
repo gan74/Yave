@@ -7,12 +7,15 @@ Sampler2D in_color;
 Sampler2D in_prev_color;
 
 [[vk::binding(2)]]
-Sampler2D<float2> in_motion;
+Sampler2D<float> in_depth;
 
 [[vk::binding(3)]]
-Sampler2D<uint> in_mask;
+Sampler2D<float2> in_motion;
 
 [[vk::binding(4)]]
+Sampler2D<uint> in_mask;
+
+[[vk::binding(5)]]
 ConstantBuffer<Camera> camera;
 
 

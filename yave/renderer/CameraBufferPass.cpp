@@ -41,6 +41,9 @@ static math::Vec2 compute_jitter(JitterSettings::JitterSeq jitter, u64 jitter_in
         case JitterSettings::JitterSeq::R2:
             return math::Vec2(math::golden_r2_2d<double>(jitter_index));
 
+        case JitterSettings::JitterSeq::Halton23:
+            return math::Vec2(math::halton<double>(jitter_index + 1, u64(2)), math::halton<double>(jitter_index + 1, u64(3)));
+
         default:
             y_fatal("Unknown jitter type");
     }
@@ -58,10 +61,14 @@ CameraBufferPass CameraBufferPass::create_no_jitter(FrameGraph& framegraph, cons
     return create(framegraph, view, {}, persistent_id, settings);
 }
 
+
+
+
 CameraBufferPass CameraBufferPass::create(FrameGraph& framegraph, const SceneView& view, const math::Vec2ui& size, FrameGraphPersistentResourceId persistent_id, const JitterSettings& settings) {
     const bool enabled = settings.jitter_intensity > 0.0f;
 
-    const u64 jitter_index = framegraph.frame_id() % 1024;
+    const u64 jitter_index = framegraph.frame_id() % 8;
+
     const Camera jittered_camera = enabled ? view.camera().jittered(compute_jitter(settings.jitter, jitter_index), size, settings.jitter_intensity) : view.camera();
     const SceneView jittered_view = SceneView(view.scene(), jittered_camera);
 

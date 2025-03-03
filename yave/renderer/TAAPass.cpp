@@ -78,6 +78,7 @@ static TAAPass create_taa_pass(FrameGraph& framegraph, const TemporalPrePass& te
 
     builder.add_uniform_input(in_color, SamplerType::PointClamp);
     builder.add_uniform_input(prev_color);
+    builder.add_uniform_input(temporal.depth);
     builder.add_uniform_input(temporal.motion);
     builder.add_uniform_input_with_default(temporal.mask, Descriptor(zero, SamplerType::PointClamp));
     builder.add_uniform_input(temporal.camera);

@@ -583,7 +583,7 @@ void EngineView::draw_settings_menu() {
             ImGui::EndCombo();
         }
 
-        const char* jitter_names[] = {"Weyl", "R2"};
+        const char* jitter_names[] = {"Weyl", "R2", "Halton23"};
         if(ImGui::BeginCombo("Jitter", jitter_names[usize(jitter.jitter)])) {
             for(usize i = 0; i != sizeof(jitter_names) / sizeof(jitter_names[0]); ++i) {
                 const bool selected = usize(jitter.jitter) == i;

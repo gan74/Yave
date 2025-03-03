@@ -127,6 +127,22 @@ SurfaceInfo decode_gbuffer(RawGBuffer raw) {
 
 
 
+float3 RGB_to_YCgCo(float3 c) {
+    return float3(
+        c.x / 4.0 + c.y / 2.0 + c.z / 4.0,
+        c.x / 2.0 - c.z / 2.0,
+        -c.x / 4.0 + c.y / 2.0 - c.z / 4.0
+    );
+}
+
+float3 YCgCo_to_RGB(float3 c) {
+    return saturate(float3(
+        c.x + c.y - c.z,
+        c.x + c.z,
+        c.x - c.y - c.z
+    ));
+}
+
 float luminance(float3 rgb) {
     return dot(rgb, float3(0.2126, 0.7152, 0.0722));
 }

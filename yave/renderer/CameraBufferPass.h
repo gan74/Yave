@@ -31,6 +31,7 @@ struct JitterSettings {
     enum class JitterSeq : u32 {
         Weyl,
         R2,
+        Halton23
     };
 
     JitterSeq jitter = JitterSeq::R2;

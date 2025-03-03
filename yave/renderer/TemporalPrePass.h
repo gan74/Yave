@@ -29,6 +29,7 @@ namespace yave {
 struct TemporalPrePass {
     FrameGraphImageId mask;
     FrameGraphImageId motion;
+    FrameGraphImageId depth;
 
     FrameGraphTypedBufferId<shader::Camera> camera;
 

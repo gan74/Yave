@@ -36,6 +36,7 @@ TemporalPrePass TemporalPrePass::create(FrameGraph& framegraph, const GBufferPas
     {
         pass.motion = gbuffer.motion;
         pass.camera = gbuffer.scene_pass.camera;
+        pass.depth = gbuffer.depth;
     }
 
     static const FrameGraphPersistentResourceId depth_persistent_id = FrameGraphPersistentResourceId::create();

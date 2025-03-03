@@ -183,6 +183,20 @@ Vec<2, T> weyl_2d(I n) {
 }
 
 
+template<typename T, typename I>
+T halton(I i, I b) {
+    T f = T(1.0);
+    T r = T(0.0);
+
+    while (i > 0) {
+        f /= T(b);
+        r = r + f * T(i % b);
+        i = I(std::floor(T(i) / T(b)));
+    }
+
+    return r;
+}
+
 template<typename T, usize N>
 static std::array<T, N> compute_gaussian_weights(T sigma) {
     const T denom = T(2.0) * sigma * sigma;

@@ -8,18 +8,21 @@
 Sampler2D in_color;
 
 [[vk::binding(1)]]
-Sampler2D in_prev;
+Sampler2D in_prev_color;
 
 [[vk::binding(2)]]
-Sampler2D<float2> in_motion;
+Sampler2D<float> in_depth;
 
 [[vk::binding(3)]]
-Sampler2D<uint> in_mask;
+Sampler2D<float2> in_motion;
 
 [[vk::binding(4)]]
-ConstantBuffer<Camera> camera;
+Sampler2D<uint> in_mask;
 
 [[vk::binding(5)]]
+ConstantBuffer<Camera> camera;
+
+[[vk::binding(6)]]
 cbuffer Settings_Inline {
     TAAFeatureBits flags;
     uint weighting_mode;
@@ -103,13 +106,13 @@ float filter_weight(float x) {
 }
 
 // https://github.com/TheRealMJP/MSAAFilter/blob/master/MSAAFilter/Resolve.hlsl
-float3 sample_prev(float2 prev_coord) {
+float3 sample_history(float2 prev_coord) {
     float3 sum = float3(0.0);
     float total = 0.0;
-    for(int x = -1; x <= 2; ++x) {
-        for(int y = -1; y <= 2; ++y) {
+    for(int x = -1; x <= 1; ++x) {
+        for(int y = -1; y <= 1; ++y) {
             const float2 sample_coord = floor(prev_coord + float2(x, y)) + 0.5;
-            const float3 prev_sample = in_prev[int2(sample_coord)].rgb;
+            const float3 prev_sample = in_prev_color[int2(sample_coord)].rgb;
 
             const float2 sample_delta = abs(sample_coord - prev_coord);
             const float weight = filter_weight(sample_delta.x) * filter_weight(sample_delta.y);
@@ -122,6 +125,26 @@ float3 sample_prev(float2 prev_coord) {
     return sum / total;
 }
 
+float2 sample_closest_velocity(int2 coord) {
+#if 0
+    int2 closest_pos = coord;
+    float closest_depth = 0.0;
+    for(int x = -1; x <= 1; ++x) {
+        for(int y = -1; y <= 1; ++y) {
+            const int2 sample_pos = coord + int2(x, y);
+            const float depth = in_depth[sample_pos];
+            if (depth > closest_depth) {
+                closest_depth = depth;
+                closest_pos = sample_pos;
+            }
+        }
+    }
+
+    return in_motion[closest_pos];
+#else
+    return in_motion[coord];
+#endif
+}
 
 
 
@@ -141,18 +164,17 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     }
 
     const float2 size = float2(image_size(in_color).xy);
-    const float2 inv_size = 1.0 / size;
 
-    const float2 motion = in_motion[coord];
-    const float2 uv = semantics.frag_coord.xy * inv_size;
+    const float2 motion = sample_closest_velocity(coord);
+    const float2 uv = semantics.frag_coord.xy / size;
     const float2 prev_uv = uv + motion;
 
     float3 prev = current;
 
     if((flags & TAAFeatureBits::MatchPrevBit) != 0) {
-        prev = sample_prev(prev_uv * size);
+        prev = sample_history(prev_uv * size);
     } else {
-        prev = in_prev.Sample(prev_uv).rgb;
+        prev = in_prev_color.Sample(prev_uv).rgb;
     }
 
     if((flags & TAAFeatureBits::ClampingBit) != 0) {
