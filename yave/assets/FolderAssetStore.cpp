@@ -637,7 +637,7 @@ AssetId FolderAssetStore::generate_id() {
     AssetId id;
     do {
         id = make_random_id();
-    } while(_ids->contains(id));
+    } while(_ids && _ids->contains(id));
     return id;
 }
 
