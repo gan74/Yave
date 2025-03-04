@@ -64,7 +64,6 @@ endfunction(optimize_shader)
 
 function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
     get_filename_component(SHADER_NAME ${SHADER_FILE} NAME_WE)
-    get_property(SLANGC GLOBAL PROPERTY SLANG_EXECUTABLE)
     foreach(DEF ${SHADER_DEFINES})
         set(COMPILE_ARGS "${COMPILE_ARGS} -D${DEF}=1")
         set(NAME_SUFFIX "${NAME_SUFFIX}_${DEF}")
@@ -73,7 +72,7 @@ function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
     set(SHADER_BIN "${SHADER_NAME}${NAME_SUFFIX}.spv")
     add_custom_command(
         TARGET ${SHADER_TARGET}
-        COMMAND ${SLANGC}
+        COMMAND ${Vulkan_SLANGC_EXECUTABLE}
             ${COMPILE_ARGS}
             -target spirv
             -matrix-layout-column-major
@@ -86,18 +85,6 @@ function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
     optimize_shader(${SHADER_TARGET}_optim ${SHADER_BIN})
 endfunction(add_slang_shader)
 
-
-function(setup_slang)
-    include(ExternalProject)
-    # https://stackoverflow.com/questions/16384831/externalproject-add-doesnt-install-the-release-configuration-of-the-project
-    set(SLANG_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/slangc")
-    ExternalProject_Add(slang
-        SOURCE_DIR "${CMAKE_SOURCE_DIR}/external/slang"
-        CMAKE_ARGS "-DCMAKE_BUILD_TYPE=Release;-DCMAKE_INSTALL_PREFIX=${SLANG_INSTALL_DIR}"
-        EXCLUDE_FROM_ALL true
-    )
-    set_property(GLOBAL PROPERTY SLANG_EXECUTABLE "${SLANG_INSTALL_DIR}/bin/slangc")
-endfunction(setup_slang)
 
 
 option(YAVE_BUILD_YAVE "Build yave" ON)
@@ -119,9 +106,20 @@ find_package(Vulkan REQUIRED)
 if(NOT Vulkan_FOUND)
     message(FATAL_ERROR "Vulkan SDK not found")
 endif()
+
+if(Vulkan_VERSION VERSION_LESS "1.4.0")
+    message(FATAL_ERROR "Vulkan SDK is too old. Yave requires 1.4 or newer")
+endif()
+
 if(NOT Vulkan_glslc_FOUND)
     message(FATAL_ERROR "glslc not found in Vulkan SDK")
 endif()
+
+if(NOT Vulkan_SLANGC_EXECUTABLE)
+    set(Vulkan_SLANGC_EXECUTABLE ${Vulkan_GLSLC_EXECUTABLE})
+    cmake_path(REPLACE_FILENAME Vulkan_SLANGC_EXECUTABLE "slangc")
+endif()
+
 
 
 # add y subtree
@@ -248,7 +246,6 @@ endfunction(build_editor_shaders)
 
 
 build_luajit(luajit)
-setup_slang()
 
 if(YAVE_UNITY_BUILD)
     enable_unity_build(yave YAVE_FILES)
@@ -279,7 +276,6 @@ if(YAVE_BUILD_YAVE)
     add_custom_target(shaders)
     add_custom_target(shaders_optim)
     build_engine_shaders(shaders)
-    add_dependencies(shaders slang)
     add_dependencies(shaders_optim shaders)
 
     add_dependencies(yave shaders_optim)

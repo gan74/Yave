@@ -9,9 +9,9 @@ typealias Sampler2DShadow = Sampler2D<float>;
 namespace semantics {
 
 in float4 frag_coord : SV_Position;
-in uint instance_index : SV_InstanceID;
+in int instance_index : SV_InstanceID;
 in bool is_front_face : SV_IsFrontFace;
-in uint vertex_index : SV_VertexID;
+in int vertex_index : SV_VertexID;
 
 in uint3 global_id : SV_DispatchThreadID;
 in uint3 work_group_id : SV_GroupID;
@@ -45,7 +45,7 @@ uint InterlockedAddRet(inout uint mem, uint data) {
 
 
 [ForceInline]
-uint image_mips<T>(Sampler2D<T> smp) {
+uint image_mips<T: ITexelElement>(Sampler2D<T> smp) {
     uint mip;
     uint2 size;
     smp.GetDimensions(0, size.x, size.y, mip);
@@ -53,7 +53,7 @@ uint image_mips<T>(Sampler2D<T> smp) {
 }
 
 [ForceInline]
-uint image_mips<T>(SamplerCube<T> smp) {
+uint image_mips<T: ITexelElement>(SamplerCube<T> smp) {
     uint mip;
     uint2 size;
     smp.GetDimensions(0, size.x, size.y, mip);
@@ -61,21 +61,21 @@ uint image_mips<T>(SamplerCube<T> smp) {
 }
 
 [ForceInline]
-uint2 image_size<T>(Sampler2D<T> smp) {
+uint2 image_size<T: ITexelElement>(Sampler2D<T> smp) {
     uint2 size;
     smp.GetDimensions(size.x, size.y);
     return size;
 }
 
 [ForceInline]
-uint2 image_size<T>(RWTexture2D<T> smp) {
+uint2 image_size<T: ITexelElement>(RWTexture2D<T> smp) {
     uint2 size;
     smp.GetDimensions(size.x, size.y);
     return size;
 }
 
 [ForceInline]
-uint3 image_size<T>(RWTexture2DArray<T> smp) {
+uint3 image_size<T: ITexelElement>(RWTexture2DArray<T> smp) {
     uint3 size;
     smp.GetDimensions(size.x, size.y, size.z);
     return size;
