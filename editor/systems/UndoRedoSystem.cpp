@@ -158,11 +158,14 @@ void UndoRedoSystem::reset() {
     _top = 0;
     _do_undo = false;
     _do_redo = false;
-    take_snapshot();
+    _snapshot = nullptr;
 }
 
 void UndoRedoSystem::setup(ecs::SystemScheduler& sched) {
+    take_snapshot();
+
     sched.schedule(ecs::SystemSchedule::TickSequential, "TickSeq", [this]() {
+        y_debug_assert(_snapshot);
         if(!_do_undo && !_do_redo) {
             UndoState state;
             for(const ecs::EntityId id : world().pending_deletions()) {

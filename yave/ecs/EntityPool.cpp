@@ -86,7 +86,7 @@ EntityId EntityPool::create() {
 
 EntityId EntityPool::create_with_id(EntityId id) {
     const u32 index = id.index();
-    if(_entities.size() < index) {
+    if(_entities.size() < index + 1) {
         _entities.set_min_size(index + 1);
     } else {
         if(_entities[index].is_valid()) {
