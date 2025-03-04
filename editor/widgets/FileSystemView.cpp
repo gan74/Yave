@@ -314,9 +314,9 @@ void FileSystemView::on_gui() {
                         bool clicked = false;
                         bool double_clicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
                         if(UiTexture preview = _preview_delegate(entry.full_name, entry.type)) {
-                            clicked = imgui::icon_button(preview, entry.name.data(), selected, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
+                            clicked = imgui::icon_button(preview, fmt_c_str("{}##{}", entry.name, index), selected, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
                         } else {
-                            clicked = imgui::icon_button(entry.icon, entry.name.data(), selected, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
+                            clicked = imgui::icon_button(entry.icon, fmt_c_str("{}##{}", entry.name, index), selected, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
                         }
                         double_clicked &= clicked;
                         const bool is_right_clicked = ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right);
