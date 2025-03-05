@@ -237,6 +237,8 @@ VK_STRUCT_TYPE(VkPhysicalDeviceVulkan12Features,                    VK_STRUCTURE
 VK_STRUCT_TYPE(VkPhysicalDeviceVulkan12Properties,                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES)
 VK_STRUCT_TYPE(VkPhysicalDeviceVulkan13Features,                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES)
 VK_STRUCT_TYPE(VkPhysicalDeviceVulkan13Properties,                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES)
+VK_STRUCT_TYPE(VkPhysicalDeviceVulkan14Features,                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES)
+VK_STRUCT_TYPE(VkPhysicalDeviceVulkan14Properties,                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_PROPERTIES)
 VK_STRUCT_TYPE(VkImageFormatListCreateInfo,                         VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO)
 VK_STRUCT_TYPE(VkAttachmentDescription2,                            VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2)
 VK_STRUCT_TYPE(VkAttachmentReference2,                              VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2)

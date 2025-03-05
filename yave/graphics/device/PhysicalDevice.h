@@ -41,6 +41,7 @@ class PhysicalDevice {
         bool is_discrete() const;
         u64 total_device_memory() const;
 
+        u32 supported_vulkan_version() const;
 
         const VkPhysicalDeviceMemoryProperties& vk_memory_properties() const;
 
@@ -49,6 +50,7 @@ class PhysicalDevice {
         const VkPhysicalDeviceVulkan11Properties& vk_properties_1_1() const;
         const VkPhysicalDeviceVulkan12Properties& vk_properties_1_2() const;
         const VkPhysicalDeviceVulkan13Properties& vk_properties_1_3() const;
+        const VkPhysicalDeviceVulkan14Properties& vk_properties_1_4() const;
 
         const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& vk_raytracing_properties() const;
 
@@ -56,6 +58,7 @@ class PhysicalDevice {
         bool supports_features(const VkPhysicalDeviceVulkan11Features& features) const;
         bool supports_features(const VkPhysicalDeviceVulkan12Features& features) const;
         bool supports_features(const VkPhysicalDeviceVulkan13Features& features) const;
+        bool supports_features(const VkPhysicalDeviceVulkan14Features& features) const;
 
         core::Vector<VkExtensionProperties> supported_extensions() const;
         bool is_extension_supported(std::string_view name) const;
@@ -70,16 +73,21 @@ class PhysicalDevice {
         VkPhysicalDevice _device = {};
         VkPhysicalDeviceMemoryProperties _memory_properties = {};
 
+        u32 _supported_version = 0;
+
         VkPhysicalDeviceProperties2 _properties = vk_struct();
         VkPhysicalDeviceVulkan11Properties _properties_1_1 = vk_struct();
         VkPhysicalDeviceVulkan12Properties _properties_1_2 = vk_struct();
         VkPhysicalDeviceVulkan13Properties _properties_1_3 = vk_struct();
+        VkPhysicalDeviceVulkan14Properties _properties_1_4 = vk_struct();
+
         VkPhysicalDeviceRayTracingPipelinePropertiesKHR _raytracing_properties = vk_struct();
 
         VkPhysicalDeviceFeatures2 _supported_features = vk_struct();
         VkPhysicalDeviceVulkan11Features _supported_features_1_1 = vk_struct();
         VkPhysicalDeviceVulkan12Features _supported_features_1_2 = vk_struct();
         VkPhysicalDeviceVulkan13Features _supported_features_1_3 = vk_struct();
+        VkPhysicalDeviceVulkan14Features _supported_features_1_4 = vk_struct();
 };
 
 }

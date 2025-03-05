@@ -56,14 +56,26 @@ PhysicalDevice::PhysicalDevice(VkPhysicalDevice device) : _device(device) {
         vkGetPhysicalDeviceFeatures2(_device, &_supported_features);
     }
 
-    {
-        _properties.pNext = &_properties_1_1;
-        _properties_1_1.pNext = &_properties_1_2;
-        _properties_1_2.pNext = &_properties_1_3;
-        _properties_1_3.pNext = &_raytracing_properties;
+    _properties_1_4.pNext = &_properties_1_3;
+    _properties_1_3.pNext = &_properties_1_2;
+    _properties_1_2.pNext = &_properties_1_1;
+    _properties_1_1.pNext = &_raytracing_properties;
 
-        vkGetPhysicalDeviceProperties2(_device, &_properties);
+    vkGetPhysicalDeviceProperties2(_device, &_properties);
+
+    if(_properties.properties.apiVersion >= VK_API_VERSION_1_4) {
+        _properties.pNext = &_properties_1_4;
+    } else if(_properties.properties.apiVersion >= VK_API_VERSION_1_3) {
+        _properties.pNext = &_properties_1_3;
+    } else if(_properties.properties.apiVersion >= VK_API_VERSION_1_2) {
+        _properties.pNext = &_properties_1_2;
+    } else if(_properties.properties.apiVersion >= VK_API_VERSION_1_1) {
+        _properties.pNext = &_properties_1_1;
+    } else {
+        _properties.pNext = &_raytracing_properties;
     }
+
+    vkGetPhysicalDeviceProperties2(_device, &_properties);
 }
 
 DeviceProperties PhysicalDevice::device_properties() const {
@@ -113,6 +125,10 @@ u64 PhysicalDevice::total_device_memory() const {
     return total;
 }
 
+u32 PhysicalDevice::supported_vulkan_version() const {
+    return _properties.properties.apiVersion;
+}
+
 VkPhysicalDevice PhysicalDevice::vk_physical_device() const {
     return _device;
 }
@@ -137,6 +153,10 @@ const VkPhysicalDeviceVulkan13Properties& PhysicalDevice::vk_properties_1_3() co
     return _properties_1_3;
 }
 
+const VkPhysicalDeviceVulkan14Properties& PhysicalDevice::vk_properties_1_4() const {
+    return _properties_1_4;
+}
+
 const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& PhysicalDevice::vk_raytracing_properties() const {
     return _raytracing_properties;
 }
@@ -155,6 +175,10 @@ bool PhysicalDevice::supports_features(const VkPhysicalDeviceVulkan12Features& f
 
 bool PhysicalDevice::supports_features(const VkPhysicalDeviceVulkan13Features& features) const {
     return supports_all_features(features, _supported_features_1_3);
+}
+
+bool PhysicalDevice::supports_features(const VkPhysicalDeviceVulkan14Features& features) const {
+    return supports_all_features(features, _supported_features_1_4);
 }
 
 core::Vector<VkExtensionProperties> PhysicalDevice::supported_extensions() const {

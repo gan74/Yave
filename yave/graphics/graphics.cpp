@@ -101,14 +101,11 @@ static void init_vk_device() {
     auto required_features_1_1 = required_device_features_1_1();
     auto required_features_1_2 = required_device_features_1_2();
     auto required_features_1_3 = required_device_features_1_3();
+    auto required_features_1_4 = required_device_features_1_4();
 
     auto required_features_accel = required_device_features_accel_struct();
     auto required_features_raytracing = required_device_features_raytracing_pipeline();
     auto required_features_ray_query = required_device_features_ray_query();
-
-    if(physical_device().vk_properties_1_3().maxInlineUniformBlockSize > 0) {
-        required_features_1_3.inlineUniformBlock = true;
-    }
 
     y_always_assert(has_required_features(physical_device()), "Device doesn't support required features");
     y_always_assert(has_required_properties(physical_device()), "Device doesn't support required properties");
@@ -133,6 +130,7 @@ static void init_vk_device() {
         features.pNext = &required_features_1_1;
         required_features_1_1.pNext = &required_features_1_2;
         required_features_1_2.pNext = &required_features_1_3;
+        required_features_1_3.pNext = &required_features_1_4;
     }
 
     if(raytracing_enabled()) {

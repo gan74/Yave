@@ -56,10 +56,13 @@ void print_properties(const DeviceProperties& properties);
 
 PhysicalDevice find_best_device(const Instance& instance);
 
+u32 required_vulkan_version();
+
 VkPhysicalDeviceFeatures required_device_features();
 VkPhysicalDeviceVulkan11Features required_device_features_1_1();
 VkPhysicalDeviceVulkan12Features required_device_features_1_2();
 VkPhysicalDeviceVulkan13Features required_device_features_1_3();
+VkPhysicalDeviceVulkan14Features required_device_features_1_4();
 VkPhysicalDeviceAccelerationStructureFeaturesKHR required_device_features_accel_struct();
 VkPhysicalDeviceRayTracingPipelineFeaturesKHR required_device_features_raytracing_pipeline();
 VkPhysicalDeviceRayQueryFeaturesKHR required_device_features_ray_query();

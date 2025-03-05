@@ -54,6 +54,10 @@ core::Span<const char*> validation_extensions() {
 }
 
 float device_score(const PhysicalDevice& device) {
+    if(device.supported_vulkan_version() < required_vulkan_version()) {
+        return -std::numeric_limits<float>::max();
+    }
+
     if(!has_required_features(device)) {
         return -std::numeric_limits<float>::max();
     }
@@ -255,6 +259,10 @@ PhysicalDevice find_best_device(const Instance& instance) {
     return devices[device_index];
 }
 
+u32 required_vulkan_version() {
+    return VK_API_VERSION_1_3;
+}
+
 VkPhysicalDeviceFeatures required_device_features() {
     VkPhysicalDeviceFeatures required = {};
 
@@ -290,17 +298,15 @@ VkPhysicalDeviceVulkan11Features required_device_features_1_1() {
 VkPhysicalDeviceVulkan12Features required_device_features_1_2() {
     VkPhysicalDeviceVulkan12Features required = vk_struct();
 
-    {
-        required.bufferDeviceAddress = true;
-        required.timelineSemaphore = true;
-        required.runtimeDescriptorArray = true;
-        required.descriptorIndexing = true;
-        required.descriptorBindingVariableDescriptorCount = true;
-        required.descriptorBindingPartiallyBound = true;
-        required.descriptorBindingUpdateUnusedWhilePending = true;
-        required.descriptorBindingSampledImageUpdateAfterBind = true;
-        required.shaderSampledImageArrayNonUniformIndexing = true;
-    }
+    required.bufferDeviceAddress = true;
+    required.timelineSemaphore = true;
+    required.runtimeDescriptorArray = true;
+    required.descriptorIndexing = true;
+    required.descriptorBindingVariableDescriptorCount = true;
+    required.descriptorBindingPartiallyBound = true;
+    required.descriptorBindingUpdateUnusedWhilePending = true;
+    required.descriptorBindingSampledImageUpdateAfterBind = true;
+    required.shaderSampledImageArrayNonUniformIndexing = true;
 
     return required;
 }
@@ -308,9 +314,15 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2() {
 VkPhysicalDeviceVulkan13Features required_device_features_1_3() {
     VkPhysicalDeviceVulkan13Features required = vk_struct();
 
-    {
-        // required.inlineUniformBlock = true; // Fallback
-    }
+    required.inlineUniformBlock = true;
+
+    return required;
+}
+
+VkPhysicalDeviceVulkan14Features required_device_features_1_4() {
+    VkPhysicalDeviceVulkan14Features required = vk_struct();
+
+    // required.pushDescriptor = true;
 
     return required;
 }
@@ -318,9 +330,7 @@ VkPhysicalDeviceVulkan13Features required_device_features_1_3() {
 VkPhysicalDeviceAccelerationStructureFeaturesKHR required_device_features_accel_struct() {
     VkPhysicalDeviceAccelerationStructureFeaturesKHR required = vk_struct();
 
-    {
-        required.accelerationStructure = true;
-    }
+    required.accelerationStructure = true;
 
     return required;
 }
@@ -328,9 +338,7 @@ VkPhysicalDeviceAccelerationStructureFeaturesKHR required_device_features_accel_
 VkPhysicalDeviceRayTracingPipelineFeaturesKHR required_device_features_raytracing_pipeline() {
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR required = vk_struct();
 
-    {
-        required.rayTracingPipeline = true;
-    }
+    required.rayTracingPipeline = true;
 
     return required;
 }
@@ -339,9 +347,7 @@ VkPhysicalDeviceRayTracingPipelineFeaturesKHR required_device_features_raytracin
 VkPhysicalDeviceRayQueryFeaturesKHR required_device_features_ray_query() {
     VkPhysicalDeviceRayQueryFeaturesKHR required = vk_struct();
 
-    {
-        required.rayQuery = true;
-    }
+    required.rayQuery = true;
 
     return required;
 }
@@ -361,6 +367,10 @@ bool has_required_features(const PhysicalDevice& physical) {
     }
 
     if(!physical.supports_features(required_device_features_1_3())) {
+        return false;
+    }
+
+    if(!physical.supports_features(required_device_features_1_4())) {
         return false;
     }
 

@@ -79,7 +79,7 @@ Instance::Instance(const InstanceParams& params) : _params(params) {
 
     VkApplicationInfo app_info = vk_struct();
     {
-        app_info.apiVersion = VK_API_VERSION_1_3;
+        app_info.apiVersion = required_vulkan_version();
         app_info.pApplicationName = "Yave";
         app_info.pEngineName = "Yave";
     }
