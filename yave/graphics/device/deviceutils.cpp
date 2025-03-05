@@ -54,16 +54,16 @@ core::Span<const char*> validation_extensions() {
 }
 
 float device_score(const PhysicalDevice& device) {
-    if(device.supported_vulkan_version() < required_vulkan_version()) {
-        return -std::numeric_limits<float>::max();
+    if(device.vulkan_version() < required_vulkan_version()) {
+        return 0.0f;
     }
 
     if(!has_required_features(device)) {
-        return -std::numeric_limits<float>::max();
+        return 0.0f;
     }
 
     if(!has_required_properties(device)) {
-        return -std::numeric_limits<float>::max();
+        return 0.0f;
     }
 
     const usize heap_size = device.total_device_memory() / (1024 * 1024);
@@ -214,14 +214,8 @@ VkQueue create_queue(VkDevice device, u32 family_index, u32 index) {
 }
 
 void print_physical_properties(const VkPhysicalDeviceProperties& properties) {
-    struct Version {
-        const u32 patch : 12;
-        const u32 minor : 10;
-        const u32 major : 10;
-    };
-
-    const Version version = std::bit_cast<Version>(properties.apiVersion);
-    log_msg(fmt("Running Vulkan ({}.{}.{}) {} bits on {} ({})", u32(version.major), u32(version.minor), u32(version.patch),
+    const u32 version = properties.apiVersion;
+    log_msg(fmt("Running Vulkan ({}.{}.{}) {} bits on {} ({})", VK_VERSION_MAJOR(version), VK_VERSION_MINOR(version), VK_VERSION_PATCH(version),
             is_64_bits() ? 64 : 32, properties.deviceName, (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? "discrete" : "integrated")));
 }
 
@@ -248,6 +242,10 @@ PhysicalDevice find_best_device(const Instance& instance) {
 
     for(usize i = 0; i != devices.size(); ++i) {
         const float dev_score = device_score(devices[i]);
+
+        const u32 version = devices[i].vulkan_version();
+        log_msg(fmt("{} with VK {}.{}.{}, score: {}", devices[i].vk_properties().deviceName, VK_VERSION_MAJOR(version), VK_VERSION_MINOR(version), VK_VERSION_PATCH(version), dev_score), Log::Debug);
+
         if(dev_score > best_score) {
             best_score = dev_score;
             device_index = i;

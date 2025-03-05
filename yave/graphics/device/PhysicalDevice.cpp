@@ -125,7 +125,7 @@ u64 PhysicalDevice::total_device_memory() const {
     return total;
 }
 
-u32 PhysicalDevice::supported_vulkan_version() const {
+u32 PhysicalDevice::vulkan_version() const {
     return _properties.properties.apiVersion;
 }
 

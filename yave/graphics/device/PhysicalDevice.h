@@ -41,7 +41,7 @@ class PhysicalDevice {
         bool is_discrete() const;
         u64 total_device_memory() const;
 
-        u32 supported_vulkan_version() const;
+        u32 vulkan_version() const;
 
         const VkPhysicalDeviceMemoryProperties& vk_memory_properties() const;
 
