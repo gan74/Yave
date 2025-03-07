@@ -158,7 +158,6 @@ void RenderPassRecorder::bind_material_template(const MaterialTemplate* material
 
 
 
-
 void RenderPassRecorder::set_main_descriptor_set(DescriptorSetBase ds_set) {
     _main_descriptor_set = ds_set.vk_descriptor_set();
 }
@@ -541,6 +540,10 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
     vkCmdDispatch(vk_cmd_buffer(), size.x(), size.y(), size.z());
 }
 
+void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+    dispatch_threads(program, math::Vec3ui(size, 1), descriptor_sets);
+}
+
 void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
     math::Vec3ui dispatch_threads;
     const math::Vec3ui program_size = program.local_size();
@@ -550,8 +553,46 @@ void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, cons
     dispatch(program, dispatch_threads, descriptor_sets);
 }
 
-void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
-    dispatch_threads(program, math::Vec3ui(size, 1), descriptor_sets);
+void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<Descriptor> descriptors) {
+    Y_VK_CMD
+
+    check_no_renderpass();
+
+    vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, program.vk_pipeline());
+
+    if(!descriptors.is_empty()) {
+        const usize descriptor_count = descriptors.size();
+        core::ScratchPad<VkWriteDescriptorSetInlineUniformBlock> inline_blocks(descriptor_count);
+        core::ScratchPad<VkWriteDescriptorSetAccelerationStructureKHR> accel_structs(descriptor_count);
+        core::ScratchPad<VkWriteDescriptorSet> writes(descriptor_count);
+
+        for(usize i = 0; i != descriptor_count; ++i) {
+            descriptors[i].fill_write(u32(i), writes[i], inline_blocks[i], accel_structs[i]);
+        }
+
+        vkCmdPushDescriptorSet(vk_cmd_buffer(),
+            VK_PIPELINE_BIND_POINT_COMPUTE,
+            program.vk_pipeline_layout(),
+            0,
+            u32(descriptor_count),
+            writes.data()
+        );
+    }
+
+    vkCmdDispatch(vk_cmd_buffer(), size.x(), size.y(), size.z());
+}
+
+void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, const math::Vec2ui& size, core::Span<Descriptor> descriptors) {
+    dispatch_threads(program, math::Vec3ui(size, 1), descriptors);
+}
+
+void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, const math::Vec3ui& size, core::Span<Descriptor> descriptors) {
+    math::Vec3ui dispatch_threads;
+    const math::Vec3ui program_size = program.local_size();
+    for(usize i = 0; i != 3; ++i) {
+        dispatch_threads[i] = size[i] / program_size[i] + !!(size[i] % program_size[i]);
+    }
+    dispatch(program, dispatch_threads, descriptors);
 }
 
 

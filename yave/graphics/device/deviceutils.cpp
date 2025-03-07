@@ -320,7 +320,7 @@ VkPhysicalDeviceVulkan13Features required_device_features_1_3() {
 VkPhysicalDeviceVulkan14Features required_device_features_1_4() {
     VkPhysicalDeviceVulkan14Features required = vk_struct();
 
-    // required.pushDescriptor = true;
+    required.pushDescriptor = true;
 
     return required;
 }

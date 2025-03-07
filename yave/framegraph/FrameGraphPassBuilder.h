@@ -34,6 +34,7 @@ SOFTWARE.
 namespace yave {
 
 class FrameGraphPassBuilderBase {
+
     public:
         // We are using screen textures 90% of the time, so clamp makes sense as a default
         const SamplerType default_samplers[2] = {
@@ -99,7 +100,8 @@ class FrameGraphPassBuilderBase {
 
         template<typename T>
         void map_buffer(FrameGraphMutableTypedBufferId<T> res, const T& data) {
-            map_buffer_internal(res, InlineDescriptor(data));
+            static_assert(sizeof(T) % sizeof(u32) == 0);
+            map_buffer_internal(res, {reinterpret_cast<const u32*>(&data), sizeof(T) / sizeof(u32)});
         }
 
         void add_descriptor_binding(Descriptor desc, i32 ds_index = -1);
@@ -118,7 +120,7 @@ class FrameGraphPassBuilderBase {
 
         void add_descriptor_binding(FrameGraphDescriptorBinding binding, i32 ds_index);
 
-        void map_buffer_internal(FrameGraphMutableBufferId res, InlineDescriptor desc = {});
+        void map_buffer_internal(FrameGraphMutableBufferId res, FrameGraphInlineBlock block = {});
 
         PipelineStage or_default(PipelineStage stage) const;
 

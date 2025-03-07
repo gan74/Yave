@@ -24,9 +24,13 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <y/core/Span.h>
+
 #include <y/utils/hash.h>
 
 namespace yave {
+    
+using FrameGraphInlineBlock = core::Span<u32>;
 
 class FrameGraphPersistentResourceId {
     public:

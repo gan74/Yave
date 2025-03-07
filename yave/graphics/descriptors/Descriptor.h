@@ -34,20 +34,26 @@ namespace yave {
 
 class InlineDescriptor {
     public:
+        static constexpr usize max_byte_size = 256;
+
         constexpr InlineDescriptor() = default;
 
         template<typename T>
         explicit constexpr InlineDescriptor(const T& data) : _data(&data), _size(sizeof(T)) {
             static_assert(sizeof(T) % 4 == 0, "InlineDescriptor's size must be a multiple of 4");
+            static_assert(sizeof(T) <= InlineDescriptor::max_byte_size, "InlineDescriptor's size should be less or equal to max_byte_size");
             static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
             static_assert(!std::is_pointer_v<T>, "T shouldn't be a pointer, use a span instead");
             static_assert(!std::is_array_v<T>, "T shouldn't be an array, use a span instead");
+            y_debug_assert(_size <= max_byte_size);
         }
 
         template<typename T>
         explicit constexpr InlineDescriptor(core::Span<T> arr) : _data(arr.data()), _size(arr.size() * sizeof(T)) {
             static_assert(sizeof(T) % 4 == 0, "InlineDescriptor's size must be a multiple of 4");
+            static_assert(sizeof(T) <= InlineDescriptor::max_byte_size, "InlineDescriptor's size should be less or equal to max_byte_size");
             static_assert(std::is_standard_layout_v<T>, "T is not standard layout");
+            y_debug_assert(_size <= max_byte_size);
         }
 
         const void* data() const {
@@ -68,6 +74,10 @@ class InlineDescriptor {
 
         const u32* words() const {
             return static_cast<const u32*>(_data);
+        }
+
+        core::Span<u32> as_words() const {
+            return {words(), size_in_words()};
         }
 
     private:
@@ -170,11 +180,10 @@ class Descriptor {
 
 
         VkDescriptorSetLayoutBinding descriptor_set_layout_binding(u32 index) const {
-            const u32 size = is_inline_block() ? u32(_info.inline_block.size) : 1;
             VkDescriptorSetLayoutBinding binding = {};
             {
                 binding.binding = index;
-                binding.descriptorCount = size;
+                binding.descriptorCount = descriptor_count();
                 binding.descriptorType = _type;
                 binding.stageFlags = VK_SHADER_STAGE_ALL;
             }
@@ -189,6 +198,9 @@ class Descriptor {
             return _type;
         }
 
+        u32 descriptor_count() const {
+            return is_inline_block() ? u32(_info.inline_block.size) : 1;
+        }
 
         bool is_buffer() const {
             return is_buffer(_type);
@@ -204,6 +216,31 @@ class Descriptor {
 
         bool is_acceleration_structure() const {
             return is_acceleration_structure(_type);
+        }
+
+        void fill_write(u32 index, VkWriteDescriptorSet& write, VkWriteDescriptorSetInlineUniformBlock& inline_block, VkWriteDescriptorSetAccelerationStructureKHR& accel_struct) const {
+            write = vk_struct();
+            write.dstBinding = index;
+            write.descriptorCount = descriptor_count();
+            write.descriptorType = vk_descriptor_type();
+            
+            if(is_buffer()) {
+                write.pBufferInfo = &descriptor_info().buffer;
+            } else if(is_image()) {
+                write.pImageInfo = &descriptor_info().image;
+            } else if(is_inline_block()) {
+                inline_block = vk_struct();
+                inline_block.pData = _info.inline_block.data;
+                inline_block.dataSize = u32(_info.inline_block.size);
+                write.pNext = &inline_block;
+            } else if(is_acceleration_structure()) {
+                accel_struct = vk_struct();
+                accel_struct.accelerationStructureCount = 1;
+                accel_struct.pAccelerationStructures = &_info.accel;
+                write.pNext = &accel_struct;
+            } else {
+                y_fatal("Unknown descriptor type");
+            }
         }
 
         static bool is_buffer(VkDescriptorType type) {

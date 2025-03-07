@@ -174,7 +174,7 @@ class FrameGraph : NonMovable {
 
         void register_image_clear(FrameGraphMutableImageId dst, const FrameGraphPass* pass);
 
-        [[nodiscard]] InlineDescriptor copy_inline_descriptor(InlineDescriptor desc);
+        [[nodiscard]] FrameGraphInlineBlock copy_inline_block(FrameGraphInlineBlock block);
 
         void map_buffer(FrameGraphMutableBufferId res, const FrameGraphPass* pass);
 
@@ -186,7 +186,6 @@ class FrameGraph : NonMovable {
         FrameGraphPass* create_pass(std::string_view name);
 
         void alloc_resources();
-        void alloc_image(FrameGraphImageId res, const ImageCreateInfo& info) const;
 
         std::unique_ptr<FrameGraphFrameResources> _resources;
 

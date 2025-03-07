@@ -283,7 +283,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimestampPool* ts_pool) 
                 y_profile_zone("prepare");
                 for(const auto& [res, data] : pass->_map_data) {
                     auto mapping = _resources->map_buffer_bytes(res);
-                    std::memcpy(mapping.data(), data.data(), data.size());
+                    std::memcpy(mapping.data(), data.data(), data.size() * sizeof(decltype(data)::value_type));
                 }
 
                 while(image_copy_index < _image_copies.size() && _image_copies[image_copy_index].pass_index == pass->_index) {
@@ -674,30 +674,26 @@ FrameGraphBufferId FrameGraph::make_persistent_and_get_prev(FrameGraphBufferId r
     return id;
 }
 
-InlineDescriptor FrameGraph::copy_inline_descriptor(InlineDescriptor desc) {
-    const usize desc_word_size = desc.size_in_words();
-
+FrameGraphInlineBlock FrameGraph::copy_inline_block(FrameGraphInlineBlock block) {
     for(InlineStorage& storage : _inline_storage) {
-        if(storage.storage.size() - storage.used < desc_word_size) {
+        if(storage.storage.size() - storage.used < block.size()) {
             continue;
         }
 
         u32* begin = storage.storage.data() + storage.used;
-        const InlineDescriptor ret(core::Span<u32>(begin, desc_word_size));
-        std::copy_n(desc.words(), desc_word_size, begin);
-        storage.used += desc_word_size;
-        return ret;
+        std::copy_n(block.data(), block.size(), begin);
+        storage.used += block.size();
+        return {begin, block.size()};
     }
 
     // 64KB blocks
-    const usize size = std::max(usize(16 * 1024), desc_word_size);
+    const usize size = std::max(usize(16 * 1024), block.size());
     InlineStorage& storage = _inline_storage.emplace_back(size);
 
     u32* begin = storage.storage.data() + storage.used;
-    const InlineDescriptor ret(core::Span<u32>(begin, desc_word_size));
-    std::copy_n(desc.words(), desc_word_size, begin);
-    storage.used += desc_word_size;
-    return ret;
+    std::copy_n(block.data(), block.size(), begin);
+    storage.used += block.size();
+    return {begin, block.size()};
 }
 
 void FrameGraph::map_buffer(FrameGraphMutableBufferId res, const FrameGraphPass* pass) {

@@ -220,7 +220,7 @@ void FrameGraphPassBuilderBase::add_uniform_input_with_default(FrameGraphImageId
 // --------------------------------- Inline ---------------------------------
 
 void FrameGraphPassBuilderBase::add_inline_input(InlineDescriptor desc, i32 ds_index) {
-    add_descriptor_binding(Descriptor(parent()->copy_inline_descriptor(desc)), ds_index);
+    add_descriptor_binding(Descriptor(InlineDescriptor(parent()->copy_inline_block(desc.as_words()))), ds_index);
 }
 
 
@@ -307,10 +307,10 @@ void FrameGraphPassBuilderBase::add_descriptor_binding(FrameGraphDescriptorBindi
     }
 }
 
-void FrameGraphPassBuilderBase::map_buffer_internal(FrameGraphMutableBufferId res, InlineDescriptor desc) {
+void FrameGraphPassBuilderBase::map_buffer_internal(FrameGraphMutableBufferId res, FrameGraphInlineBlock block) {
     parent()->map_buffer(res, _pass);
-    if(desc.data()) {
-        _pass->_map_data.emplace_back(res, parent()->copy_inline_descriptor(desc));
+    if(!block.is_empty()) {
+        _pass->_map_data.emplace_back(res, parent()->copy_inline_block(block));
     }
 }
 
