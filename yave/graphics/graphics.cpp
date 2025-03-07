@@ -107,8 +107,8 @@ static void init_vk_device() {
     auto required_features_raytracing = required_device_features_raytracing_pipeline();
     auto required_features_ray_query = required_device_features_ray_query();
 
-    y_always_assert(has_required_features(physical_device()), "Device doesn't support required features");
-    y_always_assert(has_required_properties(physical_device()), "Device doesn't support required properties");
+    y_always_assert(has_required_features(physical_device()), "{} doesn't support required features", physical_device().device_name());
+    y_always_assert(has_required_properties(physical_device()), "{} doesn't support required properties", physical_device().device_name());
 
     print_physical_properties(physical_device().vk_properties());
     print_enabled_extensions(extensions);

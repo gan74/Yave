@@ -42,6 +42,7 @@ class PhysicalDevice {
         u64 total_device_memory() const;
 
         u32 vulkan_version() const;
+        std::string_view device_name() const;
 
         const VkPhysicalDeviceMemoryProperties& vk_memory_properties() const;
 

@@ -52,6 +52,7 @@ PhysicalDevice::PhysicalDevice(VkPhysicalDevice device) : _device(device) {
         _supported_features.pNext = &_supported_features_1_1;
         _supported_features_1_1.pNext = &_supported_features_1_2;
         _supported_features_1_2.pNext = &_supported_features_1_3;
+        _supported_features_1_3.pNext = &_supported_features_1_4;
 
         vkGetPhysicalDeviceFeatures2(_device, &_supported_features);
     }
@@ -127,6 +128,10 @@ u64 PhysicalDevice::total_device_memory() const {
 
 u32 PhysicalDevice::vulkan_version() const {
     return _properties.properties.apiVersion;
+}
+
+std::string_view PhysicalDevice::device_name() const {
+    return _properties.properties.deviceName;
 }
 
 VkPhysicalDevice PhysicalDevice::vk_physical_device() const {
