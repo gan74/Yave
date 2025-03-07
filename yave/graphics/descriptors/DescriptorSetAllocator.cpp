@@ -68,20 +68,6 @@ static VkDescriptorType index_descriptor_type(usize index) {
     return VkDescriptorType(index);
 }
 
-static VkDescriptorSetLayoutBinding create_inline_uniform_binding_fallback(const VkDescriptorSetLayoutBinding& binding) {
-    if(binding.descriptorType != VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
-        return binding;
-    }
-
-    VkDescriptorSetLayoutBinding fallback = binding;
-    fallback.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    fallback.descriptorCount = 1;
-
-    return fallback;
-}
-
-
-
 DescriptorSetLayout::DescriptorSetLayout(core::Span<VkDescriptorSetLayoutBinding> bindings) {
     for(const auto& b : bindings) {
         if(Descriptor::is_inline_block(b.descriptorType)) {
