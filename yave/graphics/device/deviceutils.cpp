@@ -258,7 +258,7 @@ PhysicalDevice find_best_device(const Instance& instance) {
 }
 
 u32 required_vulkan_version() {
-    return VK_API_VERSION_1_3;
+    return VK_API_VERSION_1_4;
 }
 
 VkPhysicalDeviceFeatures required_device_features() {
