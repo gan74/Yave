@@ -43,11 +43,25 @@ DeviceMemoryAllocator::DeviceMemoryAllocator(const DeviceProperties& properties)
 
 DeviceMemory DeviceMemoryAllocator::dedicated_alloc(VkMemoryRequirements reqs, MemoryType type) {
     y_profile();
+
     auto& heap = _dedicated_heaps[type];
     if(!heap) {
         heap = std::make_unique<DedicatedDeviceMemoryAllocator>(type);
     }
     return std::move(heap->alloc(reqs).unwrap());
+}
+
+void DeviceMemoryAllocator::clear_empty_heaps() {
+    y_profile();
+
+    for(auto&& [type, heaps] : _heaps) {
+        for(usize i = 0; i < heaps.size(); ++i) {
+            if(heaps[i]->is_empty()) {
+                heaps.erase_unordered(heaps.begin() + i);
+                --i;
+            }
+        }
+    }
 }
 
 DeviceMemory DeviceMemoryAllocator::alloc(VkMemoryRequirements2 reqs, MemoryType type, MemoryAllocFlags flags) {
@@ -63,6 +77,8 @@ DeviceMemory DeviceMemoryAllocator::alloc(VkMemoryRequirements2 reqs, MemoryType
 
     Y_TODO(We are double locking here, each heap will lock internally)
     const auto lock = std::unique_lock(_lock);
+
+    y_defer(clear_empty_heaps());
 
     if(use_dedicated_alloc) {
         return dedicated_alloc(mem_reqs, type);

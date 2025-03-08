@@ -42,6 +42,8 @@ class DedicatedDeviceMemoryAllocator : public DeviceMemoryHeapBase {
         void* map(const VkMappedMemoryRange& range, MappingAccess access) override;
         void unmap(const VkMappedMemoryRange& range, MappingAccess access) override;
 
+        bool is_empty() const override;
+
         u64 allocated_size() const;
         usize allocation_count() const;
 

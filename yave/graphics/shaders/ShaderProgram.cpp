@@ -154,7 +154,6 @@ ShaderProgramBase::ShaderProgramBase(core::Span<const ShaderModuleBase*> shaders
     std::sort(variable_bindings.begin(), variable_bindings.end());
     const auto variable_bindings_end = std::unique(variable_bindings.begin(), variable_bindings.end());
 
-
     if(!_bindings.is_empty()) {
         _layouts = core::Vector<VkDescriptorSetLayout>(max_set + 1, VkDescriptorSetLayout{});
         for(const auto& binding : _bindings) {

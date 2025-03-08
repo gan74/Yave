@@ -41,7 +41,6 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
     public:
         static constexpr u64 alignment = 256;
 
-
         DeviceMemoryHeap(u32 type_bits, MemoryType type, u64 heap_size);
         ~DeviceMemoryHeap() override;
 
@@ -50,6 +49,8 @@ class DeviceMemoryHeap : public DeviceMemoryHeapBase {
 
         void* map(const VkMappedMemoryRange& range, MappingAccess access) override;
         void unmap(const VkMappedMemoryRange& range, MappingAccess access) override;
+
+        bool is_empty() const override;
 
         u64 size() const;
         u64 available() const; // slow!
