@@ -172,7 +172,8 @@ void RenderPassRecorder::draw(const MeshDrawData& draw_data, u32 instance_count,
 void RenderPassRecorder::draw(const VkDrawIndexedIndirectCommand& indirect) {
     Y_VK_CMD
 
-    vkCmdDrawIndexed(vk_cmd_buffer(),
+    vkCmdDrawIndexed(
+        vk_cmd_buffer(),
         indirect.indexCount,
         indirect.instanceCount,
         indirect.firstIndex,
@@ -184,7 +185,8 @@ void RenderPassRecorder::draw(const VkDrawIndexedIndirectCommand& indirect) {
 void RenderPassRecorder::draw(const VkDrawIndirectCommand& indirect) {
     Y_VK_CMD
 
-    vkCmdDraw(vk_cmd_buffer(),
+    vkCmdDraw(
+        vk_cmd_buffer(),
         indirect.vertexCount,
         indirect.instanceCount,
         indirect.firstVertex,
@@ -195,7 +197,8 @@ void RenderPassRecorder::draw(const VkDrawIndirectCommand& indirect) {
 void RenderPassRecorder::draw_indirect(TypedSubBuffer<VkDrawIndexedIndirectCommand, BufferUsage::IndirectBit> indirect) {
     Y_VK_CMD
 
-    vkCmdDrawIndexedIndirect(vk_cmd_buffer(),
+    vkCmdDrawIndexedIndirect(
+        vk_cmd_buffer(),
         indirect.vk_buffer(),
         indirect.byte_offset(),
         u32(indirect.size()),
@@ -469,10 +472,12 @@ void CmdBufferRecorderBase::copy(const ImageBase& src,  const ImageBase& dst) {
             copy.dstSubresource.layerCount = u32(dst.layers());
         }
 
-        vkCmdCopyImage(vk_cmd_buffer(),
-                       src.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                       dst.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                       1, &copy);
+        vkCmdCopyImage(
+            vk_cmd_buffer(),
+            src.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            dst.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1, &copy
+        );
     }
 
     {
@@ -529,12 +534,14 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, program.vk_pipeline());
 
     if(!descriptor_sets.is_empty()) {
-        vkCmdBindDescriptorSets(vk_cmd_buffer(),
+        vkCmdBindDescriptorSets(
+            vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_COMPUTE,
             program.vk_pipeline_layout(),
             0,
             u32(descriptor_sets.size()), reinterpret_cast<const VkDescriptorSet*>(descriptor_sets.data()),
-            0, nullptr);
+            0, nullptr
+        );
     }
 
     vkCmdDispatch(vk_cmd_buffer(), size.x(), size.y(), size.z());
@@ -606,12 +613,14 @@ void CmdBufferRecorderBase::raytrace(const RaytracingProgram& program, const mat
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, program.vk_pipeline());
 
     if(!descriptor_sets.is_empty()) {
-        vkCmdBindDescriptorSets(vk_cmd_buffer(),
-                                VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-                                program.vk_pipeline_layout(),
-                                0,
-                                u32(descriptor_sets.size()), reinterpret_cast<const VkDescriptorSet*>(descriptor_sets.data()),
-                                0, nullptr);
+        vkCmdBindDescriptorSets(
+            vk_cmd_buffer(),
+            VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+            program.vk_pipeline_layout(),
+            0,
+            u32(descriptor_sets.size()), reinterpret_cast<const VkDescriptorSet*>(descriptor_sets.data()),
+            0, nullptr
+        );
     }
 
     const std::array binding_tables = program.vk_binding_tables();
