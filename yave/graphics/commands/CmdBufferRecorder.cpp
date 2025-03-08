@@ -51,9 +51,10 @@ static void bind_descriptor_set(VkCommandBuffer cmd_buffer, VkPipelineBindPoint 
         const usize descriptor_count = descriptors.size();
         core::ScratchPad<VkWriteDescriptorSet> writes(descriptor_count);
         core::ScratchPad<VkDescriptorBufferInfo> buffer_infos(descriptor_count);
+        core::ScratchPad<VkWriteDescriptorSetAccelerationStructureKHR> accel_structs(descriptor_count);
 
         for(usize i = 0; i != descriptor_count; ++i) {
-            descriptors[i].fill_write(u32(i), writes[i], buffer_infos[i]);
+            descriptors[i].fill_write(u32(i), writes[i], buffer_infos[i], accel_structs[i]);
         }
 
         vkCmdPushDescriptorSet(

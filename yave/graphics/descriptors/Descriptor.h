@@ -218,7 +218,7 @@ class Descriptor {
             return is_acceleration_structure(_type);
         }
 
-        void fill_write(u32 index, VkWriteDescriptorSet& write, VkDescriptorBufferInfo& inline_buffer_info) const {
+        void fill_write(u32 index, VkWriteDescriptorSet& write, VkDescriptorBufferInfo& inline_buffer_info, VkWriteDescriptorSetAccelerationStructureKHR& accel_struct) const {
             write = vk_struct();
             write.dstBinding = index;
             write.descriptorCount = descriptor_count();
@@ -236,7 +236,10 @@ class Descriptor {
                 write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 write.pBufferInfo = &inline_buffer_info;
             } else if(is_acceleration_structure()) {
-                y_fatal("Unsupported descriptor type");
+                accel_struct = vk_struct();
+                accel_struct.accelerationStructureCount = 1;
+                accel_struct.pAccelerationStructures = &_info.accel;
+                write.pNext = &accel_struct;
             } else {
                 y_fatal("Unknown descriptor type");
             }
