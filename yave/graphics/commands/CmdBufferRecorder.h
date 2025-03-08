@@ -141,10 +141,6 @@ class CmdBufferRecorderBase : NonMovable {
         void dispatch_threads(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
         void dispatch_threads(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
 
-        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<Descriptor> descriptors);
-        void dispatch_threads(const ComputeProgram& program, const math::Vec3ui& size, core::Span<Descriptor> descriptors);
-        void dispatch_threads(const ComputeProgram& program, const math::Vec2ui& size, core::Span<Descriptor> descriptors);
-
         void raytrace(const RaytracingProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
 
         TimelineFence submit();

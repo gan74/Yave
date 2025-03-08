@@ -553,6 +553,7 @@ void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, cons
     dispatch(program, dispatch_threads, descriptor_sets);
 }
 
+#if 0
 void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<Descriptor> descriptors) {
     Y_VK_CMD
 
@@ -594,6 +595,7 @@ void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, cons
     }
     dispatch(program, dispatch_threads, descriptors);
 }
+#endif
 
 
 void CmdBufferRecorderBase::raytrace(const RaytracingProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {

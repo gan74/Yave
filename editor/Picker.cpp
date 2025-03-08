@@ -77,7 +77,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
             const auto& program = resources()[EditorResources::PickingProgram];
 
             const auto uv_set = DescriptorSet(InlineDescriptor(uv));
-            const std::array<DescriptorSetBase, 2> descriptor_sets = {self->descriptor_sets()[0], uv_set};
+            const std::array<DescriptorSetBase, 2> descriptor_sets = {self->descriptor_set(), uv_set};
             recorder.dispatch(program, math::Vec3ui(1), descriptor_sets);
         });
     }

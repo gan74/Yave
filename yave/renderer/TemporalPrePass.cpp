@@ -61,7 +61,7 @@ TemporalPrePass TemporalPrePass::create(FrameGraph& framegraph, const GBufferPas
     builder.add_color_output(mask);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::TemporalMaskMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_sets());
+        render_pass.bind_material_template(material, self->descriptor_set());
         render_pass.draw_array(3);
     });
 

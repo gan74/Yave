@@ -53,7 +53,7 @@ ExposurePass ExposurePass::create(FrameGraph& framegraph, FrameGraphImageId in_l
         for(usize i = 0; i != 2; ++i) {
             groups[i] += groups[i] * thread_count < size[i] ? 1 : 0;
         }
-        recorder.dispatch(program, groups, self->descriptor_sets());
+        recorder.dispatch(program, groups, self->descriptor_set());
     });
 
     FrameGraphComputePassBuilder params_builder = framegraph.add_compute_pass("Exposure compute pass");
@@ -64,7 +64,7 @@ ExposurePass ExposurePass::create(FrameGraph& framegraph, FrameGraphImageId in_l
     params_builder.add_uniform_input(histogram);
     params_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::ExposureParamsProgram];
-        recorder.dispatch(program, math::Vec3ui(1), self->descriptor_sets());
+        recorder.dispatch(program, math::Vec3ui(1), self->descriptor_set());
         y_debug_assert(program.thread_count() == histogram_size.x());
     });
 

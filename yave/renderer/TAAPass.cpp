@@ -91,7 +91,7 @@ static TAAPass create_taa_pass(FrameGraph& framegraph, const TemporalPrePass& te
     builder.add_color_output(aa);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[Simple ? DeviceResources::TAASimpleMaterialTemplate : DeviceResources::TAAResolveMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_sets());
+        render_pass.bind_material_template(material, self->descriptor_set());
         render_pass.draw_array(3);
     });
 

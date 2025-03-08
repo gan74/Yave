@@ -143,7 +143,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
         }
 
         const auto* material = device_resources()[DeviceResources::DeferredAmbientMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_sets());
+        render_pass.bind_material_template(material, self->descriptor_set());
         render_pass.draw_array(3);
     });
 
@@ -292,7 +292,7 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
 
             const math::Vec2ui light_count(point_count, spot_count);
             const auto light_count_set = DescriptorSet(InlineDescriptor(light_count));
-            const std::array<DescriptorSetBase, 2> descriptor_sets = {self->descriptor_sets()[0], light_count_set};
+            const std::array<DescriptorSetBase, 2> descriptor_sets = {self->descriptor_set(), light_count_set};
             recorder.dispatch_threads(program, size, descriptor_sets);
         }
     });
@@ -332,7 +332,7 @@ static void local_lights_pass(FrameGraph& framegraph,
             }
 
             const auto* material = device_resources()[DeviceResources::DeferredPointLightMaterialTemplate];
-            render_pass.bind_material_template(material, self->descriptor_sets());
+            render_pass.bind_material_template(material, self->descriptor_set());
             {
                 const StaticMesh& sphere = *device_resources()[DeviceResources::SimpleSphereMesh];
                 render_pass.draw(sphere.draw_data(), point_count);
@@ -364,7 +364,7 @@ static void local_lights_pass(FrameGraph& framegraph,
             }
 
             const auto* material = device_resources()[DeviceResources::DeferredSpotLightMaterialTemplate];
-            render_pass.bind_material_template(material, self->descriptor_sets());
+            render_pass.bind_material_template(material, self->descriptor_set());
 
             const StaticMesh& cone = *device_resources()[DeviceResources::ConeMesh];
             render_pass.draw(cone.draw_data(), spot_count);

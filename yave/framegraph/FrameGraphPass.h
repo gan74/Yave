@@ -57,6 +57,7 @@ class FrameGraphPass final : NonMovable {
 
         const Framebuffer& framebuffer() const;
         core::Span<DescriptorSet> descriptor_sets() const;
+        const DescriptorSet& descriptor_set() const;
 
         void render(CmdBufferRecorder& recorder);
 

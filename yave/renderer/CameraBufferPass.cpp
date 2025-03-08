@@ -86,7 +86,7 @@ CameraBufferPass CameraBufferPass::create(FrameGraph& framegraph, const SceneVie
         builder.add_uniform_input(prev_camera);
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const auto& program = device_resources()[DeviceResources::PrevCameraProgram];
-            recorder.dispatch(program, math::Vec3ui(1u), self->descriptor_sets());
+            recorder.dispatch(program, math::Vec3ui(1u), self->descriptor_set());
         });
     }
 

@@ -90,7 +90,7 @@ static Texture render_scene(const Scene& scene) {
             builder.add_uniform_input(renderer.gbuffer.depth);
             builder.add_external_input(StorageView(out));
             builder.set_render_func([size = out.size()](CmdBufferRecorder& rec, const FrameGraphPass* self) {
-                rec.dispatch_threads(resources()[EditorResources::DepthAlphaProgram], size, self->descriptor_sets());
+                rec.dispatch_threads(resources()[EditorResources::DepthAlphaProgram], size, self->descriptor_set());
             });
         }
 

@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace yave {
 
-DescriptorSet::DescriptorSet(core::Span<Descriptor> bindings) {
+DescriptorSet::DescriptorSet(core::Span<Descriptor> bindings) : _descriptors(bindings) {
     if(!bindings.is_empty()) {
         _data = descriptor_set_allocator().create_descritptor_set(bindings);
         _set = _data.vk_descriptor_set();

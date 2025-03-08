@@ -54,6 +54,11 @@ core::Span<DescriptorSet> FrameGraphPass::descriptor_sets() const {
     return _descriptor_sets;
 }
 
+const DescriptorSet& FrameGraphPass::descriptor_set() const {
+    y_debug_assert(_descriptor_sets.size() == 1);
+    return _descriptor_sets[0];
+}
+
 void FrameGraphPass::render(CmdBufferRecorder& recorder) {
     if(_compute_render) {
         y_debug_assert(!_render);

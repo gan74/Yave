@@ -33,11 +33,8 @@ namespace core {
 template<typename T>
 class MutableSpan {
 
-    template<typename U>
-    static constexpr bool is_compatible = std::is_constructible_v<T*, U>;
-
     template<typename C>
-    using data_type = decltype(std::declval<C>().data());
+    using data_type = std::remove_cvref_t<decltype(*std::declval<C>().data())>;
 
     public:
         using value_type = T;
@@ -66,7 +63,7 @@ class MutableSpan {
         inline constexpr MutableSpan(std::array<T, N>& arr) : _data(arr.data()), _size(N) {
         }
 
-        template<typename C> requires(is_compatible<data_type<C>>)
+        template<typename C> requires(std::is_same_v<data_type<C>, std::remove_cvref_t<value_type>>)
         inline constexpr MutableSpan(C&& vec) : _data(vec.data()), _size(std::distance(vec.begin(), vec.end())) {
         }
 
