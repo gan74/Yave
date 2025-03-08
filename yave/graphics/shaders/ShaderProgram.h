@@ -37,6 +37,8 @@ class ShaderProgramBase : NonCopyable {
         core::Span<VkPipelineShaderStageCreateInfo> vk_pipeline_stage_info() const;
         core::Span<VkDescriptorSetLayout> vk_descriptor_layouts() const;
 
+        bool use_push_descriptors = true;
+
     protected:
         ShaderProgramBase(core::Span<const ShaderModuleBase*> shaders);
 

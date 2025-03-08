@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "Descriptor.h"
 
+#include <y/core/Vector.h>
+
 namespace yave {
 
 class DescriptorSetBase {
@@ -39,11 +41,11 @@ class DescriptorSetBase {
             return _set;
         }
 
+        core::Vector<Descriptor> _descriptors;
+
     protected:
         VkDescriptorSet _set = {};
 };
-
-static_assert(sizeof(DescriptorSetBase) == sizeof(VkDescriptorSet));
 
 }
 

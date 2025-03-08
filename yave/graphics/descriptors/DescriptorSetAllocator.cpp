@@ -69,23 +69,46 @@ static VkDescriptorType index_descriptor_type(usize index) {
 }
 
 DescriptorSetLayout::DescriptorSetLayout(core::Span<VkDescriptorSetLayoutBinding> bindings) {
-    for(const auto& b : bindings) {
-        if(Descriptor::is_inline_block(b.descriptorType)) {
-            ++_inline_blocks;
+    {
+        for(const auto& b : bindings) {
+            if(Descriptor::is_inline_block(b.descriptorType)) {
+                ++_inline_blocks;
+            }
+            _sizes[descriptor_type_index(b.descriptorType)] += b.descriptorCount;
         }
-        _sizes[descriptor_type_index(b.descriptorType)] += b.descriptorCount;
+
+        VkDescriptorSetLayoutCreateInfo create_info = vk_struct();
+        {
+            create_info.bindingCount = u32(bindings.size());
+            create_info.pBindings = bindings.data();
+        }
+        vk_check(vkCreateDescriptorSetLayout(vk_device(), &create_info, vk_allocation_callbacks(), _layout.get_ptr_for_init()));
     }
 
-    VkDescriptorSetLayoutCreateInfo create_info = vk_struct();
     {
-        create_info.bindingCount = u32(bindings.size());
-        create_info.pBindings = bindings.data();
+        core::ScratchPad<VkDescriptorSetLayoutBinding> desc_bindings(bindings.size());
+        std::transform(bindings.begin(), bindings.end(), desc_bindings.begin(), [](VkDescriptorSetLayoutBinding b) {
+            if(Descriptor::is_inline_block(b.descriptorType)) {
+                b.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                b.descriptorCount = 1;
+            }
+            return b;
+        });
+
+        VkDescriptorSetLayoutCreateInfo create_info = vk_struct();
+        {
+            create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT;
+            create_info.bindingCount = u32(desc_bindings.size());
+            create_info.pBindings = desc_bindings.data();
+        }
+
+        vk_check(vkCreateDescriptorSetLayout(vk_device(), &create_info, vk_allocation_callbacks(), _push_layout.get_ptr_for_init()));
     }
-    vk_check(vkCreateDescriptorSetLayout(vk_device(), &create_info, vk_allocation_callbacks(), _layout.get_ptr_for_init()));
 }
 
 DescriptorSetLayout::~DescriptorSetLayout() {
     destroy_graphic_resource(std::move(_layout));
+    destroy_graphic_resource(std::move(_push_layout));
 }
 
 bool DescriptorSetLayout::is_null() const {
@@ -102,6 +125,10 @@ usize DescriptorSetLayout::inline_blocks() const {
 
 VkDescriptorSetLayout DescriptorSetLayout::vk_descriptor_set_layout() const {
     return _layout;
+}
+
+VkDescriptorSetLayout DescriptorSetLayout::vk_push_descriptor_set_layout() const {
+    return _push_layout;
 }
 
 

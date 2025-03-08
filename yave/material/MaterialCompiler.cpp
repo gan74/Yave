@@ -239,7 +239,10 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
 
     VkHandle<VkPipeline> pipeline;
     vk_check(vkCreateGraphicsPipelines(vk_device(), {}, 1, &create_info, vk_allocation_callbacks(), pipeline.get_ptr_for_init()));
-    return GraphicPipeline(std::move(pipeline), std::move(pipeline_layout));
+
+    GraphicPipeline pipe(std::move(pipeline), std::move(pipeline_layout));
+    pipe.use_push_descriptors = program.use_push_descriptors;
+    return pipe;
 }
 
 }

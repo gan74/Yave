@@ -67,9 +67,12 @@ class DescriptorSetLayout {
         usize inline_blocks() const;
 
         VkDescriptorSetLayout vk_descriptor_set_layout() const;
+        VkDescriptorSetLayout vk_push_descriptor_set_layout() const;
 
     private:
         VkHandle<VkDescriptorSetLayout> _layout;
+        VkHandle<VkDescriptorSetLayout> _push_layout;
+
         std::array<u32, descriptor_type_count> _sizes = {};
 
         usize _inline_blocks = 0;

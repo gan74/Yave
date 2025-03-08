@@ -218,6 +218,30 @@ class Descriptor {
             return is_acceleration_structure(_type);
         }
 
+        void fill_write(u32 index, VkWriteDescriptorSet& write, VkDescriptorBufferInfo& inline_buffer_info) const {
+            write = vk_struct();
+            write.dstBinding = index;
+            write.descriptorCount = descriptor_count();
+            write.descriptorType = vk_descriptor_type();
+
+            if(is_buffer()) {
+                write.pBufferInfo = &descriptor_info().buffer;
+            } else if(is_image()) {
+                write.pImageInfo = &descriptor_info().image;
+            } else if(is_inline_block()) {
+                UniformBuffer<MemoryType::CpuVisible> buffer(_info.inline_block.size);
+                std::memcpy(buffer.map_bytes(MappingAccess::WriteOnly).data(), _info.inline_block.data, _info.inline_block.size);
+                inline_buffer_info = buffer.vk_descriptor_info();
+                write.descriptorCount = 1;
+                write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                write.pBufferInfo = &inline_buffer_info;
+            } else if(is_acceleration_structure()) {
+                y_fatal("Unsupported descriptor type");
+            } else {
+                y_fatal("Unknown descriptor type");
+            }
+        }
+
         void fill_write(u32 index, VkWriteDescriptorSet& write, VkWriteDescriptorSetInlineUniformBlock& inline_block, VkWriteDescriptorSetAccelerationStructureKHR& accel_struct) const {
             write = vk_struct();
             write.dstBinding = index;

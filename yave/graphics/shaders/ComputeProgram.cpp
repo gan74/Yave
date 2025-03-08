@@ -41,8 +41,15 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp) : _local_size(comp.loc
     const u32 max_set = std::accumulate(bindings.begin(), bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
 
     core::ScratchPad<VkDescriptorSetLayout> layouts(max_set + 1);
+
+    use_push_descriptors = bindings.size() == 1;
     for(const auto& binding : bindings) {
-        layouts[binding.first] = descriptor_set_allocator().descriptor_set_layout(binding.second).vk_descriptor_set_layout();
+        use_push_descriptors &= !!descriptor_set_allocator().descriptor_set_layout(binding.second).vk_push_descriptor_set_layout();
+    }
+
+    for(const auto& binding : bindings) {
+        const auto& layout = descriptor_set_allocator().descriptor_set_layout(binding.second);
+        layouts[binding.first] = use_push_descriptors ? layout.vk_push_descriptor_set_layout() : layout.vk_descriptor_set_layout();
     }
 
     VkPipelineLayoutCreateInfo layout_create_info = vk_struct();

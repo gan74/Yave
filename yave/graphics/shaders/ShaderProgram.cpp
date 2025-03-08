@@ -154,6 +154,11 @@ ShaderProgramBase::ShaderProgramBase(core::Span<const ShaderModuleBase*> shaders
     std::sort(variable_bindings.begin(), variable_bindings.end());
     const auto variable_bindings_end = std::unique(variable_bindings.begin(), variable_bindings.end());
 
+    use_push_descriptors = _bindings.size() == 1;
+    use_push_descriptors &= variable_bindings.begin() == variable_bindings_end;
+    for(const auto& binding : _bindings) {
+        use_push_descriptors &= !!descriptor_set_allocator().descriptor_set_layout(binding.second).vk_push_descriptor_set_layout();
+    }
 
     if(!_bindings.is_empty()) {
         _layouts = core::Vector<VkDescriptorSetLayout>(max_set + 1, VkDescriptorSetLayout{});
@@ -162,8 +167,10 @@ ShaderProgramBase::ShaderProgramBase(core::Span<const ShaderModuleBase*> shaders
             if(std::find(variable_bindings.begin(), variable_bindings_end, binding.first) != variable_bindings_end) {
                 y_always_assert(binding.second.size() == 1, "Variable size descriptor bindings must be alone in descriptor set");
                 _layouts[binding.first] = texture_library().descriptor_set_layout();
+                y_debug_assert(!use_push_descriptors);
             } else {
-                _layouts[binding.first] = descriptor_set_allocator().descriptor_set_layout(binding.second).vk_descriptor_set_layout();
+                const auto& layout = descriptor_set_allocator().descriptor_set_layout(binding.second);
+                _layouts[binding.first] = use_push_descriptors ? layout.vk_push_descriptor_set_layout() : layout.vk_descriptor_set_layout();
             }
         }
     }

@@ -43,6 +43,8 @@ class ComputeProgram final {
         VkPipeline vk_pipeline() const;
         VkPipelineLayout vk_pipeline_layout() const;
 
+        bool use_push_descriptors = true;
+
     private:
         VkHandle<VkPipelineLayout> _layout;
         VkHandle<VkPipeline> _pipeline;

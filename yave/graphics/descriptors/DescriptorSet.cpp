@@ -28,7 +28,8 @@ SOFTWARE.
 
 namespace yave {
 
-DescriptorSet::DescriptorSet(core::Span<Descriptor> bindings) : _descriptors(bindings) {
+DescriptorSet::DescriptorSet(core::Span<Descriptor> bindings) {
+    _descriptors = bindings;
     if(!bindings.is_empty()) {
         _data = descriptor_set_allocator().create_descritptor_set(bindings);
         _set = _data.vk_descriptor_set();
@@ -56,6 +57,7 @@ VkDescriptorSetLayout DescriptorSet::vk_descriptor_set_layout() const {
 void DescriptorSet::swap(DescriptorSet& other) {
     std::swap(_data, other._data);
     std::swap(_set, other._set);
+    std::swap(_descriptors, other._descriptors);
 }
 
 

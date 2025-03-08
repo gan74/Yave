@@ -25,7 +25,7 @@ SOFTWARE.
 #include "DescriptorSetBase.h"
 #include "DescriptorSetData.h"
 
-#include <y/core/Vector.h>
+#include <y/core/Span.h>
 
 namespace yave {
 
@@ -50,7 +50,6 @@ class DescriptorSet : public DescriptorSetBase, NonCopyable {
         void swap(DescriptorSet& other);
 
         DescriptorSetData _data;
-        core::Vector<Descriptor> _descriptors;
 };
 
 }
