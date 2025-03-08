@@ -61,6 +61,8 @@ class DeviceMemoryAllocator {
 
         DeviceMemory dedicated_alloc(VkMemoryRequirements reqs, MemoryType type);
 
+        void clear_empty_heaps();
+
         core::FlatHashMap<HeapType, core::Vector<std::unique_ptr<DeviceMemoryHeap>>> _heaps;
         core::FlatHashMap<MemoryType, std::unique_ptr<DedicatedDeviceMemoryAllocator>> _dedicated_heaps;
 

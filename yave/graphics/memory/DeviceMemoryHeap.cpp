@@ -172,6 +172,10 @@ void DeviceMemoryHeap::unmap(const VkMappedMemoryRange& range, MappingAccess acc
     flush_for_unmap(range, access);
 }
 
+bool DeviceMemoryHeap::is_empty() const {
+    return available() == _heap_size;
+}
+
 u64 DeviceMemoryHeap::size() const {
     return _heap_size;
 }

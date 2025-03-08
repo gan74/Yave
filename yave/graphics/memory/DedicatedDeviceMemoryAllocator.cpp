@@ -86,6 +86,10 @@ void DedicatedDeviceMemoryAllocator::unmap(const VkMappedMemoryRange& range, Map
     }
 }
 
+bool DedicatedDeviceMemoryAllocator::is_empty() const {
+    return !_alloc_count;
+}
+
 u64 DedicatedDeviceMemoryAllocator::allocated_size() const {
     return _total_size;
 }

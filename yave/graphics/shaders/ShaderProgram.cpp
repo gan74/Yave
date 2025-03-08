@@ -160,6 +160,10 @@ ShaderProgramBase::ShaderProgramBase(core::Span<const ShaderModuleBase*> shaders
         use_push_descriptors &= !!descriptor_set_allocator().descriptor_set_layout(binding.second).vk_push_descriptor_set_layout();
     }
 
+    if(!use_push_descriptors) {
+        log_msg("Shader program does not use push descriptors", Log::Warning);
+    }
+
     if(!_bindings.is_empty()) {
         _layouts = core::Vector<VkDescriptorSetLayout>(max_set + 1, VkDescriptorSetLayout{});
         for(const auto& binding : _bindings) {

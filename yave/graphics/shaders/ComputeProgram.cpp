@@ -52,6 +52,12 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp) : _local_size(comp.loc
         layouts[binding.first] = use_push_descriptors ? layout.vk_push_descriptor_set_layout() : layout.vk_descriptor_set_layout();
     }
 
+
+    if(!use_push_descriptors) {
+        log_msg("Compute program does not use push descriptors", Log::Warning);
+    }
+
+
     VkPipelineLayoutCreateInfo layout_create_info = vk_struct();
     {
         layout_create_info.pSetLayouts = layouts.data();
