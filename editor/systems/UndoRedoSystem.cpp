@@ -159,11 +159,11 @@ void UndoRedoSystem::reset() {
     _do_undo = false;
     _do_redo = false;
     _snapshot = nullptr;
+
+    take_snapshot();
 }
 
 void UndoRedoSystem::setup(ecs::SystemScheduler& sched) {
-    take_snapshot();
-
     sched.schedule(ecs::SystemSchedule::TickSequential, "TickSeq", [this]() {
         y_debug_assert(_snapshot);
         if(!_do_undo && !_do_redo) {
@@ -186,6 +186,8 @@ void UndoRedoSystem::setup(ecs::SystemScheduler& sched) {
                 }
 
                 const ecs::ComponentTypeIndex type_id = container->type_id();
+
+                Y_TODO(We dont clear component box, they may still contain live assetptrs)
 
                 for(const ecs::EntityId id : container->mutated_ids()) {
                     if(_snapshot->exists(id) && _snapshot->has_component(id, type_id)) {
