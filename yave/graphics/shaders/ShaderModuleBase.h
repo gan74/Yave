@@ -100,7 +100,7 @@ class ShaderModuleBase : NonMovable {
         VkHandle<VkShaderModule> _module;
         core::String _entry_point = "main";
         ShaderType _type = ShaderType::None;
-        core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
+        core::Vector<core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
         core::Vector<u32> _variable_size_bindings;
         core::Vector<Attribute> _attribs;
         core::Vector<u32> _stage_output;

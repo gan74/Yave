@@ -30,11 +30,11 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/images/Sampler.h>
 #include <yave/graphics/commands/CmdQueue.h>
-#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 #include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/device/MeshAllocator.h>
 #include <yave/graphics/device/MaterialAllocator.h>
+#include <yave/graphics/device/DescriptorLayoutAllocator.h>
 #include <yave/graphics/images/TextureLibrary.h>
 #include <yave/graphics/device/DiagnosticCheckpoints.h>
 
@@ -47,6 +47,7 @@ SOFTWARE.
 namespace yave {
 namespace device {
 
+
 Instance* instance = nullptr;
 std::unique_ptr<PhysicalDevice> physical_device;
 
@@ -56,11 +57,12 @@ std::array<Uninitialized<Sampler>, 6> samplers;
 
 Uninitialized<DeviceMemoryAllocator> allocator;
 Uninitialized<LifetimeManager> lifetime_manager;
-Uninitialized<DescriptorSetAllocator> descriptor_set_allocator;
+Uninitialized<DescriptorLayoutAllocator> layout_allocator;
 Uninitialized<MeshAllocator> mesh_allocator;
 Uninitialized<MaterialAllocator> material_allocator;
 Uninitialized<TextureLibrary> texture_library;
 Uninitialized<DeviceResources> resources;
+
 
 VkDevice vk_device;
 
@@ -198,10 +200,10 @@ void init_device(Instance& instance, PhysicalDevice device) {
 
     device::lifetime_manager.init();
     device::allocator.init(device_properties());
-    device::descriptor_set_allocator.init();
     device::mesh_allocator.init();
     device::material_allocator.init();
     device::texture_library.init();
+    device::layout_allocator.init();
 
     for(usize i = 0; i != device::samplers.size(); ++i) {
         device::samplers[i].init(create_sampler(SamplerType(i)));
@@ -230,16 +232,18 @@ void destroy_device() {
         sampler.destroy();
     }
 
+
     device::diagnostic_checkpoints = nullptr;
 
+    device::layout_allocator.destroy();
     device::texture_library.destroy();
     device::material_allocator.destroy();
     device::mesh_allocator.destroy();
-    device::descriptor_set_allocator.destroy();
     device::lifetime_manager.destroy();
     device::allocator.destroy();
 
     device::queue.destroy();
+
 
     {
         y_profile_zone("vkDestroyDevice");
@@ -253,9 +257,6 @@ void destroy_device() {
 bool device_initialized() {
     return device::instance != nullptr;
 }
-
-
-
 
 const InstanceParams& instance_params() {
     return device::instance->instance_params();
@@ -292,12 +293,12 @@ TransferCmdBufferRecorder create_disposable_transfer_cmd_buffer() {
     return device::queue->cmd_pool_for_thread().create_transfer_cmd_buffer();
 }
 
-DeviceMemoryAllocator& device_allocator() {
-    return *device::allocator;
+DescriptorLayoutAllocator& layout_allocator() {
+    return *device::layout_allocator;
 }
 
-DescriptorSetAllocator& descriptor_set_allocator() {
-    return *device::descriptor_set_allocator;
+DeviceMemoryAllocator& device_allocator() {
+    return *device::allocator;
 }
 
 MeshAllocator& mesh_allocator() {

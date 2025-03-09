@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2023 Grégoire Angerand
+Copyright (c) 2016-2025 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -62,11 +62,10 @@ class ThumbmailRenderer;
 class TranslationGizmo;
 class UiManager;
 class UiTexture;
-class UndoStack;
+class UndoRedoSystem;
 class Widget;
 struct CVar;
 struct CameraSettings;
-struct Data;
 struct DebugSettings;
 struct EditorAction;
 struct EditorPass;
@@ -75,15 +74,16 @@ struct EditorRendererSettings;
 struct EditorSettings;
 struct EditorWidget;
 struct Entry;
-struct Item;
 struct PerfSettings;
 struct Picker;
 struct PickingResult;
 struct PlatformWindow;
+struct Property;
 struct ThumbmailData;
 struct TreeNode;
 struct UiIcon;
 struct UiSettings;
+struct UndoState;
 struct WidgetIdStack;
 struct ZoneHistory;
 }
@@ -97,12 +97,6 @@ struct Material;
 struct Mesh;
 struct Node;
 struct ParsedScene;
-}
-
-
-namespace editor::imp {
-struct Obj;
-struct StyleVar;
 }
 
 

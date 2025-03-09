@@ -23,9 +23,9 @@ SOFTWARE.
 #include "PerformanceMetrics.h"
 
 #include <yave/graphics/graphics.h>
-#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 #include <yave/graphics/device/LifetimeManager.h>
+#include <yave/graphics/device/DescriptorLayoutAllocator.h>
 
 #include <editor/utils/ui.h>
 
@@ -198,16 +198,7 @@ void PerformanceMetrics::draw_memory() {
         ImGui::Spacing();
         ImGui::Separator();
 
-        DescriptorSetAllocator& alloc = descriptor_set_allocator();
-        usize pools = alloc.pool_count();
-        const usize total_sets = pools * DescriptorSetPool::pool_size;
-        usize free_sets = alloc.free_sets();
-        const usize used_sets = total_sets - free_sets;
-
-        ImGui::Text("Descriptor set layouts: %u", u32(alloc.layout_count()));
-        ImGui::Text("Descriptor set pools: %u", u32(pools));
-
-        ImGui::ProgressBar(used_sets / float(total_sets), ImVec2(0, 0), fmt_c_str("{} / {} sets", used_sets, total_sets));
+        ImGui::Text("Descriptor set layouts: %u", u32(layout_allocator().layout_count()));
     }
 
     ImGui::Spacing();

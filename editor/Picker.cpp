@@ -35,6 +35,7 @@ SOFTWARE.
 
 #include <yave/graphics/shaders/ComputeProgram.h>
 
+#include <y/core/ScratchPad.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -61,6 +62,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
     FrameGraph framegraph(std::make_shared<FrameGraphResourcePool>());
 
     Y_TODO(Take editor renderer settings into account for picking)
+
     static const FrameGraphPersistentResourceId persistent_id = FrameGraphPersistentResourceId::create();
     const SceneVisibilitySubPass visibility = SceneVisibilitySubPass::create(scene_view);
     const IdBufferPass scene_pass = IdBufferPass::create(framegraph, CameraBufferPass::create_no_jitter(framegraph, scene_view, persistent_id), visibility, size);
@@ -76,9 +78,10 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const auto& program = resources()[EditorResources::PickingProgram];
 
-            const auto uv_set = DescriptorSet(InlineDescriptor(uv));
-            const std::array<DescriptorSetBase, 2> descriptor_sets = {self->descriptor_set(), uv_set};
-            recorder.dispatch(program, math::Vec3ui(1), descriptor_sets);
+            core::ScratchVector<Descriptor> descriptors(self->descriptor_set()._descriptors.size() + 1);
+            std::copy_n(self->descriptor_set()._descriptors.begin(), self->descriptor_set()._descriptors.size(), std::back_inserter(descriptors));
+            descriptors.emplace_back(InlineDescriptor(uv));
+            recorder.dispatch(program, math::Vec3ui(1), DescriptorSetProxy(descriptors));
         });
     }
 

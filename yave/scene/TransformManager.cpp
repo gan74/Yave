@@ -24,8 +24,6 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/barriers/Barrier.h>
-
-#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/device/DeviceResources.h>
 
 namespace yave {
@@ -122,8 +120,15 @@ void TransformManager::update_buffer(ComputeCapableCmdBufferRecorder& recorder) 
             std::swap(_transform_buffer, new_buffer);
         }
 
+        const auto descriptors = make_descriptor_set(
+            _transform_buffer,
+            transform_staging,
+            index_staging,
+            InlineDescriptor(u32(update_count))
+        );
+
         const auto& program = device_resources()[DeviceResources::UpdateTransformsProgram];
-        recorder.dispatch_threads(program, math::Vec2ui(u32(update_count), 1), DescriptorSet(_transform_buffer, transform_staging, index_staging, InlineDescriptor(u32(update_count))));
+        recorder.dispatch_threads(program, math::Vec2ui(u32(update_count), 1), DescriptorSetProxy(descriptors));
     }
 
 

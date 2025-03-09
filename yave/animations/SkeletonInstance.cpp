@@ -27,8 +27,7 @@ namespace yave {
 SkeletonInstance::SkeletonInstance(const Skeleton* skeleton) :
         _skeleton(skeleton),
         _bone_transforms(new std::array<math::Transform<>, Skeleton::max_bones>()),
-        _bone_transform_buffer(Skeleton::max_bones),
-        _descriptor_set(Descriptor(_bone_transform_buffer)) {
+        _bone_transform_buffer(Skeleton::max_bones) {
 
     flush_data();
 }

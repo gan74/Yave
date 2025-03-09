@@ -33,7 +33,7 @@ namespace yave {
 struct SceneRenderSubPass {
     SceneView scene_view;
 
-    i32 main_descriptor_set_index = -1;
+    i32 descriptor_set_index = -1;
     FrameGraphTypedBufferId<shader::Camera> camera;
 
     Scene::RenderFunc render_func;

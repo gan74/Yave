@@ -4,7 +4,7 @@ import os
 import codecs;
 
 license = """/*******************************
-Copyright (c) 2016-2023 Grégoire Angerand
+Copyright (c) 2016-2025 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,19 +30,35 @@ def remove_comments(content):
     find_comments = re.compile(r"\/\/[^\n\r]+?(?:\*\)|[\n\r])")
     find_ml_comments = re.compile(r"/\*.*?\*/", re.MULTILINE | re.DOTALL)
     return find_comments.sub("", find_ml_comments.sub("", content))
-                
+    
+    
+def find_matching_brace(content, begin = 0):
+    end = begin
+    braces = 0
+    for c in content[begin:]:
+        if c == '{':
+            braces += 1
+        elif c == '}':
+            braces -= 1
+        if braces == 0 and not c.isspace():
+            return end
+        end += 1
+    return -1
+                    
 def find_classes(content):
-    find_class = re.compile(r"(.*)\s+class ([A-Za-z0-9_]+)\s")
-    find_struct = re.compile(r"(.*)\s+struct ([A-Za-z0-9_]+)\s")
+    find_class = re.compile(r"(.*)\s+(class|struct) ([A-Za-z0-9_]+)\s")
     types = set()
-    for c in find_class.findall(content):
-        if "template" in c[0] or "enum" in c[0]:
-            continue
-        types.add("class " + c[1])
-    for s in find_struct.findall(content):
-        if "template" in s[0]:
-            continue
-        types.add("struct " + s[1])
+    while True:
+        cl = find_class.search(content)
+        if cl:
+            content = content[cl.end():]
+            if "template" in cl[1] or "enum" in cl[1]:
+                continue
+            types.add(cl[2] + " " + cl[3])
+            content = content[find_matching_brace(content):]
+        else:
+            break
+            
     return types;
 
 def merge_dicts(a, b):
@@ -65,17 +81,7 @@ def find_namespaces(content, current_name):
             else:
                 begin = content.find("{", namespace_index) + 1
                 name = content[namespace_index + 10 : begin - 1].strip()
-                end = begin
-                braces = 1
-                for c in content[begin:]:
-                    if c == '{':
-                        braces += 1
-                    elif c == '}':
-                        braces -= 1
-                    if braces == 0:
-                        break
-                    end += 1
-                    
+                end = find_matching_brace(content, begin - 1)
                 merge_dicts(namespaces, find_namespaces(content[begin:end].strip(), current_name + "::" + name))
                 namespace_index = end + 1
         else:
@@ -104,7 +110,10 @@ def extension(file):
 def process_project(projects):
     for proj in projects:
         forward_file_name = proj + "/utils/forward.h";
-        os.remove(forward_file_name)
+        try:
+            os.remove(forward_file_name)
+        except:
+            print(forward_file_name, "does not exist")
     
         namespaces = find_namespaces_in_folder(proj);
         cl_per_ns = {}

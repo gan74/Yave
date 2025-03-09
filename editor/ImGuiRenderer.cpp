@@ -112,14 +112,14 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
     uniform[1] = viewport_offset;
 
     const auto create_descriptor_set = [&](const TextureView* tex) {
-        return DescriptorSet(Descriptor(*tex, SamplerType::LinearClamp), uniform_buffer);
+        return make_descriptor_set(Descriptor(*tex, SamplerType::LinearClamp), uniform_buffer);
     };
 
-    const DescriptorSetBase default_set = create_descriptor_set(&_font_view);
+    const auto default_set = create_descriptor_set(&_font_view);
 
     const auto setup_state = [&](const TextureView* tex) {
         const MaterialTemplate* material = resources()[EditorResources::ImGuiMaterialTemplate];
-        recorder.bind_material_template(material, tex ? create_descriptor_set(tex) : default_set);
+        recorder.bind_material_template(material, DescriptorSetProxy(tex ? create_descriptor_set(tex) : default_set));
     };
 
     usize index_offset = 0;

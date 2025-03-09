@@ -51,15 +51,6 @@ static VkHandle<VkShaderModule> create_shader_module(const SpirVData& spirv) {
     return shader;
 }
 
-
-static bool is_inline(const SpvReflectDescriptorBinding& binding) {
-    Y_TODO(check if inline descriptors are always at the end)
-    return
-        binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER &&
-        binding.type_description->type_name &&
-        (std::string_view(binding.type_description->type_name).ends_with("_Inline") || std::string_view(binding.name).ends_with("_Inline"));
-}
-
 static ShaderType shader_exec_model(SpvExecutionModel exec_model) {
     switch(exec_model) {
         case SpvExecutionModelVertex:               return ShaderType::Vertex;
@@ -135,6 +126,7 @@ ShaderModuleBase::ShaderModuleBase(const SpirVData& spirv, ShaderType type) : _m
         spv_check(spvReflectEnumerateDescriptorSets(&module, &ds_count, sets.data()));
 
         for(const SpvReflectDescriptorSet* set : sets) {
+            _bindings.set_min_size(set->set + 1);
             auto& set_bindings = _bindings[set->set];
             for(u32 i = 0; i != set->binding_count; ++i) {
                 const SpvReflectDescriptorBinding& refl_binding = *set->bindings[i];
@@ -152,23 +144,6 @@ ShaderModuleBase::ShaderModuleBase(const SpirVData& spirv, ShaderType type) : _m
                     binding.binding = refl_binding.binding;
                     binding.descriptorCount = 1;
                     binding.descriptorType = VkDescriptorType(refl_binding.descriptor_type);
-                }
-
-                if(is_inline(refl_binding)) {
-                    // For some reason refl_binding.block.padded_size gives 16 bytes blocks when the shader could do with 4 or 8
-                    // We recompute size for blocks with members
-                    if(refl_binding.block.members) {
-                        u32 desc_size = 0;
-                        for(u32 k = 0; k != refl_binding.block.member_count; ++k) {
-                            const SpvReflectBlockVariable& member = refl_binding.block.members[k];
-                            desc_size = std::max(desc_size, member.offset + member.size);
-                        }
-                        binding.descriptorCount *= desc_size;
-                    } else {
-                        binding.descriptorCount *= refl_binding.block.padded_size;
-                    }
-
-                    binding.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
                 }
             }
 

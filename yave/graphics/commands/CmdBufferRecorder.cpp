@@ -27,7 +27,6 @@ SOFTWARE.
 #include <yave/material/Material.h>
 #include <yave/material/MaterialTemplate.h>
 #include <yave/graphics/images/TextureLibrary.h>
-#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/shaders/ShaderProgram.h>
@@ -42,6 +41,41 @@ SOFTWARE.
 #define Y_VK_CMD    do {} while(false);
 
 namespace yave {
+
+
+static void bind_descriptor_set(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point, VkPipelineLayout layout, u32 set_index, const DescriptorSetProxy& ds) {
+    const auto& descriptors = ds._descriptors;
+    const usize descriptor_count = descriptors.size();
+    if(descriptor_count) {
+        core::ScratchPad<VkWriteDescriptorSet> writes(descriptor_count);
+        core::ScratchPad<VkDescriptorBufferInfo> buffer_infos(descriptor_count);
+        core::ScratchPad<VkWriteDescriptorSetAccelerationStructureKHR> accel_structs(descriptor_count);
+
+        for(usize i = 0; i != descriptor_count; ++i) {
+            descriptors[i].fill_write(u32(i), writes[i], buffer_infos[i], accel_structs[i]);
+        }
+
+        vkCmdPushDescriptorSet(
+            cmd_buffer,
+            bind_point,
+            layout,
+            set_index,
+            u32(descriptor_count),
+            writes.data()
+        );
+    } else {
+        const VkDescriptorSet set = ds.vk_descriptor_set();
+        vkCmdBindDescriptorSets(
+            cmd_buffer,
+            bind_point,
+            layout,
+            set_index,
+            1, &set,
+            0, nullptr
+        );
+    }
+}
+
 
 // -------------------------------------------------- CmdBufferRegion --------------------------------------------------
 
@@ -121,45 +155,21 @@ RenderPassRecorder::~RenderPassRecorder() {
     _cmd_buffer.end_renderpass();
 }
 
-void RenderPassRecorder::bind_material_template(const MaterialTemplate* material_template, core::Span<DescriptorSetBase> sets, bool bind_main_ds) {
+void RenderPassRecorder::bind_material_template(const MaterialTemplate* material_template, core::Span<DescriptorSetProxy> descriptor_sets) {
     Y_VK_CMD
 
-    if(material_template != _cache.material) {
-        const GraphicPipeline& pipeline = material_template->compile(*_cmd_buffer._render_pass);
-        vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vk_pipeline());
+    const GraphicPipeline& pipeline = material_template->compile(*_cmd_buffer._render_pass);
+    vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vk_pipeline());
 
-        _cache.material = material_template;
-        _cache.pipeline_layout = pipeline.vk_pipeline_layout();
-    }
-
-    if(_main_descriptor_set && bind_main_ds) {
-        vkCmdBindDescriptorSets(
+    for(usize i = 0; i != descriptor_sets.size(); ++i) {
+        bind_descriptor_set(
             vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            _cache.pipeline_layout,
-            0,
-            1, &_main_descriptor_set,
-            0, nullptr
-        );
-        _main_descriptor_set = {};
-    }
-
-    if(!sets.is_empty()) {
-        vkCmdBindDescriptorSets(
-            vk_cmd_buffer(),
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            _cache.pipeline_layout,
-            bind_main_ds ? 1 : 0,
-            u32(sets.size()), reinterpret_cast<const VkDescriptorSet*>(sets.data()),
-            0, nullptr
+            pipeline.vk_pipeline_layout(),
+            u32(i),
+            descriptor_sets[i]
         );
     }
-}
-
-
-
-void RenderPassRecorder::set_main_descriptor_set(DescriptorSetBase ds_set) {
-    _main_descriptor_set = ds_set.vk_descriptor_set();
 }
 
 void RenderPassRecorder::draw(const MeshDrawData& draw_data, u32 instance_count, u32 instance_index) {
@@ -526,32 +536,31 @@ void CmdBufferRecorderBase::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuf
     vkCmdCopyBuffer(vk_cmd_buffer(), src.vk_buffer(), dst.vk_buffer(), 1, &copy);
 }
 
-void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetProxy> descriptor_sets) {
     Y_VK_CMD
 
     check_no_renderpass();
 
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, program.vk_pipeline());
 
-    if(!descriptor_sets.is_empty()) {
-        vkCmdBindDescriptorSets(
+    for(usize i = 0; i != descriptor_sets.size(); ++i) {
+        bind_descriptor_set(
             vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_COMPUTE,
             program.vk_pipeline_layout(),
-            0,
-            u32(descriptor_sets.size()), reinterpret_cast<const VkDescriptorSet*>(descriptor_sets.data()),
-            0, nullptr
+            u32(i),
+            descriptor_sets[i]
         );
     }
 
     vkCmdDispatch(vk_cmd_buffer(), size.x(), size.y(), size.z());
 }
 
-void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetProxy> descriptor_sets) {
     dispatch_threads(program, math::Vec3ui(size, 1), descriptor_sets);
 }
 
-void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetProxy> descriptor_sets) {
     math::Vec3ui dispatch_threads;
     const math::Vec3ui program_size = program.local_size();
     for(usize i = 0; i != 3; ++i) {
@@ -605,7 +614,7 @@ void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, cons
 #endif
 
 
-void CmdBufferRecorderBase::raytrace(const RaytracingProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+void CmdBufferRecorderBase::raytrace(const RaytracingProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetProxy> descriptor_sets) {
     Y_VK_CMD
 
     check_no_renderpass();
@@ -613,12 +622,15 @@ void CmdBufferRecorderBase::raytrace(const RaytracingProgram& program, const mat
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, program.vk_pipeline());
 
     if(!descriptor_sets.is_empty()) {
+        core::ScratchPad<VkDescriptorSet> vk_sets(descriptor_sets.size());
+        std::transform(descriptor_sets.begin(), descriptor_sets.end(), vk_sets.begin(), [](const DescriptorSetProxy& ds) { return ds.vk_descriptor_set(); });
+
         vkCmdBindDescriptorSets(
             vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
             program.vk_pipeline_layout(),
             0,
-            u32(descriptor_sets.size()), reinterpret_cast<const VkDescriptorSet*>(descriptor_sets.data()),
+            u32(vk_sets.size()), vk_sets.data(),
             0, nullptr
         );
     }

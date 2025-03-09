@@ -3,16 +3,16 @@
 
 #include "structs.slang"
 
-[[vk::binding(0, 0)]]
+[[vk::binding(0)]]
 ConstantBuffer<Camera> camera;
 
-[[vk::binding(0, 1)]]
+[[vk::binding(1)]]
 StructuredBuffer<TransformableData> transformables;
 
-[[vk::binding(1, 1)]]
+[[vk::binding(2)]]
 StructuredBuffer<MaterialData> materials;
 
-[[vk::binding(2, 1)]]
+[[vk::binding(3)]]
 StructuredBuffer<uint2> transform_material_indices;
 
 #endif

@@ -50,13 +50,8 @@ const Framebuffer& FrameGraphPass::framebuffer() const {
     return _framebuffer;
 }
 
-core::Span<DescriptorSet> FrameGraphPass::descriptor_sets() const {
-    return _descriptor_sets;
-}
-
-const DescriptorSet& FrameGraphPass::descriptor_set() const {
-    y_debug_assert(_descriptor_sets.size() == 1);
-    return _descriptor_sets[0];
+DescriptorSetProxy FrameGraphPass::descriptor_set(usize index) const {
+    return DescriptorSetProxy(_descriptor_sets[index]);
 }
 
 void FrameGraphPass::render(CmdBufferRecorder& recorder) {
@@ -116,17 +111,10 @@ void FrameGraphPass::init_framebuffer(const FrameGraphFrameResources& resources)
 void FrameGraphPass::init_descriptor_sets(const FrameGraphFrameResources& resources) {
     y_profile();
 
-    for(const auto& set : _bindings) {
-        core::ScratchVector<Descriptor> bindings(set.size());
-
-        std::transform(set.begin(), set.end(), std::back_inserter(bindings), [&](const FrameGraphDescriptorBinding& d) { return d.create_descriptor(resources); });
-        _descriptor_sets << DescriptorSet(bindings);
-
-#ifdef Y_DEBUG
-        if(const auto* debug = debug_utils()) {
-            debug->set_resource_name(_descriptor_sets.last().vk_descriptor_set(), fmt_c_str("{} DS{}", _name, _descriptor_sets.size() - 1));
-        }
-#endif
+    _descriptor_sets.set_min_size(_bindings.size());
+    for(usize i = 0; i != _bindings.size(); ++i) {
+        const auto& set = _bindings[i];
+        std::transform(set.begin(), set.end(), std::back_inserter(_descriptor_sets[i]), [&](const FrameGraphDescriptorBinding& d) { return d.create_descriptor(resources); });
     }
 }
 

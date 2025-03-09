@@ -31,7 +31,6 @@ SOFTWARE.
 #include <yave/graphics/images/ImageData.h>
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdQueue.h>
-#include <yave/graphics/descriptors/DescriptorSet.h>
 
 #include <yave/renderer/DefaultRenderer.h>
 
@@ -189,8 +188,8 @@ static Texture render_texture(const AssetPtr<Texture>& tex) {
     CmdBufferRecorder recorder = create_disposable_cmd_buffer();
     StorageTexture out = StorageTexture(ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));
     {
-        const auto ds = DescriptorSet(Descriptor(*tex, SamplerType::LinearClamp), StorageView(out));
-        recorder.dispatch_threads(device_resources()[DeviceResources::CopyProgram],  out.size(), ds);
+        const auto descriptors = make_descriptor_set(Descriptor(*tex, SamplerType::LinearClamp), StorageView(out));
+        recorder.dispatch_threads(device_resources()[DeviceResources::CopyProgram], out.size(), DescriptorSetProxy(descriptors));
     }
     recorder.submit().wait();
     return out;

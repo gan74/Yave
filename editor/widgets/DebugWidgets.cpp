@@ -28,7 +28,6 @@ SOFTWARE.
 
 #include <yave/scene/SceneView.h>
 #include <yave/graphics/device/MeshAllocator.h>
-#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/renderer/SceneVisibilitySubPass.h>

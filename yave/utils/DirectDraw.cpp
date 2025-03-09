@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "DirectDraw.h"
 
-#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/buffers/Buffer.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/device/DeviceResources.h>
@@ -155,11 +154,11 @@ void DirectDraw::render(RenderPassRecorder& recorder, const math::Matrix4<>& vie
             std::copy(verts.begin(), verts.end(), mapping.data() + offset);
             offset += verts.size();
         }
-
     }
 
     const auto* material = device_resources()[DeviceResources::WireFrameMaterialTemplate];
-    recorder.bind_material_template(material, DescriptorSet(InlineDescriptor(view_proj)));
+    const auto descriptors = make_descriptor_set(InlineDescriptor(view_proj));
+    recorder.bind_material_template(material, DescriptorSetProxy(descriptors));
     recorder.bind_attrib_buffers({vertices});
     recorder.draw_array(vertex_count);
 }

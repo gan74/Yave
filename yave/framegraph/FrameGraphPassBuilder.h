@@ -94,6 +94,11 @@ class FrameGraphPassBuilderBase {
         void clear_before_pass(FrameGraphMutableImageId res);
 
         template<typename T>
+        void add_inline_input(const T& t, i32 ds_index = -1) {
+            add_inline_input(InlineDescriptor(t), ds_index);
+        }
+
+        template<typename T>
         void map_buffer(FrameGraphMutableTypedBufferId<T> res) {
             map_buffer_internal(res);
         }

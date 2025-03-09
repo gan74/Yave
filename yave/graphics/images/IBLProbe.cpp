@@ -26,7 +26,6 @@ SOFTWARE.
 #include <yave/framegraph/TransientMipView.h>
 
 #include <yave/graphics/shaders/ComputeProgram.h>
-#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdQueue.h>
 
@@ -71,12 +70,12 @@ static void fill_probe(core::MutableSpan<ProbeMipView> views, const Image<ImageU
             ImageView<ImageUsage::StorageBit, ImageType::Layered> out_view = views[i];
             y_debug_assert(out_view.size().x() == out_view.size().y());
             const float roughness = (i * roughness_step);
-            const auto ds = DescriptorSet(
+            const auto descriptors = make_descriptor_set(
                 Descriptor(texture, SamplerType::LinearClamp),
                 out_view,
                 InlineDescriptor(math::Vec2(roughness, out_view.size().x()))
             );
-            recorder.dispatch_threads(conv_program, math::Vec3ui(out_view.size(), 6), ds);
+            recorder.dispatch_threads(conv_program, math::Vec3ui(out_view.size(), 6), DescriptorSetProxy(descriptors));
         }
     }
 

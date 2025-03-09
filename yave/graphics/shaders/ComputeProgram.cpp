@@ -23,7 +23,7 @@ SOFTWARE.
 #include "ComputeProgram.h"
 
 #include <yave/graphics/graphics.h>
-#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
+#include <yave/graphics/device/DescriptorLayoutAllocator.h>
 
 #include <y/core/ScratchPad.h>
 #include <y/utils/log.h>
@@ -37,12 +37,12 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp) : _local_size(comp.loc
     y_profile();
 
     const auto& bindings = comp.bindings();
+    core::ScratchPad<VkDescriptorSetLayout> layouts(bindings.size());
 
-    const u32 max_set = std::accumulate(bindings.begin(), bindings.end(), 0, [](u32 max, const auto& p) { return std::max(max, p.first); });
+    y_always_assert(bindings.size() <= 1, "Multiple descriptor sets are not supported");
 
-    core::ScratchPad<VkDescriptorSetLayout> layouts(max_set + 1);
-    for(const auto& binding : bindings) {
-        layouts[binding.first] = descriptor_set_allocator().descriptor_set_layout(binding.second).vk_descriptor_set_layout();
+    for(usize i = 0; i != bindings.size(); ++i) {
+        layouts[i] = layout_allocator().create_layout(bindings[i]);
     }
 
     VkPipelineLayoutCreateInfo layout_create_info = vk_struct();

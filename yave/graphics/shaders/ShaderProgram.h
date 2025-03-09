@@ -45,9 +45,9 @@ class ShaderProgramBase : NonCopyable {
 
         void swap(ShaderProgramBase& other);
 
-        core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
-        core::Vector<VkDescriptorSetLayout> _layouts;
-        core::Vector<VkPipelineShaderStageCreateInfo> _stages;
+        core::SmallVector<core::Vector<VkDescriptorSetLayoutBinding>, 2> _bindings;
+        core::SmallVector<VkDescriptorSetLayout, 2> _layouts;
+        core::SmallVector<VkPipelineShaderStageCreateInfo, 2> _stages;
 };
 
 

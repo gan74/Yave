@@ -312,8 +312,6 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2() {
 VkPhysicalDeviceVulkan13Features required_device_features_1_3() {
     VkPhysicalDeviceVulkan13Features required = vk_struct();
 
-    required.inlineUniformBlock = true;
-
     return required;
 }
 

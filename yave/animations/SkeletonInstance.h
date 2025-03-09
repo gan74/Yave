@@ -27,7 +27,6 @@ SOFTWARE.
 #include <yave/assets/AssetPtr.h>
 #include <yave/meshes/Skeleton.h>
 #include <yave/graphics/buffers/Buffer.h>
-#include <yave/graphics/descriptors/DescriptorSet.h>
 
 #include "Animation.h"
 
@@ -45,10 +44,6 @@ class SkeletonInstance {
 
         void update();
 
-        const auto& descriptor_set() const {
-            return _descriptor_set;
-        }
-
     private:
         void flush_data();
 
@@ -56,7 +51,6 @@ class SkeletonInstance {
         std::unique_ptr<std::array<math::Transform<>, Skeleton::max_bones>> _bone_transforms;
 
         TypedUniformBuffer<math::Transform<>, MemoryType::CpuVisible> _bone_transform_buffer;
-        DescriptorSet _descriptor_set;
 
         AssetPtr<Animation> _animation;
         core::StopWatch _anim_timer;

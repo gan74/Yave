@@ -20,36 +20,41 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "DenoisePass.h"
+#include "DescriptorLayoutAllocator.h"
 
-#include <yave/framegraph/FrameGraph.h>
-#include <yave/framegraph/FrameGraphPass.h>
-#include <yave/graphics/device/DeviceResources.h>
-#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/graphics.h>
 
 namespace yave {
 
-
-DenoisePass DenoisePass::create(FrameGraph& framegraph, FrameGraphImageId in_image, const DenoiseSettings& settings) {
-    const math::Vec2ui size = framegraph.image_size(in_image);
-    const ImageFormat format = framegraph.image_format(in_image);
-
-    FrameGraphPassBuilder builder = framegraph.add_pass("Denoise pass");
-
-    const auto denoised = builder.declare_image(format, size);
-
-    builder.add_color_output(denoised);
-    builder.add_uniform_input(in_image);
-    builder.add_inline_input(settings);
-    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        const auto* material = device_resources()[DeviceResources::DenoiseMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_set());
-        render_pass.draw_array(3);
+DescriptorLayoutAllocator::~DescriptorLayoutAllocator() {
+    _layouts.locked([](auto&& layouts) {
+        for(auto& [k, l] : layouts) {
+            destroy_graphic_resource(std::move(l));
+        }
+        layouts.clear();
     });
-
-    DenoisePass pass;
-    pass.denoised = denoised;
-    return pass;
-}
 }
 
+VkDescriptorSetLayout DescriptorLayoutAllocator::create_layout(core::Span<VkDescriptorSetLayoutBinding> bindings) {
+    return _layouts.locked([&](auto&& layouts) {
+        auto& layout = layouts[bindings];
+        if(!layout) {
+            VkDescriptorSetLayoutCreateInfo create_info = vk_struct();
+            {
+                create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT;
+                create_info.bindingCount = u32(bindings.size());
+                create_info.pBindings = bindings.data();
+            }
+
+            vk_check(vkCreateDescriptorSetLayout(vk_device(), &create_info, vk_allocation_callbacks(), layout.get_ptr_for_init()));
+        }
+
+        return layout.get();
+    });
+}
+
+usize DescriptorLayoutAllocator::layout_count() const {
+    return _layouts.locked([](const auto& layouts) { return layouts.size(); });
+}
+
+}

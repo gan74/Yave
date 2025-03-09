@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <yave/graphics/framebuffer/Viewport.h>
 #include <yave/graphics/images/ImageView.h>
-#include <yave/graphics/descriptors/DescriptorSetBase.h>
+#include <yave/graphics/descriptors/DescriptorSetProxy.h>
 #include <yave/graphics/buffers/Buffer.h>
 
 namespace yave {
@@ -60,9 +60,7 @@ class RenderPassRecorder final : NonMovable {
         ~RenderPassRecorder();
 
         // specific
-        void bind_material_template(const MaterialTemplate* material_template, core::Span<DescriptorSetBase> sets, bool bind_main_ds = false);
-
-        void set_main_descriptor_set(DescriptorSetBase ds_set);
+        void bind_material_template(const MaterialTemplate* material_template, core::Span<DescriptorSetProxy> descriptor_sets);
 
         void draw(const MeshDrawData& draw_data, u32 instance_count = 1, u32 instance_index = 0);
 
@@ -96,12 +94,9 @@ class RenderPassRecorder final : NonMovable {
 
         CmdBufferRecorder& _cmd_buffer;
         Viewport _viewport;
-        VkDescriptorSet _main_descriptor_set = {};
 
         struct {
             const MeshDrawBuffers* mesh_buffers = nullptr;
-            const MaterialTemplate* material = nullptr;
-            VkPipelineLayout pipeline_layout = {};
         } _cache;
 };
 
@@ -137,11 +132,11 @@ class CmdBufferRecorderBase : NonMovable {
         void unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuffer dst);
 
     protected:
-        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
-        void dispatch_threads(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
-        void dispatch_threads(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetProxy> descriptor_sets);
+        void dispatch_threads(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetProxy> descriptor_sets);
+        void dispatch_threads(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetProxy> descriptor_sets);
 
-        void raytrace(const RaytracingProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+        void raytrace(const RaytracingProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetProxy> descriptor_sets);
 
         TimelineFence submit();
         void submit_async();
