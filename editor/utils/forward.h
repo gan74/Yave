@@ -66,7 +66,6 @@ class UndoRedoSystem;
 class Widget;
 struct CVar;
 struct CameraSettings;
-struct Data;
 struct DebugSettings;
 struct EditorAction;
 struct EditorPass;
