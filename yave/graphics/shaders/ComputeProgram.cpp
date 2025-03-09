@@ -23,7 +23,6 @@ SOFTWARE.
 #include "ComputeProgram.h"
 
 #include <yave/graphics/graphics.h>
-#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 
 #include <y/core/ScratchPad.h>
 #include <y/utils/log.h>
@@ -42,8 +41,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp) : _local_size(comp.loc
     y_always_assert(bindings.size() <= 1, "Multiple descriptor sets are not supported");
 
     for(usize i = 0; i != bindings.size(); ++i) {
-        const auto& layout = descriptor_set_allocator().descriptor_set_layout(bindings[i]);
-        layouts[i] = layout.vk_push_descriptor_set_layout();
+        layouts[i] = create_push_descriptor_set_layout(bindings[i]);
     }
 
     VkPipelineLayoutCreateInfo layout_create_info = vk_struct();

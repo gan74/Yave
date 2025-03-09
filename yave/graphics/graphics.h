@@ -28,6 +28,8 @@ SOFTWARE.
 #include <yave/graphics/device/ResourceType.h>
 #include <yave/graphics/images/SamplerType.h>
 
+#include <y/core/Span.h>
+
 namespace yave {
 
 void init_device(Instance& instance);
@@ -46,6 +48,8 @@ VkPhysicalDevice vk_physical_device();
 CmdBufferRecorder create_disposable_cmd_buffer();
 ComputeCmdBufferRecorder create_disposable_compute_cmd_buffer();
 TransferCmdBufferRecorder create_disposable_transfer_cmd_buffer();
+
+VkDescriptorSetLayout create_push_descriptor_set_layout(core::Span<VkDescriptorSetLayoutBinding> bindings);
 
 const PhysicalDevice& physical_device();
 DeviceMemoryAllocator& device_allocator();

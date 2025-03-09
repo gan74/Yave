@@ -47,6 +47,37 @@ SOFTWARE.
 namespace yave {
 namespace device {
 
+using LayoutKey = core::Span<VkDescriptorSetLayoutBinding>;
+
+struct KeyEqual {
+    inline bool operator()(LayoutKey a, LayoutKey b) const {
+        return a == b;
+    }
+
+    inline bool operator()(const core::Vector<VkDescriptorSetLayoutBinding>& a, LayoutKey b) const {
+        return LayoutKey(a) == b;
+    }
+};
+
+struct KeyHash {
+    inline auto operator()(LayoutKey k) const {
+        usize h = 0;
+        static_assert(sizeof(VkDescriptorSetLayoutBinding) % sizeof(u32) == 0);
+        for(const VkDescriptorSetLayoutBinding& l : k) {
+            const usize lh = hash_range(core::Span<u32>(reinterpret_cast<const u32*>(&l), sizeof(VkDescriptorSetLayoutBinding) / sizeof(u32)));
+            hash_combine(h, lh);
+        }
+        return h;
+    }
+
+    inline auto operator()(const core::Vector<VkDescriptorSetLayoutBinding>& k) const {
+        return operator()(LayoutKey(k));
+    }
+};
+
+
+concurrent::Mutexed<core::FlatHashMap<core::Vector<VkDescriptorSetLayoutBinding>, VkHandle<VkDescriptorSetLayout>, KeyHash, KeyEqual>> descriptor_set_layouts;
+
 Instance* instance = nullptr;
 std::unique_ptr<PhysicalDevice> physical_device;
 
@@ -61,6 +92,7 @@ Uninitialized<MeshAllocator> mesh_allocator;
 Uninitialized<MaterialAllocator> material_allocator;
 Uninitialized<TextureLibrary> texture_library;
 Uninitialized<DeviceResources> resources;
+
 
 VkDevice vk_device;
 
@@ -230,6 +262,14 @@ void destroy_device() {
         sampler.destroy();
     }
 
+
+    device::descriptor_set_layouts.locked([](auto&& layouts) {
+        for(auto& [k, l] : layouts) {
+            destroy_graphic_resource(std::move(l));
+        }
+        layouts.clear();
+    });
+
     device::diagnostic_checkpoints = nullptr;
 
     device::texture_library.destroy();
@@ -240,6 +280,7 @@ void destroy_device() {
     device::allocator.destroy();
 
     device::queue.destroy();
+
 
     {
         y_profile_zone("vkDestroyDevice");
@@ -254,6 +295,26 @@ bool device_initialized() {
     return device::instance != nullptr;
 }
 
+
+
+
+VkDescriptorSetLayout create_push_descriptor_set_layout(core::Span<VkDescriptorSetLayoutBinding> bindings) {
+    return device::descriptor_set_layouts.locked([&](auto&& layouts) {
+        auto& layout = layouts[bindings];
+        if(!layout) {
+            VkDescriptorSetLayoutCreateInfo create_info = vk_struct();
+            {
+                create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT;
+                create_info.bindingCount = u32(bindings.size());
+                create_info.pBindings = bindings.data();
+            }
+
+            vk_check(vkCreateDescriptorSetLayout(vk_device(), &create_info, vk_allocation_callbacks(), layout.get_ptr_for_init()));
+        }
+
+        return layout.get();
+    });
+}
 
 
 
