@@ -50,8 +50,8 @@ const Framebuffer& FrameGraphPass::framebuffer() const {
     return _framebuffer;
 }
 
-DescriptorSetCommon FrameGraphPass::descriptor_set(usize index) const {
-    return DescriptorSetCommon(_descriptor_sets[index]);
+DescriptorSetProxy FrameGraphPass::descriptor_set(usize index) const {
+    return DescriptorSetProxy(_descriptor_sets[index]);
 }
 
 void FrameGraphPass::render(CmdBufferRecorder& recorder) {

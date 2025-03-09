@@ -85,7 +85,7 @@ static TAAPass create_taa_pass(FrameGraph& framegraph, const TemporalPrePass& te
 
     if constexpr(!Simple) {
         const auto settings_data = make_taa_settings(settings);
-        builder.add_inline_input(InlineDescriptor(settings_data));
+        builder.add_inline_input(settings_data);
     }
 
     builder.add_color_output(aa);

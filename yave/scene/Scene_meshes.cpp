@@ -165,7 +165,7 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc
         switch(pass_type) {
             case PassType::Depth:
             case PassType::GBuffer: {
-                const std::array<DescriptorSetCommon, 2> desc_sets = {
+                const std::array<DescriptorSetProxy, 2> desc_sets = {
                     pass->descriptor_set(desc_set_index),
                     texture_library().descriptor_set()
                 };

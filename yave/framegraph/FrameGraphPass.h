@@ -25,7 +25,7 @@ SOFTWARE.
 #include "FrameGraphResourceId.h"
 #include "FrameGraphDescriptorBinding.h"
 
-#include <yave/graphics/descriptors/DescriptorSetCommon.h>
+#include <yave/graphics/descriptors/DescriptorSetProxy.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/barriers/PipelineStage.h>
 
@@ -56,7 +56,7 @@ class FrameGraphPass final : NonMovable {
         const FrameGraphFrameResources& resources() const;
 
         const Framebuffer& framebuffer() const;
-        DescriptorSetCommon descriptor_set(usize index = 0) const;
+        DescriptorSetProxy descriptor_set(usize index = 0) const;
 
         void render(CmdBufferRecorder& recorder);
 

@@ -295,7 +295,7 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
             core::ScratchVector<Descriptor> descs(self->descriptor_set()._descriptors.size() + 1);
             std::copy_n(self->descriptor_set()._descriptors.begin(), self->descriptor_set()._descriptors.size(), std::back_inserter(descs));
             descs.emplace_back(InlineDescriptor(math::Vec2ui(point_count, spot_count)));
-            recorder.dispatch_threads(program, size, DescriptorSetCommon(descs));
+            recorder.dispatch_threads(program, size, DescriptorSetProxy(descs));
         }
     });
 }

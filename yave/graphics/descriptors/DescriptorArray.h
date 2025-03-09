@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORARRAY_H
 #define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORARRAY_H
 
-#include <yave/graphics/descriptors/DescriptorSetCommon.h>
+#include <yave/graphics/descriptors/DescriptorSetProxy.h>
 
 #include <y/core/HashMap.h>
 #include <y/core/Vector.h>
@@ -73,7 +73,7 @@ class DescriptorArray : NonMovable {
 
         usize descriptor_count() const;
 
-        DescriptorSetCommon descriptor_set() const;
+        DescriptorSetProxy descriptor_set() const;
 
         VkDescriptorSetLayout descriptor_set_layout() const;
 

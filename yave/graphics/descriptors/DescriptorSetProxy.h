@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETCOMMON_H
-#define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETCOMMON_H
+#ifndef YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETPROXY_H
+#define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETPROXY_H
 
 #include "Descriptor.h"
 
@@ -28,20 +28,20 @@ SOFTWARE.
 
 namespace yave {
 
-struct DescriptorSetCommon final : NonMovable {
-    DescriptorSetCommon() = default;
+struct DescriptorSetProxy final : NonMovable {
+    DescriptorSetProxy() = default;
 
-    DescriptorSetCommon(VkDescriptorSet set) : _set(set) {
+    DescriptorSetProxy(VkDescriptorSet set) : _set(set) {
     }
 
-    DescriptorSetCommon(core::Span<Descriptor> descriptors) : _descriptors(descriptors) {
+    DescriptorSetProxy(core::Span<Descriptor> descriptors) : _descriptors(descriptors) {
     }
 
-    DescriptorSetCommon(const Descriptor& descriptor) : DescriptorSetCommon(core::Span(descriptor)) {
+    DescriptorSetProxy(const Descriptor& descriptor) : DescriptorSetProxy(core::Span(descriptor)) {
     }
 
     template<usize N>
-    DescriptorSetCommon(std::array<Descriptor, N> descriptors) : _descriptors(descriptors) {
+    DescriptorSetProxy(std::array<Descriptor, N> descriptors) : _descriptors(descriptors) {
     }
 
     bool is_null() const {
@@ -57,7 +57,7 @@ struct DescriptorSetCommon final : NonMovable {
 };
 
 template<typename... Args>
-DescriptorSetCommon make_descriptor_set(Args&&... args) {
+DescriptorSetProxy make_descriptor_set(Args&&... args) {
     return std::array<Descriptor, sizeof...(args)>{
         Descriptor(y_fwd(args))...
     };
@@ -65,5 +65,5 @@ DescriptorSetCommon make_descriptor_set(Args&&... args) {
 
 }
 
-#endif // YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETCOMMON_H
+#endif // YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORSETPROXY_H
 

@@ -164,7 +164,7 @@ static FrameGraphMutableImageId upsample_mini_ao(FrameGraph& framegraph,
     builder.add_uniform_input(lo_depth);
     builder.add_uniform_input(hi_depth);
     builder.add_storage_output(upsampled);
-    builder.add_inline_input(InlineDescriptor(UpsampleParams{step_size, noise_filter_weight, blur_tolerance, upsample_tolerance}));
+    builder.add_inline_input(UpsampleParams{step_size, noise_filter_weight, blur_tolerance, upsample_tolerance});
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[merge ? DeviceResources::SSAOUpsampleMergeProgram : DeviceResources::SSAOUpsampleProgram];
         recorder.dispatch_threads(program, lo_size + math::Vec2ui(2), self->descriptor_set());
@@ -182,7 +182,7 @@ static FrameGraphImageId compute_mini_ao(FrameGraph& framegraph, FrameGraphImage
 
     builder.add_uniform_input(linear_depth);
     builder.add_storage_output(ao);
-    builder.add_inline_input(InlineDescriptor(compute_ao_params(tan_half_fov, size.x())));
+    builder.add_inline_input(compute_ao_params(tan_half_fov, size.x()));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::SSAOProgram];
         recorder.dispatch_threads(program, size, self->descriptor_set());
@@ -234,7 +234,7 @@ static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass&
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_uniform_input(sample_dir_buffer);
-    builder.add_inline_input(InlineDescriptor(std::pair<u32, float>{ray_count, max_dist}));
+    builder.add_inline_input(std::pair<u32, float>{ray_count, max_dist});
     builder.add_descriptor_binding(Descriptor(tlas));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         recorder.dispatch_threads(device_resources()[DeviceResources::RTAOProgram], size, self->descriptor_set());
@@ -263,7 +263,7 @@ static FrameGraphImageId filter_ao(FrameGraph& framegraph, const GBufferPass& gb
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_storage_output(filtered);
-    builder.add_inline_input(InlineDescriptor(Params{weights, vertical ? math::Vec2i(0, 1) : math::Vec2i(1, 0)}));
+    builder.add_inline_input(Params{weights, vertical ? math::Vec2i(0, 1) : math::Vec2i(1, 0)});
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         recorder.dispatch_threads(device_resources()[DeviceResources::FilterAOProgram], size, self->descriptor_set());
     });

@@ -81,7 +81,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
             core::ScratchVector<Descriptor> descriptors(self->descriptor_set()._descriptors.size() + 1);
             std::copy_n(self->descriptor_set()._descriptors.begin(), self->descriptor_set()._descriptors.size(), std::back_inserter(descriptors));
             descriptors.emplace_back(InlineDescriptor(uv));
-            recorder.dispatch(program, math::Vec3ui(1), DescriptorSetCommon(descriptors));
+            recorder.dispatch(program, math::Vec3ui(1), DescriptorSetProxy(descriptors));
         });
     }
 

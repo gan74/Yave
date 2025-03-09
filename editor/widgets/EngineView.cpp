@@ -178,7 +178,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         const auto gbuffer = renderer.renderer.gbuffer;
         builder.add_input_usage(output_image, ImageUsage::TransferSrcBit);
         builder.add_color_output(output_image);
-        builder.add_inline_input(InlineDescriptor(_view));
+        builder.add_inline_input(_view);
         builder.add_uniform_input(renderer.final);
         builder.add_uniform_input(gbuffer.depth);
         builder.add_uniform_input(gbuffer.motion);

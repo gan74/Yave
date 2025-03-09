@@ -169,7 +169,7 @@ struct CameraBufferPass;
 struct DefaultRenderer;
 struct DenoisePass;
 struct DenoiseSettings;
-struct DescriptorSetCommon;
+struct DescriptorSetProxy;
 struct DeviceProperties;
 struct DirectVertex;
 struct DownsamplePass;

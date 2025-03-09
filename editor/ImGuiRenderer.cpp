@@ -115,7 +115,7 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
         return make_descriptor_set(Descriptor(*tex, SamplerType::LinearClamp), uniform_buffer);
     };
 
-    const DescriptorSetCommon default_set = create_descriptor_set(&_font_view);
+    const DescriptorSetProxy default_set = create_descriptor_set(&_font_view);
 
     const auto setup_state = [&](const TextureView* tex) {
         const MaterialTemplate* material = resources()[EditorResources::ImGuiMaterialTemplate];
