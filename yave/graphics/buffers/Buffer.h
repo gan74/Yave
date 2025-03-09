@@ -139,7 +139,7 @@ class SubBuffer : public SubBufferBase {
         template<BufferUsage U, MemoryType M>
         SubBuffer(const SubBuffer<U, M>& buffer, u64 byte_len, u64 byte_off) : SubBufferBase(buffer, byte_len, byte_off) {
             static_assert(is_compatible(U, M));
-            y_debug_assert(buffer.byte_size() >= byte_len);
+            y_debug_assert(buffer.byte_size() >= byte_len + byte_off);
             y_debug_assert(byte_offset() % byte_alignment() == 0);
             if constexpr(M == MemoryType::CpuVisible) {
                 y_debug_assert(byte_offset() % host_side_alignment() == 0);

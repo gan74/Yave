@@ -25,29 +25,9 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferPool.h>
 #include <yave/graphics/device/LifetimeManager.h>
 
+#include <y/utils/memory.h>
+
 namespace yave {
-
-
-bool ResourceFence::operator==(const ResourceFence& other) const {
-    return _value == other._value;
-}
-
-bool ResourceFence::operator!=(const ResourceFence& other) const {
-    return _value != other._value;
-}
-
-bool ResourceFence::operator<(const ResourceFence& other) const {
-    return _value < other._value;
-}
-
-bool ResourceFence::operator<=(const ResourceFence& other) const {
-    return _value <= other._value;
-}
-
-ResourceFence::ResourceFence(u64 v) : _value(v) {
-}
-
-
 
 CmdBufferData::CmdBufferData(VkCommandBuffer buffer, CmdBufferPool* pool, VkCommandBufferLevel level) :
         _cmd_buffer(buffer),
@@ -64,6 +44,25 @@ CmdBufferData::~CmdBufferData() {
 void CmdBufferData::push_secondary(CmdBufferData* data) {
     y_debug_assert(!is_secondary());
     _secondaries << data;
+}
+
+CmdBufferData::InlineUniformSubBuffer CmdBufferData::alloc_inline_buffer(usize size) {
+    y_profile();
+
+    size = align_up_to(size, usize(InlineUniformSubBuffer::byte_alignment()));
+
+    if(_inline_buffers.is_empty() || _inline_buffers.last()->byte_size() - _inline_buffer_offset < size) {
+        _inline_buffers.emplace_back(_pool->alloc_inline_uniform_buffer());
+        _inline_buffer_offset = 0;
+    }
+
+    InlineUniformBuffer& buffer = *_inline_buffers.last();
+    y_debug_assert(size <= buffer.byte_size());
+
+    InlineUniformSubBuffer sub_buffer(buffer, size, _inline_buffer_offset);
+    _inline_buffer_offset += size;
+
+    return sub_buffer;
 }
 
 bool CmdBufferData::is_null() const {

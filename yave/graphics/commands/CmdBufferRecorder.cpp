@@ -42,41 +42,6 @@ SOFTWARE.
 
 namespace yave {
 
-
-static void bind_descriptor_set(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point, VkPipelineLayout layout, u32 set_index, const DescriptorSetProxy& ds) {
-    const auto& descriptors = ds._descriptors;
-    const usize descriptor_count = descriptors.size();
-    if(descriptor_count) {
-        core::ScratchPad<VkWriteDescriptorSet> writes(descriptor_count);
-        core::ScratchPad<VkDescriptorBufferInfo> buffer_infos(descriptor_count);
-        core::ScratchPad<VkWriteDescriptorSetAccelerationStructureKHR> accel_structs(descriptor_count);
-
-        for(usize i = 0; i != descriptor_count; ++i) {
-            descriptors[i].fill_write(u32(i), writes[i], buffer_infos[i], accel_structs[i]);
-        }
-
-        vkCmdPushDescriptorSet(
-            cmd_buffer,
-            bind_point,
-            layout,
-            set_index,
-            u32(descriptor_count),
-            writes.data()
-        );
-    } else {
-        const VkDescriptorSet set = ds.vk_descriptor_set();
-        vkCmdBindDescriptorSets(
-            cmd_buffer,
-            bind_point,
-            layout,
-            set_index,
-            1, &set,
-            0, nullptr
-        );
-    }
-}
-
-
 // -------------------------------------------------- CmdBufferRegion --------------------------------------------------
 
 CmdBufferRegion::CmdBufferRegion(const CmdBufferRecorderBase& cmd_buffer, CmdTimestampPool* ts_pool, CmdQueue* queue, const char* name, const math::Vec4& color) :
@@ -162,8 +127,7 @@ void RenderPassRecorder::bind_material_template(const MaterialTemplate* material
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vk_pipeline());
 
     for(usize i = 0; i != descriptor_sets.size(); ++i) {
-        bind_descriptor_set(
-            vk_cmd_buffer(),
+        _cmd_buffer.bind_descriptor_set(
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             pipeline.vk_pipeline_layout(),
             u32(i),
@@ -536,6 +500,47 @@ void CmdBufferRecorderBase::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuf
     vkCmdCopyBuffer(vk_cmd_buffer(), src.vk_buffer(), dst.vk_buffer(), 1, &copy);
 }
 
+void CmdBufferRecorderBase::bind_descriptor_set(VkPipelineBindPoint bind_point, VkPipelineLayout layout, u32 set_index, const DescriptorSetProxy& ds) {
+    y_profile();
+
+    const auto& descriptors = ds._descriptors;
+    const usize descriptor_count = descriptors.size();
+    if(descriptor_count) {
+        core::ScratchPad<VkWriteDescriptorSet> writes(descriptor_count);
+        core::ScratchPad<Descriptor::InlineBlockWriteData> inline_block_writes(descriptor_count);
+        core::ScratchPad<VkWriteDescriptorSetAccelerationStructureKHR> accel_structs(descriptor_count);
+
+        for(usize i = 0; i != descriptor_count; ++i) {
+            const Descriptor& desc = descriptors[i];
+
+            if(desc.is_inline_block()) {
+                inline_block_writes[i].buffer = _data->alloc_inline_buffer(desc.descriptor_info().inline_block.size);
+            }
+
+            desc.fill_write(u32(i), writes[i], inline_block_writes[i], accel_structs[i]);
+        }
+
+        vkCmdPushDescriptorSet(
+            vk_cmd_buffer(),
+            bind_point,
+            layout,
+            set_index,
+            u32(descriptor_count),
+            writes.data()
+        );
+    } else {
+        const VkDescriptorSet set = ds.vk_descriptor_set();
+        vkCmdBindDescriptorSets(
+            vk_cmd_buffer(),
+            bind_point,
+            layout,
+            set_index,
+            1, &set,
+            0, nullptr
+        );
+    }
+}
+
 void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetProxy> descriptor_sets) {
     Y_VK_CMD
 
@@ -545,7 +550,6 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
 
     for(usize i = 0; i != descriptor_sets.size(); ++i) {
         bind_descriptor_set(
-            vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_COMPUTE,
             program.vk_pipeline_layout(),
             u32(i),

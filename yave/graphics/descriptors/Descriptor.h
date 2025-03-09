@@ -107,6 +107,11 @@ class Descriptor {
             usize size;
         };
 
+        struct InlineBlockWriteData {
+            SubBuffer<BufferUsage::UniformBit, MemoryType::CpuVisible> buffer;
+            VkDescriptorBufferInfo buffer_info;
+        };
+
         union DescriptorInfo {
             VkDescriptorImageInfo image;
             VkDescriptorBufferInfo buffer;
@@ -201,7 +206,7 @@ class Descriptor {
             return is_acceleration_structure(_type);
         }
 
-        void fill_write(u32 index, VkWriteDescriptorSet& write, VkDescriptorBufferInfo& inline_buffer_info, VkWriteDescriptorSetAccelerationStructureKHR& accel_struct) const {
+        void fill_write(u32 index, VkWriteDescriptorSet& write, InlineBlockWriteData& inline_buffer_data, VkWriteDescriptorSetAccelerationStructureKHR& accel_struct) const {
             write = vk_struct();
             write.dstBinding = index;
             write.descriptorCount = 1;
@@ -212,12 +217,11 @@ class Descriptor {
             } else if(is_image()) {
                 write.pImageInfo = &descriptor_info().image;
             } else if(is_inline_block()) {
-                UniformBuffer<MemoryType::CpuVisible> buffer(_info.inline_block.size);
-                std::memcpy(buffer.map_bytes(MappingAccess::WriteOnly).data(), _info.inline_block.data, _info.inline_block.size);
-                inline_buffer_info = buffer.vk_descriptor_info();
+                std::memcpy(inline_buffer_data.buffer.map_bytes(MappingAccess::WriteOnly).data(), _info.inline_block.data, _info.inline_block.size);
+                inline_buffer_data.buffer_info = inline_buffer_data.buffer.vk_descriptor_info();
                 write.descriptorCount = 1;
                 write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                write.pBufferInfo = &inline_buffer_info;
+                write.pBufferInfo = &inline_buffer_data.buffer_info;
             } else if(is_acceleration_structure()) {
                 accel_struct = vk_struct();
                 accel_struct.accelerationStructureCount = 1;

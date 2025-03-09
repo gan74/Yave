@@ -90,6 +90,11 @@ void CmdBufferPool::release(CmdBufferData* data) {
     y_debug_assert(data->is_ready());
     y_debug_assert(data->_secondaries.is_empty());
 
+    _inline_buffers.locked([&](auto&& buffers) {
+        std::move(data->_inline_buffers.begin(), data->_inline_buffers.end(), std::back_inserter(buffers));
+        data->_inline_buffers.make_empty();
+    });
+
     (data->is_secondary() ? _secondary : _primary).released.locked([&](auto&& released) { released << data; });
 }
 
@@ -126,6 +131,23 @@ CmdBufferData* CmdBufferPool::create_data(Level& level) {
     vk_check(vkAllocateCommandBuffers(vk_device(), &allocate_info, &buffer));
 
     return level.cmd_buffers.emplace_back(std::make_unique<CmdBufferData>(buffer, this, level.level)).get();
+}
+
+std::unique_ptr<CmdBufferPool::InlineUniformBuffer> CmdBufferPool::alloc_inline_uniform_buffer() {
+    y_profile();
+
+    auto buffer = _inline_buffers.locked([](auto& buffers) -> std::unique_ptr<InlineUniformBuffer> {
+        if(buffers.is_empty()) {
+            return nullptr;
+        }
+        return buffers.pop();
+    });
+
+    if(buffer) {
+        return buffer;
+    }
+
+    return std::make_unique<InlineUniformBuffer>(InlineDescriptor::max_byte_size * 4);
 }
 
 CmdBufferRecorder CmdBufferPool::create_cmd_buffer(bool secondary) {

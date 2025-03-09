@@ -25,6 +25,8 @@ SOFTWARE.
 
 #include "Timeline.h"
 
+#include <yave/graphics/buffers/buffers.h>
+
 #include <y/core/Vector.h>
 
 #include <atomic>
@@ -36,26 +38,29 @@ class ResourceFence {
     public:
         ResourceFence() = default;
 
-        bool operator==(const ResourceFence& other) const;
-        bool operator!=(const ResourceFence& other) const;
-
-        bool operator<(const ResourceFence& other) const;
-        bool operator<=(const ResourceFence& other) const;
+        auto operator<=>(const ResourceFence&) const = default;
 
     private:
         friend class LifetimeManager;
 
-        ResourceFence(u64 v);
+        ResourceFence(u64 v) : _value(v) {
+        }
 
         u64 _value = 0;
 };
 
 class CmdBufferData final : NonMovable {
     public:
+        using InlineUniformBuffer = UniformBuffer<MemoryType::CpuVisible>;
+        using InlineUniformSubBuffer = SubBuffer<BufferUsage::UniformBit, MemoryType::CpuVisible>;
+
+
         CmdBufferData(VkCommandBuffer buffer, CmdBufferPool* pool, VkCommandBufferLevel level);
         ~CmdBufferData();
 
         void push_secondary(CmdBufferData* data);
+
+        InlineUniformSubBuffer alloc_inline_buffer(usize size);
 
         bool is_null() const;
         bool is_secondary() const;
@@ -86,7 +91,11 @@ class CmdBufferData final : NonMovable {
         ResourceFence _resource_fence;
         TimelineFence _timeline_fence;
 
-        core::SmallVector<CmdBufferData*, 8> _secondaries;
+        core::Vector<CmdBufferData*> _secondaries;
+
+        core::SmallVector<std::unique_ptr<InlineUniformBuffer>, 4> _inline_buffers;
+        u64 _inline_buffer_offset = 0;
+
         const VkCommandBufferLevel _level;
 };
 

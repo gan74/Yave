@@ -35,8 +35,9 @@ SOFTWARE.
 namespace yave {
 
 class CmdBufferPool : NonMovable {
-
     public:
+        using InlineUniformBuffer = CmdBufferData::InlineUniformBuffer;
+
         CmdBufferPool(CmdQueue* queue);
         ~CmdBufferPool();
 
@@ -48,6 +49,7 @@ class CmdBufferPool : NonMovable {
 
     private:
         friend class LifetimeManager;
+        friend class CmdBufferData;
 
         struct Level {
             Level(VkCommandBufferLevel lvl) : level(lvl) {
@@ -63,10 +65,14 @@ class CmdBufferPool : NonMovable {
         CmdBufferData* alloc(Level& level);
         CmdBufferData* create_data(Level& level);
 
+        std::unique_ptr<CmdBufferPool::InlineUniformBuffer> alloc_inline_uniform_buffer();
+
         VkHandle<VkCommandPool> _pool;
 
         Level _primary;
         Level _secondary;
+
+        concurrent::Mutexed<core::Vector<std::unique_ptr<CmdBufferPool::InlineUniformBuffer>>> _inline_buffers;
 
         CmdQueue* _queue = nullptr;
 

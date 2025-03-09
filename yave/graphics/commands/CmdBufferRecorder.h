@@ -149,6 +149,8 @@ class CmdBufferRecorderBase : NonMovable {
 
         void swap(CmdBufferRecorderBase& other);
 
+        void bind_descriptor_set(VkPipelineBindPoint bind_point, VkPipelineLayout layout, u32 set_index, const DescriptorSetProxy& ds);
+
         void end_renderpass();
         void check_no_renderpass() const;
 
