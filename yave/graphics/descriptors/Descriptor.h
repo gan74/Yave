@@ -177,29 +177,12 @@ class Descriptor {
                 _info(data, size) {
         }
 
-
-
-        VkDescriptorSetLayoutBinding descriptor_set_layout_binding(u32 index) const {
-            VkDescriptorSetLayoutBinding binding = {};
-            {
-                binding.binding = index;
-                binding.descriptorCount = descriptor_count();
-                binding.descriptorType = _type;
-                binding.stageFlags = VK_SHADER_STAGE_ALL;
-            }
-            return binding;
-        }
-
         const DescriptorInfo& descriptor_info() const {
             return _info;
         }
 
         VkDescriptorType vk_descriptor_type() const {
             return _type;
-        }
-
-        u32 descriptor_count() const {
-            return is_inline_block() ? u32(_info.inline_block.size) : 1;
         }
 
         bool is_buffer() const {
@@ -221,7 +204,7 @@ class Descriptor {
         void fill_write(u32 index, VkWriteDescriptorSet& write, VkDescriptorBufferInfo& inline_buffer_info, VkWriteDescriptorSetAccelerationStructureKHR& accel_struct) const {
             write = vk_struct();
             write.dstBinding = index;
-            write.descriptorCount = descriptor_count();
+            write.descriptorCount = 1;
             write.descriptorType = vk_descriptor_type();
 
             if(is_buffer()) {
@@ -235,31 +218,6 @@ class Descriptor {
                 write.descriptorCount = 1;
                 write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 write.pBufferInfo = &inline_buffer_info;
-            } else if(is_acceleration_structure()) {
-                accel_struct = vk_struct();
-                accel_struct.accelerationStructureCount = 1;
-                accel_struct.pAccelerationStructures = &_info.accel;
-                write.pNext = &accel_struct;
-            } else {
-                y_fatal("Unknown descriptor type");
-            }
-        }
-
-        void fill_write(u32 index, VkWriteDescriptorSet& write, VkWriteDescriptorSetInlineUniformBlock& inline_block, VkWriteDescriptorSetAccelerationStructureKHR& accel_struct) const {
-            write = vk_struct();
-            write.dstBinding = index;
-            write.descriptorCount = descriptor_count();
-            write.descriptorType = vk_descriptor_type();
-            
-            if(is_buffer()) {
-                write.pBufferInfo = &descriptor_info().buffer;
-            } else if(is_image()) {
-                write.pImageInfo = &descriptor_info().image;
-            } else if(is_inline_block()) {
-                inline_block = vk_struct();
-                inline_block.pData = _info.inline_block.data;
-                inline_block.dataSize = u32(_info.inline_block.size);
-                write.pNext = &inline_block;
             } else if(is_acceleration_structure()) {
                 accel_struct = vk_struct();
                 accel_struct.accelerationStructureCount = 1;
