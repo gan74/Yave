@@ -257,8 +257,8 @@ usize DescriptorArray::descriptor_count() const {
     return allocator.locked([&](auto&& allocator) { return allocator.descriptors.size(); });
 }
 
-DescriptorSetBase DescriptorArray::descriptor_set() const {
-    return DescriptorArraySet(_set);
+DescriptorSetCommon DescriptorArray::descriptor_set() const {
+    return DescriptorSetCommon(_set);
 }
 
 VkDescriptorSetLayout DescriptorArray::descriptor_set_layout() const {

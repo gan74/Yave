@@ -78,10 +78,10 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const auto& program = resources()[EditorResources::PickingProgram];
 
-            core::ScratchVector<Descriptor> descs(self->descriptor_set()._descriptors.size() + 1);
-            std::copy_n(self->descriptor_set()._descriptors.begin(), self->descriptor_set()._descriptors.size(), std::back_inserter(descs));
-            descs.emplace_back(InlineDescriptor(uv));
-            recorder.dispatch(program, math::Vec3ui(1), DescriptorSet(descs));
+            core::ScratchVector<Descriptor> descriptors(self->descriptor_set()._descriptors.size() + 1);
+            std::copy_n(self->descriptor_set()._descriptors.begin(), self->descriptor_set()._descriptors.size(), std::back_inserter(descriptors));
+            descriptors.emplace_back(InlineDescriptor(uv));
+            recorder.dispatch(program, math::Vec3ui(1), DescriptorSetCommon(descriptors));
         });
     }
 

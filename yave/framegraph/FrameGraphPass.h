@@ -25,7 +25,7 @@ SOFTWARE.
 #include "FrameGraphResourceId.h"
 #include "FrameGraphDescriptorBinding.h"
 
-#include <yave/graphics/descriptors/DescriptorSet.h>
+#include <yave/graphics/descriptors/DescriptorSetCommon.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/barriers/PipelineStage.h>
 
@@ -56,8 +56,7 @@ class FrameGraphPass final : NonMovable {
         const FrameGraphFrameResources& resources() const;
 
         const Framebuffer& framebuffer() const;
-        core::Span<DescriptorSet> descriptor_sets() const;
-        const DescriptorSet& descriptor_set() const;
+        DescriptorSetCommon descriptor_set(usize index = 0) const;
 
         void render(CmdBufferRecorder& recorder);
 
@@ -86,7 +85,7 @@ class FrameGraphPass final : NonMovable {
         core::FlatHashMap<FrameGraphBufferId, ResourceUsageInfo, hash_t> _buffers;
 
         core::SmallVector<core::SmallVector<FrameGraphDescriptorBinding, 8>, 4> _bindings;
-        core::SmallVector<DescriptorSet, 4> _descriptor_sets;
+        core::SmallVector<core::SmallVector<Descriptor, 8>, 2> _descriptor_sets;
 
         core::SmallVector<std::pair<FrameGraphMutableBufferId, FrameGraphInlineBlock>, 4> _map_data;
 

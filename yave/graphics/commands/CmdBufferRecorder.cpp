@@ -44,7 +44,7 @@ SOFTWARE.
 namespace yave {
 
 
-static void bind_descriptor_set(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point, VkPipelineLayout layout, u32 set_index, const DescriptorSetBase& ds) {
+static void bind_descriptor_set(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point, VkPipelineLayout layout, u32 set_index, const DescriptorSetCommon& ds) {
     const auto& descriptors = ds._descriptors;
     const usize descriptor_count = descriptors.size();
     if(descriptor_count) {
@@ -156,7 +156,7 @@ RenderPassRecorder::~RenderPassRecorder() {
     _cmd_buffer.end_renderpass();
 }
 
-void RenderPassRecorder::bind_material_template(const MaterialTemplate* material_template, core::Span<DescriptorSetBase> descriptor_sets, bool bind_main_ds) {
+void RenderPassRecorder::bind_material_template(const MaterialTemplate* material_template, core::Span<DescriptorSetCommon> descriptor_sets) {
     Y_VK_CMD
 
     const GraphicPipeline& pipeline = material_template->compile(*_cmd_buffer._render_pass);
@@ -537,7 +537,7 @@ void CmdBufferRecorderBase::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuf
     vkCmdCopyBuffer(vk_cmd_buffer(), src.vk_buffer(), dst.vk_buffer(), 1, &copy);
 }
 
-void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetCommon> descriptor_sets) {
     Y_VK_CMD
 
     check_no_renderpass();
@@ -557,11 +557,11 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
     vkCmdDispatch(vk_cmd_buffer(), size.x(), size.y(), size.z());
 }
 
-void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetCommon> descriptor_sets) {
     dispatch_threads(program, math::Vec3ui(size, 1), descriptor_sets);
 }
 
-void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetCommon> descriptor_sets) {
     math::Vec3ui dispatch_threads;
     const math::Vec3ui program_size = program.local_size();
     for(usize i = 0; i != 3; ++i) {
@@ -615,7 +615,7 @@ void CmdBufferRecorderBase::dispatch_threads(const ComputeProgram& program, cons
 #endif
 
 
-void CmdBufferRecorderBase::raytrace(const RaytracingProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets) {
+void CmdBufferRecorderBase::raytrace(const RaytracingProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetCommon> descriptor_sets) {
     Y_VK_CMD
 
     check_no_renderpass();
@@ -624,7 +624,7 @@ void CmdBufferRecorderBase::raytrace(const RaytracingProgram& program, const mat
 
     if(!descriptor_sets.is_empty()) {
         core::ScratchPad<VkDescriptorSet> vk_sets(descriptor_sets.size());
-        std::transform(descriptor_sets.begin(), descriptor_sets.end(), vk_sets.begin(), [](const DescriptorSetBase& ds) { return ds.vk_descriptor_set(); });
+        std::transform(descriptor_sets.begin(), descriptor_sets.end(), vk_sets.begin(), [](const DescriptorSetCommon& ds) { return ds.vk_descriptor_set(); });
 
         vkCmdBindDescriptorSets(
             vk_cmd_buffer(),

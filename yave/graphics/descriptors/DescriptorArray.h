@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORARRAY_H
 #define YAVE_GRAPHICS_DESCRIPTORS_DESCRIPTORARRAY_H
 
-#include <yave/graphics/descriptors/DescriptorSetBase.h>
+#include <yave/graphics/descriptors/DescriptorSetCommon.h>
 
 #include <y/core/HashMap.h>
 #include <y/core/Vector.h>
@@ -34,12 +34,6 @@ class DescriptorArray : NonMovable {
     struct Entry {
         u32 index = 0;
         u32 ref_count = 0;
-    };
-
-    struct DescriptorArraySet : DescriptorSetBase {
-        DescriptorArraySet(VkDescriptorSet set) {
-            _set = set;
-        }
     };
 
     union DescriptorKey {
@@ -79,7 +73,7 @@ class DescriptorArray : NonMovable {
 
         usize descriptor_count() const;
 
-        DescriptorSetBase descriptor_set() const;
+        DescriptorSetCommon descriptor_set() const;
 
         VkDescriptorSetLayout descriptor_set_layout() const;
 

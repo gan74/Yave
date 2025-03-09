@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <yave/graphics/framebuffer/Viewport.h>
 #include <yave/graphics/images/ImageView.h>
-#include <yave/graphics/descriptors/DescriptorSetBase.h>
+#include <yave/graphics/descriptors/DescriptorSetCommon.h>
 #include <yave/graphics/buffers/Buffer.h>
 
 namespace yave {
@@ -60,7 +60,7 @@ class RenderPassRecorder final : NonMovable {
         ~RenderPassRecorder();
 
         // specific
-        void bind_material_template(const MaterialTemplate* material_template, core::Span<DescriptorSetBase> descriptor_sets, bool bind_main_ds = false);
+        void bind_material_template(const MaterialTemplate* material_template, core::Span<DescriptorSetCommon> descriptor_sets);
 
         void draw(const MeshDrawData& draw_data, u32 instance_count = 1, u32 instance_index = 0);
 
@@ -132,11 +132,11 @@ class CmdBufferRecorderBase : NonMovable {
         void unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuffer dst);
 
     protected:
-        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
-        void dispatch_threads(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetBase> descriptor_sets);
-        void dispatch_threads(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+        void dispatch(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetCommon> descriptor_sets);
+        void dispatch_threads(const ComputeProgram& program, const math::Vec3ui& size, core::Span<DescriptorSetCommon> descriptor_sets);
+        void dispatch_threads(const ComputeProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetCommon> descriptor_sets);
 
-        void raytrace(const RaytracingProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetBase> descriptor_sets);
+        void raytrace(const RaytracingProgram& program, const math::Vec2ui& size, core::Span<DescriptorSetCommon> descriptor_sets);
 
         TimelineFence submit();
         void submit_async();

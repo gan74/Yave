@@ -165,7 +165,10 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc
         switch(pass_type) {
             case PassType::Depth:
             case PassType::GBuffer: {
-                const std::array<DescriptorSetBase, 2> desc_sets = {pass->descriptor_sets()[desc_set_index], texture_library().descriptor_set()};
+                const std::array<DescriptorSetCommon, 2> desc_sets = {
+                    pass->descriptor_set(desc_set_index),
+                    texture_library().descriptor_set()
+                };
 
                 usize start_of_batch = 0;
                 const MaterialTemplate* prev_template = batches[0].material_template;
@@ -176,7 +179,7 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc
 
                     if(const usize batch_size = index - start_of_batch) {
                         if(prev_template) {
-                            render_pass.bind_material_template(prev_template, desc_sets, true);
+                            render_pass.bind_material_template(prev_template, desc_sets);
                             render_pass.draw_indirect(IndirectSubBuffer(buffer, batch_size, start_of_batch));
                         }
 
@@ -205,7 +208,7 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc
                     indices_mapping[i] = batch.indices;
                 }
                 y_debug_assert(buffer.size() == batch_count);
-                render_pass.bind_material_template(device_resources()[DeviceResources::IdMaterialTemplate], pass->descriptor_sets()[desc_set_index], true);
+                render_pass.bind_material_template(device_resources()[DeviceResources::IdMaterialTemplate], pass->descriptor_set(desc_set_index));
                 render_pass.draw_indirect(buffer);
             } break;
         }
