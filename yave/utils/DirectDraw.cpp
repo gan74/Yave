@@ -158,7 +158,7 @@ void DirectDraw::render(RenderPassRecorder& recorder, const math::Matrix4<>& vie
 
     const auto* material = device_resources()[DeviceResources::WireFrameMaterialTemplate];
     const auto descriptors = make_descriptor_set(InlineDescriptor(view_proj));
-    recorder.bind_material_template(material, descriptors);
+    recorder.bind_material_template(material, DescriptorSetProxy(descriptors));
     recorder.bind_attrib_buffers({vertices});
     recorder.draw_array(vertex_count);
 }

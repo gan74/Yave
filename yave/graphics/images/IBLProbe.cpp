@@ -75,7 +75,7 @@ static void fill_probe(core::MutableSpan<ProbeMipView> views, const Image<ImageU
                 out_view,
                 InlineDescriptor(math::Vec2(roughness, out_view.size().x()))
             );
-            recorder.dispatch_threads(conv_program, math::Vec3ui(out_view.size(), 6), descriptors);
+            recorder.dispatch_threads(conv_program, math::Vec3ui(out_view.size(), 6), DescriptorSetProxy(descriptors));
         }
     }
 

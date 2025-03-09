@@ -189,7 +189,7 @@ static Texture render_texture(const AssetPtr<Texture>& tex) {
     StorageTexture out = StorageTexture(ImageFormat(VK_FORMAT_R8G8B8A8_UNORM), math::Vec2ui(ThumbmailRenderer::thumbmail_size));
     {
         const auto descriptors = make_descriptor_set(Descriptor(*tex, SamplerType::LinearClamp), StorageView(out));
-        recorder.dispatch_threads(device_resources()[DeviceResources::CopyProgram], out.size(), descriptors);
+        recorder.dispatch_threads(device_resources()[DeviceResources::CopyProgram], out.size(), DescriptorSetProxy(descriptors));
     }
     recorder.submit().wait();
     return out;

@@ -24,7 +24,6 @@ SOFTWARE.
 
 #include "Descriptor.h"
 
-#include <y/core/Vector.h>
 
 namespace yave {
 
@@ -41,23 +40,19 @@ struct DescriptorSetProxy final : NonMovable {
     }
 
     template<usize N>
-    DescriptorSetProxy(std::array<Descriptor, N> descriptors) : _descriptors(descriptors) {
-    }
-
-    bool is_null() const {
-        return !_set;
+    DescriptorSetProxy(const std::array<Descriptor, N>& descriptors) : _descriptors(core::Span<Descriptor>(descriptors)) {
     }
 
     VkDescriptorSet vk_descriptor_set() const {
         return _set;
     }
 
-    core::Vector<Descriptor> _descriptors;
+    core::Span<Descriptor> _descriptors;
     VkDescriptorSet _set = {};
 };
 
 template<typename... Args>
-DescriptorSetProxy make_descriptor_set(Args&&... args) {
+auto make_descriptor_set(Args&&... args) {
     return std::array<Descriptor, sizeof...(args)>{
         Descriptor(y_fwd(args))...
     };

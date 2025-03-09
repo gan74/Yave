@@ -115,15 +115,11 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
         return make_descriptor_set(Descriptor(*tex, SamplerType::LinearClamp), uniform_buffer);
     };
 
-    const DescriptorSetProxy default_set = create_descriptor_set(&_font_view);
+    const auto default_set = create_descriptor_set(&_font_view);
 
     const auto setup_state = [&](const TextureView* tex) {
         const MaterialTemplate* material = resources()[EditorResources::ImGuiMaterialTemplate];
-        if(tex) {
-            recorder.bind_material_template(material, create_descriptor_set(tex));
-        } else {
-            recorder.bind_material_template(material, default_set);
-        }
+        recorder.bind_material_template(material, DescriptorSetProxy(tex ? create_descriptor_set(tex) : default_set));
     };
 
     usize index_offset = 0;
