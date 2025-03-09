@@ -6,17 +6,17 @@ struct PickingOutput {
 };
 
 
-[[vk::binding(0, 0)]]
+[[vk::binding(0)]]
 Sampler2D<float> in_depth;
 
-[[vk::binding(1, 0)]]
+[[vk::binding(1)]]
 Sampler2D<uint> in_id;
 
-[[vk::binding(2, 0)]]
+[[vk::binding(2)]]
 RWStructuredBuffer<PickingOutput> out;
 
-[[vk::binding(0, 1)]]
-cbuffer Data_Inline {
+[[vk::binding(3)]]
+cbuffer Params {
     float2 uv;
 };
 

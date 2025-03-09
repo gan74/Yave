@@ -62,8 +62,6 @@ class RenderPassRecorder final : NonMovable {
         // specific
         void bind_material_template(const MaterialTemplate* material_template, core::Span<DescriptorSetBase> descriptor_sets, bool bind_main_ds = false);
 
-        void set_main_descriptor_set(DescriptorSetBase ds_set);
-
         void draw(const MeshDrawData& draw_data, u32 instance_count = 1, u32 instance_index = 0);
 
         void draw(const VkDrawIndexedIndirectCommand& indirect);
@@ -96,7 +94,6 @@ class RenderPassRecorder final : NonMovable {
 
         CmdBufferRecorder& _cmd_buffer;
         Viewport _viewport;
-        DescriptorSetBase _main_descriptor_set = {};
 
         struct {
             const MeshDrawBuffers* mesh_buffers = nullptr;

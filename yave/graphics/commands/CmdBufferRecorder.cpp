@@ -44,11 +44,10 @@ SOFTWARE.
 namespace yave {
 
 
-static void bind_descriptor_set(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point, VkPipelineLayout layout, u32 set_index, const DescriptorSetBase& ds, bool use_push_descriptors) {
-    if(use_push_descriptors) {
-        const auto& descriptors = ds._descriptors;
-
-        const usize descriptor_count = descriptors.size();
+static void bind_descriptor_set(VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point, VkPipelineLayout layout, u32 set_index, const DescriptorSetBase& ds) {
+    const auto& descriptors = ds._descriptors;
+    const usize descriptor_count = descriptors.size();
+    if(descriptor_count) {
         core::ScratchPad<VkWriteDescriptorSet> writes(descriptor_count);
         core::ScratchPad<VkDescriptorBufferInfo> buffer_infos(descriptor_count);
         core::ScratchPad<VkWriteDescriptorSetAccelerationStructureKHR> accel_structs(descriptor_count);
@@ -163,35 +162,15 @@ void RenderPassRecorder::bind_material_template(const MaterialTemplate* material
     const GraphicPipeline& pipeline = material_template->compile(*_cmd_buffer._render_pass);
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vk_pipeline());
 
-    if(!_main_descriptor_set.is_null() && bind_main_ds) {
-        bind_descriptor_set(
-            vk_cmd_buffer(),
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipeline.vk_pipeline_layout(),
-            0,
-            _main_descriptor_set,
-            pipeline.use_push_descriptors
-        );
-
-        // _main_descriptor_set = {};
-    }
-
     for(usize i = 0; i != descriptor_sets.size(); ++i) {
         bind_descriptor_set(
             vk_cmd_buffer(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             pipeline.vk_pipeline_layout(),
-            u32((bind_main_ds ? 1 : 0) + i),
-            descriptor_sets[i],
-            pipeline.use_push_descriptors
+            u32(i),
+            descriptor_sets[i]
         );
     }
-}
-
-
-
-void RenderPassRecorder::set_main_descriptor_set(DescriptorSetBase ds_set) {
-    _main_descriptor_set = ds_set;
 }
 
 void RenderPassRecorder::draw(const MeshDrawData& draw_data, u32 instance_count, u32 instance_index) {
@@ -571,8 +550,7 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
             VK_PIPELINE_BIND_POINT_COMPUTE,
             program.vk_pipeline_layout(),
             u32(i),
-            descriptor_sets[i],
-            program.use_push_descriptors
+            descriptor_sets[i]
         );
     }
 

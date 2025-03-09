@@ -37,8 +37,6 @@ class ShaderProgramBase : NonCopyable {
         core::Span<VkPipelineShaderStageCreateInfo> vk_pipeline_stage_info() const;
         core::Span<VkDescriptorSetLayout> vk_descriptor_layouts() const;
 
-        bool use_push_descriptors = true;
-
     protected:
         ShaderProgramBase(core::Span<const ShaderModuleBase*> shaders);
 
@@ -47,9 +45,9 @@ class ShaderProgramBase : NonCopyable {
 
         void swap(ShaderProgramBase& other);
 
-        core::FlatHashMap<u32, core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
-        core::Vector<VkDescriptorSetLayout> _layouts;
-        core::Vector<VkPipelineShaderStageCreateInfo> _stages;
+        core::SmallVector<core::Vector<VkDescriptorSetLayoutBinding>, 2> _bindings;
+        core::SmallVector<VkDescriptorSetLayout, 2> _layouts;
+        core::SmallVector<VkPipelineShaderStageCreateInfo, 2> _stages;
 };
 
 

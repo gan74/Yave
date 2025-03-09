@@ -107,7 +107,7 @@ static void collect_batches_for_id(core::Span<const StaticMeshObject*> meshes, c
     }
 }
 
-Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, const SceneVisibility& visibility, PassType pass_type) const {
+Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc_set_index, const SceneVisibility& visibility, PassType pass_type) const {
     y_profile();
 
 
@@ -137,21 +137,17 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, const Sc
 
 
 
-    static const PipelineStage stage = PipelineStage::VertexBit | PipelineStage::FragmentBit;
-    const i32 descriptor_set_index = builder.next_descriptor_set_index();
-
     const auto indices_buffer = builder.declare_typed_buffer<math::Vec2ui>(batch_count);
     builder.map_buffer(indices_buffer);
 
     const auto indirect_buffer = builder.declare_typed_buffer<VkDrawIndexedIndirectCommand>(batch_count);
     builder.map_buffer(indirect_buffer);
 
-    builder.add_external_input(Descriptor(_transform_manager.transform_buffer()), stage, descriptor_set_index);
-    builder.add_external_input(Descriptor(material_allocator().material_buffer()), stage, descriptor_set_index);
-    builder.add_storage_input(indices_buffer, stage, descriptor_set_index);
+    builder.add_external_input(Descriptor(_transform_manager.transform_buffer()), PipelineStage::None, desc_set_index);
+    builder.add_external_input(Descriptor(material_allocator().material_buffer()), PipelineStage::None, desc_set_index);
+    builder.add_storage_input(indices_buffer, PipelineStage::None, desc_set_index);
+
     builder.add_indrect_input(indirect_buffer);
-
-
 
 
     return [=](RenderPassRecorder& render_pass, const FrameGraphPass* pass) {
@@ -159,7 +155,6 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, const Sc
 
         const core::Span<StaticMeshBatch> batches = *static_mesh_batches;
 
-        const DescriptorSet& pass_set = pass->descriptor_sets()[descriptor_set_index];
         const IndirectSubBuffer buffer = pass->resources().buffer<BufferUsage::IndirectBit>(indirect_buffer);
 
         auto indirect_mapping = pass->resources().map_buffer(indirect_buffer);
@@ -170,7 +165,7 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, const Sc
         switch(pass_type) {
             case PassType::Depth:
             case PassType::GBuffer: {
-                const std::array<DescriptorSetBase, 2> desc_sets = {pass_set, texture_library().descriptor_set()};
+                const std::array<DescriptorSetBase, 2> desc_sets = {pass->descriptor_sets()[desc_set_index], texture_library().descriptor_set()};
 
                 usize start_of_batch = 0;
                 const MaterialTemplate* prev_template = batches[0].material_template;
@@ -210,7 +205,7 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, const Sc
                     indices_mapping[i] = batch.indices;
                 }
                 y_debug_assert(buffer.size() == batch_count);
-                render_pass.bind_material_template(device_resources()[DeviceResources::IdMaterialTemplate], pass_set, true);
+                render_pass.bind_material_template(device_resources()[DeviceResources::IdMaterialTemplate], pass->descriptor_sets()[desc_set_index], true);
                 render_pass.draw_indirect(buffer);
             } break;
         }

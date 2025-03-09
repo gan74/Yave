@@ -37,7 +37,7 @@ struct PixelStageOut {
 
 
 
-[[vk::binding(0, 2)]]
+[[vk::binding(0, 1)]]
 Sampler2D all_textures[];
 
 

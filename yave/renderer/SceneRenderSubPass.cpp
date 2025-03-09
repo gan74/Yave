@@ -36,10 +36,10 @@ SOFTWARE.
 namespace yave {
 
 static void fill_scene_render_pass(SceneRenderSubPass& pass, FrameGraphPassBuilder& builder, PassType pass_type) {
-    pass.render_func = pass.scene_view.scene()->prepare_render(builder, *pass.visibility.visible, pass_type);
+    pass.descriptor_set_index = builder.next_descriptor_set_index();
+    builder.add_uniform_input(pass.camera, PipelineStage::None, pass.descriptor_set_index);
 
-    pass.main_descriptor_set_index = builder.next_descriptor_set_index();
-    builder.add_uniform_input(pass.camera, PipelineStage::None, pass.main_descriptor_set_index);
+    pass.render_func = pass.scene_view.scene()->prepare_render(builder, pass.descriptor_set_index, *pass.visibility.visible, pass_type);
 }
 
 
@@ -69,8 +69,6 @@ SceneRenderSubPass SceneRenderSubPass::create(FrameGraphPassBuilder& builder, co
 }
 
 void SceneRenderSubPass::render(RenderPassRecorder& render_pass, const FrameGraphPass* pass) const {
-    render_pass.set_main_descriptor_set(pass->descriptor_sets()[main_descriptor_set_index]);
-
     if(render_func) {
         render_func(render_pass, pass);
     }

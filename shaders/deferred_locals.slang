@@ -37,8 +37,8 @@ StructuredBuffer<ShadowMapInfo> shadow_infos;
 [[vk::binding(8)]]
 RWTexture2D out_color;
 
-[[vk::binding(0, 1)]]
-cbuffer LightCount_Inline {
+[[vk::binding(9)]]
+cbuffer LightCount {
     uint point_count;
     uint spot_count;
 };

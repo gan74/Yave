@@ -94,7 +94,7 @@ class Scene : NonMovable {
 
         const TLAS& tlas() const;
 
-        RenderFunc prepare_render(FrameGraphPassBuilder& builder, const SceneVisibility& visibility, PassType pass_type) const;
+        RenderFunc prepare_render(FrameGraphPassBuilder& builder, i32 desc_set_index, const SceneVisibility& visibility, PassType pass_type) const;
 
 
 
