@@ -31,7 +31,6 @@ SOFTWARE.
 #include <yave/graphics/images/ImageData.h>
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdQueue.h>
-#include <yave/graphics/descriptors/DescriptorSet.h>
 
 #include <yave/renderer/DefaultRenderer.h>
 

@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "DirectDraw.h"
 
-#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/buffers/Buffer.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/device/DeviceResources.h>

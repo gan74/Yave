@@ -26,7 +26,6 @@ SOFTWARE.
 #include <yave/framegraph/TransientMipView.h>
 
 #include <yave/graphics/shaders/ComputeProgram.h>
-#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdQueue.h>
 

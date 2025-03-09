@@ -53,7 +53,6 @@ VkDescriptorSetLayout create_push_descriptor_set_layout(core::Span<VkDescriptorS
 
 const PhysicalDevice& physical_device();
 DeviceMemoryAllocator& device_allocator();
-DescriptorSetAllocator& descriptor_set_allocator();
 MeshAllocator& mesh_allocator();
 MaterialAllocator& material_allocator();
 TextureLibrary& texture_library();

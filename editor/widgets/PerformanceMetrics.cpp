@@ -23,7 +23,6 @@ SOFTWARE.
 #include "PerformanceMetrics.h"
 
 #include <yave/graphics/graphics.h>
-#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 #include <yave/graphics/device/LifetimeManager.h>
 
@@ -194,7 +193,7 @@ void PerformanceMetrics::draw_memory() {
         ImGui::PlotLines("##memory", _memory.values().data(), int(_memory.values().size()), int(_memory.next_index()), "", 0.0f, _memory.max() * 1.33f, ImVec2(0, 80));
     }
 
-    {
+    /*{
         ImGui::Spacing();
         ImGui::Separator();
 
@@ -208,7 +207,7 @@ void PerformanceMetrics::draw_memory() {
         ImGui::Text("Descriptor set pools: %u", u32(pools));
 
         ImGui::ProgressBar(used_sets / float(total_sets), ImVec2(0, 0), fmt_c_str("{} / {} sets", used_sets, total_sets));
-    }
+    }*/
 
     ImGui::Spacing();
     ImGui::Separator();

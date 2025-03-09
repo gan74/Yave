@@ -27,7 +27,6 @@ SOFTWARE.
 #include <yave/material/Material.h>
 #include <yave/material/MaterialTemplate.h>
 #include <yave/graphics/images/TextureLibrary.h>
-#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/shaders/ShaderProgram.h>

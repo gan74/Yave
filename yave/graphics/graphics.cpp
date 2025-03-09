@@ -30,7 +30,6 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/images/Sampler.h>
 #include <yave/graphics/commands/CmdQueue.h>
-#include <yave/graphics/descriptors/DescriptorSetAllocator.h>
 #include <yave/graphics/memory/DeviceMemoryAllocator.h>
 #include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/device/MeshAllocator.h>
@@ -87,7 +86,6 @@ std::array<Uninitialized<Sampler>, 6> samplers;
 
 Uninitialized<DeviceMemoryAllocator> allocator;
 Uninitialized<LifetimeManager> lifetime_manager;
-Uninitialized<DescriptorSetAllocator> descriptor_set_allocator;
 Uninitialized<MeshAllocator> mesh_allocator;
 Uninitialized<MaterialAllocator> material_allocator;
 Uninitialized<TextureLibrary> texture_library;
@@ -230,7 +228,6 @@ void init_device(Instance& instance, PhysicalDevice device) {
 
     device::lifetime_manager.init();
     device::allocator.init(device_properties());
-    device::descriptor_set_allocator.init();
     device::mesh_allocator.init();
     device::material_allocator.init();
     device::texture_library.init();
@@ -275,7 +272,6 @@ void destroy_device() {
     device::texture_library.destroy();
     device::material_allocator.destroy();
     device::mesh_allocator.destroy();
-    device::descriptor_set_allocator.destroy();
     device::lifetime_manager.destroy();
     device::allocator.destroy();
 
@@ -355,10 +351,6 @@ TransferCmdBufferRecorder create_disposable_transfer_cmd_buffer() {
 
 DeviceMemoryAllocator& device_allocator() {
     return *device::allocator;
-}
-
-DescriptorSetAllocator& descriptor_set_allocator() {
-    return *device::descriptor_set_allocator;
 }
 
 MeshAllocator& mesh_allocator() {

@@ -232,8 +232,6 @@ void LifetimeManager::destroy_resource(ManagedResource& resource) const {
                 y_fatal("Empty resource");
             } else if constexpr(std::is_same_v<decltype(res), DeviceMemory&>) {
                 res.free();
-            } else if constexpr(std::is_same_v<decltype(res), DescriptorSetData&>) {
-                res.recycle();
             } else if constexpr(std::is_same_v<decltype(res), MeshDrawData&>) {
                 res.recycle();
             } else if constexpr(std::is_same_v<decltype(res), MaterialDrawData&>) {

@@ -24,8 +24,6 @@ SOFTWARE.
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/barriers/Barrier.h>
-
-#include <yave/graphics/descriptors/DescriptorSet.h>
 #include <yave/graphics/device/DeviceResources.h>
 
 namespace yave {
