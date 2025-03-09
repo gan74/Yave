@@ -49,10 +49,9 @@ CmdBufferRecorder create_disposable_cmd_buffer();
 ComputeCmdBufferRecorder create_disposable_compute_cmd_buffer();
 TransferCmdBufferRecorder create_disposable_transfer_cmd_buffer();
 
-VkDescriptorSetLayout create_push_descriptor_set_layout(core::Span<VkDescriptorSetLayoutBinding> bindings);
-
 const PhysicalDevice& physical_device();
 DeviceMemoryAllocator& device_allocator();
+DescriptorLayoutAllocator& layout_allocator();
 MeshAllocator& mesh_allocator();
 MaterialAllocator& material_allocator();
 TextureLibrary& texture_library();

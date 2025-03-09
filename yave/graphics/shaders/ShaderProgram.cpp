@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/graphics/device/deviceutils.h>
 #include <yave/graphics/device/DeviceProperties.h>
+#include <yave/graphics/device/DescriptorLayoutAllocator.h>
 #include <yave/graphics/images/TextureLibrary.h>
 
 
@@ -154,7 +155,7 @@ ShaderProgramBase::ShaderProgramBase(core::Span<const ShaderModuleBase*> shaders
                 y_always_assert(bindings.size() == 1, "Variable size descriptor bindings must be alone in descriptor set");
                 _layouts[i] = texture_library().descriptor_set_layout();
             } else {
-                _layouts[i] = create_push_descriptor_set_layout(bindings);
+                _layouts[i] = layout_allocator().create_layout(bindings);
             }
         }
     }

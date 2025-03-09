@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2023 Grégoire Angerand
+Copyright (c) 2016-2025 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -56,6 +56,7 @@ class DebugUtils;
 class DedicatedDeviceMemoryAllocator;
 class Descriptor;
 class DescriptorArray;
+class DescriptorLayoutAllocator;
 class DeviceMemory;
 class DeviceMemoryAllocator;
 class DeviceMemoryHeap;
@@ -203,6 +204,8 @@ struct InlineBlock;
 struct InlineStorage;
 struct InstanceParams;
 struct JitterSettings;
+struct KeyEqual;
+struct KeyHash;
 struct Level;
 struct LightingPass;
 struct LightingSettings;
