@@ -164,6 +164,10 @@ void UndoRedoSystem::reset() {
 }
 
 void UndoRedoSystem::setup(ecs::SystemScheduler& sched) {
+    if(!_snapshot) {
+        take_snapshot();
+    }
+
     sched.schedule(ecs::SystemSchedule::TickSequential, "TickSeq", [this]() {
         y_debug_assert(_snapshot);
         if(!_do_undo && !_do_redo) {
