@@ -228,7 +228,6 @@ void print_enabled_extensions(core::Span<const char*> extensions) {
 
 void print_properties(const DeviceProperties& properties) {
     log_msg(fmt("max_memory_allocations = {}", properties.max_memory_allocations));
-    log_msg(fmt("max_inline_uniform_size = {}", properties.max_inline_uniform_size));
     log_msg(fmt("max_uniform_buffer_size = {}", properties.max_uniform_buffer_size));
     log_msg(fmt("raytracing support = {}", properties.has_raytracing));
 }

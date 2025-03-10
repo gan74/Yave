@@ -23,6 +23,7 @@ SOFTWARE.
 #include "PerformanceMetrics.h"
 
 #include <yave/graphics/graphics.h>
+#include <yave/graphics/device/PhysicalDevice.h>
 #include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/device/DescriptorLayoutAllocator.h>
 
@@ -146,6 +147,13 @@ void PerformanceMetrics::draw_memory() {
     VmaTotalStatistics stats = {};
     vmaCalculateStatistics(device_allocator(), &stats);
 
+    std::array<VmaBudget, VK_MAX_MEMORY_HEAPS> budgets = {};
+    vmaGetHeapBudgets(device_allocator(), budgets.data());
+
+    auto progress_bar = [](double used, double total) {
+        ImGui::ProgressBar(float(used / total), ImVec2(-1.0f, 0.0f), fmt_c_str("{}MB / {}MB", u64(used), u64(total)));
+    };
+
     {
         const VmaStatistics& total = stats.total.statistics;
         const double used = to_mb(total.allocationBytes);
@@ -156,7 +164,25 @@ void PerformanceMetrics::draw_memory() {
 
         ImGui::Text("Total allocated: %.1lfMB", allocated);
 
-        ImGui::ProgressBar(float(used / allocated), ImVec2(-1.0f, 0.0f), fmt_c_str("{}MB / {}MB", u64(used), u64(allocated)));
+        progress_bar(used, allocated);
+    }
+
+    ImGui::Checkbox("Show heaps", &_show_heaps);
+
+    if(_show_heaps) {
+        const auto& memory_props = physical_device().vk_memory_properties();
+        for(u32 i = 0; i != memory_props.memoryHeapCount; ++i) {
+            const VmaBudget& budget = budgets[i];
+            const VkMemoryHeap& heap = memory_props.memoryHeaps[i];
+            const bool is_device_local = (heap.flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) != 0;
+
+            const double used = to_mb(budget.usage);
+            const double total = to_mb(budget.budget);
+
+            ImGui::Text("%s heap:", (is_device_local ? "Device local" : "Host side"));
+
+            progress_bar(used, total);
+        }
     }
 }
 
