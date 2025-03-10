@@ -30,7 +30,7 @@ enum class MemoryType {
     DontCare = 0,
     DeviceLocal = 1,
     CpuVisible = 2,
-    Staging = 3
+    Staging = 3,
 };
 
 inline constexpr bool is_cpu_visible(MemoryType type) {

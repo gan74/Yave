@@ -312,6 +312,8 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2() {
 VkPhysicalDeviceVulkan13Features required_device_features_1_3() {
     VkPhysicalDeviceVulkan13Features required = vk_struct();
 
+    required.maintenance4 = true; 
+
     return required;
 }
 
@@ -319,6 +321,7 @@ VkPhysicalDeviceVulkan14Features required_device_features_1_4() {
     VkPhysicalDeviceVulkan14Features required = vk_struct();
 
     required.pushDescriptor = true;
+    required.maintenance5 = true;
 
     return required;
 }

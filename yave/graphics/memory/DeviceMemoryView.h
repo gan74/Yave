@@ -36,14 +36,13 @@ class DeviceMemoryView final {
     public:
         DeviceMemoryView() = default;
 
-        DeviceMemoryView(const DeviceMemory& mem) : _alloc(mem._alloc), _mapping(mem._mapping) {
+        DeviceMemoryView(const DeviceMemory& mem) : _alloc(mem._alloc) {
         }
 
     private:
         friend class BufferMappingBase;
 
         VmaAllocation _alloc = {};
-        void* _mapping = nullptr;
 };
 
 }

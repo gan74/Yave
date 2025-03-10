@@ -33,17 +33,18 @@ BufferMappingBase::BufferMappingBase(const SubBuffer<BufferUsage::None, MemoryTy
         _access(access) {
 
     // vmaInvalidateAllocation ???
-    // vk_check(vmaMapMemory(device_allocator(), _buffer.device_memory()._alloc, &_mapping));
-    _mapping = static_cast<void*>(static_cast<u8*>(_buffer.device_memory()._mapping) + _buffer.byte_offset());
+    VmaAllocationInfo info = {};
+    vmaGetAllocationInfo(device_allocator(), _buffer.device_memory()._alloc, &info);
+    y_debug_assert(info.pMappedData);
+
+    _mapping = static_cast<void*>(static_cast<u8*>(info.pMappedData) + _buffer.byte_offset());
 
     y_debug_assert(_buffer.byte_offset() % _buffer.host_side_alignment() == 0);
-    y_debug_assert(_mapping);
 }
 
 BufferMappingBase::~BufferMappingBase() {
     if(_mapping) {
-#pragma message("we flush the whole alloc")
-        vmaFlushAllocation(device_allocator(), _buffer.device_memory()._alloc, 0, VK_WHOLE_SIZE);
+        vmaFlushAllocation(device_allocator(), _buffer.device_memory()._alloc, _buffer.byte_offset(), _buffer.byte_size());
     }
 }
 

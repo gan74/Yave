@@ -143,80 +143,21 @@ void PerformanceMetrics::draw_timings() {
 }
 
 void PerformanceMetrics::draw_memory() {
-    /*double used_per_type_mb[4] = {};
-    double allocated_per_type_mb[4] = {};
-    for(const auto& heaps : device_allocator().heaps()) {
-        for(const auto& heap : heaps) {
-            u64 free = heap->available();
-            const u64 used = heap->size() - free;
-            used_per_type_mb[uenum(heap->memory_type())] += to_mb(used);
-            allocated_per_type_mb[uenum(heap->memory_type())] += to_mb(heap->size());
-        }
-    }
-
-    double dedicated_mb = 0.0;
-    usize dedicated_count = 0;
-    for(const auto& heap : device_allocator().dedicated_heaps()) {
-        const double mb = to_mb(heap->allocated_size());
-        dedicated_mb += mb;
-        dedicated_count += heap->allocation_count();
-        used_per_type_mb[uenum(heap->memory_type())] += mb;
-        allocated_per_type_mb[uenum(heap->memory_type())] += mb;
-    }
-
-    auto progress_bar = [](double used, double allocated) {
-        ImGui::ProgressBar(float(used / allocated), ImVec2(0, 0), fmt_c_str("{}MB / {}MB", u64(used), u64(allocated)));
-    };
-
-
-    double total_used_mb = 0.0;
-    double total_allocated_mb = 0.0;
-    for(usize i = 0; i != 4; ++i) {
-        total_used_mb += used_per_type_mb[i];
-        total_allocated_mb += allocated_per_type_mb[i];
-    }
-
-    _memory.push(float(total_used_mb));
+    VmaTotalStatistics stats = {};
+    vmaCalculateStatistics(device_allocator(), &stats);
 
     {
-        ImGui::Text("Total used: %.1lfMB", total_used_mb);
-        ImGui::Text("Dedicated allocation: %.1lfMB across %u allocations", dedicated_mb, unsigned(dedicated_count));
-        ImGui::Text("Total allocated: %.1lfMB", total_allocated_mb);
-        ImGui::SetNextItemWidth(-1);
-        progress_bar(total_used_mb, total_allocated_mb);
+        const VmaStatistics& total = stats.total.statistics;
+        const double used = to_mb(total.allocationBytes);
+        const double allocated = to_mb(total.blockBytes);
+    
+        ImGui::Text("Allocations: %u", total.blockCount);
+        ImGui::Text("Dedicated allocations: %u", total.allocationCount);
 
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Text("Max usage: %.1fMB", _memory.max());
+        ImGui::Text("Total allocated: %.1lfMB", allocated);
 
-        ImGui::SetNextItemWidth(-1);
-        ImGui::PlotLines("##memory", _memory.values().data(), int(_memory.values().size()), int(_memory.next_index()), "", 0.0f, _memory.max() * 1.33f, ImVec2(0, 80));
+        ImGui::ProgressBar(float(used / allocated), ImVec2(-1.0f, 0.0f), fmt_c_str("{}MB / {}MB", u64(used), u64(allocated)));
     }
-
-    {
-        ImGui::Spacing();
-        ImGui::Separator();
-
-        ImGui::Text("Descriptor set layouts: %u", u32(layout_allocator().layout_count()));
-    }
-
-    ImGui::Spacing();
-    ImGui::Separator();
-    ImGui::Checkbox("Show heaps", &_show_heaps);
-
-    if(_show_heaps) {
-        ImGui::Indent();
-        for(usize i = 0; i != 4; ++i) {
-            if(allocated_per_type_mb[i] == 0) {
-                continue;
-            }
-            ImGui::Bullet();
-            ImGui::TextUnformatted(memory_type_name(MemoryType(i)));
-            progress_bar(used_per_type_mb[i], allocated_per_type_mb[i]);
-
-        }
-        ImGui::Unindent();
-    }*/
 }
 
 }

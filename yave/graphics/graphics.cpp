@@ -50,6 +50,7 @@ namespace device {
 Instance* instance = nullptr;
 std::unique_ptr<PhysicalDevice> physical_device;
 
+core::Vector<const char*> enabled_extensions;
 DeviceProperties device_properties = {};
 
 std::array<Uninitialized<Sampler>, 6> samplers;
@@ -75,10 +76,14 @@ std::atomic<bool> destroying = false;
 }
 
 
+
 static void init_vma() {
+
     VmaVulkanFunctions vulkan_functions = {};
     {
 #define SET_VK_FUNC(func) vulkan_functions.func = func
+#define SET_VK_FUNC_KHR(func) vulkan_functions.func ## KHR = func
+
         SET_VK_FUNC(vkGetPhysicalDeviceProperties);
         SET_VK_FUNC(vkGetPhysicalDeviceMemoryProperties);
         SET_VK_FUNC(vkAllocateMemory);
@@ -98,13 +103,14 @@ static void init_vma() {
         SET_VK_FUNC(vkCmdCopyBuffer);
         SET_VK_FUNC(vkGetDeviceBufferMemoryRequirements);
         SET_VK_FUNC(vkGetDeviceImageMemoryRequirements);
-#undef SET_VK_FUNC
+        SET_VK_FUNC_KHR(vkGetBufferMemoryRequirements2);
+        SET_VK_FUNC_KHR(vkGetImageMemoryRequirements2);
+        SET_VK_FUNC_KHR(vkBindBufferMemory2);
+        SET_VK_FUNC_KHR(vkBindImageMemory2);
+        SET_VK_FUNC_KHR(vkGetPhysicalDeviceMemoryProperties2);
 
-       vulkan_functions.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2;
-       vulkan_functions.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2;
-       vulkan_functions.vkBindBufferMemory2KHR = vkBindBufferMemory2;
-       vulkan_functions.vkBindImageMemory2KHR = vkBindImageMemory2;
-       vulkan_functions.vkGetPhysicalDeviceMemoryProperties2KHR = vkGetPhysicalDeviceMemoryProperties2;
+#undef SET_VK_FUNC_KHR
+#undef SET_VK_FUNC
     }
 
     VmaAllocatorCreateInfo create_info = {};
@@ -115,6 +121,15 @@ static void init_vma() {
         create_info.device = device::vk_device;
         create_info.instance = device::instance->vk_instance();
         create_info.pAllocationCallbacks = vk_allocation_callbacks();
+        create_info.flags = 
+            VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE4_BIT | 
+            VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE5_BIT | 
+            VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT
+        ;
+    }
+
+    if(is_extension_enabled(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME)) {
+        create_info.flags |= VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
     }
 
     vmaCreateAllocator(&create_info, &device::allocator);
@@ -131,16 +146,18 @@ static void init_vk_device() {
     // const VkQueueFamilyProperties main_queue_family_properties = queue_families[main_queue_index];
     const usize queue_count = 1;
 
-    auto extensions = core::Vector<const char*>::with_capacity(4);
-    extensions << VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+    device::enabled_extensions.make_empty();
+    device::enabled_extensions << VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 
     if(raytracing_enabled()) {
         for(const char* ext_name : raytracing_extensions()) {
-            extensions << ext_name;
+            device::enabled_extensions << ext_name;
         }
     }
 
-    const bool diagnostic_checkpoints = instance_params().debug_utils && try_enable_extension(extensions, DiagnosticCheckpoints::extension_name(), physical_device());
+    try_enable_extension(device::enabled_extensions, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME, physical_device());
+
+    const bool diagnostic_checkpoints = instance_params().debug_utils && try_enable_extension(device::enabled_extensions, DiagnosticCheckpoints::extension_name(), physical_device());
 
     const auto required_features = required_device_features();
     auto required_features_1_1 = required_device_features_1_1();
@@ -156,7 +173,7 @@ static void init_vk_device() {
     y_always_assert(has_required_properties(physical_device()), "{} doesn't support required properties", physical_device().device_name());
 
     print_physical_properties(physical_device().vk_properties());
-    print_enabled_extensions(extensions);
+    print_enabled_extensions(device::enabled_extensions);
 
     core::ScratchPad<float> queue_priorities(queue_count);
     std::fill_n(queue_priorities.data(), queue_priorities.size(), 0.0f);
@@ -189,8 +206,8 @@ static void init_vk_device() {
     VkDeviceCreateInfo create_info = vk_struct();
     {
         create_info.pNext = &features;
-        create_info.enabledExtensionCount = u32(extensions.size());
-        create_info.ppEnabledExtensionNames = extensions.data();
+        create_info.enabledExtensionCount = u32(device::enabled_extensions.size());
+        create_info.ppEnabledExtensionNames = device::enabled_extensions.data();
         create_info.queueCreateInfoCount = 1;
         create_info.pQueueCreateInfos = &queue_create_info;
     }
@@ -420,6 +437,10 @@ const DebugUtils* debug_utils() {
 
 const DiagnosticCheckpoints* diagnostic_checkpoints() {
     return device::diagnostic_checkpoints.get();
+}
+
+bool is_extension_enabled(std::string_view ext_name) {
+    return std::find_if(device::enabled_extensions.begin(), device::enabled_extensions.end(), [=](const char* name) { return ext_name == name; }) != device::enabled_extensions.end();
 }
 
 void wait_all_queues() {

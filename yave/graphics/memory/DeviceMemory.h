@@ -30,7 +30,7 @@ class DeviceMemory final : NonCopyable {
     public:
         DeviceMemory() = default;
 
-        DeviceMemory(VmaAllocation alloc, void* mapping = nullptr) : _alloc(alloc), _mapping(mapping) {
+        DeviceMemory(VmaAllocation alloc) : _alloc(alloc) {
         }
 
         ~DeviceMemory() {
@@ -62,11 +62,9 @@ class DeviceMemory final : NonCopyable {
 
         void swap(DeviceMemory& other) {
             std::swap(_alloc, other._alloc);
-            std::swap(_mapping, other._mapping);
         }
 
         VmaAllocation _alloc = {};
-        void* _mapping = nullptr;
 };
 
 }

@@ -39,6 +39,7 @@ bool device_initialized();
 
 const InstanceParams& instance_params();
 
+
 VkDevice vk_device();
 VkInstance vk_device_instance();
 VkPhysicalDevice vk_physical_device();
@@ -65,6 +66,8 @@ VkSampler vk_sampler(SamplerType type);
 
 const DebugUtils* debug_utils();
 const DiagnosticCheckpoints* diagnostic_checkpoints();
+
+bool is_extension_enabled(std::string_view ext_name);
 
 void wait_all_queues();
 

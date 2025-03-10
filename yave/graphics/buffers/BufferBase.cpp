@@ -55,25 +55,28 @@ static std::tuple<VkHandle<VkBuffer>, DeviceMemory> alloc_buffer(u64 buffer_size
         buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     }
 
-    const bool cpu_visible = is_cpu_visible(type);
-
     VmaAllocationCreateInfo alloc_create_info = {};
-    {
-        alloc_create_info.usage = cpu_visible ? VMA_MEMORY_USAGE_AUTO_PREFER_HOST : VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
-        if(cpu_visible) {
-            alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT  | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        }
-    }
+    switch(type) {
+        case MemoryType::CpuVisible:
+            alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
+            alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT  | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        break;
+        
+        case MemoryType::Staging:
+            alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+            alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT  | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        break;
 
-    VmaAllocationInfo info = {};
+        default:
+            alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+        break;
+    }
 
     VmaAllocation alloc = {};
     VkHandle<VkBuffer> buffer;
-    vk_check(vmaCreateBuffer(device_allocator(), &buffer_create_info, &alloc_create_info, buffer.get_ptr_for_init(), &alloc, &info));
+    vk_check(vmaCreateBuffer(device_allocator(), &buffer_create_info, &alloc_create_info, buffer.get_ptr_for_init(), &alloc, nullptr));
 
-    y_debug_assert(!cpu_visible || info.pMappedData);
-
-    return {std::move(buffer), DeviceMemory(alloc, info.pMappedData)};
+    return {std::move(buffer), alloc};
 }
 
 
