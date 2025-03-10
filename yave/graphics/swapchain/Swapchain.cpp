@@ -25,7 +25,6 @@ SOFTWARE.
 #include <yave/window/Window.h>
 
 #include <yave/graphics/commands/CmdQueue.h>
-#include <yave/graphics/memory/DeviceMemoryHeapBase.h>
 #include <yave/graphics/barriers/Barrier.h>
 
 #include <yave/graphics/device/DebugUtils.h>
@@ -269,16 +268,11 @@ bool Swapchain::build_swapchain() {
             debug->set_resource_name(view, "Swapchain Image View");
         }
 
-        struct SwapchainImageMemory : DeviceMemory {
-            SwapchainImageMemory() : DeviceMemory({}, 0, 0) {
-            }
-        };
-
         VkHandle<VkImage> image_handle;
         *image_handle.get_ptr_for_init() = image;
 
         auto swapchain_image = SwapchainImage();
-        swapchain_image._memory = SwapchainImageMemory();
+        swapchain_image._memory = {};
         swapchain_image._size = math::Vec3ui(_size, 1);
         swapchain_image._format = _color_format;
         swapchain_image._usage = SwapchainImageUsage;

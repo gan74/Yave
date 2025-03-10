@@ -26,35 +26,11 @@ SOFTWARE.
 #include <yave/graphics/buffers/Buffer.h>
 #include <yave/graphics/barriers/Barrier.h>
 #include <yave/graphics/commands/CmdQueue.h>
-#include <yave/graphics/memory/DeviceMemoryAllocator.h>
 #include <yave/graphics/graphics.h>
 
 #include <y/core/ScratchPad.h>
 
 namespace yave {
-
-static VkHandle<VkImage> create_image(const math::Vec3ui& size, usize layers, usize mips, ImageFormat format, ImageUsage usage, ImageType type) {
-    y_debug_assert(usage != ImageUsage::TransferDstBit);
-
-    VkImageCreateInfo create_info = vk_struct();
-    {
-        create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        create_info.flags = type == ImageType::Cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
-        create_info.arrayLayers = u32(layers);
-        create_info.extent = {size.x(), size.y(), size.z()};
-        create_info.format = format.vk_format();
-        create_info.imageType = type == ImageType::ThreeD ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
-        create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-        create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        create_info.mipLevels = u32(mips);
-        create_info.usage = VkImageUsageFlags(usage);
-        create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    }
-
-    VkHandle<VkImage> image;
-    vk_check(vkCreateImage(vk_device(), &create_info, vk_allocation_callbacks(), image.get_ptr_for_init()));
-    return image;
-}
 
 static core::ScratchPad<VkBufferImageCopy> get_copy_regions(const ImageData& data) {
     core::ScratchPad<VkBufferImageCopy> regions(data.mipmaps());
@@ -115,12 +91,36 @@ static std::tuple<VkHandle<VkImage>, DeviceMemory, VkHandle<VkImageView>> alloc_
                                                                                       MemoryAllocFlags alloc_flags = MemoryAllocFlags::None) {
     y_profile();
 
-    auto image = create_image(size, layers, mips, format, usage, type);
+    /*auto image = create_image(size, layers, mips, format, usage, type);
     auto memory = device_allocator().alloc(image, alloc_flags);
 
-    vk_check(vkBindImageMemory(vk_device(), image, memory.vk_memory(), memory.vk_offset()));
+    vk_check(vkBindImageMemory(vk_device(), image, memory.vk_memory(), memory.vk_offset()));*/
 
-    return {std::move(image), std::move(memory), create_view(image, format, layers, mips, type)};
+    VkImageCreateInfo image_create_info = vk_struct();
+    {
+        image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        image_create_info.flags = type == ImageType::Cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
+        image_create_info.arrayLayers = u32(layers);
+        image_create_info.extent = {size.x(), size.y(), size.z()};
+        image_create_info.format = format.vk_format();
+        image_create_info.imageType = type == ImageType::ThreeD ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
+        image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+        image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        image_create_info.mipLevels = u32(mips);
+        image_create_info.usage = VkImageUsageFlags(usage);
+        image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    }
+
+    VmaAllocationCreateInfo alloc_create_info = {};
+    {
+        alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+    }
+
+    VmaAllocation alloc = {};
+    VkHandle<VkImage> image;
+    vk_check(vmaCreateImage(device_allocator(), &image_create_info, &alloc_create_info, image.get_ptr_for_init(), &alloc, nullptr));
+
+    return {std::move(image), alloc, create_view(image, format, layers, mips, type)};
 }
 
 static void upload_data(ImageBase& image, const ImageData& data) {

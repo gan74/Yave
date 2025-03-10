@@ -23,52 +23,57 @@ SOFTWARE.
 #include "BufferBase.h"
 
 #include <yave/graphics/graphics.h>
+#include <yave/graphics/device/deviceutils.h>
 #include <yave/graphics/device/DeviceProperties.h>
-#include <yave/graphics/memory/DeviceMemoryAllocator.h>
 
 #include <y/utils/format.h>
 
 namespace yave {
 
-static VkBuffer create_buffer(u64 byte_size, VkBufferUsageFlags usage) {
-    y_debug_assert(byte_size);
-    if(usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
-        if(byte_size > device_properties().max_uniform_buffer_size) {
-            y_fatal("Uniform buffer size exceeds maxUniformBufferRange ({})", device_properties().max_uniform_buffer_size);
-        }
-    }
-
-    if(raytracing_enabled()) {
-        usage = usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-    } else {
-        const VkBufferUsageFlags raytracing_bits = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
-        usage = usage & ~raytracing_bits;
-    }
-
-
-    VkBufferCreateInfo create_info = vk_struct();
-    {
-        create_info.size = byte_size;
-        create_info.usage = usage;
-        create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    }
-
-    VkBuffer buffer = {};
-    vk_check(vkCreateBuffer(vk_device(), &create_info, vk_allocation_callbacks(), &buffer));
-    return buffer;
-}
-
-static std::tuple<VkBuffer, DeviceMemory> alloc_buffer(u64 buffer_size, VkBufferUsageFlags usage, MemoryType type, MemoryAllocFlags flags) {
+static std::tuple<VkHandle<VkBuffer>, DeviceMemory> alloc_buffer(u64 buffer_size, VkBufferUsageFlags usage, MemoryType type, MemoryAllocFlags flags) {
     y_profile();
 
     y_debug_assert(buffer_size);
 
-    const auto buffer = create_buffer(buffer_size, usage);
-    auto memory = device_allocator().alloc(buffer, type, flags);
+    y_always_assert(
+        (usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) == 0 ||
+        buffer_size <= device_properties().max_uniform_buffer_size,
+        "Uniform buffer size exceeds maxUniformBufferRange ({})", device_properties().max_uniform_buffer_size
+    );
 
-    vk_check(vkBindBufferMemory(vk_device(), buffer, memory.vk_memory(), memory.vk_offset()));
 
-    return {buffer, std::move(memory)};
+    const VkBufferUsageFlags raytracing_bits = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+    usage = raytracing_enabled()
+        ? (usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)
+        : (usage & ~raytracing_bits)
+    ;
+
+    VkBufferCreateInfo buffer_create_info = vk_struct();
+    {
+        buffer_create_info.size = buffer_size;
+        buffer_create_info.usage = usage;
+        buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    }
+
+    const bool cpu_visible = is_cpu_visible(type);
+
+    VmaAllocationCreateInfo alloc_create_info = {};
+    {
+        alloc_create_info.usage = cpu_visible ? VMA_MEMORY_USAGE_AUTO_PREFER_HOST : VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+        if(cpu_visible) {
+            alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT  | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        }
+    }
+
+    VmaAllocationInfo info = {};
+
+    VmaAllocation alloc = {};
+    VkHandle<VkBuffer> buffer;
+    vk_check(vmaCreateBuffer(device_allocator(), &buffer_create_info, &alloc_create_info, buffer.get_ptr_for_init(), &alloc, &info));
+
+    y_debug_assert(!cpu_visible || info.pMappedData);
+
+    return {std::move(buffer), DeviceMemory(alloc, info.pMappedData)};
 }
 
 
@@ -141,11 +146,6 @@ VkDescriptorBufferInfo SubBufferBase::vk_descriptor_info() const {
     return info;
 }
 
-VkMappedMemoryRange SubBufferBase::vk_memory_range() const {
-    return _memory.vk_mapped_range(_size, _offset);
-}
-
-
 bool SubBufferBase::operator==(const SubBufferBase& other) const {
     return (_buffer == other._buffer) && (_offset == other._offset) && (_size == other._size);
 }
@@ -156,7 +156,7 @@ bool SubBufferBase::operator!=(const SubBufferBase& other) const {
 
 
 BufferBase::BufferBase(u64 byte_size, BufferUsage usage, MemoryType type, MemoryAllocFlags alloc_flags) : _size(byte_size), _usage(usage) {
-    std::tie(*_buffer.get_ptr_for_init(), _memory) = alloc_buffer(byte_size, VkBufferUsageFlagBits(usage), type, alloc_flags);
+    std::tie(_buffer, _memory) = alloc_buffer(byte_size, VkBufferUsageFlagBits(usage), type, alloc_flags);
 }
 
 BufferBase::~BufferBase() {

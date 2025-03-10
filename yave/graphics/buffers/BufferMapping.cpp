@@ -25,14 +25,16 @@ SOFTWARE.
 
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/graphics/memory/DeviceMemoryHeapBase.h>
 
 namespace yave {
 
 BufferMappingBase::BufferMappingBase(const SubBuffer<BufferUsage::None, MemoryType::CpuVisible>& buffer, MappingAccess access) :
         _buffer(buffer),
-        _mapping(static_cast<u8*>(_buffer.device_memory().heap()->map(_buffer.vk_memory_range(), access))),
         _access(access) {
+
+    // vmaInvalidateAllocation ???
+    // vk_check(vmaMapMemory(device_allocator(), _buffer.device_memory()._alloc, &_mapping));
+    _mapping = static_cast<void*>(static_cast<u8*>(_buffer.device_memory()._mapping) + _buffer.byte_offset());
 
     y_debug_assert(_buffer.byte_offset() % _buffer.host_side_alignment() == 0);
     y_debug_assert(_mapping);
@@ -40,7 +42,8 @@ BufferMappingBase::BufferMappingBase(const SubBuffer<BufferUsage::None, MemoryTy
 
 BufferMappingBase::~BufferMappingBase() {
     if(_mapping) {
-        _buffer.device_memory().heap()->unmap(_buffer.vk_memory_range(), _access);
+#pragma message("we flush the whole alloc")
+        vmaFlushAllocation(device_allocator(), _buffer.device_memory()._alloc, 0, VK_WHOLE_SIZE);
     }
 }
 

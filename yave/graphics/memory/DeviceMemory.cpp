@@ -21,73 +21,8 @@ SOFTWARE.
 **********************************/
 
 #include "DeviceMemory.h"
-#include "DeviceMemoryHeapBase.h"
 
 namespace yave {
-
-DeviceMemory::DeviceMemory(DeviceMemoryHeapBase* heap, VkDeviceMemory memory, u64 offset, u64 size) :
-        DeviceMemory(memory, offset, size) {
-    _heap = heap;
-}
-
-DeviceMemory::DeviceMemory(VkDeviceMemory memory, u64 offset, u64 size) :
-        _memory(memory),
-        _offset(offset),
-        _size(size) {
-}
-
-DeviceMemory::DeviceMemory(DeviceMemory&& other) {
-    swap(other);
-}
-
-DeviceMemory& DeviceMemory::operator=(DeviceMemory&& other) {
-    swap(other);
-    return *this;
-}
-
-DeviceMemory::~DeviceMemory() {
-    Y_TODO(right now we have to do device()->destroy to recycle memory properly, maybe we want to change that)
-    y_always_assert(is_null(), "DeviceMemory has not been freed");
-}
-
-bool DeviceMemory::is_null() const {
-    y_debug_assert(!_memory == !_heap);
-    return !_memory;
-}
-
-void DeviceMemory::free() {
-    y_profile();
-    y_debug_assert(!_memory == !_heap);
-    if(_memory && _heap) {
-        _heap->free(*this);
-        _memory = {};
-        _heap = nullptr;
-    }
-}
-
-VkDeviceMemory DeviceMemory::vk_memory() const {
-    return _memory;
-}
-
-u64 DeviceMemory::vk_offset() const {
-    return _offset;
-}
-
-u64 DeviceMemory::vk_size() const {
-    return _size;
-}
-
-DeviceMemoryHeapBase* DeviceMemory::heap() const {
-    return _heap;
-}
-
-void DeviceMemory::swap(DeviceMemory& other) {
-    std::swap(_heap, other._heap);
-    std::swap(_memory, other._memory);
-    std::swap(_offset, other._offset);
-    std::swap(_size, other._size);
-}
-
 
 }
 

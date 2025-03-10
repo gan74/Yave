@@ -53,13 +53,21 @@ in order to get warning on missed returned results
 **********************************/
 
 #define VK_NO_PROTOTYPES
+#define VMA_STATIC_VULKAN_FUNCTIONS 0
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
+
+#define VMA_ASSERT(expr) y_debug_assert(expr)
 
 #ifdef YAVE_UNITY_BUILD
 #define VOLK_IMPLEMENTATION
 #endif
 
+
 #include <Volk/volk.h>
 #include <vulkan/vulkan.h>
+#include <vma/vk_mem_alloc.h>
+
+
 
 namespace yave {
 

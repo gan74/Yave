@@ -26,41 +26,47 @@ SOFTWARE.
 
 namespace yave {
 
-class DeviceMemoryHeapBase;
-
-class DeviceMemory {
-
+class DeviceMemory final : NonCopyable {
     public:
         DeviceMemory() = default;
 
-        DeviceMemory(DeviceMemoryHeapBase* heap, VkDeviceMemory memory, u64 offset, u64 size);
-        DeviceMemory(VkDeviceMemory memory, u64 offset, u64 size);
+        DeviceMemory(VmaAllocation alloc, void* mapping = nullptr) : _alloc(alloc), _mapping(mapping) {
+        }
 
-        ~DeviceMemory();
+        ~DeviceMemory() {
+            y_debug_assert(!_alloc);
+        }
 
-        DeviceMemory(DeviceMemory&& other);
-        DeviceMemory& operator=(DeviceMemory&& other);
+        DeviceMemory(DeviceMemory&& other) {
+            swap(other);
+        }
 
-        bool is_null() const;
+        DeviceMemory& operator=(DeviceMemory&& other) {
+            swap(other);
+            return *this;
+        }
 
-        VkDeviceMemory vk_memory() const;
-        u64 vk_offset() const;
-        u64 vk_size() const;
-
-        DeviceMemoryHeapBase* heap() const;
-
-    protected:
-        void swap(DeviceMemory& other);
+        bool is_null() const {
+            return !_alloc;
+        }
 
     private:
         friend class LifetimeManager;
+        friend class DeviceMemoryView;
 
-        void free();
+        void free() {
+            y_debug_assert(_alloc);
+            vmaFreeMemory(device_allocator(), _alloc);
+            _alloc = {};
+        }
 
-        DeviceMemoryHeapBase* _heap = nullptr;
-        VkDeviceMemory _memory = {};
-        u64 _offset = 0;
-        u64 _size = 0;
+        void swap(DeviceMemory& other) {
+            std::swap(_alloc, other._alloc);
+            std::swap(_mapping, other._mapping);
+        }
+
+        VmaAllocation _alloc = {};
+        void* _mapping = nullptr;
 };
 
 }

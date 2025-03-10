@@ -31,6 +31,21 @@ SOFTWARE.
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/device/DiagnosticCheckpoints.h>
 
+
+#ifdef Y_MSVC
+#pragma warning(push)
+#pragma warning(disable:4100) // unreferenced formal parameter
+#pragma warning(disable:4189) // local variable is initialized but not referenced
+#pragma warning(disable:4324) // structure was padded due to alignment specifier
+#endif
+
+#define VMA_IMPLEMENTATION
+#include <vma/vk_mem_alloc.h>
+
+#ifdef Y_MSVC
+#pragma warning(pop)
+#endif
+
 namespace yave {
 
 void initialize_volk() {

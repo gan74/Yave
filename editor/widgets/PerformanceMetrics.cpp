@@ -23,7 +23,6 @@ SOFTWARE.
 #include "PerformanceMetrics.h"
 
 #include <yave/graphics/graphics.h>
-#include <yave/graphics/memory/DeviceMemoryAllocator.h>
 #include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/device/DescriptorLayoutAllocator.h>
 
@@ -144,7 +143,7 @@ void PerformanceMetrics::draw_timings() {
 }
 
 void PerformanceMetrics::draw_memory() {
-    double used_per_type_mb[4] = {};
+    /*double used_per_type_mb[4] = {};
     double allocated_per_type_mb[4] = {};
     for(const auto& heaps : device_allocator().heaps()) {
         for(const auto& heap : heaps) {
@@ -217,7 +216,7 @@ void PerformanceMetrics::draw_memory() {
 
         }
         ImGui::Unindent();
-    }
+    }*/
 }
 
 }

@@ -32,23 +32,18 @@ enum class MappingAccess {
     ReadWrite
 };
 
-class DeviceMemoryView {
+class DeviceMemoryView final {
     public:
         DeviceMemoryView() = default;
-        DeviceMemoryView(const DeviceMemory& mem);
 
-        VkMappedMemoryRange vk_mapped_range(u64 size, u64 offset = 0) const;
-        VkDeviceMemory vk_memory() const;
-        u64 vk_offset() const;
-        u64 vk_size() const;
-
-        DeviceMemoryHeapBase* heap();
+        DeviceMemoryView(const DeviceMemory& mem) : _alloc(mem._alloc), _mapping(mem._mapping) {
+        }
 
     private:
-        DeviceMemoryHeapBase* _heap = nullptr;
-        VkDeviceMemory _memory = {};
-        u64 _offset = 0;
-        u64 _size = 0;
+        friend class BufferMappingBase;
+
+        VmaAllocation _alloc = {};
+        void* _mapping = nullptr;
 };
 
 }

@@ -47,7 +47,6 @@ class SubBufferBase {
         DeviceMemoryView device_memory() const;
 
         VkDescriptorBufferInfo vk_descriptor_info() const;
-        VkMappedMemoryRange vk_memory_range() const;
 
         bool operator==(const SubBufferBase& other) const;
         bool operator!=(const SubBufferBase& other) const;

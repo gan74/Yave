@@ -30,7 +30,6 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/images/Sampler.h>
 #include <yave/graphics/commands/CmdQueue.h>
-#include <yave/graphics/memory/DeviceMemoryAllocator.h>
 #include <yave/graphics/device/LifetimeManager.h>
 #include <yave/graphics/device/MeshAllocator.h>
 #include <yave/graphics/device/MaterialAllocator.h>
@@ -51,11 +50,10 @@ namespace device {
 Instance* instance = nullptr;
 std::unique_ptr<PhysicalDevice> physical_device;
 
-DeviceProperties device_properties;
+DeviceProperties device_properties = {};
 
 std::array<Uninitialized<Sampler>, 6> samplers;
 
-Uninitialized<DeviceMemoryAllocator> allocator;
 Uninitialized<LifetimeManager> lifetime_manager;
 Uninitialized<DescriptorLayoutAllocator> layout_allocator;
 Uninitialized<MeshAllocator> mesh_allocator;
@@ -63,8 +61,8 @@ Uninitialized<MaterialAllocator> material_allocator;
 Uninitialized<TextureLibrary> texture_library;
 Uninitialized<DeviceResources> resources;
 
-
-VkDevice vk_device;
+VmaAllocator allocator = {};
+VkDevice vk_device = {};
 
 Uninitialized<CmdQueue> queue;
 
@@ -76,6 +74,51 @@ std::atomic<bool> destroying = false;
 
 }
 
+
+static void init_vma() {
+    VmaVulkanFunctions vulkan_functions = {};
+    {
+#define SET_VK_FUNC(func) vulkan_functions.func = func
+        SET_VK_FUNC(vkGetPhysicalDeviceProperties);
+        SET_VK_FUNC(vkGetPhysicalDeviceMemoryProperties);
+        SET_VK_FUNC(vkAllocateMemory);
+        SET_VK_FUNC(vkFreeMemory);
+        SET_VK_FUNC(vkMapMemory);
+        SET_VK_FUNC(vkUnmapMemory);
+        SET_VK_FUNC(vkFlushMappedMemoryRanges);
+        SET_VK_FUNC(vkInvalidateMappedMemoryRanges);
+        SET_VK_FUNC(vkBindBufferMemory);
+        SET_VK_FUNC(vkBindImageMemory);
+        SET_VK_FUNC(vkGetBufferMemoryRequirements);
+        SET_VK_FUNC(vkGetImageMemoryRequirements);
+        SET_VK_FUNC(vkCreateBuffer);
+        SET_VK_FUNC(vkDestroyBuffer);
+        SET_VK_FUNC(vkCreateImage);
+        SET_VK_FUNC(vkDestroyImage);
+        SET_VK_FUNC(vkCmdCopyBuffer);
+        SET_VK_FUNC(vkGetDeviceBufferMemoryRequirements);
+        SET_VK_FUNC(vkGetDeviceImageMemoryRequirements);
+#undef SET_VK_FUNC
+
+       vulkan_functions.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2;
+       vulkan_functions.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2;
+       vulkan_functions.vkBindBufferMemory2KHR = vkBindBufferMemory2;
+       vulkan_functions.vkBindImageMemory2KHR = vkBindImageMemory2;
+       vulkan_functions.vkGetPhysicalDeviceMemoryProperties2KHR = vkGetPhysicalDeviceMemoryProperties2;
+    }
+
+    VmaAllocatorCreateInfo create_info = {};
+    {
+        create_info.vulkanApiVersion = VK_API_VERSION_1_2;
+        create_info.pVulkanFunctions = &vulkan_functions;
+        create_info.physicalDevice = device::physical_device->vk_physical_device();
+        create_info.device = device::vk_device;
+        create_info.instance = device::instance->vk_instance();
+        create_info.pAllocationCallbacks = vk_allocation_callbacks();
+    }
+
+    vmaCreateAllocator(&create_info, &device::allocator);
+}
 
 static void init_vk_device() {
     y_profile();
@@ -198,8 +241,9 @@ void init_device(Instance& instance, PhysicalDevice device) {
 
     init_vk_device();
 
+    init_vma();
+
     device::lifetime_manager.init();
-    device::allocator.init(device_properties());
     device::mesh_allocator.init();
     device::material_allocator.init();
     device::texture_library.init();
@@ -240,10 +284,11 @@ void destroy_device() {
     device::material_allocator.destroy();
     device::mesh_allocator.destroy();
     device::lifetime_manager.destroy();
-    device::allocator.destroy();
 
     device::queue.destroy();
 
+    vmaDestroyAllocator(device::allocator);
+    device::allocator = {};
 
     {
         y_profile_zone("vkDestroyDevice");
@@ -297,8 +342,8 @@ DescriptorLayoutAllocator& layout_allocator() {
     return *device::layout_allocator;
 }
 
-DeviceMemoryAllocator& device_allocator() {
-    return *device::allocator;
+VmaAllocator device_allocator() {
+    return device::allocator;
 }
 
 MeshAllocator& mesh_allocator() {

@@ -21,57 +21,8 @@ SOFTWARE.
 **********************************/
 
 #include "DeviceMemoryView.h"
-#include "DeviceMemoryHeap.h"
-
-#include <yave/graphics/graphics.h>
-#include <yave/graphics/device/DeviceProperties.h>
-
-#include <y/utils/memory.h>
 
 namespace yave {
-
-DeviceMemoryView::DeviceMemoryView(const DeviceMemory& mem) :
-        _heap(mem.heap()),
-        _memory(mem.vk_memory()),
-        _offset(mem.vk_offset()),
-        _size(mem.vk_size()) {
-}
-
-VkMappedMemoryRange DeviceMemoryView::vk_mapped_range(u64 size, u64 offset) const {
-    const u64 atom_size = device_properties().non_coherent_atom_size;
-
-    const u64 full_offset = _offset + offset;
-    const u64 aligned_offset = align_down_to(full_offset, atom_size);
-    y_debug_assert(aligned_offset <= full_offset);
-    const u64 end = full_offset + size;
-    y_debug_assert(end > aligned_offset);
-    const u64 aligned_size = align_up_to(end - aligned_offset, atom_size);
-    y_debug_assert(end > full_offset);
-
-    VkMappedMemoryRange range = vk_struct();
-    {
-        range.memory = _memory;
-        range.offset = aligned_offset;
-        range.size = std::min(_size, aligned_size);
-    }
-    return range;
-}
-
-VkDeviceMemory DeviceMemoryView::vk_memory() const {
-    return _memory;
-}
-
-u64 DeviceMemoryView::vk_offset() const {
-    return _offset;
-}
-
-u64 DeviceMemoryView::vk_size() const {
-    return _size;
-}
-
-DeviceMemoryHeapBase* DeviceMemoryView::heap() {
-    return _heap;
-}
 
 
 }

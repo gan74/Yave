@@ -28,8 +28,6 @@ SOFTWARE.
 #include <yave/graphics/device/ResourceType.h>
 #include <yave/graphics/images/SamplerType.h>
 
-#include <y/core/Span.h>
-
 namespace yave {
 
 void init_device(Instance& instance);
@@ -50,7 +48,7 @@ ComputeCmdBufferRecorder create_disposable_compute_cmd_buffer();
 TransferCmdBufferRecorder create_disposable_transfer_cmd_buffer();
 
 const PhysicalDevice& physical_device();
-DeviceMemoryAllocator& device_allocator();
+VmaAllocator device_allocator();
 DescriptorLayoutAllocator& layout_allocator();
 MeshAllocator& mesh_allocator();
 MaterialAllocator& material_allocator();
