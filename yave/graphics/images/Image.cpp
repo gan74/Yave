@@ -91,10 +91,7 @@ static std::tuple<VkHandle<VkImage>, DeviceMemory, VkHandle<VkImageView>> alloc_
                                                                                       MemoryAllocFlags alloc_flags = MemoryAllocFlags::None) {
     y_profile();
 
-    /*auto image = create_image(size, layers, mips, format, usage, type);
-    auto memory = device_allocator().alloc(image, alloc_flags);
-
-    vk_check(vkBindImageMemory(vk_device(), image, memory.vk_memory(), memory.vk_offset()));*/
+    unused(alloc_flags);
 
     VkImageCreateInfo image_create_info = vk_struct();
     {

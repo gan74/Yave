@@ -33,6 +33,8 @@ namespace yave {
 static std::tuple<VkHandle<VkBuffer>, DeviceMemory> alloc_buffer(u64 buffer_size, VkBufferUsageFlags usage, MemoryType type, MemoryAllocFlags flags) {
     y_profile();
 
+    unused(flags);
+
     y_debug_assert(buffer_size);
 
     y_always_assert(
