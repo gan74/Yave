@@ -22,7 +22,10 @@ SOFTWARE.
 
 #include "ScriptVM.h"
 
+#include <y/core/ScratchPad.h>
+
 #include <y/utils/log.h>
+#include <y/utils/format.h>
 
 #include <external/LuaJIT/src/lua.hpp>
 
@@ -30,20 +33,23 @@ namespace yave {
 
 static ScriptVM* get_vm(lua_State* L) {
     lua_getglobal(L, "_vm");
-    y_debug_assert(lua_islightuserdata(L, lua_gettop(L)));
-    return static_cast<ScriptVM*>(lua_touserdata(L, lua_gettop(L)));
+    const int top = lua_gettop(L);
+    y_debug_assert(lua_islightuserdata(L, top));
+    ScriptVM* vm = static_cast<ScriptVM*>(lua_touserdata(L, top));
+    lua_pop(L, 1);
+    return vm;
 }
 
 static int lua_print(lua_State* L) {
     ScriptVM* vm = get_vm(L);
 
     const int argc = lua_gettop(L);
-    for (int i = 1; i <= argc; i++) {
+    for (int i = 1; i <= argc; ++i) {
         usize size = 0;
         const char* str = luaL_checklstring(L, i, &size);
         vm->output += std::string_view(str, size);
     }
-    vm->output += "*";
+    vm->output += "\n";
 
     return 0;
 }
