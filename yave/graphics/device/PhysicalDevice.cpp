@@ -57,6 +57,8 @@ PhysicalDevice::PhysicalDevice(VkPhysicalDevice device) : _device(device) {
         vkGetPhysicalDeviceFeatures2(_device, &_supported_features);
     }
 
+    _raytracing_properties.pNext = &_accel_struct_properties;
+
     _properties_1_4.pNext = &_properties_1_3;
     _properties_1_3.pNext = &_properties_1_2;
     _properties_1_2.pNext = &_properties_1_1;
@@ -105,6 +107,8 @@ DeviceProperties PhysicalDevice::device_properties() const {
         properties.shader_group_handle_size = _raytracing_properties.shaderGroupHandleSize;
         properties.shader_group_handle_size_aligned = align_up_to(_raytracing_properties.shaderGroupHandleSize, _raytracing_properties.shaderGroupHandleAlignment);
         properties.shader_group_handle_size_base_aligned = align_up_to(_raytracing_properties.shaderGroupHandleSize, _raytracing_properties.shaderGroupBaseAlignment);
+
+        properties.acceleration_structure_buffer_alignment = _accel_struct_properties.minAccelerationStructureScratchOffsetAlignment;
     }
 
     return properties;

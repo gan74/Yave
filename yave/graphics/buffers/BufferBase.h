@@ -29,6 +29,8 @@ SOFTWARE.
 
 namespace yave {
 
+u64 buffer_alignment_for_usage(BufferUsage usage);
+
 class SubBufferBase {
     public:
         SubBufferBase() = default;
@@ -53,9 +55,6 @@ class SubBufferBase {
 
         static u64 host_side_alignment();
 
-    protected:
-        static u64 alignment_for_usage(BufferUsage usage);
-
     private:
         u64 _size = 0;
         u64 _offset = 0;
@@ -64,7 +63,6 @@ class SubBufferBase {
 };
 
 class BufferBase : NonCopyable {
-
     public:
         ~BufferBase();
 

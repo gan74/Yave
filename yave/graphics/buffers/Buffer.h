@@ -117,7 +117,7 @@ class SubBuffer : public SubBufferBase {
 
 
         static u64 byte_alignment() {
-            return alignment_for_usage(Usage);
+            return buffer_alignment_for_usage(Usage);
         }
 
 

@@ -31,6 +31,7 @@ struct DeviceProperties {
     u32 max_uniform_buffer_size;
     u64 uniform_buffer_alignment;
     u64 storage_buffer_alignment;
+    u64 acceleration_structure_buffer_alignment;
 
     u32 max_memory_allocations;
 

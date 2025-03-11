@@ -55,7 +55,7 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
     vkGetAccelerationStructureBuildSizesKHR(vk_device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &build_info, prim_counts.data(), &size_infos);
 
     Buffer<BufferUsage::AccelStructureBit> buffer(size_infos.accelerationStructureSize);
-    Buffer<BufferUsage::StorageBit> scratch(size_infos.buildScratchSize);
+    Buffer<BufferUsage::AccelStructureScratchBit> scratch(size_infos.buildScratchSize);
 
     build_info.scratchData.deviceAddress = vk_buffer_device_address(SubBuffer(scratch));
 

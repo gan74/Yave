@@ -30,7 +30,23 @@ SOFTWARE.
 
 namespace yave {
 
-static std::tuple<VkHandle<VkBuffer>, DeviceMemory> alloc_buffer(u64 buffer_size, VkBufferUsageFlags usage, MemoryType type, MemoryAllocFlags flags) {
+u64 buffer_alignment_for_usage(BufferUsage usage) {
+    u64 align = 1;
+    const auto& props = device_properties();
+    if((usage & BufferUsage::UniformBit) == BufferUsage::UniformBit) {
+        align = std::max(props.uniform_buffer_alignment, align);
+    }
+    if((usage & BufferUsage::StorageBit) == BufferUsage::StorageBit) {
+        align = std::max(props.storage_buffer_alignment, align);
+    }
+    if((usage & BufferUsage::AccelStructureScratchBit) == BufferUsage::AccelStructureScratchBit) {
+        align = std::max(props.acceleration_structure_buffer_alignment, align);
+    }
+    return u64(align);
+}
+
+
+static std::tuple<VkHandle<VkBuffer>, DeviceMemory> alloc_buffer(u64 buffer_size, BufferUsage usage, MemoryType type, MemoryAllocFlags flags) {
     y_profile();
 
     unused(flags);
@@ -38,22 +54,22 @@ static std::tuple<VkHandle<VkBuffer>, DeviceMemory> alloc_buffer(u64 buffer_size
     y_debug_assert(buffer_size);
 
     y_always_assert(
-        (usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) == 0 ||
+        (usage & BufferUsage::UniformBit) != BufferUsage::UniformBit ||
         buffer_size <= device_properties().max_uniform_buffer_size,
         "Uniform buffer size exceeds maxUniformBufferRange ({})", device_properties().max_uniform_buffer_size
     );
 
 
-    const VkBufferUsageFlags raytracing_bits = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+    const u64 raytracing_bits = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
     usage = raytracing_enabled()
-        ? (usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)
-        : (usage & ~raytracing_bits)
+        ? (usage | BufferUsage(VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT))
+        : (usage & BufferUsage(~raytracing_bits))
     ;
 
     VkBufferCreateInfo buffer_create_info = vk_struct();
     {
         buffer_create_info.size = buffer_size;
-        buffer_create_info.usage = usage;
+        buffer_create_info.usage = VkBufferUsageFlags(usage);
         buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     }
 
@@ -74,12 +90,16 @@ static std::tuple<VkHandle<VkBuffer>, DeviceMemory> alloc_buffer(u64 buffer_size
         break;
     }
 
+    const u64 alignment = buffer_alignment_for_usage(usage);
+
     VmaAllocation alloc = {};
     VkHandle<VkBuffer> buffer;
-    vk_check(vmaCreateBuffer(device_allocator(), &buffer_create_info, &alloc_create_info, buffer.get_ptr_for_init(), &alloc, nullptr));
+    vk_check(vmaCreateBufferWithAlignment(device_allocator(), &buffer_create_info, &alloc_create_info, alignment, buffer.get_ptr_for_init(), &alloc, nullptr));
 
     return {std::move(buffer), alloc};
 }
+
+
 
 
 
@@ -113,17 +133,6 @@ u64 SubBufferBase::host_side_alignment() {
     return device_properties().non_coherent_atom_size;
 }
 
-u64 SubBufferBase::alignment_for_usage(BufferUsage usage) {
-    u64 align = 1;
-    const auto& props = device_properties();
-    if((usage & BufferUsage::UniformBit) != BufferUsage::None) {
-        align = std::max(props.uniform_buffer_alignment, align);
-    }
-    if((usage & BufferUsage::StorageBit) != BufferUsage::None) {
-        align = std::max(props.storage_buffer_alignment, align);
-    }
-    return u64(align);
-}
 
 u64 SubBufferBase::byte_size() const {
     return _size;
@@ -161,7 +170,7 @@ bool SubBufferBase::operator!=(const SubBufferBase& other) const {
 
 
 BufferBase::BufferBase(u64 byte_size, BufferUsage usage, MemoryType type, MemoryAllocFlags alloc_flags) : _size(byte_size), _usage(usage) {
-    std::tie(_buffer, _memory) = alloc_buffer(byte_size, VkBufferUsageFlagBits(usage), type, alloc_flags);
+    std::tie(_buffer, _memory) = alloc_buffer(byte_size, usage, type, alloc_flags);
 }
 
 BufferBase::~BufferBase() {

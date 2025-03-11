@@ -83,6 +83,7 @@ class PhysicalDevice {
         VkPhysicalDeviceVulkan14Properties _properties_1_4 = vk_struct();
 
         VkPhysicalDeviceRayTracingPipelinePropertiesKHR _raytracing_properties = vk_struct();
+        VkPhysicalDeviceAccelerationStructurePropertiesKHR _accel_struct_properties = vk_struct();
 
         VkPhysicalDeviceFeatures2 _supported_features = vk_struct();
         VkPhysicalDeviceVulkan11Features _supported_features_1_1 = vk_struct();

@@ -27,7 +27,9 @@ SOFTWARE.
 
 namespace yave {
 
-enum class BufferUsage : u32 {
+// BufferUsage is 64 bits, the low 32 bits store the vulkan usage flags, while the high 32 bits store any other flag we might need
+// This enables the creation of custom usage without making the cast to VkBufferUsageFlags more complex
+enum class BufferUsage : u64 {
     None = 0,
 
     AttributeBit                = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
@@ -41,15 +43,19 @@ enum class BufferUsage : u32 {
 
     AccelStructureInputBit      = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
     AccelStructureBit           = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
+    AccelStructureScratchBit    = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | 0x0000000100000000,
+
     BindingTableBit             = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR,
+
+
 };
 
 constexpr BufferUsage operator|(BufferUsage a, BufferUsage b) {
-    return BufferUsage(u32(a) | u32(b));
+    return BufferUsage(u64(a) | u64(b));
 }
 
 constexpr BufferUsage operator&(BufferUsage a, BufferUsage b) {
-    return BufferUsage(u32(a) & u32(b));
+    return BufferUsage(u64(a) & u64(b));
 }
 
 inline constexpr MemoryType prefered_memory_type(BufferUsage) {
