@@ -51,6 +51,9 @@ if exist minilua.exe.manifest^
 minilua %DASM% -LN %DASMFLAGS% -o host\buildvm_arch.h %DASC%
 @if errorlevel 1 goto :BAD
 
+if exist ..\.git ( git show -s --format=%%ct >luajit_relver.txt ) else ( type ..\.relver >luajit_relver.txt )
+minilua host\genversion.lua
+
 %LJCOMPILE% /I "." /I %DASMDIR% %GC64% -DLUAJIT_TARGET=LUAJIT_ARCH_X64 -DLUAJIT_OS=LUAJIT_OS_OTHER -DLUAJIT_DISABLE_JIT -DLUAJIT_DISABLE_FFI -DLUAJIT_NO_UNWIND host\buildvm*.c
 @if errorlevel 1 goto :BAD
 %LJLINK% /out:buildvm.exe buildvm*.obj
@@ -74,11 +77,11 @@ buildvm -m folddef -o lj_folddef.h lj_opt_fold.c
 @if errorlevel 1 goto :BAD
 
 @rem ---- Cross compiler ----
-@set LJCOMPILE="%SCE_PROSPERO_SDK_DIR%\host_tools\bin\prospero-clang" -c -Wall -DLUAJIT_DISABLE_FFI %GC64%
+@set LJCOMPILE="%SCE_PROSPERO_SDK_DIR%\host_tools\bin\prospero-clang" -c -Wall -DLUAJIT_DISABLE_FFI -DLUAJIT_USE_SYSMALLOC %GC64%
 @set LJLIB="%SCE_PROSPERO_SDK_DIR%\host_tools\bin\prospero-llvm-ar" rcus
 @set INCLUDE=""
 
-%SCE_PROSPERO_SDK_DIR%\host_tools\bin\prospero-llvm-as -o lj_vm.o lj_vm.s
+"%SCE_PROSPERO_SDK_DIR%\host_tools\bin\prospero-clang" -c -o lj_vm.o lj_vm.s
 
 @if "%1" neq "debug" goto :NODEBUG
 @shift

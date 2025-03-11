@@ -3,7 +3,7 @@
 <head>
 <title>String Buffer Library</title>
 <meta charset="utf-8">
-<meta name="Copyright" content="Copyright (C) 2005-2022">
+<meta name="Copyright" content="Copyright (C) 2005-2025">
 <meta name="Language" content="en">
 <link rel="stylesheet" type="text/css" href="bluequad.css" media="screen">
 <link rel="stylesheet" type="text/css" href="bluequad-print.css" media="print">
@@ -57,9 +57,9 @@
 <a href="ext_profiler.html">Profiler</a>
 </li></ul>
 </li><li>
-<a href="status.html">Status</a>
+<a href="https://luajit.org/status.html">Status <span class="ext">&raquo;</span></a>
 </li><li>
-<a href="faq.html">FAQ</a>
+<a href="https://luajit.org/faq.html">FAQ <span class="ext">&raquo;</span></a>
 </li><li>
 <a href="https://luajit.org/list.html">Mailing List <span class="ext">&raquo;</span></a>
 </li></ul>
@@ -85,13 +85,7 @@ operations.
 </p>
 <p>
 The string buffer library also includes a high-performance
-<a href="serialize">serializer</a> for Lua objects.
-</p>
-
-<h2 id="wip" style="color:#ff0000">Work in Progress</h2>
-<p>
-<b style="color:#ff0000">This library is a work in progress. More
-functionality will be added soon.</b>
+<a href="#serialize">serializer</a> for Lua objects.
 </p>
 
 <h2 id="use">Using the String Buffer Library</h2>
@@ -594,9 +588,9 @@ num       → 0x07 double.L
 tab       → 0x08                                   // Empty table
           | 0x09 h.U h*{object object}          // Key/value hash
           | 0x0a a.U a*object                    // 0-based array
-          | 0x0b a.U a*object h.U h*{object object}      // Mixed
+          | 0x0b a.U h.U a*object h*{object object}      // Mixed
           | 0x0c a.U (a-1)*object                // 1-based array
-          | 0x0d a.U (a-1)*object h.U h*{object object}  // Mixed
+          | 0x0d a.U h.U (a-1)*object h*{object object}  // Mixed
 tab_mt    → 0x0e (index-1).U tab          // Metatable dict entry
 
 int64     → 0x10 int.L                             // FFI int64_t
@@ -685,7 +679,7 @@ mappings of files are OK, but only if the file does not change.
 </div>
 <div id="foot">
 <hr class="hide">
-Copyright &copy; 2005-2022
+Copyright &copy; 2005-2025
 <span class="noprint">
 &middot;
 <a href="contact.html">Contact</a>

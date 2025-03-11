@@ -1,6 +1,6 @@
 /*
 ** LuaJIT VM tags, values and objects.
-** Copyright (C) 2005-2022 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 **
 ** Portions taken verbatim or adapted from the Lua interpreter.
 ** Copyright (C) 1994-2008 Lua.org, PUC-Rio. See Copyright Notice in lua.h
@@ -413,7 +413,7 @@ typedef struct GCproto {
 #define PROTO_UV_IMMUTABLE	0x4000	/* Immutable upvalue. */
 
 #define proto_kgc(pt, idx) \
-  check_exp((uintptr_t)(intptr_t)(idx) >= (uintptr_t)-(intptr_t)(pt)->sizekgc, \
+  check_exp((uintptr_t)(intptr_t)(idx) >= ~(uintptr_t)(pt)->sizekgc+1u, \
 	    gcref(mref((pt)->k, GCRef)[(idx)]))
 #define proto_knumtv(pt, idx) \
   check_exp((uintptr_t)(idx) < (pt)->sizekn, &mref((pt)->k, TValue)[(idx)])
@@ -579,6 +579,9 @@ typedef enum {
   GCROOT_BASEMT_NUM = GCROOT_BASEMT + ~LJ_TNUMX,
   GCROOT_IO_INPUT,	/* Userdata for default I/O input file. */
   GCROOT_IO_OUTPUT,	/* Userdata for default I/O output file. */
+#if LJ_HASFFI
+  GCROOT_FFI_FIN,	/* FFI finalizer table. */
+#endif
   GCROOT_MAX
 } GCRootID;
 
@@ -592,7 +595,7 @@ typedef struct GCState {
   GCSize threshold;	/* Memory threshold. */
   uint8_t currentwhite;	/* Current white color. */
   uint8_t state;	/* GC state. */
-  uint8_t nocdatafin;	/* No cdata finalizer called. */
+  uint8_t unused0;
 #if LJ_64
   uint8_t lightudnum;	/* Number of lightuserdata segments - 1. */
 #else
@@ -1041,5 +1044,19 @@ LJ_DATA const char *const lj_obj_itypename[~LJ_TNUMX+1];
 /* Compare two objects without calling metamethods. */
 LJ_FUNC int LJ_FASTCALL lj_obj_equal(cTValue *o1, cTValue *o2);
 LJ_FUNC const void * LJ_FASTCALL lj_obj_ptr(global_State *g, cTValue *o);
+
+#if LJ_ABI_PAUTH
+#if LJ_TARGET_ARM64
+#include <ptrauth.h>
+#define lj_ptr_sign(ptr, ctx) \
+  ptrauth_sign_unauthenticated((ptr), ptrauth_key_function_pointer, (ctx))
+#define lj_ptr_strip(ptr) ptrauth_strip((ptr), ptrauth_key_function_pointer)
+#else
+#error "No support for pointer authentication for this architecture"
+#endif
+#else
+#define lj_ptr_sign(ptr, ctx) (ptr)
+#define lj_ptr_strip(ptr) (ptr)
+#endif
 
 #endif

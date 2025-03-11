@@ -72,6 +72,10 @@ if exist minilua.exe.manifest^
 @set DASMFLAGS=%DASMFLAGS% %DASMTARGET% -D LJ_TARGET_NX -D LUAJIT_OS=LUAJIT_OS_OTHER -D LUAJIT_DISABLE_JIT -D LUAJIT_DISABLE_FFI
 minilua %DASM% -LN %DASMFLAGS% -o host\buildvm_arch.h %DASC%
 @if errorlevel 1 goto :BAD
+
+if exist ..\.git ( git show -s --format=%%ct >luajit_relver.txt ) else ( type ..\.relver >luajit_relver.txt )
+minilua host\genversion.lua
+
 %LJCOMPILE% /I "." /I %DASMDIR% %DASMTARGET% -D LJ_TARGET_NX -DLUAJIT_OS=LUAJIT_OS_OTHER -DLUAJIT_DISABLE_JIT -DLUAJIT_DISABLE_FFI host\buildvm*.c
 @if errorlevel 1 goto :BAD
 %LJLINK% /out:buildvm.exe buildvm*.obj
@@ -95,20 +99,21 @@ buildvm -m folddef -o lj_folddef.h lj_opt_fold.c
 @if errorlevel 1 goto :BAD
 
 @rem ---- Cross compiler ----
+@set NXCOMPILER_ROOT="%NINTENDO_SDK_ROOT%\Compilers\NintendoClang"
 @if "%platform%" neq "x64" goto :NX32_CROSSBUILD
-@set LJCOMPILE="%NINTENDO_SDK_ROOT%\Compilers\NX\nx\aarch64\bin\clang" -Wall -I%NINTENDO_SDK_ROOT%\Include %DASMTARGET% -DLUAJIT_OS=LUAJIT_OS_OTHER -DLUAJIT_DISABLE_JIT -DLUAJIT_DISABLE_FFI -DLUAJIT_USE_SYSMALLOC -c
-@set LJLIB="%NINTENDO_SDK_ROOT%\Compilers\NX\nx\aarch64\bin\aarch64-nintendo-nx-elf-ar" rc
+@set LJCOMPILE="%NXCOMPILER_ROOT%\bin\clang" --target=aarch64-nintendo-nx-elf -Wall -I%NINTENDO_SDK_ROOT%\Include %DASMTARGET% -DLUAJIT_OS=LUAJIT_OS_OTHER -DLUAJIT_DISABLE_JIT -DLUAJIT_DISABLE_FFI -DLUAJIT_USE_SYSMALLOC -c
+@set LJLIB="%NXCOMPILER_ROOT%\bin\llvm-ar" rc
 @set TARGETLIB_SUFFIX=nx64
 
-%NINTENDO_SDK_ROOT%\Compilers\NX\nx\aarch64\bin\aarch64-nintendo-nx-elf-as -o lj_vm.o lj_vm.s
+%NXCOMPILER_ROOT%\bin\clang --target=aarch64-nintendo-nx-elf -o lj_vm.o -c lj_vm.s
 goto :DEBUGCHECK
 
 :NX32_CROSSBUILD
-@set LJCOMPILE="%NINTENDO_SDK_ROOT%\Compilers\NX\nx\armv7l\bin\clang" -Wall -I%NINTENDO_SDK_ROOT%\Include %DASMTARGET% -DLUAJIT_OS=LUAJIT_OS_OTHER -DLUAJIT_DISABLE_JIT -DLUAJIT_DISABLE_FFI -DLUAJIT_USE_SYSMALLOC -c
-@set LJLIB="%NINTENDO_SDK_ROOT%\Compilers\NX\nx\armv7l\bin\armv7l-nintendo-nx-eabihf-ar" rc
+@set LJCOMPILE="%NXCOMPILER_ROOT%\bin\clang" --target=armv7l-nintendo-nx-eabihf -Wall -I%NINTENDO_SDK_ROOT%\Include %DASMTARGET% -DLUAJIT_OS=LUAJIT_OS_OTHER -DLUAJIT_DISABLE_JIT -DLUAJIT_DISABLE_FFI -DLUAJIT_USE_SYSMALLOC -c
+@set LJLIB="%NXCOMPILER_ROOT%\bin\llvm-ar" rc
 @set TARGETLIB_SUFFIX=nx32
 
-%NINTENDO_SDK_ROOT%\Compilers\NX\nx\armv7l\bin\armv7l-nintendo-nx-eabihf-as -o lj_vm.o lj_vm.s
+%NXCOMPILER_ROOT%\bin\clang --target=armv7l-nintendo-nx-eabihf -o lj_vm.o -c lj_vm.s
 :DEBUGCHECK
 
 @if "%1" neq "debug" goto :NODEBUG
@@ -121,6 +126,7 @@ goto :BUILD
 @set TARGETLIB=libluajit_%TARGETLIB_SUFFIX%.a
 :BUILD
 del %TARGETLIB%
+@set LJCOMPILE=%LJCOMPILE% -fPIC
 @if "%1" neq "noamalg" goto :AMALG
 for %%f in (lj_*.c lib_*.c) do (
   %LJCOMPILE% %%f

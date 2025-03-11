@@ -3,7 +3,7 @@
 ** AA: Alias Analysis using high-level semantic disambiguation.
 ** FWD: Load Forwarding (L2L) + Store Forwarding (S2L).
 ** DSE: Dead-Store Elimination.
-** Copyright (C) 2005-2022 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 */
 
 #define lj_opt_mem_c
@@ -186,6 +186,7 @@ static TRef fwd_ahload(jit_State *J, IRRef xref)
 	fwd_aa_tab_clear(J, tab, tab)) {
       /* A NEWREF with a number key may end up pointing to the array part.
       ** But it's referenced from HSTORE and not found in the ASTORE chain.
+      ** Or a NEWREF may rehash the table and move unrelated number keys.
       ** For now simply consider this a conflict without forwarding anything.
       */
       if (xr->o == IR_AREF) {
@@ -196,6 +197,11 @@ static TRef fwd_ahload(jit_State *J, IRRef xref)
 	    goto cselim;
 	  ref2 = newref->prev;
 	}
+      } else {
+	IRIns *key = IR(xr->op2);
+	if (key->o == IR_KSLOT) key = IR(key->op1);
+	if (irt_isnum(key->t) && J->chain[IR_NEWREF] > tab)
+	  goto cselim;
       }
       /* NEWREF inhibits CSE for HREF, and dependent FLOADs from HREFK/AREF.
       ** But the above search for conflicting stores was limited by xref.
@@ -211,25 +217,23 @@ static TRef fwd_ahload(jit_State *J, IRRef xref)
 	}
 	ref = store->prev;
       }
-      if (ir->o == IR_TNEW && !irt_isnil(fins->t))
-	return 0;  /* Type instability in loop-carried dependency. */
-      if (irt_ispri(fins->t)) {
-	return TREF_PRI(irt_type(fins->t));
-      } else if (irt_isnum(fins->t) || (LJ_DUALNUM && irt_isint(fins->t)) ||
-		 irt_isstr(fins->t)) {
+      /* Simplified here: let loop_unroll() figure out any type instability. */
+      if (ir->o == IR_TNEW) {
+	return TREF_NIL;
+      } else {
 	TValue keyv;
 	cTValue *tv;
 	IRIns *key = IR(xr->op2);
 	if (key->o == IR_KSLOT) key = IR(key->op1);
 	lj_ir_kvalue(J->L, &keyv, key);
 	tv = lj_tab_get(J->L, ir_ktab(IR(ir->op1)), &keyv);
-	lj_assertJ(itype2irt(tv) == irt_type(fins->t),
-		   "mismatched type in constant table");
-	if (irt_isnum(fins->t))
+	if (tvispri(tv))
+	  return TREF_PRI(itype2irt(tv));
+	else if (tvisnum(tv))
 	  return lj_ir_knum_u64(J, tv->u64);
-	else if (LJ_DUALNUM && irt_isint(fins->t))
+	else if (tvisint(tv))
 	  return lj_ir_kint(J, intV(tv));
-	else
+	else if (tvisgcv(tv))
 	  return lj_ir_kstr(J, strV(tv));
       }
       /* Othwerwise: don't intern as a constant. */
@@ -458,18 +462,23 @@ doemit:
 */
 static AliasRet aa_uref(IRIns *refa, IRIns *refb)
 {
-  if (refa->o != refb->o)
-    return ALIAS_NO;  /* Different UREFx type. */
   if (refa->op1 == refb->op1) {  /* Same function. */
     if (refa->op2 == refb->op2)
       return ALIAS_MUST;  /* Same function, same upvalue idx. */
     else
       return ALIAS_NO;  /* Same function, different upvalue idx. */
   } else {  /* Different functions, check disambiguation hash values. */
-    if (((refa->op2 ^ refb->op2) & 0xff))
+    if (((refa->op2 ^ refb->op2) & 0xff)) {
       return ALIAS_NO;  /* Upvalues with different hash values cannot alias. */
-    else
-      return ALIAS_MAY;  /* No conclusion can be drawn for same hash value. */
+    } else if (refa->o != refb->o) {
+      /* Different UREFx type, but need to confirm the UREFO really is open. */
+      if (irt_type(refa->t) == IRT_IGC) refa->t.irt += IRT_PGC-IRT_IGC;
+      else if (irt_type(refb->t) == IRT_IGC) refb->t.irt += IRT_PGC-IRT_IGC;
+      return ALIAS_NO;
+    } else {
+      /* No conclusion can be drawn for same hash value and same UREFx type. */
+      return ALIAS_MAY;
+    }
   }
 }
 
@@ -951,6 +960,8 @@ int lj_opt_fwd_wasnonnil(jit_State *J, IROpT loadop, IRRef xref)
 	if (skref == xkref || !irref_isk(skref) || !irref_isk(xkref))
 	  return 0;  /* A nil store with same const key or var key MAY alias. */
 	/* Different const keys CANNOT alias. */
+      } else if (irt_isp32(IR(skref)->t) != irt_isp32(IR(xkref)->t)) {
+	return 0;  /* HREF and HREFK MAY alias. */
       }  /* Different key types CANNOT alias. */
     }  /* Other non-nil stores MAY alias. */
     ref = store->prev;

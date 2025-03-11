@@ -1,6 +1,6 @@
 /*
 ** Common definitions for the JIT compiler.
-** Copyright (C) 2005-2022 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 */
 
 #ifndef _LJ_JIT_H
@@ -87,10 +87,11 @@
 #define JIT_F_OPT_ABC		(JIT_F_OPT << 7)
 #define JIT_F_OPT_SINK		(JIT_F_OPT << 8)
 #define JIT_F_OPT_FUSE		(JIT_F_OPT << 9)
+#define JIT_F_OPT_FMA		(JIT_F_OPT << 10)
 
 /* Optimizations names for -O. Must match the order above. */
 #define JIT_F_OPTSTRING	\
-  "\4fold\3cse\3dce\3fwd\3dse\6narrow\4loop\3abc\4sink\4fuse"
+  "\4fold\3cse\3dce\3fwd\3dse\6narrow\4loop\3abc\4sink\4fuse\3fma"
 
 /* Optimization levels set a fixed combination of flags. */
 #define JIT_F_OPT_0	0
@@ -99,11 +100,12 @@
 #define JIT_F_OPT_3	(JIT_F_OPT_2|\
   JIT_F_OPT_FWD|JIT_F_OPT_DSE|JIT_F_OPT_ABC|JIT_F_OPT_SINK|JIT_F_OPT_FUSE)
 #define JIT_F_OPT_DEFAULT	JIT_F_OPT_3
+/* Note: FMA is not set by default. */
 
 /* -- JIT engine parameters ----------------------------------------------- */
 
 #if LJ_TARGET_WINDOWS || LJ_64
-/* See: http://blogs.msdn.com/oldnewthing/archive/2003/10/08/55239.aspx */
+/* See: https://devblogs.microsoft.com/oldnewthing/20031008-00/?p=42223 */
 #define JIT_P_sizemcode_DEFAULT		64
 #else
 /* Could go as low as 4K, but the mmap() overhead would be rather high. */
@@ -271,6 +273,9 @@ typedef struct GCtrace {
   BCIns startins;	/* Original bytecode of starting instruction. */
   MSize szmcode;	/* Size of machine code. */
   MCode *mcode;		/* Start of machine code. */
+#if LJ_ABI_PAUTH
+  ASMFunction mcauth;	/* Start of machine code, with ptr auth applied. */
+#endif
   MSize mcloop;		/* Offset of loop start in machine code. */
   uint16_t nchild;	/* Number of child traces (root trace only). */
   uint16_t spadjust;	/* Stack pointer adjustment (offset in bytes). */
@@ -455,8 +460,8 @@ typedef struct jit_State {
 #endif
 
   IRIns *irbuf;		/* Temp. IR instruction buffer. Biased with REF_BIAS. */
-  IRRef irtoplim;	/* Upper limit of instuction buffer (biased). */
-  IRRef irbotlim;	/* Lower limit of instuction buffer (biased). */
+  IRRef irtoplim;	/* Upper limit of instruction buffer (biased). */
+  IRRef irbotlim;	/* Lower limit of instruction buffer (biased). */
   IRRef loopref;	/* Last loop reference or ref of final LOOP (or 0). */
 
   MSize sizesnap;	/* Size of temp. snapshot buffer. */

@@ -1,6 +1,6 @@
 /*
 ** Stack frames.
-** Copyright (C) 2005-2022 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 */
 
 #ifndef _LJ_FRAME_H
