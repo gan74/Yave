@@ -84,7 +84,9 @@ y_force_inline static ScriptVM* get_vm(lua_State* L) {
 
 static float test_func(float x) {
     return x + 1;
-} 
+}
+
+
 
 
 
@@ -139,6 +141,7 @@ y_force_inline static void push_value(lua_State* L, T val) {
 
 template<typename T>
 y_force_inline T get_value(lua_State* L, int index) {
+    static_assert(std::is_trivially_destructible_v<T>);
     if constexpr(std::is_same_v<T, bool>) {
         return !!luaL_checkinteger(L, index);
     } else if constexpr(std::is_integral_v<T>) {
@@ -156,6 +159,7 @@ y_force_inline T get_value(lua_State* L, int index) {
 
 template<typename T, usize... Is>
 y_force_inline T get_values(lua_State* L, std::index_sequence<Is...>) {
+    static_assert(std::is_trivially_destructible_v<T>);
     static_assert(std::tuple_size_v<T> == sizeof...(Is));
     return T(
         get_value<std::tuple_element_t<Is, T>>(L, int(Is + 1))...
@@ -188,6 +192,15 @@ ScriptVM::ScriptVM() {
     // lua_setglobal(_state, "_vm");
 
     bind_func<test_func>(_state, "test");
+
+    
+    auto f = [](lua_State* L) { 
+        y_defer(log_msg("flooop")); 
+        void* p = luaL_checkudata(L, 1, "floop"); 
+        return 0; 
+    };
+    lua_pushcfunction(_state, f);
+    lua_setglobal(_state, "pwet");
 }
 
 ScriptVM::~ScriptVM() {
