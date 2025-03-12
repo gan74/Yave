@@ -25,17 +25,33 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include <y/core/String.h>
+#include <y/core/Result.h>
 
 struct lua_State;
 
 namespace yave {
+
+enum class ScriptTypeIndex : u32 {
+    invalid_index = u32(-1),
+};
+
+namespace detail {
+ScriptTypeIndex next_script_type_index();
+}
+
+template<typename T>
+ScriptTypeIndex script_type_index() {
+    static_assert(!std::is_const_v<T> && !std::is_reference_v<T>);
+    static ScriptTypeIndex type(detail::next_script_type_index());
+    return type;
+}
 
 class ScriptVM : NonMovable {
     public:
         ScriptVM();
         ~ScriptVM();
 
-        bool run(const core::String& script);
+        core::Result<void, core::String> run(const core::String& script);
 
         core::String output;
 

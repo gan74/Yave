@@ -46,10 +46,16 @@ void ScriptingConsole::on_gui() {
     ImGui::SetNextItemWidth(-1);
     imgui::text_input_multiline("##code", _code, {0.0f, height});
 
-    ImGui::SetNextItemWidth(-1);
-    imgui::text_input_multiline("##log", _vm.output, {0.0f, height}, ImGuiInputTextFlags_ReadOnly);
+    if(!_error.is_empty()) {
+        ImGui::SetNextItemWidth(-1);
+        ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
+        imgui::text_input_multiline("##error", _error, {0.0f, height}, ImGuiInputTextFlags_ReadOnly);
+        ImGui::PopStyleColor();
+    } else {
+        ImGui::SetNextItemWidth(-1);
+        imgui::text_input_multiline("##log", _vm.output, {0.0f, height}, ImGuiInputTextFlags_ReadOnly);
+    }
 
-    ImGui::SetNextItemWidth(-1);
     if(ImGui::Button(ICON_FA_PLAY " Run")) {
         if(auto f = io2::File::create(script_file)) {
             f.unwrap().write_array(_code.data(), _code.size()).ignore();
@@ -61,7 +67,11 @@ void ScriptingConsole::on_gui() {
 
 
 void ScriptingConsole::run(const core::String& code) {
-    _vm.run(code);
+    _vm.output = {};
+    _error = {};
+    if(auto r = _vm.run(code); r.is_error()) {
+        _error = r.error();
+    }
 }
 
 }

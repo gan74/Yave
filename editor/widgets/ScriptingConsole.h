@@ -30,7 +30,7 @@ namespace editor {
 
 class ScriptingConsole final : public Widget {
 
-    editor_widget(ScriptingConsole, "View")
+    editor_widget_open(ScriptingConsole, "View")
 
     public:
         ScriptingConsole();
@@ -42,6 +42,7 @@ class ScriptingConsole final : public Widget {
         void run(const core::String& code);
 
         core::String _code;
+        core::String _error;
         ScriptVM _vm;
 };
 
