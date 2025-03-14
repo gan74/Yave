@@ -41,11 +41,22 @@ consteval std::string_view ct_type_name() {
 static_assert(false, "ct_type_name is not supported");
 #endif
 }
+
+template<typename T>
+static constexpr std::array ct_type_name_buffer = [] {
+    constexpr std::string_view inner = ct_type_name<T>();
+    std::array<char, inner.size() + 1> buffer = {};
+    std::copy_n(inner.begin(), inner.size(), buffer.begin());
+    return buffer;
+}();
 }
 
 template<typename T>
 constexpr std::string_view ct_type_name() {
-    return detail::ct_type_name<T>();
+    return std::string_view(
+        detail::ct_type_name_buffer<T>.data(),
+        detail::ct_type_name_buffer<T>.size() - 1
+    );
 }
 
 static_assert(ct_type_name<int>() == "int");
