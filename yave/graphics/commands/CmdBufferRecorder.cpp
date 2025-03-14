@@ -503,7 +503,7 @@ void CmdBufferRecorderBase::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuf
 void CmdBufferRecorderBase::bind_descriptor_set(VkPipelineBindPoint bind_point, VkPipelineLayout layout, u32 set_index, const DescriptorSetProxy& ds) {
     y_profile();
 
-    const auto& descriptors = ds._descriptors;
+    const core::Span descriptors = ds.descriptors();
     const usize descriptor_count = descriptors.size();
     if(descriptor_count) {
         core::ScratchPad<VkWriteDescriptorSet> writes(descriptor_count);

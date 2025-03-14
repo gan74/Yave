@@ -292,8 +292,8 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
         if(point_count || spot_count) {
             const auto& program = device_resources()[debug_tiles ? DeviceResources::DeferredLocalsDebugProgram : DeviceResources::DeferredLocalsProgram];
 
-            core::ScratchVector<Descriptor> descs(self->descriptor_set()._descriptors.size() + 1);
-            std::copy_n(self->descriptor_set()._descriptors.begin(), self->descriptor_set()._descriptors.size(), std::back_inserter(descs));
+            core::ScratchVector<Descriptor> descs(self->descriptor_set().descriptors().size() + 1);
+            descs.push_back(self->descriptor_set().descriptors().begin(), self->descriptor_set().descriptors().end());
             descs.emplace_back(InlineDescriptor(math::Vec2ui(point_count, spot_count)));
             recorder.dispatch_threads(program, size, DescriptorSetProxy(descs));
         }

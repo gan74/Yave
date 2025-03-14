@@ -285,6 +285,11 @@ class ScratchVector : public ScratchPadBase<Elem> {
             return *(::new(this->_data + this->_size++) data_type{y_fwd(args)...});
         }
 
+        template<typename It>
+        inline void push_back(It beg_it, It end_it) {
+            std::copy(beg_it, end_it, std::back_inserter(*this));
+        }
+
         inline value_type pop() {
             y_debug_assert(!is_empty());
             data_type r = std::move(this->last());

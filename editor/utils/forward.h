@@ -57,6 +57,7 @@ class Preview;
 class Renamer;
 class ResourceBrowser;
 class RotationGizmo;
+class ScriptingConsole;
 class Settings;
 class ThumbmailRenderer;
 class TranslationGizmo;
