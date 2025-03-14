@@ -81,7 +81,7 @@ struct function_traits<Ret(Args...)> {
 
     static constexpr usize arg_count = sizeof...(Args);
 
-    using argument_pack = std::tuple<std::remove_const_t<std::remove_reference_t<Args>>...>;
+    using argument_pack = std::tuple<std::remove_const_t<Args>...>;
 
     template<usize I>
     struct args {

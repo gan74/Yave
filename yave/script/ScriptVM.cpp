@@ -43,18 +43,33 @@ struct TestType {
     static inline usize init = 0;
 
     TestType() {
+        val = init;
         log_msg(fmt("+ TestType({})", ++init));
     }
 
     ~TestType() {
         log_msg(fmt("- TestType({})", --init));
     }
+
+    usize val = 0;
 };
+
+void test_func(const TestType& i) {
+    log_msg(fmt("test_func({})", i.val));
+}
 
 ScriptVM::ScriptVM() {
     _state = luaL_newstate();
+
+#ifdef Y_DEBUG
+    luaJIT_setmode(_state, 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF);
+#endif
+
+
     luaL_openlibs(_state);
 
+
+    lua::bind_func<test_func>(_state, "foo");
     lua::bind_type<TestType>(_state, "Test");
 }
 
