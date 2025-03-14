@@ -25,12 +25,26 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <y/utils/name.h>
+#include <y/utils/format.h>
+
 #include <external/LuaJIT/src/lua.hpp>
 
 #include <tuple>
+#include <type_traits>
 
 namespace yave {
 namespace lua {
+
+template<typename T>
+struct LuaUserData {
+        T value;
+};
+
+template<typename T>
+y_force_inline static const char* metatable_name() {
+    return ct_type_name<T>().data();
+}
 
 template<typename T>
 y_force_inline static void push_value(lua_State* L, T val) {
@@ -91,6 +105,50 @@ void bind_func(lua_State* L, const char* name) {
     lua_pushcfunction(L, adaptor);
     lua_setglobal(L, name);
 }
+
+
+template<typename T>
+void bind_type(lua_State* L, const char* name) {
+    std::array<luaL_Reg, 8> methods = {};
+    usize method_count = 0;
+
+    if constexpr(!std::is_trivially_destructible_v<T>) {
+        methods[method_count++] = {
+            "__gc", [](lua_State* L) {
+                static_cast<LuaUserData<T>*>(luaL_checkudata(L, 1, metatable_name<T>()))->value.~T();
+                return 0;
+            }
+        };
+    }
+
+    methods[method_count++] = {
+        "__tostring", [](lua_State* L) {
+            lua_pushfstring(L, fmt_c_str("userdata({})", metatable_name<T>()));
+            return 1;
+        }
+    };
+
+    luaL_newmetatable(L, metatable_name<T>());
+    luaL_setfuncs(L, methods.data(), 0);
+
+    lua_pushvalue(L, -1);
+    lua_setfield(L, -2, "__index");
+
+    lua_newtable(L);
+    const int pos = lua_gettop(L);
+
+    lua_pushcfunction(L, [](lua_State* L) {
+        LuaUserData<T>* userdata = static_cast<LuaUserData<T>*>(lua_newuserdata(L, sizeof(LuaUserData<T>)));
+        new (&userdata->value) T();
+        luaL_getmetatable(L, metatable_name<T>());
+        lua_setmetatable(L, -2);
+        return 1;
+    });
+
+    lua_setfield(L, pos, "new");
+    lua_setglobal(L, name);
+}
+
 
 }
 }
