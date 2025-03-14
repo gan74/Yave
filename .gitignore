@@ -1,7 +1,5 @@
 /build/
-/old/
 /assets/
-/store/
+*.pdb
 *.user
 *.spv
-/sponza/
