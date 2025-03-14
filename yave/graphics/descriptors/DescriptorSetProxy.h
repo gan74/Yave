@@ -27,28 +27,34 @@ SOFTWARE.
 
 namespace yave {
 
-struct DescriptorSetProxy final : NonMovable {
-    DescriptorSetProxy() = default;
+class DescriptorSetProxy final : NonMovable {
+    public:
+        DescriptorSetProxy() = default;
 
-    DescriptorSetProxy(VkDescriptorSet set) : _set(set) {
-    }
+        DescriptorSetProxy(VkDescriptorSet set) : _set(set) {
+        }
 
-    DescriptorSetProxy(core::Span<Descriptor> descriptors) : _descriptors(descriptors) {
-    }
+        DescriptorSetProxy(core::Span<Descriptor> descriptors) : _descriptors(descriptors) {
+        }
 
-    DescriptorSetProxy(const Descriptor& descriptor) : DescriptorSetProxy(core::Span(descriptor)) {
-    }
+        DescriptorSetProxy(const Descriptor& descriptor) : DescriptorSetProxy(core::Span(descriptor)) {
+        }
 
-    template<usize N>
-    DescriptorSetProxy(const std::array<Descriptor, N>& descriptors) : _descriptors(core::Span<Descriptor>(descriptors)) {
-    }
+        template<usize N>
+        DescriptorSetProxy(const std::array<Descriptor, N>& descriptors) : _descriptors(core::Span<Descriptor>(descriptors)) {
+        }
 
-    VkDescriptorSet vk_descriptor_set() const {
-        return _set;
-    }
+        VkDescriptorSet vk_descriptor_set() const {
+            return _set;
+        }
 
-    core::Span<Descriptor> _descriptors;
-    VkDescriptorSet _set = {};
+        core::Span<Descriptor> descriptors() const {
+            return _descriptors;
+        }
+
+    private:
+        core::Span<Descriptor> _descriptors;
+        VkDescriptorSet _set = {};
 };
 
 template<typename... Args>

@@ -27,6 +27,9 @@ SOFTWARE.
 
 #include <yave/utils/traits.h>
 
+#include <type_traits>
+
+
 namespace yave {
 
 template<BufferUsage Usage, MemoryType Memory>
@@ -182,6 +185,8 @@ class TypedWrapper final : public Buff {
         using base_buffer_type = Buffer<usage, memory_type>;
 
         using value_type = Elem;
+
+        static_assert(std::is_trivially_copyable_v<Elem>);
 
         static_assert(
             !(usage == BufferUsage::StorageBit || usage == BufferUsage::UniformBit) ||
