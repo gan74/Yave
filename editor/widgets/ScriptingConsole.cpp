@@ -31,7 +31,7 @@ SOFTWARE.
 
 namespace editor {
 
-static const core::String script_file = "script.lua";
+static const core::String script_file = "script.as";
 
 ScriptingConsole::ScriptingConsole() : Widget(ICON_FA_CODE " Scripting Console", ImGuiWindowFlags_NoNavInputs) {
     if(auto f = io2::File::open(script_file)) {

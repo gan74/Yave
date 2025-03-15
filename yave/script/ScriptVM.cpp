@@ -21,72 +21,116 @@ SOFTWARE.
 **********************************/
 
 #include "ScriptVM.h"
-#include "lua_helpers.h"
+
 
 #include <y/core/ScratchPad.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
+#include <external/angelscript/add_on/scriptstdstring/scriptstdstring.h>
+#include <external/angelscript/add_on/scriptbuilder/scriptbuilder.h>
+
 
 namespace yave {
-namespace detail {
 
-ScriptTypeIndex next_script_type_index() {
-    static std::atomic<std::underlying_type_t<ScriptTypeIndex>> global_type_index = 0;
-    return ScriptTypeIndex(global_type_index++);
-}
-}
+static void message_callback(const asSMessageInfo* msg, void*) {
+    const std::string_view formatted_msg = fmt("{} ({}, {}): {}", msg->section, msg->row, msg->col, msg->message);
+    switch(msg->type) {
+        case asMSGTYPE_ERROR:
+            log_msg(formatted_msg, Log::Error);
+        break;
 
+        case asMSGTYPE_WARNING:
+            log_msg(formatted_msg, Log::Warning);
+        break;
+
+        default:
+            log_msg(formatted_msg);
+    }
+}
 
 struct TestType {
     static inline usize init = 0;
 
     TestType() {
-        val = init;
-        log_msg(fmt("+ TestType({})", ++init));
+        val = init++;
+        log_msg(fmt("+ TestType({})", val));
+    }
+
+    TestType(const TestType&) : TestType() {
     }
 
     ~TestType() {
-        log_msg(fmt("- TestType({})", --init));
+        log_msg(fmt("- TestType({})", val));
+        val = usize(-1);
     }
 
-    usize val = 0;
+    TestType& operator=(const TestType&) {
+        val = ++init;
+        log_msg(fmt("TestType = {}", val));
+        return *this;
+    }
+
+    void method(int i) {
+        log_msg(fmt("method({})", i));
+    }
+
+    usize val = usize(-1);
 };
 
-void test_func(const TestType& i) {
-    log_msg(fmt("test_func({})", i.val));
+TestType test_func(const TestType& i) {
+    return i;
 }
 
+
 ScriptVM::ScriptVM() {
-    _state = luaL_newstate();
+    _engine = asCreateScriptEngine();
+    y_debug_assert(_engine);
 
-#ifdef Y_DEBUG
-    luaJIT_setmode(_state, 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF);
-#endif
+    RegisterStdString(_engine);
 
+    _engine->SetMessageCallback(asFUNCTION(message_callback), nullptr, asCALL_CDECL);
 
-    luaL_openlibs(_state);
+    as::check(_engine->RegisterGlobalFunction("void print(const string& in)", asFUNCTION(+[](const std::string& str) { log_msg(str); }), asCALL_CDECL), "Unable to register function");
 
+    as::bind_type<TestType>(_engine, _types, "TestType");
+    as::bind_global_func(_engine, _types, "test_func", test_func);
 
-    lua::bind_func<test_func>(_state, "foo");
-    lua::bind_type<TestType>(_state, "Test");
+    as::bind_method<&TestType::method>(_engine, _types, "method");
+
 }
 
 ScriptVM::~ScriptVM() {
-    lua_close(_state);
+    _engine->ShutDownAndRelease();
 }
 
 core::Result<void, core::String> ScriptVM::run(const core::String& script) {
-    y_defer(lua_pop(_state, lua_gettop(_state)));
-    if(luaL_loadstring(_state, script.data()) == LUA_OK) {
-        if(lua_pcall(_state, 0, 0, 0) == LUA_OK) {
+    CScriptBuilder builder;
+    as::check(builder.StartNewModule(_engine, "MyModule"), "Unrecoverable error while starting a new module");
+    as::check(builder.AddSectionFromMemory("script.as", script.data(), unsigned(script.size())), "Please correct the errors in the script and try again");
+    as::check(builder.BuildModule(), "Please correct the errors in the script and try again");
+
+    asIScriptModule* mod = _engine->GetModule("MyModule");
+    asIScriptFunction* func = mod->GetFunctionByDecl("void main()");
+    y_always_assert(func, "The script must have the function 'void main()'. Please add it and try again");
+
+
+    asIScriptContext* ctx = _engine->CreateContext();
+    ctx->Prepare(func);
+    y_defer(ctx->Release());
+    switch(ctx->Execute()) {
+        case asEXECUTION_FINISHED:
             return core::Ok();
-        }
+
+        case asEXECUTION_EXCEPTION:
+            return core::Err(fmt_to_owned("An exception '{}' occurred. Please correct the code and try again", ctx->GetExceptionString()));
+
+        default:
+            y_fatal("???");
     }
 
-    core::String err = lua_tostring(_state, lua_gettop(_state));
-    return core::Err(std::move(err));
+    return core::Ok();
 }
 
 }

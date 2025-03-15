@@ -1,36 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(yave)
 
-function(build_luajit LUAJIT_TARGET)
-    set(LUA_DIR ${CMAKE_SOURCE_DIR}/external/LuaJIT)
-    set(LUA_SOURCE_DIR ${LUA_DIR}/src)
-
-    if(WIN32)
-        set(LUA_SHARED_OBJECT ${LUA_SOURCE_DIR}/lua51.dll)
-    else()
-        set(LUA_SHARED_OBJECT ${LUA_SOURCE_DIR}/lua51.so)
-    endif()
-
-    if(MSVC)
-        set(LUA_LIB_FILE ${LUA_SOURCE_DIR}/lua51.lib)
-        add_custom_command(OUTPUT ${LUA_LIB_FILE} COMMAND cmd /c ${LUA_SOURCE_DIR}/msvcbuild.bat WORKING_DIRECTORY ${LUA_SOURCE_DIR})
-    else()
-        set(LUA_LIB_FILE ${LUA_SHARED_OBJECT})
-        set(MAKE_CMD make)
-        if(MINGW)
-            set(MAKE_CMD mingw32-make)
-        endif()
-        add_custom_command(OUTPUT ${LUA_LIB_FILE} COMMAND ${MAKE_CMD} WORKING_DIRECTORY ${LUA_DIR})
-    endif()
-
-    add_custom_target(copy-luajit DEPENDS ${LUA_LIB_FILE})
-    add_custom_command(TARGET copy-luajit POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${LUA_SHARED_OBJECT} ${CMAKE_CURRENT_BINARY_DIR})
-
-    add_library(${LUAJIT_TARGET} STATIC IMPORTED GLOBAL)
-    add_dependencies(${LUAJIT_TARGET} copy-luajit)
-    set_target_properties(${LUAJIT_TARGET} PROPERTIES IMPORTED_LOCATION ${LUA_LIB_FILE})
-endfunction(build_luajit)
-
 function(enable_unity_build UB_SUFFIX SOURCE_VARIABLE_NAME)
     message("Using unity build for target ${UB_SUFFIX}")
     set(FILES ${${SOURCE_VARIABLE_NAME}})
@@ -125,13 +95,15 @@ endif()
 # add y subtree
 add_subdirectory(y)
 
+add_subdirectory(external/angelscript)
+
+
 
 # setup includes
 include_directories(${y_SOURCE_DIR})
 include_directories(${yave_SOURCE_DIR})
 include_directories(${Vulkan_INCLUDE_DIRS})
-include_directories(external/sol/include)
-include_directories(external/LuaJIT/src)
+include_directories(external/angelscript/angelscript/include)
 
 
 # Yave's core file
@@ -147,6 +119,13 @@ set(TRACY_FILES
 set(SPIRV_REFLECT_FILES
     "external/spirv_reflect/spirv_reflect.c"
     "external/spirv_reflect/spirv_reflect.h"
+)
+
+file(GLOB_RECURSE AS_FILES
+    "external/angelscript/angelscript/*.h"
+    "external/angelscript/angelscript/*.cpp"
+    "external/angelscript/add_on/*.h"
+    "external/angelscript/add_on/*.cpp"
 )
 
 # Editor files
@@ -245,14 +224,13 @@ endfunction(build_editor_shaders)
 
 
 
-build_luajit(luajit)
-
 if(YAVE_UNITY_BUILD)
     enable_unity_build(yave YAVE_FILES)
 endif()
 
 if(YAVE_BUILD_YAVE)
     add_library(yave STATIC ${YAVE_FILES} ${SPIRV_REFLECT_FILES} ${SHADER_FILES} ${SHADER_LIBS})
+    add_library(angelscript STATIC ${AS_FILES})
 
     if(UNIX)
         target_link_libraries(yave xcb)
@@ -267,7 +245,8 @@ if(YAVE_BUILD_YAVE)
         target_link_libraries(yave tracy)
     endif()
 
-    target_link_libraries(yave y luajit)
+    target_link_libraries(yave y)
+    target_link_libraries(yave AngelScript)
 
     if(NOT MSVC)
         target_link_libraries(yave stdc++fs)
