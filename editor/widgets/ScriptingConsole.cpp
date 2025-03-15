@@ -46,15 +46,10 @@ void ScriptingConsole::on_gui() {
     ImGui::SetNextItemWidth(-1);
     imgui::text_input_multiline("##code", _code, {0.0f, height});
 
-    if(!_error.is_empty()) {
-        ImGui::SetNextItemWidth(-1);
-        ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
-        imgui::text_input_multiline("##error", _error, {0.0f, height}, ImGuiInputTextFlags_ReadOnly);
-        ImGui::PopStyleColor();
-    } else {
-        ImGui::SetNextItemWidth(-1);
-        imgui::text_input_multiline("##log", _vm.output, {0.0f, height}, ImGuiInputTextFlags_ReadOnly);
-    }
+    ImGui::SetNextItemWidth(-1);
+    ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
+    imgui::text_input_multiline("##error", _error, {0.0f, height}, ImGuiInputTextFlags_ReadOnly);
+    ImGui::PopStyleColor();
 
     if(ImGui::Button(ICON_FA_PLAY " Run")) {
         if(auto f = io2::File::create(script_file)) {
@@ -67,9 +62,10 @@ void ScriptingConsole::on_gui() {
 
 
 void ScriptingConsole::run(const core::String& code) {
-    _vm.output = {};
+    ScriptVM vm;
+
     _error = {};
-    if(auto r = _vm.run(code); r.is_error()) {
+    if(auto r = vm.run(code); r.is_error()) {
         _error = r.error();
     }
 }

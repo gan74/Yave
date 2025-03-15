@@ -53,8 +53,6 @@ class ScriptVM : NonMovable {
 
         core::Result<void, core::String> run(const core::String& script);
 
-        core::String output;
-
     private:
         lua_State* _state = nullptr;
 };

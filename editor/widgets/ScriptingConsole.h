@@ -43,7 +43,6 @@ class ScriptingConsole final : public Widget {
 
         core::String _code;
         core::String _error;
-        ScriptVM _vm;
 };
 
 }
