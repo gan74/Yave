@@ -98,8 +98,8 @@ CmdTimestampPool* EngineView::timestamp_pool() const {
 
 bool EngineView::is_mouse_inside() const {
     const auto less = [](const math::Vec2& a, const math::Vec2& b) { return a.x() < b.x() && a.y() < b.y(); };
-    const math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos);
-    return less(mouse_pos, math::Vec2(ImGui::GetWindowPos()) + math::Vec2(ImGui::GetWindowSize())) && less(ImGui::GetWindowPos(), mouse_pos);
+    const math::Vec2 mouse_pos = to_y(ImGui::GetIO().MousePos);
+    return less(mouse_pos, to_y(ImGui::GetWindowPos()) + to_y(ImGui::GetWindowSize())) && less(to_y(ImGui::GetWindowPos()), mouse_pos);
 }
 
 bool EngineView::is_focussed() const {
@@ -132,7 +132,7 @@ void EngineView::set_is_moving_camera(bool moving) {
 bool EngineView::before_gui() {
     ImGui::PushStyleColor(ImGuiCol_Border, 0);
     ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetColorU32(ImGuiCol_HeaderActive));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, math::Vec2());
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{});
 
     return Widget::before_gui();
 }
@@ -205,7 +205,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     }
 
     if(output) {
-        ImGui::Image(output.to_imgui(), content_size());
+        ImGui::Image(output.to_imgui(), to_im(content_size()));
     }
 }
 
@@ -258,8 +258,8 @@ void EngineView::update_scene_view() {
 
 void EngineView::update_picking() {
     const math::Vec2ui viewport_size = content_size();
-    const math::Vec2 offset = ImGui::GetWindowPos();
-    const math::Vec2 mouse = ImGui::GetIO().MousePos;
+    const math::Vec2 offset = to_y(ImGui::GetWindowPos());
+    const math::Vec2 mouse = to_y(ImGui::GetIO().MousePos);
     const math::Vec2 uv = (mouse - offset) / math::Vec2(viewport_size);
 
     if(uv.x() < 0.0f || uv.y() < 0.0f ||
@@ -301,7 +301,7 @@ void EngineView::on_gui() {
     if(ImGui::BeginChild("##view")) {
         update_scene_view();
 
-        const math::Vec2 cursor = ImGui::GetCursorPos();
+        const math::Vec2 cursor = to_y(ImGui::GetCursorPos());
 
         {
             CmdBufferRecorder recorder = create_disposable_cmd_buffer();
@@ -312,7 +312,7 @@ void EngineView::on_gui() {
         make_drop_target();
 
         {
-            ImGui::SetCursorPos(cursor + math::Vec2(ImGui::GetStyle().IndentSpacing * 0.5f));
+            ImGui::SetCursorPos(to_im(cursor + math::Vec2(ImGui::GetStyle().IndentSpacing * 0.5f)));
             draw_toolbar_and_gizmos();
         }
 

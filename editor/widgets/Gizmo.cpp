@@ -78,7 +78,7 @@ static bool is_clicked() {
 }
 
 static bool is_hovering_axis(math::Vec2 a, math::Vec2 b) {
-    const math::Vec2 mouse = math::Vec2(ImGui::GetIO().MousePos);
+    const math::Vec2 mouse = to_y(ImGui::GetIO().MousePos);
     const math::Vec2 to_mouse = mouse - b;
     const math::Vec2 vec = a - b;
 
@@ -180,8 +180,8 @@ math::Vec3 GizmoBase::to_screen_pos(const math::Vec3& world) const {
 }
 
 math::Vec2 GizmoBase::to_window_pos(const math::Vec3& world) const {
-    const math::Vec2 viewport = ImGui::GetWindowSize();
-    const math::Vec2 offset = ImGui::GetWindowPos();
+    const math::Vec2 viewport = to_y(ImGui::GetWindowSize());
+    const math::Vec2 offset = to_y(ImGui::GetWindowPos());
 
     auto screen = to_screen_pos(world);
 
@@ -193,8 +193,8 @@ math::Vec2 GizmoBase::to_window_pos(const math::Vec3& world) const {
 }
 
 math::Vec3 GizmoBase::to_world_pos(const math::Vec2& window) const {
-    const math::Vec2 viewport = ImGui::GetWindowSize();
-    const math::Vec2 offset = ImGui::GetWindowPos();
+    const math::Vec2 viewport = to_y(ImGui::GetWindowSize());
+    const math::Vec2 offset = to_y(ImGui::GetWindowPos());
 
     const math::Vec2 ndc = ((window - offset) / viewport) * 2.0f - 1.0f;
     const math::Vec4 h_pos = _scene_view->camera().inverse_matrix() * math::Vec4(ndc, 0.5f, 1.0f);
@@ -233,7 +233,7 @@ void TranslationGizmo::draw() {
 
 
 
-    const math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos);
+    const math::Vec2 mouse_pos = to_y(ImGui::GetIO().MousePos);
 
     const math::Vec3 cam_pos = _scene_view->camera().position();
     const math::Vec3 cam_fwd = _scene_view->camera().forward();
@@ -376,7 +376,7 @@ void TranslationGizmo::draw() {
     for(usize i : rev_indices) {
         const std::array quad = build_quad(i);
         const ImVec2 pts[] = {
-            quad[0], quad[1], quad[2], quad[3]
+            to_im(quad[0]), to_im(quad[1]), to_im(quad[2]), to_im(quad[3])
         };
 
         const u32 color = (is_hovered((i + 1) % 3) && is_hovered((i + 2) % 3)) ? gizmo_hover_color : imgui::gizmo_color(i);
@@ -386,11 +386,10 @@ void TranslationGizmo::draw() {
     // Axis
     for(usize i : indices) {
         const u32 color = is_hovered(i) ? gizmo_hover_color : imgui::gizmo_color(i);
-        ImGui::GetWindowDrawList()->AddLine(gizmo_screen_center, screen_end_points[i], gizmo_alpha | color, gizmo_width);
+        ImGui::GetWindowDrawList()->AddLine(to_im(gizmo_screen_center), to_im(screen_end_points[i]), gizmo_alpha | color, gizmo_width);
     }
 
-
-    ImGui::GetWindowDrawList()->AddCircleFilled(gizmo_screen_center, 1.5f * gizmo_width, 0xFFFFFFFF);
+    ImGui::GetWindowDrawList()->AddCircleFilled(to_im(gizmo_screen_center), 1.5f * gizmo_width, 0xFFFFFFFF);
 }
 
 
@@ -441,7 +440,7 @@ void RotationGizmo::draw() {
 
 
 
-    const math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos);
+    const math::Vec2 mouse_pos = to_y(ImGui::GetIO().MousePos);
 
     const math::Vec3 cam_pos = _scene_view->camera().position();
     const math::Vec3 cam_fwd = _scene_view->camera().forward();
@@ -553,7 +552,7 @@ void RotationGizmo::draw() {
                 const math::Vec3 u_axis = basis[(_rotation_axis + 1) % 3];
                 const math::Vec3 v_axis = basis[(_rotation_axis + 2) % 3];
                 const math::Vec3 d = u_axis * std::cos(_angle_offset) + v_axis * std::sin(_angle_offset);
-                ImGui::GetWindowDrawList()->AddLine(to_window_pos(obj_pos), to_window_pos(obj_pos + d * perspective), gizmo_alpha | 0x00FFFFFF, gizmo_width * 0.5f);
+                ImGui::GetWindowDrawList()->AddLine(to_im(to_window_pos(obj_pos)), to_im(to_window_pos(obj_pos + d * perspective)), gizmo_alpha | 0x00FFFFFF, gizmo_width * 0.5f);
             }
 
             const float angle = compute_angle(_rotation_axis);
@@ -594,7 +593,7 @@ void RotationGizmo::draw() {
         const u32 color = is_current_axis ? gizmo_hover_color : imgui::gizmo_color(rot_axis);
 
         for_each_visible_segment(axis, [&](math::Vec2 a, math::Vec2 b) {
-            ImGui::GetWindowDrawList()->AddLine(a, b, gizmo_alpha | color, gizmo_width);
+            ImGui::GetWindowDrawList()->AddLine(to_im(a), to_im(b), gizmo_alpha | color, gizmo_width);
         });
     }
 }
@@ -612,9 +611,9 @@ void OrientationGizmo::draw() {
 
     _is_dragging &= ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
-    const math::Vec2 offset = ImGui::GetWindowPos();
-    const math::Vec2 viewport = ImGui::GetWindowSize();
-    const math::Vec2 mouse_pos = ImGui::GetMousePos();
+    const math::Vec2 offset = to_y(ImGui::GetWindowPos());
+    const math::Vec2 viewport = to_y(ImGui::GetWindowSize());
+    const math::Vec2 mouse_pos = to_y(ImGui::GetMousePos());
 
     const math::Vec2 center = offset + viewport - (orientation_gizmo_size * 2.0f);
 
@@ -648,7 +647,7 @@ void OrientationGizmo::draw() {
 
     for(i32 i : axes) {
         if(i < 0) {
-            ImGui::GetWindowDrawList()->AddCircleFilled(center, orientation_gizmo_width, 0xFFFFFFFF);
+            ImGui::GetWindowDrawList()->AddCircleFilled(to_im(center), orientation_gizmo_width, 0xFFFFFFFF);
             continue;
         }
 
@@ -661,19 +660,19 @@ void OrientationGizmo::draw() {
 
         if(axis.length() > orientation_gizmo_end_point_width) {
             const math::Vec2 dir = axis.normalized();
-            ImGui::GetWindowDrawList()->AddLine(center + dir * orientation_gizmo_width, end - dir * (orientation_gizmo_end_point_width - 1.0f), color, orientation_gizmo_width);
+            ImGui::GetWindowDrawList()->AddLine(to_im(center + dir * orientation_gizmo_width), to_im(end - dir * (orientation_gizmo_end_point_width - 1.0f)), color, orientation_gizmo_width);
         }
 
-        ImGui::GetWindowDrawList()->AddCircleFilled(end, orientation_gizmo_end_point_width, color);
+        ImGui::GetWindowDrawList()->AddCircleFilled(to_im(end), orientation_gizmo_end_point_width, color);
 
-        const math::Vec2 text_offset = math::Vec2(ImGui::CalcTextSize(axis_names[i]));
-        ImGui::GetWindowDrawList()->AddText(end - text_offset * 0.5f, orientation_gizmo_alpha, axis_names[i]);
+        const math::Vec2 text_offset = to_y(ImGui::CalcTextSize(axis_names[i]));
+        ImGui::GetWindowDrawList()->AddText(to_im(end - text_offset * 0.5f), orientation_gizmo_alpha, axis_names[i]);
     }
 
     if(_allow_dragging) {
         const float full_radius = orientation_gizmo_size + orientation_gizmo_end_point_width * 2.0f;
         if(_is_dragging || (center - mouse_pos).length() < full_radius) {
-            ImGui::GetWindowDrawList()->AddCircle(center, full_radius, orientation_gizmo_alpha | 0x00FFFFFF, 0, 1.5f);
+            ImGui::GetWindowDrawList()->AddCircle(to_im(center), full_radius, orientation_gizmo_alpha | 0x00FFFFFF, 0, 1.5f);
             if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                 _is_dragging = true;
             }
@@ -683,7 +682,7 @@ void OrientationGizmo::draw() {
 
 
     if(_is_dragging && _allow_dragging) {
-        const math::Vec2 raw_mouse_delta = math::Vec2(ImGui::GetIO().MouseDelta);
+        const math::Vec2 raw_mouse_delta = to_y(ImGui::GetIO().MouseDelta);
         if(raw_mouse_delta.sq_length() > 0.0f) {
             const math::Vec2 mouse_delta = raw_mouse_delta / (-0.5f * math::pi<float> * orientation_gizmo_size);
             const math::Vec3 cam_pos = camera.position();

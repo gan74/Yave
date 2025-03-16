@@ -111,7 +111,7 @@ void Widget::draw(bool inside) {
 
     bool opened = false;
     if(inside) {
-        opened = ImGui::BeginChild(_title_with_id.data(), math::Vec2(), false, _flags);
+        opened = ImGui::BeginChild(_title_with_id.data(), {}, false, _flags);
     } else {
         ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_ScrollbarBg));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.5f);
@@ -147,7 +147,7 @@ void Widget::draw(bool inside) {
 }
 
 math::Vec2ui Widget::content_size() const {
-    return ImGui::GetWindowSize(); //(math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin())).max(math::Vec2(1.0f));
+    return math::Vec2ui(to_y(ImGui::GetWindowSize())); //(math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin())).max(math::Vec2(1.0f));
 }
 
 void Widget::set_flags(int flags) {
