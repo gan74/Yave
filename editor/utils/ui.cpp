@@ -119,7 +119,7 @@ u32 gizmo_color(usize axis) {
     //    pack_to_u32(sRGB_to_linear(unpack_from_u32(0x005236F6))),
     //    pack_to_u32(sRGB_to_linear(unpack_from_u32(0x001BA56F))),
     //    pack_to_u32(sRGB_to_linear(unpack_from_u32(0x00E3832F))),
-    constexpr u32 colors[] = { 0x001609EB, 0x00036029, 0x00C43A07 };
+    constexpr u32 colors[] = { 0x005236F6, 0x001BA56F, 0x00E3832F };
     return colors[axis];
 }
 

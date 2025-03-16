@@ -436,6 +436,7 @@ void CmdBufferRecorderBase::copy(const ImageBase& src,  const ImageBase& dst) {
 
     {
         y_always_assert(src.image_size() == dst.image_size(), "Image size do not match");
+        y_always_assert(src.format() == dst.format(), "Image format do not match");
 
         VkImageCopy copy = {};
         {

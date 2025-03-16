@@ -54,7 +54,7 @@ static void setup_style() {
 
     auto rgb = [=](u8 r, u8 g, u8 b, float alpha = 1.0f) {
         const math::Vec3 linear = (math::Vec3(r, g, b) / 255.0f).saturated();
-        return to_im(math::Vec4(sRGB_to_linear(linear), alpha));
+        return to_im(math::Vec4(linear, alpha));
     };
 
     auto gr = [=](u8 l, float alpha = 1.0f) {
@@ -74,9 +74,8 @@ static void setup_style() {
     colors[ImGuiCol_DockingEmptyBg]         = none;
     colors[ImGuiCol_ModalWindowDimBg]       = none;
     colors[ImGuiCol_TableRowBg]             = none;
-    colors[ImGuiCol_Border]                 = none;
 
-    colors[ImGuiCol_TableRowBgAlt]          = gr(0, 0.5f);
+    colors[ImGuiCol_TableRowBgAlt]          = gr(26, 0.5f);
 
     colors[ImGuiCol_Text]                   = gr(255);
     colors[ImGuiCol_TextDisabled]           = gr(255, 0.3f);
@@ -84,13 +83,15 @@ static void setup_style() {
     colors[ImGuiCol_ScrollbarGrabHovered]   = gr(143);
     colors[ImGuiCol_ResizeGripHovered]      = gr(143);
 
-    colors[ImGuiCol_SliderGrab]             = gr(57);
-    colors[ImGuiCol_ScrollbarGrab]          = gr(57);
-    colors[ImGuiCol_ResizeGrip]             = gr(57);
+    colors[ImGuiCol_SliderGrab]             = gr(56);
+    colors[ImGuiCol_ScrollbarGrab]          = gr(56);
+    colors[ImGuiCol_ResizeGrip]             = gr(56);
 
-    colors[ImGuiCol_Button]                 = gr(63);
+    colors[ImGuiCol_Button]                 = gr(56);
     colors[ImGuiCol_ButtonHovered]          = gr(56);
     colors[ImGuiCol_Header]                 = gr(56);
+
+    colors[ImGuiCol_Border]                 = gr(45);
 
     colors[ImGuiCol_ButtonActive]           = bg;
     colors[ImGuiCol_TableBorderLight]       = bg;
@@ -110,10 +111,11 @@ static void setup_style() {
     colors[ImGuiCol_TitleBgActive]          = bg;
     colors[ImGuiCol_TitleBgCollapsed]       = bg;
     colors[ImGuiCol_MenuBarBg]              = bg;
-    colors[ImGuiCol_FrameBg]                = bg;
-    colors[ImGuiCol_FrameBgActive]          = bg;
     colors[ImGuiCol_TableHeaderBg]          = bg;
     colors[ImGuiCol_DockingPreview]         = bg;
+
+    colors[ImGuiCol_FrameBg]                = gr(23);
+    colors[ImGuiCol_FrameBgActive]          = gr(23);
 
     colors[ImGuiCol_CheckMark]              = highlight;
     colors[ImGuiCol_DragDropTarget]         = highlight;
@@ -402,6 +404,8 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
 
     _renderer = std::make_unique<ImGuiRenderer>();
     _main_window = std::make_unique<PlatformWindow>(this, Window::Resizable);
+
+    log_msg(_main_window->swapchain.color_format().name());
 
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     viewport->PlatformHandle = _main_window.get();

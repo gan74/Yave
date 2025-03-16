@@ -114,8 +114,8 @@ namespace imgui {
 
 static constexpr const char* drag_drop_path_id = "YAVE_DRAG_DROP_PATH";
 static constexpr const char* drag_drop_entity_id = "YAVE_DRAG_DROP_ENTITY";
-static const ImVec4 error_text_color = to_im(math::Vec4(sRGB_to_linear(math::Vec3(1.0f, 0.3f, 0.3f)), 1.0f));
-static const ImVec4 warning_text_color = to_im(math::Vec4(sRGB_to_linear(math::Vec3(1.0f, 0.8f, 0.4f)), 1.0f));
+static constexpr ImVec4 error_text_color = to_im(math::Vec4(1.0f, 0.3f, 0.3f, 1.0f));
+static constexpr ImVec4 warning_text_color = to_im(math::Vec4(1.0f, 0.8f, 0.4f, 1.0f));
 
 const u32 folder_icon_color = 0xFF62D6FF;    // Light yellow
 

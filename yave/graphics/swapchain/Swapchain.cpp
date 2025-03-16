@@ -51,8 +51,8 @@ static VkSurfaceFormatKHR surface_format(VkSurfaceKHR surface) {
 
     for(u32 i = 0; i != format_count; ++i) {
         switch(formats[i].format) {
-            case VK_FORMAT_R8G8B8A8_SRGB:
-            case VK_FORMAT_B8G8R8A8_SRGB:
+            case VK_FORMAT_R8G8B8A8_UNORM:
+            case VK_FORMAT_B8G8R8A8_UNORM:
                 return formats[i];
 
             default:
