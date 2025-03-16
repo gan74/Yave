@@ -245,7 +245,7 @@ PhysicalDevice find_best_device(const Instance& instance) {
         const u32 version = devices[i].vulkan_version();
         log_msg(fmt("{} with VK {}.{}.{}, score: {}", devices[i].vk_properties().deviceName, VK_VERSION_MAJOR(version), VK_VERSION_MINOR(version), VK_VERSION_PATCH(version), dev_score), Log::Debug);
 
-        if(dev_score > best_score) {
+        if(dev_score > 0.0f && dev_score > best_score) {
             best_score = dev_score;
             device_index = i;
         }
