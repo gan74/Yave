@@ -57,52 +57,46 @@ static void setup_style() {
         return math::Vec4(sRGB_to_linear(linear), alpha);
     };
 
-    auto grey = [=](u8 g, float alpha = 1.0f) {
-        return rgb(g, g, g, alpha);
+    auto gr = [=](u8 l, float alpha = 1.0f) {
+        return rgb(l, l, l, alpha);
     };
 
     for(usize i = 0; i != ImGuiCol_COUNT; ++i) {
         colors[i] = rgb(255, 0, 0);
     }
 
-    auto stl = [&](u8 base, float alpha = 1.0f) {
-        return rgb(base, base + 3, base + 7, alpha);
-    };
-
-    const math::Vec4 bg = stl(33);        // rgb(33, 36, 40);
-    const math::Vec4 child = stl(44);     // rgb(44, 47, 52);
-    const math::Vec4 highlight = rgb(0, 112, 224);
+    const math::Vec4 bg = gr(26);
+    const math::Vec4 child = gr(36);
+    const math::Vec4 highlight = rgb(63, 108, 255);
 
 
     colors[ImGuiCol_BorderShadow]           = none;
     colors[ImGuiCol_DockingEmptyBg]         = none;
     colors[ImGuiCol_ModalWindowDimBg]       = none;
     colors[ImGuiCol_TableRowBg]             = none;
-    colors[ImGuiCol_TableRowBgAlt]          = none;
     colors[ImGuiCol_Border]                 = none;
 
-    colors[ImGuiCol_Text]                   = rgb(177, 183, 190);
-    colors[ImGuiCol_TextDisabled]           = rgb(107, 123, 139);
+    colors[ImGuiCol_TableRowBgAlt]          = gr(0, 0.5f);
 
-    colors[ImGuiCol_SliderGrabActive]       = stl(143); // rgb(143, 146, 150);
-    colors[ImGuiCol_ScrollbarGrabActive]    = stl(143); // rgb(143, 146, 150);
-    colors[ImGuiCol_ScrollbarGrabHovered]   = stl(143); // rgb(143, 146, 150);
-    colors[ImGuiCol_ResizeGripActive]       = stl(143); // rgb(143, 146, 150);
-    colors[ImGuiCol_ResizeGripHovered]      = stl(143); // rgb(143, 146, 150);
+    colors[ImGuiCol_Text]                   = gr(255);
+    colors[ImGuiCol_TextDisabled]           = gr(255, 0.3f);
 
-    colors[ImGuiCol_SliderGrab]             = stl(57); // rgb(57, 60, 65);
-    colors[ImGuiCol_ScrollbarGrab]          = stl(57); // rgb(57, 60, 65);
-    colors[ImGuiCol_ResizeGrip]             = stl(57); // rgb(57, 60, 65);
+    colors[ImGuiCol_ScrollbarGrabHovered]   = gr(143);
+    colors[ImGuiCol_ResizeGripHovered]      = gr(143);
 
-    colors[ImGuiCol_Button]                 = stl(63); // rgb(63, 68, 76);
-    colors[ImGuiCol_ButtonHovered]          = stl(56); // rgb(56, 60, 68);
-    colors[ImGuiCol_Header]                 = stl(56); // rgb(56, 60, 68);
+    colors[ImGuiCol_SliderGrab]             = gr(57);
+    colors[ImGuiCol_ScrollbarGrab]          = gr(57);
+    colors[ImGuiCol_ResizeGrip]             = gr(57);
 
-    colors[ImGuiCol_ButtonActive]           = stl(60); // rgb(60, 65, 72);
-    colors[ImGuiCol_TableBorderLight]       = stl(60);
-    colors[ImGuiCol_TableBorderStrong]      = stl(60);
+    colors[ImGuiCol_Button]                 = gr(63);
+    colors[ImGuiCol_ButtonHovered]          = gr(56);
+    colors[ImGuiCol_Header]                 = gr(56);
 
-    colors[ImGuiCol_PopupBg]                = stl(30, 0.9f);
+    colors[ImGuiCol_ButtonActive]           = bg;
+    colors[ImGuiCol_TableBorderLight]       = bg;
+    colors[ImGuiCol_TableBorderStrong]      = bg;
+
+    colors[ImGuiCol_PopupBg]                = gr(30, 0.9f);
 
     colors[ImGuiCol_ChildBg]                = child;
     colors[ImGuiCol_WindowBg]               = child;
@@ -131,6 +125,9 @@ static void setup_style() {
     colors[ImGuiCol_HeaderActive]           = highlight;
     colors[ImGuiCol_SeparatorActive]        = highlight;
     colors[ImGuiCol_TabSelectedOverline]    = highlight;
+    colors[ImGuiCol_SliderGrabActive]       = highlight;
+    colors[ImGuiCol_ScrollbarGrabActive]    = highlight;
+    colors[ImGuiCol_ResizeGripActive]       = highlight;
 
     colors[ImGuiCol_HeaderHovered]              = math::lerp(child, highlight, 0.25f);
     colors[ImGuiCol_SeparatorHovered]           = math::lerp(child, highlight, 0.25f);
@@ -141,7 +138,7 @@ static void setup_style() {
     colors[ImGuiCol_TabDimmed]                  = math::lerp(child, bg, 0.75f);
     colors[ImGuiCol_Tab]                        = math::lerp(child, bg, 0.75f);
 
-    colors[ImGuiCol_TabDimmedSelectedOverline]  = math::lerp(child, highlight, 0.75f);
+    colors[ImGuiCol_TabDimmedSelectedOverline]  = math::lerp(child, highlight, 0.5f);
 
 
 
