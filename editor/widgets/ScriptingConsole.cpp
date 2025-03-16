@@ -68,7 +68,9 @@ void ScriptingConsole::run(std::string_view code) {
     ScriptVM vm;
 
     if(auto r = vm.run(code); r.is_error()) {
-        log_msg(r.error(), Log::Error);
+        for(const auto& e : r.error()) {
+            log_msg(fmt("{} ({}, {}): {}", e.section, e.line, e.column, e.message), Log::Error);
+        }
     }
 }
 

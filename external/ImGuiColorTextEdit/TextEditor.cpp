@@ -12,7 +12,7 @@
 
 
 struct TextEditor::RegexList {
-    std::vector<std::pair<std::regex, TextEditor::PaletteIndex>> mValue;
+	std::vector<std::pair<std::regex, TextEditor::PaletteIndex>> mValue;
 };
 
 
@@ -20,7 +20,7 @@ struct TextEditor::RegexList {
 // ------------- Exposed API ------------- //
 
 TextEditor::TextEditor()
-    : mRegexList(std::make_shared<RegexList>())
+	: mRegexList(std::make_shared<RegexList>())
 {
 	SetPalette(defaultPalette);
 	mLines.push_back(Line());
@@ -98,9 +98,9 @@ void TextEditor::SetLanguageDefinition(LanguageDefinitionId aValue)
 		break;
 	}
 
-    mRegexList->mValue.clear();
+	mRegexList->mValue.clear();
 	for (const auto& r : mLanguageDefinition->mTokenRegexStrings)
-        mRegexList->mValue.push_back(std::make_pair(std::regex(r.first, std::regex_constants::optimize), r.second));
+		mRegexList->mValue.push_back(std::make_pair(std::regex(r.first, std::regex_constants::optimize), r.second));
 
 	Colorize();
 }
@@ -1993,6 +1993,8 @@ void TextEditor::HandleKeyboardInputs(bool aParentIsFocused)
 		io.WantCaptureKeyboard = true;
 		io.WantTextInput = true;
 
+		ImGui::SetNextFrameWantCaptureKeyboard(true);
+
 		if (!mReadOnly && isShortcut && ImGui::IsKeyPressed(ImGuiKey_Z))
 			Undo();
 		else if (!mReadOnly && isAltOnly && ImGui::IsKeyPressed(ImGuiKey_Backspace))
@@ -2053,7 +2055,7 @@ void TextEditor::HandleKeyboardInputs(bool aParentIsFocused)
 			SelectAll();
 		else if (isShortcut && ImGui::IsKeyPressed(ImGuiKey_D))
 			AddCursorForNextOccurrence();
-        else if (!mReadOnly && !alt && !ctrl && !shift && !super && (ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter)))
+		else if (!mReadOnly && !alt && !ctrl && !shift && !super && (ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter)))
 			EnterCharacter('\n', false);
 		else if (!mReadOnly && !alt && !ctrl && !super && ImGui::IsKeyPressed(ImGuiKey_Tab))
 			EnterCharacter('\t', shift);
@@ -2569,7 +2571,7 @@ void TextEditor::ColorizeRange(int aFromLine, int aToLine)
 		return;
 
 	std::string buffer;
-    std::cmatch results;
+	std::cmatch results;
 	std::string id;
 
 	int endLine = std::max(0, std::min((int)mLines.size(), aToLine));
@@ -2615,7 +2617,7 @@ void TextEditor::ColorizeRange(int aFromLine, int aToLine)
 				for (const auto& p : mRegexList->mValue)
 				{
 					bool regexSearchResult = false;
-                    try { regexSearchResult = std::regex_search(first, last, results, p.first, std::regex_constants::match_continuous); }
+					try { regexSearchResult = std::regex_search(first, last, results, p.first, std::regex_constants::match_continuous); }
 					catch (...) {}
 					if (regexSearchResult)
 					{

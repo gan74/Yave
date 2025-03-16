@@ -35,10 +35,17 @@ class ScriptStringFactory;
 
 class ScriptVM : NonMovable {
     public:
+        struct Error {
+            int line = 0;
+            int column = 0;
+            core::String section;
+            core::String message;
+        };
+
         ScriptVM();
         ~ScriptVM();
 
-        core::Result<void, core::String> run(std::string_view code, const char* section_name = "script.as");
+        core::Result<void, core::Vector<Error>> run(std::string_view code, const char* section_name = "script.as");
 
     private:
         asIScriptEngine* _engine = nullptr;
@@ -46,7 +53,7 @@ class ScriptVM : NonMovable {
 
         as::TypeNameMap _types;
 
-        core::String _output;
+        core::Vector<Error> _errors;
 };
 
 }

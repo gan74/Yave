@@ -34,15 +34,25 @@ SOFTWARE.
 
 namespace yave {
 
+using ErrorList = core::Vector<ScriptVM::Error>;
+
+static ErrorList make_error(std::string_view section, std::string_view message) {
+    ErrorList list;
+    auto& e = list.emplace_back();
+    e.section = section;
+    e.message = message;
+    return list;
+}
+
 static void message_callback(const asSMessageInfo* msg, void* out) {
     const std::string_view formatted_msg = fmt("{} ({}, {}): {}", msg->section, msg->row, msg->col, msg->message);
-    if(out) {
-        *static_cast<core::String*>(out) += formatted_msg;
-        static_cast<core::String*>(out)->push_back('\n');
-    }
+
     switch(msg->type) {
         case asMSGTYPE_ERROR:
             log_msg(formatted_msg, Log::Error);
+            if(out) {
+                static_cast<ErrorList*>(out)->emplace_back(msg->row, msg->col, msg->section, msg->message);
+            }
         break;
 
         case asMSGTYPE_WARNING:
@@ -97,7 +107,7 @@ ScriptVM::ScriptVM() : _string_factory(std::make_unique<ScriptStringFactory>()) 
 
     _engine = asCreateScriptEngine();
     y_debug_assert(_engine);
-    _engine->SetMessageCallback(asFUNCTION(message_callback), &_output, asCALL_CDECL);
+    _engine->SetMessageCallback(asFUNCTION(message_callback), &_errors, asCALL_CDECL);
 
     as::register_string(_engine, _types);
     _engine->RegisterStringFactory("string", _string_factory.get());
@@ -109,20 +119,20 @@ ScriptVM::~ScriptVM() {
     _engine->ShutDownAndRelease();
 }
 
-core::Result<void, core::String> ScriptVM::run(std::string_view code, const char* section_name) {
-    _output = {};
+core::Result<void, core::Vector<ScriptVM::Error>> ScriptVM::run(std::string_view code, const char* section_name) {
+    _errors.clear();
 
     CScriptBuilder builder;
     if(as::is_error(builder.StartNewModule(_engine, "Module")) ||
        as::is_error(builder.AddSectionFromMemory(section_name, code.data(), unsigned(code.size()))) ||
        as::is_error(builder.BuildModule())) {
-        return core::Err(_output);
+        return core::Err(std::move(_errors));
     }
 
     asIScriptModule* mod = _engine->GetModule("Module");
     asIScriptFunction* func = mod->GetFunctionByDecl("void main()");
     if(!func) {
-        return core::Err(core::String("The script must have the function 'void main()'"));
+        return core::Err(make_error(section_name, "The script must have the function 'void main()'"));
     }
 
     asIScriptContext* ctx = _engine->CreateContext();
@@ -134,7 +144,7 @@ core::Result<void, core::String> ScriptVM::run(std::string_view code, const char
             return core::Ok();
 
         case asEXECUTION_EXCEPTION:
-            return core::Err(fmt_to_owned("An exception '{}' occurred", ctx->GetExceptionString()));
+            return core::Err(make_error(section_name, fmt("An exception '{}' occurred", ctx->GetExceptionString())));
 
         default:
             y_fatal("???");
