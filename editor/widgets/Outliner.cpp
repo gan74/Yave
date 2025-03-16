@@ -190,7 +190,7 @@ void Outliner::on_gui() {
 
         {
             ImGui::Indent();
-            ImGui::Dummy(math::Vec2(ImGui::GetContentRegionAvail()) - math::Vec2(ImGui::GetStyle().FramePadding));
+            ImGui::Dummy(to_im(to_y(ImGui::GetContentRegionAvail()) - to_y(ImGui::GetStyle().FramePadding)));
             make_drop_target(world, {});
             ImGui::Unindent();
         }

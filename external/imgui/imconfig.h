@@ -9,25 +9,17 @@
 
 #pragma once
 
-#include <y/math/Vec.h>
+#include <cstdint>
+
 #include "IconsFontAwesome5.h"
 
-#ifdef Y_GCC
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpragmas"
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#pragma GCC diagnostic ignored "-Wsign-promo"
-#pragma GCC diagnostic ignored "-Wswitch-default"
-#pragma GCC diagnostic ignored "-Wstringop-truncation"
-#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wclass-memaccess"
-#endif
+namespace y {
+[[noreturn]] void fatal(const char* msg, const char* file, int line);
+void break_in_debugger();
+}
 
 //---- Define assertion handler. Defaults to calling assert().
-#define IM_Y_ASSERT(_EXPR) do { if(!(_EXPR)) { y_fatal("IM_ASSERT failed: " #_EXPR); } } while(false)
+#define IM_Y_ASSERT(_EXPR) do { if(!(_EXPR)) { y::fatal("IM_ASSERT failed: " #_EXPR, __FILE__, __LINE__); } } while(false)
 #define IM_ASSERT(_EXPR) IM_Y_ASSERT(_EXPR)
 
 
@@ -50,10 +42,10 @@
 //#define IMGUI_DISABLE_FORMAT_STRING_FUNCTIONS
 
 //---- Include imgui_user.inl at the end of imgui.cpp so you can include code that extends ImGui using its private data/functions.
-#define IMGUI_INCLUDE_IMGUI_USER_INL
+// define IMGUI_INCLUDE_IMGUI_USER_INL
 
 //---- Include imgui_user.h at the end of imgui.h as a convenience
-#define IMGUI_INCLUDE_IMGUI_USER_H
+// #define IMGUI_INCLUDE_IMGUI_USER_H
 
 //---- Pack colors to BGRA8 instead of RGBA8 (if you needed to convert from one to another anyway)
 //#define IMGUI_USE_BGRA_PACKED_COLOR
@@ -64,30 +56,16 @@
 //---- Define constructor and implicit cast operators to convert back<>forth from your math types and ImVec2/ImVec4.
 // This will be inlined as part of ImVec2 and ImVec4 class declarations.
 
-#define IM_VEC2_CLASS_EXTRA                                                                     \
-        ImVec2(const y::math::Vec2& f) { x = f.x(); y = f.y(); }                                \
-        operator y::math::Vec2() const { return y::math::Vec2(x, y); }                          \
-        ImVec2(const y::math::Vec2i& f) { x = float(f.x()); y = float(f.y()); }                 \
-        operator y::math::Vec2i() const { return y::math::Vec2i(y::i32(x), y::i32(y)); }        \
-        ImVec2(const y::math::Vec2ui& f) { x = float(f.x()); y = float(f.y()); }                \
-        operator y::math::Vec2ui() const {                                                      \
-            y_debug_assert(x >= 0.0f && y >= 0.0f);                                             \
-            return y::math::Vec2ui(y::u32(x), y::u32(y));                                       \
-        }
+// #define IM_VEC2_CLASS_EXTRA
 
-#define IM_VEC4_CLASS_EXTRA                                                                     \
-        ImVec4(const y::math::Vec4& f) { x = f.x(); y = f.y(); z = f.z(); w = f.w(); }          \
-        operator y::math::Vec4() const { return  y::math::Vec4(x, y, z, w); }
+// #define IM_VEC4_CLASS_EXTRA
 
 
 //---- Use 32-bit vertex indices (instead of default 16-bit) to allow meshes with more than 64K vertices. Render function needs to support it.
-#define ImDrawIdx y::u32
+#define ImDrawIdx uint32_t
 
-#define IM_DEBUG_BREAK() y_breakpoint
-
-
+#define IM_DEBUG_BREAK() y::break_in_debugger()
 
 
-
-#define ImTextureID y::u64
+#define ImTextureID uint64_t
 

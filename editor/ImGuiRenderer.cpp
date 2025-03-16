@@ -97,7 +97,7 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
     const usize imgui_index_buffer_size = next_power_of_2(draw_data->TotalIdxCount);
     const usize imgui_vertex_buffer_size = next_power_of_2(draw_data->TotalVtxCount);
     const math::Vec2 viewport_size = recorder.viewport().extent;
-    const math::Vec2 viewport_offset = draw_data->DisplayPos;
+    const math::Vec2 viewport_offset = to_y(draw_data->DisplayPos);
 
 
     const TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> index_buffer(imgui_index_buffer_size);
@@ -150,7 +150,7 @@ void ImGuiRenderer::render(ImDrawData* draw_data, RenderPassRecorder& recorder) 
         for(auto i = 0; i != cmd_list->CmdBuffer.Size; ++i) {
             const ImDrawCmd& cmd = cmd_list->CmdBuffer[i];
 
-            const math::Vec2i offset = math::Vec2i(i32(cmd.ClipRect.x), i32(cmd.ClipRect.y)) - math::Vec2i(viewport_offset);
+            const math::Vec2i offset = math::Vec2i(i32(cmd.ClipRect.x - viewport_offset.x()), i32(cmd.ClipRect.y - viewport_offset.y()));
             const math::Vec2ui extent(u32(cmd.ClipRect.z - cmd.ClipRect.x), u32(cmd.ClipRect.w - cmd.ClipRect.y));
             recorder.set_scissor(offset.max(math::Vec2(0.0f)), extent);
 

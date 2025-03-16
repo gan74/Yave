@@ -193,19 +193,19 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             ImGui::PushID(fmt_c_str("{}", info.type_name));
             {
                 const float button_size = ImGui::GetFrameHeight();
-                const math::Vec2 button_pos = math::Vec2(ImGui::GetContentRegionAvail().x - button_size, 0.0f) + math::Vec2(ImGui::GetCursorScreenPos());
-                ImGui::SetCursorScreenPos(button_pos);
+                const math::Vec2 button_pos = math::Vec2(ImGui::GetContentRegionAvail().x - button_size, 0.0f) + to_y(ImGui::GetCursorScreenPos());
+                ImGui::SetCursorScreenPos(to_im(button_pos));
                 const bool can_remove = !_world->is_component_required(_id, info.type_id);
-                const bool remove_component = ImGui::InvisibleButton(ICON_FA_TRASH "###invisible", math::Vec2(button_size));
+                const bool remove_component = ImGui::InvisibleButton(ICON_FA_TRASH "###invisible", ImVec2(button_size, button_size));
 
                 ImGui::SameLine();
                 ImGui::SetCursorPosX(0.0);
                 open = ImGui::CollapsingHeader(fmt_c_str(ICON_FA_PUZZLE_PIECE " {}", info.clean_component_name()), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow);
 
                 ImGui::SameLine();
-                ImGui::SetCursorScreenPos(button_pos);
+                ImGui::SetCursorScreenPos(to_im(button_pos));
                 ImGui::BeginDisabled(!can_remove);
-                ImGui::Button(ICON_FA_TRASH, math::Vec2(button_size));
+                ImGui::Button(ICON_FA_TRASH, ImVec2(button_size, button_size));
                 ImGui::EndDisabled();
 
                 if(remove_component) {
@@ -364,7 +364,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                 } break;
 
                 case Vec3Role::Color: {
-                    if(ImGui::ColorButton("Color", math::Vec4(v, 1.0f), color_flags)) {
+                    if(ImGui::ColorButton("Color", to_im(math::Vec4(v, 1.0f)), color_flags)) {
                         ImGui::OpenPopup("##color");
                     }
 

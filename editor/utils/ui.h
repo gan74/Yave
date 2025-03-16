@@ -31,7 +31,7 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 
-#include <external/imgui/yave_imgui.h>
+#include <external/imgui/imgui.h>
 
 namespace editor {
 
@@ -97,6 +97,16 @@ struct UiIcon {
     u32 color;
 };
 
+
+inline constexpr math::Vec4 to_y(ImVec4 v) { return {v.x, v.y, v.z, v.w}; }
+inline constexpr math::Vec2 to_y(ImVec2 v) { return {v.x, v.y}; }
+
+template<typename T>
+inline constexpr ImVec4 to_im(math::Vec<4, T> v) { return {float(v.x()), float(v.y()), float(v.z()), float(v.w())}; }
+
+template<typename T>
+inline constexpr ImVec2 to_im(math::Vec<2, T> v) { return {float(v.x()), float(v.y())}; }
+
 ImGuiKey to_imgui_key(Key k);
 ImGuiMouseButton to_imgui_button(MouseButton b);
 
@@ -104,8 +114,8 @@ namespace imgui {
 
 static constexpr const char* drag_drop_path_id = "YAVE_DRAG_DROP_PATH";
 static constexpr const char* drag_drop_entity_id = "YAVE_DRAG_DROP_ENTITY";
-static const math::Vec4 error_text_color = math::Vec4(sRGB_to_linear(math::Vec3(1.0f, 0.3f, 0.3f)), 1.0f);
-static const math::Vec4 warning_text_color = math::Vec4(sRGB_to_linear(math::Vec3(1.0f, 0.8f, 0.4f)), 1.0f);
+static const ImVec4 error_text_color = to_im(math::Vec4(sRGB_to_linear(math::Vec3(1.0f, 0.3f, 0.3f)), 1.0f));
+static const ImVec4 warning_text_color = to_im(math::Vec4(sRGB_to_linear(math::Vec3(1.0f, 0.8f, 0.4f)), 1.0f));
 
 const u32 folder_icon_color = 0xFF62D6FF;    // Light yellow
 

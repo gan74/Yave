@@ -122,7 +122,6 @@ endif()
 
 
 
-# add y subtree
 add_subdirectory(y)
 
 
@@ -155,10 +154,12 @@ file(GLOB_RECURSE EDITOR_FILES
     "editor/*.h"
 )
 
-file(GLOB_RECURSE EDITOR_EXTERNAL_FILES
+file(GLOB_RECURSE IMGUI_FILES
     "external/imgui/*.cpp"
     "external/imgui/*.h"
+)
 
+file(GLOB_RECURSE EDITOR_EXTERNAL_FILES
     "external/tinygltf/*.hpp"
     "external/tinygltf/*.h"
 )
@@ -282,12 +283,14 @@ if(YAVE_BUILD_YAVE)
 endif()
 
 if(YAVE_BUILD_EDITOR)
+    add_library(imgui ${IMGUI_FILES})
+    target_include_directories(imgui PRIVATE external/imgui)
+
     add_executable(editor ${EDITOR_FILES} ${EDITOR_EXTERNAL_FILES})
-    target_include_directories(editor PRIVATE external/imgui)
 
     build_editor_shaders(shaders)
     add_dependencies(editor shaders)
 
-    target_link_libraries(editor yave)
+    target_link_libraries(editor yave imgui)
 endif()
 

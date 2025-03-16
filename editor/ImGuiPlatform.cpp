@@ -50,11 +50,11 @@ static void setup_style() {
     auto& style = ImGui::GetStyle();
     ImVec4* colors = style.Colors;
 
-    const math::Vec4 none = {};
+    const ImVec4 none = {};
 
     auto rgb = [=](u8 r, u8 g, u8 b, float alpha = 1.0f) {
         const math::Vec3 linear = (math::Vec3(r, g, b) / 255.0f).saturated();
-        return math::Vec4(sRGB_to_linear(linear), alpha);
+        return to_im(math::Vec4(sRGB_to_linear(linear), alpha));
     };
 
     auto gr = [=](u8 l, float alpha = 1.0f) {
@@ -65,9 +65,9 @@ static void setup_style() {
         colors[i] = rgb(255, 0, 0);
     }
 
-    const math::Vec4 bg = gr(26);
-    const math::Vec4 child = gr(36);
-    const math::Vec4 highlight = rgb(63, 108, 255);
+    const ImVec4 bg = gr(26);
+    const ImVec4 child = gr(36);
+    const ImVec4 highlight = rgb(63, 108, 255);
 
 
     colors[ImGuiCol_BorderShadow]           = none;
@@ -129,16 +129,16 @@ static void setup_style() {
     colors[ImGuiCol_ScrollbarGrabActive]    = highlight;
     colors[ImGuiCol_ResizeGripActive]       = highlight;
 
-    colors[ImGuiCol_HeaderHovered]              = math::lerp(child, highlight, 0.25f);
-    colors[ImGuiCol_SeparatorHovered]           = math::lerp(child, highlight, 0.25f);
-    colors[ImGuiCol_TextSelectedBg]             = math::lerp(child, highlight, 0.25f);
+    colors[ImGuiCol_HeaderHovered]              = to_im(math::lerp(to_y(child), to_y(highlight), 0.25f));
+    colors[ImGuiCol_SeparatorHovered]           = to_im(math::lerp(to_y(child), to_y(highlight), 0.25f));
+    colors[ImGuiCol_TextSelectedBg]             = to_im(math::lerp(to_y(child), to_y(highlight), 0.25f));
 
-    colors[ImGuiCol_FrameBgHovered]             = math::lerp(child, bg, 0.75f);
+    colors[ImGuiCol_FrameBgHovered]             = to_im(math::lerp(to_y(child), to_y(bg), 0.75f));
 
-    colors[ImGuiCol_TabDimmed]                  = math::lerp(child, bg, 0.75f);
-    colors[ImGuiCol_Tab]                        = math::lerp(child, bg, 0.75f);
+    colors[ImGuiCol_TabDimmed]                  = to_im(math::lerp(to_y(child), to_y(bg), 0.75f));
+    colors[ImGuiCol_Tab]                        = to_im(math::lerp(to_y(child), to_y(bg), 0.75f));
 
-    colors[ImGuiCol_TabDimmedSelectedOverline]  = math::lerp(child, highlight, 0.5f);
+    colors[ImGuiCol_TabDimmedSelectedOverline]  = to_im(math::lerp(to_y(child), to_y(highlight), 0.5f));
 
 
 
@@ -249,11 +249,11 @@ static void discover_monitors(ImGuiPlatformIO& platform) {
     auto monitors = Monitor::monitors();
     std::sort(monitors.begin(), monitors.end(), [](const Monitor& a, const Monitor& b) { return b.is_primary < a.is_primary; });
     std::transform(monitors.begin(), monitors.end(), std::back_inserter(platform.Monitors), [](const Monitor& monitor) {
-        ImGuiPlatformMonitor imgui_mon;
-        imgui_mon.MainPos = monitor.position;
-        imgui_mon.MainSize = monitor.size;
-        imgui_mon.WorkPos = monitor.work_position;
-        imgui_mon.WorkSize = monitor.work_size;
+        ImGuiPlatformMonitor imgui_mon = {};
+        imgui_mon.MainPos = to_im(monitor.position);
+        imgui_mon.MainSize = to_im(monitor.size);
+        imgui_mon.WorkPos = to_im(monitor.work_position);
+        imgui_mon.WorkSize = to_im(monitor.work_size);
         return imgui_mon;
     });
 }
@@ -385,10 +385,10 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
 
         platform.Platform_DestroyWindow         = [](ImGuiViewport* vp) { get_platform()->close_window(get_platform_window(vp)); };
         platform.Platform_ShowWindow            = [](ImGuiViewport* vp) { get_window(vp)->show(); };
-        platform.Platform_SetWindowPos          = [](ImGuiViewport* vp, ImVec2 pos) { get_window(vp)->set_position(pos); };
-        platform.Platform_SetWindowSize         = [](ImGuiViewport* vp, ImVec2 size) { get_window(vp)->set_size(size); };
-        platform.Platform_GetWindowPos          = [](ImGuiViewport* vp) { return ImVec2(get_window(vp)->position()); };
-        platform.Platform_GetWindowSize         = [](ImGuiViewport* vp) { return ImVec2(get_window(vp)->size()); };
+        platform.Platform_SetWindowPos          = [](ImGuiViewport* vp, ImVec2 pos) { get_window(vp)->set_position(to_y(pos)); };
+        platform.Platform_SetWindowSize         = [](ImGuiViewport* vp, ImVec2 size) { get_window(vp)->set_size(to_y(size)); };
+        platform.Platform_GetWindowPos          = [](ImGuiViewport* vp) { return to_im(get_window(vp)->position()); };
+        platform.Platform_GetWindowSize         = [](ImGuiViewport* vp) { return to_im(get_window(vp)->size()); };
 
         platform.Platform_SetWindowTitle        = [](ImGuiViewport* vp, const char* title) { get_window(vp)->set_title(title); };
 
@@ -441,7 +441,7 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
         y_profile_zone("exec once");
 
         ImGui::GetIO().DeltaTime = std::max(math::epsilon<float>, float(_frame_timer.reset().to_secs()));
-        ImGui::GetIO().DisplaySize = _main_window->window.size();
+        ImGui::GetIO().DisplaySize = to_im(_main_window->window.size());
 
         Window::set_cursor_shape(ImGui::GetIO().MouseDrawCursor ? CursorShape::None : to_cursor_shape(ImGui::GetMouseCursor()));
 

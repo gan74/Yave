@@ -129,7 +129,7 @@ bool should_open_context_menu() {
 
 math::Vec2 client_window_pos() {
     if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        return ImGui::GetWindowPos();
+        return to_y(ImGui::GetWindowPos());
     }
     return math::Vec2(0.0f);
 }
@@ -195,7 +195,7 @@ bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags, 
 
 bool text_input_multiline(const char* name, core::String& str, const math::Vec2& size, ImGuiInputTextFlags flags) {
     y_defer(str.resize(std::strlen(str.data())));
-    return ImGui::InputTextMultiline(name, str.data(), str.size() + 1, size, ImGuiInputTextFlags_CallbackResize | flags, str_resize_callback, &str);
+    return ImGui::InputTextMultiline(name, str.data(), str.size() + 1, to_im(size), ImGuiInputTextFlags_CallbackResize | flags, str_resize_callback, &str);
 }
 
 void text_read_only(const char* name, std::string_view str) {
@@ -223,25 +223,25 @@ bool position_input(const char* str_id, math::Vec3& position) {
             ImGui::SameLine();
         }
 
-        const math::Vec2 start_pos = ImGui::GetCursorScreenPos();
+        const math::Vec2 start_pos = to_y(ImGui::GetCursorScreenPos());
 
         ImGui::SetNextItemWidth(width / 3.0f);
         edited |= ImGui::DragFloat(input_name[i], &position[i], 1.0f, 0.0f, 0.0f, " %.2f");
 
-        const math::Vec2 end_pos = ImGui::GetCursorScreenPos();
+        const math::Vec2 end_pos = to_y(ImGui::GetCursorScreenPos());
         const float vertical_padding = ((end_pos - start_pos).y() - text_height) * 0.5f;
 
         if(vertical_padding > 1.0f && !ImGui::IsItemActive()) {
             const math::Vec2 pos = start_pos + math::Vec2(padding, vertical_padding);
-            ImGui::GetWindowDrawList()->AddRectFilled(pos, pos + math::Vec2(4.0f, text_height), 0x80000000 | gizmo_color(i), 0.5f);
+            ImGui::GetWindowDrawList()->AddRectFilled(to_im(pos), to_im(pos + math::Vec2(4.0f, text_height)), 0x80000000 | gizmo_color(i), 0.5f);
         }
     }
     return edited;
 }
 
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear) {
-    static constexpr math::Vec2 button_size = math::Vec2(64.0f, 64.0f);
-    const math::Vec2 padded_button_size =  button_size + math::Vec2(ImGui::GetStyle().FramePadding) * 4.0f;
+    static constexpr ImVec2 button_size = ImVec2(64.0f, 64.0f);
+    const ImVec2 padded_button_size = to_im(to_y(button_size) + to_y(ImGui::GetStyle().FramePadding) * 4.0f);
 
     ImGui::PushID(fmt_c_str("{}_{}_{}", id.id(), uenum(type), text));
     ImGui::BeginGroup();
@@ -275,7 +275,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
 
 
     ImGui::SameLine();
-    if(ImGui::GetContentRegionAvail().x > button_size.x() * 0.5f) {
+    if(ImGui::GetContentRegionAvail().x > button_size.x * 0.5f) {
         const auto clean_name = [=](auto&& n) { return asset_store().filesystem()->filename(n); };
         const core::String clean = name.map(clean_name).unwrap_or(core::String());
 
@@ -424,7 +424,7 @@ bool search_bar(const char* text, char* buffer, usize buffer_size) {
     const float y_offset = 2.0f;
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, math::Vec2(ImGui::GetStyle().FramePadding) - math::Vec2(0.0f, y_offset));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, to_im(to_y(ImGui::GetStyle().FramePadding) - math::Vec2(0.0f, y_offset)));
     ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetStyleColorVec4(ImGuiCol_CheckMark));
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + y_offset);
     y_defer({ ImGui::PopStyleVar(3); ImGui::PopStyleColor(); });
@@ -433,7 +433,7 @@ bool search_bar(const char* text, char* buffer, usize buffer_size) {
     {
         const float text_width = ImGui::CalcTextSize(text, nullptr, true).x + 8.0f;
         ImGui::SetNextItemWidth(-text_width);
-        search_bar_state.popup_pos = math::Vec2(ImGui::GetWindowPos()) + math::Vec2(ImGui::GetCursorPos());
+        search_bar_state.popup_pos = to_im(to_y(ImGui::GetWindowPos()) + to_y(ImGui::GetCursorPos()));
     }
 
     ImGuiInputTextState* imgui_state = ImGui::GetInputTextState(ImGui::GetID(text));
@@ -516,7 +516,7 @@ bool begin_suggestion_popup() {
             ImGuiWindowFlags_NoSavedSettings;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, math::Vec4(sRGB_to_linear(math::Vec3(20.0f / 255.0f)), 0.95f));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, to_im(math::Vec4(sRGB_to_linear(math::Vec3(20.0f / 255.0f)), 0.95f)));
 
     ImGui::SetNextWindowPos(search_bar_state.popup_pos);
     ImGui::SetNextWindowSize(ImVec2(search_bar_state.popup_width, 0.0f));
@@ -591,23 +591,23 @@ bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGu
 static bool icon_button(const UiIcon& icon, const UiTexture& tex_icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags) {
     ImGui::BeginGroup();
 
-    const math::Vec2 cursor = ImGui::GetCursorPos();
     const float text_height = ImGui::CalcTextSize(str_id).y;
-    const math::Vec2 padding = ImGui::GetStyle().FramePadding;
-    const math::Vec2 padded_size = math::Vec2(icon_size) - padding * 2.0f;
+    const math::Vec2 cursor = to_y(ImGui::GetCursorPos());
+    const math::Vec2 padding = to_y(ImGui::GetStyle().FramePadding);
+    const ImVec2 padded_size = to_im(math::Vec2(icon_size - padding * 2.0f));
 
     ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
-    const bool activated = ImGui::Selectable(str_id, selected, flags, math::Vec2(icon_size, icon_size + text_height));
+    const bool activated = ImGui::Selectable(str_id, selected, flags, ImVec2(icon_size, icon_size + text_height));
     ImGui::PopStyleVar();
 
-    ImGui::SetCursorPos(cursor + padding);
+    ImGui::SetCursorPos(to_im(cursor + padding));
 
     if(tex_icon) {
         ImGui::Image(tex_icon.to_imgui(), padded_size);
     } else {
         const auto [uv, uv_size] = imgui::compute_glyph_uv_size(icon.icon.data());
         const ImVec4 color = ImGui::ColorConvertU32ToFloat4(icon.color);
-        ImGui::Image({}, padded_size, uv, uv + uv_size, color, {});
+        ImGui::Image({}, padded_size, to_im(uv), to_im(uv + uv_size), color, {});
     }
 
 
@@ -670,7 +670,7 @@ void indeterminate_progress_bar(const math::Vec2& size_arg, float speed) {
     }
 
     ImGuiStyle& style = g.Style;
-    const ImVec2 size = CalcItemSize(size_arg, CalcItemWidth(), g.FontSize + style.FramePadding.y * 2.0f);
+    const ImVec2 size = CalcItemSize(to_im(size_arg), CalcItemWidth(), g.FontSize + style.FramePadding.y * 2.0f);
     const ImVec2 pos = window->DC.CursorPos;
     ImRect bb(pos.x, pos.y, pos.x + size.x, pos.y + size.y);
     ItemSize(size);

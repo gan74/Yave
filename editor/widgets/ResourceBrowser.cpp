@@ -140,7 +140,7 @@ void ResourceBrowser::on_gui() {
 
 
 void ResourceBrowser::draw_path_bar() {
-    ImGui::PushStyleColor(ImGuiCol_Button, math::Vec4());
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{});
     const auto res = draw_path_bar_element(_fs_view.path());
     ImGui::PopStyleColor();
     if(res) {
