@@ -171,7 +171,7 @@ void Outliner::on_gui() {
 
 
     if(ImGui::BeginChild("##entitiesarea")) {
-        if(ImGui::BeginTable("##entities", int(1 + _tag_buttons.size()))) {
+        if(ImGui::BeginTable("##entities", int(1 + _tag_buttons.size()), ImGuiTableFlags_RowBg)) {
             y_profile_zone("fill entity table");
 
             ImGui::TableSetupColumn("##name", ImGuiTableColumnFlags_WidthStretch);

@@ -125,7 +125,27 @@ SurfaceInfo decode_gbuffer(RawGBuffer raw) {
 
 
 
+float sRGB_to_linear(float x) {
+    if(x <= 0.04045) {
+        return x / 12.92;
+    }
+    return pow((x + 0.055) / 1.055, 2.4);
+}
 
+float linear_to_sRGB(float x) {
+    if(x <= 0.0031308) {
+        return x * 12.92;
+    }
+    return 1.055 * pow(x, 1.0 / 2.4) - 0.055;
+}
+
+float3 sRGB_to_linear(float3 x) {
+    return float3(sRGB_to_linear(x.x), sRGB_to_linear(x.y), sRGB_to_linear(x.z));
+}
+
+float3 linear_to_sRGB(float3 x) {
+    return float3(linear_to_sRGB(x.x), linear_to_sRGB(x.y), linear_to_sRGB(x.z));
+}
 
 float3 RGB_to_YCgCo(float3 c) {
     return float3(
