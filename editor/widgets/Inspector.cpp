@@ -129,7 +129,7 @@ static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, e
 
 static const ImGuiTableFlags table_flags =
     ImGuiTableFlags_BordersInnerV |
-    // ImGuiTableFlags_BordersInnerH |
+    ImGuiTableFlags_BordersInnerH |
     ImGuiTableFlags_Resizable;
 
 
@@ -244,14 +244,14 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
             // position
             {
-                begin_property_row("Position");
+                auto row = begin_property_row("Position");
                 changed |= imgui::position_input("##position", pos);
             }
 
 
             // rotation
             {
-                begin_property_row("Rotation");
+                auto row = begin_property_row("Rotation");
 
                 auto is_same_angle = [&](math::Vec3 a, math::Vec3 b) {
                     const auto qa = math::Quaternion<>::from_euler(a);
@@ -310,7 +310,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
             // scale
             {
-                begin_property_row("Scale");
+                auto row = begin_property_row("Scale");
 
                 float scalar_scale = scale.dot(math::Vec3(1.0f / 3.0f));
                 if(ImGui::DragFloat("##scale", &scalar_scale, 0.1f, 0.0f, 0.0f, "%.3f")) {
@@ -339,7 +339,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             ImGui::PushID(name.data());
             y_defer(ImGui::PopID());
 
-            begin_property_row(name);
+            auto row = begin_property_row(name);
 
             switch(role) {
 
@@ -390,7 +390,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             ImGui::PushID(name.data());
             y_defer(ImGui::PopID());
 
-            begin_property_row(name);
+            auto row = begin_property_row(name);
 
             float factor = 1.0f;
             const char* format = "%.4f";
@@ -443,7 +443,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             ImGui::PushID(name.data());
             y_defer(ImGui::PopID());
 
-            begin_property_row(name);
+            auto row = begin_property_row(name);
 
             if(max >= u32(std::numeric_limits<int>::max())) {
                 int value = int(u);
@@ -462,7 +462,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             ImGui::PushID(name.data());
             y_defer(ImGui::PopID());
 
-            begin_property_row(name);
+            auto row = begin_property_row(name);
             ImGui::Checkbox("##checkbox", &b);
         }
 
@@ -470,7 +470,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             ImGui::PushID(name.data());
             y_defer(ImGui::PopID());
 
-            begin_property_row(name);
+            auto row = begin_property_row(name);
             id_selector(id, name, _id, _type, type);
         }
 
@@ -478,7 +478,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             ImGui::PushID(name.data());
             y_defer(ImGui::PopID());
 
-            begin_property_row(name);
+            auto row = begin_property_row(name);
 
             switch(p.type()) {
                 case AssetType::Mesh:
@@ -522,11 +522,13 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             ImGui::Unindent();
         }
 
-        void begin_property_row(std::string_view name) {
-            imgui::table_begin_next_row();
-            ImGui::TextUnformatted(name.data(), name.data() + name.size());
-            ImGui::TableNextColumn();
+        [[nodiscard]] auto begin_property_row(core::String name) {
+            imgui::table_begin_next_row(1);
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().FramePadding.x * 2.0f);
+            return ScopeGuard([n = std::move(name)] {
+                ImGui::TableSetColumnIndex(0);
+                ImGui::TextUnformatted(n.data(), n.data() + n.size());
+            });
         }
 
 
@@ -562,6 +564,13 @@ void Inspector::on_gui() {
     }
 
 
+
+    if(!ImGui::BeginChild("##inspectorpanel")) {
+        return;
+    }
+
+    y_defer(ImGui::EndChild());
+
     {
         ImGui::BeginGroup();
 
@@ -594,10 +603,8 @@ void Inspector::on_gui() {
         ImGui::EndGroup();
     }
 
-
     InspectorPanelInspector inspector(id, component, &world);
     world.inspect_components(id, &inspector);
-
 
     ImGui::Separator();
 
