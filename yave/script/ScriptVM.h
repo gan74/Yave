@@ -36,11 +36,13 @@ class ScriptVM : NonMovable {
         ScriptVM();
         ~ScriptVM();
 
-        core::Result<void, core::String> run(const core::String& script);
+        core::Result<void, core::String> run(const core::String& script, const char* section_name = "script.as");
 
     private:
         asIScriptEngine* _engine = nullptr;
         as::TypeNameMap _types;
+
+        core::String _output;
 };
 
 }

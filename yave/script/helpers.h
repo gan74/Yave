@@ -35,8 +35,12 @@ namespace as {
 
 using TypeNameMap = core::FlatHashMap<std::string_view, core::String>;
 
+inline bool is_error(int res) {
+    return res < 0;
+}
+
 inline void check(int res, const char* err_msg = "AngelScript error") {
-    y_always_assert(res >= 0, err_msg);
+    y_always_assert(!is_error(res), err_msg);
 }
 
 template<typename T>

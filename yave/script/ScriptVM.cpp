@@ -34,8 +34,11 @@ SOFTWARE.
 
 namespace yave {
 
-static void message_callback(const asSMessageInfo* msg, void*) {
+static void message_callback(const asSMessageInfo* msg, void* out) {
     const std::string_view formatted_msg = fmt("{} ({}, {}): {}", msg->section, msg->row, msg->col, msg->message);
+    if(out) {
+        *static_cast<core::String*>(out) += formatted_msg;
+    }
     switch(msg->type) {
         case asMSGTYPE_ERROR:
             log_msg(formatted_msg, Log::Error);
@@ -90,7 +93,7 @@ ScriptVM::ScriptVM() {
 
     RegisterStdString(_engine);
 
-    _engine->SetMessageCallback(asFUNCTION(message_callback), nullptr, asCALL_CDECL);
+    _engine->SetMessageCallback(asFUNCTION(message_callback), &_output, asCALL_CDECL);
 
     as::check(_engine->RegisterGlobalFunction("void print(const string& in)", asFUNCTION(+[](const std::string& str) { log_msg(str); }), asCALL_CDECL), "Unable to register function");
 
@@ -105,26 +108,32 @@ ScriptVM::~ScriptVM() {
     _engine->ShutDownAndRelease();
 }
 
-core::Result<void, core::String> ScriptVM::run(const core::String& script) {
+core::Result<void, core::String> ScriptVM::run(const core::String& script, const char* section_name) {
+    _output = {};
+
     CScriptBuilder builder;
-    as::check(builder.StartNewModule(_engine, "MyModule"), "Unrecoverable error while starting a new module");
-    as::check(builder.AddSectionFromMemory("script.as", script.data(), unsigned(script.size())), "Please correct the errors in the script and try again");
-    as::check(builder.BuildModule(), "Please correct the errors in the script and try again");
+    if(as::is_error(builder.StartNewModule(_engine, "Module")) ||
+       as::is_error(builder.AddSectionFromMemory(section_name, script.data(), unsigned(script.size()))) ||
+       as::is_error(builder.BuildModule())) {
+        return core::Err(_output);
+    }
 
-    asIScriptModule* mod = _engine->GetModule("MyModule");
+    asIScriptModule* mod = _engine->GetModule("Module");
     asIScriptFunction* func = mod->GetFunctionByDecl("void main()");
-    y_always_assert(func, "The script must have the function 'void main()'. Please add it and try again");
-
+    if(!func) {
+        return core::Err(core::String("The script must have the function 'void main()'. Please add it and try again"));
+    }
 
     asIScriptContext* ctx = _engine->CreateContext();
     ctx->Prepare(func);
     y_defer(ctx->Release());
+
     switch(ctx->Execute()) {
         case asEXECUTION_FINISHED:
             return core::Ok();
 
         case asEXECUTION_EXCEPTION:
-            return core::Err(fmt_to_owned("An exception '{}' occurred. Please correct the code and try again", ctx->GetExceptionString()));
+            return core::Err(fmt_to_owned("An exception '{}' occurred", ctx->GetExceptionString()));
 
         default:
             y_fatal("???");
