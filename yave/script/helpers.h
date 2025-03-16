@@ -44,6 +44,38 @@ inline void check(int res, const char* err_msg = "AngelScript error") {
 }
 
 template<typename T>
+static constexpr auto build_integral_type_name() {
+    static_assert(std::is_integral_v<T>);
+    usize end = 0;
+    std::array<char, 16> buffer = {};
+    auto push = [&](std::string_view s) {
+        for(usize i = 0; i != s.size(); ++i) {
+            buffer[end++] = s[i];
+        }
+    };
+
+    if constexpr(std::is_unsigned_v<T>) {
+        push("uint");
+    } else {
+        push("int");
+    }
+
+    if constexpr(sizeof(T) == 8) {
+        push("64");
+    } else if constexpr(sizeof(T) == 4) {
+        push("32");
+    } else if constexpr(sizeof(T) == 2) {
+        push("16");
+    } else if constexpr(sizeof(T) == 1) {
+        push("8");
+    } else {
+        static_assert(false, "Type is unsupported");
+    }
+
+    return buffer;
+}
+
+template<typename T>
 inline std::string_view type_name(const TypeNameMap& map) {
     static_assert(!std::is_reference_v<T>);
     static_assert(!std::is_const_v<T>);
@@ -52,8 +84,13 @@ inline std::string_view type_name(const TypeNameMap& map) {
             return it->second;
         }
         y_fatal("Type does not exist");
+    } else if constexpr(std::is_integral_v<T>) {
+        static constexpr std::array buffer = build_integral_type_name<T>();
+        return std::string_view(buffer.data());
     } else {
-        return ct_type_name<T>();
+        constexpr std::string_view str = ct_type_name<T>();
+        static_assert(str.find(" ") == std::string_view::npos);
+        return str;
     }
 }
 
@@ -149,9 +186,12 @@ void bind_method(asIScriptEngine* engine, const TypeNameMap& map, const char* na
 template<typename F>
 void bind_global_func(asIScriptEngine* engine, const TypeNameMap& map, const char* name, F func) {
     const char* proto = create_prototype<F>(map, name);
-    check(engine->RegisterGlobalFunction(proto, asFUNCTION(func), asCALL_CDECL));
+    check(engine->RegisterGlobalFunction(proto, asFUNCTION(+func), asCALL_CDECL));
 }
 
+
+
+void register_string(asIScriptEngine* engine, TypeNameMap& map);
 
 
 }

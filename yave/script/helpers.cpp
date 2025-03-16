@@ -19,38 +19,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCRIPT_SCRIPTVM_H
-#define YAVE_SCRIPT_SCRIPTVM_H
-
-#include <yave/yave.h>
-
-#include <y/core/String.h>
-#include <y/core/Result.h>
 
 #include "helpers.h"
 
 namespace yave {
+namespace as {
 
-class ScriptStringFactory;
+void register_string(asIScriptEngine* engine, TypeNameMap& map) {
+    bind_type<core::String>(engine, map, "string");
 
-class ScriptVM : NonMovable {
-    public:
-        ScriptVM();
-        ~ScriptVM();
+    //r = engine->RegisterStringFactory("string", GetStdStringFactorySingleton());
 
-        core::Result<void, core::String> run(const core::String& script, const char* section_name = "script.as");
+    check(engine->RegisterObjectMethod("string", "string &opAddAssign(const string &in)", asFUNCTION(+[](const core::String& str, core::String& dst) -> core::String& {
+        return dst += str;
+    }), asCALL_CDECL_OBJLAST));
 
-    private:
-        asIScriptEngine* _engine = nullptr;
-        std::unique_ptr<ScriptStringFactory> _string_factory;
+    check(engine->RegisterObjectMethod("string", "bool opEquals(const string &in) const", asFUNCTION(+[](const core::String& a, const core::String& b) -> bool {
+        return a == b;
+    }), asCALL_CDECL_OBJLAST));
 
-        as::TypeNameMap _types;
+    check(engine->RegisterObjectMethod("string", "string opAdd(const string &in) const", asFUNCTION(+[](const core::String& a, const core::String& self) -> core::String {
+        return self + a;
+    }), asCALL_CDECL_OBJLAST));
 
-        core::String _output;
-};
-
+    bind_method<&core::String::size>(engine, map, "length");
+    bind_method<&core::String::is_empty>(engine, map, "is_empty");
+    bind_method<resolve_const<>(&core::String::operator[])>(engine, map, "opIndex");
 }
 
+}
+}
 
-#endif // YAVE_SCRIPT_SCRIPTVM_H
 

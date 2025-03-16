@@ -93,6 +93,12 @@ struct function_traits<Ret(Args...)> {
 
 };
 
+template<typename... Args, typename T, typename R>
+constexpr auto resolve(R (T::*m)(Args...)) { return m; }
+
+template<typename... Args, typename T, typename R>
+constexpr auto resolve_const(R (T::*m)(Args...) const) { return m; }
+
 
 namespace detail {
 template<typename T>
@@ -108,9 +114,9 @@ static auto has_end(...) -> std::false_type;
 
 template<typename T>
 using is_iterable = bool_type<
-        decltype(detail::has_begin<std::remove_reference_t<T>>(nullptr))::value &&
-        decltype(detail::has_end<std::remove_reference_t<T>>(nullptr))::value
-    >;
+    decltype(detail::has_begin<std::remove_reference_t<T>>(nullptr))::value &&
+    decltype(detail::has_end<std::remove_reference_t<T>>(nullptr))::value
+>;
 
 template<typename T>
 static constexpr bool is_iterable_v = is_iterable<T>::value;
