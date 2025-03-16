@@ -29,44 +29,46 @@ SOFTWARE.
 
 #include <algorithm>
 
+#include <external/ImGuiColorTextEdit/TextEditor.h>
+
 namespace editor {
 
 static const core::String script_file = "script.as";
 
-ScriptingConsole::ScriptingConsole() : Widget(ICON_FA_CODE " Scripting Console", ImGuiWindowFlags_NoNavInputs) {
+ScriptingConsole::ScriptingConsole() : Widget(ICON_FA_CODE " Scripting Console", ImGuiWindowFlags_NoNavInputs), _editor(std::make_unique<TextEditor>()) {
+    _editor->SetLanguageDefinition(TextEditor::LanguageDefinitionId::AngelScript);
+    _editor->SetPalette(TextEditor::PaletteId::Dark);
+
     if(auto f = io2::File::open(script_file)) {
-        _code.resize(f.unwrap().size());
-        f.unwrap().read_array(_code.data(), _code.size()).ignore();
+        std::string str;
+        str.resize(f.unwrap().size());
+        f.unwrap().read_array(str.data(), str.size()).ignore();
+        _editor->SetText(str);
+    }
+}
+
+ScriptingConsole::~ScriptingConsole() {
+    if(auto f = io2::File::create(script_file)) {
+        const std::string code = _editor->GetText();
+        f.unwrap().write_array(code.data(), code.size()).ignore();
     }
 }
 
 void ScriptingConsole::on_gui() {
-    const float height = ImGui::GetContentRegionAvail().y * 0.5f - ImGui::GetTextLineHeightWithSpacing();
-
-    ImGui::SetNextItemWidth(-1);
-    imgui::text_input_multiline("##code", _code, {0.0f, height});
-
-    ImGui::SetNextItemWidth(-1);
-    ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
-    imgui::text_input_multiline("##error", _error, {0.0f, height}, ImGuiInputTextFlags_ReadOnly);
-    ImGui::PopStyleColor();
+    const float height = ImGui::GetContentRegionAvail().y - ImGui::GetTextLineHeightWithSpacing() * 1.5f;
+    _editor->Render("##editor", ImGui::IsWindowFocused(), ImVec2(-1.0f, height));
 
     if(ImGui::Button(ICON_FA_PLAY " Run")) {
-        if(auto f = io2::File::create(script_file)) {
-            f.unwrap().write_array(_code.data(), _code.size()).ignore();
-        }
-
-        run(_code);
+        run(_editor->GetText());
     }
 }
 
 
-void ScriptingConsole::run(const core::String& code) {
+void ScriptingConsole::run(std::string_view code) {
     ScriptVM vm;
 
-    _error = {};
     if(auto r = vm.run(code); r.is_error()) {
-        _error = r.error();
+        log_msg(r.error(), Log::Error);
     }
 }
 

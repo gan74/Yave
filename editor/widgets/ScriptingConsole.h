@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include <editor/Widget.h>
 
+class TextEditor;
+
 namespace editor {
 
 class ScriptingConsole final : public Widget {
@@ -34,15 +36,15 @@ class ScriptingConsole final : public Widget {
 
     public:
         ScriptingConsole();
+        ~ScriptingConsole();
 
     protected:
         void on_gui() override;
 
     private:
-        void run(const core::String& code);
+        void run(std::string_view code);
 
-        core::String _code;
-        core::String _error;
+        std::unique_ptr<TextEditor> _editor;
 };
 
 }

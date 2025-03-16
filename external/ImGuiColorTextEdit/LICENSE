@@ -1,5 +1,6 @@
-/*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+MIT License
+
+Copyright (c) 2017 BalazsJako
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -18,39 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-**********************************/
-#ifndef YAVE_SCRIPT_SCRIPTVM_H
-#define YAVE_SCRIPT_SCRIPTVM_H
-
-#include <yave/yave.h>
-
-#include <y/core/String.h>
-#include <y/core/Result.h>
-
-#include "helpers.h"
-
-namespace yave {
-
-class ScriptStringFactory;
-
-class ScriptVM : NonMovable {
-    public:
-        ScriptVM();
-        ~ScriptVM();
-
-        core::Result<void, core::String> run(std::string_view code, const char* section_name = "script.as");
-
-    private:
-        asIScriptEngine* _engine = nullptr;
-        std::unique_ptr<ScriptStringFactory> _string_factory;
-
-        as::TypeNameMap _types;
-
-        core::String _output;
-};
-
-}
-
-
-#endif // YAVE_SCRIPT_SCRIPTVM_H
-

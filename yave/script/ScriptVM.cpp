@@ -109,12 +109,12 @@ ScriptVM::~ScriptVM() {
     _engine->ShutDownAndRelease();
 }
 
-core::Result<void, core::String> ScriptVM::run(const core::String& script, const char* section_name) {
+core::Result<void, core::String> ScriptVM::run(std::string_view code, const char* section_name) {
     _output = {};
 
     CScriptBuilder builder;
     if(as::is_error(builder.StartNewModule(_engine, "Module")) ||
-       as::is_error(builder.AddSectionFromMemory(section_name, script.data(), unsigned(script.size()))) ||
+       as::is_error(builder.AddSectionFromMemory(section_name, code.data(), unsigned(code.size()))) ||
        as::is_error(builder.BuildModule())) {
         return core::Err(_output);
     }

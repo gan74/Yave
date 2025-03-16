@@ -136,6 +136,8 @@ file(GLOB_RECURSE EDITOR_FILES
 file(GLOB_RECURSE IMGUI_FILES
     "external/imgui/*.cpp"
     "external/imgui/*.h"
+    "external/ImGuiColorTextEdit/*.cpp"
+    "external/ImGuiColorTextEdit/*.h"
 )
 
 file(GLOB_RECURSE EDITOR_EXTERNAL_FILES
