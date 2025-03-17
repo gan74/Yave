@@ -23,6 +23,7 @@ SOFTWARE.
 #include "ScriptVM.h"
 
 #include <y/concurrent/Mutexed.h>
+#include <y/core/Chrono.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -103,6 +104,8 @@ class ScriptStringFactory final : public asIStringFactory {
         concurrent::Mutexed<std::unordered_set<core::String>> _cache;
 };
 
+
+
 ScriptVM::ScriptVM() : _string_factory(std::make_unique<ScriptStringFactory>()) {
 
     _engine = asCreateScriptEngine();
@@ -113,6 +116,7 @@ ScriptVM::ScriptVM() : _string_factory(std::make_unique<ScriptStringFactory>()) 
     _engine->RegisterStringFactory("string", _string_factory.get());
 
     as::bind_global_func(_engine, _types, "print", +[](const core::String& str) { log_msg(str); });
+    as::bind_global_func(_engine, _types, "rand_bool", +[]() { return (std::bit_cast<u64>(core::StopWatch::program().to_micros()) & 0x1) == 0; });
 }
 
 ScriptVM::~ScriptVM() {

@@ -29,6 +29,9 @@ void register_string(asIScriptEngine* engine, TypeNameMap& map) {
     bind_type<core::String>(engine, map, "string");
 
     //r = engine->RegisterStringFactory("string", GetStdStringFactorySingleton());
+    check(engine->RegisterObjectBehaviour("string", asBEHAVE_CONSTRUCT, "void f(uint8 c)", asFUNCTION(+[](const char c, core::String* self) {
+        new(self) core::String(&c, 1);
+    }), asCALL_CDECL_OBJLAST));
 
     check(engine->RegisterObjectMethod("string", "string &opAddAssign(const string &in)", asFUNCTION(+[](const core::String& str, core::String& dst) -> core::String& {
         return dst += str;
