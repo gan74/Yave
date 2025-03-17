@@ -135,6 +135,7 @@ y_test_func("String find") {
     const auto end = s.find("flubudu");
 
     y_test_assert(found != s.end());
+    y_test_assert(std::string_view(found).starts_with("strings"));
     y_test_assert(end == s.end());
 }
 
@@ -142,6 +143,12 @@ y_test_func("String replace") {
     y_test_assert(core::String::replaced("abdaddaaaabdadad", "a", "x") == "xbdxddxxxxbdxdxd");
     y_test_assert(core::String::replaced("xyuyyyxyxyxyx", "a", "k") == "xyuyyyxyxyxyx");
     y_test_assert(core::String::replaced("", "a", "b") == "");
+}
+
+y_test_func("String insert") {
+    core::String str = "hello world!";
+    str.insert(str.find("world"), "w-");
+    y_test_assert(str == "hello w-world!");
 }
 
 }

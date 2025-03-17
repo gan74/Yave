@@ -149,6 +149,8 @@ class String {
         static String replaced(std::string_view str, std::string_view from, std::string_view to);
         String replaced(std::string_view from, std::string_view to) const;
 
+        void insert(iterator it, std::string_view str);
+
         char* data();
         const char* data() const;
 
@@ -239,8 +241,7 @@ class String {
         }
 
     private:
-        union
-        {
+        union {
             LongData _l;
             ShortData _s;
         };

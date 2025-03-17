@@ -259,6 +259,16 @@ String String::replaced(std::string_view from, std::string_view to) const {
     return replaced(view(), from, to);
 }
 
+void String::insert(iterator it, std::string_view str) {
+    if(it == end()) {
+        append(str.data(), str.size());
+    } else {
+        grow(size() + str.size(), '\0');
+        std::memmove(it + str.size(), it, end() - it);
+        std::memcpy(it, str.data(), str.size());
+    }
+}
+
 char* String::data() {
     return is_long() ? _l.data : _s.data;
 }
