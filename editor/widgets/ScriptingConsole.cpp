@@ -29,44 +29,52 @@ SOFTWARE.
 
 #include <algorithm>
 
-#include <external/ImGuiColorTextEdit/TextEditor.h>
-
 namespace editor {
 
 static const core::String script_file = "script.as";
 
-ScriptingConsole::ScriptingConsole() : Widget(ICON_FA_CODE " Scripting Console", ImGuiWindowFlags_NoNavInputs), _editor(std::make_unique<TextEditor>()) {
-    _editor->SetLanguageDefinition(TextEditor::LanguageDefinitionId::AngelScript);
-    _editor->SetPalette(TextEditor::PaletteId::Dark);
-
+ScriptingConsole::ScriptingConsole() : Widget(ICON_FA_CODE " Scripting Console", ImGuiWindowFlags_NoNavInputs) {
     if(auto f = io2::File::open(script_file)) {
-        std::string str;
-        str.resize(f.unwrap().size());
-        f.unwrap().read_array(str.data(), str.size()).ignore();
-        _editor->SetText(str);
+        _code.resize(f.unwrap().size(), '\0');
+        f.unwrap().read_array(_code.data(), _code.size()).ignore();
     }
 }
 
 ScriptingConsole::~ScriptingConsole() {
-    if(auto f = io2::File::create(script_file)) {
-        const std::string code = _editor->GetText();
-        f.unwrap().write_array(code.data(), code.size()).ignore();
-    }
 }
 
 void ScriptingConsole::on_gui() {
     const float height = ImGui::GetContentRegionAvail().y - ImGui::GetTextLineHeightWithSpacing() * 1.5f;
-    _editor->Render("##editor", ImGui::IsWindowFocused(), ImVec2(-1.0f, height));
+
+    {
+        auto callback = [](ImGuiInputTextCallbackData* data) {
+           auto& str = *static_cast<core::String*>(data->UserData);
+
+            if(data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
+                str.resize(usize(data->BufSize));
+            }
+            if(data->EventFlag == ImGuiInputTextFlags_CallbackCompletion && data->EventKey == ImGuiKey_Tab) {
+                data->InsertChars(data->CursorPos, "\t");
+            }
+            return 0;
+        };
+
+        ImGui::InputTextMultiline("##script", _code.data(), _code.size() + 1, ImVec2(-1.0f, height), ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackCompletion, callback, &_code);
+        _code.resize(std::strlen(_code.data()));
+    }
+
 
     if(ImGui::Button(ICON_FA_PLAY " Run")) {
-        run(_editor->GetText());
+        if(auto f = io2::File::create(script_file)) {
+            f.unwrap().write_array(_code.data(), _code.size()).ignore();
+        }
+        run(_code);
     }
 }
 
 
 void ScriptingConsole::run(std::string_view code) {
     ScriptVM vm;
-
     if(auto r = vm.run(code); r.is_error()) {
         for(const auto& e : r.error()) {
             log_msg(fmt("{} ({}, {}): {}", e.section, e.line, e.column, e.message), Log::Error);

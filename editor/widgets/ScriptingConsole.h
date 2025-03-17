@@ -26,8 +26,6 @@ SOFTWARE.
 
 #include <editor/Widget.h>
 
-class TextEditor;
-
 namespace editor {
 
 class ScriptingConsole final : public Widget {
@@ -44,7 +42,7 @@ class ScriptingConsole final : public Widget {
     private:
         void run(std::string_view code);
 
-        std::unique_ptr<TextEditor> _editor;
+        core::String _code;
 };
 
 }
