@@ -171,10 +171,10 @@ void text_icon(const UiIcon& icon) {
 }
 
 static int str_resize_callback(ImGuiInputTextCallbackData* data) {
+    core::String& str = *static_cast<core::String*>(data->UserData);
+    y_debug_assert(str.data() == data->Buf);
     if(data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
-        core::String& str = *static_cast<core::String*>(data->UserData);
-        y_debug_assert(str.data() == data->Buf);
-        str.resize(usize(data->BufSize), '\0'); // NB: On resizing calls, generally data->BufSize == data->BufTextLen + 1
+        str.resize(data->BufTextLen);
         data->Buf = str.data();
     }
     return 0;
@@ -184,8 +184,6 @@ bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags, 
     ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_ButtonActive));
     y_defer(ImGui::PopStyleColor());
 
-    y_defer(str.resize(std::strlen(str.data())));
-
     /*if(hint.empty()) {
         return ImGui::InputText(name, str.data(), str.size() + 1, flags | ImGuiInputTextFlags_CallbackResize, str_resize_callback, &str);
     } else*/ {
@@ -194,8 +192,7 @@ bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags, 
 }
 
 bool text_input_multiline(const char* name, core::String& str, const math::Vec2& size, ImGuiInputTextFlags flags) {
-    y_defer(str.resize(std::strlen(str.data())));
-    return ImGui::InputTextMultiline(name, str.data(), str.size() + 1, to_im(size), ImGuiInputTextFlags_CallbackResize | flags, str_resize_callback, &str);
+    return ImGui::InputTextMultiline(name, str.data(), str.capacity() + 1, to_im(size), ImGuiInputTextFlags_CallbackResize | flags, str_resize_callback, &str);
 }
 
 void text_read_only(const char* name, std::string_view str) {
