@@ -1,5 +1,8 @@
 /build/
 /assets/
+/store/
+*.ini
+*.dat
 *.pdb
 *.user
 *.spv
