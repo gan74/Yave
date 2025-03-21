@@ -191,7 +191,7 @@ EditorPass EditorPass::create(FrameGraph& framegraph, const SceneView& scene_vie
     const auto color = copy_or_dummy(builder, in_color, VK_FORMAT_R8G8B8A8_UNORM, size);
     const auto id = copy_or_dummy(builder, in_id, VK_FORMAT_R32_UINT, size);
 
-    builder.add_external_input(imgui_platform()->renderer()->font_texture());
+    builder.add_external_input(imgui_platform()->font_texture());
     builder.add_uniform_input(pass_buffer);
 
     builder.add_attrib_input(vertex_buffer);

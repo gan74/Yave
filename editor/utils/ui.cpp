@@ -230,7 +230,7 @@ bool position_input(const char* str_id, math::Vec3& position) {
 
         if(vertical_padding > 1.0f && !ImGui::IsItemActive()) {
             const math::Vec2 pos = start_pos + math::Vec2(padding, vertical_padding);
-            ImGui::GetWindowDrawList()->AddRectFilled(to_im(pos), to_im(pos + math::Vec2(4.0f, text_height)), 0x80000000 | gizmo_color(i), 0.5f);
+            ImGui::GetWindowDrawList()->AddRectFilled(to_im(pos), to_im(pos + math::Vec2(4.0f, text_height)), 0xFF000000 | gizmo_color(i), 0.5f);
         }
     }
     return edited;

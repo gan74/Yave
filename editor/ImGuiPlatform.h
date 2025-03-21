@@ -23,7 +23,7 @@ SOFTWARE.
 #ifndef EDITOR_IMGUIPLATFORM_H
 #define EDITOR_IMGUIPLATFORM_H
 
-#include "ImGuiRenderer.h"
+#include <editor/editor.h>
 
 #include <yave/window/Window.h>
 #include <yave/window/EventHandler.h>
@@ -35,20 +35,16 @@ SOFTWARE.
 #include <functional>
 
 struct ImGuiViewport;
-struct ImGuiTestEngine;
 
 namespace editor {
 
-class ImGuiEventHandler;
-
 ImGuiPlatform* imgui_platform();
 
-class ImGuiPlatform : NonMovable {
+class ImGuiEventHandler;
 
+class ImGuiPlatform : NonMovable {
     struct PlatformWindow : NonMovable {
         PlatformWindow(ImGuiPlatform* parent, Window::Flags flags);
-
-        bool render(ImGuiViewport* viewport);
 
         ImGuiPlatform* platform = nullptr;
 
@@ -63,9 +59,7 @@ class ImGuiPlatform : NonMovable {
         ImGuiPlatform(bool multi_viewport = true);
         ~ImGuiPlatform();
 
-        static ImGuiPlatform* instance();
-
-        const ImGuiRenderer* renderer() const;
+        const Texture& font_texture() const;
 
         Window* main_window();
 
@@ -74,25 +68,21 @@ class ImGuiPlatform : NonMovable {
         void show_demo();
 
     private:
-        friend struct PlatformWindow;
-
         void close_window(PlatformWindow* window);
 
-        static ImGuiPlatform* get_platform();
         static Window* get_window(ImGuiViewport* vp);
         static PlatformWindow* get_platform_window(ImGuiViewport* vp);
 
     private:
-        static ImGuiPlatform* _instance;
-
         std::unique_ptr<PlatformWindow> _main_window;
         core::Vector<std::unique_ptr<PlatformWindow>> _windows;
-
-        std::unique_ptr<ImGuiRenderer> _renderer;
 
         core::StopWatch _frame_timer;
 
         bool _demo_window = is_debug_defined;
+
+        Texture _font;
+        TextureView _font_view;
 };
 
 }
