@@ -193,8 +193,8 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             ImGui::PushID(fmt_c_str("{}", info.type_name));
             {
                 const float button_size = ImGui::GetFrameHeight();
-                const math::Vec2 button_pos = math::Vec2(ImGui::GetContentRegionAvail().x - button_size, 0.0f) + to_y(ImGui::GetCursorScreenPos());
-                ImGui::SetCursorScreenPos(to_im(button_pos));
+                const ImVec2 button_pos = ImVec2(ImGui::GetContentRegionAvail().x - button_size, 0.0f) + ImGui::GetCursorScreenPos();
+                ImGui::SetCursorScreenPos(button_pos);
                 const bool can_remove = !_world->is_component_required(_id, info.type_id);
                 const bool remove_component = ImGui::InvisibleButton(ICON_FA_TRASH "###invisible", ImVec2(button_size, button_size));
 
@@ -203,7 +203,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                 open = ImGui::CollapsingHeader(fmt_c_str(ICON_FA_PUZZLE_PIECE " {}", info.clean_component_name()), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow);
 
                 ImGui::SameLine();
-                ImGui::SetCursorScreenPos(to_im(button_pos));
+                ImGui::SetCursorScreenPos(button_pos);
                 ImGui::BeginDisabled(!can_remove);
                 ImGui::Button(ICON_FA_TRASH, ImVec2(button_size, button_size));
                 ImGui::EndDisabled();

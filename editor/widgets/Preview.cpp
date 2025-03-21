@@ -198,14 +198,14 @@ void Preview::on_gui() {
     }
 
     if(output) {
-        const math::Vec2 top_left = to_y(ImGui::GetCursorPos());
+        const ImVec2 top_left = ImGui::GetCursorPos();
         const float width = ImGui::GetContentRegionAvail().x;
 
         ImGui::Image(output.to_imgui(), ImVec2(width, width));
 
         const ImVec2 bottom = ImGui::GetCursorPos();
 
-        ImGui::SetCursorPos(to_im(top_left + math::Vec2(4.0f)));
+        ImGui::SetCursorPos(top_left + ImVec2(4.0f, 4.0f));
         if(ImGui::Button(ICON_FA_CIRCLE)) {
             add_child_widget<AssetSelector>(AssetType::Image)->set_selected_callback(
                 [this](AssetId id) {

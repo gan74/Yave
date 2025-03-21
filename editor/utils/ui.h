@@ -97,7 +97,6 @@ struct UiIcon {
     u32 color;
 };
 
-
 inline constexpr math::Vec4 to_y(ImVec4 v) { return {v.x, v.y, v.z, v.w}; }
 inline constexpr math::Vec2 to_y(ImVec2 v) { return {v.x, v.y}; }
 

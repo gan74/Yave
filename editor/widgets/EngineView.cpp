@@ -97,9 +97,9 @@ CmdTimestampPool* EngineView::timestamp_pool() const {
 }
 
 bool EngineView::is_mouse_inside() const {
-    const auto less = [](const math::Vec2& a, const math::Vec2& b) { return a.x() < b.x() && a.y() < b.y(); };
-    const math::Vec2 mouse_pos = to_y(ImGui::GetIO().MousePos);
-    return less(mouse_pos, to_y(ImGui::GetWindowPos()) + to_y(ImGui::GetWindowSize())) && less(to_y(ImGui::GetWindowPos()), mouse_pos);
+    const auto less = [](const ImVec2& a, const ImVec2& b) { return a.x < b.x && a.y < b.y; };
+    const ImVec2 mouse_pos = ImGui::GetIO().MousePos;
+    return less(mouse_pos, ImGui::GetWindowPos() + ImGui::GetWindowSize()) && less(ImGui::GetWindowPos(), mouse_pos);
 }
 
 bool EngineView::is_focussed() const {
@@ -258,9 +258,9 @@ void EngineView::update_scene_view() {
 
 void EngineView::update_picking() {
     const math::Vec2ui viewport_size = content_size();
-    const math::Vec2 offset = to_y(ImGui::GetWindowPos());
-    const math::Vec2 mouse = to_y(ImGui::GetIO().MousePos);
-    const math::Vec2 uv = (mouse - offset) / math::Vec2(viewport_size);
+    const ImVec2 offset = ImGui::GetWindowPos();
+    const ImVec2 mouse = ImGui::GetIO().MousePos;
+    const math::Vec2 uv = to_y(mouse - offset) / math::Vec2(viewport_size);
 
     if(uv.x() < 0.0f || uv.y() < 0.0f ||
        uv.x() > 1.0f || uv.y() > 1.0f) {
@@ -301,7 +301,7 @@ void EngineView::on_gui() {
     if(ImGui::BeginChild("##view")) {
         update_scene_view();
 
-        const math::Vec2 cursor = to_y(ImGui::GetCursorPos());
+        const ImVec2 cursor = ImGui::GetCursorPos();
 
         {
             CmdBufferRecorder recorder = create_disposable_cmd_buffer();
@@ -312,7 +312,8 @@ void EngineView::on_gui() {
         make_drop_target();
 
         {
-            ImGui::SetCursorPos(to_im(cursor + math::Vec2(ImGui::GetStyle().IndentSpacing * 0.5f)));
+            const float spacing = ImGui::GetStyle().IndentSpacing * 0.5f;
+            ImGui::SetCursorPos(cursor + ImVec2(spacing, spacing));
             draw_toolbar_and_gizmos();
         }
 

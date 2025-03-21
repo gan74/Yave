@@ -264,16 +264,16 @@ static void setup_style() {
     colors[ImGuiCol_ScrollbarGrabActive]    = highlight;
     colors[ImGuiCol_ResizeGripActive]       = highlight;
 
-    colors[ImGuiCol_HeaderHovered]              = to_im(math::lerp(to_y(child), to_y(highlight), 0.25f));
-    colors[ImGuiCol_SeparatorHovered]           = to_im(math::lerp(to_y(child), to_y(highlight), 0.25f));
-    colors[ImGuiCol_TextSelectedBg]             = to_im(math::lerp(to_y(child), to_y(highlight), 0.25f));
+    colors[ImGuiCol_HeaderHovered]              = math::lerp(child, highlight, 0.25f);
+    colors[ImGuiCol_SeparatorHovered]           = math::lerp(child, highlight, 0.25f);
+    colors[ImGuiCol_TextSelectedBg]             = math::lerp(child, highlight, 0.25f);
 
-    colors[ImGuiCol_FrameBgHovered]             = to_im(math::lerp(to_y(child), to_y(bg), 0.75f));
+    colors[ImGuiCol_FrameBgHovered]             = math::lerp(child, bg, 0.75f);
 
-    colors[ImGuiCol_TabDimmed]                  = to_im(math::lerp(to_y(child), to_y(bg), 0.75f));
-    colors[ImGuiCol_Tab]                        = to_im(math::lerp(to_y(child), to_y(bg), 0.75f));
+    colors[ImGuiCol_TabDimmed]                  = math::lerp(child, bg, 0.75f);
+    colors[ImGuiCol_Tab]                        = math::lerp(child, bg, 0.75f);
 
-    colors[ImGuiCol_TabDimmedSelectedOverline]  = to_im(math::lerp(to_y(child), to_y(highlight), 0.5f));
+    colors[ImGuiCol_TabDimmedSelectedOverline]  = math::lerp(child, highlight, 0.5f);
 
 
 

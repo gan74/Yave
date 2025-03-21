@@ -220,17 +220,17 @@ bool position_input(const char* str_id, math::Vec3& position) {
             ImGui::SameLine();
         }
 
-        const math::Vec2 start_pos = to_y(ImGui::GetCursorScreenPos());
+        const ImVec2 start_pos = ImGui::GetCursorScreenPos();
 
         ImGui::SetNextItemWidth(width / 3.0f);
         edited |= ImGui::DragFloat(input_name[i], &position[i], 1.0f, 0.0f, 0.0f, " %.2f");
 
-        const math::Vec2 end_pos = to_y(ImGui::GetCursorScreenPos());
-        const float vertical_padding = ((end_pos - start_pos).y() - text_height) * 0.5f;
+        const ImVec2 end_pos = ImGui::GetCursorScreenPos();
+        const float vertical_padding = ((end_pos - start_pos).y - text_height) * 0.5f;
 
         if(vertical_padding > 1.0f && !ImGui::IsItemActive()) {
-            const math::Vec2 pos = start_pos + math::Vec2(padding, vertical_padding);
-            ImGui::GetWindowDrawList()->AddRectFilled(to_im(pos), to_im(pos + math::Vec2(4.0f, text_height)), 0xFF000000 | gizmo_color(i), 0.5f);
+            const ImVec2 pos = start_pos + ImVec2(padding, vertical_padding);
+            ImGui::GetWindowDrawList()->AddRectFilled(pos, pos + ImVec2(4.0f, text_height), 0xFF000000 | gizmo_color(i), 0.5f);
         }
     }
     return edited;
@@ -238,7 +238,7 @@ bool position_input(const char* str_id, math::Vec3& position) {
 
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear) {
     static constexpr ImVec2 button_size = ImVec2(64.0f, 64.0f);
-    const ImVec2 padded_button_size = to_im(to_y(button_size) + to_y(ImGui::GetStyle().FramePadding) * 4.0f);
+    const ImVec2 padded_button_size = button_size + ImGui::GetStyle().FramePadding * 4.0f;
 
     ImGui::PushID(fmt_c_str("{}_{}_{}", id.id(), uenum(type), text));
     ImGui::BeginGroup();
@@ -421,7 +421,7 @@ bool search_bar(const char* text, char* buffer, usize buffer_size) {
     const float y_offset = 2.0f;
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, to_im(to_y(ImGui::GetStyle().FramePadding) - math::Vec2(0.0f, y_offset)));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImGui::GetStyle().FramePadding - ImVec2(0.0f, y_offset));
     ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetStyleColorVec4(ImGuiCol_CheckMark));
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + y_offset);
     y_defer({ ImGui::PopStyleVar(3); ImGui::PopStyleColor(); });
@@ -430,7 +430,7 @@ bool search_bar(const char* text, char* buffer, usize buffer_size) {
     {
         const float text_width = ImGui::CalcTextSize(text, nullptr, true).x + 8.0f;
         ImGui::SetNextItemWidth(-text_width);
-        search_bar_state.popup_pos = to_im(to_y(ImGui::GetWindowPos()) + to_y(ImGui::GetCursorPos()));
+        search_bar_state.popup_pos = ImGui::GetWindowPos() + ImGui::GetCursorPos();
     }
 
     ImGuiInputTextState* imgui_state = ImGui::GetInputTextState(ImGui::GetID(text));
@@ -589,15 +589,15 @@ static bool icon_button(const UiIcon& icon, const UiTexture& tex_icon, const cha
     ImGui::BeginGroup();
 
     const float text_height = ImGui::CalcTextSize(str_id).y;
-    const math::Vec2 cursor = to_y(ImGui::GetCursorPos());
-    const math::Vec2 padding = to_y(ImGui::GetStyle().FramePadding);
-    const ImVec2 padded_size = to_im(math::Vec2(icon_size - padding * 2.0f));
+    const ImVec2 cursor = ImGui::GetCursorPos();
+    const ImVec2 padding = ImGui::GetStyle().FramePadding;
+    const ImVec2 padded_size = ImVec2(icon_size, icon_size) - padding * 2.0f;
 
     ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
     const bool activated = ImGui::Selectable(str_id, selected, flags, ImVec2(icon_size, icon_size + text_height));
     ImGui::PopStyleVar();
 
-    ImGui::SetCursorPos(to_im(cursor + padding));
+    ImGui::SetCursorPos(cursor + padding);
 
     if(tex_icon) {
         ImGui::Image(tex_icon.to_imgui(), padded_size);
