@@ -53,6 +53,19 @@ class ImGuiPlatform : NonMovable {
         std::unique_ptr<ImGuiEventHandler> event_handler;
     };
 
+    struct ImGuiImage : NonMovable {
+        DstTexture texture;
+        TextureView view;
+
+        ImGuiImage() = default;
+
+        ImGuiImage(DstTexture tex) : texture(std::move(tex)), view(texture) {
+        }
+
+        ImGuiImage(TextureView v) : view(v) {
+        }
+    };
+
     public:
         using OnGuiFunc = std::function<void()>;
 
@@ -66,6 +79,11 @@ class ImGuiPlatform : NonMovable {
         void exec(OnGuiFunc func = nullptr);
 
         void show_demo();
+
+        template<typename... Args>
+        UiTexture to_ui(Args&&... args) {
+            return &_images.emplace_back(std::make_unique<ImGuiImage>(y_fwd(args)...))->view;
+        }
 
     private:
         void close_window(PlatformWindow* window);
@@ -83,6 +101,8 @@ class ImGuiPlatform : NonMovable {
 
         Texture _font;
         TextureView _font_view;
+
+        core::Vector<std::unique_ptr<ImGuiImage>> _images;
 };
 
 }

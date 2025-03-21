@@ -35,63 +35,6 @@ SOFTWARE.
 
 namespace editor {
 
-class UiTexture {
-    struct Data : NonMovable {
-        Image<ImageUsage::TextureBit | ImageUsage::TransferDstBit | ImageUsage::ColorBit> texture;
-        TextureView view;
-
-        Data() = default;
-
-        Data(ImageFormat format, const math::Vec2ui& size) : texture(format, size, MemoryAllocFlags::NoDedicatedAllocBit), view(texture) {
-        }
-
-        Data(TextureView v) : view(v) {
-        }
-    };
-
-    static core::Vector<std::unique_ptr<Data>> _all_textures;
-
-    public:
-        static void clear_all() {
-            _all_textures.clear();
-        }
-
-        static const TextureView* view(ImTextureID id) {
-            return id ? &_all_textures[id - 1]->view : nullptr;
-        }
-
-        UiTexture() = default;
-
-        UiTexture(ImageFormat format, const math::Vec2ui& size)  {
-            _all_textures.emplace_back(std::make_unique<Data>(format, size));
-            _id = ImTextureID(_all_textures.size());
-        }
-
-        UiTexture(TextureView view) {
-            y_debug_assert(!view.is_null());
-            _all_textures.emplace_back(std::make_unique<Data>(view));
-            _id = ImTextureID(_all_textures.size());
-        }
-
-        const auto& texture() {
-            y_debug_assert(_id);
-            y_debug_assert(!_all_textures[_id - 1]->texture.is_null());
-            return _all_textures[_id - 1]->texture;
-        }
-
-        operator bool() const {
-            return _id;
-        }
-
-        ImTextureID to_imgui() const {
-            y_debug_assert(_id);
-            return _id;
-        }
-
-    private:
-        ImTextureID _id = {};
-};
-
 struct UiIcon {
     std::string_view icon;
     u32 color;
@@ -152,7 +95,7 @@ void table_begin_next_row(int col_index = 0);
 
 bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGuiSelectableFlags flags = 0);
 bool icon_button(const UiIcon& icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags = 0);
-bool icon_button(const UiTexture& icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags = 0);
+bool icon_button(UiTexture icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags = 0);
 
 bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_size);
 

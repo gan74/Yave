@@ -128,7 +128,7 @@ void break_in_debugger();
 // Read about ImGuiBackendFlags_RendererHasVtxOffset for details.
 #define ImDrawIdx uint32_t
 
-#define ImTextureID uint64_t
+#define ImTextureID void*
 
 //---- Override ImDrawCallback signature (will need to modify renderer backends accordingly)
 //struct ImDrawList;

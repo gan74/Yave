@@ -44,6 +44,8 @@ SOFTWARE.
 
 namespace editor {
 
+static_assert(std::is_same_v<UiTexture, ImTextureID>);
+
 ImGuiPlatform* imgui_platform() {
     y_debug_assert(ImGui::GetIO().BackendPlatformUserData);
     return static_cast<ImGuiPlatform*>(ImGui::GetIO().BackendPlatformUserData);
@@ -94,7 +96,7 @@ static void render_frame(ImDrawData* draw_data, RenderPassRecorder& recorder, co
 
     usize index_offset = 0;
     usize vertex_offset = 0;
-    ImTextureID current_tex = 0;
+    const TextureView* current_tex = nullptr;
 
     setup_state(nullptr);
 
@@ -127,9 +129,10 @@ static void render_frame(ImDrawData* draw_data, RenderPassRecorder& recorder, co
             y_always_assert(!cmd.UserCallback, "User callback not supported");
 
             if(cmd.ElemCount) {
-                if(current_tex != cmd.TextureId) {
-                    current_tex = cmd.TextureId;
-                    setup_state(UiTexture::view(current_tex));
+                const TextureView* tex = static_cast<const TextureView*>(cmd.TextureId);
+                if(current_tex != tex) {
+                    current_tex = tex;
+                    setup_state(current_tex);
                 }
 
                 VkDrawIndexedIndirectCommand command = {};
@@ -599,7 +602,7 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                 ImGui::RenderPlatformWindowsDefault();
             }
 
-            UiTexture::clear_all();
+            _images.make_empty();
         }
     }
 }

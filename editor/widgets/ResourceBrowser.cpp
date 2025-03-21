@@ -25,6 +25,7 @@ SOFTWARE.
 #include "GltfImporter.h"
 #include "ImageImporter.h"
 
+#include <editor/ImGuiPlatform.h>
 #include <editor/ThumbmailRenderer.h>
 
 #include <editor/utils/assets.h>
@@ -70,7 +71,7 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _fs_vi
         if(type == FileSystemModel::EntryType::File) {
             if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
                 if(const TextureView* tex = thumbmail_renderer().thumbmail(id)) {
-                    return *tex;
+                    return imgui_platform()->to_ui(*tex);
                 }
             }
         }

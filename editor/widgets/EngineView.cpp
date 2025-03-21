@@ -27,6 +27,7 @@ SOFTWARE.
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
 #include <editor/utils/CameraController.h>
+#include <editor/ImGuiPlatform.h>
 #include <editor/utils/ui.h>
 
 #include <yave/scene/EcsScene.h>
@@ -155,7 +156,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 
     const math::Vec2ui output_size = _resolution < 0 ? content_size() : standard_resolutions()[_resolution].second;
 
-    UiTexture output;
+    DstTexture output;
     FrameGraph graph(_resource_pool);
 
 
@@ -194,8 +195,8 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
                 render_pass.draw_array(3);
             }
             const auto& src = self->resources().image_base(output_image);
-            output = UiTexture(src.format(), src.image_size().to<2>());
-            recorder.copy(src, output.texture());
+            output = DstTexture(src.format(), src.image_size().to<2>());
+            recorder.copy(src, output);
         });
     }
 
@@ -204,8 +205,8 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         graph.render(recorder, ts_pool);
     }
 
-    if(output) {
-        ImGui::Image(output.to_imgui(), to_im(content_size()));
+    if(!output.is_null()) {
+        ImGui::Image(imgui_platform()->to_ui(std::move(output)), to_im(content_size()));
     }
 }
 

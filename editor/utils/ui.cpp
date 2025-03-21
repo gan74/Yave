@@ -23,6 +23,7 @@ SOFTWARE.
 #include "ui.h"
 #include "assets.h"
 
+#include <editor/ImGuiPlatform.h>
 #include <editor/ThumbmailRenderer.h>
 #include <editor/EditorWorld.h>
 #include <editor/widgets/AssetSelector.h>
@@ -42,8 +43,6 @@ SOFTWARE.
 #include <ctime>
 
 namespace editor {
-
-core::Vector<std::unique_ptr<UiTexture::Data>> UiTexture::_all_textures = {};
 
 ImGuiKey to_imgui_key(Key k) {
     if(u32(k) >= u32(Key::A) && u32(k) <= u32(Key::Z)) {
@@ -253,7 +252,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
     bool ret = false;
     if(is_valid) {
         if(const TextureView* img = thumbmail_renderer().thumbmail(id)) {
-            ret = ImGui::ImageButton("##tex", UiTexture(*img).to_imgui(), button_size);
+            ret = ImGui::ImageButton("##tex", imgui_platform()->to_ui(*img), button_size);
         } else {
             ret = ImGui::Button(ICON_FA_HOURGLASS_HALF, padded_button_size);
         }
@@ -585,7 +584,7 @@ bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGu
     return ImGui::Selectable(str_id, selected, flags) || activated;
 }
 
-static bool icon_button(const UiIcon& icon, const UiTexture& tex_icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags) {
+static bool icon_button(const UiIcon& icon, UiTexture tex_icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags) {
     ImGui::BeginGroup();
 
     const float text_height = ImGui::CalcTextSize(str_id).y;
@@ -600,7 +599,7 @@ static bool icon_button(const UiIcon& icon, const UiTexture& tex_icon, const cha
     ImGui::SetCursorPos(cursor + padding);
 
     if(tex_icon) {
-        ImGui::Image(tex_icon.to_imgui(), padded_size);
+        ImGui::Image(tex_icon, padded_size);
     } else {
         const auto [uv, uv_size] = imgui::compute_glyph_uv_size(icon.icon.data());
         const ImVec4 color = ImGui::ColorConvertU32ToFloat4(icon.color);
@@ -616,7 +615,7 @@ bool icon_button(const UiIcon& icon, const char* str_id, bool selected, float ic
     return icon_button(icon, {}, str_id, selected, icon_size, flags);
 }
 
-bool icon_button(const UiTexture& icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags) {
+bool icon_button(editor::UiTexture icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags) {
     return icon_button({}, icon, str_id, selected, icon_size, flags);
 }
 
