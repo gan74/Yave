@@ -39,7 +39,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
 
     const float3 final = in_final[coord].rgb;
 
-    float3 color = final;
+    float3 color = linear_to_sRGB(final);
     if(target_index == 1) {
         color = surface.albedo;
     } else if(target_index == 2) {

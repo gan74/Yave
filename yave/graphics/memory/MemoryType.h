@@ -53,7 +53,6 @@ inline const char* memory_type_name(MemoryType type) {
 
 enum class MemoryAllocFlags  {
     None                    = 0x00,
-    NoDedicatedAllocBit     = 0x01,
 };
 
 constexpr MemoryAllocFlags operator|(MemoryAllocFlags a, MemoryAllocFlags b) {

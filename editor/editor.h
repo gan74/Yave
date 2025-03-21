@@ -93,6 +93,9 @@ T* add_detached_widget(Args&&... args) {
 
 
 
+using UiTexture = void*;
+
+
 
 struct EditorAction {
     enum Flags : u32 {

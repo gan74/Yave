@@ -31,71 +31,23 @@ SOFTWARE.
 
 #include <y/core/Vector.h>
 
-#include <external/imgui/yave_imgui.h>
+#include <external/imgui/imgui.h>
 
 namespace editor {
-
-class UiTexture {
-    struct Data : NonMovable {
-        Image<ImageUsage::TextureBit | ImageUsage::TransferDstBit | ImageUsage::ColorBit> texture;
-        TextureView view;
-
-        Data() = default;
-
-        Data(ImageFormat format, const math::Vec2ui& size) : texture(format, size, MemoryAllocFlags::NoDedicatedAllocBit), view(texture) {
-        }
-
-        Data(TextureView v) : view(v) {
-        }
-    };
-
-    static core::Vector<std::unique_ptr<Data>> _all_textures;
-
-    public:
-        static void clear_all() {
-            _all_textures.clear();
-        }
-
-        static const TextureView* view(ImTextureID id) {
-            return id ? &_all_textures[id - 1]->view : nullptr;
-        }
-
-        UiTexture() = default;
-
-        UiTexture(ImageFormat format, const math::Vec2ui& size)  {
-            _all_textures.emplace_back(std::make_unique<Data>(format, size));
-            _id = ImTextureID(_all_textures.size());
-        }
-
-        UiTexture(TextureView view) {
-            y_debug_assert(!view.is_null());
-            _all_textures.emplace_back(std::make_unique<Data>(view));
-            _id = ImTextureID(_all_textures.size());
-        }
-
-        const auto& texture() {
-            y_debug_assert(_id);
-            y_debug_assert(!_all_textures[_id - 1]->texture.is_null());
-            return _all_textures[_id - 1]->texture;
-        }
-
-        operator bool() const {
-            return _id;
-        }
-
-        ImTextureID to_imgui() const {
-            y_debug_assert(_id);
-            return _id;
-        }
-
-    private:
-        ImTextureID _id = {};
-};
 
 struct UiIcon {
     std::string_view icon;
     u32 color;
 };
+
+inline constexpr math::Vec4 to_y(ImVec4 v) { return {v.x, v.y, v.z, v.w}; }
+inline constexpr math::Vec2 to_y(ImVec2 v) { return {v.x, v.y}; }
+
+template<typename T>
+inline constexpr ImVec4 to_im(math::Vec<4, T> v) { return {float(v.x()), float(v.y()), float(v.z()), float(v.w())}; }
+
+template<typename T>
+inline constexpr ImVec2 to_im(math::Vec<2, T> v) { return {float(v.x()), float(v.y())}; }
 
 ImGuiKey to_imgui_key(Key k);
 ImGuiMouseButton to_imgui_button(MouseButton b);
@@ -104,8 +56,8 @@ namespace imgui {
 
 static constexpr const char* drag_drop_path_id = "YAVE_DRAG_DROP_PATH";
 static constexpr const char* drag_drop_entity_id = "YAVE_DRAG_DROP_ENTITY";
-static const math::Vec4 error_text_color = math::Vec4(sRGB_to_linear(math::Vec3(1.0f, 0.3f, 0.3f)), 1.0f);
-static const math::Vec4 warning_text_color = math::Vec4(sRGB_to_linear(math::Vec3(1.0f, 0.8f, 0.4f)), 1.0f);
+static constexpr ImVec4 error_text_color = to_im(math::Vec4(1.0f, 0.3f, 0.3f, 1.0f));
+static constexpr ImVec4 warning_text_color = to_im(math::Vec4(1.0f, 0.8f, 0.4f, 1.0f));
 
 const u32 folder_icon_color = 0xFF62D6FF;    // Light yellow
 
@@ -143,7 +95,7 @@ void table_begin_next_row(int col_index = 0);
 
 bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGuiSelectableFlags flags = 0);
 bool icon_button(const UiIcon& icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags = 0);
-bool icon_button(const UiTexture& icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags = 0);
+bool icon_button(UiTexture icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags = 0);
 
 bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_size);
 

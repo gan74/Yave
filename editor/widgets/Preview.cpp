@@ -24,6 +24,7 @@ SOFTWARE.
 #include "AssetSelector.h"
 
 #include <editor/EditorWorld.h>
+#include <editor/ImGuiPlatform.h>
 #include <editor/Settings.h>
 #include <editor/utils/ui.h>
 
@@ -99,7 +100,7 @@ const AssetPtr<Material>& Preview::material() const {
 
 void Preview::update_camera() {
     if(ImGui::IsMouseDown(0) && /*is_mouse_inside()*/ ImGui::IsWindowHovered()) {
-        math::Vec2 delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(content_size());
+        math::Vec2 delta = to_y(ImGui::GetIO().MouseDelta) / math::Vec2(content_size());
         delta *= app_settings().camera.trackball_sensitivity;
 
         const float pi_2 = (math::pi<float> * 0.5f) - 0.001f;
@@ -169,7 +170,7 @@ void Preview::on_gui() {
 
     update_camera();
 
-    UiTexture output;
+    DstTexture output;
     {
         RendererSettings settings;
         settings.ao.method = AOSettings::AOMethod::None;
@@ -184,8 +185,8 @@ void Preview::on_gui() {
         builder.add_input_usage(output_image, ImageUsage::TransferSrcBit);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const auto& src = self->resources().image_base(output_image);
-            output = UiTexture(src.format(), src.image_size().to<2>());
-            recorder.copy(src, output.texture());
+            output = DstTexture(src.format(), src.image_size().to<2>());
+            recorder.copy(src, output);
         });
 
 
@@ -197,15 +198,15 @@ void Preview::on_gui() {
         }
     }
 
-    if(output) {
-        const math::Vec2 top_left = ImGui::GetCursorPos();
+    if(!output.is_null()) {
+        const ImVec2 top_left = ImGui::GetCursorPos();
         const float width = ImGui::GetContentRegionAvail().x;
 
-        ImGui::Image(output.to_imgui(), ImVec2(width, width));
+        ImGui::Image(imgui_platform()->to_ui(std::move(output)), ImVec2(width, width));
 
-        const math::Vec2 bottom = ImGui::GetCursorPos();
+        const ImVec2 bottom = ImGui::GetCursorPos();
 
-        ImGui::SetCursorPos(top_left + math::Vec2(4.0f));
+        ImGui::SetCursorPos(top_left + ImVec2(4.0f, 4.0f));
         if(ImGui::Button(ICON_FA_CIRCLE)) {
             add_child_widget<AssetSelector>(AssetType::Image)->set_selected_callback(
                 [this](AssetId id) {

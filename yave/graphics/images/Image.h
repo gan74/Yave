@@ -100,7 +100,7 @@ class Image : public ImageBase {
         Image(ImageFormat format, const size_type& image_size, u32 mips, MemoryAllocFlags alloc_flags = MemoryAllocFlags::None) :
                 ImageBase(format, Usage, to_3d_size(image_size), Type, Type == ImageType::Cube ? 6 : 1, mips, alloc_flags) {
 
-            static_assert(is_attachment_usage(Usage) || is_storage_usage(Usage), "Texture images must be initilized");
+            static_assert(is_attachment_usage(Usage) || is_storage_usage(Usage) || is_copy_dst_usage(Usage), "Texture images must be initilized");
             static_assert(Type == ImageType::TwoD || is_storage_usage(Usage), "Only 2D images can be created empty");
         }
 
@@ -130,6 +130,7 @@ class Image : public ImageBase {
 };
 
 using Texture = Image<ImageUsage::TextureBit>;
+using DstTexture = Image<ImageUsage::TextureBit | ImageUsage::TransferDstBit>;
 using StorageTexture = Image<ImageUsage::TextureBit | ImageUsage::StorageBit>;
 using DepthAttachment = Image<ImageUsage::DepthBit>;
 using ColorAttachment = Image<ImageUsage::ColorBit>;

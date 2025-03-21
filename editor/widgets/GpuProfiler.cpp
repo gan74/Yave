@@ -144,8 +144,8 @@ void GpuProfiler::on_gui() {
                 if(width <= 0.5f) {
                     return;
                 }
-                const math::Vec2 size(width, ImGui::GetTextLineHeight());
-                const math::Vec2 pos = ImGui::GetCursorScreenPos();
+                const ImVec2 size = ImVec2(width, ImGui::GetTextLineHeight());
+                const ImVec2 pos = ImGui::GetCursorScreenPos();
                 ImGui::GetWindowDrawList()->AddRectFilled(pos, pos + size, color_u32);
             };
 

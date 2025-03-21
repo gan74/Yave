@@ -66,6 +66,10 @@ inline constexpr bool is_copy_usage(ImageUsage usage) {
     return (usage & (ImageUsage::TransferDstBit | ImageUsage::TransferSrcBit)) != ImageUsage::None;
 }
 
+inline constexpr bool is_copy_dst_usage(ImageUsage usage) {
+    return (usage & ImageUsage::TransferDstBit) != ImageUsage::None;
+}
+
 inline constexpr bool is_attachment_usage(ImageUsage usage) {
     return (usage & ImageUsage::Attachment) != ImageUsage::None;
 }

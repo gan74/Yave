@@ -45,8 +45,6 @@ SOFTWARE.
 
 #include <y/utils/format.h>
 
-#include <external/imgui/IconsFontAwesome5.h>
-
 #include <algorithm>
 
 namespace editor {

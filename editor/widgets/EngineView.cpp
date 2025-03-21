@@ -27,6 +27,7 @@ SOFTWARE.
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
 #include <editor/utils/CameraController.h>
+#include <editor/ImGuiPlatform.h>
 #include <editor/utils/ui.h>
 
 #include <yave/scene/EcsScene.h>
@@ -97,9 +98,9 @@ CmdTimestampPool* EngineView::timestamp_pool() const {
 }
 
 bool EngineView::is_mouse_inside() const {
-    const auto less = [](const math::Vec2& a, const math::Vec2& b) { return a.x() < b.x() && a.y() < b.y(); };
-    const math::Vec2 mouse_pos = math::Vec2(ImGui::GetIO().MousePos);
-    return less(mouse_pos, math::Vec2(ImGui::GetWindowPos()) + math::Vec2(ImGui::GetWindowSize())) && less(ImGui::GetWindowPos(), mouse_pos);
+    const auto less = [](const ImVec2& a, const ImVec2& b) { return a.x < b.x && a.y < b.y; };
+    const ImVec2 mouse_pos = ImGui::GetIO().MousePos;
+    return less(mouse_pos, ImGui::GetWindowPos() + ImGui::GetWindowSize()) && less(ImGui::GetWindowPos(), mouse_pos);
 }
 
 bool EngineView::is_focussed() const {
@@ -132,7 +133,7 @@ void EngineView::set_is_moving_camera(bool moving) {
 bool EngineView::before_gui() {
     ImGui::PushStyleColor(ImGuiCol_Border, 0);
     ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetColorU32(ImGuiCol_HeaderActive));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, math::Vec2());
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{});
 
     return Widget::before_gui();
 }
@@ -155,7 +156,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 
     const math::Vec2ui output_size = _resolution < 0 ? content_size() : standard_resolutions()[_resolution].second;
 
-    UiTexture output;
+    DstTexture output;
     FrameGraph graph(_resource_pool);
 
 
@@ -194,8 +195,8 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
                 render_pass.draw_array(3);
             }
             const auto& src = self->resources().image_base(output_image);
-            output = UiTexture(src.format(), src.image_size().to<2>());
-            recorder.copy(src, output.texture());
+            output = DstTexture(src.format(), src.image_size().to<2>());
+            recorder.copy(src, output);
         });
     }
 
@@ -204,8 +205,8 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         graph.render(recorder, ts_pool);
     }
 
-    if(output) {
-        ImGui::Image(output.to_imgui(), content_size());
+    if(!output.is_null()) {
+        ImGui::Image(imgui_platform()->to_ui(std::move(output)), to_im(content_size()));
     }
 }
 
@@ -258,9 +259,9 @@ void EngineView::update_scene_view() {
 
 void EngineView::update_picking() {
     const math::Vec2ui viewport_size = content_size();
-    const math::Vec2 offset = ImGui::GetWindowPos();
-    const math::Vec2 mouse = ImGui::GetIO().MousePos;
-    const math::Vec2 uv = (mouse - offset) / math::Vec2(viewport_size);
+    const ImVec2 offset = ImGui::GetWindowPos();
+    const ImVec2 mouse = ImGui::GetIO().MousePos;
+    const math::Vec2 uv = to_y(mouse - offset) / math::Vec2(viewport_size);
 
     if(uv.x() < 0.0f || uv.y() < 0.0f ||
        uv.x() > 1.0f || uv.y() > 1.0f) {
@@ -301,7 +302,7 @@ void EngineView::on_gui() {
     if(ImGui::BeginChild("##view")) {
         update_scene_view();
 
-        const math::Vec2 cursor = ImGui::GetCursorPos();
+        const ImVec2 cursor = ImGui::GetCursorPos();
 
         {
             CmdBufferRecorder recorder = create_disposable_cmd_buffer();
@@ -312,7 +313,8 @@ void EngineView::on_gui() {
         make_drop_target();
 
         {
-            ImGui::SetCursorPos(cursor + math::Vec2(ImGui::GetStyle().IndentSpacing * 0.5f));
+            const float spacing = ImGui::GetStyle().IndentSpacing * 0.5f;
+            ImGui::SetCursorPos(cursor + ImVec2(spacing, spacing));
             draw_toolbar_and_gizmos();
         }
 

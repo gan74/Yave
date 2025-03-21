@@ -130,7 +130,7 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
     }
 
     {
-        math::Vec2 delta = math::Vec2(ImGui::GetIO().MouseDelta) / math::Vec2(viewport_size);
+        const math::Vec2 delta = to_y(ImGui::GetIO().MouseDelta) / math::Vec2(viewport_size);
         _cumulated_delta += delta;
     }
 
