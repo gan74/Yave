@@ -91,7 +91,8 @@ class DeviceResources final : NonMovable {
             HBlurMaterialTemplate,
             VBlurMaterialTemplate,
 
-            WireFrameMaterialTemplate,
+            DirectDrawWireMaterialTemplate,
+            DirectDrawMaterialTemplate,
 
             TemporalMaskMaterialTemplate,
             TAASimpleMaterialTemplate,

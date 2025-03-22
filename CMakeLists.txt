@@ -219,7 +219,7 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "opaque.slang" "SPECULAR")
     add_slang_shader(${SHADER_TARGET} "opaque.slang" "SPECULAR;ALPHA_TEST")
 
-    add_slang_shader(${SHADER_TARGET} "wireframe.slang" "")
+    add_slang_shader(${SHADER_TARGET} "directdraw.slang" "")
     add_slang_shader(${SHADER_TARGET} "copy.slang" "")
     add_slang_shader(${SHADER_TARGET} "screen.slang" "")
     add_slang_shader(${SHADER_TARGET} "tonemap.slang" "")

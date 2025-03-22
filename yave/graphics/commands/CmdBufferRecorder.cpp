@@ -187,10 +187,11 @@ void RenderPassRecorder::draw_indexed(usize index_count) {
     draw(command);
 }
 
-void RenderPassRecorder::draw_array(usize vertex_count, usize instance_count) {
+void RenderPassRecorder::draw_array(usize vertex_count, usize instance_count, usize first_vertex) {
     VkDrawIndirectCommand command = {};
     command.vertexCount = u32(vertex_count);
     command.instanceCount = u32(instance_count);
+    command.firstVertex = u32(first_vertex);
     draw(command);
 }
 
