@@ -46,11 +46,15 @@ SOFTWARE.
 
 #include <editor/utils/ui.h>
 
+
+
 // we actually need this to index utf-8 chars from the imgui font (defined in imgui_internal)
 IMGUI_API int ImTextCharFromUtf8(unsigned int* out_char, const char* in_text, const char* in_text_end);
 
 
 namespace editor {
+
+static constexpr u32 editor_pass_draw_color = 0xFFFF0000;
 
 struct ImGuiBillboardVertex {
     math::Vec3 position;
@@ -137,7 +141,7 @@ static void render_selection(DirectDraw& draw, const SceneView& scene_view) {
 
         if(const PointLightObject* obj = scene->point_light(selected)) {
             const math::Transform<> tr = scene->transform(*obj);
-            draw.add_primitive("selected light")->add_sphere_3circles(tr.position(), tr.scale().max_component() * obj->component.range());
+            draw.add_primitive("selected light")->add_sphere_3circles(editor_pass_draw_color, tr.position(), tr.scale().max_component() * obj->component.range());
         }
 
         if(const SpotLightObject* obj = scene->spot_light(selected)) {
@@ -145,20 +149,20 @@ static void render_selection(DirectDraw& draw, const SceneView& scene_view) {
             const u32 inner_color = pack_to_u32(math::Vec4(1.0f, 1.0f, 0.0f, 0.25f));
             const float scale = tr.scale().max_component();
             const auto sphere = obj->component.enclosing_sphere();
-            draw.add_primitive("selected light outer")->add_cone(tr.position(), tr.forward(), tr.up(), obj->component.range() * scale, obj->component.half_angle());
-            draw.add_primitive("selected light inner", inner_color)->add_cone(tr.position(), tr.forward(), tr.up(), obj->component.range() * scale, obj->component.half_inner_angle());
+            draw.add_primitive("selected light outer")->add_wire_cone(editor_pass_draw_color, tr.position(), tr.forward(), tr.up(), obj->component.range() * scale, obj->component.half_angle());
+            draw.add_primitive("selected light inner")->add_wire_cone(inner_color, tr.position(), tr.forward(), tr.up(), obj->component.range() * scale, obj->component.half_inner_angle());
             // draw.add_primitive("selected light sphere")->add_sphere_3circles(tr.transform_point(math::Vec3(0.0f, sphere.dist_to_center, 0.0f)), sphere.radius * scale);
         }
 
         if(app_settings().debug.display_selected_bbox) {
             if(const StaticMeshObject* obj = scene->mesh(selected)) {
-                draw.add_primitive("selected bbox")->add_box(obj->global_aabb);
+                draw.add_primitive("selected bbox")->add_wire_box(editor_pass_draw_color, obj->global_aabb);
             }
             if(const PointLightObject* obj = scene->point_light(selected)) {
-                draw.add_primitive("selected bbox")->add_box(obj->global_aabb);
+                draw.add_primitive("selected bbox")->add_wire_box(editor_pass_draw_color, obj->global_aabb);
             }
             if(const SpotLightObject* obj = scene->spot_light(selected)) {
-                draw.add_primitive("selected bbox")->add_box(obj->global_aabb);
+                draw.add_primitive("selected bbox")->add_wire_box(editor_pass_draw_color, obj->global_aabb);
             }
         }
     }
