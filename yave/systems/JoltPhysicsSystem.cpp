@@ -46,9 +46,42 @@ SOFTWARE.
 
 namespace yave {
 
-static inline math::Vec3 to_y(JPH::RVec3Arg v) {
+[[maybe_unused]]
+y_force_inline static math::Vec4 to_y(const JPH::Vec4& v) {
+    return math::Vec4(v.GetX(), v.GetY(), v.GetZ(), v.GetW());
+}
+
+[[maybe_unused]]
+y_force_inline static math::Vec3 to_y(const JPH::Vec3& v) {
     return math::Vec3(v.GetX(), v.GetY(), v.GetZ());
 }
+
+[[maybe_unused]]
+y_force_inline static math::Vec3 to_y(const JPH::Float3& v) {
+    return math::Vec3(v.x, v.y, v.z);
+}
+
+/*class DebugBatch : public JPH::RefTargetVirtual {
+    public:
+        JPH_OVERRIDE_NEW_DELETE
+
+        void AddRef() override {
+            ++_ref_count;
+        }
+
+        void Release() override {
+            if(!--_ref_count) {
+                delete this;
+            }
+        }
+
+        u32 color = 0xFFFFFFFF;
+        core::Vector<math::Vec3> vertices;
+
+    private:
+        std::atomic<u32> _ref_count = 0;
+};*/
+
 
 class DebugDrawer final : public JPH::DebugRendererSimple {
     public:
@@ -60,10 +93,9 @@ class DebugDrawer final : public JPH::DebugRendererSimple {
             _prim->add_line(color.mU32, to_y(from), to_y(to));
         }
 
-
-        void DrawTriangle(JPH::RVec3Arg v1, JPH::RVec3Arg v2, JPH::RVec3Arg v3, JPH::ColorArg color, ECastShadow cast_shadow) override {
+        void DrawTriangle(JPH::RVec3Arg v0, JPH::RVec3Arg v1, JPH::RVec3Arg v2, JPH::ColorArg color, ECastShadow cast_shadow) override {
             unused(cast_shadow);
-            _prim->add_triangle(color.mU32, to_y(v1), to_y(v2), to_y(v3));
+            _prim->add_triangle(color.mU32, to_y(v0), to_y(v1), to_y(v2));
         }
 
         void DrawText3D(JPH::RVec3Arg pos, const std::string_view& str, JPH::ColorArg color, float height) override {
@@ -71,40 +103,77 @@ class DebugDrawer final : public JPH::DebugRendererSimple {
             log_msg("DrawText3D is not supported");
         }
 
-#if 0
-        void DrawGeometry(JPH::RMat44Arg model, const JPH::AABox &bounds, float lod_scale, JPH::ColorArg color, const GeometryRef& geom, ECullMode cull_mode, ECastShadow cast_shadow, EDrawMode draw_mode) override {
+        /*void DrawGeometry(JPH::RMat44Arg model, const JPH::AABox&, float, JPH::ColorArg color, const GeometryRef& geom, ECullMode, ECastShadow, EDrawMode draw_mode) override {
+            const DebugBatch* batch = static_cast<const DebugBatch*>(geom->mLODs.data()->mTriangleBatch.GetPtr());
+            const math::Matrix4<> tr(
+                to_y(model.GetColumn4(0)),
+                to_y(model.GetColumn4(1)),
+                to_y(model.GetColumn4(2)),
+                to_y(model.GetColumn4(3))
+            );
+            const u32 draw_color = (JPH::Color(batch->color) * color).mU32;
+            _prim->add_triangles(
+                draw_color,
+                tr.transposed(),
+                batch->vertices
+            );
         }
-#endif
+
+        Batch CreateTriangleBatch(const Triangle* triangles, int tri_count) override {
+            DebugBatch* batch = new DebugBatch();
+            batch->vertices.set_min_capacity(batch->vertices.size() + usize(tri_count) * 3);
+            for(int i = 0; i != tri_count; ++i) {
+                const Triangle& tri = triangles[i];
+                batch->vertices.emplace_back(to_y(tri.mV[0].mPosition));
+                batch->vertices.emplace_back(to_y(tri.mV[1].mPosition));
+                batch->vertices.emplace_back(to_y(tri.mV[2].mPosition));
+            }
+            if(tri_count) {
+                batch->color = triangles[0].mV[0].mColor.mU32;
+            }
+            return batch;
+        }
+
+        Batch CreateTriangleBatch(const Vertex* vertices, int vert_count, const u32* indices, int index_count) override {
+            DebugBatch* batch = new DebugBatch();
+            batch->vertices.set_min_capacity(batch->vertices.size() + usize(index_count));
+            for(int i = 0; i != index_count; ++i) {
+                const Vertex& vert = vertices[indices[i]];
+                batch->vertices.emplace_back(to_y(vert.mPosition));
+            }
+            if(vert_count) {
+                batch->color = vertices[0].mColor.mU32;
+            }
+            return batch;
+        }*/
+
     private:
         DirectDrawPrimitive* _prim = nullptr;
 };
 
-class BPLayerInterface final : public JPH::BroadPhaseLayerInterface {
-    public:
-        BPLayerInterface()  = default;
+struct BPLayerInterface final : JPH::BroadPhaseLayerInterface {
+    BPLayerInterface()  = default;
 
-        u32 GetNumBroadPhaseLayers() const override {
-            return 1;
-        }
+    u32 GetNumBroadPhaseLayers() const override {
+        return 1;
+    }
 
-        JPH::BroadPhaseLayer GetBroadPhaseLayer(JPH::ObjectLayer layer) const override {
-            y_debug_assert(!layer);
-            return JPH::BroadPhaseLayer(0);
-        }
+    JPH::BroadPhaseLayer GetBroadPhaseLayer(JPH::ObjectLayer layer) const override {
+        y_debug_assert(!layer);
+        return JPH::BroadPhaseLayer(0);
+    }
 };
 
-class ObjectVsPBLayerFilter : public JPH::ObjectVsBroadPhaseLayerFilter {
-    public:
-        bool ShouldCollide(JPH::ObjectLayer, JPH::BroadPhaseLayer) const override {
-            return true;
-        }
+struct ObjectVsPBLayerFilter : JPH::ObjectVsBroadPhaseLayerFilter {
+    bool ShouldCollide(JPH::ObjectLayer, JPH::BroadPhaseLayer) const override {
+        return true;
+    }
 };
 
-class ObjectLayerPairFilter : public JPH::ObjectLayerPairFilter {
-    public:
-        bool ShouldCollide(JPH::ObjectLayer, JPH::ObjectLayer) const override {
-            return true;
-        }
+struct ObjectLayerPairFilter : JPH::ObjectLayerPairFilter {
+    bool ShouldCollide(JPH::ObjectLayer, JPH::ObjectLayer) const override {
+        return true;
+    }
 };
 
 struct JoltData : NonMovable {
@@ -202,8 +271,11 @@ JoltPhysicsSystem::~JoltPhysicsSystem() {
 void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
     _jolt = std::make_unique<JoltData>();
 
-    sched.schedule(ecs::SystemSchedule::Tick, "Jolt", [this]() {
+    sched.schedule(ecs::SystemSchedule::Update, "Jolt", [this]() {
         _jolt->update(float(_time.reset().to_secs()));
+    });
+
+    sched.schedule(ecs::SystemSchedule::PostUpdate, "Jolt Debug", [this]() {
         DebugDrawer renderer;
         _jolt->physics_system.DrawBodies(JPH::BodyManager::DrawSettings{}, &renderer);
     });
