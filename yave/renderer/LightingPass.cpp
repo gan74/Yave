@@ -288,13 +288,14 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
 
         const u32 point_count = fill_point_light_buffer(points.data(), visibility);
         const u32 spot_count = fill_spot_light_buffer<false>(spots.data(), visibility, shadow_pass);
+        const math::Vec2ui light_count(point_count, spot_count);
 
         if(point_count || spot_count) {
             const auto& program = device_resources()[debug_tiles ? DeviceResources::DeferredLocalsDebugProgram : DeviceResources::DeferredLocalsProgram];
 
             core::ScratchVector<Descriptor> descs(self->descriptor_set().descriptors().size() + 1);
             descs.push_back(self->descriptor_set().descriptors().begin(), self->descriptor_set().descriptors().end());
-            descs.emplace_back(InlineDescriptor(math::Vec2ui(point_count, spot_count)));
+            descs.emplace_back(InlineDescriptor(light_count));
             recorder.dispatch_threads(program, size, DescriptorSetProxy(descs));
         }
     });

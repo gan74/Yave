@@ -56,6 +56,9 @@ class InlineDescriptor {
             y_debug_assert(_size <= max_byte_size);
         }
 
+        template<typename T>
+        constexpr InlineDescriptor(T&&) = delete;
+
         const void* data() const {
             return _data;
         }
