@@ -70,10 +70,11 @@ static void fill_probe(core::MutableSpan<ProbeMipView> views, const Image<ImageU
             ImageView<ImageUsage::StorageBit, ImageType::Layered> out_view = views[i];
             y_debug_assert(out_view.size().x() == out_view.size().y());
             const float roughness = (i * roughness_step);
+            const math::Vec2 params(roughness, out_view.size().x());
             const auto descriptors = make_descriptor_set(
                 Descriptor(texture, SamplerType::LinearClamp),
                 out_view,
-                InlineDescriptor(math::Vec2(roughness, out_view.size().x()))
+                InlineDescriptor(params)
             );
             recorder.dispatch_threads(conv_program, math::Vec3ui(out_view.size(), 6), DescriptorSetProxy(descriptors));
         }

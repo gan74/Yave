@@ -120,11 +120,12 @@ void TransformManager::update_buffer(ComputeCapableCmdBufferRecorder& recorder) 
             std::swap(_transform_buffer, new_buffer);
         }
 
+        const u32 count = u32(update_count);
         const auto descriptors = make_descriptor_set(
             _transform_buffer,
             transform_staging,
             index_staging,
-            InlineDescriptor(u32(update_count))
+            InlineDescriptor(count)
         );
 
         const auto& program = device_resources()[DeviceResources::UpdateTransformsProgram];

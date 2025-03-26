@@ -184,12 +184,14 @@ void DirectDraw::render(RenderPassRecorder& recorder, const math::Matrix4<>& vie
 
     recorder.bind_attrib_buffers({vertices});
     {
-        const auto descriptors = make_descriptor_set(InlineDescriptor(Params{view_proj, {}, 0}));
+        const Params params{view_proj, {}, 0};
+        const auto descriptors = make_descriptor_set(InlineDescriptor(params));
         recorder.bind_material_template(device_resources()[DeviceResources::DirectDrawWireMaterialTemplate], DescriptorSetProxy(descriptors));
         recorder.draw_array(wire_vertex_count, 1, 0);
     }
     {
-        const auto descriptors = make_descriptor_set(InlineDescriptor(Params{view_proj, {}, 1}));
+        const Params params{view_proj, {}, 1};
+        const auto descriptors = make_descriptor_set(InlineDescriptor(params));
         recorder.bind_material_template(device_resources()[DeviceResources::DirectDrawMaterialTemplate], DescriptorSetProxy(descriptors));
         recorder.draw_array(triangle_vertex_count, 1, wire_vertex_count);
     }
