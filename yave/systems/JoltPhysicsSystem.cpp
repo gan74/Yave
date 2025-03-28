@@ -22,11 +22,14 @@ SOFTWARE.
 
 #include "JoltPhysicsSystem.h"
 
-#include <yave/utils/DirectDraw.h>
+#include <yave/components/ColliderComponent.h>
+#include <yave/components/StaticMeshComponent.h>
+#include <yave/components/TransformableComponent.h>
+#include <yave/ecs/EntityWorld.h>
 
-#include <Jolt/Jolt.h>
 
 // Jolt includes
+#include <Jolt/Jolt.h>
 #include <Jolt/RegisterTypes.h>
 #include <Jolt/Core/Factory.h>
 #include <Jolt/Core/TempAllocator.h>
@@ -40,9 +43,13 @@ SOFTWARE.
 #include <Jolt/Renderer/DebugRenderer.h>
 #include <Jolt/Renderer/DebugRendererSimple.h>
 
-#include <thread>
+#include <yave/utils/DirectDraw.h>
 
 #include <y/utils/log.h>
+
+
+#include <thread>
+
 
 namespace yave {
 
@@ -61,26 +68,10 @@ y_force_inline static math::Vec3 to_y(const JPH::Float3& v) {
     return math::Vec3(v.x, v.y, v.z);
 }
 
-/*class DebugBatch : public JPH::RefTargetVirtual {
-    public:
-        JPH_OVERRIDE_NEW_DELETE
-
-        void AddRef() override {
-            ++_ref_count;
-        }
-
-        void Release() override {
-            if(!--_ref_count) {
-                delete this;
-            }
-        }
-
-        u32 color = 0xFFFFFFFF;
-        core::Vector<math::Vec3> vertices;
-
-    private:
-        std::atomic<u32> _ref_count = 0;
-};*/
+[[maybe_unused]]
+y_force_inline static JPH::Vec3 to_jph(const math::Vec3& v) {
+    return JPH::Vec3(v.x(), v.y(), v.z());
+}
 
 
 class DebugDrawer final : public JPH::DebugRendererSimple {
@@ -102,50 +93,6 @@ class DebugDrawer final : public JPH::DebugRendererSimple {
             unused(pos, str, color, height);
             log_msg("DrawText3D is not supported");
         }
-
-        /*void DrawGeometry(JPH::RMat44Arg model, const JPH::AABox&, float, JPH::ColorArg color, const GeometryRef& geom, ECullMode, ECastShadow, EDrawMode draw_mode) override {
-            const DebugBatch* batch = static_cast<const DebugBatch*>(geom->mLODs.data()->mTriangleBatch.GetPtr());
-            const math::Matrix4<> tr(
-                to_y(model.GetColumn4(0)),
-                to_y(model.GetColumn4(1)),
-                to_y(model.GetColumn4(2)),
-                to_y(model.GetColumn4(3))
-            );
-            const u32 draw_color = (JPH::Color(batch->color) * color).mU32;
-            _prim->add_triangles(
-                draw_color,
-                tr.transposed(),
-                batch->vertices
-            );
-        }
-
-        Batch CreateTriangleBatch(const Triangle* triangles, int tri_count) override {
-            DebugBatch* batch = new DebugBatch();
-            batch->vertices.set_min_capacity(batch->vertices.size() + usize(tri_count) * 3);
-            for(int i = 0; i != tri_count; ++i) {
-                const Triangle& tri = triangles[i];
-                batch->vertices.emplace_back(to_y(tri.mV[0].mPosition));
-                batch->vertices.emplace_back(to_y(tri.mV[1].mPosition));
-                batch->vertices.emplace_back(to_y(tri.mV[2].mPosition));
-            }
-            if(tri_count) {
-                batch->color = triangles[0].mV[0].mColor.mU32;
-            }
-            return batch;
-        }
-
-        Batch CreateTriangleBatch(const Vertex* vertices, int vert_count, const u32* indices, int index_count) override {
-            DebugBatch* batch = new DebugBatch();
-            batch->vertices.set_min_capacity(batch->vertices.size() + usize(index_count));
-            for(int i = 0; i != index_count; ++i) {
-                const Vertex& vert = vertices[indices[i]];
-                batch->vertices.emplace_back(to_y(vert.mPosition));
-            }
-            if(vert_count) {
-                batch->color = vertices[0].mColor.mU32;
-            }
-            return batch;
-        }*/
 
     private:
         DirectDrawPrimitive* _prim = nullptr;
@@ -271,8 +218,33 @@ JoltPhysicsSystem::~JoltPhysicsSystem() {
 void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
     _jolt = std::make_unique<JoltData>();
 
+    sched.schedule(ecs::SystemSchedule::Tick, "Collect colliders", [this](ecs::EntityGroup<ecs::Mutate<ColliderComponent>, ecs::Changed<StaticMeshComponent>, TransformableComponent>&& group) {
+        for(auto&& [coll, mesh, tr] : group) {
+            if(!mesh.is_fully_loaded() || !coll.body_id.IsInvalid()) {
+                continue;
+            }
+
+            if(const AssetPtr<StaticMesh>& static_mesh = mesh.mesh()) {
+                const AABB aabb = static_mesh->aabb();
+                const math::Transform<>& transform = tr.transform();
+
+                const auto [translation, rotation, scale] = transform.decompose();
+                const math::Vec3 center = transform.transform_point(aabb.center());
+
+                const JPH::BoxShapeSettings shape_settings(to_jph(static_mesh->aabb().half_extent() * scale));
+                const JPH::ShapeSettings::ShapeResult shape_result = shape_settings.Create();
+
+                const JPH::BodyCreationSettings body_settings(shape_result.Get(), to_jph(center), JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, JPH::ObjectLayer(0));
+                coll.body_id = _jolt->body_interface->CreateAndAddBody(body_settings, JPH::EActivation::Activate);
+
+                log_msg("body created");
+            }
+        }
+    });
+
     sched.schedule(ecs::SystemSchedule::Update, "Jolt", [this]() {
-        _jolt->update(float(_time.reset().to_secs()));
+        const double dt = _time.reset().to_secs();
+        _jolt->update(float(std::min(dt, 0.1)));
     });
 
     sched.schedule(ecs::SystemSchedule::PostUpdate, "Jolt Debug", [this]() {
