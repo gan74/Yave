@@ -171,7 +171,7 @@ static constexpr std::string_view _y_reflect_type_name = #Type;                 
 
 #define y_reflect_empty(Type)                                                                               \
 y_reflect_base(Type)                                                                                        \
-template<typename = void> static inline consteval auto _y_reflect_static() const { return std::tuple<>{}; }
+template<typename = void> static inline consteval auto _y_reflect_static() { return std::tuple<>{}; }
 
 #define y_reflect_static(Type, ...)                                                                         \
 y_reflect_base(Type);                                                                                       \

@@ -187,6 +187,8 @@ class EntityGroup final : NonCopyable {
 
     template<typename T, usize I>
     void fill_one(const ContainerTuple& containers, usize& mut_index, usize& filter_index, usize& const_index) {
+        y_debug_assert(std::get<I>(containers));
+
         std::get<I>(_sets) = &std::get<I>(containers)->_components;
 
         if constexpr(traits::is_component_mutable_v<T>) {
