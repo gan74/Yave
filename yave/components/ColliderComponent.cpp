@@ -27,6 +27,8 @@ SOFTWARE.
 namespace yave {
 
 void ColliderComponent::inspect(ecs::ComponentInspector* inspector) {
+    const std::array<std::string_view, 3> values = {"Static", "Kinematic", "Dynamic"};
+    inspector->inspect("Type", _type, values);
 }
 
 }

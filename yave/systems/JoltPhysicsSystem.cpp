@@ -53,25 +53,34 @@ SOFTWARE.
 
 namespace yave {
 
-[[maybe_unused]]
 y_force_inline static math::Vec4 to_y(const JPH::Vec4& v) {
     return math::Vec4(v.GetX(), v.GetY(), v.GetZ(), v.GetW());
 }
 
-[[maybe_unused]]
 y_force_inline static math::Vec3 to_y(const JPH::Vec3& v) {
     return math::Vec3(v.GetX(), v.GetY(), v.GetZ());
 }
 
-[[maybe_unused]]
 y_force_inline static math::Vec3 to_y(const JPH::Float3& v) {
     return math::Vec3(v.x, v.y, v.z);
 }
 
-[[maybe_unused]]
+y_force_inline static math::Quaternion<> to_y(const JPH::Quat& q) {
+    return math::Quaternion<>(q.GetX(), q.GetY(), q.GetZ(), q.GetW());
+}
+
 y_force_inline static JPH::Vec3 to_jph(const math::Vec3& v) {
     return JPH::Vec3(v.x(), v.y(), v.z());
 }
+
+y_force_inline static JPH::Quat to_jph(const math::Quaternion<>& q) {
+    return JPH::Quat(q.x(), q.y(), q.z(), q.w());
+}
+
+y_force_inline static JPH::EMotionType to_jph(ColliderComponent::Type type) {
+    return JPH::EMotionType(type);
+}
+
 
 
 class DebugDrawer final : public JPH::DebugRendererSimple {
@@ -86,7 +95,7 @@ class DebugDrawer final : public JPH::DebugRendererSimple {
 
         void DrawTriangle(JPH::RVec3Arg v0, JPH::RVec3Arg v1, JPH::RVec3Arg v2, JPH::ColorArg color, ECastShadow cast_shadow) override {
             unused(cast_shadow);
-            _prim->add_triangle(color.mU32, to_y(v0), to_y(v1), to_y(v2));
+            _prim->add_triangle((color.mU32 & 0x00FFFFFF) | 0xF0000000, to_y(v0), to_y(v1), to_y(v2));
         }
 
         void DrawText3D(JPH::RVec3Arg pos, const std::string_view& str, JPH::ColorArg color, float height) override {
@@ -123,7 +132,32 @@ struct ObjectLayerPairFilter : JPH::ObjectLayerPairFilter {
     }
 };
 
+struct JoltActiveComponent {
+    JPH::BodyID id;
+};
+
+struct BodyActivationListener : JPH::BodyActivationListener, NonMovable {
+        BodyActivationListener(ecs::EntityWorld* w) : world(w) {
+    }
+
+    void OnBodyActivated(const JPH::BodyID& body_id, u64 body_user_data) override {
+        if(const ecs::EntityId id = ecs::EntityId::from_u64(body_user_data); id.is_valid()) {
+            world->add_or_replace_component<JoltActiveComponent>(id, body_id);
+        }
+    }
+
+    void OnBodyDeactivated(const JPH::BodyID&, u64 body_user_data) override {
+        if(const ecs::EntityId id = ecs::EntityId::from_u64(body_user_data); id.is_valid()) {
+            world->remove_component<JoltActiveComponent>(id);
+        }
+    }
+
+    ecs::EntityWorld* world = nullptr;
+
+};
+
 struct JoltData : NonMovable {
+    BodyActivationListener activation_listener;
     JPH::TempAllocatorImpl temp_allocator;
     JPH::JobSystemThreadPool thread_pool;
     BPLayerInterface bp_layer_interface;
@@ -134,9 +168,10 @@ struct JoltData : NonMovable {
     JPH::PhysicsSystem physics_system;
 
 
-    JoltData() : temp_allocator(1024 * 1024 * 8), thread_pool(2048, 8, std::thread::hardware_concurrency() - 1) {
+    JoltData(ecs::EntityWorld* world) : activation_listener(world), temp_allocator(1024 * 1024 * 8), thread_pool(2048, 8, std::thread::hardware_concurrency() - 1) {
 
         physics_system.Init(1024, 0, 1024, 1024, bp_layer_interface, obj_vs_bp_layer_filter, obj_vs_obj_layer_filter);
+        physics_system.SetBodyActivationListener(&activation_listener);
         body_interface = &physics_system.GetBodyInterface();
 
         physics_system.SetGravity(JPH::Vec3(0.0f, 0.0f, -9.81f));
@@ -153,7 +188,7 @@ struct JoltData : NonMovable {
 
         // Create the settings for the body itself. Note that here you can also set other properties like the restitution / friction.
         JPH::BodyCreationSettings floor_settings(floor_shape, JPH::RVec3(0.0f, 0.0f, -10.0f), JPH::Quat::sIdentity(), JPH::EMotionType::Static, JPH::ObjectLayer(0));
-        floor_settings.mRestitution = 1.0f;
+        floor_settings.mUserData = ecs::EntityId().as_u64();
 
         // Create the actual rigid body
         JPH::Body *floor = body_interface->CreateBody(floor_settings); // Note that if we run out of bodies this can return nullptr
@@ -164,6 +199,7 @@ struct JoltData : NonMovable {
         // Now create a dynamic body to bounce on the floor
         // Note that this uses the shorthand version of creating and adding a body to the world
         JPH::BodyCreationSettings sphere_settings(new JPH::SphereShape(0.5f), JPH::RVec3(0.0f, 0.0f, 2.0f), JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, JPH::ObjectLayer(0));
+        sphere_settings.mUserData = ecs::EntityId().as_u64();
         sphere_settings.mRestitution = 1.0f;
 
         JPH::BodyID sphere_id = body_interface->CreateAndAddBody(sphere_settings, JPH::EActivation::Activate);
@@ -216,12 +252,22 @@ JoltPhysicsSystem::~JoltPhysicsSystem() {
 }
 
 void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
-    _jolt = std::make_unique<JoltData>();
+    _jolt = std::make_unique<JoltData>(&world());
 
-    sched.schedule(ecs::SystemSchedule::Tick, "Collect colliders", [this](ecs::EntityGroup<ecs::Mutate<ColliderComponent>, ecs::Changed<StaticMeshComponent>, TransformableComponent>&& group) {
-        for(auto&& [coll, mesh, tr] : group) {
-            if(!mesh.is_fully_loaded() || !coll.body_id.IsInvalid()) {
+    sched.schedule(ecs::SystemSchedule::Tick, "Collect colliders", [this](ecs::EntityGroup<
+            ecs::AnyChanged<ColliderComponent>,
+            ecs::AnyChanged<StaticMeshComponent>,
+            TransformableComponent
+        >&& group) {
+
+        for(auto&& [id, coll, mesh, tr] : group.id_components()) {
+            if(!mesh.is_fully_loaded()) {
                 continue;
+            }
+
+            if(!coll._body_id.IsInvalid()) {
+                _jolt->body_interface->RemoveBody(coll._body_id);
+                coll._body_id = {};
             }
 
             if(const AssetPtr<StaticMesh>& static_mesh = mesh.mesh()) {
@@ -234,8 +280,11 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
                 const JPH::BoxShapeSettings shape_settings(to_jph(static_mesh->aabb().half_extent() * scale));
                 const JPH::ShapeSettings::ShapeResult shape_result = shape_settings.Create();
 
-                const JPH::BodyCreationSettings body_settings(shape_result.Get(), to_jph(center), JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, JPH::ObjectLayer(0));
-                coll.body_id = _jolt->body_interface->CreateAndAddBody(body_settings, JPH::EActivation::Activate);
+                JPH::BodyCreationSettings body_settings(shape_result.Get(), to_jph(center), to_jph(rotation), to_jph(coll._type), JPH::ObjectLayer(0));
+                body_settings.mUserData = id.as_u64();
+
+                coll._scale = scale;
+                coll._body_id = _jolt->body_interface->CreateAndAddBody(body_settings, JPH::EActivation::Activate);
 
                 log_msg("body created");
             }
@@ -245,6 +294,24 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
     sched.schedule(ecs::SystemSchedule::Update, "Jolt", [this]() {
         const double dt = _time.reset().to_secs();
         _jolt->update(float(std::min(dt, 0.1)));
+    });
+
+    sched.schedule(ecs::SystemSchedule::PostUpdate, "Jolt Copy transforms", [this](ecs::EntityGroup<
+            JoltActiveComponent,
+            ColliderComponent,
+            ecs::Mutate<TransformableComponent>
+        >&& group) {
+
+        const JPH::BodyLockInterface& lock_interface = _jolt->physics_system.GetBodyLockInterface();
+        for(auto&& [id, active, coll, tr] : group.id_components()) {
+            y_debug_assert(!active.id.IsInvalid());
+            const JPH::BodyLockRead lock(lock_interface, active.id);
+            if(!lock.Succeeded()) {
+                continue;
+            }
+            const JPH::Body& body = lock.GetBody();
+            tr.set_transform(math::Transform<>(to_y(body.GetPosition()), to_y(body.GetRotation()), coll._scale));
+        }
     });
 
     sched.schedule(ecs::SystemSchedule::PostUpdate, "Jolt Debug", [this]() {

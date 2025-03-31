@@ -37,13 +37,25 @@ namespace yave {
 class ColliderComponent final {
 
     public:
+        enum class Type {
+            Static,
+            Kinematic,
+            Dynamic,
+        };
+
         ColliderComponent() = default;
 
         void inspect(ecs::ComponentInspector* inspector);
 
-        y_reflect_empty(ColliderComponent)
+        y_reflect(ColliderComponent, _type)
 
-        JPH::BodyID body_id = {};
+    private:
+        friend class JoltPhysicsSystem;
+
+        Type _type = Type::Static;
+
+        mutable JPH::BodyID _body_id = {};
+        mutable math::Vec3 _scale = math::Vec3(1.0f);
 };
 
 
