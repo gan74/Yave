@@ -41,9 +41,9 @@ uint frag_main(float2 in_uv) : SV_Target0 {
     const float depth = in_depth.Sample(uv);
     const float prev_depth = in_prev_depth.Sample(prev_uv);
 
-    /*if(is_depth_far(depth) || is_depth_far(prev_depth)) {
+    if(is_depth_far(depth)/* || is_depth_far(prev_depth)*/) {
         return TAAMask::DepthOutOfBounds;
-    }*/
+    }
 
     const bool has_moved = any(abs(motion) > 2.0 * inv_size);
     if(has_moved) {
