@@ -33,6 +33,7 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/components/ColliderComponent.h>
 #include <yave/scene/SceneView.h>
 
 #include <editor/components/DebugAnimateComponent.h>
@@ -100,7 +101,7 @@ static void add_debug_lights() {
 }
 
 
-static void add_debug_cubes(bool animate) {
+static void add_debug_cubes(bool animate, bool physics = false) {
     y_profile();
 
     EditorWorld& world = current_world();
@@ -126,6 +127,10 @@ static void add_debug_cubes(bool animate) {
         if(animate) {
             world.get_or_add_component<DebugAnimateComponent>(entity);
         }
+
+        if(physics) {
+            world.get_or_add_component<ColliderComponent>(entity);
+        }
     }
 }
 
@@ -133,6 +138,7 @@ static void add_debug_cubes(bool animate) {
 
 editor_action("Add debug lights", add_debug_lights)
 editor_action("Add debug cubes", [] { add_debug_cubes(false); })
+editor_action("Add debug phys cubes", [] { add_debug_cubes(false, true); })
 editor_action("Add animated debug cubes", [] { add_debug_cubes(true); })
 
 editor_action_contextual(ICON_FA_TRASH " Delete selected",

@@ -286,17 +286,17 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
                 coll._scale = scale;
                 coll._body_id = _jolt->body_interface->CreateAndAddBody(body_settings, JPH::EActivation::Activate);
 
-                log_msg("body created");
+                log_msg(fmt("body created: {}", coll._body_id.GetIndexAndSequenceNumber()));
             }
         }
     });
 
-    sched.schedule(ecs::SystemSchedule::Update, "Jolt", [this]() {
+    sched.schedule(ecs::SystemSchedule::Update, "Update physics", [this]() {
         const double dt = _time.reset().to_secs();
         _jolt->update(float(std::min(dt, 0.1)));
     });
 
-    sched.schedule(ecs::SystemSchedule::PostUpdate, "Jolt Copy transforms", [this](ecs::EntityGroup<
+    sched.schedule(ecs::SystemSchedule::PostUpdate, "Copy transforms", [this](ecs::EntityGroup<
             JoltActiveComponent,
             ColliderComponent,
             ecs::Mutate<TransformableComponent>
@@ -314,7 +314,7 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
         }
     });
 
-    sched.schedule(ecs::SystemSchedule::PostUpdate, "Jolt Debug", [this]() {
+    sched.schedule(ecs::SystemSchedule::PostUpdate, "Debug draw", [this]() {
         DebugDrawer renderer;
         _jolt->physics_system.DrawBodies(JPH::BodyManager::DrawSettings{}, &renderer);
     });
