@@ -428,7 +428,7 @@ class EntityGroup final : NonCopyable {
 
             auto unlock = [&] {
                 for(usize i = 0; i != read_index; ++i) {
-                    _read_locks[i]->unlock();
+                    _read_locks[i]->unlock_shared();
                 }
                 for(usize i = 0; i != write_index; ++i) {
                     _write_locks[i]->unlock();
