@@ -184,26 +184,28 @@ class WritableArchive final {
         inline Result serialize_one(NamedObject<T> non_const_object) {
             const auto object = non_const_object.make_const_ref();
 
-            static_assert(!has_no_serde3_v<T>, "Type has serialization disabled");
-
-            if constexpr(is_property_v<T>) {
-                return serialize_property(object);
-            } else if constexpr(has_serde3_v<T>) {
-                return serialize_object(object);
-            } else if constexpr(has_serde3_ptr_poly_v<T> || has_serde3_poly_v<T>) {
-                return serialize_poly(object);
-            } else if constexpr(is_tuple_v<T>) {
-                return serialize_tuple(object);
-            } else if constexpr(is_range_v<T>) {
-                return serialize_range(object);
-            } else if constexpr(is_pod_v<T>) {
-                return serialize_pod(object);
-            } else if constexpr(is_std_ptr_v<T>) {
-                return serialize_ptr(object);
-            } else if constexpr(is_iterable_v<T>) {
-                return serialize_collection(object);
+            if constexpr(!has_no_serde3_v<T>) { 
+                if constexpr(is_property_v<T>) {
+                    return serialize_property(object);
+                } else if constexpr(has_serde3_v<T>) {
+                    return serialize_object(object);
+                } else if constexpr(has_serde3_ptr_poly_v<T> || has_serde3_poly_v<T>) {
+                    return serialize_poly(object);
+                } else if constexpr(is_tuple_v<T>) {
+                    return serialize_tuple(object);
+                } else if constexpr(is_range_v<T>) {
+                    return serialize_range(object);
+                } else if constexpr(is_pod_v<T>) {
+                    return serialize_pod(object);
+                } else if constexpr(is_std_ptr_v<T>) {
+                    return serialize_ptr(object);
+                } else if constexpr(is_iterable_v<T>) {
+                    return serialize_collection(object);
+                } else {
+                    return write_header(object);
+                }
             } else {
-                return write_header(object);
+                return core::Ok(Success::Full);
             }
         }
 
@@ -554,28 +556,28 @@ class ReadableArchive final {
 
         template<typename T>
         inline Result deserialize_one(NamedObject<T> object) {
-            static_assert(!has_no_serde3_v<T>, "Type has serialization disabled");
-
             Result res = core::Ok(Success::Full);
 
-            if constexpr(is_property_v<T>) {
-                res = deserialize_property(object);
-            } else if constexpr(has_serde3_v<T>) {
-                res = deserialize_object(object);
-            } else if constexpr(has_serde3_ptr_poly_v<T> || has_serde3_poly_v<T>) {
-                res = deserialize_poly(object);
-            } else if constexpr(is_tuple_v<T>) {
-                res = deserialize_tuple(object);
-            } else if constexpr(is_range_v<T>) {
-                res = deserialize_range(object);
-            } else if constexpr(is_pod_v<T>) {
-                res = deserialize_pod(object);
-            } else if constexpr(is_std_ptr_v<T>) {
-                res = deserialize_ptr(object);
-            } else if constexpr(is_iterable_v<T>) {
-                res = deserialize_collection(object);
-            } else {
-                res = check_header(object);
+            if constexpr(!has_no_serde3_v<T>) {
+                if constexpr(is_property_v<T>) {
+                    res = deserialize_property(object);
+                } else if constexpr(has_serde3_v<T>) {
+                    res = deserialize_object(object);
+                } else if constexpr(has_serde3_ptr_poly_v<T> || has_serde3_poly_v<T>) {
+                    res = deserialize_poly(object);
+                } else if constexpr(is_tuple_v<T>) {
+                    res = deserialize_tuple(object);
+                } else if constexpr(is_range_v<T>) {
+                    res = deserialize_range(object);
+                } else if constexpr(is_pod_v<T>) {
+                    res = deserialize_pod(object);
+                } else if constexpr(is_std_ptr_v<T>) {
+                    res = deserialize_ptr(object);
+                } else if constexpr(is_iterable_v<T>) {
+                    res = deserialize_collection(object);
+                } else {
+                    res = check_header(object);
+                }
             }
 
             if(res.is_ok()) {
