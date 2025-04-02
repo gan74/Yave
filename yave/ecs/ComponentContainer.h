@@ -128,6 +128,7 @@ class ComponentContainer final : public ComponentContainerBase {
         T* add_or_replace(EntityId id, Args&... args) {
             if(_components.contains(id)) {
                 _mutated.insert(id);
+                _to_delete.erase(id);
                 return &(_components[id] = T(y_fwd(args)...));
             }
             return add(id, y_fwd(args)...);
