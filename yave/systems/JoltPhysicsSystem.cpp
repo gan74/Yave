@@ -134,6 +134,8 @@ struct ObjectLayerPairFilter : JPH::ObjectLayerPairFilter {
 
 struct JoltActiveComponent {
     JPH::BodyID id;
+
+    y_no_serde3()
 };
 
 struct BodyActivationListener : JPH::BodyActivationListener, NonMovable {
@@ -141,13 +143,17 @@ struct BodyActivationListener : JPH::BodyActivationListener, NonMovable {
     }
 
     void OnBodyActivated(const JPH::BodyID& body_id, u64 body_user_data) override {
+        unused(body_id);
         if(const ecs::EntityId id = ecs::EntityId::from_u64(body_user_data); id.is_valid()) {
+            // log_msg(fmt("body activated: {}", body_id.GetIndexAndSequenceNumber()));
             world->add_or_replace_component<JoltActiveComponent>(id, body_id);
         }
     }
 
-    void OnBodyDeactivated(const JPH::BodyID&, u64 body_user_data) override {
+    void OnBodyDeactivated(const JPH::BodyID& body_id, u64 body_user_data) override {
+        unused(body_id);
         if(const ecs::EntityId id = ecs::EntityId::from_u64(body_user_data); id.is_valid()) {
+            // log_msg(fmt("body deactivated: {}", body_id.GetIndexAndSequenceNumber()));
             world->remove_component<JoltActiveComponent>(id);
         }
     }
@@ -170,7 +176,7 @@ struct JoltData : NonMovable {
 
     JoltData(ecs::EntityWorld* world) : activation_listener(world), temp_allocator(1024 * 1024 * 8), thread_pool(2048, 8, std::thread::hardware_concurrency() - 1) {
 
-        physics_system.Init(1024, 0, 1024, 1024, bp_layer_interface, obj_vs_bp_layer_filter, obj_vs_obj_layer_filter);
+        physics_system.Init(16 * 1024, 0, 1024, 1024, bp_layer_interface, obj_vs_bp_layer_filter, obj_vs_obj_layer_filter);
         physics_system.SetBodyActivationListener(&activation_listener);
         body_interface = &physics_system.GetBodyInterface();
 
@@ -284,8 +290,8 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
                 body_settings.mUserData = id.as_u64();
 
                 coll._scale = scale;
+                coll._center = aabb.center() * scale;
                 coll._body_id = _jolt->body_interface->CreateAndAddBody(body_settings, JPH::EActivation::Activate);
-
                 log_msg(fmt("body created: {}", coll._body_id.GetIndexAndSequenceNumber()));
             }
         }
@@ -305,12 +311,18 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
         const JPH::BodyLockInterface& lock_interface = _jolt->physics_system.GetBodyLockInterface();
         for(auto&& [id, active, coll, tr] : group.id_components()) {
             y_debug_assert(!active.id.IsInvalid());
+
             const JPH::BodyLockRead lock(lock_interface, active.id);
             if(!lock.Succeeded()) {
                 continue;
             }
+
             const JPH::Body& body = lock.GetBody();
-            tr.set_transform(math::Transform<>(to_y(body.GetPosition()), to_y(body.GetRotation()), coll._scale));
+            y_debug_assert(ecs::EntityId::from_u64(body.GetUserData()) == id);
+
+            const math::Quaternion<> rotation = to_y(body.GetRotation());
+            const math::Vec3 position = to_y(body.GetPosition()) - rotation(coll._center);
+            tr.set_transform(math::Transform<>(position, rotation, coll._scale));
         }
     });
 

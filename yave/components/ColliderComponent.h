@@ -56,6 +56,7 @@ class ColliderComponent final {
 
         mutable JPH::BodyID _body_id = {};
         mutable math::Vec3 _scale = math::Vec3(1.0f);
+        mutable math::Vec3 _center;
 };
 
 
