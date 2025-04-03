@@ -69,6 +69,16 @@ static void add_prefab() {
         });
 }
 
+static void set_tag_on_children(EditorWorld& world, ecs::EntityId id, const core::String& tag, bool remove) {
+    if(remove) {
+        world.remove_tag(id, tag);
+    } else {
+        world.add_tag(id, tag);
+    }
+    for(const ecs::EntityId child : world.direct_children(id)) {
+        set_tag_on_children(world, child, tag, remove);
+    }
+}
 
 
 
@@ -204,6 +214,7 @@ void Outliner::on_gui() {
     ImGui::EndChild();
 }
 
+
 void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
     const EditorComponent* component = world.component<EditorComponent>(id);
     if(!component) {
@@ -223,11 +234,7 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
             }
 
             if(ImGui::IsItemClicked()) {
-                if(tagged) {
-                    world.remove_tag(id, tag);
-                } else {
-                    world.add_tag(id, tag);
-                }
+                set_tag_on_children(world, id, tag, tagged);
             }
         }
     };
@@ -307,7 +314,7 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
 
 
     if(open) {
-        const auto children = core::Vector<ecs::EntityId>::from_range(world.children(id));
+        const auto children = core::Vector<ecs::EntityId>::from_range(world.direct_children(id));
         for(const ecs::EntityId child : children) {
             display_node(world, child);
         }
