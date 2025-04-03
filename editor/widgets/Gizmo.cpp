@@ -67,7 +67,7 @@ static void move_recursive(EditorWorld& world, ecs::EntityId id, math::Transform
         new_parent_transform = component->transform();
     }
 
-    for(const ecs::EntityId child : world.children(id)) {
+    for(const ecs::EntityId child : world.direct_children(id)) {
         move_recursive(world, child, old_parent_transform, new_parent_transform);
     }
 }

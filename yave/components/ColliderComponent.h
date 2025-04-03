@@ -52,11 +52,10 @@ class ColliderComponent final {
     private:
         friend class JoltPhysicsSystem;
 
-        Type _type = Type::Dynamic;
+        Type _type = Type::Static;
 
         mutable JPH::BodyID _body_id = {};
         mutable math::Vec3 _scale = math::Vec3(1.0f);
-        mutable math::Vec3 _center;
 };
 
 

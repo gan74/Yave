@@ -247,7 +247,7 @@ EntityPrefab EntityWorld::create_prefab_from_entity(EntityId id) const {
         }
     }
 
-    for(const EntityId child : children(id)) {
+    for(const EntityId child : direct_children(id)) {
         prefab.add_child(std::make_unique<EntityPrefab>(create_prefab_from_entity(child)));
     }
 

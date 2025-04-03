@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "AABB.h"
 #include "MeshDrawData.h"
+#include "MeshData.h"
 
 #include <yave/assets/AssetTraits.h>
 
@@ -48,6 +49,8 @@ class StaticMesh : NonCopyable {
         const MeshDrawData& draw_data() const;
         const MeshDrawCommand& draw_command() const;
         const core::Span<MeshDrawCommand> sub_meshes() const;
+        
+        const MeshTriangleData& triangle_data() const;
 
         float radius() const;
         const AABB& aabb() const;
@@ -56,6 +59,8 @@ class StaticMesh : NonCopyable {
         MeshDrawData _draw_data = {};
         core::FixedArray<MeshDrawCommand> _sub_meshes;
         AABB _aabb;
+
+        MeshTriangleData _triangle_data;
 };
 
 YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(StaticMesh, MeshData, AssetType::Mesh);

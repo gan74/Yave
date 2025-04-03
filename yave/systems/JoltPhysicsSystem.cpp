@@ -25,6 +25,7 @@ SOFTWARE.
 #include <yave/components/ColliderComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
+#include <yave/meshes/MeshData.h>
 #include <yave/ecs/EntityWorld.h>
 
 
@@ -37,6 +38,9 @@ SOFTWARE.
 #include <Jolt/Physics/PhysicsSettings.h>
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/Shape/MeshShape.h>
+#include <Jolt/Physics/Collision/Shape/ScaledShape.h>
+#include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
@@ -81,6 +85,10 @@ y_force_inline static JPH::EMotionType to_jph(ColliderComponent::Type type) {
     return JPH::EMotionType(type);
 }
 
+y_force_inline static JPH::IndexedTriangle to_jph(IndexedTriangle t) {
+    return JPH::IndexedTriangle(t[0], t[1], t[2], 0);
+}
+
 
 
 class DebugDrawer final : public JPH::DebugRendererSimple {
@@ -95,7 +103,7 @@ class DebugDrawer final : public JPH::DebugRendererSimple {
 
         void DrawTriangle(JPH::RVec3Arg v0, JPH::RVec3Arg v1, JPH::RVec3Arg v2, JPH::ColorArg color, ECastShadow cast_shadow) override {
             unused(cast_shadow);
-            _prim->add_triangle((color.mU32 & 0x00FFFFFF) | 0xF0000000, to_y(v0), to_y(v1), to_y(v2));
+            _prim->add_triangle((color.mU32 & 0x00FFFFFF) | 0x80000000, to_y(v0), to_y(v1), to_y(v2));
         }
 
         void DrawText3D(JPH::RVec3Arg pos, const std::string_view& str, JPH::ColorArg color, float height) override {
@@ -277,21 +285,33 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
             }
 
             if(const AssetPtr<StaticMesh>& static_mesh = mesh.mesh()) {
-                const AABB aabb = static_mesh->aabb();
                 const math::Transform<>& transform = tr.transform();
-
                 const auto [translation, rotation, scale] = transform.decompose();
-                const math::Vec3 center = transform.transform_point(aabb.center());
 
-                const JPH::BoxShapeSettings shape_settings(to_jph(static_mesh->aabb().half_extent() * scale));
-                const JPH::ShapeSettings::ShapeResult shape_result = shape_settings.Create();
+                JPH::ShapeSettings::ShapeResult shape_result = {};
 
-                JPH::BodyCreationSettings body_settings(shape_result.Get(), to_jph(center), to_jph(rotation), to_jph(coll._type), JPH::ObjectLayer(0));
+                if(coll._type == ColliderComponent::Type::Static) {
+                    const MeshTriangleData& triangle_data = static_mesh->triangle_data();
+                    JPH::Array<JPH::Float3> vertices(triangle_data.positions.size());
+                    JPH::Array<JPH::IndexedTriangle> triangles(triangle_data.triangles.size());
+                    std::transform(triangle_data.positions.begin(), triangle_data.positions.end(), vertices.begin(), [&](math::Vec3 p) { p *= scale; return JPH::Float3(p[0], p[1], p[2]) ; });
+                    std::transform(triangle_data.triangles.begin(), triangle_data.triangles.end(), triangles.begin(), [](IndexedTriangle t) { return to_jph(t); });
+
+                    const JPH::MeshShapeSettings shape_settings(vertices, triangles);
+                    shape_result = shape_settings.Create();
+                } else {
+                    const AABB aabb = static_mesh->aabb();
+
+                    const JPH::RotatedTranslatedShapeSettings shape_settings(to_jph(aabb.center() * scale), JPH::Quat::sIdentity(), new JPH::BoxShape(to_jph(aabb.half_extent() * scale)));
+                    shape_result = shape_settings.Create();
+                }
+                
+                JPH::BodyCreationSettings body_settings = JPH::BodyCreationSettings(shape_result.Get(), to_jph(translation), to_jph(rotation), to_jph(coll._type), JPH::ObjectLayer(0));
                 body_settings.mUserData = id.as_u64();
 
                 coll._scale = scale;
-                coll._center = aabb.center() * scale;
                 coll._body_id = _jolt->body_interface->CreateAndAddBody(body_settings, JPH::EActivation::Activate);
+
                 log_msg(fmt("body created: {}", coll._body_id.GetIndexAndSequenceNumber()));
             }
         }
@@ -320,9 +340,7 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
             const JPH::Body& body = lock.GetBody();
             y_debug_assert(ecs::EntityId::from_u64(body.GetUserData()) == id);
 
-            const math::Quaternion<> rotation = to_y(body.GetRotation());
-            const math::Vec3 position = to_y(body.GetPosition()) - rotation(coll._center);
-            tr.set_transform(math::Transform<>(position, rotation, coll._scale));
+            tr.set_transform(math::Transform<>(to_y(body.GetPosition()), to_y(body.GetRotation()), coll._scale));
         }
     });
 

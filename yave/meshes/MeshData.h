@@ -32,6 +32,11 @@ SOFTWARE.
 
 namespace yave {
 
+struct MeshTriangleData {
+    core::FixedArray<IndexedTriangle> triangles;
+    core::FixedArray<math::Vec3> positions;
+};
+
 class MeshData {
     public:
         struct SubMesh {
@@ -61,6 +66,8 @@ class MeshData {
 
         core::Span<Bone> bones() const;
         core::Span<SkinWeights> skin() const;
+
+        MeshTriangleData triangle_data() const;
 
         bool has_skeleton() const;
 
