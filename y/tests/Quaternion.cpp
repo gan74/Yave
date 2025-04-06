@@ -74,6 +74,21 @@ y_test_func("Quaternion rotation") {
     y_test_assert(((mat * Vec4(t1, 0.0f)).to<3>() - quat(t1)).sq_length() < 0.01f);
 }
 
+y_test_func("Quaternion axis angle") {
+    const int step = 7;
+    for(int p = -180; p < 180; p += step) {
+        for(int y = -180; y < 180; y += step) {
+            for(int r = -180; r < 180; r += step) {
+                const auto quat = Quaternion<>::from_euler(to_rad(p), to_rad(y), to_rad(r));
+                const auto q2 = Quaternion<>::from_axis_angle(quat.to_axis_angle());
+
+                const Vec3 v(0.5f, 0.75f, 1.0f);
+                y_test_assert((q2(v) - quat(v)).length() < 0.001f);
+            }
+        }
+    }
+}
+
 y_test_func("Quaternion euler") {
     const int step = 7;
     for(int p = -180; p < 180; p += step) {
