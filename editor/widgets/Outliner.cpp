@@ -66,7 +66,24 @@ static void add_prefab() {
             current_world().set_selected(id);
             set_new_entity_pos(id);
             return id.is_valid();
-        });
+        }
+    );
+}
+
+static void add_point_light() {
+    const ecs::EntityId id = current_world().create_named_entity("Point light");
+    current_world().add_or_replace_component<PointLightComponent>(id);
+
+    current_world().set_selected(id);
+    set_new_entity_pos(id);
+}
+
+static void add_spot_light() {
+    const ecs::EntityId id = current_world().create_named_entity("Spot light");
+    current_world().add_or_replace_component<SpotLightComponent>(id);
+
+    current_world().set_selected(id);
+    set_new_entity_pos(id);
 }
 
 static void set_tag_on_children(EditorWorld& world, ecs::EntityId id, const core::String& tag, bool remove) {
@@ -172,14 +189,24 @@ void Outliner::on_gui() {
     }
 
     if(ImGui::BeginPopup("##plusmenu")) {
-        if(ImGui::MenuItem("Empty entity")) {
+        if(ImGui::MenuItem(ICON_FA_PUZZLE_PIECE " Empty entity")) {
             current_world().set_selected(world.create_named_entity("New entity"));
         }
 
         ImGui::Separator();
 
-        if(ImGui::MenuItem("Add Prefab")) {
+        if(ImGui::MenuItem(ICON_FA_PUZZLE_PIECE " Add prefab")) {
             add_prefab();
+        }
+
+        ImGui::Separator();
+
+        if(ImGui::MenuItem(ICON_FA_LIGHTBULB " Add point light")) {
+            add_point_light();
+        }
+
+        if(ImGui::MenuItem(ICON_FA_LIGHTBULB " Add spot light")) {
+            add_spot_light();
         }
 
         ImGui::EndPopup();
