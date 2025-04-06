@@ -365,7 +365,7 @@ class RaytracingDebug : public Widget {
 
 class UndoRedoDebug : public Widget {
 
-    editor_widget_open(UndoRedoDebug)
+    editor_widget(UndoRedoDebug)
 
     public:
         UndoRedoDebug() : Widget("Undo Redo") {
