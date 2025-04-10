@@ -39,6 +39,7 @@ SOFTWARE.
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
+#include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
@@ -300,9 +301,11 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
                     const JPH::MeshShapeSettings shape_settings(vertices, triangles);
                     shape_result = shape_settings.Create();
                 } else {
-                    const AABB aabb = static_mesh->aabb();
+                    const MeshTriangleData& triangle_data = static_mesh->triangle_data();
+                    JPH::Array<JPH::Vec3> vertices(triangle_data.positions.size());
+                    std::transform(triangle_data.positions.begin(), triangle_data.positions.end(), vertices.begin(), [&](math::Vec3 p) { p *= scale; return to_jph(p); });
 
-                    const JPH::RotatedTranslatedShapeSettings shape_settings(to_jph(aabb.center() * scale), JPH::Quat::sIdentity(), new JPH::BoxShape(to_jph(aabb.half_extent() * scale)));
+                    const JPH::ConvexHullShapeSettings shape_settings(vertices.data(), int(vertices.size()));
                     shape_result = shape_settings.Create();
                 }
                 
