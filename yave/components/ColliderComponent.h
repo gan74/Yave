@@ -45,6 +45,10 @@ class ColliderComponent final {
 
         ColliderComponent() = default;
 
+        void set_type(Type t) {
+            _type = t;
+        }
+
         void inspect(ecs::ComponentInspector* inspector);
 
         y_reflect(ColliderComponent, _type)

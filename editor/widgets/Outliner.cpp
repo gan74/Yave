@@ -156,7 +156,7 @@ static void add_debug_cubes(bool animate, bool physics = false) {
         }
 
         if(physics) {
-            world.get_or_add_component<ColliderComponent>(entity);
+            world.get_or_add_component<ColliderComponent>(entity)->set_type(ColliderComponent::Type::Dynamic);;
         }
     }
 }
