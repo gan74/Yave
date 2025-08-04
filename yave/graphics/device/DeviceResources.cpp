@@ -96,7 +96,7 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData{"directdraw", "directdraw", DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, true},
     DeviceMaterialData::screen("temporal_mask"),
     DeviceMaterialData::screen("taa_simple"),
-    DeviceMaterialData::screen("taa_resolve"),
+    DeviceMaterialData{"taa_resolve", "taa_resolve", DepthTestMode::None, BlendMode::None, CullMode::None, false},
     DeviceMaterialData::screen("denoise"),
     DeviceMaterialData{"id", "id", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
 };
