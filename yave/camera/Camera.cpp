@@ -61,7 +61,7 @@ math::Vec3 Camera::position_from_view(const math::Matrix4<>& view) {
 
 
 
-Camera::Camera() : Camera(math::look_at({2.0f, 0.0f, 0.0f}, math::Vec3{}, math::Vec3{0.0f, 0.0f, 1.0f}), math::perspective(math::to_rad(45.0f), 16.0f / 9.0f, 0.1f)) {
+Camera::Camera() : Camera(math::look_at({0.0f, 0.0f, 1.0f}, math::Vec3{}, math::Vec3{0.0f, 1.0f, 0.0f}), math::perspective(math::to_rad(45.0f), 16.0f / 9.0f, 0.1f)) {
 }
 
 Camera::Camera(const math::Matrix4<>& view, const math::Matrix4<>& proj) : _view(view), _proj(proj) {

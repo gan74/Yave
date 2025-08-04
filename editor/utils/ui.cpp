@@ -195,7 +195,7 @@ bool text_input_multiline(const char* name, core::String& str, const math::Vec2&
 }
 
 void text_read_only(const char* name, std::string_view str) {
-    ImGui::InputText(name, const_cast<char*>(str.data()), str.size(), ImGuiInputTextFlags_ReadOnly);
+    ImGui::InputText(name, const_cast<char*>(str.data()), str.size() + 1, ImGuiInputTextFlags_ReadOnly);
 }
 
 bool position_input(const char* str_id, math::Vec3& position) {
@@ -323,7 +323,7 @@ bool path_selector(const char* text, std::string_view path) {
     ImGui::TextUnformatted(text);
 
     core::String path_copy = path;
-    ImGui::InputText("", path_copy.data(), path_copy.size(), ImGuiInputTextFlags_ReadOnly);
+    ImGui::InputText("", path_copy.data(), path_copy.size() + 1, ImGuiInputTextFlags_ReadOnly);
     ImGui::SameLine();
     const bool ret = ImGui::Button(ICON_FA_FOLDER_OPEN);
 

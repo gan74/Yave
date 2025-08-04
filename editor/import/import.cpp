@@ -201,14 +201,6 @@ static core::Result<usize> component_count(int type) {
     }
 }
 
-y_force_inline static math::Vec3 change_base(const math::Vec3& v) {
-    return math::Vec3(v.z(), v.x(), v.y());
-}
-
-y_force_inline static math::Vec3 change_base_euler(const math::Vec3& v) {
-    return math::Vec3(v.z(), v.x(), -v.y());
-}
-
 static math::Transform<> parse_node_transform_matrix(const tinygltf::Node& node) {
     y_debug_assert(node.matrix.size() == 16);
 
@@ -261,18 +253,15 @@ void propagate_transforms(T& nodes, int index, math::Transform<> parent) {
     }
 }
 
-template<typename T, bool Remap = true>
+template<typename T>
 static void read_attrib(T& v, core::Span<typename T::value_type> s) {
     std::copy_n(s.begin(), std::min(v.size(), s.size()), v.begin());
-    if constexpr(Remap) {
-        v.to<3>() = change_base(v.to<3>());
-    }
 }
 
-template<usize I, bool Remap = true>
+template<usize I>
 static void read_packed_unit_vec(math::Vec2ui& packed, core::Span<float> s) {
     math::Vec4 v;
-    read_attrib<math::Vec4, Remap>(v, s);
+    read_attrib(v, s);
     packed[I] = pack_2_10_10_10(v.to<3>().normalized(), v.w() < 0.0f);
 }
 
@@ -325,7 +314,7 @@ static core::Result<MeshVertexStreams> import_vertices(const tinygltf::Model& mo
             has_tangents = true;
             import_stream(model, accessor, streams.stream<VertexStreamType::NormalTangent>(), read_packed_unit_vec<1>);
         } else if(name == "TEXCOORD_0") {
-            import_stream(model, accessor, streams.stream<VertexStreamType::Uv>(), read_attrib<math::Vec2, false>);
+            import_stream(model, accessor, streams.stream<VertexStreamType::Uv>(), read_attrib<math::Vec2>);
         } else {
             log_msg(fmt("Attribute \"{}\" is not supported", name), Log::Warning);
         }
@@ -538,15 +527,6 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
                 root_nodes << int(i);
                 propagate_transforms(scene.nodes, int(i), math::Transform<>());
             }
-        }
-
-        for(auto& node : scene.nodes) {
-            const auto [t, r, s] = node.transform.decompose();
-            node.transform = math::Transform<>(
-                change_base(t),
-                math::Quaternion<>::from_euler(change_base_euler(r.to_euler())),
-                change_base(s)
-            );
         }
     }
 

@@ -189,12 +189,12 @@ struct JoltData : NonMovable {
         physics_system.SetBodyActivationListener(&activation_listener);
         body_interface = &physics_system.GetBodyInterface();
 
-        physics_system.SetGravity(JPH::Vec3(0.0f, 0.0f, -9.81f));
+        physics_system.SetGravity(JPH::Vec3(0.0f, -9.81f, 0.0f));
 
         // Next we can create a rigid body to serve as the floor, we make a large box
         // Create the settings for the collision volume (the shape).
         // Note that for simple shapes (like boxes) you can also directly construct a BoxShape.
-        JPH::BoxShapeSettings floor_shape_settings(JPH::Vec3(100.0f, 100.0f, 10.0f));
+        JPH::BoxShapeSettings floor_shape_settings(JPH::Vec3(100.0f, 10.0f, 100.0f));
         // floor_shape_settings.SetEmbedded(); // A ref counted object on the stack (base class RefTarget) should be marked as such to prevent it from being freed when its reference count goes to 0.
 
         // Create the shape
@@ -202,7 +202,7 @@ struct JoltData : NonMovable {
         JPH::ShapeRefC floor_shape = floor_shape_result.Get(); // We don't expect an error here, but you can check floor_shape_result for HasError() / GetError()
 
         // Create the settings for the body itself. Note that here you can also set other properties like the restitution / friction.
-        JPH::BodyCreationSettings floor_settings(floor_shape, JPH::RVec3(0.0f, 0.0f, -10.0f), JPH::Quat::sIdentity(), JPH::EMotionType::Static, JPH::ObjectLayer(0));
+        JPH::BodyCreationSettings floor_settings(floor_shape, JPH::RVec3(0.0f, -10.0f, 0.0f), JPH::Quat::sIdentity(), JPH::EMotionType::Static, JPH::ObjectLayer(0));
         floor_settings.mUserData = ecs::EntityId().as_u64();
 
         // Create the actual rigid body
@@ -213,7 +213,7 @@ struct JoltData : NonMovable {
 
         // Now create a dynamic body to bounce on the floor
         // Note that this uses the shorthand version of creating and adding a body to the world
-        JPH::BodyCreationSettings sphere_settings(new JPH::SphereShape(0.5f), JPH::RVec3(0.0f, 0.0f, 2.0f), JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, JPH::ObjectLayer(0));
+        JPH::BodyCreationSettings sphere_settings(new JPH::SphereShape(0.5f), JPH::RVec3(0.0f, 2.0f, 0.0f), JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, JPH::ObjectLayer(0));
         sphere_settings.mUserData = ecs::EntityId().as_u64();
         sphere_settings.mRestitution = 1.0f;
 
@@ -221,7 +221,7 @@ struct JoltData : NonMovable {
 
         // Now you can interact with the dynamic body, in this case we're going to give it a velocity.
         // (note that if we had used CreateBody then we could have set the velocity straight on the body before adding it to the physics system)
-        body_interface->SetLinearVelocity(sphere_id, JPH::Vec3(0.0f, 0.0f, -5.0f));
+        body_interface->SetLinearVelocity(sphere_id, JPH::Vec3(0.0f, -5.0f, 0.0f));
 
 
         // Optional step: Before starting the physics simulation you can optimize the broad phase. This improves collision detection performance (it's pointless here because we only have 2 bodies).
@@ -308,7 +308,7 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
                     const JPH::ConvexHullShapeSettings shape_settings(vertices.data(), int(vertices.size()));
                     shape_result = shape_settings.Create();
                 }
-                
+
                 JPH::BodyCreationSettings body_settings = JPH::BodyCreationSettings(shape_result.Get(), to_jph(translation), to_jph(rotation), to_jph(coll._type), JPH::ObjectLayer(0));
                 body_settings.mUserData = id.as_u64();
 

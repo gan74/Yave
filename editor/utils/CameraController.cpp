@@ -149,14 +149,14 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
     if(fps) {
         // FPS
         const auto pitch = math::Quaternion<>::from_axis_angle(_cam_rht, _cumulated_delta.y() * settings.trackball_sensitivity);
-        const auto yaw = math::Quaternion<>::from_axis_angle(math::Vec3(0.0f, 0.0f, 1.0f), -_cumulated_delta.x() * settings.trackball_sensitivity);
+        const auto yaw = math::Quaternion<>::from_axis_angle(math::Vec3(0.0f, 1.0f, 0.0f), -_cumulated_delta.x() * settings.trackball_sensitivity);
         out_cam_fwd = yaw(pitch(_cam_fwd));
         out_cam_rht = yaw(_cam_rht);
     } else {
         // Trackball
         if(_mouse_button == ImGuiMouseButton_Left) {
             const auto pitch = math::Quaternion<>::from_axis_angle(_cam_rht, _cumulated_delta.y() * settings.trackball_sensitivity);
-            const auto yaw = math::Quaternion<>::from_axis_angle(math::Vec3(0.0f, 0.0f, -1.0f), _cumulated_delta.x() * settings.trackball_sensitivity);
+            const auto yaw = math::Quaternion<>::from_axis_angle(math::Vec3(0.0f, -1.0f, 0.0f), _cumulated_delta.x() * settings.trackball_sensitivity);
             const math::Vec3 boom_arm = yaw(pitch(_cam_pos - _picked_pos));
             const math::Vec3 target_offset = yaw(pitch(_target_offset));
             out_cam_rht = yaw(_cam_rht);
@@ -181,7 +181,7 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 
     // kill any roll that might arise from imprecisions
     {
-        out_cam_rht.z() = 0.0f;
+        out_cam_rht.y() = 0.0f;
         out_cam_rht.normalize();
     }
 
