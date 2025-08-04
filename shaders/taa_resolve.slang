@@ -146,27 +146,72 @@ float2 sample_closest_velocity(int2 coord) {
 #endif
 }
 
+float2 camera_reproject(float2 uv) {
+    const float3 w = unproject(uv, 0.000001, camera.cur.inv_view_proj);
+    const float2 reproj = project(w, camera.prev.view_proj).xy;
+    return (reproj - uv) - camera.combined_jitter * 0.5;
+}
+
+
+struct PixelStageIn {
+    float3 screen_pos;
+    float3 last_screen_pos;
+};
+
+struct VertexStageOut {
+    float4 sv_position : SV_Position;
+    PixelStageIn frag;
+
+};
+
+float2 camera_reproject(PixelStageIn in) {
+    return ((in.last_screen_pos.xy / in.last_screen_pos.z) - (in.screen_pos.xy / in.screen_pos.z) - camera.combined_jitter) * 0.5;
+}
 
 
 
 
 // -------------------------------- Main --------------------------------
+[shader("vertex")]
+VertexStageOut vert_main() {
+    static const float2 uvs[] = {
+        float2(0.0, 0.0),
+        float2(0.0, 2.0),
+        float2(2.0, 0.0),
+    };
+
+    const float2 uv = uvs[semantics.vertex_index];
+
+    const float3 unproj = unproject(uv, 0.000001, camera.cur.inv_view_proj);
+    const float4 current_position = mul(camera.cur.view_proj, float4(unproj, 1.0));
+    const float4 last_position = mul(camera.prev.view_proj, float4(unproj, 1.0));
+
+    VertexStageOut out;
+    {
+        out.sv_position = float4((uv * 2.0 - 1.0), 0.0, 1.0);
+        out.frag.screen_pos = current_position.xyw;
+        out.frag.last_screen_pos = last_position.xyw;
+    }
+    return out;
+}
+
 
 // https://www.elopezr.com/temporal-aa-and-the-quest-for-the-holy-trail/
 [shader("fragment")]
-float4 frag_main(float2 in_uv) : SV_Target0 {
+float4 frag_main(PixelStageIn in) : SV_Target0 {
     const int2 coord = int2(semantics.frag_coord.xy);
 
     const float3 current = in_color[coord].rgb;
 
-    if(in_mask[coord] != TAAMask::None) {
+    const uint mask = in_mask[coord];
+    if(mask != TAAMask::None && mask != TAAMask::DepthOutOfBounds) {
         return float4(current, 1.0);
     }
 
     const float2 size = float2(image_size(in_color).xy);
-
-    const float2 motion = sample_closest_velocity(coord);
     const float2 uv = semantics.frag_coord.xy / size;
+
+    float2 motion = mask == TAAMask::DepthOutOfBounds ? camera_reproject(in) : sample_closest_velocity(coord);
     const float2 prev_uv = uv + motion;
 
     float3 prev = current;
@@ -185,7 +230,6 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
             prev = clamp(prev, clamping_info.min_color, clamping_info.max_color);
         }
     }
-
 
     return float4(blend_weighted(current, prev, blending_factor), 1.0);
 }

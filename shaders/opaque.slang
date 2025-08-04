@@ -18,7 +18,7 @@ struct PixelStageIn {
 
 struct VertexStageOut {
     float4 sv_position  : SV_Position;
-    PixelStageIn vert;
+    PixelStageIn frag;
 };
 
 struct PixelStageOut {
@@ -59,13 +59,13 @@ VertexStageOut vert_main(StdVertexStageIn in) {
     {
         out.sv_position = current_position;
 
-        out.vert.normal = normalize(mul(model, in_normal));
-        out.vert.uv = in.uv;
-        out.vert.tangent = normalize(mul(model, in_tangent_sign.xyz));
-        out.vert.bitangent = cross(out.vert.tangent, out.vert.normal) * in_tangent_sign.w;
-        out.vert.screen_pos = current_position.xyw;
-        out.vert.last_screen_pos = last_position.xyw;
-        out.vert.instance_index = semantics.instance_index;
+        out.frag.normal = normalize(mul(model, in_normal));
+        out.frag.uv = in.uv;
+        out.frag.tangent = normalize(mul(model, in_tangent_sign.xyz));
+        out.frag.bitangent = cross(out.frag.tangent, out.frag.normal) * in_tangent_sign.w;
+        out.frag.screen_pos = current_position.xyw;
+        out.frag.last_screen_pos = last_position.xyw;
+        out.frag.instance_index = semantics.instance_index;
     }
     return out;
 }
