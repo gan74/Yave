@@ -72,7 +72,7 @@ struct Transform : Matrix4<T> {
 
     // Y forward
     inline constexpr const auto& forward() const {
-        return this->column(1).template to<3>();
+        return this->column(2).template to<3>();
     }
 
     // X right
@@ -82,7 +82,7 @@ struct Transform : Matrix4<T> {
 
     // Z up
     inline constexpr const auto& up() const {
-        return this->column(2).template to<3>();
+        return this->column(1).template to<3>();
     }
 
 

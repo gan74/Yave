@@ -201,18 +201,6 @@ static core::Result<usize> component_count(int type) {
     }
 }
 
-static math::Transform<> build_base_change_transform() {
-    const math::Vec3 forward = math::Vec3(1.0f, 0.0f, 0.0f);
-    const math::Vec3 right = math::Vec3(0.0f, 0.0f, 1.0f);
-    const math::Vec3 up = math::Vec3(0.0f, 1.0f, 0.0f);
-
-    math::Transform<> transform;
-    transform.set_basis(forward, right, up);
-    return transform.inverse();
-}
-
-static const math::Transform<> base_change_transform = build_base_change_transform();
-
 static math::Transform<> parse_node_transform_matrix(const tinygltf::Node& node) {
     y_debug_assert(node.matrix.size() == 16);
 
@@ -539,10 +527,6 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
                 root_nodes << int(i);
                 propagate_transforms(scene.nodes, int(i), math::Transform<>());
             }
-        }
-
-        for(auto& node : scene.nodes) {
-            node.transform = base_change_transform * node.transform;
         }
     }
 

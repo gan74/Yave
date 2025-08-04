@@ -60,7 +60,7 @@ static Texture render_scene(const Scene& scene) {
     y_profile();
 
     const Camera camera(
-        math::look_at(math::Vec3(0.0f, -1.0f, 1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 0.0f, 1.0f)),
+        math::look_at(math::Vec3(0.0f, 1.0f, -1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 1.0f, 0.0f)),
         math::perspective(math::to_rad(45.0f), 1.0f, 0.1f)
     );
 

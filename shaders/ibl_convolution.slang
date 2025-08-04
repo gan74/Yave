@@ -27,12 +27,12 @@ cbuffer Roughness_Inline {
 
 float3 debug_cube(uint side) {
     switch(side) {
-        case 0: return float3(1.0, 0.5, 0.5); // front
-        case 1: return float3(0.0, 0.5, 0.5); // back
-        case 2: return float3(0.5, 1.0, 0.5); // right
-        case 3: return float3(0.5, 0.0, 0.5); // left
-        case 4: return float3(0.5, 0.5, 1.0); // top
-        case 5: return float3(0.5, 0.5, 0.0); // bottom
+        case 0: return float3(1.0, 0.5, 0.5); // left
+        case 1: return float3(0.0, 0.5, 0.5); // right
+        case 2: return float3(0.5, 1.0, 0.5); // up
+        case 3: return float3(0.5, 0.0, 0.5); // down
+        case 4: return float3(0.5, 0.5, 1.0); // front
+        case 5: return float3(0.5, 0.5, 0.0); // back
     }
     return 0.0;
 }
@@ -41,12 +41,12 @@ float3 cube_dir(float2 tex_coord, uint side) {
     const float2 tex = tex_coord * 2.0 - 1.0;
 
     switch(side) {
-        case 0: return float3(1.0, -tex.y, -tex.x); // front
-        case 1: return float3(-1.0, -tex.y, tex.x); // back
-        case 2: return float3(tex.x, 1.0, tex.y); // right
-        case 3: return float3(tex.x, -1.0, -tex.y); // left
-        case 4: return float3(tex.x, -tex.y, 1.0); // top
-        case 5: return float3(-tex.x, -tex.y, -1.0); // bottom
+        case 0: return float3(1.0, -tex.x, -tex.y);     // left
+        case 1: return float3(-1.0, tex.x , -tex.y);    // right
+        case 2: return float3(tex.x, tex.y , 1.0);      // up
+        case 3: return float3(tex.x, -tex.y, -1.0);     // down
+        case 4: return float3(tex.x, 1.0, -tex.y);      // front
+        case 5: return float3(-tex.x, -1.0, -tex.y);    // back
     }
 
     return 0.0;
