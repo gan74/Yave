@@ -26,7 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-core::Span<AttribSubBuffer> MeshDrawBuffers::attrib_buffers() const {
+core::Span<AttribStorageSubBuffer> MeshDrawBuffers::attrib_buffers() const {
     return _attrib_buffers;
 }
 
@@ -78,6 +78,10 @@ const MeshDrawBuffers& MeshDrawData::mesh_buffers() const {
 
 const MeshDrawCommand& MeshDrawData::draw_command() const {
     return _command;
+}
+
+u32 MeshDrawData::vertex_count() const {
+    return _vertex_count;
 }
 
 const BLAS& MeshDrawData::blas() const {

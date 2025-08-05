@@ -35,7 +35,7 @@ namespace yave {
 
 class MeshAllocator : NonMovable {
     using MutableTriangleSubBuffer = SubBuffer<BufferUsage::IndexBit | BufferUsage::TransferDstBit>;
-    using MutableAttribSubBuffer = SubBuffer<BufferUsage::AttributeBit | BufferUsage::TransferDstBit>;
+    using MutableAttribSubBuffer = SubBuffer<BufferUsage::AttributeBit | BufferUsage::StorageBit | BufferUsage::TransferDstBit>;
 
     struct FreeBlock {
         u64 vertex_offset;
@@ -68,7 +68,7 @@ class MeshAllocator : NonMovable {
 
         void recycle(MeshDrawData* data);
 
-        AttribBuffer<> _attrib_buffer;
+        AttribStorageBuffer<> _attrib_buffer;
         TriangleBuffer<> _triangle_buffer;
 
         core::Vector<FreeBlock> _free_blocks;

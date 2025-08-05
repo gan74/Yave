@@ -59,6 +59,8 @@ class DeviceResources final : NonMovable {
             UpdateTransformsProgram,
             FilterAOProgram,
 
+            GIProgram,
+
             MaxNonRTComputePrograms,
             RTAOProgram = MaxNonRTComputePrograms,
 

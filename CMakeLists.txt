@@ -233,6 +233,8 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "filter_ao.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "basic_rt.slang" "")
+
+    add_slang_shader(${SHADER_TARGET} "gi.slang" "")
 endfunction(build_engine_shaders)
 
 function(build_editor_shaders SHADER_TARGET)

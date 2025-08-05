@@ -52,7 +52,7 @@ class MeshDrawBuffers : NonMovable {
 
         MeshDrawBuffers() = default;
 
-        core::Span<AttribSubBuffer> attrib_buffers() const;
+        core::Span<AttribStorageSubBuffer> attrib_buffers() const;
         const TriangleSubBuffer& triangle_buffer() const;
 
         usize vertex_count() const;
@@ -63,7 +63,7 @@ class MeshDrawBuffers : NonMovable {
         friend class MeshAllocator;
 
         usize _vertex_count = 0;
-        std::array<AttribSubBuffer, vertex_stream_count> _attrib_buffers;
+        std::array<AttribStorageSubBuffer, vertex_stream_count> _attrib_buffers;
         TriangleSubBuffer _triangle_buffer;
 
         MeshAllocator* _parent = nullptr;
@@ -83,6 +83,7 @@ class MeshDrawData : NonCopyable {
         const TriangleSubBuffer& triangle_buffer() const;
 
         const MeshDrawCommand& draw_command() const;
+        u32 vertex_count() const;
 
         const BLAS& blas() const;
 

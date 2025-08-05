@@ -59,11 +59,7 @@ groupshared uint2 tile_dist_bounds;
 // -------------------------------- HELPERS --------------------------------
 
 uint2 dispatch_range(uint num) {
-    const uint thread_count = semantics.work_group_size.x * semantics.work_group_size.y;
-    const uint range = 1 + (num / thread_count);
-    const uint begin = min(semantics.local_index * range, num);
-    const uint end = min(begin + range, num);
-    return uint2(begin, end);
+    return dispatch_range(semantics.local_index, num, semantics.work_group_size.x * semantics.work_group_size.y);
 }
 
 

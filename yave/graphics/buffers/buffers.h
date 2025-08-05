@@ -64,6 +64,13 @@ template<typename T, MemoryType Memory = prefered_memory_type(BufferUsage::Attri
 using TypedAttribBuffer = TypedBuffer<T, BufferUsage::AttributeBit, Memory>;
 
 
+template<MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
+using AttribStorageBuffer = Buffer<BufferUsage::AttributeBit | BufferUsage::StorageBit | BufferUsage::TransferDstBit, Memory>;
+
+template<typename T, MemoryType Memory = prefered_memory_type(BufferUsage::AttributeBit)>
+using TypedStorageAttribBuffer = TypedBuffer<T, BufferUsage::AttributeBit | BufferUsage::StorageBit, Memory>;
+
+
 
 template<MemoryType Memory = prefered_memory_type(BufferUsage::UniformBit)>
 using UniformBuffer = Buffer<BufferUsage::UniformBit, Memory>;
@@ -85,7 +92,10 @@ using TriangleSubBuffer = TypedSubBuffer<IndexedTriangle, BufferUsage::IndexBit>
 using VertexSubBuffer = TypedSubBuffer<PackedVertex, BufferUsage::AttributeBit>;
 
 using AttribSubBuffer = SubBuffer<BufferUsage::AttributeBit>;
+using AttribStorageSubBuffer = SubBuffer<BufferUsage::AttributeBit | BufferUsage::StorageBit>;
 using IndexSubBuffer = SubBuffer<BufferUsage::IndexBit>;
+
+using StorageSubBuffer = SubBuffer<BufferUsage::StorageBit>;
 
 using IndirectSubBuffer = TypedSubBuffer<VkDrawIndexedIndirectCommand, BufferUsage::IndirectBit>;
 

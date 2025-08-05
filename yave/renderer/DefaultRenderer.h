@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "CameraBufferPass.h"
 #include "LightingPass.h"
+#include "GIPass.h"
 #include "AtmospherePass.h"
 #include "ExposurePass.h"
 #include "ToneMappingPass.h"
@@ -50,6 +51,7 @@ struct DefaultRenderer {
     TemporalPrePass temporal;
     AOPass ao;
     LightingPass lighting;
+    GIPass gi;
     AtmospherePass atmosphere;
     ExposurePass exposure;
     BloomPass bloom;

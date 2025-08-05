@@ -90,6 +90,7 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData::screen("downsample"),
     DeviceMaterialData::screen("bloom_upscale", BlendMode::SrcAlpha),
     DeviceMaterialData::screen("bloom_downscale"),
+
     DeviceMaterialData::screen("blur_HORIZONTAL", true),
     DeviceMaterialData::screen("blur_VERTICAL", true),
     DeviceMaterialData{"directdraw", "directdraw", DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, true, PrimitiveType::Lines},
@@ -119,6 +120,8 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "prev_camera",
     "update_transforms",
     "filter_ao",
+    "gi",
+
     "rtao",
 };
 

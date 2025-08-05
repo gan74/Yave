@@ -122,8 +122,12 @@ SurfaceInfo decode_gbuffer(RawGBuffer raw) {
 
 
 
-
-
+uint2 dispatch_range(uint local_index, uint item_count, uint thread_count) {
+    const uint range = 1 + (item_count / thread_count);
+    const uint begin = min(local_index * range, item_count);
+    const uint end = min(begin + range, item_count);
+    return uint2(begin, end);
+}
 
 float sRGB_to_linear(float x) {
     if(x <= 0.04045) {

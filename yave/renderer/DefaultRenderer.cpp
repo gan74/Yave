@@ -44,6 +44,7 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     renderer.temporal       = TemporalPrePass::create(framegraph, renderer.gbuffer);
     renderer.ao             = AOPass::create(framegraph, renderer.gbuffer, renderer.temporal, settings.ao);
     renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ao.ao, settings.lighting);
+    renderer.gi             = GIPass::create(framegraph, renderer.camera);
     renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.lighting.lit);
 
     renderer.taa            = TAAPass::create(framegraph, renderer.temporal, renderer.atmosphere.lit, settings.taa);

@@ -74,6 +74,9 @@ class RenderPassRecorder final : NonMovable {
 
         void bind_mesh_buffers(const MeshDrawBuffers& mesh_buffers);
         void bind_index_buffer(IndexSubBuffer indices);
+
+        Y_TODO(nuke this)
+        void bind_attrib_storage_buffers(core::Span<AttribStorageSubBuffer> attribs);
         void bind_attrib_buffers(core::Span<AttribSubBuffer> attribs);
 
 

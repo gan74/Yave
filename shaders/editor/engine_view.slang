@@ -28,6 +28,10 @@ Sampler2D<uint> in_mask;
 Sampler2D<float> in_ao;
 
 
+[[vk::binding(8)]]
+Sampler2D<uint> in_gi;
+
+
 [shader("fragment")]
 float4 frag_main(float2 in_uv) : SV_Target0 {
     const int2 coord = int2(semantics.frag_coord.xy);
@@ -63,6 +67,11 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     } else if(target_index == 8) {
         const float ao = in_ao.Sample(in_uv);
         color = float3(ao);
+    }
+
+    if(coord.x < 258 && coord.y < 256) {
+        const float value = asfloat(in_gi[coord / 2]);
+        color = heat_spectrum(value);
     }
 
     return float4(color, 1.0);

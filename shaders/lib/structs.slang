@@ -149,4 +149,11 @@ struct AtmosphereParams {
     float density_falloff;
 };
 
+struct GIMeshInfo {
+    uint vertex_count;
+    uint vertex_offset;
+    uint transform_index;
+    uint padding;
+};
+
 #endif

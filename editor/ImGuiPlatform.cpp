@@ -73,7 +73,7 @@ static void render_frame(ImDrawData* draw_data, RenderPassRecorder& recorder, co
 
 
     const TypedBuffer<u32, BufferUsage::IndexBit, MemoryType::CpuVisible> index_buffer(imgui_index_buffer_size);
-    const TypedBuffer<ImDrawVert, BufferUsage::AttributeBit, MemoryType::CpuVisible> vertex_buffer(imgui_vertex_buffer_size);
+    const TypedAttribBuffer<ImDrawVert, MemoryType::CpuVisible> vertex_buffer(imgui_vertex_buffer_size);
     const TypedUniformBuffer<math::Vec2, MemoryType::CpuVisible> uniform_buffer(2);
 
     auto indices = index_buffer.map(MappingAccess::WriteOnly);
