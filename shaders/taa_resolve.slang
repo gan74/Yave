@@ -1,3 +1,4 @@
+
 #include "lib/utils.slang"
 
 
@@ -146,11 +147,6 @@ float2 sample_closest_velocity(int2 coord) {
 #endif
 }
 
-float2 camera_reproject(float2 uv) {
-    const float3 w = unproject(uv, 0.000001, camera.cur.inv_view_proj);
-    const float2 reproj = project(w, camera.prev.view_proj).xy;
-    return (reproj - uv) - camera.combined_jitter * 0.5;
-}
 
 
 struct PixelStageIn {
@@ -163,6 +159,12 @@ struct VertexStageOut {
     PixelStageIn frag;
 
 };
+
+float2 camera_reproject(float2 uv) {
+    const float3 w = unproject(uv, 0.000001, camera.cur.inv_view_proj);
+    const float2 reproj = project(w, camera.prev.view_proj).xy;
+    return (reproj - uv) - camera.combined_jitter * 0.5;
+}
 
 float2 camera_reproject(PixelStageIn in) {
     return ((in.last_screen_pos.xy / in.last_screen_pos.z) - (in.screen_pos.xy / in.screen_pos.z) - camera.combined_jitter) * 0.5;
