@@ -36,17 +36,21 @@ namespace editor {
 
 class ThumbmailRenderer : NonMovable {
 
+    enum class ThumbmailStatus {
+        Rendering,
+        Failed,
+        Done,
+    };
+
     struct ThumbmailData : NonMovable {
         Texture texture;
         TextureView view;
-        GenericAssetPtr asset_ptr;
-        // To avoid futures...
-        concurrent::DependencyGroup done;
-        std::atomic<bool> failed = false;
+
+        std::atomic<ThumbmailStatus> status = ThumbmailStatus::Rendering;
     };
 
     public:
-        static constexpr usize thumbmail_size = 128;
+        static constexpr usize thumbmail_size = 256;
 
         ThumbmailRenderer(AssetLoader& loader);
 

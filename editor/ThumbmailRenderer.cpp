@@ -56,11 +56,54 @@ SOFTWARE.
 
 namespace editor {
 
-static Texture render_scene(const Scene& scene) {
+static void fill_world(ecs::EntityWorld& world) {
+    const ecs::EntityId sky_id = world.create_entity();
+    SkyLightComponent* sky = world.get_or_add_component<SkyLightComponent>(sky_id);
+    sky->probe() = device_resources().ibl_probe();
+    sky->intensity() = 0.5f;
+}
+
+static AABB merge_empty_aabb(const AABB& a, const AABB& b) {
+    if(a.is_empty()) {
+        return b;
+    }
+    if(b.is_empty()) {
+        return a;
+    }
+    return a.merged(b);
+}
+
+static AABB compute_entity_aabb(const ecs::EntityWorld& world, ecs::EntityId id) {
+    AABB aabb;
+
+    if(const StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(id)) {
+        if(const StaticMesh* mesh = mesh_comp->mesh().get()) {
+            if(const TransformableComponent* trans_comp = world.component<TransformableComponent>(id)) {
+                aabb = merge_empty_aabb(aabb, trans_comp->to_global(mesh->aabb()));
+            }
+        }
+    }
+
+    for(const ecs::EntityId child : world.children(id)) {
+        aabb = merge_empty_aabb(aabb, compute_entity_aabb(world, child));
+    }
+
+    return aabb;
+}
+
+static Texture render_world(ecs::EntityWorld& world) {
     y_profile();
 
+    AABB aabb;
+    for(const ecs::EntityId id : world.entity_pool().ids()) {
+        aabb = merge_empty_aabb(aabb, compute_entity_aabb(world, id));
+    }
+
+    const EcsScene scene(&world);
+
+    const float camera_distance = std::max(math::epsilon<float>, aabb.radius()) * 2.0f;
     const Camera camera(
-        math::look_at(math::Vec3(0.0f, 1.0f, -1.0f), math::Vec3(0.0f), math::Vec3(0.0f, 1.0f, 0.0f)),
+        math::look_at(aabb.center() + math::Vec3(0.0f, 1.0f, 1.0f) * camera_distance, aabb.center(), math::Vec3(0.0f, 1.0f, 0.0f)),
         math::perspective(math::to_rad(45.0f), 1.0f, 0.1f)
     );
 
@@ -77,7 +120,9 @@ static Texture render_scene(const Scene& scene) {
         RendererSettings settings;
         {
             settings.tone_mapping.auto_exposure = false;
+            settings.tone_mapping.exposure = 10.0f;
             settings.taa.enable = false;
+            settings.ao.method = AOSettings::AOMethod::RTAOFallback;
         }
 
         const DefaultRenderer renderer = DefaultRenderer::create(graph, scene_view, out.size(), settings);
@@ -89,7 +134,7 @@ static Texture render_scene(const Scene& scene) {
             builder.add_uniform_input(renderer.gbuffer.depth);
             builder.add_external_input(StorageView(out));
             builder.set_render_func([size = out.size()](CmdBufferRecorder& rec, const FrameGraphPass* self) {
-                rec.dispatch_threads(resources()[EditorResources::DepthAlphaProgram], size, self->descriptor_set());
+                rec.dispatch_threads(resources()[EditorResources::ThumbmailProgram], size, self->descriptor_set());
             });
         }
 
@@ -100,52 +145,6 @@ static Texture render_scene(const Scene& scene) {
     return out;
 }
 
-static void fill_world(ecs::EntityWorld& world) {
-    const float intensity = 0.25f;
-
-    {
-        const ecs::EntityId light_id = world.create_entity();
-        DirectionalLightComponent* light_comp = world.get_or_add_component<DirectionalLightComponent>(light_id);
-        light_comp->direction() = math::Vec3{0.0f, 0.3f, -1.0f};
-        light_comp->intensity() = 3.0f * intensity;
-    }
-    {
-        const ecs::EntityId light_id = world.create_entity();
-        world.get_or_add_component<TransformableComponent>(light_id)->set_position(math::Vec3(0.75f, -0.5f, 0.5f));
-        PointLightComponent* light = world.get_or_add_component<PointLightComponent>(light_id);
-        light->color() = k_to_rbg(2500.0f);
-        light->intensity() = 1.5f * intensity;
-        light->falloff() = 0.5f;
-        light->range() = 2.0f;
-    }
-    {
-        const ecs::EntityId light_id = world.create_entity();
-        world.get_or_add_component<TransformableComponent>(light_id)->set_position(math::Vec3(-0.75f, -0.5f, 0.5f));
-        PointLightComponent* light = world.get_or_add_component<PointLightComponent>(light_id);
-        light->color() = k_to_rbg(10000.0f);
-        light->intensity() = 1.5f * intensity;
-        light->falloff() = 0.5f;
-        light->range() = 2.0f;
-    }
-
-    {
-        const ecs::EntityId sky_id = world.create_entity();
-        SkyLightComponent* sky = world.get_or_add_component<SkyLightComponent>(sky_id);
-        sky->probe() = device_resources().ibl_probe();
-        sky->intensity() = intensity;
-    }
-
-}
-
-static math::Transform<> center_to_camera(const AABB& box) {
-    const float scale = 0.25f / std::max(math::epsilon<float>, box.radius());
-    const float angle = (box.extent().x() > box.extent().y() ? 90.0f : 0.0f) + 30.0f;
-    const auto rot = math::Quaternion<>::from_euler(0.0f, math::to_rad(angle), 0.0f);
-    const math::Vec3 tr = rot(box.center() * scale);
-    return math::Transform<>(math::Vec3(0.0f, -0.65f, 0.65f) - tr,
-                             rot,
-                             math::Vec3(scale));
-}
 
 static Texture render_object(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Material>& mat) {
     y_profile();
@@ -153,33 +152,28 @@ static Texture render_object(const AssetPtr<StaticMesh>& mesh, const AssetPtr<Ma
     ecs::EntityWorld world;
     fill_world(world);
 
-    {
-        const ecs::EntityId entity = world.create_entity();
-        *world.get_or_add_component<StaticMeshComponent>(entity) = StaticMeshComponent(mesh, mat);
-        world.get_or_add_component<TransformableComponent>(entity)->set_transform(center_to_camera(mesh->aabb()));
-    }
+    *world.get_or_add_component<StaticMeshComponent>(world.create_entity()) = StaticMeshComponent(mesh, mat);
 
-    return render_scene(EcsScene(&world));
+    return render_world(world);
 }
+
 
 static Texture render_prefab(const AssetPtr<ecs::EntityPrefab>& prefab) {
     y_profile();
 
     ecs::EntityWorld world;
     fill_world(world);
+    world.create_entity(*prefab);
 
     {
-        const ecs::EntityId entity = world.create_entity(*prefab);
-        if(const StaticMeshComponent* mesh_comp = world.component<StaticMeshComponent>(entity)) {
-            if(const StaticMesh* mesh = mesh_comp->mesh().get()) {
-                if(TransformableComponent* trans_comp = world.component_mut<TransformableComponent>(entity)) {
-                    trans_comp->set_transform(center_to_camera(mesh->aabb()));
-                }
-            }
-        }
+        Y_TODO(we should not have to do this)
+        y_profile_zone("world tick");
+        concurrent::StaticThreadPool thread_pool;
+        world.add_system<AssetLoaderSystem>(asset_loader());
+        world.tick(thread_pool);
     }
 
-    return render_scene(EcsScene(&world));
+    return render_world(world);
 }
 
 static Texture render_texture(const AssetPtr<Texture>& tex) {
@@ -217,11 +211,11 @@ const TextureView* ThumbmailRenderer::thumbmail(AssetId id) {
             return nullptr;
         }
 
-        if(data->failed) {
+        if(data->status == ThumbmailStatus::Failed) {
             return nullptr;
         }
 
-        if(data->done.is_ready()) {
+        if(data->status == ThumbmailStatus::Done) {
             return &data->view;
         }
 
@@ -238,37 +232,30 @@ std::unique_ptr<ThumbmailRenderer::ThumbmailData> ThumbmailRenderer::schedule_re
 
     auto data = std::make_unique<ThumbmailData>();
     _render_thread.schedule([this, data = data.get(), id]() {
+        y_debug_assert(data->status == ThumbmailStatus::Rendering);
+
         const AssetType asset_type = _loader->store().asset_type(id).unwrap_or(AssetType::Unknown);
-        data->failed = true;
         switch(asset_type) {
             case AssetType::Mesh:
                 if(const auto ptr = _loader->load<StaticMesh>(id)) {
-                    data->failed = false;
-                    data->asset_ptr = ptr;
                     data->texture = render_object(ptr, device_resources()[DeviceResources::EmptyMaterial]);
                 }
             break;
 
             case AssetType::Image:
                 if(const auto ptr = _loader->load<Texture>(id)) {
-                    data->failed = false;
-                    data->asset_ptr = ptr;
                     data->texture = render_texture(ptr);
                 }
             break;
 
             case AssetType::Material:
                 if(const auto ptr = _loader->load<Material>(id)) {
-                    data->failed = false;
-                    data->asset_ptr = ptr;
                     data->texture = render_object(device_resources()[DeviceResources::SphereMesh], ptr);
                 }
             break;
 
             case AssetType::Prefab:
                 if(const auto ptr = _loader->load<ecs::EntityPrefab>(id)) {
-                    data->failed = false;
-                    data->asset_ptr = ptr;
                     data->texture = render_prefab(ptr);
                 }
             break;
@@ -278,15 +265,13 @@ std::unique_ptr<ThumbmailRenderer::ThumbmailData> ThumbmailRenderer::schedule_re
             break;
         }
 
-        if(!data->failed) {
-            data->failed = data->texture.is_null();
-        }
-
-        if(!data->failed) {
+        if(!data->texture.is_null()) {
             data->view = data->texture;
+            data->status = ThumbmailStatus::Done;
+        } else {
+            data->status = ThumbmailStatus::Failed;
         }
-
-    }, &data->done);
+    });
 
     return data;
 }

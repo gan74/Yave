@@ -84,6 +84,11 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _fs_vi
                 const std::string_view type_name = asset_type_name(asset_type(id), false, false);
                 ImGui::TextUnformatted(type_name.data(), type_name.data() + type_name.size());
                 ImGui::Separator();
+
+                if(const TextureView* tex = thumbmail_renderer().thumbmail(id)) {
+                    ImGui::Image(imgui_platform()->to_ui(*tex), ImVec2(256.0f, 256.0f));
+                    ImGui::Separator();
+                }
             }
         }
 
