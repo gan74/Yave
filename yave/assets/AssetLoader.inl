@@ -190,7 +190,7 @@ AssetPtr<T> AssetLoader::Loader<T>::reload(const AssetPtr<T>& ptr) {
 namespace detail {
 template<typename T>
 concept Loadable = requires(T t) {
-    t.load_(std::declval<AssetLoadingContext&>());
+    t.load(std::declval<AssetLoadingContext&>());
     t.load_async(std::declval<AssetLoadingContext&>());
 };
 }
