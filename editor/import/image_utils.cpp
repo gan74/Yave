@@ -27,6 +27,10 @@ SOFTWARE.
 #include <y/core/ScratchPad.h>
 #include <y/utils/log.h>
 
+#include <external/bc7enc_rdo/bc7enc.h>
+#include <external/bc7enc_rdo/rgbcx.h>
+
+
 #if defined(Y_MSVC) || defined(__SSE4_2__)
 #define USE_SIMD
 #include <immintrin.h>
@@ -244,7 +248,13 @@ ImageData block_compress(const ImageData& image, ImageFormat compressed_format, 
         const math::Vec3ui block_size = compressed_format.block_size();
         y_debug_assert(block_size.z() == 1);
 
-        core::ScratchPad<u8> block(block_size.x() * block_size.y() * 4);
+        const usize block_bytes = (block_size.x() * block_size.y() * compressed_format.bit_per_pixel()) / 8;
+
+        std::array<u8, 16 * 4> in_block;
+        std::array<u8, 16 * 4> out_block;
+
+        y_debug_assert(in_block.size() >= block_size.x() * block_size.y() * 4);
+        y_debug_assert(out_block.size() >= block_bytes);
 
         usize offset = 0;
         for(usize i = 0; i != mip_count; ++i) {
@@ -263,15 +273,15 @@ ImageData block_compress(const ImageData& image, ImageFormat compressed_format, 
                             const usize image_index = coord.y() * mip.size.x() + coord.x();
                             y_debug_assert(image_index < mip_texel_count);
                             for(usize c = 0; c != 4; ++c) {
-                                block[block_index++] = u8(mip.data[image_index * 4 + c]);
+                                in_block[block_index++] = u8(mip.data[image_index * 4 + c]);
                             }
                         }
                     }
 
-                    const auto compressed_block = process_block(block.data());
-                    y_debug_assert(offset + sizeof(compressed_block) <= compressed_data.size());
-                    std::memcpy(compressed_data.data() + offset, &compressed_block, sizeof(compressed_block));
-                    offset += sizeof(compressed_block);
+                    process_block(in_block.data(), out_block.data());
+                    y_debug_assert(offset + block_bytes <= compressed_data.size());
+                    std::memcpy(compressed_data.data() + offset, out_block.data(), block_bytes);
+                    offset += block_bytes;
                 }
             }
         }
@@ -285,99 +295,59 @@ ImageData block_compress(const ImageData& image, ImageFormat compressed_format, 
     return copy(image);
 }
 
-static inline u16 to_565(u8 r, u8 g, u8 b) {
-    return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-}
 
-// Inspired by https://github.com/wolfpld/tracy/blame/master/client/TracyDxt1.cpp
-static inline u64 compress_block_bc1(const u8* src) {
-    u8 min[3] = {src[0], src[1], src[2]};
-    u8 max[3] = {src[0], src[1], src[2]};
+ImageData compress(const ImageData& image, ImageCompression compression) {
+    y_profile();
+
+    const ImageFormat format = image.format();
+    const bool is_srgb = format.is_sRGB();
+
+    if(format.is_block_format()) {
+        return copy(image);
+    }
 
     {
-        const u8* next_px = src + 4;
-        for(usize i = 1; i != 16; ++i) {
-            for(usize c = 0; c != 3; ++c) {
-                min[c] = std::min(min[c], next_px[c]);
-                max[c] = std::max(max[c], next_px[c]);
-            }
-            next_px += 4;
+        static std::mutex init_lock;
+        static bool init = false;
+
+        const std::unique_lock lock(init_lock);
+        if(!init) {
+            bc7enc_compress_block_init();
+            rgbcx::init();
+            init = true;
         }
     }
 
-#if 0
-    for(usize c = 0; c != 3; ++c) {
-        const u8 inset = (max[c] - min[c]) >> 4;
-        min[c] += inset;
-        max[c] -= inset;
-        y_debug_assert(min[c] <= max[c]);
-    }
-#endif
+    switch(compression) {
+        case ImageCompression::BC1:
+            return block_compress(image, is_srgb ? VK_FORMAT_BC1_RGBA_SRGB_BLOCK : VK_FORMAT_BC1_RGBA_UNORM_BLOCK, [](const u8* src, u8* dst) {
+                rgbcx::encode_bc1(10, dst, src, true, false);
+            });
+        break;
 
-    const u64 endpoint_0 = u64(to_565(min[0], min[1], min[2]));
-    const u64 endpoint_1 = u64(to_565(max[0], max[1], max[2]));
-    y_debug_assert(endpoint_0 <= endpoint_1);
-    if(endpoint_0 == endpoint_1) {
-        return endpoint_0;
-    }
+        case ImageCompression::BC4:
+            return block_compress(image, VK_FORMAT_BC4_UNORM_BLOCK, [](const u8* src, u8* dst) {
+                rgbcx::encode_bc4(dst, src);
+            });
+        break;
 
-    math::Vec3i c0(min[0] & 0xF8, min[1] & 0xFC, min[2] & 0xF8);
-    math::Vec3i c1(max[0] & 0xF8, max[1] & 0xFC, max[2] & 0xF8);
-    const math::Vec3i colors[] = { c1, c0, (c1 * 2 + c0) / 3, (c1 + c0 * 2) / 3  };
+        case ImageCompression::BC5:
+            return block_compress(image, VK_FORMAT_BC5_UNORM_BLOCK, [](const u8* src, u8* dst) {
+                rgbcx::encode_bc5(dst, src);
+            });
+        break;
 
-    u32 idx_data = 0;
-    for(usize i = 0; i != 16; ++i) {
-        const math::Vec3i color(src[0] & 0xF8, src[1] & 0xFC, src[2] & 0xF8);
-        u32 idx = 0;
-        i32 best = (colors[0] - color).sq_length();
-        for(u32 c = 1; c != 4; ++c) {
-            i32 score = (colors[c] - color).sq_length();
-            if(score < best) {
-                best = score;
-                idx = c;
-            }
-        }
-        idx_data |= idx << (i * 2);
-        src += 4;
+        case ImageCompression::BC7: {
+            bc7enc_compress_block_params params = {};
+            bc7enc_compress_block_params_init(&params);
+
+            return block_compress(image, is_srgb ? VK_FORMAT_BC7_SRGB_BLOCK : VK_FORMAT_BC7_UNORM_BLOCK, [&](const u8* src, u8* dst) {
+                bc7enc_compress_block(dst, src, &params);
+            });
+        } break;
     }
 
-    return (u64(idx_data) << 32) | (endpoint_0 << 16) | (endpoint_1);
-}
-
-static inline u64 compress_block_bc4(const u8* src) {
-    const usize stride = 4;
-    u8 min = src[0];
-    u8 max = src[0];
-
-    for(usize i = 1; i != 16; ++i) {
-        min = std::min(min, src[stride * i]);
-        max = std::max(max, src[stride * i]);
-    }
-
-    const u8 diff = max - min;
-
-    u64 idx_data = 0;
-    for(usize i = 0; i != 16; ++i) {
-        const u32 value = src[stride * i];
-        const u64 idx = (value - min) * 8 / (diff + 1);
-        y_debug_assert(idx < 8);
-        idx_data |= idx << (i * 3);
-        src += 4;
-    }
-
-    return (u64(idx_data) << 48) | (u64(min) << 8) | (u64(max));
-}
-
-ImageData compress_bc1(const ImageData& image) {
-    const ImageFormat compressed_format = image.format().is_sRGB()
-        ? VK_FORMAT_BC1_RGB_SRGB_BLOCK
-        : VK_FORMAT_BC1_RGB_UNORM_BLOCK;
-
-    return block_compress(image, compressed_format, compress_block_bc1);
-}
-
-ImageData compress_bc4(const ImageData& image) {
-    return block_compress(image, VK_FORMAT_BC4_UNORM_BLOCK, compress_block_bc4);
+    y_fatal("Unknown compression format");
 }
 
 }

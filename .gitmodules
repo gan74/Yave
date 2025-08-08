@@ -4,3 +4,6 @@
 [submodule "external/spirv_reflect"]
 	path = external/spirv_reflect
 	url = https://github.com/KhronosGroup/SPIRV-Reflect.git
+[submodule "external/bc7enc_rdo"]
+	path = external/bc7enc_rdo
+	url = https://github.com/richgel999/bc7enc_rdo.git

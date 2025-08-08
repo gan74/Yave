@@ -148,6 +148,11 @@ set(SPIRV_REFLECT_FILES
     "external/spirv_reflect/spirv_reflect.h"
 )
 
+set(BC7ENC_FILES
+    "external/bc7enc_rdo/rgbcx.cpp"
+    "external/bc7enc_rdo/bc7enc.cpp"
+)
+
 # Editor files
 file(GLOB_RECURSE EDITOR_FILES
     "editor/*.cpp"
@@ -286,11 +291,14 @@ if(YAVE_BUILD_EDITOR)
     add_library(imgui ${IMGUI_FILES})
     target_include_directories(imgui PRIVATE external/imgui)
 
+    add_library(bc7enc ${BC7ENC_FILES})
+    target_include_directories(bc7enc PRIVATE external/bc7enc_rdo)
+
     add_executable(editor ${EDITOR_FILES} ${EDITOR_EXTERNAL_FILES})
 
     build_editor_shaders(shaders)
     add_dependencies(editor shaders)
 
-    target_link_libraries(editor yave imgui)
+    target_link_libraries(editor yave imgui bc7enc)
 endif()
 
