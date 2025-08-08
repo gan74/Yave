@@ -86,10 +86,10 @@ bool StaticMeshComponent::update_asset_loading_status() {
 }
 
 void StaticMeshComponent::load_assets(AssetLoadingContext& loading_ctx) {
-    _mesh.load(loading_ctx);
+    _mesh.load_async(loading_ctx);
 
     for(auto& material : _materials) {
-        material.load(loading_ctx);
+        material.load_async(loading_ctx);
     }
 }
 

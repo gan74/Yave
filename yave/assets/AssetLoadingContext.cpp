@@ -26,10 +26,7 @@ SOFTWARE.
 
 namespace yave {
 
-AssetLoadingContext::AssetLoadingContext(AssetLoader* loader) : AssetLoadingContext(loader, loader->loading_flags()){
-}
-
-AssetLoadingContext::AssetLoadingContext(AssetLoader* loader, AssetLoadingFlags flags) : _parent(loader), _dependencies(flags) {
+AssetLoadingContext::AssetLoadingContext(AssetLoader* loader, AssetLoadingFlags flags) : _parent(loader), _dependencies(flags | loader->loading_flags()) {
     y_always_assert(loader, "Invalid parent");
 }
 
@@ -39,6 +36,10 @@ const AssetDependencies& AssetLoadingContext::dependencies() const {
 
 AssetLoader* AssetLoadingContext::parent() const {
     return _parent;
+}
+
+AssetLoadingFlags AssetLoadingContext::flags() const {
+    return _dependencies.flags();
 }
 
 }

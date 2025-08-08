@@ -168,9 +168,8 @@ static Texture render_prefab(const AssetPtr<ecs::EntityPrefab>& prefab) {
     {
         Y_TODO(we should not have to do this)
         y_profile_zone("world tick");
-        concurrent::StaticThreadPool thread_pool;
-        world.add_system<AssetLoaderSystem>(asset_loader());
-        world.tick(thread_pool);
+        world.add_system<AssetLoaderSystem>(asset_loader(), AssetLoadingFlags::SynchronousLoad);
+        world.tick(thread_pool());
     }
 
     return render_world(world);

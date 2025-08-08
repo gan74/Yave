@@ -37,9 +37,8 @@ SOFTWARE.
 namespace yave {
 
 template<typename T>
-void AssetPtr<T>::load(AssetLoadingContext& context)  {
-    const AssetId id = _id;
-    if(id == AssetId::invalid_id()) {
+void AssetPtr<T>::load(AssetLoadingContext& context) {
+    if(_id == AssetId::invalid_id()) {
         return;
     }
 
@@ -47,7 +46,22 @@ void AssetPtr<T>::load(AssetLoadingContext& context)  {
         return;
     }
 
-    *this = context.load_async<T>(id);
+    *this = context.template load<T>(_id);
+    y_debug_assert(loader());
+    flush_reload();
+}
+
+template<typename T>
+void AssetPtr<T>::load_async(AssetLoadingContext& context) {
+    if(_id == AssetId::invalid_id()) {
+        return;
+    }
+
+    if(has_loader()) {
+        return;
+    }
+
+    *this = context.template load_async<T>(_id);
     y_debug_assert(loader());
     flush_reload();
 }
@@ -157,7 +171,7 @@ AssetPtr<T> AssetLoader::Loader<T>::reload(const AssetPtr<T>& ptr) {
 
     AssetPtr<T> reloaded(id, parent());
     {
-        parent()->_thread_pool.add_loading_job(create_loading_job(reloaded));
+        parent()->_thread_pool.add_loading_job(create_loading_job(reloaded, true));
         parent()->wait_until_loaded(reloaded);
         y_debug_assert(!reloaded.is_loading());
     }
@@ -170,6 +184,15 @@ AssetPtr<T> AssetLoader::Loader<T>::reload(const AssetPtr<T>& ptr) {
         weak = reloaded._data;
     });
     return reloaded;
+}
+
+
+namespace detail {
+template<typename T>
+concept Loadable = requires(T t) {
+    t.load_(std::declval<AssetLoadingContext&>());
+    t.load_async(std::declval<AssetLoadingContext&>());
+};
 }
 
 template<typename T>
@@ -204,8 +227,8 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
                     }
 
                     reflect::explore_recursive(_load_from, [this](auto& m) {
-                        if constexpr(is_asset_ptr_v<std::remove_cvref_t<decltype(m)>>) {
-                            m.load(loading_context());
+                        if constexpr(detail::Loadable<std::remove_cvref_t<decltype(m)>>) {
+                            m.load_async(loading_context());
                         }
                     });
 
@@ -339,6 +362,10 @@ AssetPtr<T> AssetLoadingContext::load(AssetId id) {
 
 template<typename T>
 AssetPtr<T> AssetLoadingContext::load_async(AssetId id) {
+    if((flags() & AssetLoadingFlags::SynchronousLoad) == AssetLoadingFlags::SynchronousLoad) {
+        return load<T>(id);
+    }
+
     auto ptr = _parent->load_async<T>(id);
     _dependencies.add_dependency(ptr);
     return ptr;

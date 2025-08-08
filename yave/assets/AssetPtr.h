@@ -53,9 +53,11 @@ enum class AssetLoadingErrorType : u32 {
     Unknown
 };
 
-enum class AssetLoadingFlags : u32 {
-    None = 0,
-    SkipFailedDependenciesBit = 0x01
+enum class
+    AssetLoadingFlags : u32 {
+    None                        = 0x00,
+    SkipFailedDependenciesBit   = 0x01,
+    SynchronousLoad             = 0x02,
 };
 
 inline constexpr AssetLoadingFlags operator|(AssetLoadingFlags l, AssetLoadingFlags r) {
@@ -174,6 +176,7 @@ class AssetPtr {
         inline bool operator!=(const AssetPtr& other) const;
 
         void load(AssetLoadingContext& context);
+        void load_async(AssetLoadingContext& context);
 
         y_reflect(AssetPtr, _id)
 
@@ -291,24 +294,6 @@ class GenericAssetPtr {
         u32 _type_index = u32(-1);
         AssetId _id;
 };
-
-
-
-
-namespace detail {
-template<typename T>
-struct IsAssetPtr {
-    static constexpr bool value = false;
-};
-template<typename T>
-struct IsAssetPtr<AssetPtr<T>> {
-    static constexpr bool value = true;
-    using type = T;
-};
-}
-
-template<typename T>
-static constexpr bool is_asset_ptr_v = detail::IsAssetPtr<T>::value;
 
 
 }
