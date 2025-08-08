@@ -122,13 +122,11 @@ template<typename T>
 class AssetPtrData final : public AssetPtrDataBase {
     public:
         T asset;
-        std::atomic<std::shared_ptr<AssetPtrData<T>>> reloaded;
 
         inline AssetPtrData(AssetId id, AssetLoader* loader);
         inline AssetPtrData(AssetId id, AssetLoader* loader, T t);
 
         inline void finalize_loading(T t);
-        inline void set_reloaded(const std::shared_ptr<AssetPtrData<T>>& other);
 };
 
 }
@@ -148,8 +146,6 @@ class AssetPtr {
         inline AssetId id() const;
 
         inline void wait_until_loaded() const;
-        inline bool flush_reload();
-        inline void reload();
 
         inline bool is_empty() const;
         inline bool has_loader() const;

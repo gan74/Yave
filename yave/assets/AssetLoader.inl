@@ -38,42 +38,22 @@ namespace yave {
 
 template<typename T>
 void AssetPtr<T>::load(AssetLoadingContext& context) {
-    if(_id == AssetId::invalid_id()) {
-        return;
-    }
-
-    if(has_loader()) {
+    if(_id == AssetId::invalid_id() || has_loader()) {
         return;
     }
 
     *this = context.template load<T>(_id);
     y_debug_assert(loader());
-    flush_reload();
 }
 
 template<typename T>
 void AssetPtr<T>::load_async(AssetLoadingContext& context) {
-    if(_id == AssetId::invalid_id()) {
-        return;
-    }
-
-    if(has_loader()) {
+    if(_id == AssetId::invalid_id() || has_loader()) {
         return;
     }
 
     *this = context.template load_async<T>(_id);
     y_debug_assert(loader());
-    flush_reload();
-}
-
-template<typename T>
-void AssetPtr<T>::reload() {
-    y_debug_assert(!_data || _data->id == _id);
-    if(has_loader()) {
-        flush_reload();
-        loader()->reload(*this);
-        flush_reload();
-    }
 }
 
 template<typename T>
@@ -156,34 +136,6 @@ AssetPtr<T> AssetLoader::Loader<T>::load_async(AssetId id) {
         parent()->_thread_pool.add_loading_job(create_loading_job(ptr));
     }
     return ptr;
-}
-
-template<typename T>
-AssetPtr<T> AssetLoader::Loader<T>::reload(const AssetPtr<T>& ptr) {
-    y_profile();
-
-    const AssetId id = ptr.id();
-    if(id == AssetId::invalid_id()) {
-        return AssetPtr<T>();
-    }
-
-    y_always_assert(!ptr.is_empty(), "Can not reload empty asset");
-
-    AssetPtr<T> reloaded(id, parent());
-    {
-        parent()->_thread_pool.add_loading_job(create_loading_job(reloaded, true));
-        parent()->wait_until_loaded(reloaded);
-        y_debug_assert(!reloaded.is_loading());
-    }
-
-    _loaded.locked([&](auto&& loaded) {
-        auto& weak = loaded[id];
-        if(auto orig = weak.lock()) {
-            orig->set_reloaded(reloaded._data);
-        }
-        weak = reloaded._data;
-    });
-    return reloaded;
 }
 
 
