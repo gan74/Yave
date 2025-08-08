@@ -23,7 +23,6 @@ SOFTWARE.
 #define Y_CORE_STRING_H
 
 #include <y/utils.h>
-#include <y/utils/detect.h>
 
 #include <string>
 #include <string_view>

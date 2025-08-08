@@ -109,7 +109,7 @@ class ShaderModuleBase : NonMovable {
 
 };
 
-static_assert(is_safe_base<ShaderModuleBase>::value);
+static_assert(is_safe_base<ShaderModuleBase>);
 
 }
 

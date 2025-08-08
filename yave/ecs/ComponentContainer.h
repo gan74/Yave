@@ -179,7 +179,7 @@ class ComponentContainer final : public ComponentContainerBase {
         y_serde3_poly(ComponentContainer)
         y_reflect(ComponentContainer, _components)
 
-        y_no_serde3_expr(serde3::has_no_serde3_v<T>);
+        y_no_serde3_expr(serde3::has_no_serde3<T>);
 
     private:
         friend class EntityWorld;
