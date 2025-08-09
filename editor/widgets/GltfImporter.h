@@ -27,7 +27,6 @@ SOFTWARE.
 #include <editor/import/import.h>
 
 #include <y/concurrent/StaticThreadPool.h>
-#include <y/concurrent/Mutexed.h>
 
 namespace editor {
 

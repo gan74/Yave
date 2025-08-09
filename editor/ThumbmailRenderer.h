@@ -30,7 +30,6 @@ SOFTWARE.
 
 #include <y/core/HashMap.h>
 #include <y/concurrent/StaticThreadPool.h>
-#include <y/concurrent/Mutexed.h>
 
 namespace editor {
 
@@ -61,7 +60,7 @@ class ThumbmailRenderer : NonMovable {
     private:
         std::unique_ptr<ThumbmailData> schedule_render(AssetId id);
 
-        concurrent::Mutexed<core::FlatHashMap<AssetId, std::unique_ptr<ThumbmailData>>> _thumbmails;
+        Mutexed<core::FlatHashMap<AssetId, std::unique_ptr<ThumbmailData>>> _thumbmails;
         AssetLoader* _loader = nullptr;
 
         concurrent::WorkerThread _render_thread;

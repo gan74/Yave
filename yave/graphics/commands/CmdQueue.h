@@ -25,7 +25,6 @@ SOFTWARE.
 #include "CmdBufferRecorder.h"
 
 #include <yave/graphics/swapchain/Swapchain.h>
-#include <y/concurrent/Mutexed.h>
 
 #include <memory>
 #include <thread>
@@ -95,12 +94,12 @@ class CmdQueue final : NonMovable {
         void clear_thread(u32 thread_id);
 
 
-        concurrent::Mutexed<VkQueue> _queue = {};
-        concurrent::Mutexed<AsyncSubmitData> _async_submit_data;
+        Mutexed<VkQueue> _queue = {};
+        Mutexed<AsyncSubmitData> _async_submit_data;
 
         Timeline _timeline;
 
-        concurrent::Mutexed<core::Vector<std::pair<u32, std::unique_ptr<CmdBufferPool>>>> _cmd_pools;
+        Mutexed<core::Vector<std::pair<u32, std::unique_ptr<CmdBufferPool>>>> _cmd_pools;
 
         const u32 _family_index = u32(-1);
 
@@ -108,7 +107,7 @@ class CmdQueue final : NonMovable {
         TracyVkCtx _profiling_ctx;
 #endif
 
-        static concurrent::Mutexed<core::Vector<CmdQueue*>> _all_queues;
+        static Mutexed<core::Vector<CmdQueue*>> _all_queues;
 };
 
 }

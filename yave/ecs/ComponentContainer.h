@@ -82,8 +82,7 @@ class ComponentContainerBase : NonMovable {
         core::FixedArray<ComponentContainerBase*> _required;
         core::Vector<ComponentTypeIndex> _required_by;
 
-
-        y_profile_shared_lock(std::shared_mutex, _lock);
+        ProfiledSharedLock<> _lock;
 
     public:
         using lock_type = decltype(_lock);

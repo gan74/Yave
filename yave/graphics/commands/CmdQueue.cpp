@@ -73,7 +73,7 @@ static auto create_profiling_ctx(VkQueue queue, u32 family_index) {
 
 
 
-concurrent::Mutexed<core::Vector<CmdQueue*>> CmdQueue::_all_queues = {};
+Mutexed<core::Vector<CmdQueue*>> CmdQueue::_all_queues = {};
 
 CmdQueue::CmdQueue(u32 family_index, VkQueue queue) : _queue(queue), _family_index(family_index){
     _all_queues.locked([&](auto&& all_queues) {

@@ -29,7 +29,6 @@ SOFTWARE.
 
 #include <yave/utils/traits.h>
 
-#include <y/concurrent/Mutexed.h>
 #include <thread>
 
 namespace yave {
@@ -56,7 +55,7 @@ class CmdBufferPool : NonMovable {
             }
 
             core::Vector<std::unique_ptr<CmdBufferData>> cmd_buffers;
-            concurrent::Mutexed<core::Vector<CmdBufferData*>> released;
+            Mutexed<core::Vector<CmdBufferData*>> released;
             const VkCommandBufferLevel level;
         };
 
@@ -72,7 +71,7 @@ class CmdBufferPool : NonMovable {
         Level _primary;
         Level _secondary;
 
-        concurrent::Mutexed<core::Vector<std::unique_ptr<CmdBufferPool::InlineUniformBuffer>>> _inline_buffers;
+        Mutexed<core::Vector<std::unique_ptr<CmdBufferPool::InlineUniformBuffer>>> _inline_buffers;
 
         CmdQueue* _queue = nullptr;
 

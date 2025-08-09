@@ -23,6 +23,9 @@ SOFTWARE.
 #define YAVE_UTILS_PROFILE_H
 
 #include <y/concurrent/concurrent.h>
+#include <y/concurrent/Mutexed.h>
+
+#include <source_location>
 #include <cstring>
 
 #if defined(TRACY_ENABLE) && !defined(YAVE_PROFILING_DISABLED)
@@ -53,9 +56,42 @@ SOFTWARE.
 #define y_profile_alloc(ptr, size)              TracyAlloc(ptr, size)
 #define y_profile_free(ptr)                     TracyFree(ptr)
 
-#define y_profile_lock(type, varname)           TracyLockable(type, varname)
-#define y_profile_shared_lock(type, varname)    TracySharedLockable(type, varname)
 #define y_profile_set_lock_name(varname, name)  do { (varname).CustomName((name), std::strlen(name)); } while(false)
+
+namespace yave {
+
+namespace detail {
+inline constexpr tracy::SourceLocationData tracy_location_data = { "Unamed lock", "" "", 0, 0xFFFFFFFF };
+}
+
+
+template<typename T = std::mutex>
+struct ProfiledLock : tracy::Lockable<T>, y::NonMovable {
+    ProfiledLock() : tracy::Lockable<T>(&detail::tracy_location_data) {
+    }
+
+    using tracy::Lockable<T>::lock;
+    using tracy::Lockable<T>::unlock;
+    using tracy::Lockable<T>::try_lock;
+};
+
+template<typename T = std::shared_mutex>
+struct ProfiledSharedLock : tracy::SharedLockable<T>, y::NonMovable {
+    ProfiledSharedLock() : tracy::SharedLockable<T>(&detail::tracy_location_data) {
+    }
+
+    using tracy::SharedLockable<T>::lock;
+    using tracy::SharedLockable<T>::unlock;
+    using tracy::SharedLockable<T>::try_lock;
+    using tracy::SharedLockable<T>::lock_shared;
+    using tracy::SharedLockable<T>::unlock_shared;
+    using tracy::SharedLockable<T>::try_lock_shared;
+};
+
+template<typename T, typename Lock = std::mutex>
+using Mutexed = y::concurrent::Mutexed<T, ProfiledLock<Lock>>;
+
+}
 
 #else
 
@@ -71,9 +107,20 @@ SOFTWARE.
 #define y_profile_alloc(ptr, size)              do {} while(false)
 #define y_profile_free(ptr)                     do {} while(false)
 
-#define y_profile_lock(type, varname)           type varname
-#define y_profile_shared_lock(type, varname)    type varname
 #define y_profile_set_lock_name(varname, name)  do {} while(false)
+
+namespace yave {
+
+template<typename T>
+using ProfiledLock = T;
+
+template<typename T>
+using ProfiledSharedLock = T;
+
+template<typename T, typename Lock = std::mutex>
+using Mutexed = y::concurrent::Mutexed<T, ProfiledLock<Lock>>;
+
+}
 
 #endif // YAVE_PROFILING
 

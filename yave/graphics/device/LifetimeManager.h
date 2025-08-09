@@ -28,7 +28,6 @@ SOFTWARE.
 #include <yave/material/MaterialDrawData.h>
 #include <yave/meshes/MeshDrawData.h>
 
-#include <y/concurrent/Mutexed.h>
 #include <y/core/RingQueue.h>
 
 #include <variant>
@@ -79,8 +78,8 @@ YAVE_GRAPHIC_HANDLE_TYPES(YAVE_GENERATE_DESTROY)
         void clear_resources(u64 up_to);
         void destroy_resource(ManagedResource& resource) const;
 
-        concurrent::Mutexed<core::RingQueue<std::pair<u64, ManagedResource>>> _to_destroy;
-        concurrent::Mutexed<core::RingQueue<CmdBufferData*>, std::recursive_mutex> _in_flight;
+        Mutexed<core::RingQueue<std::pair<u64, ManagedResource>>> _to_destroy;
+        Mutexed<core::RingQueue<CmdBufferData*>, std::recursive_mutex> _in_flight;
 
         std::atomic<u64> _create_counter = 0;
         u64 _next_to_collect = 0; // Guarded by _in_flight

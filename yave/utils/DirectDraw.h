@@ -76,7 +76,7 @@ class DirectDraw : NonCopyable {
         void render(RenderPassRecorder& recorder, const math::Matrix4<>& view_proj) const;
 
     private:
-        mutable std::mutex _lock;
+        mutable ProfiledLock<> _lock;
         core::SmallVector<std::unique_ptr<DirectDrawPrimitive>, 16> _primitives;
 };
 
