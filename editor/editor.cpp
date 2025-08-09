@@ -25,7 +25,7 @@ SOFTWARE.
 #include "EditorResources.h"
 #include "UiManager.h"
 #include "ImGuiPlatform.h"
-#include "ThumbmailRenderer.h"
+#include "ThumbnailRenderer.h"
 #include "EditorWorld.h"
 
 #include <yave/assets/FolderAssetStore.h>
@@ -65,7 +65,7 @@ namespace application {
 std::unique_ptr<EditorResources> resources;
 std::shared_ptr<AssetStore> asset_store;
 std::unique_ptr<AssetLoader> loader;
-std::unique_ptr<ThumbmailRenderer> thumbmail_renderer;
+std::unique_ptr<ThumbnailRenderer> thumbnail_renderer;
 std::unique_ptr<DirectDraw> debug_drawer;
 std::unique_ptr<UiManager> ui;
 std::unique_ptr<EditorWorld> world;
@@ -179,7 +179,7 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::ui = std::make_unique<UiManager>();
     application::asset_store = std::make_shared<FolderAssetStore>(store_dir);
     application::loader = std::make_unique<AssetLoader>(application::asset_store, AssetLoadingFlags::SkipFailedDependenciesBit, 4);
-    application::thumbmail_renderer = std::make_unique<ThumbmailRenderer>(*application::loader);
+    application::thumbnail_renderer = std::make_unique<ThumbnailRenderer>(*application::loader);
     application::world = std::make_unique<EditorWorld>(*application::loader);
     application::scene = std::make_unique<EcsScene>(application::world.get());
     application::debug_drawer = std::make_unique<DirectDraw>();
@@ -193,7 +193,7 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
 
 
 void destroy_editor() {
-    application::thumbmail_renderer = nullptr;
+    application::thumbnail_renderer = nullptr;
     application::scene = nullptr;
     application::world = nullptr;
     application::scene_view  = nullptr;
@@ -232,8 +232,8 @@ AssetLoader& asset_loader() {
     return *application::loader;
 }
 
-ThumbmailRenderer& thumbmail_renderer() {
-    return *application::thumbmail_renderer;
+ThumbnailRenderer& thumbnail_renderer() {
+    return *application::thumbnail_renderer;
 }
 
 concurrent::StaticThreadPool& thread_pool() {

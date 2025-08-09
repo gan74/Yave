@@ -26,7 +26,7 @@ SOFTWARE.
 #include "ImageImporter.h"
 
 #include <editor/ImGuiPlatform.h>
-#include <editor/ThumbmailRenderer.h>
+#include <editor/ThumbnailRenderer.h>
 
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
@@ -70,7 +70,7 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _fs_vi
     _fs_view.set_preview_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) -> UiTexture {
         if(type == FileSystemModel::EntryType::File) {
             if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
-                if(const TextureView* tex = thumbmail_renderer().thumbmail(id)) {
+                if(const TextureView* tex = thumbnail_renderer().thumbnail_img(id)) {
                     return imgui_platform()->to_ui(*tex);
                 }
             }
@@ -79,20 +79,22 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _fs_vi
     });
 
     _fs_view.set_tooltip_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+        ImGui::TextUnformatted(full_name.data(), full_name.data() + full_name.size());
         if(type == FileSystemModel::EntryType::File) {
             if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
+                ImGui::Separator();
                 const std::string_view type_name = asset_type_name(asset_type(id), false, false);
                 ImGui::TextUnformatted(type_name.data(), type_name.data() + type_name.size());
-                ImGui::Separator();
 
-                if(const TextureView* tex = thumbmail_renderer().thumbmail(id)) {
-                    ImGui::Image(imgui_platform()->to_ui(*tex), ImVec2(256.0f, 256.0f));
+                if(const auto* thumb = thumbnail_renderer().thumbnail_data(id)) {
                     ImGui::Separator();
+                    ImGui::Image(imgui_platform()->to_ui(thumb->view), ImVec2(256.0f, 256.0f));
+                    for(const core::String& info : thumb->infos) {
+                        ImGui::TextUnformatted(info.data());
+                    }
                 }
             }
         }
-
-        ImGui::TextUnformatted(full_name.data(), full_name.data() + full_name.size());
     });
 
 }

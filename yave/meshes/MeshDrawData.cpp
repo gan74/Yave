@@ -80,6 +80,10 @@ const MeshDrawCommand& MeshDrawData::draw_command() const {
     return _command;
 }
 
+usize MeshDrawData::vertex_count() const {
+    return _vertex_count;
+}
+
 const BLAS& MeshDrawData::blas() const {
     return _blas;
 }

@@ -241,7 +241,7 @@ function(build_engine_shaders SHADER_TARGET)
 endfunction(build_engine_shaders)
 
 function(build_editor_shaders SHADER_TARGET)
-    add_slang_shader(${SHADER_TARGET} "editor/thumbmail.slang" "")
+    add_slang_shader(${SHADER_TARGET} "editor/thumbnail.slang" "")
     add_slang_shader(${SHADER_TARGET} "editor/picking.slang" "")
     add_slang_shader(${SHADER_TARGET} "editor/imgui.slang" "")
     add_slang_shader(${SHADER_TARGET} "editor/selection.slang" "")

@@ -84,6 +84,8 @@ class MeshDrawData : NonCopyable {
 
         const MeshDrawCommand& draw_command() const;
 
+        usize vertex_count() const;
+
         const BLAS& blas() const;
 
     private:

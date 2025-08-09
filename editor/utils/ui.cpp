@@ -24,7 +24,7 @@ SOFTWARE.
 #include "assets.h"
 
 #include <editor/ImGuiPlatform.h>
-#include <editor/ThumbmailRenderer.h>
+#include <editor/ThumbnailRenderer.h>
 #include <editor/EditorWorld.h>
 #include <editor/widgets/AssetSelector.h>
 #include <editor/widgets/FileBrowser.h>
@@ -251,7 +251,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
 
     bool ret = false;
     if(is_valid) {
-        if(const TextureView* img = thumbmail_renderer().thumbmail(id)) {
+        if(const TextureView* img = thumbnail_renderer().thumbnail_img(id)) {
             ret = ImGui::ImageButton("##tex", imgui_platform()->to_ui(*img), button_size);
         } else {
             ret = ImGui::Button(ICON_FA_HOURGLASS_HALF, padded_button_size);
