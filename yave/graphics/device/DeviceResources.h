@@ -62,6 +62,8 @@ class DeviceResources final : NonMovable {
             MaxNonRTComputePrograms,
             RTAOProgram = MaxNonRTComputePrograms,
 
+            RTProgram,
+
             MaxComputePrograms
         };
 

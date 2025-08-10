@@ -35,9 +35,13 @@ void Scene::update_tlas() {
 
     {
         y_profile_zone("gather instances");
-        for(const StaticMeshObject& mesh : _meshes) {
-            if(const BLAS* blas = mesh.component.blas()) {
-                instances << TLAS::make_instance(transform(mesh), *blas);
+        u32 index = 0;
+        for(const StaticMeshObject& mesh_obj : _meshes) {
+            if(const StaticMesh* mesh = mesh_obj.component.mesh().get()) {
+                const math::Transform<>& tr = transform(mesh_obj);
+                for(const BLAS& blas : mesh->blases()) {
+                    instances << TLAS::make_instance(tr, blas, index++);
+                }
             }
         }
     }

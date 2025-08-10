@@ -55,6 +55,11 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     renderer.final = renderer.tone_mapping.tone_mapped;
     renderer.depth = renderer.gbuffer.depth;
 
+
+    renderer.rt             = RaytracingPass::create(framegraph, renderer.camera, size);
+    renderer.final = renderer.rt.raytraced;
+
+
     return renderer;
 }
 

@@ -120,6 +120,7 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "update_transforms",
     "filter_ao",
     "rtao",
+    "rt",
 };
 
 

@@ -33,13 +33,20 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
 
     const auto sub_meshes = mesh_data.sub_meshes();
     _sub_meshes = core::FixedArray<MeshDrawCommand>(sub_meshes.size());
-    std::transform(sub_meshes.begin(), sub_meshes.end(), _sub_meshes.begin(), [cmd = _draw_data.draw_command()](auto sub_mesh) {
+    std::transform(sub_meshes.begin(), sub_meshes.end(), _sub_meshes.begin(), [draw_cmd = _draw_data.draw_command()](auto sub_mesh) {
         return MeshDrawCommand {
             sub_mesh.triangle_count * 3,
-            sub_mesh.first_triangle * 3 + cmd.first_index,
-            cmd.vertex_offset
+            sub_mesh.first_triangle * 3 + draw_cmd.first_index,
+            draw_cmd.vertex_offset
         };
     });
+
+    if(raytracing_enabled()) {
+        _blases = std::make_unique<BLAS[]>(_sub_meshes.size());
+        std::transform(_sub_meshes.begin(), _sub_meshes.end(), _blases.get(), [this](const MeshDrawCommand& draw_cmd) {
+            return BLAS(_draw_data, draw_cmd);
+        });
+    }
 }
 
 StaticMesh::~StaticMesh() {
@@ -58,8 +65,12 @@ const MeshDrawCommand& StaticMesh::draw_command() const {
     return _draw_data.draw_command();
 }
 
-const core::Span<MeshDrawCommand> StaticMesh::sub_meshes() const {
+core::Span<MeshDrawCommand> StaticMesh::sub_meshes() const {
     return _sub_meshes;
+}
+
+core::Span<BLAS> StaticMesh::blases() const {
+    return core::Span<BLAS>(_blases.get(), _sub_meshes.size());
 }
 
 float StaticMesh::radius() const {

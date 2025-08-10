@@ -41,7 +41,7 @@ RaytracingPass RaytracingPass::create(FrameGraph& framegraph, const CameraBuffer
     builder.add_uniform_input(camera.camera);
     builder.add_storage_output(raytraced);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        recorder.raytrace(device_resources()[DeviceResources::BasicRaytracingProgram], size, self->descriptor_set());
+        recorder.dispatch_threads(device_resources()[DeviceResources::RTProgram], size, self->descriptor_set());
     });
 
     RaytracingPass pass;

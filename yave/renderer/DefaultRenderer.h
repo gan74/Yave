@@ -31,6 +31,7 @@ SOFTWARE.
 #include "BloomPass.h"
 #include "TemporalPrePass.h"
 #include "TAAPass.h"
+#include "RaytracingPass.h"
 
 namespace yave {
 
@@ -55,6 +56,7 @@ struct DefaultRenderer {
     BloomPass bloom;
     ToneMappingPass tone_mapping;
     TAAPass taa;
+    RaytracingPass rt;
 
 
     FrameGraphImageId final;

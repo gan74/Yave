@@ -84,12 +84,11 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
 
 
 
-static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::AccelStructureBit>> create_blas(const MeshDrawData& mesh) {
+static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::AccelStructureBit>> create_blas(const MeshDrawData& mesh, const MeshDrawCommand& draw_cmd) {
     const MeshDrawBuffers& mesh_buffers = mesh.mesh_buffers();
-    const MeshDrawCommand& draw_params = mesh.draw_command();
 
-    const u32 prim_count = draw_params.index_count / 3;
-    y_debug_assert(prim_count * 3 == draw_params.index_count);
+    const u32 prim_count = draw_cmd.index_count / 3;
+    y_debug_assert(prim_count * 3 == draw_cmd.index_count);
 
     VkAccelerationStructureGeometryTrianglesDataKHR triangles = vk_struct();
     {
@@ -114,8 +113,8 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
     VkAccelerationStructureBuildRangeInfoKHR range = {};
     {
         range.primitiveCount = prim_count;
-        range.primitiveOffset = u32(mesh.triangle_buffer().byte_offset()) + (draw_params.first_index * sizeof(u32));
-        range.firstVertex = draw_params.vertex_offset;
+        range.primitiveOffset = u32(mesh.triangle_buffer().byte_offset()) + (draw_cmd.first_index * sizeof(u32));
+        range.firstVertex = draw_cmd.vertex_offset;
     }
 
     return create_acceleration_structure(geometry, prim_count, range, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
@@ -178,8 +177,11 @@ VkDeviceAddress AccelerationStructure::vk_device_address() const {
 }
 
 
-BLAS::BLAS(const MeshDrawData& mesh) {
-    std::tie(_acc_struct, _buffer) = create_blas(mesh);
+BLAS::BLAS(const MeshDrawData& mesh) : BLAS(mesh, mesh.draw_command()) {
+}
+
+BLAS::BLAS(const MeshDrawData& mesh, const MeshDrawCommand& draw_cmd) {
+    std::tie(_acc_struct, _buffer) = create_blas(mesh, draw_cmd);
 
     VkAccelerationStructureDeviceAddressInfoKHR addr_info = vk_struct();
     addr_info.accelerationStructure = vk_accel_struct();
@@ -195,11 +197,12 @@ TLAS::TLAS(core::Span<BLASInstance> instances) {
     _address = vkGetAccelerationStructureDeviceAddressKHR(vk_device(), &addr_info);
 }
 
-BLASInstance TLAS::make_instance(const math::Transform<>& tr, const BLAS& blas) {
+BLASInstance TLAS::make_instance(const math::Transform<>& tr, const BLAS& blas, u32 index) {
     BLASInstance instance = {};
 
     {
         instance.mask = 0xFF;
+        instance.instanceCustomIndex = index;
         instance.accelerationStructureReference = blas.vk_device_address();
 
         const math::Matrix mat = tr.matrix().to<3, 4>().transposed();

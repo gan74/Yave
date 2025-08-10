@@ -629,17 +629,12 @@ void CmdBufferRecorderBase::raytrace(const RaytracingProgram& program, const mat
 
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, program.vk_pipeline());
 
-    if(!descriptor_sets.is_empty()) {
-        core::ScratchPad<VkDescriptorSet> vk_sets(descriptor_sets.size());
-        std::transform(descriptor_sets.begin(), descriptor_sets.end(), vk_sets.begin(), [](const DescriptorSetProxy& ds) { return ds.vk_descriptor_set(); });
-
-        vkCmdBindDescriptorSets(
-            vk_cmd_buffer(),
+    for(usize i = 0; i != descriptor_sets.size(); ++i) {
+        bind_descriptor_set(
             VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
             program.vk_pipeline_layout(),
-            0,
-            u32(vk_sets.size()), vk_sets.data(),
-            0, nullptr
+            u32(i),
+            descriptor_sets[i]
         );
     }
 

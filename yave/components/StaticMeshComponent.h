@@ -45,8 +45,6 @@ class StaticMeshComponent final :
         AssetPtr<StaticMesh>& mesh();
         const AssetPtr<StaticMesh>& mesh() const;
 
-        const BLAS* blas() const;
-
         core::MutableSpan<AssetPtr<Material>> materials();
         core::Span<AssetPtr<Material>> materials() const;
 
