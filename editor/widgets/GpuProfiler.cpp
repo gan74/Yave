@@ -160,7 +160,7 @@ void GpuProfiler::on_gui() {
 
                 const bool has_children = as_tree && zone.contained_zones;
                 const char* name = (!as_tree && zone.contained_zones) ? fmt_c_str("{} *", zone.name) : zone.name.data();
-                const bool open = ImGui::TreeNodeEx(name, has_children ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_Leaf);
+                const bool open = ImGui::TreeNodeEx(fmt_c_str("{}##{}", name, i), has_children ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_Leaf);
                 if(open) {
                     ImGui::TreePop();
                 } else if(as_tree) {
