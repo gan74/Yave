@@ -28,6 +28,10 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
+#include <yave/graphics/device/MaterialAllocator.h>
+#include <yave/graphics/images/TextureLibrary.h>
+
+
 namespace yave {
 
 RaytracingPass RaytracingPass::create(FrameGraph& framegraph, const CameraBufferPass& camera, const math::Vec2ui& size) {
@@ -39,9 +43,14 @@ RaytracingPass RaytracingPass::create(FrameGraph& framegraph, const CameraBuffer
 
     builder.add_descriptor_binding(Descriptor(tlas));
     builder.add_uniform_input(camera.camera);
+    builder.add_external_input(Descriptor(material_allocator().material_buffer()));
     builder.add_storage_output(raytraced);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        recorder.dispatch_threads(device_resources()[DeviceResources::RTProgram], size, self->descriptor_set());
+        const std::array<DescriptorSetProxy, 2> desc_sets = {
+            self->descriptor_set(),
+            texture_library().descriptor_set()
+        };
+        recorder.dispatch_threads(device_resources()[DeviceResources::RTProgram], size, desc_sets);
     });
 
     RaytracingPass pass;

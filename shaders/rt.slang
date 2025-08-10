@@ -9,7 +9,14 @@ RaytracingAccelerationStructure tlas;
 ConstantBuffer<Camera> camera;
 
 [[vk::binding(2)]]
+StructuredBuffer<MaterialData> materials;
+
+[[vk::binding(3)]]
 RWTexture2D out_image;
+
+[[vk::binding(0, 1)]]
+Sampler2D all_textures[];
+
 
 
 
@@ -54,8 +61,10 @@ void comp() {
     }
 
     if(rayQueryGetIntersectionTypeEXT(ray_query, true) == gl_RayQueryCommittedIntersectionTriangleEXT) {
-        const uint instance_id = rayQueryGetIntersectionInstanceCustomIndexEXT(ray_query, true);
-        out_image[coord] = float4(heat_spectrum(float(hash(instance_id) % 4096) / 4096), 0.0);
+        const uint material_id = rayQueryGetIntersectionInstanceCustomIndexEXT(ray_query, true);
+        const MaterialData material = materials[material_id];
+        const uint albedo_id = material.texture_indices[uint(TextureSlots::Albedo)];
+        out_image[coord] = all_textures[albedo_id].SampleLevel(float2(0.5), 100.0);
     } else {
         out_image[coord] = 0.0;
     }

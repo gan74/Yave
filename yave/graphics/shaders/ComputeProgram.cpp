@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/graphics/graphics.h>
 #include <yave/graphics/device/DescriptorLayoutAllocator.h>
+#include <yave/graphics/images/TextureLibrary.h>
 
 #include <y/core/ScratchPad.h>
 #include <y/utils/log.h>
@@ -39,10 +40,13 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp) : _local_size(comp.loc
     const auto& bindings = comp.bindings();
     core::ScratchPad<VkDescriptorSetLayout> layouts(bindings.size());
 
-    y_always_assert(bindings.size() <= 1, "Multiple descriptor sets are not supported");
-
     for(usize i = 0; i != bindings.size(); ++i) {
-        layouts[i] = layout_allocator().create_layout(bindings[i]);
+        if(std::find(comp.variable_size_bindings().begin(), comp.variable_size_bindings().end(), i) != comp.variable_size_bindings().end()) {
+            y_always_assert(bindings[i].size() == 1, "Variable size descriptor bindings must be alone in descriptor set");
+            layouts[i] = texture_library().descriptor_set_layout();
+        } else {
+            layouts[i] = layout_allocator().create_layout(bindings[i]);
+        }
     }
 
     VkPipelineLayoutCreateInfo layout_create_info = vk_struct();

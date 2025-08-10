@@ -56,8 +56,8 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     renderer.depth = renderer.gbuffer.depth;
 
 
-    renderer.rt             = RaytracingPass::create(framegraph, renderer.camera, size);
-    renderer.final = renderer.rt.raytraced;
+    // renderer.rt             = RaytracingPass::create(framegraph, renderer.camera, size);
+    // renderer.final = renderer.rt.raytraced;
 
 
     return renderer;

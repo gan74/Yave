@@ -58,7 +58,7 @@ static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Ve
         }
 
         const core::Span materials = mesh->component.materials();
-        if(materials.size() == 1) {
+        /*if(materials.size() == 1) {
             if(const Material* mat = materials[0].get()) {
                 batches.emplace_back(
                     mat->material_template(),
@@ -66,7 +66,7 @@ static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Ve
                     math::Vec2ui(transform_index, mat->draw_data().index())
                 );
             }
-        } else {
+        } else*/ {
             for(usize i = 0; i != materials.size(); ++i) {
                 if(const Material* mat = materials[i].get()) {
                     batches.emplace_back(
