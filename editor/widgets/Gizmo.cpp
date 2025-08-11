@@ -688,7 +688,7 @@ void OrientationGizmo::draw() {
             const math::Vec3 cam_pos = camera.position();
             const math::Vec3 cam_fwd = camera.forward();
             // Hack to avoid the camera rolling
-            const math::Vec3 cam_right = math::Vec3(camera.right().to<2>(), 0.0f).normalized();
+            const math::Vec3 cam_right = math::Vec3(camera.right().x(), 0.0f, camera.right().z()).normalized();
             const math::Vec3 cam_up = cam_fwd.cross(cam_right).normalized();
 
             const math::Quaternion<> yaw = math::Quaternion<>::from_axis_angle(cam_up, mouse_delta.x());
