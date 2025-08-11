@@ -184,7 +184,7 @@ void FrameGraphResourcePool::release(TransientImage image, core::Span<FrameGraph
 }
 
 void FrameGraphResourcePool::release(TransientVolume volume, core::Span<FrameGraphPersistentResourceId> persistent_ids) {
-    y_always_assert(!persistent_ids.is_empty(), "Persistent volumes not supported");
+    y_always_assert(persistent_ids.is_empty(), "Persistent volumes not supported");
     y_debug_assert(!volume.is_null());
     _volumes.locked([&](auto&& volumes) { volumes.emplace_back(std::move(volume), _frame_id); });
 }
