@@ -179,10 +179,10 @@ Frustum Camera::frustum() const {
 Camera::operator shader::Camera() const {
     shader::Camera camera_data = {};
 
-    camera_data.cur.view_proj = view_proj_matrix();
-    camera_data.cur.inv_view_proj = inverse_matrix();
+    camera_data.curr.view_proj = view_proj_matrix();
+    camera_data.curr.inv_view_proj = inverse_matrix();
 
-    camera_data.prev = camera_data.cur;
+    camera_data.prev = camera_data.curr;
 
     camera_data.jitter = jitter();
     camera_data.prev_jitter = camera_data.jitter;

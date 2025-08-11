@@ -161,7 +161,7 @@ struct VertexStageOut {
 };
 
 float2 camera_reproject(float2 uv) {
-    const float3 w = unproject(uv, 0.000001, camera.cur.inv_view_proj);
+    const float3 w = unproject(uv, 0.000001, camera.curr.inv_view_proj);
     const float2 reproj = project(w, camera.prev.view_proj).xy;
     return (reproj - uv) - camera.combined_jitter * 0.5;
 }
@@ -184,8 +184,8 @@ VertexStageOut vert_main() {
 
     const float2 uv = uvs[semantics.vertex_index];
 
-    const float3 unproj = unproject(uv, 0.000001, camera.cur.inv_view_proj);
-    const float4 current_position = mul(camera.cur.view_proj, float4(unproj, 1.0));
+    const float3 unproj = unproject(uv, 0.000001, camera.curr.inv_view_proj);
+    const float4 current_position = mul(camera.curr.view_proj, float4(unproj, 1.0));
     const float4 last_position = mul(camera.prev.view_proj, float4(unproj, 1.0));
 
     VertexStageOut out;

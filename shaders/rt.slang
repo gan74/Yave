@@ -59,14 +59,14 @@ void comp() {
     });
 
 #if 1
-    const float3 world_pos = unproject(in_uv, depth, camera.cur.inv_view_proj);
+    const float3 world_pos = unproject(in_uv, depth, camera.curr.inv_view_proj);
 
-    const float3 target = unproject(in_uv - camera.jitter * 0.5, 1.0, camera.cur.inv_view_proj);
+    const float3 target = unproject(in_uv - camera.jitter * 0.5, 1.0, camera.curr.inv_view_proj);
     const float3 view_dir = normalize(target - camera.position);
     const float3 trace_dir = reflect(view_dir, surface.normal);
 #else
     const float3 world_pos = camera.position;
-    const float3 target = unproject(in_uv - camera.jitter * 0.5, 1.0, camera.cur.inv_view_proj);
+    const float3 target = unproject(in_uv - camera.jitter * 0.5, 1.0, camera.curr.inv_view_proj);
     const float3 trace_dir = normalize(target - camera.position);
 #endif
 

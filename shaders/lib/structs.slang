@@ -36,7 +36,7 @@ struct CameraMatrices {
 };
 
 struct Camera {
-    CameraMatrices cur;
+    CameraMatrices curr;
     CameraMatrices prev;
 
     float2 jitter;

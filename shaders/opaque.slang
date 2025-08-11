@@ -49,7 +49,7 @@ VertexStageOut vert_main(StdVertexStageIn in) {
 
     const float3x3 model = float3x3(transformable.current);
 
-    const float4 current_position = mul(camera.cur.view_proj, mul(transformable.current, float4(in.position, 1.0)));
+    const float4 current_position = mul(camera.curr.view_proj, mul(transformable.current, float4(in.position, 1.0)));
     const float4 last_position = mul(camera.prev.view_proj, mul(transformable.last, float4(in.position, 1.0)));
 
     const float3 in_normal = unpack_2_10_10_10(in.packed_normal_tangent_sign.x).xyz;

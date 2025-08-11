@@ -57,7 +57,7 @@ void main() {
     float ao = 0;
     if(!is_depth_far(depth)) {
         const float2 uv = (coord + 0.5) / float2(size);
-        const float3 world_pos = unproject(uv, depth, camera.cur.inv_view_proj);
+        const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
         const float3 normal = decode_gbuffer({float4(0.0), in_rt1[coord]}).normal;
         const float view_dist = length(world_pos - camera.position);
         const float min_dist = lerp(0.001, 0.01, view_dist / (view_dist + 10.0));

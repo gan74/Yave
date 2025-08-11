@@ -48,7 +48,7 @@ uint frag_main(float2 in_uv) : SV_Target0 {
     const bool has_moved = any(abs(motion) > 2.0 * inv_size);
     if(has_moved) {
         const float3 world_pos = unproject(prev_uv, prev_depth, camera.prev.inv_view_proj);
-        const float3 reproj_pos = project(world_pos + (world_pos - camera.position) * 0.01, camera.cur.view_proj);
+        const float3 reproj_pos = project(world_pos + (world_pos - camera.position) * 0.01, camera.curr.view_proj);
         if(reproj_pos.z > depth) {
             return TAAMask::Deoccluded;
         }
