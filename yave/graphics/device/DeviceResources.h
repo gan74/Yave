@@ -108,8 +108,6 @@ class DeviceResources final : NonMovable {
         };
 
         enum RaytracingPrograms {
-            BasicRaytracingProgram,
-
             MaxRaytracingPrograms
         };
 

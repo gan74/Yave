@@ -125,7 +125,6 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
 
 
 static constexpr std::array<std::string_view, usize(RaytracingPrograms::MaxRaytracingPrograms)> raytracing_datas = {
-    "basic_rt",
 };
 
 // ABGR
