@@ -16,7 +16,7 @@ RWTexture2D<float> out_ao;
 Sampler2D<float> in_depth;
 
 [[vk::binding(2)]]
-Sampler2D in_rt1;
+Sampler2D<uint> in_rt1;
 
 [[vk::binding(3)]]
 ConstantBuffer<Camera> camera;

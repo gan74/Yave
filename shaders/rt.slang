@@ -15,7 +15,7 @@ Sampler2D<float> in_depth;
 Sampler2D in_rt0;
 
 [[vk::binding(4)]]
-Sampler2D in_rt1;
+Sampler2D<uint> in_rt1;
 
 [[vk::binding(5)]]
 StructuredBuffer<MaterialData> materials;

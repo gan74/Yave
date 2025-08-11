@@ -19,7 +19,7 @@ Sampler2D<float2> in_motion;
 Sampler2D in_rt0;
 
 [[vk::binding(5)]]
-Sampler2D in_rt1;
+Sampler2D<uint> in_rt1;
 
 [[vk::binding(6)]]
 Sampler2D<uint> in_mask;

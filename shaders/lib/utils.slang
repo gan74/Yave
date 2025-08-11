@@ -58,13 +58,14 @@ struct SurfaceInfo {
 
 struct RawGBuffer {
     float4 rt0;
-    float4 rt1;
+    uint rt1;
 
     __init() {
-        rt0 = rt1 = 0.0;
+        rt0 = 0.0;
+        rt1 = 0;
     }
 
-    __init(float4 r0, float4 r1) {
+    __init(float4 r0, uint r1) {
         rt0 = r0;
         rt1 = r1;
     }
@@ -92,17 +93,24 @@ void unpack_gbuffer_color(float4 buff, out float3 color, out float metallic) {
     metallic = buff.a;
 }
 
-void unpack_gbuffer_normal(float4 buff, out float3 normal, out float roughness) {
-    normal = octahedron_decode(buff.xy);
-    roughness = max(0.05, buff.z);
+void unpack_gbuffer_normal(uint buff, out float3 normal, out float roughness) {
+    const uint3 unpacked = uint3(
+        (buff >> 20) & 0xFFF,
+        (buff >> 8) & 0xFFF,
+        buff & 0xFF
+    );
+
+    normal = octahedron_decode(float2(unpacked.xy) / float2(0xFFF));
+    roughness = max(0.05, float(unpacked.z) / float(0xFF));
 }
 
 float4 pack_gbuffer_color(float3 color, float metallic) {
     return float4(color, metallic);
 }
 
-float4 pack_gbuffer_normal(float3 normal, float roughness) {
-    return float4(octahedron_encode(normal), roughness, 0.0);
+uint pack_gbuffer_normal(float3 normal, float roughness) {
+    const uint2 packed_normal = uint2(saturate(octahedron_encode(normal)) * 0xFFF);
+    return (packed_normal.x << 20) | (packed_normal.y << 8) | uint(saturate(roughness) * 0xFF);
 }
 
 
