@@ -12,7 +12,7 @@ RWTexture2D<float4> out_color;
 [shader("compute")]
 [numthreads(8, 8)]
 void comp_main() {
-    const int2 coord = int2(semantics.global_id.xy);
+    const uint2 coord = semantics.global_id.xy;
 
     if(is_depth_far(in_depth[coord])) {
         float4 color = float4(0.0);
@@ -23,7 +23,7 @@ void comp_main() {
                 }
             }
         }
-        out_color[coord] = color.a > 0.0 ? float4(color.rgb / color.a, color.a / 9.0) : float4(0.0); 
+        out_color[coord] = color.a > 0.0 ? float4(color.rgb / color.a, color.a / 9.0) : float4(0.0);
     } else {
         const float4 color = in_color[coord];
         out_color[coord] = float4(color.rgb, 1.0);

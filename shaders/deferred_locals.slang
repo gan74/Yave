@@ -222,7 +222,7 @@ void cull_lights() {
 [shader("compute")]
 [numthreads(16, 16)]
 void comp_main() {
-    const int2 coord = int2(semantics.global_id.xy);
+    const uint2 coord = semantics.global_id.xy;
     const float2 image_size = float2(image_size(out_color).xy);
     const float2 uv = (semantics.global_id.xy + 0.5) / image_size;
 

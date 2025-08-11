@@ -40,9 +40,10 @@ struct RayPayload {
 
 
 [shader("compute")]
+[numthreads(8, 8)]
 void comp() {
-    const uint2 size = image_size(out_image);
-    const uint2 coord = uint2(semantics.global_id.xy);
+    const uint2 size = image_size(in_depth);
+    const uint2 coord = semantics.global_id.xy;
 
     if(any(coord >= size)) {
         return;

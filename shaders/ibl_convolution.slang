@@ -56,7 +56,7 @@ float3 cube_dir(float2 tex_coord, uint side) {
 [shader("compute")]
 [numthreads(8, 8, 1)]
 void comp_main() {
-    const int2 coord = int2(semantics.global_id.xy);
+    const uint2 coord = semantics.global_id.xy;
     const float2 uv = (semantics.global_id.xy + 0.5) / size;
 
     const float3 local_dir = normalize(cube_dir(uv, semantics.global_id.z));
@@ -70,6 +70,6 @@ void comp_main() {
         conv = specular_convolution(in_envmap, local_dir, roughness);
     }
 
-    out_image[int3(coord, semantics.global_id.z)] = float4(conv, roughness);
+    out_image[uint3(coord, semantics.global_id.z)] = float4(conv, roughness);
 }
 

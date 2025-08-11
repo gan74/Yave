@@ -59,7 +59,7 @@ bool is_valid(float sample_depth, float depth, float3 sample_normal, float3 norm
 [shader("compute")]
 [numthreads(8, 8)]
 void main() {
-    const int2 coord = int2(semantics.global_id.xy);
+    const uint2 coord = semantics.global_id.xy;
     const float2 image_size = float2(image_size(in_depth).xy);
 
     const float depth = in_depth[coord].x;
@@ -91,5 +91,5 @@ void main() {
         ao /= weight;
     }
 
-    out_ao[semantics.global_id.xy] = ao;
+    out_ao[coord] = ao;
 }

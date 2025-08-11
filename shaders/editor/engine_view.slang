@@ -27,6 +27,9 @@ Sampler2D<uint> in_mask;
 [[vk::binding(7)]]
 Sampler2D<float> in_ao;
 
+[[vk::binding(8)]]
+Sampler2D in_gi;
+
 
 [shader("fragment")]
 float4 frag_main(float2 in_uv) : SV_Target0 {
@@ -61,8 +64,9 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
         };
         color = colors[in_mask[coord]];
     } else if(target_index == 8) {
-        const float ao = in_ao.Sample(in_uv);
-        color = float3(ao);
+        color = float3(in_ao.Sample(in_uv));
+    } else if(target_index == 9) {
+        color = in_gi.Sample(in_uv).rgb;
     }
 
     return float4(color, 1.0);

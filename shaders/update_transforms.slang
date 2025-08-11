@@ -18,7 +18,7 @@ cbuffer Params_Inline {
 [shader("compute")]
 [numthreads(64)]
 void comp_main() {
-    const uint id = uint(semantics.global_id.x);
+    const uint id = semantics.global_id.x;
     if(id >= transform_count) {
         return;
     }
