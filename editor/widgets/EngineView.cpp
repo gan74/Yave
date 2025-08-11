@@ -491,7 +491,7 @@ void EngineView::draw_settings_menu() {
 
         ImGui::Separator();
 
-        ImGui::Checkbox("Show histogram", &settings.debug_exposure);
+        ImGui::MenuItem("Show histogram", nullptr, &settings.debug_exposure);
 
         ImGui::EndMenu();
     }
@@ -604,6 +604,10 @@ void EngineView::draw_settings_menu() {
 
         ImGui::EndMenu();
     }
+
+    ImGui::Separator();
+
+    ImGui::MenuItem("Enable TAA", nullptr, &_settings.renderer_settings.taa.enable);
 }
 
 }

@@ -44,13 +44,22 @@ void Scene::update_tlas() {
                 if(materials.is_empty()) {
                     continue;
                 }
-                y_debug_assert(blases.size() == materials.size());
-
-                for(usize i = 0; i != blases.size(); ++i) {
-                    if(const Material* material = materials[i].get()) {
-                        instances << TLAS::make_instance(tr, blases[i], material->draw_data().index());
+                if(materials.size() == 1) {
+                    if(const Material* material = materials[0].get()) {
+                        const u32 index = material->draw_data().index();
+                        for(usize i = 0; i != blases.size(); ++i) {
+                            instances << TLAS::make_instance(tr, blases[i], index);
+                        }
+                    }
+                } else {
+                    y_debug_assert(blases.size() == materials.size());
+                    for(usize i = 0; i != blases.size(); ++i) {
+                        if(const Material* material = materials[i].get()) {
+                            instances << TLAS::make_instance(tr, blases[i], material->draw_data().index());
+                        }
                     }
                 }
+                
             }
         }
     }

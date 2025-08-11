@@ -54,13 +54,9 @@ static constexpr usize max_point_lights = 1024;
 static constexpr usize max_spot_lights = 1024;
 
 
-static std::tuple<const IBLProbe*, float, bool> find_probe(const SceneView& scene_view) {
-    for(const SkyLightObject& obj : scene_view.scene()->sky_lights()) {
-        if((obj.visibility_mask & scene_view.visibility_mask()) == 0) {
-            continue;
-        }
-
-        const SkyLightComponent& sky = obj.component;
+static std::tuple<const IBLProbe*, float, bool> find_probe(const SceneVisibility& visibility) {
+    if(const SkyLightObject* obj = visibility.sky_light) {
+        const SkyLightComponent& sky = obj->component;
         if(const IBLProbe* probe = sky.probe().get()) {
             y_debug_assert(!probe->is_null());
             return {probe, sky.intensity(), sky.display_sky()};
@@ -76,10 +72,9 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                                              const ShadowMapPass& shadow_pass,
                                              FrameGraphImageId ao) {
 
-    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
 
-    auto [ibl_probe, intensity, sky] = find_probe(scene_view);
+    auto [ibl_probe, intensity, sky] = find_probe(visibility);
     const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Ambient/Sun pass");

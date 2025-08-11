@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "RaytracingPass.h"
-#include "CameraBufferPass.h"
+#include "GBufferPass.h"
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -30,20 +30,29 @@ SOFTWARE.
 
 #include <yave/graphics/device/MaterialAllocator.h>
 #include <yave/graphics/images/TextureLibrary.h>
+#include <yave/components/SkyLightComponent.h>
 
 
 namespace yave {
 
-RaytracingPass RaytracingPass::create(FrameGraph& framegraph, const CameraBufferPass& camera, const math::Vec2ui& size) {
+RaytracingPass RaytracingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size) {
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Raytracing");
+
+    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
+    const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
+
+    const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
+    const TLAS& tlas = scene_view.scene()->tlas();
 
     const auto raytraced = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, size);
 
-    const TLAS& tlas = camera.view.scene()->tlas();
-
     builder.add_descriptor_binding(Descriptor(tlas));
-    builder.add_uniform_input(camera.camera);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
+    builder.add_uniform_input(gbuffer.depth);
+    builder.add_uniform_input(gbuffer.color);
+    builder.add_uniform_input(gbuffer.normal);
     builder.add_external_input(Descriptor(material_allocator().material_buffer()));
+    builder.add_external_input(ibl_probe ? *ibl_probe : *device_resources().empty_probe());
     builder.add_storage_output(raytraced);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const std::array<DescriptorSetProxy, 2> desc_sets = {

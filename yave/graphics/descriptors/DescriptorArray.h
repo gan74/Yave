@@ -67,6 +67,7 @@ class DescriptorArray : NonMovable {
 
     public:
         static constexpr u32 upper_descriptor_count_limit = 1024 * 1024;
+        static constexpr u32 reserved_descriptor_count = 16;
 
         ~DescriptorArray();
 

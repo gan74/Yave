@@ -136,6 +136,20 @@ class Scene : NonMovable {
             }
         }
 
+        template<typename T>
+        static const SceneObject<T>* first_visible(core::Span<SceneObject<T>> objects, u32 visibility_mask = u32(-1)) {
+            y_profile();
+            
+            for(const auto& obj : objects) {
+                if((obj.visibility_mask & visibility_mask) == 0) {
+                    continue;
+                }
+                return &obj;
+            }
+            
+            return nullptr;
+        }
+
     protected:
         void update_tlas();
 

@@ -28,6 +28,8 @@ SOFTWARE.
 #include <y/core/ScratchPad.h>
 #include <y/utils/format.h>
 
+#include <vulkan/vk_enum_string_helper.h>
+
 namespace yave {
 
 static VkHandle<VkDescriptorPool> create_libray_pool(u32 desc_count, VkDescriptorType type) {
@@ -87,8 +89,11 @@ static VkHandle<VkDescriptorSetLayout> create_libray_layout(VkDescriptorType typ
 
     VkDescriptorSetLayoutBinding binding = {};
     {
+        const u32 max_descs = max_descriptor_of_type(type);
+        y_always_assert(max_descs > 2 * DescriptorArray::reserved_descriptor_count, "not enough descriptors of type {}", string_VkDescriptorType(type));
+
         binding.descriptorType = type;
-        binding.descriptorCount = std::min(max_descriptor_of_type(type), DescriptorArray::upper_descriptor_count_limit);
+        binding.descriptorCount = std::min(max_descs - DescriptorArray::reserved_descriptor_count, DescriptorArray::upper_descriptor_count_limit);
         binding.stageFlags = VK_SHADER_STAGE_ALL;
     }
 

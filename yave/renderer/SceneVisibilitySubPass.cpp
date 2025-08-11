@@ -39,6 +39,8 @@ SceneVisibilitySubPass SceneVisibilitySubPass::create(const SceneView& scene_vie
     
     scene->gather_visible(pass.visible->directional_lights, scene->directionals(), scene_view.visibility_mask());
 
+    pass.visible->sky_light = scene->first_visible(scene->sky_lights(), scene_view.visibility_mask());
+
     return pass;
 }
 
