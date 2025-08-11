@@ -1,5 +1,4 @@
 #include "lib/utils.slang"
-#include "lib/rt.slang"
 
 
 // -------------------------------- DEFINES --------------------------------
@@ -41,6 +40,27 @@ float3 compute_sample_dir(float3 normal, uint i) {
     return dot(normal, s) < 0.0 ? -s : s;
 }
 
+
+float trace_first_hit(RaytracingAccelerationStructure accel, float3 origin, float3 dir, float min_dist, float max_dist) {
+    RayDesc ray;
+    {
+        ray.Origin = origin;
+        ray.Direction = dir;
+        ray.TMin = min_dist;
+        ray.TMax = max_dist;
+    }
+
+    RayQuery<RAY_FLAG_FORCE_OPAQUE> query;
+    query.TraceRayInline(accel, RAY_FLAG_FORCE_OPAQUE, 0xFF, ray);
+
+    query.Proceed();
+
+    if(query.CommittedStatus() == COMMITTED_TRIANGLE_HIT) {
+        return query.CommittedRayT();
+    }
+
+    return max_dist;
+}
 
 [shader("compute")]
 [numthreads(8, 8)]

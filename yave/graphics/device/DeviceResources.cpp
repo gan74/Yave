@@ -99,7 +99,7 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData{"taa_resolve", "taa_resolve", DepthTestMode::None, BlendMode::None, CullMode::None, false},
     DeviceMaterialData::screen("denoise"),
     DeviceMaterialData{"id", "id", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
-    DeviceMaterialData{"debug_probes", "debug_probes", DepthTestMode::None, BlendMode::None, CullMode::None, true},
+    DeviceMaterialData{"debug_probes", "debug_probes", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
 };
 
 static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputePrograms)> compute_datas = {

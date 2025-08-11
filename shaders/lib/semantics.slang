@@ -36,15 +36,6 @@ property uint3 work_group_count {
 
 
 [ForceInline]
-uint InterlockedAddRet(inout uint mem, uint data) {
-    uint prev;
-    InterlockedAdd(mem, data, prev);
-    return prev;
-}
-
-
-
-[ForceInline]
 uint image_mips<T: ITexelElement>(Sampler2D<T> smp) {
     uint mip;
     uint2 size;

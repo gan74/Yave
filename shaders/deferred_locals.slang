@@ -182,7 +182,9 @@ void cull_points() {
 
     for(uint i = range.x; i != range.y; ++i) {
         if(is_inside(point_lights[i])) {
-            const uint light_index = InterlockedAddRet(tile_point_count, 1);
+            uint light_index = 0;
+            InterlockedAdd(tile_point_count, 1, light_index);
+
             if(light_index >= max_tile_lights) {
                 break;
             }
@@ -196,7 +198,10 @@ void cull_spots() {
 
     for(uint i = range.x; i != range.y; ++i) {
         if(is_inside(spot_lights[i])) {
-            const uint light_index = InterlockedAddRet(tile_spot_count, 1) + tile_point_count;
+            uint light_index = 0;
+            InterlockedAdd(tile_spot_count, 1, light_index);
+            light_index += tile_point_count;
+
             if(light_index >= max_tile_lights) {
                 break;
             }

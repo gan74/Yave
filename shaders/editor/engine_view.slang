@@ -6,6 +6,7 @@ cbuffer Target_Inline {
 };
 
 
+
 [[vk::binding(1)]]
 Sampler2D in_final;
 
@@ -66,7 +67,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     } else if(target_index == 8) {
         color = float3(in_ao.Sample(in_uv));
     } else if(target_index == 9) {
-        color = in_gi.Sample(in_uv).rgb;
+        color = in_gi.Sample(in_uv).rgb * 4.0;
     }
 
     return float4(color, 1.0);

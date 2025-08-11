@@ -149,4 +149,14 @@ struct AtmosphereParams {
     float density_falloff;
 };
 
+struct SHBase {
+    float Y00, Y11, Y10, Y1_1, Y21, Y2_1, Y2_2, Y20, Y22;
+
+#ifndef __cplusplus
+    __init() {
+        Y00 = Y11 = Y10 = Y1_1 = Y21 = Y2_1 = Y2_2 = Y20 = Y22 = 0.0;
+    }
+#endif
+};
+
 #endif

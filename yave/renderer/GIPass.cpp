@@ -29,6 +29,9 @@ SOFTWARE.
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/device/DeviceResources.h>
 
+#include <yave/graphics/device/MaterialAllocator.h>
+#include <yave/graphics/images/TextureLibrary.h>
+
 
 namespace yave {
 
@@ -47,12 +50,36 @@ static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass&
 
     builder.add_depth_output(depth);
     builder.add_color_output(color);
+
+#if 0
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_uniform_input(grid);
     builder.add_inline_input(u32(framegraph.frame_id()));
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::DebugProbesTemplate];
         render_pass.bind_material_template(material, self->descriptor_set());
+
+        const StaticMesh& sphere = *device_resources()[DeviceResources::SimpleSphereMesh];
+        render_pass.draw(sphere.draw_data(), u32(grid_size.x() * grid_size.y() * grid_size.z()));
+    });
+#endif
+
+    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
+    const TLAS& tlas = scene_view.scene()->tlas();
+
+    builder.add_uniform_input(grid);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
+    builder.add_external_input(Descriptor(material_allocator().material_buffer()));
+    builder.add_external_input(Descriptor(tlas));
+    builder.add_inline_input(u32(framegraph.frame_id()));
+    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
+        const std::array<DescriptorSetProxy, 2> desc_sets = {
+            self->descriptor_set(),
+            texture_library().descriptor_set()
+        };
+
+        const auto* material = device_resources()[DeviceResources::DebugProbesTemplate];
+        render_pass.bind_material_template(material, desc_sets);
 
         const StaticMesh& sphere = *device_resources()[DeviceResources::SimpleSphereMesh];
         render_pass.draw(sphere.draw_data(), u32(grid_size.x() * grid_size.y() * grid_size.z()));
@@ -69,6 +96,9 @@ GIPass GIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameG
     }
 
     const auto region = framegraph.region("GI");
+
+    // const SceneView& scene_view = gbuffer.scene_pass.scene_view;
+    // const TLAS& tlas = scene_view.scene()->tlas();
 
     static const math::Vec3ui grid_size = math::Vec3ui(64);
     const math::Vec2ui size = framegraph.image_size(lit);
@@ -91,6 +121,7 @@ GIPass GIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameG
         });
     }
 
+#if 0
     {
         FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Probe clean pass");
 
@@ -107,14 +138,21 @@ GIPass GIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameG
         FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Probe gather pass");
 
         builder.add_uniform_input(grid);
+        builder.add_uniform_input(gbuffer.scene_pass.camera);
+        builder.add_external_input(Descriptor(material_allocator().material_buffer()));
+        builder.add_external_input(Descriptor(tlas));
         builder.add_storage_output(count);
         builder.add_inline_input(u32(framegraph.frame_id()));
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+            const std::array<DescriptorSetProxy, 2> desc_sets = {
+                self->descriptor_set(),
+                texture_library().descriptor_set()
+            };
             const auto& program = device_resources()[DeviceResources::GatherProbesProgram];
-            recorder.dispatch_threads(program, grid_size, self->descriptor_set());
+            recorder.dispatch_threads(program, grid_size, desc_sets);
         });
     }
-
+#endif
 
     GIPass pass;
     pass.lit = debug_probes(framegraph, gbuffer, lit, grid);

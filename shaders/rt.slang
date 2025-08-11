@@ -31,14 +31,6 @@ Sampler2D all_textures[];
 
 
 
-
-struct RayPayload {
-    float3 hit_value;
-};
-
-
-
-
 [shader("compute")]
 [numthreads(8, 8)]
 void comp() {
