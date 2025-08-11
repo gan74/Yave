@@ -63,6 +63,9 @@ class DeviceResources final : NonMovable {
             RTAOProgram = MaxNonRTComputePrograms,
 
             RTProgram,
+            PlaceProbesProgram,
+            CleanProbesProgram,
+            GatherProbesProgram,
 
             MaxComputePrograms
         };
@@ -103,6 +106,8 @@ class DeviceResources final : NonMovable {
             DenoiseMaterialTemplate,
 
             IdMaterialTemplate,
+
+            DebugProbesTemplate,
 
             MaxMaterialTemplates
         };

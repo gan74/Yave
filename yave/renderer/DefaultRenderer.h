@@ -32,6 +32,7 @@ SOFTWARE.
 #include "TemporalPrePass.h"
 #include "TAAPass.h"
 #include "RaytracingPass.h"
+#include "GIPass.h"
 
 namespace yave {
 
@@ -55,6 +56,7 @@ struct DefaultRenderer {
     ExposurePass exposure;
     BloomPass bloom;
     ToneMappingPass tone_mapping;
+    GIPass gi;
     TAAPass taa;
     RaytracingPass rt;
 

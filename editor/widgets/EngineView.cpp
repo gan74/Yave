@@ -187,6 +187,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.normal);
         builder.add_uniform_input_with_default(renderer.renderer.temporal.mask, Descriptor(zero, SamplerType::PointClamp));
         builder.add_uniform_input_with_default(renderer.renderer.ao.ao, Descriptor(white));
+        builder.add_uniform_input(renderer.renderer.gi.lit);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             {
                 auto render_pass = recorder.bind_framebuffer(self->framebuffer());
@@ -415,7 +416,7 @@ void EngineView::draw_menu() {
 
         ImGui::Separator();
         {
-            const char* output_names[] = {"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "TAA Mask", "AO"};
+            const char* output_names[] = {"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "TAA Mask", "AO", "Probes"};
             for(usize i = 0; i != usize(RenderView::Max); ++i) {
                 bool selected = usize(_view) == i;
                 ImGui::MenuItem(output_names[i], nullptr, &selected);

@@ -46,6 +46,8 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ao.ao, settings.lighting);
     renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.lighting.lit);
 
+    renderer.gi             = GIPass::create(framegraph, renderer.gbuffer, renderer.atmosphere.lit);
+
     renderer.taa            = TAAPass::create(framegraph, renderer.temporal, renderer.atmosphere.lit, settings.taa);
 
     renderer.exposure       = ExposurePass::create(framegraph, renderer.taa.anti_aliased);
@@ -56,7 +58,7 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     renderer.depth = renderer.gbuffer.depth;
 
 
-    // renderer.rt             = RaytracingPass::create(framegraph, renderer.camera, size);
+    // renderer.rt             = RaytracingPass::create(framegraph, renderer.gbuffer, size);
     // renderer.final = renderer.rt.raytraced;
 
 
