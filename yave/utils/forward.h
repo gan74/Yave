@@ -220,7 +220,6 @@ struct SkinWeights;
 struct SkinnedVertex;
 struct TAAPass;
 struct TAASettings;
-struct TemporalPrePass;
 struct TimedZone;
 struct ToneMappingPass;
 struct ToneMappingSettings;

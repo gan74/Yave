@@ -56,6 +56,7 @@ class DeviceResources final : NonMovable {
             ExposureDebugProgram,
             DepthBoundProgram,
             PrevCameraProgram,
+            TAAResolveProgram,
             UpdateTransformsProgram,
             FilterAOProgram,
 
@@ -95,10 +96,6 @@ class DeviceResources final : NonMovable {
 
             DirectDrawWireMaterialTemplate,
             DirectDrawMaterialTemplate,
-
-            TemporalMaskMaterialTemplate,
-            TAASimpleMaterialTemplate,
-            TAAResolveMaterialTemplate,
 
             DenoiseMaterialTemplate,
 

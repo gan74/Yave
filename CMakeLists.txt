@@ -228,8 +228,7 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "copy.slang" "")
     add_slang_shader(${SHADER_TARGET} "screen.slang" "")
     add_slang_shader(${SHADER_TARGET} "tonemap.slang" "")
-    add_slang_shader(${SHADER_TARGET} "temporal_mask.slang" "")
-    add_slang_shader(${SHADER_TARGET} "taa_simple.slang" "")
+    
     add_slang_shader(${SHADER_TARGET} "taa_resolve.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "denoise.slang" "")
