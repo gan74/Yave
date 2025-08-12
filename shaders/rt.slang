@@ -12,22 +12,49 @@ ConstantBuffer<Camera> camera;
 Sampler2D<float> in_depth;
 
 [[vk::binding(3)]]
-Sampler2D in_rt0;
-
-[[vk::binding(4)]]
 Sampler2D<uint> in_rt1;
 
-[[vk::binding(5)]]
+[[vk::binding(4)]]
 StructuredBuffer<MaterialData> materials;
 
-[[vk::binding(6)]]
+[[vk::binding(5)]]
 SamplerCube in_envmap;
 
+[[vk::binding(6)]]
+cbuffer SampleDirData { float4 sample_dirs[256]; };
+
 [[vk::binding(7)]]
+StructuredBuffer<DirectionalLight> lights;
+
+[[vk::binding(8)]]
 RWTexture2D out_image;
+
+[[vk::binding(9)]]
+cbuffer Params {
+    uint directional_lights;
+};
 
 [[vk::binding(0, 1)]]
 Sampler2D all_textures[];
+
+
+bool hit(RaytracingAccelerationStructure accel, float3 origin, float3 dir, float min_dist, float max_dist) {
+    rayQueryEXT query;
+    rayQueryInitializeEXT(
+        query,
+        accel,
+        gl_RayFlagsOpaqueEXT,
+        0xFF,
+        origin,
+        min_dist,
+        dir,
+        max_dist
+     );
+
+    rayQueryProceedEXT(query);
+
+    return rayQueryGetIntersectionTypeEXT(query, true) == gl_RayQueryCommittedIntersectionTriangleEXT;
+}
 
 
 
@@ -41,71 +68,60 @@ void comp() {
         return;
     }
 
-
     const float2 px_center = float2(coord) + float2(0.5);
     const float2 in_uv = px_center / float2(size);
 
     const float depth = in_depth[coord];
     const SurfaceInfo surface = decode_gbuffer({
-        in_rt0[coord],
+        float4(0.0),
         in_rt1[coord],
     });
 
-#if 1
     const float3 world_pos = unproject(in_uv, depth, camera.curr.inv_view_proj);
 
-    const float3 target = unproject(in_uv - camera.jitter * 0.5, 1.0, camera.curr.inv_view_proj);
-    const float3 view_dir = normalize(target - camera.position);
-    const float3 trace_dir = reflect(view_dir, surface.normal);
-#else
-    const float3 world_pos = camera.position;
-    const float3 target = unproject(in_uv - camera.jitter * 0.5, 1.0, camera.curr.inv_view_proj);
-    const float3 trace_dir = normalize(target - camera.position);
-#endif
+    float3 acc = float3(0.0);
 
-    const float tmin = 0.001;
-    const float tmax = 10000.0;
+    const uint sample_count = 4;
+    for(uint k = 0; k != sample_count; ++k) {
+        const float3 sample_dir = sample_dirs[(hash(semantics.work_group_index) ^ hash(semantics.local_index) ^ hash(k)) & 0xFF].xyz;
+        const float3 trace_dir = dot(surface.normal, sample_dir) < 0.0 ? -sample_dir : sample_dir;
 
-    float ray_t = 0.0;
-    float3 hit_color;
-    rayQueryEXT ray_query;
+        const float tmin = 0.001;
+        const float tmax = 10000.0;
 
-    for(uint k = 0; k != 4; ++k) {
+        rayQueryEXT query;
         rayQueryInitializeEXT(
-            ray_query,
+            query,
             tlas,
             gl_RayFlagsOpaqueEXT,
             0xFF,
             world_pos,
-            tmin + ray_t,
+            tmin,
             trace_dir,
             tmax
         );
 
-        while(rayQueryProceedEXT(ray_query));
+        rayQueryProceedEXT(query);
 
-        if(rayQueryGetIntersectionTypeEXT(ray_query, true) == gl_RayQueryCommittedIntersectionTriangleEXT) {
-            const uint material_id = rayQueryGetIntersectionInstanceCustomIndexEXT(ray_query, true);
-            const MaterialData material = materials[material_id];
-            const uint albedo_id = material.texture_indices[uint(TextureSlots::Albedo)];
-            const float4 albedo = all_textures[albedo_id].SampleLevel(float2(0.5), 100.0);
-            hit_color = albedo.rgb * surface.albedo;
+        if(rayQueryGetIntersectionTypeEXT(query, true) == gl_RayQueryCommittedIntersectionTriangleEXT) {
+            const uint material_id = rayQueryGetIntersectionInstanceCustomIndexEXT(query, true);
+            const float3 hit_pos = world_pos + trace_dir * rayQueryGetIntersectionTEXT(query, true);
 
-            if(albedo.a < 0.9) {
-                const int primitive_id = rayQueryGetIntersectionPrimitiveIndexEXT(ray_query, true);
-                if(hash(primitive_id) % 1024 > albedo.a * 1024.0) {
-                    ray_t = rayQueryGetIntersectionTEXT(ray_query, true);
-                    continue;
-                }
+            const DirectionalLight light = lights[0];
+            if(!hit(tlas, hit_pos, light.direction, tmin, tmax)) {
+                const MaterialData material = materials[material_id];
+                const uint albedo_id = material.texture_indices[uint(TextureSlots::Albedo)];
+                const float4 albedo = all_textures[albedo_id].SampleLevel(float2(0.5), 100.0);
+
+                acc += albedo.rgb * light.color;
             }
-        } else {
-            hit_color = in_envmap.SampleLevel(trace_dir, 0.0).rgb;
-        }
 
-        break;
+        } else {
+            acc += in_envmap.SampleLevel(trace_dir, 0.0).rgb;
+        }
     }
 
-    out_image[coord] = float4(hit_color, 1.0);
+    out_image[coord] = float4(acc / sample_count, 1.0);
 
 }
 

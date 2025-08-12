@@ -58,7 +58,7 @@ class EngineView final : public Widget {
 
             AO,
 
-            Probes,
+            GI,
 
             Max,
         };

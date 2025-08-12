@@ -29,6 +29,22 @@ property uint3 work_group_count {
     get { return spirv_asm { result: $$uint3 = OpLoad builtin(NumWorkgroups: uint3); }; }
 }
 
+property uint work_group_index {
+    get {
+        return
+            work_group_id.x +
+            work_group_id.y * work_group_count.x +
+            work_group_id.z * work_group_count.x * work_group_count.y
+        ;
+    }
+}
+
+property uint work_group_thread_count {
+    get {
+        return work_group_size.x * work_group_size.y * work_group_size.z;
+    }
+}
+
 }
 
 
