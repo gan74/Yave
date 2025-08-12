@@ -260,7 +260,9 @@ uint hash(uint2 x) {
     return 1103515245u * (q.x ^ (q.y >> 3u));
 }
 
-
+float component_max(float3 x) {
+    return max(x.x, max(x.y, x.z));
+}
 
 
 
@@ -305,12 +307,10 @@ float3 octahedron_decode(float2 f) {
     return normalize(n);
 }
 
-
 float3 unpack_normal_map(float2 normal) {
     normal = normal * 2.0 - 1.0;
     return float3(normal, 1.0 - sqrt(dot(normal, normal)));
 }
-
 
 float4 unpack_2_10_10_10(uint packed) {
     return float4(

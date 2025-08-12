@@ -6,7 +6,6 @@ cbuffer Target_Inline {
 };
 
 
-
 [[vk::binding(1)]]
 Sampler2D in_final;
 
@@ -23,12 +22,9 @@ Sampler2D in_rt0;
 Sampler2D<uint> in_rt1;
 
 [[vk::binding(6)]]
-Sampler2D<uint> in_mask;
-
-[[vk::binding(7)]]
 Sampler2D<float> in_ao;
 
-[[vk::binding(8)]]
+[[vk::binding(7)]]
 Sampler2D in_gi;
 
 
@@ -59,15 +55,9 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
         const float2 motion = in_motion[coord];
         color = float3(clamp(motion * 10.0, -0.5, 0.5) + 0.5, length(motion) > epsilon ? 0.75 : 0.5);
     } else if(target_index == 7) {
-        const float3 colors[] = {
-            float3(pow(in_depth[coord], 0.35)),
-            float3(1, 0, 0), float3(0, 1, 0), float3(1, 1, 0), float3(1, 0, 1)
-        };
-        color = colors[in_mask[coord]];
-    } else if(target_index == 8) {
         color = float3(in_ao.Sample(in_uv));
-    } else if(target_index == 9) {
-        color = in_gi.Sample(in_uv).rgb * 4.0;
+    } else if(target_index == 8) {
+        color = in_gi.Sample(in_uv).rgb;
     }
 
     return float4(color, 1.0);

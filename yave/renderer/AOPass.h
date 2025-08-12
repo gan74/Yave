@@ -61,7 +61,7 @@ struct AOSettings {
 struct AOPass {
     FrameGraphImageId ao;
 
-    static AOPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const TemporalPrePass& temporal, const AOSettings& settings = AOSettings());
+    static AOPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const AOSettings& settings = AOSettings());
 };
 
 

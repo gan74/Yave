@@ -29,7 +29,6 @@ SOFTWARE.
 #include "ToneMappingPass.h"
 #include "AOPass.h"
 #include "BloomPass.h"
-#include "TemporalPrePass.h"
 #include "TAAPass.h"
 #include "RaytracingPass.h"
 #include "GIPass.h"
@@ -49,7 +48,6 @@ struct DefaultRenderer {
     SceneVisibilitySubPass visibility;
     CameraBufferPass camera;
     GBufferPass gbuffer;
-    TemporalPrePass temporal;
     AOPass ao;
     LightingPass lighting;
     AtmospherePass atmosphere;

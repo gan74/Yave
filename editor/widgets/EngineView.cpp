@@ -64,7 +64,6 @@ static bool keep_taa(EngineView::RenderView view) {
     switch(view) {
         case EngineView::RenderView::Lit:
         case EngineView::RenderView::Motion:
-        case EngineView::RenderView::TAAMask:
             return true;
         break;
 
@@ -170,7 +169,6 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     const EditorRenderer renderer = EditorRenderer::create(graph, _scene_view, output_size, settings);
     {
         const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
-        const Texture& zero = *device_resources()[DeviceResources::ZeroTexture];
 
         FrameGraphComputePassBuilder builder = graph.add_compute_pass("ImGui texture pass");
 
@@ -185,7 +183,6 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.motion);
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
-        builder.add_uniform_input_with_default(renderer.renderer.temporal.mask, Descriptor(zero, SamplerType::PointClamp));
         builder.add_uniform_input_with_default(renderer.renderer.ao.ao, Descriptor(white));
         builder.add_uniform_input(renderer.renderer.gi.lit);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -416,7 +413,7 @@ void EngineView::draw_menu() {
 
         ImGui::Separator();
         {
-            const char* output_names[] = {"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "TAA Mask", "AO", "Probes"};
+            const char* output_names[] = {"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "AO", "Probes"};
             for(usize i = 0; i != usize(RenderView::Max); ++i) {
                 bool selected = usize(_view) == i;
                 ImGui::MenuItem(output_names[i], nullptr, &selected);
@@ -570,21 +567,9 @@ void EngineView::draw_settings_menu() {
         ImGui::Separator();
 
         ImGui::Checkbox("Enable clamping", &taa.use_clamping);
-        ImGui::Checkbox("Enable previous sample matching", &taa.use_previous_matching);
-        ImGui::Checkbox("Enable weighted clamp", &taa.use_weighted_clamp);
+        ImGui::Checkbox("Enable denoise", &taa.use_denoise);
 
         ImGui::Separator();
-
-        const char* weighting_names[] = {"None", "Luminance", "Log"};
-        if(ImGui::BeginCombo("Weighting mode", weighting_names[usize(taa.weighting_mode)])) {
-            for(usize i = 0; i != sizeof(weighting_names) / sizeof(weighting_names[0]); ++i) {
-                const bool selected = usize(taa.weighting_mode) == i;
-                if(ImGui::Selectable(weighting_names[i], selected)) {
-                    taa.weighting_mode = TAASettings::WeightingMode(i);
-                }
-            }
-            ImGui::EndCombo();
-        }
 
         const char* jitter_names[] = {"Weyl", "R2", "Halton23"};
         if(ImGui::BeginCombo("Jitter", jitter_names[usize(jitter.jitter)])) {
@@ -600,7 +585,6 @@ void EngineView::draw_settings_menu() {
 
         ImGui::Separator();
 
-        ImGui::SliderFloat("Blending factor", &taa.blending_factor, 0.0f, 1.0f, "%.2f");
         ImGui::SliderFloat("Jitter intensity", &jitter.jitter_intensity, 0.0f, 2.0f, "%.2f");
 
         ImGui::EndMenu();
