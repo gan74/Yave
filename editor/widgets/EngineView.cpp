@@ -494,6 +494,16 @@ void EngineView::draw_settings_menu() {
         ImGui::EndMenu();
     }
 
+    if(ImGui::BeginMenu("RTGI")) {
+        RTGISettings& settings = _settings.renderer_settings.rtgi;
+
+        int samples = int(settings.sample_count);
+        ImGui::SliderInt("Samples", &samples, 1, 16);
+        ImGui::Checkbox("Temporal stabilisation", &settings.temporal);
+        settings.sample_count = samples;
+        ImGui::EndMenu();
+    }
+
     if(ImGui::BeginMenu("AO")) {
         AOSettings& settings = _settings.renderer_settings.ao;
 

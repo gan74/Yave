@@ -62,22 +62,28 @@ static auto generate_sample_dirs(u64 seed) {
 }
 
 
-RtgiPass RtgiPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size) {
+RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size, const RTGISettings& settings) {
     const auto sample_dirs = generate_sample_dirs<256>(framegraph.frame_id());
 
-    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Raytracing");
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("RTGI pass");
 
     const SceneView& scene_view = gbuffer.scene_pass.scene_view;
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
 
-    const u32 directional_count = u32(visibility.directional_lights.size());
+    // const u32 directional_count = u32(visibility.directional_lights.size());
 
     const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
     const TLAS& tlas = scene_view.scene()->tlas();
 
-    const auto raytraced = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, size);
+    const auto gi = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, size);
     const auto sample_dir_buffer = builder.declare_typed_buffer<std::remove_cvref_t<decltype(sample_dirs)>>();
     const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
+
+    struct Params {
+        u32 sample_count;
+    } params {
+        settings.sample_count
+    };
 
     builder.map_buffer(sample_dir_buffer, sample_dirs);
     builder.map_buffer(directional_buffer);
@@ -90,8 +96,8 @@ RtgiPass RtgiPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
     builder.add_external_input(ibl_probe ? *ibl_probe : *device_resources().empty_probe());
     builder.add_uniform_input(sample_dir_buffer);
     builder.add_storage_input(directional_buffer);
-    builder.add_storage_output(raytraced);
-    builder.add_inline_input(InlineDescriptor(directional_count));
+    builder.add_storage_output(gi);
+    builder.add_inline_input(params);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto mapping = self->resources().map_buffer(directional_buffer);
         for(usize i = 0; i != visibility.directional_lights.size(); ++i) {
@@ -111,11 +117,15 @@ RtgiPass RtgiPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGIProgram], size, desc_sets);
     });
 
-    static const FrameGraphPersistentResourceId persistent_color_id = FrameGraphPersistentResourceId::create();
-    static const FrameGraphPersistentResourceId persistent_motion_id = FrameGraphPersistentResourceId::create();
 
-    RtgiPass pass;
-    pass.gi =  TAAPass::create(framegraph, gbuffer, raytraced, persistent_color_id, persistent_motion_id).anti_aliased;
+    RTGIPass pass;
+    if(settings.temporal) {
+        static const FrameGraphPersistentResourceId persistent_color_id = FrameGraphPersistentResourceId::create();
+        static const FrameGraphPersistentResourceId persistent_motion_id = FrameGraphPersistentResourceId::create();
+        pass.gi = TAAPass::create(framegraph, gbuffer, gi, persistent_color_id, persistent_motion_id).anti_aliased;
+    } else {
+        pass.gi = gi;
+    }
     return pass;
 }
 

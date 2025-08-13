@@ -26,10 +26,16 @@ SOFTWARE.
 
 namespace yave {
 
-struct RtgiPass {
+struct RTGISettings {
+    u32 sample_count = 1;
+
+    bool temporal = true;
+};
+
+struct RTGIPass {
     FrameGraphImageId gi;
 
-    static RtgiPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size);
+    static RTGIPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size, const RTGISettings& settings = {});
 };
 
 }

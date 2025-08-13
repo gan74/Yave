@@ -40,6 +40,7 @@ struct RendererSettings {
     LightingSettings lighting;
     AOSettings ao;
     BloomSettings bloom;
+    RTGISettings rtgi;
     JitterSettings jitter;
     TAASettings taa;
 };
@@ -55,8 +56,8 @@ struct DefaultRenderer {
     BloomPass bloom;
     ToneMappingPass tone_mapping;
     GIPass gi;
+    RTGIPass rtgi;
     TAAPass taa;
-    RtgiPass rtgi;
 
 
     FrameGraphImageId final;

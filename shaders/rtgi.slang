@@ -30,7 +30,7 @@ RWTexture2D out_image;
 
 [[vk::binding(9)]]
 cbuffer Params {
-    uint directional_lights;
+    uint sample_count;
 };
 
 [[vk::binding(0, 1)]]
@@ -65,7 +65,6 @@ void comp() {
 #endif
 
     float3 acc = float3(0.0);
-    const uint sample_count = 16;
     for(uint k = 0; k != sample_count; ++k) {
         const float3 sample_dir = sample_dirs[hash(uint2(semantics.work_group_index, semantics.local_index * sample_count + k)) & 0xFF].xyz;
         const float3 trace_dir = dot(surface.normal, sample_dir) < 0.0 ? -sample_dir : sample_dir;
