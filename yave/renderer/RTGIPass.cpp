@@ -62,23 +62,28 @@ static auto generate_sample_dirs(u64 seed) {
 }
 
 
-RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size, const RTGISettings& settings) {
+RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_lit, const RTGISettings& settings) {
+    const auto region = framegraph.region("RTGI");
+
     const auto sample_dirs = generate_sample_dirs<256>(framegraph.frame_id());
+
+    const math::Vec2ui size = framegraph.image_size(in_lit);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("RTGI pass");
 
     const SceneView& scene_view = gbuffer.scene_pass.scene_view;
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
 
-    // const u32 directional_count = u32(visibility.directional_lights.size());
-
     const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
     const TLAS& tlas = scene_view.scene()->tlas();
 
     const auto gi = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, size);
+    // const auto gi = builder.declare_copy(in_lit);
+
     const auto sample_dir_buffer = builder.declare_typed_buffer<std::remove_cvref_t<decltype(sample_dirs)>>();
     const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
 
+    // const u32 directional_count = u32(visibility.directional_lights.size());
     struct Params {
         u32 sample_count;
     } params {

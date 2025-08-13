@@ -35,7 +35,7 @@ struct RTGISettings {
 struct RTGIPass {
     FrameGraphImageId gi;
 
-    static RTGIPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size, const RTGISettings& settings = {});
+    static RTGIPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_lit, const RTGISettings& settings = {});
 };
 
 }
