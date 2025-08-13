@@ -40,6 +40,7 @@ core::Span<const char*> raytracing_extensions() {
         VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
         VK_KHR_RAY_QUERY_EXTENSION_NAME,
+        VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME,
     };
 
     return extensions;
@@ -341,7 +342,6 @@ VkPhysicalDeviceRayTracingPipelineFeaturesKHR required_device_features_raytracin
     return required;
 }
 
-
 VkPhysicalDeviceRayQueryFeaturesKHR required_device_features_ray_query() {
     VkPhysicalDeviceRayQueryFeaturesKHR required = vk_struct();
 
@@ -350,6 +350,14 @@ VkPhysicalDeviceRayQueryFeaturesKHR required_device_features_ray_query() {
     return required;
 }
 
+VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR required_device_features_ray_position_fetch() {
+    VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR required = vk_struct();
+
+    required.rayTracingPositionFetch = true;
+
+    return required;
+
+}
 
 bool has_required_features(const PhysicalDevice& physical) {
     if(!physical.supports_features(required_device_features())) {
