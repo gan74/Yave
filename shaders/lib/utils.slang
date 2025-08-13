@@ -347,7 +347,7 @@ float2 fibonacci_square(uint i, uint count) {
     return float2(
         fract(i / golden),
         i / (count - 0.9)
-        );
+    );
 }
 
 float3 fibonacci_sphere(uint i, uint count) {
@@ -356,7 +356,7 @@ float3 fibonacci_sphere(uint i, uint count) {
     return float3(
         float2(cos(theta_phi.x), sin(theta_phi.x)) * sin(theta_phi.y),
         cos(theta_phi.y)
-        );
+    );
 }
 
 bool is_depth_far(float z) {
