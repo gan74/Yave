@@ -108,7 +108,7 @@ RaytracingPass RaytracingPass::create(FrameGraph& framegraph, const GBufferPass&
             self->descriptor_set(),
             texture_library().descriptor_set()
         };
-        recorder.dispatch_threads(device_resources()[DeviceResources::RTProgram], size, desc_sets);
+        recorder.dispatch_threads(device_resources()[DeviceResources::RTGIProgram], size, desc_sets);
     });
 
     static const FrameGraphPersistentResourceId persistent_color_id = FrameGraphPersistentResourceId::create();

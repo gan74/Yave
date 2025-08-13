@@ -228,7 +228,7 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "copy.slang" "")
     add_slang_shader(${SHADER_TARGET} "screen.slang" "")
     add_slang_shader(${SHADER_TARGET} "tonemap.slang" "")
-    
+
     add_slang_shader(${SHADER_TARGET} "taa_resolve.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "denoise.slang" "")
@@ -236,7 +236,7 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "rtao.slang" "")
     add_slang_shader(${SHADER_TARGET} "filter_ao.slang" "")
 
-    add_slang_shader(${SHADER_TARGET} "rt.slang" "")
+    add_slang_shader(${SHADER_TARGET} "rtgi.slang" "")
     add_slang_shader(${SHADER_TARGET} "place_probes.slang" "")
     add_slang_shader(${SHADER_TARGET} "debug_probes.slang" "")
     add_slang_shader(${SHADER_TARGET} "clean_probes.slang" "")
