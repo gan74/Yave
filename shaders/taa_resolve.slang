@@ -1,4 +1,5 @@
 
+
 #include "lib/utils.slang"
 
 #define TAA_CLIP
@@ -26,6 +27,8 @@ ConstantBuffer<Camera> camera;
 [[vk::binding(6)]]
 cbuffer Params {
     TAAFeatureBits flags;
+    float clamping_range;
+    float anti_flicker_strength;
 }
 
 
@@ -88,7 +91,7 @@ void compute_variance_min_max(inout float3 aabb_min, inout float3 aabb_max) {
 
     const float inv_sample_count = 1.0 / 9.0;
     const float gamma = 1.0;
-    
+
     const float3 mu = m1 * inv_sample_count;
     const float3 sigma = sqrt(abs((m2 * inv_sample_count) - sqr(mu)));
     aabb_min = mu - gamma * sigma;
@@ -140,7 +143,7 @@ void comp_main() {
     const float3 bl = local_neighbourhood[6];
     const float3 bc = local_neighbourhood[7];
     const float3 br = local_neighbourhood[8];
-    
+
     // 3x3 box pattern
     const float3 box_min = min(tl, min(tc, min(tr, min(ml, min(mc, min(mr, min(bl, min(bc, br))))))));
     const float3 box_max = max(tl, max(tc, max(tr, max(ml, max(mc, max(mr, max(bl, max(bc, br))))))));
@@ -152,7 +155,7 @@ void comp_main() {
     // Average both bounding boxes to get a more rounded shape
     float3 local_neighbourhood_min = 0.5 * (box_min + cross_min);
     float3 local_neighbourhood_max = 0.5 * (box_max + cross_max);
-    
+
     const float3 average = 0.5 * (local_neighbourhood_min + local_neighbourhood_max);
 
     compute_variance_min_max(local_neighbourhood_min, local_neighbourhood_max);
@@ -165,17 +168,17 @@ void comp_main() {
     const float velocity_blend = saturate(600.0 * max(length(velocity), length(last_velocity)));
 
     const float2 uv = (float2(coord) + float2(0.5)) / image_size(in_color) + velocity;
-    
+
     float3 prev_color = sample_prev(uv);
     float3 curr_color = mc;
-    
+
     const float curr_lum = luminance(curr_color);
     const float prev_lum = luminance(prev_color);
 
     const float prev_contrast = saturate(abs(curr_lum - prev_lum) / component_max(float3(0.2, curr_lum, prev_lum)));
-    const float anti_flicker = lerp(0.6, 5.0, 1.0 - velocity_blend);
-    float range = 1.4;
-    
+    const float anti_flicker = lerp(0.0, anti_flicker_strength, 1.0 - velocity_blend);
+    float range = clamping_range;
+
     if((flags & TAAFeatureBits::DenoiseBit) != 0) {
         range += anti_flicker;
     } else {
@@ -196,12 +199,12 @@ void comp_main() {
     const float min_velocity_blend = 0.05;
     const float max_velocity_blend = 0.2;
     const float blend_factor = (any(saturate(uv) != uv)) ? 1.0 : lerp(min_velocity_blend, max_velocity_blend, velocity_blend);
-    
+
     const float prev_weight = (1.0 - blend_factor) / (1.0 + luminance(prev_color));
     const float curr_weight =  blend_factor / (1.0 + luminance(curr_color));
 
     const float3 resolved = abs(((prev_color * prev_weight) + (curr_color * curr_weight)) / (prev_weight + curr_weight));
-    
+
     if (any(isnan(resolved))) {
         out_color[coord] = float4(1.0, 0.0, 0.0, 1.0);
     } else {

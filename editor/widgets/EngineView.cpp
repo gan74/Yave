@@ -569,6 +569,9 @@ void EngineView::draw_settings_menu() {
         ImGui::Checkbox("Enable clamping", &taa.use_clamping);
         ImGui::Checkbox("Enable denoise", &taa.use_denoise);
 
+        ImGui::SliderFloat("Clamping range", &taa.clamping_range, 0.0f, 2.0f);
+        ImGui::SliderFloat("Anti Flicker Strength", &taa.anti_flicker_strength, 0.0f, 8.0f);
+
         ImGui::Separator();
 
         const char* jitter_names[] = {"Weyl", "R2", "Halton23"};

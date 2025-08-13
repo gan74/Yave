@@ -264,6 +264,10 @@ float component_max(float3 x) {
     return max(x.x, max(x.y, x.z));
 }
 
+float component_min(float3 x) {
+    return min(x.x, min(x.y, x.z));
+}
+
 
 
 
