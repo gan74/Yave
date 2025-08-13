@@ -71,15 +71,21 @@ TAAPass TAAPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fram
         prev_motion = builder.declare_copy(gbuffer.motion);
     }
 
-    const u32 flags = taa_flags(settings);
+    struct Params {
+        u32 flags;
+        float clamping_range;
+        float anti_flicker_strength;
+    } params = {
+        taa_flags(settings), settings.clamping_range, settings.anti_flicker_strength
+    };
 
     builder.add_uniform_input(in_color, SamplerType::PointClamp);
     builder.add_uniform_input(prev_color, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.motion, SamplerType::PointClamp);
     builder.add_uniform_input(prev_motion, SamplerType::PointClamp);
-    builder.add_uniform_input(gbuffer.depth);
+    builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_inline_input(InlineDescriptor(flags));
+    builder.add_inline_input(params);
     builder.add_storage_output(aa);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::TAAResolveProgram];

@@ -30,13 +30,16 @@ struct TAASettings {
     bool use_clamping = true;
     bool use_denoise = false;
 
+    float clamping_range = 1.0f;
+    float anti_flicker_strength = 1.0f;
+
     bool enable = true;
 };
 
 
 struct TAAPass {
     FrameGraphImageId anti_aliased;
-    
+
     static TAAPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_color, FrameGraphPersistentResourceId persistent_color_id, FrameGraphPersistentResourceId persistent_motion_id, const TAASettings& settings = {});
     static TAAPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_color, const TAASettings& settings = {});
 };
