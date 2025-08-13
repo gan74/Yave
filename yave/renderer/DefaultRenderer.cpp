@@ -48,17 +48,14 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     renderer.gi             = GIPass::create(framegraph, renderer.gbuffer, renderer.atmosphere.lit);
     renderer.taa            = TAAPass::create(framegraph, renderer.gbuffer, renderer.atmosphere.lit, settings.taa);
 
+    renderer.rtgi           = RtgiPass::create(framegraph, renderer.gbuffer, size);
+
     renderer.exposure       = ExposurePass::create(framegraph, renderer.taa.anti_aliased);
     renderer.bloom          = BloomPass::create(framegraph, renderer.taa.anti_aliased, renderer.exposure.params, settings.bloom);
     renderer.tone_mapping   = ToneMappingPass::create(framegraph, renderer.bloom.bloomed, renderer.exposure, settings.tone_mapping);
 
     renderer.final = renderer.tone_mapping.tone_mapped;
     renderer.depth = renderer.gbuffer.depth;
-
-
-    renderer.rt             = RaytracingPass::create(framegraph, renderer.gbuffer, size);
-    // renderer.final = renderer.rt.raytraced;
-
 
     return renderer;
 }

@@ -184,7 +184,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
         builder.add_uniform_input_with_default(renderer.renderer.ao.ao, Descriptor(white));
-        builder.add_uniform_input(renderer.renderer.rt.raytraced);
+        builder.add_uniform_input(renderer.renderer.rtgi.gi);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             {
                 auto render_pass = recorder.bind_framebuffer(self->framebuffer());
@@ -560,6 +560,7 @@ void EngineView::draw_settings_menu() {
 
     if(ImGui::BeginMenu("TAA")) {
         JitterSettings& jitter = _settings.renderer_settings.jitter;
+
         TAASettings& taa = _settings.renderer_settings.taa;
 
         ImGui::Checkbox("Enable TAA", &taa.enable);

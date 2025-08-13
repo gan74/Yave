@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "RaytracingPass.h"
+#include "RTGIPass.h"
 #include "GBufferPass.h"
 #include "TAAPass.h"
 
@@ -62,7 +62,7 @@ static auto generate_sample_dirs(u64 seed) {
 }
 
 
-RaytracingPass RaytracingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size) {
+RtgiPass RtgiPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size) {
     const auto sample_dirs = generate_sample_dirs<256>(framegraph.frame_id());
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Raytracing");
@@ -114,8 +114,8 @@ RaytracingPass RaytracingPass::create(FrameGraph& framegraph, const GBufferPass&
     static const FrameGraphPersistentResourceId persistent_color_id = FrameGraphPersistentResourceId::create();
     static const FrameGraphPersistentResourceId persistent_motion_id = FrameGraphPersistentResourceId::create();
 
-    RaytracingPass pass;
-    pass.raytraced =  TAAPass::create(framegraph, gbuffer, raytraced, persistent_color_id, persistent_motion_id).anti_aliased;
+    RtgiPass pass;
+    pass.gi =  TAAPass::create(framegraph, gbuffer, raytraced, persistent_color_id, persistent_motion_id).anti_aliased;
     return pass;
 }
 

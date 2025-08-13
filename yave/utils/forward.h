@@ -206,7 +206,7 @@ struct Mip;
 struct Monitor;
 struct ObjectIndices;
 struct PackedVertex;
-struct RaytracingPass;
+struct RtgiPass;
 struct Region;
 struct RendererSettings;
 struct ResourceCreateInfo;

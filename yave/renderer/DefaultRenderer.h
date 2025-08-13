@@ -30,7 +30,7 @@ SOFTWARE.
 #include "AOPass.h"
 #include "BloomPass.h"
 #include "TAAPass.h"
-#include "RaytracingPass.h"
+#include "RTGIPass.h"
 #include "GIPass.h"
 
 namespace yave {
@@ -56,7 +56,7 @@ struct DefaultRenderer {
     ToneMappingPass tone_mapping;
     GIPass gi;
     TAAPass taa;
-    RaytracingPass rt;
+    RtgiPass rtgi;
 
 
     FrameGraphImageId final;

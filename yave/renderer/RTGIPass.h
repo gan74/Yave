@@ -19,21 +19,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_RAYTRACINGPASS_H
-#define YAVE_RENDERER_RAYTRACINGPASS_H
+#ifndef YAVE_RENDERER_RTGIPASS_H
+#define YAVE_RENDERER_RTGIPASS_H
 
 #include <yave/framegraph/FrameGraphResourceId.h>
 
 namespace yave {
 
-struct RaytracingPass {
-    FrameGraphImageId raytraced;
+struct RtgiPass {
+    FrameGraphImageId gi;
 
-    static RaytracingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size);
+    static RtgiPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size);
 };
 
 }
 
 
-#endif // YAVE_RENDERER_RAYTRACINGPASS_H
+#endif // YAVE_RENDERER_RTGIPASS_H
 
