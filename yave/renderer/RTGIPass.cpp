@@ -23,6 +23,7 @@ SOFTWARE.
 #include "RTGIPass.h"
 #include "GBufferPass.h"
 #include "TAAPass.h"
+#include "BilateralPass.h"
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -97,6 +98,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_uniform_input(gbuffer.depth);
     builder.add_uniform_input(gbuffer.normal);
+    builder.add_uniform_input(in_lit);
     builder.add_external_input(Descriptor(material_allocator().material_buffer()));
     builder.add_external_input(ibl_probe ? *ibl_probe : *device_resources().empty_probe());
     builder.add_uniform_input(sample_dir_buffer);
@@ -124,13 +126,18 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
 
     RTGIPass pass;
+    pass.gi = gi;
+
     if(settings.temporal) {
         static const FrameGraphPersistentResourceId persistent_color_id = FrameGraphPersistentResourceId::create();
         static const FrameGraphPersistentResourceId persistent_motion_id = FrameGraphPersistentResourceId::create();
-        pass.gi = TAAPass::create(framegraph, gbuffer, gi, persistent_color_id, persistent_motion_id).anti_aliased;
-    } else {
-        pass.gi = gi;
+        pass.gi = TAAPass::create(framegraph, gbuffer, pass.gi, persistent_color_id, persistent_motion_id).anti_aliased;
     }
+
+    if(settings.filter) {
+        pass.gi = BilateralPass::create(framegraph, gbuffer, pass.gi, settings.filter_settings).filtered;
+    }
+
     return pass;
 }
 

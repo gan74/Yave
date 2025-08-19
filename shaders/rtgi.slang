@@ -14,27 +14,58 @@ Sampler2D<float> in_depth;
 Sampler2D<uint> in_rt1;
 
 [[vk::binding(4)]]
-StructuredBuffer<MaterialData> materials;
+Sampler2D in_lit;
 
 [[vk::binding(5)]]
-SamplerCube in_envmap;
+StructuredBuffer<MaterialData> materials;
 
 [[vk::binding(6)]]
-cbuffer SampleDirData { float4 sample_dirs[256]; };
+SamplerCube in_envmap;
 
 [[vk::binding(7)]]
-StructuredBuffer<DirectionalLight> lights;
+cbuffer SampleDirData { float4 sample_dirs[256]; };
 
 [[vk::binding(8)]]
-RWTexture2D out_image;
+StructuredBuffer<DirectionalLight> lights;
 
 [[vk::binding(9)]]
+RWTexture2D out_image;
+
+[[vk::binding(10)]]
 cbuffer Params {
     uint sample_count;
 };
 
 [[vk::binding(0, 1)]]
 Sampler2D all_textures[];
+
+
+
+bool is_on_screen(float3 world_pos, out float2 screen_uv) {
+    const float3 proj = project(world_pos, camera.curr.view_proj);
+    screen_uv = proj.xy;
+
+    if(any(saturate(proj.xy) != proj.xy)) {
+        return false;
+    }
+
+    return in_depth.SampleLevel(proj.xy, 0) <= proj.z + epsilon;
+}
+
+float4 eval_material_color(uint instance_id) {
+    const MaterialData material = materials[instance_id];
+    const uint albedo_id = material.texture_indices[uint(TextureSlots::Albedo)];
+    return all_textures[albedo_id].SampleLevel(float2(0.5), 100.0);
+}
+
+float4 eval_hit_color(HitInfo hit) {
+    float2 hit_uv;
+    if(is_on_screen(hit.position, hit_uv)) {
+        return float4(in_lit.SampleLevel(hit_uv, 0.0).rgb, 1.0);
+    }
+
+    return eval_material_color(hit.instance_id);
+}
 
 
 [shader("compute")]
@@ -59,11 +90,10 @@ void comp() {
     const float3 world_pos = unproject(in_uv, depth, camera.curr.inv_view_proj);
 
 #if 0
-    const HitInfo hit = trace_inline(tlas, camera.position, normalize(world_pos - camera.position), 0.001, 10000.0);
-    const float3 normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
-    out_image[coord] = float4(normal * 0.5 + 0.5, 1.0);
-#endif
-
+    const float3 view_dir = normalize(world_pos - camera.position);
+    const HitInfo hit = trace_inline(tlas, world_pos, reflect(view_dir, surface.normal), 0.001, 10000.0);
+    out_image[coord] = eval_hit_color(hit);
+#else
     float3 acc = float3(0.0);
     for(uint k = 0; k != sample_count; ++k) {
         const float3 sample_dir = sample_dirs[hash(uint2(semantics.work_group_index, semantics.local_index * sample_count + k)) & 0xFF].xyz;
@@ -80,11 +110,9 @@ void comp() {
                 const float3 normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
                 const float NoL = dot(light.direction, normal);
                 if(NoL > 0.0) {
-                    const MaterialData material = materials[hit.instance_id];
-                    const uint albedo_id = material.texture_indices[uint(TextureSlots::Albedo)];
-                    const float4 albedo = all_textures[albedo_id].SampleLevel(float2(0.5), 100.0);
-
-                    acc += albedo.rgb * light.color * NoL * dot(surface.normal, trace_dir);
+                    const float3 view_dir = normalize(world_pos - camera.position);
+                    const float4 albedo = eval_material_color(hit.instance_id);
+                    acc += albedo.rgb * light.color * NoL * dot(surface.normal, trace_dir)/* * dot(surface.normal, view_dir)*/;
                 }
             }
         } else {
@@ -93,7 +121,7 @@ void comp() {
     }
 
     out_image[coord] = float4(acc / sample_count, 1.0);
-
+#endif
 }
 
 

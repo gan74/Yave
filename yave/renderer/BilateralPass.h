@@ -19,30 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_RTGIPASS_H
-#define YAVE_RENDERER_RTGIPASS_H
+#ifndef YAVE_RENDERER_BILATERALPASS_H
+#define YAVE_RENDERER_BILATERALPASS_H
 
-#include "BilateralPass.h"
+#include "GBufferPass.h"
 
 namespace yave {
 
-struct RTGISettings {
-    u32 sample_count = 4;
-
-    BilateralSettings filter_settings = {};
-
-    bool filter = true;
-    bool temporal = true;
+struct BilateralSettings {
+    float sigma = 8.0f;
+    float depth_phi = 1.0f;
+    float normal_phi = 32.0f;
 };
 
-struct RTGIPass {
-    FrameGraphImageId gi;
+struct BilateralPass {
+    FrameGraphImageId filtered;
 
-    static RTGIPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_lit, const RTGISettings& settings = {});
+    static BilateralPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in, const BilateralSettings& settings = {});
 };
 
 }
 
-
-#endif // YAVE_RENDERER_RTGIPASS_H
+#endif // YAVE_RENDERER_BILATERALPASS_H
 
