@@ -66,11 +66,11 @@ void load_local_data() {
     }
 }
 
-int2 find_nearest_pixel() {
+int2 find_nearest_pixel(float2 inv_size) {
     float depth = 0.0;
     int2 offset = int2(0);
     for(uint i = 0; i != 9; ++i) {
-        const float curr_depth = in_depth[semantics.global_id.xy + offsets[i]];
+        const float curr_depth = in_depth[(semantics.global_id.xy + offsets[i]) * inv_size];
         if(curr_depth > depth) {
             depth = curr_depth;
             offset = offsets[i];
@@ -130,9 +130,10 @@ float3 sample_prev(float2 uv) {
 [shader("compute")]
 [numthreads(8, 8)]
 void comp_main() {
+    const float2 inv_size = 1.0 / image_size(in_color);
     load_local_data();
 
-    const int2 offset = find_nearest_pixel();
+    const int2 offset = find_nearest_pixel(inv_size);
 
     const float3 tl = local_neighbourhood[0];
     const float3 tc = local_neighbourhood[1];
@@ -162,8 +163,8 @@ void comp_main() {
 
     const uint2 coord = semantics.global_id.xy;
     const int2 velocity_coord = coord + offset;
-    const float2 velocity = in_motion[velocity_coord];
-    const float2 last_velocity = in_prev_motion[coord];
+    const float2 velocity = in_motion.SampleLevel(velocity_coord * inv_size, 0.0);
+    const float2 last_velocity = in_prev_motion.SampleLevel(coord * inv_size, 0.0);
 
     const float velocity_blend = saturate(600.0 * max(length(velocity), length(last_velocity)));
 
