@@ -60,7 +60,7 @@ static const int2 offsets[9] = int2[9](
 
 
 
-void load_loca_data() {
+void load_local_data() {
     for(uint i = 0; i != 9; ++i) {
         local_neighbourhood[i] = in_color[semantics.global_id.xy + offsets[i]].rgb;
     }
@@ -130,7 +130,7 @@ float3 sample_prev(float2 uv) {
 [shader("compute")]
 [numthreads(8, 8)]
 void comp_main() {
-    load_loca_data();
+    load_local_data();
 
     const int2 offset = find_nearest_pixel();
 
@@ -210,5 +210,7 @@ void comp_main() {
     } else {
         out_color[coord] = float4(resolved, 1.0);
     }
+
+    //out_color[coord] = float4(lerp(in_color[coord].rgb, in_prev_color[coord].rgb, 0.9), 1.0);
 }
 
