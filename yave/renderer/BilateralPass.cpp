@@ -53,8 +53,8 @@ static FrameGraphImageId bilateral(FrameGraph& framegraph, const GBufferPass& gb
     };
 
     builder.add_uniform_input(in);
-    builder.add_uniform_input(gbuffer.depth);
-    builder.add_uniform_input(gbuffer.normal);
+    builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
+    builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
     builder.add_storage_output(filtered);
     builder.add_inline_input(weights);
     builder.add_inline_input(params);
