@@ -28,11 +28,13 @@ namespace yave {
 
 struct RTGISettings {
     u32 sample_count = 4;
-
-    BilateralSettings filter_settings = {};
+    u32 resolution_scale = 2; // Resolution /= (1 << resolution_scale)
 
     bool filter = true;
     bool temporal = true;
+
+    BilateralSettings filter_settings = {};
+
 };
 
 struct RTGIPass {

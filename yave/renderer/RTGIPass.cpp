@@ -68,7 +68,9 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     const auto sample_dirs = generate_sample_dirs<256>(framegraph.frame_id());
 
+    const u32 resolution_factor = (1 << settings.resolution_scale);
     const math::Vec2ui size = framegraph.image_size(in_lit);
+    const math::Vec2ui scaled_size = size / resolution_factor;
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("RTGI pass");
 
@@ -78,8 +80,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
     const TLAS& tlas = scene_view.scene()->tlas();
 
-    const auto gi = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, size);
-    // const auto gi = builder.declare_copy(in_lit);
+    const auto gi = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, scaled_size);
 
     const auto sample_dir_buffer = builder.declare_typed_buffer<std::remove_cvref_t<decltype(sample_dirs)>>();
     const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
@@ -87,8 +88,10 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     // const u32 directional_count = u32(visibility.directional_lights.size());
     struct Params {
         u32 sample_count;
+        u32 resolution_scale;
     } params {
-        settings.sample_count
+        settings.sample_count,
+        settings.resolution_scale
     };
 
     builder.map_buffer(sample_dir_buffer, sample_dirs);
@@ -96,9 +99,9 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     builder.add_descriptor_binding(Descriptor(tlas));
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_uniform_input(gbuffer.depth);
-    builder.add_uniform_input(gbuffer.normal);
-    builder.add_uniform_input(in_lit);
+    builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
+    builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
+    builder.add_uniform_input(in_lit, SamplerType::PointClamp);
     builder.add_external_input(Descriptor(material_allocator().material_buffer()));
     builder.add_external_input(ibl_probe ? *ibl_probe : *device_resources().empty_probe());
     builder.add_uniform_input(sample_dir_buffer);
@@ -121,7 +124,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
             self->descriptor_set(),
             texture_library().descriptor_set()
         };
-        recorder.dispatch_threads(device_resources()[DeviceResources::RTGIProgram], size, desc_sets);
+        recorder.dispatch_threads(device_resources()[DeviceResources::RTGIProgram], scaled_size, desc_sets);
     });
 
 

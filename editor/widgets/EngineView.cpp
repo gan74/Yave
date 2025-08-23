@@ -498,13 +498,16 @@ void EngineView::draw_settings_menu() {
         RTGISettings& settings = _settings.renderer_settings.rtgi;
 
         int samples = int(settings.sample_count);
+        int scale = int(settings.resolution_scale);
         ImGui::SliderInt("Samples", &samples, 1, 16);
+        ImGui::SliderInt("Resolution scale", &scale, 1, 4);
         ImGui::SliderFloat("Filter sigma", &settings.filter_settings.sigma, 0.0f, 16.0f);
         ImGui::SliderFloat("Filter depth phi", &settings.filter_settings.depth_phi, 0.0f, 16.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
         ImGui::SliderFloat("Filter normal phi", &settings.filter_settings.normal_phi, 0.0f, 128.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
         ImGui::Checkbox("Bilateral filter", &settings.filter);
         ImGui::Checkbox("Temporal stabilisation", &settings.temporal);
         settings.sample_count = samples;
+        settings.resolution_scale = scale;
         ImGui::EndMenu();
     }
 
