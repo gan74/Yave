@@ -60,7 +60,7 @@ void half_kernel(inout float4 acc, inout float total, int2 dir, float center_dep
         }
 #endif
 
-        acc += in_color[coord + dir * i] * weight;
+        acc += in_color[coord] * weight;
         total += weight;
     }
 }
