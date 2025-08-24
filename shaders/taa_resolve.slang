@@ -70,7 +70,7 @@ int2 find_nearest_pixel(float2 inv_size) {
     float depth = 0.0;
     int2 offset = int2(0);
     for(uint i = 0; i != 9; ++i) {
-        const float curr_depth = in_depth[(semantics.global_id.xy + offsets[i]) * inv_size];
+        const float curr_depth = in_depth.SampleLevel((semantics.global_id.xy + offsets[i]) * inv_size, 0.0);
         if(curr_depth > depth) {
             depth = curr_depth;
             offset = offsets[i];
