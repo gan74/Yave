@@ -35,7 +35,9 @@ namespace yave {
 static FrameGraphImageId bilateral(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in, bool horizontal, const BilateralSettings& settings) {
     const auto weights = math::compute_gaussian_weights<float, 64>(settings.sigma);
 
-    const math::Vec2ui size = framegraph.image_size(in);
+    const math::Vec2ui orig_size = framegraph.image_size(in);
+    const math::Vec2ui target_size = framegraph.image_size(gbuffer.depth);
+    const math::Vec2ui size(horizontal ? target_size.x() : orig_size.x(), horizontal ? orig_size.y() : target_size.y());
     const ImageFormat format = framegraph.image_format(in);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass(horizontal ? "Bilateral horizontal pass" : "Bilateral vertical pass");
@@ -52,7 +54,7 @@ static FrameGraphImageId bilateral(FrameGraph& framegraph, const GBufferPass& gb
         {}
     };
 
-    builder.add_uniform_input(in);
+    builder.add_uniform_input(in, SamplerType::LinearClamp);
     builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
     builder.add_storage_output(filtered);
