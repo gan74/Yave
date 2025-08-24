@@ -1,5 +1,6 @@
 #include "lib/utils.slang"
 #include "lib/rt.slang"
+#include "lib/reservoir.slang"
 
 [[vk::binding(0)]]
 RaytracingAccelerationStructure tlas;
@@ -34,6 +35,8 @@ RWTexture2D out_image;
 [[vk::binding(10)]]
 cbuffer Params {
     uint sample_count;
+    uint resolution_scale;
+    uint restir;
 };
 
 [[vk::binding(0, 1)]]
@@ -68,11 +71,35 @@ float4 eval_hit_color(HitInfo hit) {
 }
 
 
+void init_restir<T: Rng>(inout Reservoir res, float3 normal, inout T rng, uint M = 32) {
+    float pdf = 1.0 / 256.0;
+
+    //initial selection of 1 light of M
+    for(uint i = 0; i != M; ++i) {
+        const uint sample_index = uint(rng.next_float() * 255);
+        const float p_hat = dot(normal, sample_dirs[sample_index].xyz) + 1.0; // TEMP
+        const float w = p_hat / pdf;
+        res.update(sample_index, w, 1, rng);
+    }
+
+    /*const uint sample_index = res.Y;
+    if(sample_index < 256) {
+        const float3 sample = sample_dirs[sample_index].xyz;
+
+        return sample;
+
+        //reservoir.W_y = p_hat > 0.0 ? rcp(p_hat) * reservoir.W_sum / reservoir.M : 0.0;
+        //radiance *=  reservoir.W_y;
+    }
+    return sample_dirs[0].xyz;*/
+}
+
+
 [shader("compute")]
 [numthreads(8, 8)]
 void comp() {
     const uint2 size = image_size(in_depth);
-    const uint2 coord = semantics.global_id.xy;
+    const uint2 coord = semantics.global_id.xy << resolution_scale;
 
     if(any(coord >= size)) {
         return;
@@ -92,11 +119,25 @@ void comp() {
 #if 0
     const float3 view_dir = normalize(world_pos - camera.position);
     const HitInfo hit = trace_inline(tlas, world_pos, reflect(view_dir, surface.normal), 0.001, 10000.0);
-    out_image[coord] = eval_hit_color(hit);
+    out_image[semantics.global_id.xy] = eval_hit_color(hit);
 #else
     float3 acc = float3(0.0);
+
+    HashRng rng = HashRng(hash(coord.x << 16 | coord.y));
+    Reservoir reservoir;
+
     for(uint k = 0; k != sample_count; ++k) {
-        const float3 sample_dir = sample_dirs[hash(uint2(semantics.work_group_index, semantics.local_index * sample_count + k)) & 0xFF].xyz;
+        float3 sample_dir = sample_dirs[hash(uint2(semantics.work_group_index, semantics.local_index * sample_count + k)) & 0xFF].xyz;
+        if(restir != 0) {
+            init_restir(reservoir, surface.normal, rng);
+            const uint sample_index = reservoir.Y;
+            if(sample_index < 256) {
+                sample_dir = sample_dirs[sample_index].xyz;
+            } else {
+                break;
+            }
+        }
+
         const float3 trace_dir = dot(surface.normal, sample_dir) < 0.0 ? -sample_dir : sample_dir;
 
         const float tmin = 0.001;
@@ -104,23 +145,29 @@ void comp() {
 
         const HitInfo hit = trace_inline(tlas, world_pos, trace_dir, tmin, tmax);
 
+        float3 contrib = float3(0.0);
         if(hit.hit) {
             const DirectionalLight light = lights[0];
             if(!trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
                 const float3 normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
                 const float NoL = dot(light.direction, normal);
                 if(NoL > 0.0) {
-                    const float3 view_dir = normalize(world_pos - camera.position);
                     const float4 albedo = eval_material_color(hit.instance_id);
-                    acc += albedo.rgb * light.color * NoL * dot(surface.normal, trace_dir)/* * dot(surface.normal, view_dir)*/;
+                    contrib = albedo.rgb * light.color * NoL * dot(surface.normal, trace_dir);
                 }
             }
         } else {
-            acc += in_envmap.SampleLevel(trace_dir, 0.0).rgb;
+            contrib = in_envmap.SampleLevel(trace_dir, 0.0).rgb;
         }
+
+        if(restir != 0) {
+            contrib *= min(10.0, reservoir.reintegrate_sample(length(contrib)));
+        }
+
+        acc += contrib;
     }
 
-    out_image[coord] = float4(acc / sample_count, 1.0);
+    out_image[semantics.global_id.xy] = float4(reinhard(acc / sample_count), 1.0);
 #endif
 }
 

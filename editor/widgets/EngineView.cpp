@@ -506,6 +506,7 @@ void EngineView::draw_settings_menu() {
         ImGui::SliderFloat("Filter normal phi", &settings.filter_settings.normal_phi, 0.0f, 128.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
         ImGui::Checkbox("Bilateral filter", &settings.filter);
         ImGui::Checkbox("Temporal stabilisation", &settings.temporal);
+        ImGui::Checkbox("ReSTIR", &settings.restir);
         settings.sample_count = samples;
         settings.resolution_scale = scale;
         ImGui::EndMenu();

@@ -401,6 +401,10 @@ float3 build_orthogonal(float3 v) {
 
 
 
+interface IEnvmap {
+    float4 SampleCube(float3 dir, float level = 0.0);
+}
+
 struct CubeMap : IEnvmap {
     SamplerCube<float4> sampler;
 
@@ -417,10 +421,6 @@ struct EquirecMap : IEnvmap {
     }
 };
 
-
-interface IEnvmap {
-    float4 SampleCube(float3 dir, float level = 0.0);
-}
 
 
 
@@ -694,7 +694,6 @@ float3 F90_from_F0(float3 f0) {
     const float reflectance = max(max(f0.r, f0.g), f0.b);
     return saturate(reflectance * 50.0);
 }
-
 
 
 #endif
