@@ -98,6 +98,10 @@ DeviceProperties PhysicalDevice::device_properties() const {
     properties.max_sampled_image_desc_array_size = _properties_1_2.maxDescriptorSetUpdateAfterBindSampledImages;
     properties.max_storage_image_desc_array_size = _properties_1_2.maxDescriptorSetUpdateAfterBindStorageImages;
 
+    for(usize i = 0; i != 3; ++i) {
+        properties.max_compute_dispatch_size[i] = limits.maxComputeWorkGroupCount[i];
+    }
+
 
     properties.timestamp_period = limits.timestampPeriod;
 

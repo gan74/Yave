@@ -97,7 +97,7 @@ class EngineView final : public Widget {
         void set_is_moving_camera(bool moving);
 
 
-        RenderView _view = RenderView::Lit;
+        RenderView _view = RenderView::GI;
 
         std::shared_ptr<FrameGraphResourcePool> _resource_pool;
         core::RingQueue<std::unique_ptr<CmdTimestampPool>> _timestamp_pools;

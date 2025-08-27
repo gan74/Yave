@@ -35,59 +35,33 @@ SOFTWARE.
 
 namespace yave {
 
+static constexpr u32 gi_grid_size = 32;
+static constexpr u32 gi_probe_count = gi_grid_size * gi_grid_size * gi_grid_size;
+static constexpr u32 gi_atlas_size = 256;
 
-static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, FrameGraphVolumeId grid) {
-    const math::Vec3ui grid_size = framegraph.volume_size(grid);
+static_assert(gi_atlas_size * gi_atlas_size >= gi_probe_count);
 
+
+static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, FrameGraphImageId probes) {
     FrameGraphPassBuilder builder = framegraph.add_pass("Probe debug pass");
 
     const auto depth = builder.declare_copy(gbuffer.depth);
     const auto color = builder.declare_copy(lit);
 
-    // const math::Vec2ui size = framegraph.image_size(lit);
-    // const auto depth = builder.declare_image(VK_FORMAT_D32_SFLOAT, size);
-    // const auto color = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, size)
-
     builder.add_depth_output(depth);
     builder.add_color_output(color);
-
-#if 0
+    builder.add_uniform_input(probes);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_uniform_input(grid);
-    builder.add_inline_input(u32(framegraph.frame_id()));
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::DebugProbesTemplate];
         render_pass.bind_material_template(material, self->descriptor_set());
 
         const StaticMesh& sphere = *device_resources()[DeviceResources::SimpleSphereMesh];
-        render_pass.draw(sphere.draw_data(), u32(grid_size.x() * grid_size.y() * grid_size.z()));
-    });
-#endif
-
-    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
-    const TLAS& tlas = scene_view.scene()->tlas();
-
-    builder.add_uniform_input(grid);
-    builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_external_input(Descriptor(material_allocator().material_buffer()));
-    builder.add_external_input(Descriptor(tlas));
-    builder.add_inline_input(u32(framegraph.frame_id()));
-    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        const std::array<DescriptorSetProxy, 2> desc_sets = {
-            self->descriptor_set(),
-            texture_library().descriptor_set()
-        };
-
-        const auto* material = device_resources()[DeviceResources::DebugProbesTemplate];
-        render_pass.bind_material_template(material, desc_sets);
-
-        const StaticMesh& sphere = *device_resources()[DeviceResources::SimpleSphereMesh];
-        render_pass.draw(sphere.draw_data(), u32(grid_size.x() * grid_size.y() * grid_size.z()));
+        render_pass.draw(sphere.draw_data(), u32(gi_probe_count));
     });
 
     return color;
 }
-
 
 
 GIPass GIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit) {
@@ -97,65 +71,48 @@ GIPass GIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameG
 
     const auto region = framegraph.region("GI");
 
-    // const SceneView& scene_view = gbuffer.scene_pass.scene_view;
-    // const TLAS& tlas = scene_view.scene()->tlas();
+    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
+    const TLAS& tlas = scene_view.scene()->tlas();
 
-    static const math::Vec3ui grid_size = math::Vec3ui(64);
-    const math::Vec2ui size = framegraph.image_size(lit);
-    FrameGraphMutableVolumeId grid;
-    FrameGraphMutableTypedBufferId<u32> count;
+    const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
 
-    {
-        FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Probe placing pass");
+    const math::Vec2ui probe_size = math::Vec2ui(32);
 
-        grid = builder.declare_volume(VK_FORMAT_R32_UINT, grid_size);
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Probe filling pass");
 
-        builder.add_uniform_input(gbuffer.scene_pass.camera);
-        builder.add_uniform_input(gbuffer.depth);
-        builder.add_uniform_input(gbuffer.normal);
-        builder.add_storage_output(grid);
-        builder.add_inline_input(u32(framegraph.frame_id()));
-        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            const auto& program = device_resources()[DeviceResources::PlaceProbesProgram];
-            recorder.dispatch_threads(program, size, self->descriptor_set());
-        });
-    }
+    const auto probes = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, probe_size * gi_atlas_size);
+    const auto directionals = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
 
-#if 0
-    {
-        FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Probe clean pass");
+    builder.map_buffer(directionals);
 
-        count = builder.declare_typed_buffer<u32>();
-
-        builder.add_storage_output(count);
-        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            const auto& program = device_resources()[DeviceResources::CleanProbesProgram];
-            recorder.dispatch(program, math::Vec3ui(1), self->descriptor_set());
-        });
-    }
-
-    {
-        FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Probe gather pass");
-
-        builder.add_uniform_input(grid);
-        builder.add_uniform_input(gbuffer.scene_pass.camera);
-        builder.add_external_input(Descriptor(material_allocator().material_buffer()));
-        builder.add_external_input(Descriptor(tlas));
-        builder.add_storage_output(count);
-        builder.add_inline_input(u32(framegraph.frame_id()));
-        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            const std::array<DescriptorSetProxy, 2> desc_sets = {
-                self->descriptor_set(),
-                texture_library().descriptor_set()
+    builder.add_external_input(Descriptor(tlas));
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
+    builder.add_external_input(Descriptor(material_allocator().material_buffer()));
+    builder.add_storage_input(directionals);
+    builder.add_storage_output(probes);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        auto mapping = self->resources().map_buffer(directionals);
+        for(usize i = 0; i != visibility.directional_lights.size(); ++i) {
+            const DirectionalLightComponent& light = visibility.directional_lights[i]->component;
+            mapping[i] = {
+                -light.direction().normalized(),
+                std::cos(light.disk_size()),
+                light.color() * light.intensity(),
+                0, {}
             };
-            const auto& program = device_resources()[DeviceResources::GatherProbesProgram];
-            recorder.dispatch_threads(program, grid_size, desc_sets);
-        });
-    }
-#endif
+        }
+
+        const std::array<DescriptorSetProxy, 2> desc_sets = {
+            self->descriptor_set(),
+            texture_library().descriptor_set()
+        };
+        const auto& program = device_resources()[DeviceResources::TraceProbesProgram];
+        recorder.dispatch_threads(program, math::Vec3ui(probe_size, gi_probe_count), desc_sets);
+    });
 
     GIPass pass;
-    pass.lit = debug_probes(framegraph, gbuffer, lit, grid);
+    pass.probes = probes;
+    pass.gi = debug_probes(framegraph, gbuffer, lit, probes);
     return pass;
 }
 

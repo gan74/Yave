@@ -561,6 +561,10 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
         );
     }
 
+    for(usize i = 0; i != 3; ++i) {
+        y_debug_assert(size[i] <= device_properties().max_compute_dispatch_size[i]);
+    }
+
     vkCmdDispatch(vk_cmd_buffer(), size.x(), size.y(), size.z());
 }
 

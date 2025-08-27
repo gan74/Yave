@@ -37,7 +37,7 @@ namespace yave {
 
 struct RendererSettings {
     ToneMappingSettings tone_mapping;
-        AOSettings ao;
+    AOSettings ao;
     LightingSettings lighting;
     RTGISettings rtgi;
     BloomSettings bloom;
@@ -52,6 +52,7 @@ struct DefaultRenderer {
     AOPass ao;
     LightingPass lighting;
     RTGIPass rtgi;
+    GIPass gi;
     AtmospherePass atmosphere;
     ExposurePass exposure;
     BloomPass bloom;

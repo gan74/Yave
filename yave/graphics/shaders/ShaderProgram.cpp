@@ -284,7 +284,7 @@ RaytracingProgram::RaytracingProgram(const RayGenShader& gen, const MissShader& 
                 table_data.data() + i * device_properties().shader_group_handle_size_aligned,
                 device_properties().shader_group_handle_size,
                 mapping.data() + i * device_properties().shader_group_handle_size_base_aligned
-                );
+            );
         }
     }
 }

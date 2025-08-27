@@ -29,7 +29,8 @@ SOFTWARE.
 namespace yave {
 
 struct GIPass {
-    FrameGraphImageId lit;
+    FrameGraphImageId probes;
+    FrameGraphImageId gi;
 
     static GIPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit);
 };
