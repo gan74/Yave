@@ -124,6 +124,9 @@ static FrameGraphImageId trace_probes(FrameGraph& framegraph, const GBufferPass&
 static FrameGraphImageId fetch_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId probes) {
     const math::Vec2 size = framegraph.image_size(gbuffer.depth);
 
+    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
+    const TLAS& tlas = scene_view.scene()->tlas();
+
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Fetch probes pass");
 
     const auto gi = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, size);
@@ -133,6 +136,7 @@ static FrameGraphImageId fetch_probes(FrameGraph& framegraph, const GBufferPass&
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_uniform_input(probes);
     builder.add_storage_output(gi);
+    builder.add_external_input(tlas);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::FetchProbesProgram];
         recorder.dispatch_threads(program, size, self->descriptor_set());
@@ -155,7 +159,7 @@ GIPass GIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameG
     GIPass pass;
     pass.probes = probes;
     pass.gi = fetch_probes(framegraph, gbuffer, probes);
-    pass.gi = debug_probes(framegraph, gbuffer, pass.gi, probes);
+    // pass.gi = debug_probes(framegraph, gbuffer, pass.gi, probes);
     return pass;
 }
 

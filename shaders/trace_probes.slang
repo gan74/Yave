@@ -39,8 +39,8 @@ void comp() {
 
     const float3 probe_pos = gi.compute_world_coord(gi.compute_grid_coord(probe_index), camera.position);
 
-    const float2 px_center = float2(coord) + float2(0.5);
-    const float2 uv = px_center / semantics.work_group_size.xy;
+    const float2 px_center = float2(coord) + 0.5;
+    const float2 uv = px_center / gi.probe_size;
 
     const float3 trace_dir = octahedron_decode(uv);
 
@@ -50,7 +50,7 @@ void comp() {
 
     float3 color = float3(0.0);
     if(hit.hit) {
-#if 0
+#if 1
         const DirectionalLight light = lights[0];
         if(!trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
             const float3 normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
