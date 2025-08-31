@@ -174,6 +174,28 @@ float3 YCgCo_to_RGB(float3 c) {
     ));
 }
 
+float3 HSV_to_RGB(float h, float s, float v) {
+    h = fmod(h, 1.0) * 6.0;
+    const int i = int(h);
+    const float f = h - float(i);
+    const float p = v * (1.0 - s);
+    const float q = v * (1.0 - s * f);
+    const float t = v * (1.0 - s * (1.0 - f));
+
+    switch(i) {
+        case 0: return float3(v, t, p);
+        case 1: return float3(q, v, p);
+        case 2: return float3(p, v, t);
+        case 3: return float3(p, q, v);
+        case 4: return float3(t, p, v);
+        default: return float3(v, p, q);
+    }
+}
+
+float3 identifying_color(uint index, float s = 0.5, float v = 1.0) {
+    return HSV_to_RGB(fmod(index * 0.618033988749895, 1.0), s, v);
+}
+
 float luminance(float3 rgb) {
     return dot(rgb, float3(0.2126, 0.7152, 0.0722));
 }

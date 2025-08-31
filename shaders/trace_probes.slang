@@ -1,4 +1,4 @@
-#include "lib/utils.slang"
+#include "lib/gi.slang"
 #include "lib/rt.slang"
 
 [[vk::binding(0)]]
@@ -14,6 +14,9 @@ StructuredBuffer<MaterialData> materials;
 StructuredBuffer<DirectionalLight> lights;
 
 [[vk::binding(4)]]
+SamplerCube in_envmap;
+
+[[vk::binding(5)]]
 RWTexture2D out_image;
 
 [[vk::binding(0, 1)]]
@@ -28,37 +31,26 @@ float4 eval_material_color(uint instance_id) {
     return all_textures[albedo_id].SampleLevel(float2(0.5), 100.0);
 }
 
-
-int3 compute_coord(uint instance_index) {
-    const int3 coord = uint3(
-        (instance_index / (32 * 32)) % 32,
-        (instance_index / 32) % 32,
-        instance_index % 32
-    );
-    return coord;
-}
-
-
 [shader("compute")]
-[numthreads(32, 32)]
+[numthreads(gi.probe_size, gi.probe_size)]
 void comp() {
     const uint2 coord = semantics.global_id.xy;
     const uint probe_index = semantics.global_id.z;
 
-    const int3 probe_coord = compute_coord(probe_index);
+    const float3 probe_pos = gi.compute_world_coord(gi.compute_grid_coord(probe_index), camera.position);
 
     const float2 px_center = float2(coord) + float2(0.5);
     const float2 uv = px_center / semantics.work_group_size.xy;
 
     const float3 trace_dir = octahedron_decode(uv);
-    const float3 probe_pos = float3(int3(camera.position) + probe_coord - int3(15));
 
     const float tmin = 0.01;
-    const float tmax = 10000.0;
+    const float tmax = 10000.0; // <-------------------------------------------------------------------- TODO
     const HitInfo hit = trace_inline(tlas, probe_pos, trace_dir, tmin, tmax);
 
     float3 color = float3(0.0);
     if(hit.hit) {
+#if 0
         const DirectionalLight light = lights[0];
         if(!trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
             const float3 normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
@@ -68,7 +60,12 @@ void comp() {
                 color = albedo.rgb * light.color * NoL;
             }
         }
+#else
+        color = eval_material_color(hit.instance_id).rgb;
+#endif
+    } else {
+        color = in_envmap.SampleLevel(trace_dir, 0.0).rgb;
     }
 
-    out_image[coord + uint2(probe_index / 256, probe_index % 256) * semantics.work_group_size.xy] = float4(color, 1.0);
+    out_image[coord + gi.compute_atlas_coord(probe_index) * gi.probe_size] = float4(color, hit.ray_t);
 }

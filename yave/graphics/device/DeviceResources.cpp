@@ -123,6 +123,7 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "rtao",
     "rtgi",
     "trace_probes",
+    "fetch_probes",
 };
 
 

@@ -38,10 +38,25 @@ namespace yave {
 static constexpr u32 gi_grid_size = 32;
 static constexpr u32 gi_probe_count = gi_grid_size * gi_grid_size * gi_grid_size;
 static constexpr u32 gi_atlas_size = 256;
+static constexpr u32 gi_probe_size = 16;
 
 static_assert(gi_atlas_size * gi_atlas_size >= gi_probe_count);
 
 
+static const IBLProbe* find_ibl_probe(const SceneVisibility& visibility) {
+    if(const SkyLightObject* obj = visibility.sky_light) {
+        const SkyLightComponent& sky = obj->component;
+        if(const IBLProbe* probe = sky.probe().get()) {
+            y_debug_assert(!probe->is_null());
+            return probe;
+        }
+    }
+
+    return device_resources().empty_probe().get();
+}
+
+
+[[maybe_unused]]
 static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, FrameGraphImageId probes) {
     FrameGraphPassBuilder builder = framegraph.add_pass("Probe debug pass");
 
@@ -63,24 +78,16 @@ static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass&
     return color;
 }
 
-
-GIPass GIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit) {
-    if(!raytracing_enabled()) {
-        return {lit};
-    }
-
-    const auto region = framegraph.region("GI");
-
+static FrameGraphImageId trace_probes(FrameGraph& framegraph, const GBufferPass& gbuffer) {
     const SceneView& scene_view = gbuffer.scene_pass.scene_view;
     const TLAS& tlas = scene_view.scene()->tlas();
 
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
-
-    const math::Vec2ui probe_size = math::Vec2ui(32);
+    const IBLProbe* ibl_probe = find_ibl_probe(visibility);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Probe filling pass");
 
-    const auto probes = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, probe_size * gi_atlas_size);
+    const auto probes = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, math::Vec2ui(gi_probe_size * gi_atlas_size));
     const auto directionals = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
 
     builder.map_buffer(directionals);
@@ -89,6 +96,7 @@ GIPass GIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameG
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_external_input(Descriptor(material_allocator().material_buffer()));
     builder.add_storage_input(directionals);
+    builder.add_external_input(*ibl_probe);
     builder.add_storage_output(probes);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto mapping = self->resources().map_buffer(directionals);
@@ -107,12 +115,47 @@ GIPass GIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameG
             texture_library().descriptor_set()
         };
         const auto& program = device_resources()[DeviceResources::TraceProbesProgram];
-        recorder.dispatch_threads(program, math::Vec3ui(probe_size, gi_probe_count), desc_sets);
+        recorder.dispatch_threads(program, math::Vec3ui(gi_probe_size, gi_probe_size, gi_probe_count), desc_sets);
     });
+
+    return probes;
+}
+
+static FrameGraphImageId fetch_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId probes) {
+    const math::Vec2 size = framegraph.image_size(gbuffer.depth);
+
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Fetch probes pass");
+
+    const auto gi = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, size);
+
+    builder.add_uniform_input(gbuffer.depth);
+    builder.add_uniform_input(gbuffer.normal);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
+    builder.add_uniform_input(probes);
+    builder.add_storage_output(gi);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        const auto& program = device_resources()[DeviceResources::FetchProbesProgram];
+        recorder.dispatch_threads(program, size, self->descriptor_set());
+    });
+
+    return gi;
+}
+
+
+GIPass GIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit) {
+    if(!raytracing_enabled()) {
+        return {lit};
+    }
+
+    const auto region = framegraph.region("GI");
+
+    const FrameGraphImageId probes = trace_probes(framegraph, gbuffer);
+
 
     GIPass pass;
     pass.probes = probes;
-    pass.gi = debug_probes(framegraph, gbuffer, lit, probes);
+    pass.gi = fetch_probes(framegraph, gbuffer, probes);
+    pass.gi = debug_probes(framegraph, gbuffer, pass.gi, probes);
     return pass;
 }
 

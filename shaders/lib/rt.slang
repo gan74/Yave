@@ -17,7 +17,7 @@ struct HitInfo {
 
     __init() {
         hit = false;
-        ray_t = 0.0;
+        ray_t = -1.0;
         position = float3(0.0);
         instance_id = primitive_id = 0;
         barycentrics = float2(0.0);

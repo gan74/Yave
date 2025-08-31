@@ -1,5 +1,5 @@
-#include "lib/utils.slang"
-#include "lib/sh.slang"
+#include "lib/gi.slang"
+
 
 [[vk::binding(0)]]
 Sampler2D probes;
@@ -21,19 +21,11 @@ struct VertexStageOut {
 
 
 
-int3 compute_coord(uint instance_index) {
-    const int3 coord = uint3(
-        (instance_index / (32 * 32)) % 32,
-        (instance_index / 32) % 32,
-        instance_index % 32
-    );
-    return coord;
-}
 
 
 [shader("vertex")]
 VertexStageOut vert_main(StdVertexStageIn in) {
-    const float3 position = int3(camera.position) + compute_coord(semantics.instance_index) - int3(15);
+    const float3 position = gi.compute_world_coord(gi.compute_grid_coord(semantics.instance_index), camera.position);
 
     VertexStageOut out;
     {
@@ -48,11 +40,10 @@ VertexStageOut vert_main(StdVertexStageIn in) {
 
 [shader("fragment")]
 float4 frag_main(PixelStageIn in) {
-    const uint2 atlas_coord = uint2(in.instance_index / 256, in.instance_index % 256);
-
     const float2 uv = saturate(octahedron_encode(in.normal));
-    const float4 irr = probes[clamp(uv * 32, 0, 31) + atlas_coord * 32];
+    const float4 irr = probes[uint2(clamp(uv * gi.probe_size, 0, gi.probe_size - 1)) + gi.compute_atlas_coord(in.instance_index) * gi.probe_size];
 
+    // return float4(identifying_color(in.instance_index), 1.0);
     return float4(reinhard(irr.rgb), 1.0);
 
 }
