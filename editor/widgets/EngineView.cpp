@@ -184,7 +184,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
         builder.add_uniform_input_with_default(renderer.renderer.ao.ao, Descriptor(white));
-        builder.add_uniform_input(renderer.renderer.gi.gi);
+        builder.add_uniform_input(renderer.renderer.rtgi.gi);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             {
                 auto render_pass = recorder.bind_framebuffer(self->framebuffer());
@@ -501,11 +501,13 @@ void EngineView::draw_settings_menu() {
         int scale = int(settings.resolution_scale);
         ImGui::SliderInt("Samples", &samples, 1, 16);
         ImGui::SliderInt("Resolution scale", &scale, 0, 4);
-        ImGui::SliderFloat("Filter sigma", &settings.filter_settings.sigma, 0.0f, 16.0f);
-        ImGui::SliderFloat("Filter depth phi", &settings.filter_settings.depth_phi, 0.0f, 16.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-        ImGui::SliderFloat("Filter normal phi", &settings.filter_settings.normal_phi, 0.0f, 128.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
-        ImGui::Checkbox("Bilateral filter", &settings.filter);
         ImGui::Checkbox("Temporal stabilisation", &settings.temporal);
+        ImGui::Checkbox("Denoise", &settings.denoise);
+        ImGui::Separator();
+        ImGui::SliderFloat("Filter sigma", &settings.denoise_settings.sigma, 0.1f, 8.0f);
+        ImGui::SliderFloat("Filter K sigma", &settings.denoise_settings.k_sigma, 0.1f, 8.0f);
+        ImGui::SliderFloat("Filter threshold", &settings.denoise_settings.threshold, 0.0f, 1.0f);
+
         settings.sample_count = samples;
         settings.resolution_scale = scale;
         ImGui::EndMenu();

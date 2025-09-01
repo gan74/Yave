@@ -23,7 +23,7 @@ SOFTWARE.
 #include "RTGIPass.h"
 #include "GBufferPass.h"
 #include "TAAPass.h"
-#include "BilateralPass.h"
+#include "DenoisePass.h"
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -137,8 +137,8 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         pass.gi = TAAPass::create(framegraph, gbuffer, pass.gi, persistent_color_id, persistent_motion_id).anti_aliased;
     }
 
-    if(settings.filter) {
-        pass.gi = BilateralPass::create(framegraph, gbuffer, pass.gi, settings.filter_settings).filtered;
+    if(settings.denoise) {
+        pass.gi = DenoisePass::create(framegraph, pass.gi, settings.denoise_settings).denoised;
     }
 
     return pass;

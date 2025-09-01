@@ -22,19 +22,18 @@ SOFTWARE.
 #ifndef YAVE_RENDERER_RTGIPASS_H
 #define YAVE_RENDERER_RTGIPASS_H
 
-#include "BilateralPass.h"
+#include "DenoisePass.h"
 
 namespace yave {
 
 struct RTGISettings {
     u32 sample_count = 4;
-    u32 resolution_scale = 2; // Resolution /= (1 << resolution_scale)
+    u32 resolution_scale = 1; // Resolution /= (1 << resolution_scale)
 
-    bool filter = true;
     bool temporal = true;
+    bool denoise = true;
 
-    BilateralSettings filter_settings = {};
-
+    DenoiseSettings denoise_settings = {};
 };
 
 struct RTGIPass {
