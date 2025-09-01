@@ -57,7 +57,7 @@ float4 frag_main(PixelStageIn in) {
     const float2 uv = saturate(octahedron_encode(in.normal));
     const float4 irr = probes[uint2(clamp(uv * ddgi.probe_size, 0, ddgi.probe_size - 1)) + ddgi.compute_atlas_coord(in.instance_index) * ddgi.probe_size];
 
-    return float4(identifying_color(in.instance_index), 1.0);
-    // return float4(reinhard(irr.rgb), 1.0);
+    // return float4(identifying_color(in.instance_index), 1.0);
+    return float4(reinhard(irr.rgb), 1.0);
 
 }

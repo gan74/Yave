@@ -32,6 +32,8 @@ SOFTWARE.
 #include <yave/graphics/device/MaterialAllocator.h>
 #include <yave/graphics/images/TextureLibrary.h>
 
+#include <yave/utils/DebugValues.h>
+
 
 namespace yave {
 
@@ -183,7 +185,10 @@ DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     DDGIPass pass;
     pass.probes = probes;
     pass.gi = fetch_probes(framegraph, gbuffer, probes, grid);
-    pass.gi = debug_probes(framegraph, gbuffer, pass.gi, probes, grid);
+
+    if(editor::debug_values().value<bool>("Show DDGI probes")) {
+        pass.gi = debug_probes(framegraph, gbuffer, pass.gi, probes, grid);
+    }
     return pass;
 }
 

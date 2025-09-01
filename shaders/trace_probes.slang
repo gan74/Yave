@@ -66,19 +66,19 @@ void comp() {
 
     float3 color = float3(0.0);
     if(hit.hit) {
-#if 1
         const DirectionalLight light = lights[0];
         if(!trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
             const float3 normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
             const float NoL = dot(light.direction, normal);
             if(NoL > 0.0) {
                 const float4 albedo = eval_material_color(hit.instance_id);
-                color = albedo.rgb * light.color * NoL;
+                if(albedo.a > 0.8 && !hit.front_face) {
+                    color = float3(1, 0, 1);
+                } else {
+                    color = albedo.rgb * light.color * NoL;
+                }
             }
         }
-#else
-        color = eval_material_color(hit.instance_id).rgb;
-#endif
     } else {
         color = in_envmap.SampleLevel(trace_dir, 0.0).rgb;
     }

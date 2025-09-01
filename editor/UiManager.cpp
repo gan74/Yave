@@ -25,6 +25,7 @@ SOFTWARE.
 #include <editor/Settings.h>
 #include <editor/utils/ui.h>
 #include <editor/widgets/PerformanceMetrics.h>
+#include <editor/widgets/DebugValueEditor.h>
 #include <yave/graphics/device/Instance.h>
 
 #include <yave/assets/AssetLoader.h>
@@ -206,6 +207,10 @@ void UiManager::draw_menu_bar() {
 
         if(instance_params().validation_layers) {
             ImGui::TextColored(imgui::error_text_color, "(Debug layers enabled)");
+        }
+
+        if(ImGui::MenuItem(ICON_FA_BUG)) {
+            add_widget(std::make_unique<DebugValueEditor>());
         }
 
         for(const EditorAction* action : _actions) {

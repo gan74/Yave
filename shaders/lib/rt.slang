@@ -5,6 +5,7 @@
 
 struct HitInfo {
     bool hit;
+    bool front_face;
     float ray_t;
     float3 position;
     uint instance_id;
@@ -17,6 +18,7 @@ struct HitInfo {
 
     __init() {
         hit = false;
+        front_face = true;
         ray_t = -1.0;
         position = float3(0.0);
         instance_id = primitive_id = 0;
@@ -44,6 +46,7 @@ HitInfo trace_inline(RaytracingAccelerationStructure accel, float3 origin, float
     HitInfo info;
     if(query.CommittedStatus() == COMMITTED_TRIANGLE_HIT) {
         info.hit = true;
+        info.front_face = query.CommittedRayFrontFace();
         info.ray_t = query.CommittedRayT();
         info.instance_id = query.CommittedInstanceID();
         info.primitive_id = query.CommittedPrimitiveIndex();

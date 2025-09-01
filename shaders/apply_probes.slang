@@ -91,5 +91,5 @@ void comp() {
     }
 
     out_image[coord] = float4(irr / total, 1.0);
-    out_image[coord] = float4(identifying_color(probe_index), 1.0);
+    // out_image[coord] = float4(identifying_color(probe_index), 1.0);
 }

@@ -33,6 +33,7 @@ SOFTWARE.
 #include <yave/utils/DirectDraw.h>
 #include <yave/scene/SceneView.h>
 #include <yave/scene/EcsScene.h>
+#include <yave/utils/DebugValues.h>
 
 #include <y/io2/File.h>
 #include <y/serde3/archives.h>
