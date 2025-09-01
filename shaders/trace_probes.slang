@@ -1,4 +1,4 @@
-#include "lib/gi.slang"
+#include "lib/ddgi.slang"
 #include "lib/rt.slang"
 
 
@@ -42,21 +42,21 @@ float4 eval_material_color(uint instance_id) {
 }
 
 [shader("compute")]
-[numthreads(gi.probe_size, gi.probe_size)]
+[numthreads(ddgi.probe_size, ddgi.probe_size)]
 void comp() {
     const uint2 coord = semantics.global_id.xy;
     const uint probe_index = semantics.global_id.z;
 
-    const int3 probe_id = gi.compute_grid_coord(probe_index);
+    const int3 probe_id = ddgi.compute_grid_coord(probe_index);
     if(in_grid[probe_id] != frame_id) {
         out_image[coord] = float4(0, 1, 0, 0);
         return;
     }
 
-    const float3 probe_pos = gi.compute_world_coord(probe_id, camera.position);
+    const float3 probe_pos = ddgi.compute_world_coord(probe_id, camera.position);
 
     const float2 px_center = float2(coord) + 0.5;
-    const float2 uv = px_center / gi.probe_size;
+    const float2 uv = px_center / ddgi.probe_size;
 
     const float3 trace_dir = octahedron_decode(uv);
 
@@ -83,5 +83,5 @@ void comp() {
         color = in_envmap.SampleLevel(trace_dir, 0.0).rgb;
     }
 
-    out_image[coord + gi.compute_atlas_coord(probe_index) * gi.probe_size] = float4(color, hit.ray_t);
+    out_image[coord + ddgi.compute_atlas_coord(probe_index) * ddgi.probe_size] = float4(color, hit.ray_t);
 }

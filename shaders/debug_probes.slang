@@ -1,4 +1,4 @@
-#include "lib/gi.slang"
+#include "lib/ddgi.slang"
 
 
 [[vk::binding(0)]]
@@ -34,8 +34,8 @@ struct VertexStageOut {
 
 [shader("vertex")]
 VertexStageOut vert_main(StdVertexStageIn in) {
-    const int3 coord = gi.compute_grid_coord(semantics.instance_index);
-    const float3 position = gi.compute_world_coord(coord, camera.position);
+    const int3 coord = ddgi.compute_grid_coord(semantics.instance_index);
+    const float3 position = ddgi.compute_world_coord(coord, camera.position);
 
     VertexStageOut out;
     {
@@ -55,7 +55,7 @@ VertexStageOut vert_main(StdVertexStageIn in) {
 [shader("fragment")]
 float4 frag_main(PixelStageIn in) {
     const float2 uv = saturate(octahedron_encode(in.normal));
-    const float4 irr = probes[uint2(clamp(uv * gi.probe_size, 0, gi.probe_size - 1)) + gi.compute_atlas_coord(in.instance_index) * gi.probe_size];
+    const float4 irr = probes[uint2(clamp(uv * ddgi.probe_size, 0, ddgi.probe_size - 1)) + ddgi.compute_atlas_coord(in.instance_index) * ddgi.probe_size];
 
     return float4(identifying_color(in.instance_index), 1.0);
     // return float4(reinhard(irr.rgb), 1.0);

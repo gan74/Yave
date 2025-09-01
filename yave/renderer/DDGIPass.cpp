@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "GIPass.h"
+#include "DDGIPass.h"
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -35,12 +35,12 @@ SOFTWARE.
 
 namespace yave {
 
-static constexpr u32 gi_grid_size = 32;
-static constexpr u32 gi_probe_count = gi_grid_size * gi_grid_size * gi_grid_size;
-static constexpr u32 gi_atlas_size = 256;
-static constexpr u32 gi_probe_size = 16;
+static constexpr u32 ddgi_grid_size = 32;
+static constexpr u32 ddgi_probe_count = ddgi_grid_size * ddgi_grid_size * ddgi_grid_size;
+static constexpr u32 ddgi_atlas_size = 256;
+static constexpr u32 ddgi_probe_size = 16;
 
-static_assert(gi_atlas_size * gi_atlas_size >= gi_probe_count);
+static_assert(ddgi_atlas_size * ddgi_atlas_size >= ddgi_probe_count);
 
 
 static const IBLProbe* find_ibl_probe(const SceneVisibility& visibility) {
@@ -74,7 +74,7 @@ static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass&
         render_pass.bind_material_template(material, self->descriptor_set());
 
         const StaticMesh& sphere = *device_resources()[DeviceResources::SimpleSphereMesh];
-        render_pass.draw(sphere.draw_data(), u32(gi_probe_count));
+        render_pass.draw(sphere.draw_data(), u32(ddgi_probe_count));
     });
 
     return color;
@@ -85,7 +85,7 @@ static FrameGraphMutableVolumeId place_probes(FrameGraph& framegraph, const GBuf
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Probe placing pass");
 
-    FrameGraphMutableVolumeId grid = builder.declare_volume(VK_FORMAT_R32_UINT, math::Vec3ui(gi_grid_size));
+    FrameGraphMutableVolumeId grid = builder.declare_volume(VK_FORMAT_R32_UINT, math::Vec3ui(ddgi_grid_size));
 
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_uniform_input(gbuffer.depth);
@@ -109,7 +109,7 @@ static FrameGraphImageId trace_probes(FrameGraph& framegraph, const GBufferPass&
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Probe filling pass");
 
-    const auto probes = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, math::Vec2ui(gi_probe_size * gi_atlas_size));
+    const auto probes = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, math::Vec2ui(ddgi_probe_size * ddgi_atlas_size));
     const auto directionals = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
 
     builder.map_buffer(directionals);
@@ -139,7 +139,7 @@ static FrameGraphImageId trace_probes(FrameGraph& framegraph, const GBufferPass&
             texture_library().descriptor_set()
         };
         const auto& program = device_resources()[DeviceResources::TraceProbesProgram];
-        recorder.dispatch_threads(program, math::Vec3ui(gi_probe_size, gi_probe_size, gi_probe_count), desc_sets);
+        recorder.dispatch_threads(program, math::Vec3ui(ddgi_probe_size, ddgi_probe_size, ddgi_probe_count), desc_sets);
     });
 
     return probes;
@@ -160,7 +160,7 @@ static FrameGraphImageId fetch_probes(FrameGraph& framegraph, const GBufferPass&
     builder.add_uniform_input(grid);
     builder.add_inline_input(u32(framegraph.frame_id()));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources()[DeviceResources::FetchProbesProgram];
+        const auto& program = device_resources()[DeviceResources::ApplyProbesProgram];
         recorder.dispatch_threads(program, size, self->descriptor_set());
     });
 
@@ -168,7 +168,7 @@ static FrameGraphImageId fetch_probes(FrameGraph& framegraph, const GBufferPass&
 }
 
 
-GIPass GIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit) {
+DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit) {
     if(!raytracing_enabled()) {
         return {lit};
     }
@@ -180,7 +180,7 @@ GIPass GIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameG
     const FrameGraphImageId probes = trace_probes(framegraph, gbuffer, grid);
 
 
-    GIPass pass;
+    DDGIPass pass;
     pass.probes = probes;
     pass.gi = fetch_probes(framegraph, gbuffer, probes, grid);
     pass.gi = debug_probes(framegraph, gbuffer, pass.gi, probes, grid);

@@ -68,7 +68,7 @@ class DeviceResources final : NonMovable {
             RTGIProgram,
             PlaceProbesProgram,
             TraceProbesProgram,
-            FetchProbesProgram,
+            ApplyProbesProgram,
 
             MaxComputePrograms
         };

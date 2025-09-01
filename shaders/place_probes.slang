@@ -1,4 +1,4 @@
-#include "lib/gi.slang"
+#include "lib/ddgi.slang"
 
 [[vk::binding(0)]]
 ConstantBuffer<Camera> camera;
@@ -43,9 +43,9 @@ void comp() {
     });
 
     const float3 world_pos = unproject(in_uv, depth, camera.curr.inv_view_proj);
-    const int3 probe_id = gi.compute_grid_coord(world_pos, surface.normal);
+    const int3 probe_id = ddgi.compute_grid_coord(world_pos, surface.normal);
 
-    if(!gi.in_range(world_pos, camera.position)) {
+    if(!ddgi.in_range(world_pos, camera.position)) {
         return;
     }
 

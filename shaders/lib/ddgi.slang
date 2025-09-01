@@ -4,7 +4,7 @@
 #include "utils.slang"
 
 
-namespace gi {
+namespace ddgi {
 
 static const uint grid_size = 32;
 static const uint atlas_size = 256;
@@ -53,7 +53,7 @@ uint2 compute_atlas_coord(uint probe_index) {
 
 bool in_range(float3 world_pos, float3 cam_pos) {
     const int3 delta = int3(round(world_pos)) - int3(round(cam_pos));
-    return all(abs(delta) < gi.grid_size / 2);
+    return all(abs(delta) < grid_size / 2);
 }
 
 }

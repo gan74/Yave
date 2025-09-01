@@ -1,4 +1,4 @@
-#include "lib/gi.slang"
+#include "lib/ddgi.slang"
 #include "lib/rt.slang"
 
 
@@ -56,11 +56,11 @@ void comp() {
     const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
     const SurfaceInfo surface = decode_gbuffer({float4(0.0), in_rt1[coord]});
 
-    const int3 probe_id = gi.compute_grid_coord(world_pos, surface.normal);
-    const uint probe_index = gi.compute_probe_index(probe_id);
-    const uint2 atlas_coord = gi.compute_atlas_coord(probe_index);
+    const int3 probe_id = ddgi.compute_grid_coord(world_pos, surface.normal);
+    const uint probe_index = ddgi.compute_probe_index(probe_id);
+    const uint2 atlas_coord = ddgi.compute_atlas_coord(probe_index);
 
-    if(!gi.in_range(world_pos, camera.position)) {
+    if(!ddgi.in_range(world_pos, camera.position)) {
         out_image[coord] = float4(0.0);
         return;
     }
@@ -70,7 +70,7 @@ void comp() {
         return;
     }
 
-    const float3 probe_pos = gi.compute_world_coord(probe_id, camera.position);
+    const float3 probe_pos = ddgi.compute_world_coord(probe_id, camera.position);
     if(dot((probe_pos - world_pos), surface.normal)  < 0.0) {
         out_image[coord] = float4(1, 0, 0, 0);
         return;
@@ -79,13 +79,13 @@ void comp() {
 
     float total = 0.0;
     float3 irr = float3(0.0);
-    for(uint u = 0; u != gi.probe_size; ++u) {
-        for(uint v = 0; v != gi.probe_size; ++v) {
-            const float3 dir = octahedron_decode((float2(u, v) + 0.5) / gi.probe_size);
+    for(uint u = 0; u != ddgi.probe_size; ++u) {
+        for(uint v = 0; v != ddgi.probe_size; ++v) {
+            const float3 dir = octahedron_decode((float2(u, v) + 0.5) / ddgi.probe_size);
             const float NoL = dot(dir, surface.normal);
             if(NoL > 0.0) {
                 total += NoL;
-                irr += in_probes[uint2(u, v) + atlas_coord * gi.probe_size].rgb * NoL;
+                irr += in_probes[uint2(u, v) + atlas_coord * ddgi.probe_size].rgb * NoL;
             }
         }
     }
