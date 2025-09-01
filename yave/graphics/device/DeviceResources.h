@@ -66,6 +66,7 @@ class DeviceResources final : NonMovable {
             RTAOProgram = MaxNonRTComputePrograms,
 
             RTGIProgram,
+            PlaceProbesProgram,
             TraceProbesProgram,
             FetchProbesProgram,
 

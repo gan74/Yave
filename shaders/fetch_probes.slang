@@ -1,38 +1,32 @@
 #include "lib/gi.slang"
 #include "lib/rt.slang"
 
+
 [[vk::binding(0)]]
-Sampler2D<float> in_depth;
-
-[[vk::binding(1)]]
-Sampler2D<uint> in_rt1;
-
-[[vk::binding(2)]]
-ConstantBuffer<Camera> camera;
-
-[[vk::binding(3)]]
-Sampler2D in_probes;
-
-[[vk::binding(4)]]
 RWTexture2D out_image;
 
+[[vk::binding(1)]]
+Sampler2D<float> in_depth;
+
+[[vk::binding(2)]]
+Sampler2D<uint> in_rt1;
+
+[[vk::binding(3)]]
+ConstantBuffer<Camera> camera;
+
+[[vk::binding(4)]]
+Sampler2D in_probes;
+
 [[vk::binding(5)]]
-RaytracingAccelerationStructure tlas;
+Sampler3D<uint> in_grid;
+
+[[vk::binding(6)]]
+cbuffer Params {
+    uint frame_id;
+};
 
 
 
-
-static const int2 offsets[9] = int2[9](
-    int2(-1, -1),
-    int2(0, -1),
-    int2(1, -1),
-    int2(-1, 0),
-    int2(0, 0),
-    int2(1, 0),
-    int2(-1, 1),
-    int2(0, 1),
-    int2(1, 1)
-);
 
 float3 hemisphere_sample(uint i, uint count) {
     const float theta = 2.0 * pi * i * golden;
@@ -53,8 +47,10 @@ void comp() {
 
     const float depth = in_depth[coord];
     if(is_depth_far(depth)) {
+        out_image[coord] = float4(0.0);
         return;
     }
+
 
     const float2 uv = (semantics.global_id.xy + 0.5) / image_size;
     const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
@@ -64,36 +60,21 @@ void comp() {
     const uint probe_index = gi.compute_probe_index(probe_id);
     const uint2 atlas_coord = gi.compute_atlas_coord(probe_index);
 
+    if(!gi.in_range(world_pos, camera.position)) {
+        out_image[coord] = float4(0.0);
+        return;
+    }
+
+    if(in_grid[probe_id] != frame_id) {
+        out_image[coord] = float4(0, 1, 0, 0);
+        return;
+    }
+
     const float3 probe_pos = gi.compute_world_coord(probe_id, camera.position);
-    const float3 to_probe = probe_pos - world_pos;
-    const float probe_dist = length(to_probe);
-    const float3 probe_dir = to_probe / probe_dist;
-
-    /*{
-        float4 debug_color = float4(0.0);
-        if(trace_inline(tlas, world_pos, probe_dir, 0.01, probe_dist).hit) {
-            debug_color.r = 1.0;
-        }
-
-        const float2 to_probe_uv = saturate(octahedron_encode(-probe_dir));
-        const uint2 probe_coord = uint2(round(to_probe_uv * gi.probe_size));
-
-        float dist = 0.0;
-        for(uint i = 0; i != 9; ++i) {
-            dist = max(dist, in_probes[(probe_coord + offsets[i]) % gi.probe_size + atlas_coord * gi.probe_size].w);
-        }
-
-        if(dist < 0.0) {
-            debug_color.b = 1.0;
-        } else if(dist < probe_dist) {
-            debug_color.g = dist / 2.0;
-        }
-
-        if(any(debug_color > 0.0)) {
-            out_image[coord] = debug_color;
-            return;
-        }
-    }*/
+    if(dot((probe_pos - world_pos), surface.normal)  < 0.0) {
+        out_image[coord] = float4(1, 0, 0, 0);
+        return;
+    }
 
 
     float total = 0.0;
@@ -110,4 +91,5 @@ void comp() {
     }
 
     out_image[coord] = float4(irr / total, 1.0);
+    out_image[coord] = float4(identifying_color(probe_index), 1.0);
 }

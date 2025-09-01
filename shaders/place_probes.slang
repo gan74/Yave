@@ -1,4 +1,4 @@
-#include "lib/utils.slang"
+#include "lib/gi.slang"
 
 [[vk::binding(0)]]
 ConstantBuffer<Camera> camera;
@@ -19,23 +19,6 @@ cbuffer Params {
 
 
 
-int round_toward_normal(float x, float nx) {
-    if(nx > 0.0) {
-        return int(ceil(x));
-    }
-    return int(floor(x));
-}
-
-
-int3 round_toward_normal(float3 x, float3 nx) {
-    return int3(
-        round_toward_normal(x.x, nx.x),
-        round_toward_normal(x.y, nx.y),
-        round_toward_normal(x.z, nx.z)
-    );
-}
-
-
 [shader("compute")]
 [numthreads(8, 8)]
 void comp() {
@@ -46,19 +29,27 @@ void comp() {
         return;
     }
 
-    const float2 px_center = float2(coord + 0.5);
+    const float2 px_center = float2(coord) + 0.5;
     const float2 in_uv = px_center / float2(size);
 
     const float depth = in_depth[coord];
+    if(is_depth_far(depth)) {
+        return;
+    }
+
     const SurfaceInfo surface = decode_gbuffer({
         float4(0.0),
         in_rt1[coord],
     });
 
     const float3 world_pos = unproject(in_uv, depth, camera.curr.inv_view_proj);
-    const int3 pos = (round_toward_normal(world_pos, surface.normal) - int3(camera.position)) + int3(32);
+    const int3 probe_id = gi.compute_grid_coord(world_pos, surface.normal);
 
-    out_grid[pos] = frame_id;
+    if(!gi.in_range(world_pos, camera.position)) {
+        return;
+    }
+
+    out_grid[probe_id] = frame_id;
 
 }
 

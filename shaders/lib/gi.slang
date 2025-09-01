@@ -19,12 +19,13 @@ int3 compute_grid_coord(float3 world_pos) {
 }
 
 int3 compute_grid_coord(float3 world_pos, float3 normal) {
-#if 0
-    int3 grid;
-    for(uint i = 0; i != 3; ++i) {
-        grid[i] = int(normal[i] > 0.0 ? ceil(world_pos[i]) : floor(world_pos[i]));
+#if 1
+    int3 w = int3(round(world_pos));
+    if(dot(w - world_pos, normal) < 0.0) {
+        w += int3(round(normal));
     }
-    return grid % grid_size;
+
+    return w % grid_size;
 #else
     return int3(round(world_pos + normal * 0.5)) % grid_size;
 #endif
@@ -48,6 +49,11 @@ int3 compute_world_coord(int3 grid_coord, float3 cam_pos) {
 
 uint2 compute_atlas_coord(uint probe_index) {
     return uint2(probe_index / atlas_size, probe_index % atlas_size);
+}
+
+bool in_range(float3 world_pos, float3 cam_pos) {
+    const int3 delta = int3(round(world_pos)) - int3(round(cam_pos));
+    return all(abs(delta) < gi.grid_size / 2);
 }
 
 }

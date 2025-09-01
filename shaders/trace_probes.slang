@@ -1,23 +1,33 @@
 #include "lib/gi.slang"
 #include "lib/rt.slang"
 
+
 [[vk::binding(0)]]
-RaytracingAccelerationStructure tlas;
+RWTexture2D out_image;
 
 [[vk::binding(1)]]
-ConstantBuffer<Camera> camera;
+RaytracingAccelerationStructure tlas;
 
 [[vk::binding(2)]]
-StructuredBuffer<MaterialData> materials;
+ConstantBuffer<Camera> camera;
 
 [[vk::binding(3)]]
-StructuredBuffer<DirectionalLight> lights;
+StructuredBuffer<MaterialData> materials;
 
 [[vk::binding(4)]]
-SamplerCube in_envmap;
+StructuredBuffer<DirectionalLight> lights;
 
 [[vk::binding(5)]]
-RWTexture2D out_image;
+SamplerCube in_envmap;
+
+[[vk::binding(6)]]
+Sampler3D<uint> in_grid;
+
+[[vk::binding(7)]]
+cbuffer Params {
+    uint frame_id;
+};
+
 
 [[vk::binding(0, 1)]]
 Sampler2D all_textures[];
@@ -37,7 +47,13 @@ void comp() {
     const uint2 coord = semantics.global_id.xy;
     const uint probe_index = semantics.global_id.z;
 
-    const float3 probe_pos = gi.compute_world_coord(gi.compute_grid_coord(probe_index), camera.position);
+    const int3 probe_id = gi.compute_grid_coord(probe_index);
+    if(in_grid[probe_id] != frame_id) {
+        out_image[coord] = float4(0, 1, 0, 0);
+        return;
+    }
+
+    const float3 probe_pos = gi.compute_world_coord(probe_id, camera.position);
 
     const float2 px_center = float2(coord) + 0.5;
     const float2 uv = px_center / gi.probe_size;

@@ -7,6 +7,15 @@ Sampler2D probes;
 [[vk::binding(1)]]
 ConstantBuffer<Camera> camera;
 
+[[vk::binding(2)]]
+Sampler3D<uint> in_grid;
+
+[[vk::binding(3)]]
+cbuffer Params {
+    uint frame_id;
+};
+
+
 
 struct PixelStageIn {
     float3 normal;
@@ -25,13 +34,18 @@ struct VertexStageOut {
 
 [shader("vertex")]
 VertexStageOut vert_main(StdVertexStageIn in) {
-    const float3 position = gi.compute_world_coord(gi.compute_grid_coord(semantics.instance_index), camera.position);
+    const int3 coord = gi.compute_grid_coord(semantics.instance_index);
+    const float3 position = gi.compute_world_coord(coord, camera.position);
 
     VertexStageOut out;
     {
         out.sv_position = mul(camera.curr.view_proj, float4(position + in.position * 0.1, 1.0));
         out.vert.normal = unpack_2_10_10_10(in.packed_normal_tangent_sign.x).xyz;
         out.vert.instance_index = semantics.instance_index;
+    }
+
+    if(in_grid[coord] != frame_id) {
+        out.sv_position = asfloat(0xFFFFFFFF);
     }
 
     return out;
