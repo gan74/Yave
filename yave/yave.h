@@ -37,17 +37,9 @@ using namespace y;
 
 }
 
-// Hack to get drawer from the editor
+// Hack to get stuff from the editor
 namespace editor {
 using namespace yave;
-
-struct DebugValues {
-    bool bool_f[4] = {false, false, false, false};
-    bool bool_t[4] = {true, true, true, true};
-    float float_0[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-    float float_1[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-};
-
 
 DebugValues& debug_values();
 DirectDraw& debug_drawer();

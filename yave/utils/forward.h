@@ -53,6 +53,7 @@ class ComputeCapableCmdBufferRecorder;
 class ComputeCmdBufferRecorder;
 class ComputeProgram;
 class DebugUtils;
+class DebugValues;
 class Descriptor;
 class DescriptorArray;
 class DescriptorLayoutAllocator;
@@ -154,6 +155,8 @@ struct AtmospherePass;
 struct AtmosphereSettings;
 struct Attachment;
 struct Attribute;
+struct BilateralPass;
+struct BilateralSettings;
 struct BloomPass;
 struct BloomSettings;
 struct BlurPass;
@@ -164,6 +167,7 @@ struct BufferCopyInfo;
 struct BufferCreateInfo;
 struct BufferData;
 struct CameraBufferPass;
+struct DDGIPass;
 struct DefaultRenderer;
 struct DenoisePass;
 struct DenoiseSettings;
@@ -207,6 +211,7 @@ struct Monitor;
 struct ObjectIndices;
 struct PackedVertex;
 struct RTGIPass;
+struct RTGISettings;
 struct Region;
 struct RendererSettings;
 struct ResourceCreateInfo;
@@ -227,11 +232,6 @@ struct TransformData;
 struct TransformableSceneObjectData;
 struct Viewport;
 struct Zone;
-}
-
-
-namespace editor {
-struct DebugValues;
 }
 
 
