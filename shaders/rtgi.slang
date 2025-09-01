@@ -34,6 +34,7 @@ RWTexture2D out_image;
 [[vk::binding(10)]]
 cbuffer Params {
     uint sample_count;
+    uint resolution_scale;
 };
 
 [[vk::binding(0, 1)]]
@@ -71,20 +72,21 @@ float4 eval_hit_color(HitInfo hit) {
 [shader("compute")]
 [numthreads(8, 8)]
 void comp() {
-    const uint2 size = image_size(in_depth);
     const uint2 coord = semantics.global_id.xy;
+    const uint2 scaled_coord = coord << resolution_scale;
+    const uint2 size = image_size(in_depth);
 
-    if(any(coord >= size)) {
+    if(any(scaled_coord >= size)) {
         return;
     }
 
-    const float2 px_center = float2(coord) + float2(0.5);
+    const float2 px_center = float2(scaled_coord) + float2(0.5);
     const float2 in_uv = px_center / float2(size);
 
-    const float depth = in_depth[coord];
+    const float depth = in_depth[scaled_coord];
     const SurfaceInfo surface = decode_gbuffer({
         float4(0.0),
-        in_rt1[coord],
+        in_rt1[scaled_coord],
     });
 
     const float3 world_pos = unproject(in_uv, depth, camera.curr.inv_view_proj);

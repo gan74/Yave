@@ -500,7 +500,7 @@ void EngineView::draw_settings_menu() {
         int samples = int(settings.sample_count);
         int scale = int(settings.resolution_scale);
         ImGui::SliderInt("Samples", &samples, 1, 16);
-        ImGui::SliderInt("Resolution scale", &scale, 1, 4);
+        ImGui::SliderInt("Resolution scale", &scale, 0, 4);
         ImGui::SliderFloat("Filter sigma", &settings.filter_settings.sigma, 0.0f, 16.0f);
         ImGui::SliderFloat("Filter depth phi", &settings.filter_settings.depth_phi, 0.0f, 16.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
         ImGui::SliderFloat("Filter normal phi", &settings.filter_settings.normal_phi, 0.0f, 128.0f, "%.2f", ImGuiSliderFlags_Logarithmic);
