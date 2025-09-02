@@ -56,7 +56,7 @@ void comp() {
     if(hit.hit) {
         const DirectionalLight light = lights[0];
         const float NoL = dot(light.direction, normal);
-        if(NoL > 0.0/* && !trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit*/) {
+        if(NoL > 0.0 && !trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
             const float4 albedo = eval_material_color(hit.instance_id);
             color = albedo.rgb * light.color * NoL;
         }
@@ -66,12 +66,12 @@ void comp() {
 
     DDGIRayHit out_hit;
     {
-        out_hit.position = hit.position;
-        out_hit.normal = normal;
-        out_hit.distance = hit.ray_t;
+        out_hit.dir = trace_dir;
+        out_hit.t = hit.ray_t;
+        out_hit.hit_normal = normal;
+        out_hit.is_hit = hit.hit ? 1.0 : 0.0;
         out_hit.radiance = color;
-        out_hit.padding1 = 0.0;
-        out_hit.padding2 = 0.0;
+        out_hit.padding = 0.0;
     }
 
     out_hits[semantics.global_id.x] = out_hit;

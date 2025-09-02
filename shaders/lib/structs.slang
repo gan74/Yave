@@ -159,14 +159,14 @@ struct SHBase {
 };
 
 struct DDGIRayHit {
-    float3 position;
-    float distance;
+    float3 dir;
+    float t;
 
-    float3 normal;
-    float padding1;
+    float3 hit_normal;
+    float is_hit;
 
     float3 radiance;
-    float padding2;
+    float padding;
 };
 
 #endif
