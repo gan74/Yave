@@ -243,6 +243,7 @@ function(build_engine_shaders SHADER_TARGET)
 
     add_slang_shader(${SHADER_TARGET} "place_probes.slang" "")
     add_slang_shader(${SHADER_TARGET} "trace_probes.slang" "")
+    add_slang_shader(${SHADER_TARGET} "update_probes.slang" "")
     add_slang_shader(${SHADER_TARGET} "debug_probes.slang" "")
     add_slang_shader(${SHADER_TARGET} "apply_probes.slang" "")
 endfunction(build_engine_shaders)

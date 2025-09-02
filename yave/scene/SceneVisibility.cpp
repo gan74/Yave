@@ -19,25 +19,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCENE_SCENEVISIBILITY_H
-#define YAVE_SCENE_SCENEVISIBILITY_H
 
-#include "Scene.h"
+#include "SceneVisibility.h"
+
+#include <yave/graphics/device/DeviceResources.h>
 
 namespace yave {
 
-struct SceneVisibility {
-    core::Vector<const StaticMeshObject*> meshes;
-    core::Vector<const PointLightObject*> point_lights;
-    core::Vector<const SpotLightObject*> spot_lights;
-    core::Vector<const DirectionalLightObject*> directional_lights;
-    const SkyLightObject* sky_light = nullptr;
+std::tuple<const IBLProbe*, float, bool> SceneVisibility::ibl_probe() const {
+    if(const SkyLightObject* obj = sky_light) {
+        const SkyLightComponent& sky = obj->component;
+        if(const IBLProbe* probe = sky.probe().get()) {
+            y_debug_assert(!probe->is_null());
+            return {probe, sky.intensity(), sky.display_sky()};
+        }
+    }
 
-    std::tuple<const IBLProbe*, float, bool> ibl_probe() const;
-};
-
+    return {device_resources().empty_probe().get(), 1.0f, true};
+}
 
 }
 
-#endif // YAVE_SCENE_SCENEVISIBILITY_H
 

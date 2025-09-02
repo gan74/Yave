@@ -37,26 +37,13 @@ SOFTWARE.
 
 namespace yave {
 
+#if 0
 static constexpr u32 ddgi_grid_size = 32;
 static constexpr u32 ddgi_probe_count = ddgi_grid_size * ddgi_grid_size * ddgi_grid_size;
 static constexpr u32 ddgi_atlas_size = 256;
 static constexpr u32 ddgi_probe_size = 16;
 
 static_assert(ddgi_atlas_size * ddgi_atlas_size >= ddgi_probe_count);
-
-
-static const IBLProbe* find_ibl_probe(const SceneVisibility& visibility) {
-    if(const SkyLightObject* obj = visibility.sky_light) {
-        const SkyLightComponent& sky = obj->component;
-        if(const IBLProbe* probe = sky.probe().get()) {
-            y_debug_assert(!probe->is_null());
-            return probe;
-        }
-    }
-
-    return device_resources().empty_probe().get();
-}
-
 
 [[maybe_unused]]
 static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, FrameGraphImageId probes, FrameGraphVolumeId grid) {
@@ -101,56 +88,10 @@ static FrameGraphMutableVolumeId place_probes(FrameGraph& framegraph, const GBuf
 
     return grid;
 }
-
-static FrameGraphImageId trace_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphVolumeId grid) {
-    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
-    const TLAS& tlas = scene_view.scene()->tlas();
-
-    const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
-    const IBLProbe* ibl_probe = find_ibl_probe(visibility);
-
-    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Probe filling pass");
-
-    const auto probes = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, math::Vec2ui(ddgi_probe_size * ddgi_atlas_size));
-    const auto directionals = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
-
-    builder.map_buffer(directionals);
-
-    builder.add_storage_output(probes);
-    builder.add_external_input(Descriptor(tlas));
-    builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_external_input(Descriptor(material_allocator().material_buffer()));
-    builder.add_storage_input(directionals);
-    builder.add_external_input(*ibl_probe);
-    builder.add_uniform_input(grid);
-    builder.add_inline_input(u32(framegraph.frame_id()));
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        auto mapping = self->resources().map_buffer(directionals);
-        for(usize i = 0; i != visibility.directional_lights.size(); ++i) {
-            const DirectionalLightComponent& light = visibility.directional_lights[i]->component;
-            mapping[i] = {
-                -light.direction().normalized(),
-                std::cos(light.disk_size()),
-                light.color() * light.intensity(),
-                0, {}
-            };
-        }
-
-        const std::array<DescriptorSetProxy, 2> desc_sets = {
-            self->descriptor_set(),
-            texture_library().descriptor_set()
-        };
-        const auto& program = device_resources()[DeviceResources::TraceProbesProgram];
-        recorder.dispatch_threads(program, math::Vec3ui(ddgi_probe_size, ddgi_probe_size, ddgi_probe_count), desc_sets);
-    });
-
-    return probes;
-}
-
 static FrameGraphImageId fetch_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId probes, FrameGraphVolumeId grid) {
     const math::Vec2 size = framegraph.image_size(gbuffer.depth);
 
-    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Fetch probes pass");
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Apply probes pass");
 
     const auto gi = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, size);
 
@@ -169,6 +110,129 @@ static FrameGraphImageId fetch_probes(FrameGraph& framegraph, const GBufferPass&
     return gi;
 }
 
+#endif
+
+
+static constexpr u32 ddgi_grid_size = 32;
+static constexpr u32 ddgi_probe_count = ddgi_grid_size * ddgi_grid_size * ddgi_grid_size;
+static constexpr u32 ddgi_probe_rays = 256;
+
+static constexpr u32 ddgi_atlas_size = 256;
+static constexpr u32 ddgi_probe_size_no_border = 14;
+static constexpr u32 ddgi_probe_size_border = ddgi_probe_size_no_border + 2;
+
+
+
+static FrameGraphTypedBufferId<shader::DDGIRayHit> trace_probes(FrameGraph& framegraph, const GBufferPass& gbuffer) {
+    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
+    const TLAS& tlas = scene_view.scene()->tlas();
+
+    const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
+    const IBLProbe* ibl_probe = std::get<0>(visibility.ibl_probe());
+
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Probe filling pass");
+
+    const auto hits = builder.declare_typed_buffer<shader::DDGIRayHit>(ddgi_probe_count * ddgi_probe_rays);
+    const auto directionals = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
+
+    builder.map_buffer(directionals);
+
+    builder.add_storage_output(hits);
+    builder.add_external_input(Descriptor(tlas));
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
+    builder.add_external_input(Descriptor(material_allocator().material_buffer()));
+    builder.add_storage_input(directionals);
+    builder.add_external_input(*ibl_probe);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        auto mapping = self->resources().map_buffer(directionals);
+        for(usize i = 0; i != visibility.directional_lights.size(); ++i) {
+            const DirectionalLightComponent& light = visibility.directional_lights[i]->component;
+            mapping[i] = {
+                -light.direction().normalized(),
+                std::cos(light.disk_size()),
+                light.color() * light.intensity(),
+                0, {}
+            };
+        }
+
+        const std::array<DescriptorSetProxy, 2> desc_sets = {
+            self->descriptor_set(),
+            texture_library().descriptor_set()
+        };
+
+        const auto& program = device_resources()[DeviceResources::TraceProbesProgram];
+        recorder.dispatch_threads(program, math::Vec2ui(ddgi_probe_count * ddgi_probe_rays, 1), desc_sets);
+    });
+
+    return hits;
+}
+
+static std::pair<FrameGraphImageId, FrameGraphImageId>  update_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphTypedBufferId<shader::DDGIRayHit> hits) {
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Update probes pass");
+
+    const auto irradiance = builder.declare_image(VK_FORMAT_B10G11R11_UFLOAT_PACK32, math::Vec2ui(ddgi_probe_size_border * ddgi_atlas_size));
+    const auto distance = builder.declare_image(VK_FORMAT_R32G32_SFLOAT, math::Vec2ui(ddgi_probe_size_border * ddgi_atlas_size));
+
+    builder.add_storage_output(irradiance);
+    builder.add_storage_output(distance);
+    builder.add_storage_input(hits);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        const auto& program = device_resources()[DeviceResources::UpdateProbesProgram];
+        recorder.dispatch_threads(program, math::Vec3ui(ddgi_probe_size_border, ddgi_probe_size_border, ddgi_probe_count), self->descriptor_set());
+    });
+
+    return {irradiance, distance};
+}
+
+static FrameGraphImageId apply_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId irradiance, FrameGraphImageId distance) {
+    const math::Vec2 size = framegraph.image_size(gbuffer.depth);
+
+    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
+    const TLAS& tlas = scene_view.scene()->tlas();
+
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Apply probes pass");
+
+    const auto gi = builder.declare_image(VK_FORMAT_B10G11R11_UFLOAT_PACK32, size);
+
+    builder.add_storage_output(gi);
+    builder.add_uniform_input(gbuffer.depth);
+    builder.add_uniform_input(gbuffer.normal);
+    builder.add_uniform_input(irradiance);
+    builder.add_uniform_input(distance);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
+    builder.add_external_input(tlas);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        const auto& program = device_resources()[DeviceResources::ApplyProbesProgram];
+        recorder.dispatch_threads(program, size, self->descriptor_set());
+    });
+
+    return gi;
+}
+
+
+[[maybe_unused]]
+static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, FrameGraphImageId irradiance, FrameGraphImageId /*distance*/) {
+    FrameGraphPassBuilder builder = framegraph.add_pass("Probe debug pass");
+
+    const auto depth = builder.declare_copy(gbuffer.depth);
+    const auto color = builder.declare_copy(lit);
+
+    builder.add_depth_output(depth);
+    builder.add_color_output(color);
+    builder.add_uniform_input(irradiance);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
+    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
+        const auto* material = device_resources()[DeviceResources::DebugProbesTemplate];
+        render_pass.bind_material_template(material, self->descriptor_set());
+
+        const StaticMesh& sphere = *device_resources()[DeviceResources::SimpleSphereMesh];
+        render_pass.draw(sphere.draw_data(), u32(ddgi_probe_count));
+    });
+
+    return color;
+}
+
 
 DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit) {
     if(!raytracing_enabled()) {
@@ -177,18 +241,19 @@ DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     const auto region = framegraph.region("GI");
 
-
-    const FrameGraphMutableVolumeId grid = place_probes(framegraph, gbuffer);
-    const FrameGraphImageId probes = trace_probes(framegraph, gbuffer, grid);
-
+    const FrameGraphTypedBufferId<shader::DDGIRayHit> hits = trace_probes(framegraph, gbuffer);
+    const auto [irradiance, distance] = update_probes(framegraph, gbuffer, hits);
+    const FrameGraphImageId gi = apply_probes(framegraph, gbuffer, irradiance, distance);
 
     DDGIPass pass;
-    pass.probes = probes;
-    pass.gi = fetch_probes(framegraph, gbuffer, probes, grid);
+    pass.irradiance = irradiance;
+    pass.distance = distance;
+    pass.gi = gi;
 
     if(editor::debug_values().value<bool>("Show DDGI probes")) {
-        pass.gi = debug_probes(framegraph, gbuffer, pass.gi, probes, grid);
+        pass.gi = debug_probes(framegraph, gbuffer, pass.gi, irradiance, distance);
     }
+
     return pass;
 }
 

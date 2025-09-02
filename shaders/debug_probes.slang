@@ -2,19 +2,10 @@
 
 
 [[vk::binding(0)]]
-Sampler2D probes;
+Sampler2D<float3> in_irradiance;
 
 [[vk::binding(1)]]
 ConstantBuffer<Camera> camera;
-
-[[vk::binding(2)]]
-Sampler3D<uint> in_grid;
-
-[[vk::binding(3)]]
-cbuffer Params {
-    uint frame_id;
-};
-
 
 
 struct PixelStageIn {
@@ -44,20 +35,17 @@ VertexStageOut vert_main(StdVertexStageIn in) {
         out.vert.instance_index = semantics.instance_index;
     }
 
-    if(in_grid[coord] != frame_id) {
-        out.sv_position = asfloat(0xFFFFFFFF);
-    }
-
     return out;
 }
 
 
 [shader("fragment")]
 float4 frag_main(PixelStageIn in) {
-    const float2 uv = saturate(octahedron_encode(in.normal));
-    const float4 irr = probes[uint2(clamp(uv * ddgi.probe_size, 0, ddgi.probe_size - 1)) + ddgi.compute_atlas_coord(in.instance_index) * ddgi.probe_size];
+    const uint2 probe_corner = ddgi.atlas_coord(in.instance_index) + 1;
+    const float2 probe_coord = octahedron_encode(in.normal) * ddgi.probe_size_no_border;
+    const float3 irr = in_irradiance.SampleLevel((probe_corner + probe_coord) / image_size(in_irradiance), 0.0);
 
     // return float4(identifying_color(in.instance_index), 1.0);
-    return float4(reinhard(irr.rgb), 1.0);
+    return float4(reinhard(irr), 1.0);
 
 }

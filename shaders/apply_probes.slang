@@ -3,7 +3,7 @@
 
 
 [[vk::binding(0)]]
-RWTexture2D out_image;
+RWTexture2D<float3> out_image;
 
 [[vk::binding(1)]]
 Sampler2D<float> in_depth;
@@ -12,84 +12,93 @@ Sampler2D<float> in_depth;
 Sampler2D<uint> in_rt1;
 
 [[vk::binding(3)]]
-ConstantBuffer<Camera> camera;
+Sampler2D<float3> in_irradiance;
 
 [[vk::binding(4)]]
-Sampler2D in_probes;
+Sampler2D<float2> in_distance;
 
 [[vk::binding(5)]]
-Sampler3D<uint> in_grid;
+ConstantBuffer<Camera> camera;
 
 [[vk::binding(6)]]
-cbuffer Params {
-    uint frame_id;
-};
-
-
-
-
-float3 hemisphere_sample(uint i, uint count) {
-    const float theta = 2.0 * pi * i * golden;
-    const float phi = acos(1.0 - 2.0 * i / float(count)) * 0.5;
-    return float3(float2(cos(theta), sin(theta)) * sin(phi), cos(phi));
-}
+RaytracingAccelerationStructure tlas;
 
 
 [shader("compute")]
 [numthreads(8, 8)]
 void comp() {
     const uint2 coord = semantics.global_id.xy;
-    const uint2 image_size = image_size(out_image);
+    const uint2 size = image_size(out_image);
 
-    if(any(coord > image_size)) {
+    if(any(coord > size)) {
         return;
     }
 
     const float depth = in_depth[coord];
     if(is_depth_far(depth)) {
-        out_image[coord] = float4(0.0);
+        out_image[coord] = float3(0.0);
         return;
     }
 
-
-    const float2 uv = (semantics.global_id.xy + 0.5) / image_size;
-    const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
-    const SurfaceInfo surface = decode_gbuffer({float4(0.0), in_rt1[coord]});
-
-    const int3 probe_id = ddgi.compute_grid_coord(world_pos, surface.normal);
-    const uint probe_index = ddgi.compute_probe_index(probe_id);
-    const uint2 atlas_coord = ddgi.compute_atlas_coord(probe_index);
-
+    const float3 world_pos = unproject(((semantics.global_id.xy + 0.5) / size), depth, camera.curr.inv_view_proj);
     if(!ddgi.in_range(world_pos, camera.position)) {
-        out_image[coord] = float4(0.0);
+        out_image[coord] = float3(0.0);
         return;
     }
 
-    if(in_grid[probe_id] != frame_id) {
-        out_image[coord] = float4(0, 1, 0, 0);
-        return;
-    }
+    const float2 inv_atlas_size = 1.0 / image_size(in_irradiance);
 
-    const float3 probe_pos = ddgi.compute_world_coord(probe_id, camera.position);
-    if(dot((probe_pos - world_pos), surface.normal)  < 0.0) {
-        out_image[coord] = float4(1, 0, 0, 0);
-        return;
-    }
+    const SurfaceInfo surface = decode_gbuffer({float4(0.0), in_rt1[coord]});
+    const float2 sample_coord = octahedron_encode(surface.normal) * ddgi.probe_size_no_border;
 
+    const int3 lo = ddgi.compute_grid_coord_low(world_pos);
+    const int3 hi = ddgi.compute_grid_coord_high(world_pos);
 
     float total = 0.0;
-    float3 irr = float3(0.0);
-    for(uint u = 0; u != ddgi.probe_size; ++u) {
-        for(uint v = 0; v != ddgi.probe_size; ++v) {
-            const float3 dir = octahedron_decode((float2(u, v) + 0.5) / ddgi.probe_size);
-            const float NoL = dot(dir, surface.normal);
-            if(NoL > 0.0) {
-                total += NoL;
-                irr += in_probes[uint2(u, v) + atlas_coord * ddgi.probe_size].rgb * NoL;
-            }
+    float3 acc = 0.0;
+    for(uint k = 0; k != 8; ++k) {
+        const int3 probe_id = int3(
+            ((k & 0x01) != 0) ? lo.x : hi.x,
+            ((k & 0x02) != 0) ? lo.y : hi.y,
+            ((k & 0x04) != 0) ? lo.z : hi.z,
+        );
+
+        const int3 probe_pos = ddgi.compute_world_coord(probe_id, camera.position);
+        const float3 probe_vec = probe_pos - world_pos;
+        const float probe_dist = length(probe_vec);
+        const float3 probe_dir = probe_vec / probe_dist;
+        const float3 trilinear = saturate(1.0 - abs(probe_vec));
+
+        float weight = 1.0;
+        weight *= trilinear.x * trilinear.y * trilinear.z;
+        // weight *= sqr(max(epsilon, (dot(probe_dir, surface.normal) + 1.0) * 0.5)) + 0.2;
+        weight *= max(0.0, dot(probe_dir, surface.normal));
+
+        if(trace_inline(tlas, world_pos, probe_dir, 0.01, max(0.01, probe_dist)).hit) {
+            continue;
         }
+
+        const uint probe_index = ddgi.compute_probe_index(probe_id);
+        const uint2 probe_corner = ddgi.atlas_coord(probe_index) + 1;
+        float3 irr = in_irradiance.SampleLevel((probe_corner + sample_coord) * inv_atlas_size, 0.0);
+
+#ifdef SQ_BLEND
+        irr *= irr;
+#endif
+
+        total += weight;
+        acc += irr * weight;
     }
 
-    out_image[coord] = float4(irr / total, 1.0);
-    // out_image[coord] = float4(identifying_color(probe_index), 1.0);
+
+#ifdef SQ_BLEND
+    irr = sqrt(irr);
+#endif
+
+    if(total > epsilon) {
+        // out_image[coord] = (acc / total) * 0.5 * pi;
+        out_image[coord] = acc / total;
+    } else {
+        out_image[coord] = float3(0.0);
+    }
 }

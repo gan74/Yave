@@ -8,6 +8,7 @@
 static const float pi = 3.1415926535897932384626433832795;
 static const float inv_pi = 0.31830988618379067153776752674503;
 static const float inv_sqrt_2pi = 0.39894228040143267793994605993439;
+static const float sqrt_2 = 1.414213562373095;
 
 static const float euler = 2.7182818284590452353602874713526;
 static const float epsilon = 0.0000001;

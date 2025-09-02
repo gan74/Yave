@@ -158,4 +158,15 @@ struct SHBase {
 #endif
 };
 
+struct DDGIRayHit {
+    float3 position;
+    float distance;
+
+    float3 normal;
+    float padding1;
+
+    float3 radiance;
+    float padding2;
+};
+
 #endif

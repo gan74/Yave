@@ -3,7 +3,7 @@
 
 
 [[vk::binding(0)]]
-RWTexture2D out_image;
+RWStructuredBuffer<DDGIRayHit> out_hits;
 
 [[vk::binding(1)]]
 RaytracingAccelerationStructure tlas;
@@ -20,20 +20,15 @@ StructuredBuffer<DirectionalLight> lights;
 [[vk::binding(5)]]
 SamplerCube in_envmap;
 
-[[vk::binding(6)]]
-Sampler3D<uint> in_grid;
-
-[[vk::binding(7)]]
-cbuffer Params {
-    uint frame_id;
-};
-
-
 [[vk::binding(0, 1)]]
 Sampler2D all_textures[];
 
 
-
+float3 hemisphere_sample(uint i, uint count) {
+    const float theta = 2.0 * pi * i * golden;
+    const float phi = acos(1.0 - 2.0 * i / float(count)) * 0.5;
+    return float3(float2(cos(theta), sin(theta)) * sin(phi), cos(phi));
+}
 
 float4 eval_material_color(uint instance_id) {
     const MaterialData material = materials[instance_id];
@@ -41,47 +36,43 @@ float4 eval_material_color(uint instance_id) {
     return all_textures[albedo_id].SampleLevel(float2(0.5), 100.0);
 }
 
+
 [shader("compute")]
-[numthreads(ddgi.probe_size, ddgi.probe_size)]
+[numthreads(64, 1)]
 void comp() {
-    const uint2 coord = semantics.global_id.xy;
-    const uint probe_index = semantics.global_id.z;
-
+    const uint probe_index = semantics.global_id.x / ddgi.probe_rays;
+    const uint ray_index = semantics.global_id.x % ddgi.probe_rays;
     const int3 probe_id = ddgi.compute_grid_coord(probe_index);
-    if(in_grid[probe_id] != frame_id) {
-        out_image[coord] = float4(0, 1, 0, 0);
-        return;
-    }
-
     const float3 probe_pos = ddgi.compute_world_coord(probe_id, camera.position);
 
-    const float2 px_center = float2(coord) + 0.5;
-    const float2 uv = px_center / ddgi.probe_size;
-
-    const float3 trace_dir = octahedron_decode(uv);
+    const float3 trace_dir = hemisphere_sample(ray_index, ddgi.probe_rays);
 
     const float tmin = 0.01;
     const float tmax = 10000.0; // <-------------------------------------------------------------------- TODO
     const HitInfo hit = trace_inline(tlas, probe_pos, trace_dir, tmin, tmax);
+    const float3 normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
 
     float3 color = float3(0.0);
     if(hit.hit) {
         const DirectionalLight light = lights[0];
-        if(!trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
-            const float3 normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
-            const float NoL = dot(light.direction, normal);
-            if(NoL > 0.0) {
-                const float4 albedo = eval_material_color(hit.instance_id);
-                if(albedo.a > 0.8 && !hit.front_face) {
-                    color = float3(1, 0, 1);
-                } else {
-                    color = albedo.rgb * light.color * NoL;
-                }
-            }
+        const float NoL = dot(light.direction, normal);
+        if(NoL > 0.0/* && !trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit*/) {
+            const float4 albedo = eval_material_color(hit.instance_id);
+            color = albedo.rgb * light.color * NoL;
         }
     } else {
         color = in_envmap.SampleLevel(trace_dir, 0.0).rgb;
     }
 
-    out_image[coord + ddgi.compute_atlas_coord(probe_index) * ddgi.probe_size] = float4(color, hit.ray_t);
+    DDGIRayHit out_hit;
+    {
+        out_hit.position = hit.position;
+        out_hit.normal = normal;
+        out_hit.distance = hit.ray_t;
+        out_hit.radiance = color;
+        out_hit.padding1 = 0.0;
+        out_hit.padding2 = 0.0;
+    }
+
+    out_hits[semantics.global_id.x] = out_hit;
 }

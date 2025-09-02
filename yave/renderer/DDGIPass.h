@@ -29,7 +29,9 @@ SOFTWARE.
 namespace yave {
 
 struct DDGIPass {
-    FrameGraphImageId probes;
+    FrameGraphImageId irradiance;
+    FrameGraphImageId distance;
+
     FrameGraphImageId gi;
 
     static DDGIPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit);

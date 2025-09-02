@@ -22,6 +22,7 @@ cbuffer Params {
 [shader("compute")]
 [numthreads(8, 8)]
 void comp() {
+#if 0
     const uint2 size = image_size(in_depth);
     const uint2 coord = semantics.global_id.xy;
 
@@ -50,7 +51,7 @@ void comp() {
     }
 
     out_grid[probe_id] = frame_id;
-
+#endif
 }
 
 
