@@ -86,7 +86,7 @@ struct DirectionalLight {
     float cos_disk;
 
     float3 color;
-    uint padding_1;
+    uint cast_shadow;
 
     uint4 shadow_map_indices;
 };
@@ -162,8 +162,8 @@ struct DDGIRayHit {
     float3 dir;
     float t;
 
-    float3 hit_normal;
-    float is_hit;
+    float3 normal;
+    uint is_hit;
 
     float3 radiance;
     float padding;

@@ -105,7 +105,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                 -light.direction().normalized(),
                 std::cos(light.disk_size()),
                 light.color() * light.intensity(),
-                0,
+                u32(light.cast_shadow() ? 1 : 0),
                 shadow_indices
             };
 

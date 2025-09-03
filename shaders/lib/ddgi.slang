@@ -6,7 +6,7 @@
 
 namespace ddgi {
 
-static const uint probe_rays = 256;
+static const uint probe_rays = 128;
 
 static const uint grid_size = 32;
 static const uint atlas_size = 256;

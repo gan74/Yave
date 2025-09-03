@@ -8,6 +8,9 @@ Sampler2D<float3> in_irradiance;
 ConstantBuffer<Camera> camera;
 
 
+
+
+
 struct PixelStageIn {
     float3 normal;
     uint instance_index;

@@ -51,8 +51,7 @@ void comp() {
     const uint end = begin + ddgi.probe_rays;
     for(uint i = begin; i != end; ++i) {
         const DDGIRayHit hit = in_hits[i];
-        const float3 ray_dir = hit.dir;
-        const float weight = max(0.0, dot(ray_dir, tex_dir));
+        const float weight = max(0.0, dot(hit.dir, tex_dir));
 
         total += weight;
         irr += hit.radiance * weight;
@@ -65,6 +64,8 @@ void comp() {
         out_distance[coord] = dist / total;
     }
 
+
+    // out_irradiance[coord] = heat_spectrum(total / ddgi.probe_rays);
 
     // out_irradiance[coord] = max(0.0, tex_dir.y);
     /*if(any(semantics.global_id.xy == 0) || any(semantics.global_id.xy == ddgi.probe_size_border - 1)) {

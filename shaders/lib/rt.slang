@@ -41,7 +41,7 @@ HitInfo trace_inline(RaytracingAccelerationStructure accel, float3 origin, float
     RayQuery<RAY_FLAG_FORCE_OPAQUE> query;
     query.TraceRayInline(accel, RAY_FLAG_FORCE_OPAQUE, 0xFF, ray);
 
-    query.Proceed();
+    /*while*/ (query.Proceed());
 
     HitInfo info;
     if(query.CommittedStatus() == COMMITTED_TRIANGLE_HIT) {

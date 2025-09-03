@@ -108,6 +108,7 @@ class DeviceResources final : NonMovable {
             IdMaterialTemplate,
 
             DebugProbesTemplate,
+            DebugHitsTemplate,
 
             MaxMaterialTemplates
         };

@@ -116,7 +116,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
                 -light.direction().normalized(),
                 std::cos(light.disk_size()),
                 light.color() * light.intensity(),
-                0, {}
+                u32(light.cast_shadow() ? 1 : 0), {}
             };
         }
 

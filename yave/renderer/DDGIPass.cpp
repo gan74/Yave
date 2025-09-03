@@ -37,85 +37,9 @@ SOFTWARE.
 
 namespace yave {
 
-#if 0
 static constexpr u32 ddgi_grid_size = 32;
 static constexpr u32 ddgi_probe_count = ddgi_grid_size * ddgi_grid_size * ddgi_grid_size;
-static constexpr u32 ddgi_atlas_size = 256;
-static constexpr u32 ddgi_probe_size = 16;
-
-static_assert(ddgi_atlas_size * ddgi_atlas_size >= ddgi_probe_count);
-
-[[maybe_unused]]
-static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, FrameGraphImageId probes, FrameGraphVolumeId grid) {
-    FrameGraphPassBuilder builder = framegraph.add_pass("Probe debug pass");
-
-    const auto depth = builder.declare_copy(gbuffer.depth);
-    const auto color = builder.declare_copy(lit);
-
-    builder.add_depth_output(depth);
-    builder.add_color_output(color);
-    builder.add_uniform_input(probes);
-    builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_uniform_input(grid);
-    builder.add_inline_input(u32(framegraph.frame_id()));
-    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        const auto* material = device_resources()[DeviceResources::DebugProbesTemplate];
-        render_pass.bind_material_template(material, self->descriptor_set());
-
-        const StaticMesh& sphere = *device_resources()[DeviceResources::SimpleSphereMesh];
-        render_pass.draw(sphere.draw_data(), u32(ddgi_probe_count));
-    });
-
-    return color;
-}
-
-static FrameGraphMutableVolumeId place_probes(FrameGraph& framegraph, const GBufferPass& gbuffer) {
-    const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
-
-    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Probe placing pass");
-
-    FrameGraphMutableVolumeId grid = builder.declare_volume(VK_FORMAT_R32_UINT, math::Vec3ui(ddgi_grid_size));
-
-    builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_uniform_input(gbuffer.depth);
-    builder.add_uniform_input(gbuffer.normal);
-    builder.add_storage_output(grid);
-    builder.add_inline_input(u32(framegraph.frame_id()));
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources()[DeviceResources::PlaceProbesProgram];
-        recorder.dispatch_threads(program, size, self->descriptor_set());
-    });
-
-    return grid;
-}
-static FrameGraphImageId fetch_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId probes, FrameGraphVolumeId grid) {
-    const math::Vec2 size = framegraph.image_size(gbuffer.depth);
-
-    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Apply probes pass");
-
-    const auto gi = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, size);
-
-    builder.add_storage_output(gi);
-    builder.add_uniform_input(gbuffer.depth);
-    builder.add_uniform_input(gbuffer.normal);
-    builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_uniform_input(probes);
-    builder.add_uniform_input(grid);
-    builder.add_inline_input(u32(framegraph.frame_id()));
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources()[DeviceResources::ApplyProbesProgram];
-        recorder.dispatch_threads(program, size, self->descriptor_set());
-    });
-
-    return gi;
-}
-
-#endif
-
-
-static constexpr u32 ddgi_grid_size = 32;
-static constexpr u32 ddgi_probe_count = ddgi_grid_size * ddgi_grid_size * ddgi_grid_size;
-static constexpr u32 ddgi_probe_rays = 256;
+static constexpr u32 ddgi_probe_rays = 128;
 
 static constexpr u32 ddgi_atlas_size = 256;
 static constexpr u32 ddgi_probe_size_no_border = 14;
@@ -151,7 +75,7 @@ static FrameGraphTypedBufferId<shader::DDGIRayHit> trace_probes(FrameGraph& fram
                 -light.direction().normalized(),
                 std::cos(light.disk_size()),
                 light.color() * light.intensity(),
-                0, {}
+                u32(light.cast_shadow() ? 1 : 0), {}
             };
         }
 
@@ -213,7 +137,7 @@ static FrameGraphImageId apply_probes(FrameGraph& framegraph, const GBufferPass&
 
 [[maybe_unused]]
 static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, FrameGraphImageId irradiance, FrameGraphImageId /*distance*/) {
-    FrameGraphPassBuilder builder = framegraph.add_pass("Probe debug pass");
+    FrameGraphPassBuilder builder = framegraph.add_pass("Debug probes pass");
 
     const auto depth = builder.declare_copy(gbuffer.depth);
     const auto color = builder.declare_copy(lit);
@@ -228,6 +152,35 @@ static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass&
 
         const StaticMesh& sphere = *device_resources()[DeviceResources::SimpleSphereMesh];
         render_pass.draw(sphere.draw_data(), u32(ddgi_probe_count));
+    });
+
+    return color;
+}
+
+[[maybe_unused]]
+static FrameGraphImageId debug_hits(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, FrameGraphTypedBufferId<shader::DDGIRayHit> hits) {
+
+    FrameGraphPassBuilder builder = framegraph.add_pass("Debug hits pass");
+
+    const auto depth = builder.declare_copy(gbuffer.depth);
+    // const auto color = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, framegraph.image_size(lit));
+    const auto color = builder.declare_copy(lit);
+
+    builder.add_depth_output(depth);
+    builder.add_color_output(color);
+    builder.add_storage_input(hits);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
+
+    math::Vec3i coord;
+    coord.x() = editor::debug_values().value<int>("Debug probe X");
+    coord.y() = editor::debug_values().value<int>("Debug probe Y");
+    coord.z() = editor::debug_values().value<int>("Debug probe Z");
+    builder.add_inline_input(coord);
+
+    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
+        const auto* material = device_resources()[DeviceResources::DebugHitsTemplate];
+        render_pass.bind_material_template(material, self->descriptor_set());
+        render_pass.draw_array(ddgi_probe_count * ddgi_probe_rays * 2);
     });
 
     return color;
@@ -251,7 +204,11 @@ DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     pass.gi = gi;
 
     if(editor::debug_values().value<bool>("Show DDGI probes")) {
-        pass.gi = debug_probes(framegraph, gbuffer, pass.gi, irradiance, distance);
+        pass.gi = debug_probes(framegraph, gbuffer, lit, irradiance, distance);
+    }
+
+    if(editor::debug_values().value<bool>("Show DDGI hits")) {
+        pass.gi = debug_hits(framegraph, gbuffer, lit, hits);
     }
 
     return pass;

@@ -116,7 +116,7 @@ PixelStageOut frag_main(PixelStageIn in) {
     const float3 mapped_front_face_normal = /*normal.x * in.tangent + normal.y * in.bitangent + normal.z */ in.normal;
     const float3 mapped_normal = semantics.is_front_face ? mapped_front_face_normal : -mapped_front_face_normal;
 
-    const float4 albedo_alpha = albedo_tex.Sample(in.uv);
+    const float4 albedo_alpha = albedo_tex.SampleLevel(in.uv, 99999.0);
     const float3 albedo = albedo_alpha.rgb * material.base_color_factor;
 
 #ifdef ALPHA_TEST

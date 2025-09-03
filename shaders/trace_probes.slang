@@ -24,9 +24,9 @@ SamplerCube in_envmap;
 Sampler2D all_textures[];
 
 
-float3 hemisphere_sample(uint i, uint count) {
+float3 sample_sphere_uniform(uint i, uint count) {
     const float theta = 2.0 * pi * i * golden;
-    const float phi = acos(1.0 - 2.0 * i / float(count)) * 0.5;
+    const float phi = acos(1.0 - 2.0 * i / float(count));
     return float3(float2(cos(theta), sin(theta)) * sin(phi), cos(phi));
 }
 
@@ -45,18 +45,20 @@ void comp() {
     const int3 probe_id = ddgi.compute_grid_coord(probe_index);
     const float3 probe_pos = ddgi.compute_world_coord(probe_id, camera.position);
 
-    const float3 trace_dir = hemisphere_sample(ray_index, ddgi.probe_rays);
+    const float3 trace_dir = sample_sphere_uniform(ray_index, ddgi.probe_rays);
 
     const float tmin = 0.01;
     const float tmax = 10000.0; // <-------------------------------------------------------------------- TODO
     const HitInfo hit = trace_inline(tlas, probe_pos, trace_dir, tmin, tmax);
-    const float3 normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
+    float3 hit_normal = float3(0.0);
 
     float3 color = float3(0.0);
     if(hit.hit) {
         const DirectionalLight light = lights[0];
-        const float NoL = dot(light.direction, normal);
-        if(NoL > 0.0 && !trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
+        hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
+        const float NoL = dot(light.direction, hit_normal);
+        const bool cast_shadow = light.cast_shadow != 0;
+        if(NoL > 0.0 && (!cast_shadow || !trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit)) {
             const float4 albedo = eval_material_color(hit.instance_id);
             color = albedo.rgb * light.color * NoL;
         }
@@ -68,8 +70,8 @@ void comp() {
     {
         out_hit.dir = trace_dir;
         out_hit.t = hit.ray_t;
-        out_hit.hit_normal = normal;
-        out_hit.is_hit = hit.hit ? 1.0 : 0.0;
+        out_hit.normal = hit_normal;
+        out_hit.is_hit = hit.hit ? 1 : 0;
         out_hit.radiance = color;
         out_hit.padding = 0.0;
     }
