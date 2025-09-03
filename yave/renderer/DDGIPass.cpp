@@ -112,8 +112,8 @@ static std::pair<FrameGraphImageId, FrameGraphImageId>  update_probes(FrameGraph
 static FrameGraphImageId apply_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId irradiance, FrameGraphImageId distance) {
     const math::Vec2 size = framegraph.image_size(gbuffer.depth);
 
-    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
-    const TLAS& tlas = scene_view.scene()->tlas();
+    // const SceneView& scene_view = gbuffer.scene_pass.scene_view;
+    // const TLAS& tlas = scene_view.scene()->tlas();
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Apply probes pass");
 
@@ -125,7 +125,7 @@ static FrameGraphImageId apply_probes(FrameGraph& framegraph, const GBufferPass&
     builder.add_uniform_input(irradiance);
     builder.add_uniform_input(distance);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_external_input(tlas);
+    // builder.add_external_input(tlas);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::ApplyProbesProgram];
         recorder.dispatch_threads(program, size, self->descriptor_set());

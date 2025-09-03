@@ -20,8 +20,8 @@ Sampler2D<float2> in_distance;
 [[vk::binding(5)]]
 ConstantBuffer<Camera> camera;
 
-[[vk::binding(6)]]
-RaytracingAccelerationStructure tlas;
+/*[[vk::binding(6)]]
+RaytracingAccelerationStructure tlas;*/
 
 
 [shader("compute")]
@@ -71,16 +71,25 @@ void comp() {
 
         float weight = 1.0;
         weight *= trilinear.x * trilinear.y * trilinear.z;
-        // weight *= sqr(max(epsilon, (dot(probe_dir, surface.normal) + 1.0) * 0.5)) + 0.2;
         weight *= max(0.0, dot(probe_dir, surface.normal));
+        // weight *= sqr(max(epsilon, (dot(probe_dir, surface.normal) + 1.0) * 0.5)) + 0.2;
 
-        if(trace_inline(tlas, world_pos, probe_dir, 0.01, max(0.01, probe_dist)).hit) {
+        /*if(trace_inline(tlas, world_pos, probe_dir, 0.01, max(0.01, probe_dist)).hit) {
             continue;
-        }
+        }*/
 
         const uint probe_index = ddgi.compute_probe_index(probe_id);
         const uint2 probe_corner = ddgi.atlas_coord(probe_index) + 1;
-        float3 irr = in_irradiance.SampleLevel((probe_corner + sample_coord) * inv_atlas_size, 0.0);
+        const float2 sample_uv = (probe_corner + sample_coord) * inv_atlas_size;
+
+        const float2 dist_moments = in_distance.SampleLevel(sample_uv, 0.0);
+        const float mean = dist_moments.x;
+        const float variance = abs(sqr(mean) - dist_moments.y);
+        const float cheb_bias = 0.1;
+        const float chebyshev = variance / (variance + sqr(max(0.0, probe_dist - mean))) + cheb_bias;
+         weight *= (probe_dist <= mean) ? 1.0 : chebyshev;
+
+        float3 irr = in_irradiance.SampleLevel(sample_uv, 0.0);
 
 #ifdef SQ_BLEND
         irr *= irr;
