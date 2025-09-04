@@ -56,7 +56,7 @@ SOFTWARE.
 #define y_profile_alloc(ptr, size)              TracyAlloc(ptr, size)
 #define y_profile_free(ptr)                     TracyFree(ptr)
 
-#define y_profile_set_lock_name(varname, name)  do { (varname).CustomName((name), std::strlen(name)); } while(false)
+/*#define y_profile_set_lock_name(varname, name)  do { (varname).CustomName((name), std::strlen(name)); } while(false)
 
 namespace yave {
 
@@ -91,6 +91,22 @@ struct ProfiledSharedLock : tracy::SharedLockable<T>, y::NonMovable {
 template<typename T, typename Lock = std::mutex>
 using Mutexed = y::concurrent::Mutexed<T, ProfiledLock<Lock>>;
 
+}*/
+
+
+#define y_profile_set_lock_name(varname, name)  do {} while(false)
+
+namespace yave {
+
+template<typename T = std::mutex>
+using ProfiledLock = T;
+
+template<typename T = std::shared_mutex>
+using ProfiledSharedLock = T;
+
+template<typename T, typename Lock = std::mutex>
+using Mutexed = y::concurrent::Mutexed<T, ProfiledLock<Lock>>;
+
 }
 
 #else
@@ -111,10 +127,10 @@ using Mutexed = y::concurrent::Mutexed<T, ProfiledLock<Lock>>;
 
 namespace yave {
 
-template<typename T>
+template<typename T = std::mutex>
 using ProfiledLock = T;
 
-template<typename T>
+template<typename T = std::shared_mutex>
 using ProfiledSharedLock = T;
 
 template<typename T, typename Lock = std::mutex>

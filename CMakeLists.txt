@@ -139,10 +139,6 @@ file(GLOB_RECURSE YAVE_FILES
     "yave/*.cpp"
 )
 
-set(TRACY_FILES
-    "external/tracy/public/TracyClient.cpp"
-)
-
 set(SPIRV_REFLECT_FILES
     "external/spirv_reflect/spirv_reflect.c"
     "external/spirv_reflect/spirv_reflect.h"
@@ -260,23 +256,16 @@ if(YAVE_BUILD_YAVE)
     add_library(yave STATIC ${YAVE_FILES} ${SPIRV_REFLECT_FILES} ${SHADER_FILES} ${SHADER_LIBS})
 
     if(UNIX)
-        target_link_libraries(yave xcb)
+        target_link_libraries(yave PRIVATE xcb)
     endif()
 
     if(YAVE_TRACY_PROFILING)
-        add_library(tracy STATIC ${TRACY_FILES})
-        if(WIN32)
-            target_link_libraries(tracy ws2_32 dbghelp advapi32 user32)
-        endif()
-        target_compile_options(tracy PUBLIC "-DTRACY_ENABLE")
-        target_link_libraries(yave tracy)
+        option(TRACY_ENABLE "" ON)
+        add_subdirectory(external/tracy)
+        target_link_libraries(yave PUBLIC Tracy::TracyClient)
     endif()
 
-    target_link_libraries(yave y luajit)
-
-    if(NOT MSVC)
-        target_link_libraries(yave stdc++fs)
-    endif()
+    target_link_libraries(yave PUBLIC y luajit)
 
     add_custom_target(shaders)
     add_custom_target(shaders_optim)
