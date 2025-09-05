@@ -92,7 +92,7 @@ class AssetLoader : NonMovable {
                 [[nodiscard]] inline bool find_ptr(AssetPtr<T>& ptr);
                 inline std::unique_ptr<LoadingJob> create_loading_job(AssetPtr<T> ptr);
 
-                Mutexed<core::FlatHashMap<AssetId, WeakAssetPtr>, std::recursive_mutex> _loaded;
+                ProfiledMutexed<core::FlatHashMap<AssetId, WeakAssetPtr>, std::recursive_mutex> _loaded;
         };
 
    public:
@@ -143,7 +143,7 @@ class AssetLoader : NonMovable {
 
         core::Result<AssetId> load_or_import(std::string_view name, std::string_view import_from, AssetType type);
 
-        Mutexed<core::FlatHashMap<std::type_index, std::unique_ptr<LoaderBase>>, std::recursive_mutex> _loaders;
+        ProfiledMutexed<core::FlatHashMap<std::type_index, std::unique_ptr<LoaderBase>>, std::recursive_mutex> _loaders;
         std::shared_ptr<AssetStore> _store;
 
         AssetLoadingThreadPool _thread_pool;

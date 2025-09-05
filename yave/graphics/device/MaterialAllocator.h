@@ -53,7 +53,7 @@ class MaterialAllocator : NonMovable {
         void recycle(MaterialDrawData* data);
 
         TypedBuffer<shader::MaterialData, BufferUsage::StorageBit, MemoryType::CpuVisible> _materials;
-        Mutexed<core::Vector<u32>> _free;
+        ProfiledMutexed<core::Vector<u32>> _free;
 
 };
 
