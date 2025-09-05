@@ -53,7 +53,9 @@ void comp() {
     float3 hit_normal = float3(0.0);
 
     float3 color = float3(0.0);
-    if(hit.hit) {
+    if(!hit.front_face) {
+        // Nothing ?
+    } else if(hit.hit) {
         const DirectionalLight light = lights[0];
         hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
         const float NoL = dot(light.direction, hit_normal);
