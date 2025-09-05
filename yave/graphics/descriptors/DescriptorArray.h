@@ -101,7 +101,7 @@ class DescriptorArray : NonMovable {
         VkHandle<VkDescriptorSetLayout> _layout;
         std::atomic<VkDescriptorSet> _set = {};
 
-        Mutexed<Allocator> allocator;
+        ProfiledMutexed<Allocator> allocator;
 
         mutable ProfiledLock<std::mutex> _set_lock; // Locks for writes on the set
 

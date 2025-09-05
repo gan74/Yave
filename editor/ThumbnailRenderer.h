@@ -62,7 +62,7 @@ class ThumbnailRenderer : NonMovable {
 
         std::unique_ptr<ThumbnailData> schedule_render(AssetId id);
 
-        Mutexed<core::FlatHashMap<AssetId, std::unique_ptr<ThumbnailData>>> _thumbnails;
+        ProfiledMutexed<core::FlatHashMap<AssetId, std::unique_ptr<ThumbnailData>>> _thumbnails;
         AssetLoader* _loader = nullptr;
 
         concurrent::WorkerThread _render_thread;

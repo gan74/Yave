@@ -286,7 +286,7 @@ class EntityWorld : NonMovable {
 
 
         core::Vector<std::unique_ptr<ComponentContainerBase>> _containers;
-        Mutexed<core::Vector<std::unique_ptr<EntityGroupProvider>>> _groups;
+        ProfiledMutexed<core::Vector<std::unique_ptr<EntityGroupProvider>>> _groups;
 
         ComponentMatrix _matrix;
         EntityPool _entities;

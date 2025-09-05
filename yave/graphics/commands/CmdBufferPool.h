@@ -55,7 +55,7 @@ class CmdBufferPool : NonMovable {
             }
 
             core::Vector<std::unique_ptr<CmdBufferData>> cmd_buffers;
-            Mutexed<core::Vector<CmdBufferData*>> released;
+            ProfiledMutexed<core::Vector<CmdBufferData*>> released;
             const VkCommandBufferLevel level;
         };
 
@@ -71,7 +71,7 @@ class CmdBufferPool : NonMovable {
         Level _primary;
         Level _secondary;
 
-        Mutexed<core::Vector<std::unique_ptr<CmdBufferPool::InlineUniformBuffer>>> _inline_buffers;
+        ProfiledMutexed<core::Vector<std::unique_ptr<CmdBufferPool::InlineUniformBuffer>>> _inline_buffers;
 
         CmdQueue* _queue = nullptr;
 

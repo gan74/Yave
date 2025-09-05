@@ -62,12 +62,12 @@ class FrameGraphResourcePool : NonMovable {
         bool create_buffer_from_pool(TransientBuffer& res, usize byte_size, BufferUsage usage, MemoryType memory, bool exact);
 
         // That's a lot of locking....
-        Mutexed<core::Vector<std::pair<TransientImage, u64>>, std::recursive_mutex> _images;
-        Mutexed<core::Vector<std::pair<TransientVolume, u64>>, std::recursive_mutex> _volumes;
-        Mutexed<core::Vector<std::pair<TransientBuffer, u64>>, std::recursive_mutex> _buffers;
+        ProfiledMutexed<core::Vector<std::pair<TransientImage, u64>>, std::recursive_mutex> _images;
+        ProfiledMutexed<core::Vector<std::pair<TransientVolume, u64>>, std::recursive_mutex> _volumes;
+        ProfiledMutexed<core::Vector<std::pair<TransientBuffer, u64>>, std::recursive_mutex> _buffers;
 
-        Mutexed<core::Vector<TransientImage>, std::recursive_mutex> _persistent_images;
-        Mutexed<core::Vector<TransientBuffer>, std::recursive_mutex> _persistent_buffers;
+        ProfiledMutexed<core::Vector<TransientImage>, std::recursive_mutex> _persistent_images;
+        ProfiledMutexed<core::Vector<TransientBuffer>, std::recursive_mutex> _persistent_buffers;
 
         std::atomic<u64> _frame_id = 0;
 };

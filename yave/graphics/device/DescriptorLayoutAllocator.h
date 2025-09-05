@@ -72,7 +72,7 @@ class DescriptorLayoutAllocator : NonMovable {
         };
 
 
-        Mutexed<core::FlatHashMap<core::Vector<VkDescriptorSetLayoutBinding>, VkHandle<VkDescriptorSetLayout>, KeyHash, KeyEqual>> _layouts;
+        ProfiledMutexed<core::FlatHashMap<core::Vector<VkDescriptorSetLayoutBinding>, VkHandle<VkDescriptorSetLayout>, KeyHash, KeyEqual>> _layouts;
 };
 
 }

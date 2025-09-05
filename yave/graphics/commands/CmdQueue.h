@@ -94,12 +94,12 @@ class CmdQueue final : NonMovable {
         void clear_thread(u32 thread_id);
 
 
-        Mutexed<VkQueue> _queue = {};
-        Mutexed<AsyncSubmitData> _async_submit_data;
+        ProfiledMutexed<VkQueue> _queue = {};
+        ProfiledMutexed<AsyncSubmitData> _async_submit_data;
 
         Timeline _timeline;
 
-        Mutexed<core::Vector<std::pair<u32, std::unique_ptr<CmdBufferPool>>>> _cmd_pools;
+        ProfiledMutexed<core::Vector<std::pair<u32, std::unique_ptr<CmdBufferPool>>>> _cmd_pools;
 
         const u32 _family_index = u32(-1);
 
@@ -107,7 +107,7 @@ class CmdQueue final : NonMovable {
         TracyVkCtx _profiling_ctx;
 #endif
 
-        static Mutexed<core::Vector<CmdQueue*>> _all_queues;
+        static concurrent::Mutexed<core::Vector<CmdQueue*>> _all_queues;
 };
 
 }

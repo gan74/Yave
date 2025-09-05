@@ -73,7 +73,7 @@ static auto create_profiling_ctx(VkQueue queue, u32 family_index) {
 
 
 
-Mutexed<core::Vector<CmdQueue*>> CmdQueue::_all_queues = {};
+concurrent::Mutexed<core::Vector<CmdQueue*>> CmdQueue::_all_queues = {};
 
 CmdQueue::CmdQueue(u32 family_index, VkQueue queue) : _queue(queue), _family_index(family_index){
     _all_queues.locked([&](auto&& all_queues) {
@@ -296,6 +296,7 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
             }
 
             y_profile_zone("vkQueueSubmit");
+            y_profile_msg(fmt_c_str("Waiting for {} semaphores", wait_count));
             vk_check(vkQueueSubmit(queue, 1, &submit_info, fence));
         });
     }
