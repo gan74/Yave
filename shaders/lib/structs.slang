@@ -53,6 +53,9 @@ struct Camera {
     float3 position;
     float aspect;
 
+    float3 prev_position;
+    float3 padding_0;
+
     float3 forward;
     uint padding_1;
 
@@ -160,17 +163,32 @@ struct SHBase {
 
 struct DDGIRayHit {
     float3 position;
-    uint is_hit;
+    uint padding0;
 
     float3 radiance;
-    uint padding;
+    uint padding1;
 
 #ifndef __cplusplus
     __init() {
         position = float3(0.0);
         radiance = float3(0.0);
-        padding = 0;
-        is_hit = 0;
+        padding0 = 0;
+        padding1 = 0;
+    }
+#endif
+};
+
+
+struct IrradianceFieldSettings {
+    float distance_bias;
+    float variance_bias;
+    float chebyshev_bias;
+
+#ifndef __cplusplus
+    __init() {
+        distance_bias = 0.0;
+        variance_bias = 0.02;
+        chebyshev_bias = 0.07;
     }
 #endif
 };

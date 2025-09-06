@@ -194,6 +194,7 @@ Camera::operator shader::Camera() const {
     camera_data.inv_view = camera_data.view.inverse();
 
     camera_data.position = position();
+    camera_data.prev_position = camera_data.position;
     camera_data.forward = forward();
     camera_data.up = up();
 

@@ -14,6 +14,11 @@ StructuredBuffer<DDGIRayHit> in_hits;
 [[vk::binding(3)]]
 ConstantBuffer<Camera> camera;
 
+[[vk::binding(4)]]
+cbuffer Params {
+    float depth_sharpness;
+};
+
 
 uint mirror(uint x) {
     return ddgi.probe_size_border - (x + 1);
@@ -37,13 +42,16 @@ uint2 wrap_coord(uint2 c) {
 void comp() {
     const uint probe_index = semantics.global_id.z;
     const int3 probe_id = ddgi.compute_grid_coord(probe_index);
-    const float3 probe_pos = ddgi.compute_world_coord(probe_id, camera.position);
+    const int3 probe_pos = ddgi.compute_world_coord(probe_id, camera.position);
+    const bool probe_moved = any(probe_pos != ddgi.compute_world_coord(probe_id, camera.prev_position));
 
     const float2 uv = (wrap_coord(semantics.global_id.xy) + 0.5) / ddgi.probe_size_no_border;
     const float3 tex_dir = octahedron_decode(uv);
 
     float total = 0.0;
     float3 irr = 0.0;
+
+    float dist_total = 0.0;
     float2 dist = 0.0;
 
     const uint begin = probe_index * ddgi.probe_rays;
@@ -58,19 +66,23 @@ void comp() {
 
         total += weight;
         irr += hit.radiance * weight;
-        dist += float2(ray_len, sqr(ray_len)) * weight;
+
+        const float dist_weight = pow(weight, depth_sharpness);
+
+        dist_total += dist_weight;
+        dist += float2(ray_len, sqr(ray_len)) * dist_weight;
     }
 
     const uint2 coord = ddgi.atlas_coord(probe_index) + semantics.global_id.xy;
-    if(total > epsilon) {
+
 #if 0
-        out_irradiance[coord] = lerp(irr / total, out_irradiance[coord], 0.9);
-        out_distance[coord] = lerp(dist / total, out_distance[coord], 0.9);
+    const float blend_factor = probe_moved ? 0.0 : 0.98;
+    out_irradiance[coord] = lerp(irr / max(epsilon, total), out_irradiance[coord], blend_factor);
+    out_distance[coord] = lerp(dist / max(epsilon, dist_total), out_distance[coord], blend_factor);
 #else
-        out_irradiance[coord] = irr / total;
-        out_distance[coord] = dist / total;
+    out_irradiance[coord] = irr / max(epsilon, total);
+    out_distance[coord] = dist / max(epsilon, dist_total) * 0.5;
 #endif
-    }
 
 
     // out_irradiance[coord] = identifying_color(probe_index);

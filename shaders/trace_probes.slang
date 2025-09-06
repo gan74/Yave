@@ -21,10 +21,17 @@ StructuredBuffer<DirectionalLight> lights;
 SamplerCube in_envmap;
 
 [[vk::binding(6)]]
+Sampler2D<float3> in_irradiance;
+
+[[vk::binding(7)]]
+Sampler2D<float2> in_distance;
+
+[[vk::binding(8)]]
 cbuffer Params {
     float4 normal;
     float4 tangent;
     float4 bitangent;
+    float sky_intensity;
 };
 
 [[vk::binding(0, 1)]]
@@ -61,29 +68,27 @@ void comp() {
 
     const float tmin = 0.01;
     const float tmax = 10000.0; // <-------------------------------------------------------------------- TODO
-    const HitInfo hit = trace_inline(tlas, probe_pos, trace_dir, tmin, tmax);
+    const HitInfo hit = trace_inline_flags<RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_CULL_BACK_FACING_TRIANGLES>(tlas, probe_pos, trace_dir, tmin, tmax);
 
     DDGIRayHit out_hit;
-    {
-        out_hit.position = hit.position;
-        out_hit.is_hit = hit.hit ? 1 : 0;
-    }
+    out_hit.position = hit.position;
 
-    if(!hit.front_face) {
-        out_hit.position = probe_pos;
-    } else if(hit.hit) {
+    if(hit.hit) {
         const float3 hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
         out_hit.position += hit_normal * 0.01;
+
+        float3 radiance = sample_irradiance(hit.position, hit_normal, camera.position, in_irradiance, in_distance) * inv_pi;
 
         const DirectionalLight light = lights[0];
         const float NoL = dot(light.direction, hit_normal);
         const bool cast_shadow = light.cast_shadow != 0;
         if(NoL > 0.0 && (!cast_shadow || !trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit)) {
-            const float4 albedo = eval_material_color(hit.instance_id);
-            out_hit.radiance = albedo.rgb * light.color * NoL;
+            radiance += light.color * NoL;
         }
+
+        out_hit.radiance = radiance * eval_material_color(hit.instance_id).rgb;
     } else {
-        out_hit.radiance = in_envmap.SampleLevel(trace_dir, 0.0).rgb; // ....
+        out_hit.radiance = in_envmap.SampleLevel(trace_dir, 0.0).rgb * sky_intensity;
     }
 
     out_hits[semantics.global_id.x] = out_hit;

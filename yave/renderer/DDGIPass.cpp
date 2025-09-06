@@ -71,17 +71,25 @@ static auto generate_random_tbn(u64 seed) {
     return tbn;
 }
 
-static FrameGraphTypedBufferId<shader::DDGIRayHit> trace_probes(FrameGraph& framegraph, const GBufferPass& gbuffer) {
+static std::tuple<FrameGraphTypedBufferId<shader::DDGIRayHit>, FrameGraphMutableImageId, FrameGraphMutableImageId> trace_probes(FrameGraph& framegraph, const GBufferPass& gbuffer) {
     const SceneView& scene_view = gbuffer.scene_pass.scene_view;
     const TLAS& tlas = scene_view.scene()->tlas();
 
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
-    const IBLProbe* ibl_probe = std::get<0>(visibility.ibl_probe());
+    const auto [ibl_probe, intensity, _] = visibility.ibl_probe();
 
-    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Probe filling pass");
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Probe tracing pass");
 
     const auto hits = builder.declare_typed_buffer<shader::DDGIRayHit>(ddgi_probe_count * ddgi_probe_rays);
     const auto directionals = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
+
+    const auto irradiance = builder.declare_image(VK_FORMAT_B10G11R11_UFLOAT_PACK32, math::Vec2ui(ddgi_probe_size_border * ddgi_atlas_size));
+    const auto distance = builder.declare_image(VK_FORMAT_R16G16_SFLOAT, math::Vec2ui(ddgi_probe_size_border * ddgi_atlas_size));
+
+    if(editor::debug_values().value<bool>("Clear probes")) {
+        builder.clear_before_pass(irradiance);
+        builder.clear_before_pass(distance);
+    }
 
     builder.map_buffer(directionals);
 
@@ -91,7 +99,9 @@ static FrameGraphTypedBufferId<shader::DDGIRayHit> trace_probes(FrameGraph& fram
     builder.add_external_input(Descriptor(material_allocator().material_buffer()));
     builder.add_storage_input(directionals);
     builder.add_external_input(*ibl_probe);
-    builder.add_inline_input(generate_random_tbn(framegraph.frame_id()));
+    builder.add_uniform_input(irradiance);
+    builder.add_uniform_input(distance);
+    builder.add_inline_input(std::pair{generate_random_tbn(framegraph.frame_id()), intensity});
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto mapping = self->resources().map_buffer(directionals);
         for(usize i = 0; i != visibility.directional_lights.size(); ++i) {
@@ -113,32 +123,28 @@ static FrameGraphTypedBufferId<shader::DDGIRayHit> trace_probes(FrameGraph& fram
         recorder.dispatch_threads(program, math::Vec2ui(ddgi_probe_count * ddgi_probe_rays, 1), desc_sets);
     });
 
-    return hits;
+    return {hits, irradiance, distance};
 }
 
-static std::pair<FrameGraphImageId, FrameGraphImageId> update_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphTypedBufferId<shader::DDGIRayHit> hits) {
+static void update_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphTypedBufferId<shader::DDGIRayHit> hits, FrameGraphMutableImageId irradiance, FrameGraphMutableImageId distance) {
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Update probes pass");
-
-    const auto irradiance = builder.declare_image(VK_FORMAT_B10G11R11_UFLOAT_PACK32, math::Vec2ui(ddgi_probe_size_border * ddgi_atlas_size));
-    const auto distance = builder.declare_image(VK_FORMAT_R32G32_SFLOAT, math::Vec2ui(ddgi_probe_size_border * ddgi_atlas_size));
 
     builder.add_storage_output(irradiance);
     builder.add_storage_output(distance);
     builder.add_storage_input(hits);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
+    builder.add_inline_input(editor::debug_values().value<float>("Depth sharpness", 2.0f));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::UpdateProbesProgram];
         recorder.dispatch_threads(program, math::Vec3ui(ddgi_probe_size_border, ddgi_probe_size_border, ddgi_probe_count), self->descriptor_set());
     });
-
-    return {irradiance, distance};
 }
 
 static FrameGraphImageId apply_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId irradiance, FrameGraphImageId distance) {
     const math::Vec2 size = framegraph.image_size(gbuffer.depth);
 
-    /*const SceneView& scene_view = gbuffer.scene_pass.scene_view;
-    const TLAS& tlas = scene_view.scene()->tlas();*/
+    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
+    const TLAS& tlas = scene_view.scene()->tlas();
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Apply probes pass");
 
@@ -150,7 +156,7 @@ static FrameGraphImageId apply_probes(FrameGraph& framegraph, const GBufferPass&
     builder.add_uniform_input(irradiance);
     builder.add_uniform_input(distance);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-    // builder.add_external_input(tlas);
+    builder.add_external_input(tlas);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::ApplyProbesProgram];
         recorder.dispatch_threads(program, size, self->descriptor_set());
@@ -220,8 +226,8 @@ DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     const auto region = framegraph.region("GI");
 
-    const FrameGraphTypedBufferId<shader::DDGIRayHit> hits = trace_probes(framegraph, gbuffer);
-    const auto [irradiance, distance] = update_probes(framegraph, gbuffer, hits);
+    const auto [hits, irradiance, distance] = trace_probes(framegraph, gbuffer);
+    update_probes(framegraph, gbuffer, hits, irradiance, distance);
     const FrameGraphImageId gi = apply_probes(framegraph, gbuffer, irradiance, distance);
 
     DDGIPass pass;

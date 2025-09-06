@@ -29,7 +29,7 @@ struct HitInfo {
     }
 };
 
-HitInfo trace_inline(RaytracingAccelerationStructure accel, float3 origin, float3 dir, float min_dist, float max_dist) {
+HitInfo trace_inline_flags<uint flags>(RaytracingAccelerationStructure accel, float3 origin, float3 dir, float min_dist, float max_dist) {
     RayDesc ray;
     {
         ray.Origin = origin;
@@ -38,8 +38,8 @@ HitInfo trace_inline(RaytracingAccelerationStructure accel, float3 origin, float
         ray.TMax = max_dist;
     }
 
-    RayQuery<RAY_FLAG_FORCE_OPAQUE> query;
-    query.TraceRayInline(accel, RAY_FLAG_FORCE_OPAQUE, 0xFF, ray);
+    RayQuery<flags> query;
+    query.TraceRayInline(accel, flags, 0xFF, ray);
 
     /*while*/ (query.Proceed());
 
@@ -64,5 +64,8 @@ HitInfo trace_inline(RaytracingAccelerationStructure accel, float3 origin, float
     return info;
 }
 
+HitInfo trace_inline(RaytracingAccelerationStructure accel, float3 origin, float3 dir, float min_dist, float max_dist) {
+    return trace_inline_flags<RAY_FLAG_FORCE_OPAQUE>(accel, origin, dir, min_dist, max_dist);
+}
 
 #endif // RT_SLANG
