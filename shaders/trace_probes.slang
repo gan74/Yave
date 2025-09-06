@@ -20,6 +20,13 @@ StructuredBuffer<DirectionalLight> lights;
 [[vk::binding(5)]]
 SamplerCube in_envmap;
 
+[[vk::binding(6)]]
+cbuffer Params {
+    float4 normal;
+    float4 tangent;
+    float4 bitangent;
+};
+
 [[vk::binding(0, 1)]]
 Sampler2D all_textures[];
 
@@ -28,6 +35,11 @@ float3 sample_sphere_uniform(uint i, uint count) {
     const float theta = 2.0 * pi * i * golden;
     const float phi = acos(1.0 - 2.0 * i / float(count));
     return float3(float2(cos(theta), sin(theta)) * sin(phi), cos(phi));
+}
+
+float3 sample_sphere_uniform_rotated(uint i, uint count) {
+    const float3 v = sample_sphere_uniform(i, count);
+    return (v.x * normal + v.y * tangent + v.z * bitangent).xyz;
 }
 
 float4 eval_material_color(uint instance_id) {
@@ -71,7 +83,7 @@ void comp() {
     DDGIRayHit out_hit;
     {
         out_hit.dir = trace_dir;
-        out_hit.t = hit.ray_t;
+        out_hit.t = hit.front_face ? hit.ray_t : 0;
         out_hit.normal = hit_normal;
         out_hit.is_hit = hit.hit ? 1 : 0;
         out_hit.radiance = color;

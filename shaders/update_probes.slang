@@ -35,10 +35,7 @@ uint2 wrap_coord(uint2 c) {
 [shader("compute")]
 [numthreads(ddgi.probe_size_border, ddgi.probe_size_border)]
 void comp() {
-    const uint probe_index = semantics.global_id.z;
-
-    // const int3 probe_id = ddgi.compute_grid_coord(probe_index);
-    // const float3 probe_pos = ddgi.compute_world_coord(probe_id, camera.position);
+    const uint probe_index = semantics.global_id.z;;
 
     const float2 uv = (wrap_coord(semantics.global_id.xy) + 0.5) / ddgi.probe_size_no_border;
     const float3 tex_dir = octahedron_decode(uv);
@@ -60,15 +57,15 @@ void comp() {
 
     const uint2 coord = ddgi.atlas_coord(probe_index) + semantics.global_id.xy;
     if(total > epsilon) {
+#if 0
+        out_irradiance[coord] = lerp(irr / total, out_irradiance[coord], 0.9);
+        out_distance[coord] = lerp(dist / total, out_distance[coord], 0.9);
+#else
         out_irradiance[coord] = irr / total;
         out_distance[coord] = dist / total;
+#endif
     }
 
 
-    // out_irradiance[coord] = heat_spectrum(total / ddgi.probe_rays);
-
-    // out_irradiance[coord] = max(0.0, tex_dir.y);
-    /*if(any(semantics.global_id.xy == 0) || any(semantics.global_id.xy == ddgi.probe_size_border - 1)) {
-        out_irradiance[coord] = float3(1, 0, 0);
-    }*/
+    // out_irradiance[coord] = identifying_color(probe_index);
 }

@@ -24,6 +24,15 @@ ConstantBuffer<Camera> camera;
 RaytracingAccelerationStructure tlas;*/
 
 
+float3 encode_irr(float3 irr) {
+    return irr * irr;
+}
+
+float3 decode_irr(float3 irr) {
+    return sqrt(irr);
+}
+
+
 [shader("compute")]
 [numthreads(8, 8)]
 void comp() {
@@ -40,8 +49,8 @@ void comp() {
         return;
     }
 
-    const float3 world_pos = unproject(((semantics.global_id.xy + 0.5) / size), depth, camera.curr.inv_view_proj);
-    if(!ddgi.in_range(world_pos, camera.position)) {
+    const float3 true_world_pos = unproject(((semantics.global_id.xy + 0.5) / size), depth, camera.curr.inv_view_proj);
+    if(!ddgi.in_range(true_world_pos, camera.position)) {
         out_image[coord] = float3(0.0);
         return;
     }
@@ -51,62 +60,65 @@ void comp() {
     const SurfaceInfo surface = decode_gbuffer({float4(0.0), in_rt1[coord]});
     const float2 sample_coord = octahedron_encode(surface.normal) * ddgi.probe_size_no_border;
 
-    const int3 lo = ddgi.compute_grid_coord_low(world_pos);
-    const int3 hi = ddgi.compute_grid_coord_high(world_pos);
+    const float3 view_dir = normalize(camera.position - true_world_pos);
+    const float3 bias = surface.normal * 0.05 + view_dir * 0.05;
+    const float3 sample_world_pos = true_world_pos + bias;
 
     float total = 0.0;
     float3 acc = 0.0;
-    for(uint k = 0; k != 8; ++k) {
-        const int3 probe_id = int3(
-            ((k & 0x01) != 0) ? lo.x : hi.x,
-            ((k & 0x02) != 0) ? lo.y : hi.y,
-            ((k & 0x04) != 0) ? lo.z : hi.z,
-        );
+    for(int kx = -1; kx <= 1; ++kx) {
+        for(int ky = -1; ky <= 1; ++ky) {
+            for(int kz = -1; kz <= 1; ++kz) {
+                float weight = 1.0;
 
-        const int3 probe_pos = ddgi.compute_world_coord(probe_id, camera.position);
-        const float3 probe_vec = probe_pos - world_pos;
-        const float probe_dist = length(probe_vec);
-        const float3 probe_dir = probe_vec / probe_dist;
-        const float3 trilinear = saturate(1.0 - abs(probe_vec));
+                const int3 probe_id = ddgi.compute_grid_coord(sample_world_pos + float3(kx, ky, kz));
+                const int3 probe_pos = ddgi.compute_world_coord(probe_id, camera.position);
+                const float3 probe_vec = probe_pos - sample_world_pos;
+                const float probe_dist = length(probe_vec);
 
-        float weight = 1.0;
-        weight *= trilinear.x * trilinear.y * trilinear.z;
-        weight *= max(0.0, dot(probe_dir, surface.normal));
-        // weight *= sqr(max(epsilon, (dot(probe_dir, surface.normal) + 1.0) * 0.5)) + 0.2;
+                {
+                    const float3 trilinear = saturate(1.0 - abs(probe_vec) / 1.5);
+                    weight *= trilinear.x * trilinear.y * trilinear.z;
+                }
 
-        /*if(trace_inline(tlas, world_pos, probe_dir, 0.01, max(0.01, probe_dist)).hit) {
-            continue;
-        }*/
-
-        const uint probe_index = ddgi.compute_probe_index(probe_id);
-        const uint2 probe_corner = ddgi.atlas_coord(probe_index) + 1;
-        const float2 sample_uv = (probe_corner + sample_coord) * inv_atlas_size;
-
-        const float2 dist_moments = in_distance.SampleLevel(sample_uv, 0.0);
-        const float mean = dist_moments.x;
-        const float variance = abs(sqr(mean) - dist_moments.y);
-        const float cheb_bias = 0.1;
-        const float chebyshev = variance / (variance + sqr(max(0.0, probe_dist - mean))) + cheb_bias;
-         weight *= (probe_dist <= mean) ? 1.0 : chebyshev;
-
-        float3 irr = in_irradiance.SampleLevel(sample_uv, 0.0);
-
-#ifdef SQ_BLEND
-        irr *= irr;
+#if 1
+                {
+                    const float3 true_pos_vec = probe_pos - true_world_pos;
+                    weight *= max(0.0, dot(normalize(true_pos_vec), surface.normal));
+                    // weight *= sqr(max(epsilon, (dot(probe_dir, surface.normal) + 1.0) * 0.5)) + 0.2;
+                }
 #endif
 
-        total += weight;
-        acc += irr * weight;
+                const uint probe_index = ddgi.compute_probe_index(probe_id);
+                const uint2 probe_corner = ddgi.atlas_coord(probe_index) + 1;
+                const float2 sample_uv = (probe_corner + sample_coord) * inv_atlas_size;
+
+#if 1
+                {
+                    const float2 dist_moments = in_distance.SampleLevel(sample_uv, 0.0);
+                    const float mean = dist_moments.x;
+                    const float variance = abs(sqr(mean) - dist_moments.y);
+                    const float cheb_bias = 0.1;
+                    const float chebyshev = variance / (variance + sqr(max(0.0, probe_dist - mean))) + cheb_bias;
+                    weight *= (probe_dist <= mean) ? 1.0 : min(1.0, chebyshev);
+
+                    /*if(trace_inline(tlas, world_pos + bias, normalize(probe_vec), 0.01, max(0.01, probe_dist)).hit) {
+                        weight = 0.0;
+                    }*/
+                }
+#endif
+
+                const float3 irr = in_irradiance.SampleLevel(sample_uv, 0.0);
+
+                total += weight;
+                acc += encode_irr(irr) * weight;
+            }
+        }
     }
 
 
-#ifdef SQ_BLEND
-    irr = sqrt(irr);
-#endif
-
     if(total > epsilon) {
-        // out_image[coord] = (acc / total) * 0.5 * pi;
-        out_image[coord] = acc / total;
+        out_image[coord] = decode_irr(acc / total);
     } else {
         out_image[coord] = float3(0.0);
     }

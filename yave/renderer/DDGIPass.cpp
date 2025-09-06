@@ -34,6 +34,8 @@ SOFTWARE.
 
 #include <yave/utils/DebugValues.h>
 
+#include <y/math/random.h>
+
 
 namespace yave {
 
@@ -46,6 +48,28 @@ static constexpr u32 ddgi_probe_size_no_border = 14;
 static constexpr u32 ddgi_probe_size_border = ddgi_probe_size_no_border + 2;
 
 
+static auto generate_random_tbn(u64 seed) {
+    math::FastRandom rng(seed);
+    auto random = [&] { return float(double(rng()) / double(rng.max())) * 2.0f - 1.0f; };
+    const math::Vec3 normal = math::Vec3(random(), random(), random()).normalized();
+
+    math::Vec3 tangent;
+    for(;;) {
+        tangent = math::Vec3(random(), random(), random()).normalized();
+        if(std::abs(tangent.dot(normal)) < 0.9f) {
+            break;
+        }
+    }
+
+    const math::Vec3 bitangent = normal.cross(tangent).normalized();
+    tangent = normal.cross(bitangent);
+
+    const std::array<math::Vec4, 3> tbn {
+        math::Vec4(normal, 0.0f),  math::Vec4(tangent, 0.0f),  math::Vec4(bitangent, 0.0f)
+    };
+
+    return tbn;
+}
 
 static FrameGraphTypedBufferId<shader::DDGIRayHit> trace_probes(FrameGraph& framegraph, const GBufferPass& gbuffer) {
     const SceneView& scene_view = gbuffer.scene_pass.scene_view;
@@ -67,6 +91,7 @@ static FrameGraphTypedBufferId<shader::DDGIRayHit> trace_probes(FrameGraph& fram
     builder.add_external_input(Descriptor(material_allocator().material_buffer()));
     builder.add_storage_input(directionals);
     builder.add_external_input(*ibl_probe);
+    builder.add_inline_input(generate_random_tbn(framegraph.frame_id()));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto mapping = self->resources().map_buffer(directionals);
         for(usize i = 0; i != visibility.directional_lights.size(); ++i) {
@@ -91,7 +116,7 @@ static FrameGraphTypedBufferId<shader::DDGIRayHit> trace_probes(FrameGraph& fram
     return hits;
 }
 
-static std::pair<FrameGraphImageId, FrameGraphImageId>  update_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphTypedBufferId<shader::DDGIRayHit> hits) {
+static std::pair<FrameGraphImageId, FrameGraphImageId> update_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphTypedBufferId<shader::DDGIRayHit> hits) {
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Update probes pass");
 
     const auto irradiance = builder.declare_image(VK_FORMAT_B10G11R11_UFLOAT_PACK32, math::Vec2ui(ddgi_probe_size_border * ddgi_atlas_size));
@@ -112,8 +137,8 @@ static std::pair<FrameGraphImageId, FrameGraphImageId>  update_probes(FrameGraph
 static FrameGraphImageId apply_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId irradiance, FrameGraphImageId distance) {
     const math::Vec2 size = framegraph.image_size(gbuffer.depth);
 
-    // const SceneView& scene_view = gbuffer.scene_pass.scene_view;
-    // const TLAS& tlas = scene_view.scene()->tlas();
+    /*const SceneView& scene_view = gbuffer.scene_pass.scene_view;
+    const TLAS& tlas = scene_view.scene()->tlas();*/
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Apply probes pass");
 
@@ -136,7 +161,7 @@ static FrameGraphImageId apply_probes(FrameGraph& framegraph, const GBufferPass&
 
 
 [[maybe_unused]]
-static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, FrameGraphImageId irradiance, FrameGraphImageId /*distance*/) {
+static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, FrameGraphImageId irradiance, FrameGraphImageId distance) {
     FrameGraphPassBuilder builder = framegraph.add_pass("Debug probes pass");
 
     const auto depth = builder.declare_copy(gbuffer.depth);
@@ -145,6 +170,7 @@ static FrameGraphImageId debug_probes(FrameGraph& framegraph, const GBufferPass&
     builder.add_depth_output(depth);
     builder.add_color_output(color);
     builder.add_uniform_input(irradiance);
+    builder.add_uniform_input(distance);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::DebugProbesTemplate];
@@ -204,11 +230,11 @@ DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     pass.gi = gi;
 
     if(editor::debug_values().value<bool>("Show DDGI probes")) {
-        pass.gi = debug_probes(framegraph, gbuffer, lit, irradiance, distance);
+        pass.gi = debug_probes(framegraph, gbuffer, pass.gi, irradiance, distance);
     }
 
     if(editor::debug_values().value<bool>("Show DDGI hits")) {
-        pass.gi = debug_hits(framegraph, gbuffer, lit, hits);
+        pass.gi = debug_hits(framegraph, gbuffer, pass.gi, hits);
     }
 
     return pass;
