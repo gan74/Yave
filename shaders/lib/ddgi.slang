@@ -69,12 +69,12 @@ float3 decode_irr(float3 irr) {
 }
 
 
-// #define DDGI_SAMPLE_EXHAUSTIVE
+// #define DDGI_SAMPLE_EXTENDED
 
 #ifdef DDGI_TRACE_PROBES
 float3 sample_irradiance(float3 world_pos, float3 normal, float3 cam_pos, Sampler2D<float3> irradiance_tex, RaytracingAccelerationStructure tlas) {
 #else
-float3 sample_irradiance(float3 world_pos, float3 normal, float3 cam_pos, Sampler2D<float3> irradiance_tex, Sampler2D<float2> distance_tex, IrradianceFieldSettings settings = IrradianceFieldSettings()) {
+float3 sample_irradiance(float3 world_pos, float3 normal, float3 cam_pos, Sampler2D<float3> irradiance_tex, Sampler2D<float2> distance_tex, IrradianceFieldSampleParams params = IrradianceFieldSampleParams()) {
 #endif
     const float2 inv_atlas_size = 1.0 / image_size(irradiance_tex);
 
@@ -87,7 +87,7 @@ float3 sample_irradiance(float3 world_pos, float3 normal, float3 cam_pos, Sample
     float total = 0.0;
     float3 acc = 0.0;
 
-#ifdef DDGI_SAMPLE_EXHAUSTIVE
+#ifdef DDGI_SAMPLE_EXTENDED
     for(int kx = -1; kx <= 1; ++kx)
     for(int ky = -1; ky <= 1; ++ky)
     for(int kz = -1; kz <= 1; ++kz) {
@@ -126,11 +126,11 @@ float3 sample_irradiance(float3 world_pos, float3 normal, float3 cam_pos, Sample
                 continue;
             }
 
-            const float mean = dist_moments.x + settings.distance_bias;
-            const float variance = abs(sqr(mean) - dist_moments.y) + settings.variance_bias;
+            const float mean = dist_moments.x + params.distance_bias;
+            const float variance = abs(sqr(mean) - dist_moments.y) + params.variance_bias;
 
             const float chebyshev = variance / (variance + sqr(max(0.0, probe_dist - mean)));
-            const float chebyshev_weight = max(0.0, sqr(chebyshev) - settings.chebyshev_bias) / (1.0 - settings.chebyshev_bias);
+            const float chebyshev_weight = max(0.0, sqr(chebyshev) - params.chebyshev_bias) / (1.0 - params.chebyshev_bias);
             weight *= (probe_dist <= mean) ? 1.0 : chebyshev_weight;
         }
 #endif
@@ -150,7 +150,7 @@ float3 sample_irradiance(float3 world_pos, float3 normal, float3 cam_pos, Sample
         }
 
         {
-#ifdef DDGI_SAMPLE_EXHAUSTIVE
+#ifdef DDGI_SAMPLE_EXTENDED
             const float3 trilinear = saturate(1.0 - abs(probe_vec) / 1.5);
 #else
             const float3 trilinear = saturate(1.0 - abs(probe_vec));

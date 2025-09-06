@@ -1,6 +1,12 @@
 #ifndef STRUCT_SLANG
 #define STRUCT_SLANG
 
+#ifdef __cplusplus
+#define SLANG_CTOR(Type) Type
+#else
+#define SLANG_CTOR(Type) __init
+#endif
+
 
 enum TextureSlots : uint32_t {
     Albedo                      = 0,
@@ -154,11 +160,9 @@ struct AtmosphereParams {
 struct SHBase {
     float Y00, Y11, Y10, Y1_1, Y21, Y2_1, Y2_2, Y20, Y22;
 
-#ifndef __cplusplus
-    __init() {
+    SLANG_CTOR(SHBase)() {
         Y00 = Y11 = Y10 = Y1_1 = Y21 = Y2_1 = Y2_2 = Y20 = Y22 = 0.0;
     }
-#endif
 };
 
 struct DDGIRayHit {
@@ -168,29 +172,29 @@ struct DDGIRayHit {
     float3 radiance;
     uint padding1;
 
-#ifndef __cplusplus
-    __init() {
+    SLANG_CTOR(DDGIRayHit)() {
         position = float3(0.0);
         radiance = float3(0.0);
         padding0 = 0;
         padding1 = 0;
     }
-#endif
 };
 
-
-struct IrradianceFieldSettings {
+struct IrradianceFieldSampleParams {
     float distance_bias;
     float variance_bias;
     float chebyshev_bias;
 
-#ifndef __cplusplus
-    __init() {
+    SLANG_CTOR(IrradianceFieldSampleParams)() {
         distance_bias = 0.0;
         variance_bias = 0.02;
         chebyshev_bias = 0.07;
     }
-#endif
+};
+
+struct ProbeData {
+    float3 position;
+    float padding;
 };
 
 #endif
