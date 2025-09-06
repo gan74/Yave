@@ -62,7 +62,7 @@ void comp() {
 
     const float3 view_dir = normalize(camera.position - true_world_pos);
     const float3 bias = surface.normal * 0.05 + view_dir * 0.05;
-    const float3 sample_world_pos = true_world_pos + bias;
+    const float3 biased_world_pos = true_world_pos + bias;
 
     float total = 0.0;
     float3 acc = 0.0;
@@ -71,9 +71,9 @@ void comp() {
             for(int kz = -1; kz <= 1; ++kz) {
                 float weight = 1.0;
 
-                const int3 probe_id = ddgi.compute_grid_coord(sample_world_pos + float3(kx, ky, kz));
+                const int3 probe_id = ddgi.compute_grid_coord(biased_world_pos + float3(kx, ky, kz));
                 const int3 probe_pos = ddgi.compute_world_coord(probe_id, camera.position);
-                const float3 probe_vec = probe_pos - sample_world_pos;
+                const float3 probe_vec = probe_pos - biased_world_pos;
                 const float probe_dist = length(probe_vec);
 
                 {
@@ -91,11 +91,12 @@ void comp() {
 
                 const uint probe_index = ddgi.compute_probe_index(probe_id);
                 const uint2 probe_corner = ddgi.atlas_coord(probe_index) + 1;
-                const float2 sample_uv = (probe_corner + sample_coord) * inv_atlas_size;
-
 #if 1
                 {
-                    const float2 dist_moments = in_distance.SampleLevel(sample_uv, 0.0);
+                    const float2 dist_sample_coord = octahedron_encode(probe_vec) * ddgi.probe_size_no_border;
+                    const float2 dist_sample_uv = (probe_corner + dist_sample_coord) * inv_atlas_size;
+
+                    const float2 dist_moments = in_distance.SampleLevel(dist_sample_uv, 0.0);
                     const float mean = dist_moments.x;
                     const float variance = abs(sqr(mean) - dist_moments.y);
                     const float cheb_bias = 0.1;
@@ -108,6 +109,7 @@ void comp() {
                 }
 #endif
 
+                const float2 sample_uv = (probe_corner + sample_coord) * inv_atlas_size;
                 const float3 irr = in_irradiance.SampleLevel(sample_uv, 0.0);
 
                 total += weight;
