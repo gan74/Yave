@@ -25,11 +25,11 @@ RaytracingAccelerationStructure tlas;*/
 
 
 float3 encode_irr(float3 irr) {
-    return irr * irr;
+    return sqrt(irr);
 }
 
 float3 decode_irr(float3 irr) {
-    return sqrt(irr);
+    return sqr(irr);
 }
 
 
@@ -76,15 +76,10 @@ void comp() {
                 const float3 probe_vec = probe_pos - biased_world_pos;
                 const float probe_dist = length(probe_vec);
 
-                {
-                    const float3 trilinear = saturate(1.0 - abs(probe_vec) / 1.5);
-                    weight *= trilinear.x * trilinear.y * trilinear.z;
-                }
-
 #if 1
                 {
-                    const float3 true_pos_vec = probe_pos - true_world_pos;
-                    weight *= max(0.0, dot(normalize(true_pos_vec), surface.normal));
+                    const float3 true_probe_vec = probe_pos - true_world_pos;
+                    weight *= max(0.0, dot(normalize(true_probe_vec), surface.normal));
                     // weight *= sqr(max(epsilon, (dot(probe_dir, surface.normal) + 1.0) * 0.5)) + 0.2;
                 }
 #endif
@@ -99,15 +94,27 @@ void comp() {
                     const float2 dist_moments = in_distance.SampleLevel(dist_sample_uv, 0.0);
                     const float mean = dist_moments.x;
                     const float variance = abs(sqr(mean) - dist_moments.y);
-                    const float cheb_bias = 0.1;
-                    const float chebyshev = variance / (variance + sqr(max(0.0, probe_dist - mean))) + cheb_bias;
-                    weight *= (probe_dist <= mean) ? 1.0 : min(1.0, chebyshev);
+
+                    const float chebyshev = max(0.0, variance / (variance + sqr(max(0.0, probe_dist - mean))) + 0.1);
+                    weight *= (probe_dist <= mean) ? 1.0 : (chebyshev * chebyshev * chebyshev);
 
                     /*if(trace_inline(tlas, world_pos + bias, normalize(probe_vec), 0.01, max(0.01, probe_dist)).hit) {
                         weight = 0.0;
                     }*/
                 }
 #endif
+
+                const float crush_threshold = 0.2;
+                if (weight < crush_threshold) {
+                    weight = max(epsilon, weight);
+                    weight *= weight * weight * (1.0 / sqr(crush_threshold));
+                }
+
+                {
+                    const float3 trilinear = saturate(1.0 - abs(probe_vec) / 1.5);
+                    weight *= trilinear.x * trilinear.y * trilinear.z;
+                }
+
 
                 const float2 sample_uv = (probe_corner + sample_coord) * inv_atlas_size;
                 const float3 irr = in_irradiance.SampleLevel(sample_uv, 0.0);

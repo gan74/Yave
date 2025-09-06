@@ -62,32 +62,28 @@ void comp() {
     const float tmin = 0.01;
     const float tmax = 10000.0; // <-------------------------------------------------------------------- TODO
     const HitInfo hit = trace_inline(tlas, probe_pos, trace_dir, tmin, tmax);
-    float3 hit_normal = float3(0.0);
 
-    float3 color = float3(0.0);
+    DDGIRayHit out_hit;
+    {
+        out_hit.position = hit.position;
+        out_hit.is_hit = hit.hit ? 1 : 0;
+    }
+
     if(!hit.front_face) {
-        // Nothing ?
+        out_hit.position = probe_pos;
     } else if(hit.hit) {
+        const float3 hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
+        out_hit.position += hit_normal * 0.01;
+
         const DirectionalLight light = lights[0];
-        hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
         const float NoL = dot(light.direction, hit_normal);
         const bool cast_shadow = light.cast_shadow != 0;
         if(NoL > 0.0 && (!cast_shadow || !trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit)) {
             const float4 albedo = eval_material_color(hit.instance_id);
-            color = albedo.rgb * light.color * NoL;
+            out_hit.radiance = albedo.rgb * light.color * NoL;
         }
     } else {
-        color = in_envmap.SampleLevel(trace_dir, 0.0).rgb;
-    }
-
-    DDGIRayHit out_hit;
-    {
-        out_hit.dir = trace_dir;
-        out_hit.t = hit.front_face ? hit.ray_t : 0;
-        out_hit.normal = hit_normal;
-        out_hit.is_hit = hit.hit ? 1 : 0;
-        out_hit.radiance = color;
-        out_hit.padding = 0.0;
+        out_hit.radiance = in_envmap.SampleLevel(trace_dir, 0.0).rgb; // ....
     }
 
     out_hits[semantics.global_id.x] = out_hit;

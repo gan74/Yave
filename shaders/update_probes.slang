@@ -35,7 +35,9 @@ uint2 wrap_coord(uint2 c) {
 [shader("compute")]
 [numthreads(ddgi.probe_size_border, ddgi.probe_size_border)]
 void comp() {
-    const uint probe_index = semantics.global_id.z;;
+    const uint probe_index = semantics.global_id.z;
+    const int3 probe_id = ddgi.compute_grid_coord(probe_index);
+    const float3 probe_pos = ddgi.compute_world_coord(probe_id, camera.position);
 
     const float2 uv = (wrap_coord(semantics.global_id.xy) + 0.5) / ddgi.probe_size_no_border;
     const float3 tex_dir = octahedron_decode(uv);
@@ -48,11 +50,15 @@ void comp() {
     const uint end = begin + ddgi.probe_rays;
     for(uint i = begin; i != end; ++i) {
         const DDGIRayHit hit = in_hits[i];
-        const float weight = max(0.0, dot(hit.dir, tex_dir));
+
+        const float3 ray_vec = hit.position - probe_pos;
+        const float ray_len = length(ray_vec);
+
+        const float weight = max(0.0, dot(ray_vec / ray_len, tex_dir));
 
         total += weight;
         irr += hit.radiance * weight;
-        dist += float2(hit.t, sqr(hit.t)) * weight;
+        dist += float2(ray_len, sqr(ray_len)) * weight;
     }
 
     const uint2 coord = ddgi.atlas_coord(probe_index) + semantics.global_id.xy;

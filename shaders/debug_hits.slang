@@ -21,7 +21,6 @@ cbuffer Params {
 
 
 struct PixelStageIn {
-    float3 normal;
     uint hit_index;
 };
 
@@ -49,12 +48,11 @@ VertexStageOut vert_main() {
     const int3 probe_pos = ddgi.compute_world_coord(probe_id, camera.position);
 
     const DDGIRayHit hit = in_hits[hit_index];
-    const float3 position = at_probe ? probe_pos : (hit.dir * max(0.0, hit.t - 0.001) + probe_pos);
+    const float3 position = at_probe ? probe_pos : hit.position;
 
     VertexStageOut out;
     {
         out.sv_position = mul(camera.curr.view_proj, float4(position, 1.0));
-        out.vert.normal = hit.normal;
         out.vert.hit_index = hit_index;
     }
 

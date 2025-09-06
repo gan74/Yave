@@ -54,11 +54,12 @@ HitInfo trace_inline(RaytracingAccelerationStructure accel, float3 origin, float
         info.ms_vertices = query.CommittedGetIntersectionTriangleVertexPositions();
         info.model_to_world = query.CommittedObjectToWorld3x4();
 
-        info.position = origin + dir * info.ray_t;
         info.ms_normal = normalize(cross((info.ms_vertices[0] - info.ms_vertices[1]), (info.ms_vertices[0] - info.ms_vertices[2])));
     } else {
         info.ray_t = max_dist;
     }
+
+    info.position = origin + dir * info.ray_t;
 
     return info;
 }
