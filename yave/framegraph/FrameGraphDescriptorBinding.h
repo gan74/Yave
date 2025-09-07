@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef YAVE_FRAMEGRAPH_FRAMEGRAPHDESCRIPTORBINDING_H
 #define YAVE_FRAMEGRAPH_FRAMEGRAPHDESCRIPTORBINDING_H
 
-#include "FrameGraphResourceToken.h"
+#include "FrameGraphResourceId.h"
 
 #include <yave/graphics/descriptors/Descriptor.h>
 
