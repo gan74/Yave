@@ -236,6 +236,7 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "filter_ao.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "rtgi.slang" "")
+    add_slang_shader(${SHADER_TARGET} "rtreuse.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "place_probes.slang" "")
     add_slang_shader(${SHADER_TARGET} "trace_probes.slang" "")
