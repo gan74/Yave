@@ -19,6 +19,7 @@ enum TextureSlots : uint32_t {
 enum TAAFeatureBits : uint32_t {
     ClampingBit                 = 0x01,
     DenoiseBit                  = 0x02,
+    LumWeightBit                = 0x04,
 };
 
 enum TAAMask : uint32_t {

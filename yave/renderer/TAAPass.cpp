@@ -41,6 +41,9 @@ static u32 taa_flags(const TAASettings& settings) {
     if(settings.use_denoise) {
         flags |= shader::TAAFeatureBits::DenoiseBit;
     }
+    if(settings.luminance_weighting) {
+        flags |= shader::TAAFeatureBits::LumWeightBit;
+    }
     return flags;
 }
 

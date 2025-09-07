@@ -39,7 +39,7 @@ RWTexture2D out_color;
 
 
 
-
+// TODO make groupshared & optimize
 static float3 local_neighbourhood[9];
 
 
@@ -201,8 +201,13 @@ void comp_main() {
     const float max_velocity_blend = 0.2;
     const float blend_factor = (any(saturate(uv) != uv)) ? 1.0 : lerp(min_velocity_blend, max_velocity_blend, velocity_blend);
 
-    const float prev_weight = (1.0 - blend_factor) / (1.0 + luminance(prev_color));
-    const float curr_weight =  blend_factor / (1.0 + luminance(curr_color));
+    float prev_weight = (1.0 - blend_factor);
+    float curr_weight =  blend_factor;
+
+    if((flags & TAAFeatureBits::LumWeightBit) != 0) {
+        prev_weight /= (1.0 + luminance(prev_color));
+        curr_weight /= (1.0 + luminance(curr_color));
+    }
 
     const float3 resolved = abs(((prev_color * prev_weight) + (curr_color * curr_weight)) / (prev_weight + curr_weight));
 

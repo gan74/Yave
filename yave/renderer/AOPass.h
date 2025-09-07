@@ -39,7 +39,7 @@ struct AOSettings {
         None,
     };
 
-    AOMethod method = AOMethod::RTAO;
+    AOMethod method = AOMethod::MiniEngine;
 
     struct {
         u32 level_count = 2;

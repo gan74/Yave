@@ -23,7 +23,6 @@ SOFTWARE.
 #include "RTGIPass.h"
 #include "GBufferPass.h"
 #include "TAAPass.h"
-#include "DenoisePass.h"
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -64,11 +63,14 @@ static auto generate_sample_dirs(u64 seed) {
     return dirs;
 }
 
-static FrameGraphImageId rt_reuse(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_gi, const RTGISettings&) {
+static FrameGraphImageId rt_reuse(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_gi, const RTGISettings& settings) {
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("RTGI reuse");
 
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
     const ImageFormat format = framegraph.image_format(in_gi);
+
+    const u32 sample_count = settings.denoise_sample_count;
+    const u32 seed = u32(hash_u64(framegraph.frame_id()));
 
     const auto re = builder.declare_image(format, size);
 
@@ -79,7 +81,7 @@ static FrameGraphImageId rt_reuse(FrameGraph& framegraph, const GBufferPass& gbu
     builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
     builder.add_uniform_input(in_gi, SamplerType::PointClamp);
-    builder.add_inline_input(std::min(256, editor::debug_values().value<u32>("Reuse samples", 64)));
+    builder.add_inline_input(math::Vec2ui(seed, sample_count));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         recorder.dispatch_threads(device_resources()[DeviceResources::RTReuseProgram], size, self->descriptor_set());
     });
@@ -91,7 +93,7 @@ static FrameGraphImageId rt_reuse(FrameGraph& framegraph, const GBufferPass& gbu
 RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_lit, const RTGISettings& settings) {
     const auto region = framegraph.region("RTGI");
 
-    const auto sample_dirs = generate_sample_dirs<256>(editor::debug_values().value<bool>("Random", true) ? framegraph.frame_id() : 0);
+    const auto sample_dirs = generate_sample_dirs<256>(framegraph.frame_id());
 
     const u32 resolution_factor = (1 << settings.resolution_scale);
     const math::Vec2ui size = framegraph.image_size(in_lit);
@@ -157,21 +159,25 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     pass.gi = gi;
 
     {
-        const auto filt_region = framegraph.region("Filtering");
+        const auto filter_region = framegraph.region("Filtering");
 
-        const u32 max = std::min(32, editor::debug_values().value<u32>("Reuse passes", 1));
-        for(u32 i = 0; i < max; ++i) {
+        for(u32 i = 0; i < settings.denoise_iterations; ++i) {
             pass.gi = rt_reuse(framegraph, gbuffer, pass.gi, settings);
         }
 
         if(settings.temporal) {
             static const FrameGraphPersistentResourceId persistent_color_id = FrameGraphPersistentResourceId::create();
             static const FrameGraphPersistentResourceId persistent_motion_id = FrameGraphPersistentResourceId::create();
-            pass.gi = TAAPass::create(framegraph, gbuffer, pass.gi, persistent_color_id, persistent_motion_id).anti_aliased;
-        }
 
-        if(settings.denoise) {
-            pass.gi = DenoisePass::create(framegraph, pass.gi, settings.denoise_settings).denoised;
+            TAASettings taa_settings;
+            {
+                taa_settings.use_clamping = editor::debug_values().value<bool>("Use clamping", false);
+                taa_settings.use_denoise = editor::debug_values().value<bool>("Use denoise", false);
+                taa_settings.luminance_weighting = editor::debug_values().value<bool>("Use lum weighting", false);
+                taa_settings.clamping_range = editor::debug_values().value<float>("Clamping range", 1.0f);
+                taa_settings.anti_flicker_strength = editor::debug_values().value<float>("Flicker strength", 1.0f);
+            }
+            pass.gi = TAAPass::create(framegraph, gbuffer, pass.gi, persistent_color_id, persistent_motion_id, taa_settings).anti_aliased;
         }
     }
 

@@ -499,17 +499,19 @@ void EngineView::draw_settings_menu() {
 
         int samples = int(settings.sample_count);
         int scale = int(settings.resolution_scale);
+        int denoise_iter = int(settings.denoise_iterations);
+        int denoise_samples = int(settings.denoise_sample_count);
         ImGui::SliderInt("Samples", &samples, 1, 16);
         ImGui::SliderInt("Resolution scale", &scale, 0, 4);
         ImGui::Checkbox("Temporal stabilisation", &settings.temporal);
-        ImGui::Checkbox("Denoise", &settings.denoise);
         ImGui::Separator();
-        ImGui::SliderFloat("Filter sigma", &settings.denoise_settings.sigma, 0.1f, 8.0f);
-        ImGui::SliderFloat("Filter K sigma", &settings.denoise_settings.k_sigma, 0.1f, 8.0f);
-        ImGui::SliderFloat("Filter threshold", &settings.denoise_settings.threshold, 0.0f, 1.0f);
+        ImGui::SliderInt("Denoise samples", &denoise_samples, 1, 128);
+        ImGui::SliderInt("Denoise iterations", &denoise_iter, 0, 16);
 
         settings.sample_count = samples;
         settings.resolution_scale = scale;
+        settings.denoise_iterations = denoise_iter;
+        settings.denoise_sample_count = denoise_samples;
         ImGui::EndMenu();
     }
 

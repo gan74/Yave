@@ -33,7 +33,7 @@ static const int2 direction = int2(1, 0);
 static const int2 direction = int2(0, 1);
 #endif
 
-static const uint kernel_size = 32;
+static const uint kernel_size = 16;
 
 
 

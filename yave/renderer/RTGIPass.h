@@ -28,12 +28,13 @@ namespace yave {
 
 struct RTGISettings {
     u32 sample_count = 1;
+
     u32 resolution_scale = 0; // Resolution /= (1 << resolution_scale)
 
-    bool temporal = true;
-    bool denoise = false;
+    u32 denoise_iterations = 1;
+    u32 denoise_sample_count = 16;
 
-    DenoiseSettings denoise_settings = {};
+    bool temporal = true;
 };
 
 struct RTGIPass {

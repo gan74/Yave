@@ -29,6 +29,7 @@ namespace yave {
 struct TAASettings {
     bool use_clamping = true;
     bool use_denoise = false;
+    bool luminance_weighting = true;
 
     float clamping_range = 1.0f;
     float anti_flicker_strength = 1.0f;

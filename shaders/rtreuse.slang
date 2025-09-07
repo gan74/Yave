@@ -18,6 +18,7 @@ Sampler2D in_gi;
 
 [[vk::binding(5)]]
 cbuffer Params {
+    uint seed;
     uint sample_count;
 }
 
@@ -57,11 +58,20 @@ float4 take_sample(float2 sample_uv, float3 world_pos, float3 normal, bool rejec
         return float4(0.0);
     }
 
+#if 0
     const float view_dist = length(world_pos - camera.position);
-    if(reject_depth && length(sample_world_pos - world_pos) * 100.0 < view_dist) {
+    if(reject_depth && length(sample_world_pos - world_pos) > view_dist * 0.1) {
         ++depth_rejection;
         return float4(0.0);
     }
+#else
+    const float3 to_point = sample_world_pos - world_pos;
+    const float3 sample_dir = normalize(to_point);
+    if(reject_depth && abs(dot(normal, sample_dir)) > 0.1) {
+        ++depth_rejection;
+        return float4(0.0);
+    }
+#endif
 
     return float4(in_gi.SampleLevel(sample_uv, 0.0).rgb, 1.0);
 }
@@ -89,33 +99,34 @@ void comp() {
 
 #if 0
     float4 acc = 0.0;
-    for(int x = -3; x <= 3; ++x) {
-        for(int y = -3; y <= 3; ++y) {
+    const int kernel_size = 7;
+    for(int x = -kernel_size; x <= kernel_size; ++x) {
+        for(int y = -kernel_size; y <= kernel_size; ++y) {
             const float2 sample_uv = wrap_uv(uv + (float2(x, y) / size));
-            acc += take_sample(sample_uv, world_pos, normal, false, true);
+            acc += take_sample(sample_uv, world_pos, normal, true, true);
         }
     }
 #else
     float4 acc = float4(in_gi.SampleLevel(uv, 0.0).rgb, 1.0);
-#endif
 
-    const float random = float(hash(semantics.global_index) & 0x0FFFFFF) / 0x0FFFFFF;
+    const float random = float((hash(semantics.global_index) ^ seed) & 0x0FFFFFF) / 0x0FFFFFF;
     const float random_angle = random * pi * 2.0;
 
     const float step = 1.0 / sample_count;
-    for(float t = 0.0; t <= 1.0; t += step) {
-        const float r = lerp(2.0, 64.0, t);
-        const float phi = lerp(0.0, pi * 2.0 * 8.0, t);
+    for(float t = 0.0; t < 1.0; t += step) {
+        const float r = lerp(2.0, 32.0, t);
+        const float phi = lerp(0.0, pi * 2.0 * 5.0, t);
         const float2 sample_offset = float2(cos(phi + random_angle), sin(phi + random_angle)) * r;
         const float2 sample_uv = wrap_uv(uv + (sample_offset / size));
 
         acc += take_sample(sample_uv, world_pos, normal, true, true);
     }
+#endif
 
-    out_image[coord] = float4(acc.rgb / acc.a, acc.a);
+    out_image[coord] = float4(acc.rgb / max(acc.a, 0.01), acc.a);
 
-    // out_image[coord] = float4(heat_spectrum(normal_rejection / 64.0), 0);
-    //  out_image[coord] = float4(heat_spectrum(depth / 64.0), 0);
+    // out_image[coord] = float4(heat_spectrum(acc.a / sample_count), 0);
+    // out_image[coord] = float4(heat_spectrum(depth_rejection / float(sample_count)), 0);
 }
 
 
