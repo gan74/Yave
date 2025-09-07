@@ -79,7 +79,7 @@ static FrameGraphImageId rt_reuse(FrameGraph& framegraph, const GBufferPass& gbu
     builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
     builder.add_uniform_input(in_gi, SamplerType::PointClamp);
-    builder.add_inline_input(editor::debug_values().value<u32>("Reuse iterations", 1));
+    builder.add_inline_input(std::min(256, editor::debug_values().value<u32>("Reuse samples", 64)));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         recorder.dispatch_threads(device_resources()[DeviceResources::RTReuseProgram], size, self->descriptor_set());
     });
@@ -159,7 +159,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     {
         const auto filt_region = framegraph.region("Filtering");
 
-        const u32 max = editor::debug_values().value<u32>("Reuse passes", 1);
+        const u32 max = std::min(32, editor::debug_values().value<u32>("Reuse passes", 1));
         for(u32 i = 0; i < max; ++i) {
             pass.gi = rt_reuse(framegraph, gbuffer, pass.gi, settings);
         }

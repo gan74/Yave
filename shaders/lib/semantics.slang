@@ -30,6 +30,7 @@ property uint3 work_group_count {
 }
 
 property uint work_group_index {
+    [__unsafeForceInlineEarly]
     get {
         return
             work_group_id.x +
@@ -40,8 +41,34 @@ property uint work_group_index {
 }
 
 property uint work_group_thread_count {
+    [__unsafeForceInlineEarly]
     get {
         return work_group_size.x * work_group_size.y * work_group_size.z;
+    }
+}
+
+property uint3 dispatch_size {
+    [__unsafeForceInlineEarly]
+    get {
+        return work_group_size * work_group_count;
+    }
+}
+
+property uint3 dispatch_thread_count {
+    [__unsafeForceInlineEarly]
+    get {
+        return dispatch_size.x * dispatch_size.y * dispatch_size.z;
+    }
+}
+
+property uint global_index {
+    [__unsafeForceInlineEarly]
+    get {
+        return
+            global_id.x +
+            global_id.y * dispatch_size.x +
+            global_id.z * dispatch_size.x * dispatch_size.z
+        ;
     }
 }
 

@@ -30,7 +30,7 @@ struct RTGISettings {
     u32 sample_count = 1;
     u32 resolution_scale = 0; // Resolution /= (1 << resolution_scale)
 
-    bool temporal = false;
+    bool temporal = true;
     bool denoise = false;
 
     DenoiseSettings denoise_settings = {};

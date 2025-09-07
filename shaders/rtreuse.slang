@@ -18,9 +18,53 @@ Sampler2D in_gi;
 
 [[vk::binding(5)]]
 cbuffer Params {
-    uint iterations;
+    uint sample_count;
 }
 
+
+
+
+float wrap_uv(float x) {
+    if(x < 0.0) {
+        x = -x;
+    }
+    if(x > 1.0) {
+        x = 1.0 - frac(x);
+    }
+    return x;
+}
+
+float2 wrap_uv(float2 v) {
+    return float2(wrap_uv(v.x), wrap_uv(v.y));
+}
+
+
+
+static uint normal_rejection = 0;
+static uint depth_rejection = 0;
+
+float4 take_sample(float2 sample_uv, float3 world_pos, float3 normal, bool reject_depth, bool reject_normal) {
+    const float sample_depth = in_depth.SampleLevel(sample_uv, 0.0);
+    const float3 sample_world_pos = unproject(sample_uv, sample_depth, camera.curr.inv_view_proj);
+    const float3 sample_normal = decode_gbuffer({float4(0.0), in_rt1.SampleLevel(sample_uv, 0.0)}).normal;
+
+    if(is_depth_far(sample_depth)) {
+        return float4(0.0);
+    }
+
+    if(reject_normal && dot(normal, sample_normal) < 0.8) {
+        ++normal_rejection;
+        return float4(0.0);
+    }
+
+    const float view_dist = length(world_pos - camera.position);
+    if(reject_depth && length(sample_world_pos - world_pos) * 100.0 < view_dist) {
+        ++depth_rejection;
+        return float4(0.0);
+    }
+
+    return float4(in_gi.SampleLevel(sample_uv, 0.0).rgb, 1.0);
+}
 
 
 [shader("compute")]
@@ -43,44 +87,35 @@ void comp() {
     const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
     const float3 normal = decode_gbuffer({float4(0.0), in_rt1[coord]}).normal;
 
-    const float view_dist = length(world_pos - camera.position);
-
-
-    float total = 1.0;
-    float3 acc = in_gi[coord].rgb;
-
-    const float radius = 60.0;
-    for(float r = 1.0; r < radius; r *= 1.5) {
-        for(uint p = 0; p != 6; ++p) {
-            const float phi = p / 6.0 * pi * 2.0;
-            const float2 sample_offset = float2(cos(phi + r), sin(phi + r)) * r;
-            const float2 sample_uv = uv + (sample_offset / size);
-            if(any(saturate(sample_uv) != sample_uv)) {
-                continue;
-            }
-
-            const float sample_depth = in_depth.SampleLevel(sample_uv, 0.0);
-            const float3 sample_world_pos = unproject(sample_uv, sample_depth, camera.curr.inv_view_proj);
-            const float3 sample_normal = decode_gbuffer({float4(0.0), in_rt1.SampleLevel(sample_uv, 0.0)}).normal;
-
-            if(is_depth_far(sample_depth)) {
-                continue;
-            }
-
-            if(dot(normal, sample_normal) < 0.8) {
-                continue;
-            }
-
-            if(length(sample_world_pos - world_pos) * 100.0 < view_dist) {
-                continue;
-            }
-
-            total += 1.0;
-            acc += in_gi.SampleLevel(sample_uv, 0.0).rgb;
+#if 0
+    float4 acc = 0.0;
+    for(int x = -3; x <= 3; ++x) {
+        for(int y = -3; y <= 3; ++y) {
+            const float2 sample_uv = wrap_uv(uv + (float2(x, y) / size));
+            acc += take_sample(sample_uv, world_pos, normal, false, true);
         }
     }
+#else
+    float4 acc = float4(in_gi.SampleLevel(uv, 0.0).rgb, 1.0);
+#endif
 
-    out_image[coord] = float4(acc / total, 0);
+    const float random = float(hash(semantics.global_index) & 0x0FFFFFF) / 0x0FFFFFF;
+    const float random_angle = random * pi * 2.0;
+
+    const float step = 1.0 / sample_count;
+    for(float t = 0.0; t <= 1.0; t += step) {
+        const float r = lerp(2.0, 64.0, t);
+        const float phi = lerp(0.0, pi * 2.0 * 8.0, t);
+        const float2 sample_offset = float2(cos(phi + random_angle), sin(phi + random_angle)) * r;
+        const float2 sample_uv = wrap_uv(uv + (sample_offset / size));
+
+        acc += take_sample(sample_uv, world_pos, normal, true, true);
+    }
+
+    out_image[coord] = float4(acc.rgb / acc.a, acc.a);
+
+    // out_image[coord] = float4(heat_spectrum(normal_rejection / 64.0), 0);
+    //  out_image[coord] = float4(heat_spectrum(depth / 64.0), 0);
 }
 
 
