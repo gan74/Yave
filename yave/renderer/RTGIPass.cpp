@@ -39,6 +39,8 @@ SOFTWARE.
 
 #include <yave/graphics/shader_structs.h>
 
+#include <yave/utils/DebugValues.h>
+
 #include <y/math/random.h>
 
 namespace yave {
@@ -70,11 +72,14 @@ static FrameGraphImageId rt_reuse(FrameGraph& framegraph, const GBufferPass& gbu
 
     const auto re = builder.declare_image(format, size);
 
+    builder.clear_before_pass(re);
+
     builder.add_storage_output(re);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
     builder.add_uniform_input(in_gi, SamplerType::PointClamp);
+    builder.add_inline_input(editor::debug_values().value<u32>("Reuse iterations", 1));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         recorder.dispatch_threads(device_resources()[DeviceResources::RTReuseProgram], size, self->descriptor_set());
     });
@@ -86,7 +91,7 @@ static FrameGraphImageId rt_reuse(FrameGraph& framegraph, const GBufferPass& gbu
 RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_lit, const RTGISettings& settings) {
     const auto region = framegraph.region("RTGI");
 
-    const auto sample_dirs = generate_sample_dirs<256>(framegraph.frame_id());
+    const auto sample_dirs = generate_sample_dirs<256>(editor::debug_values().value<bool>("Random", true) ? framegraph.frame_id() : 0);
 
     const u32 resolution_factor = (1 << settings.resolution_scale);
     const math::Vec2ui size = framegraph.image_size(in_lit);
@@ -151,16 +156,23 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     RTGIPass pass;
     pass.gi = gi;
 
-    pass.gi = rt_reuse(framegraph, gbuffer, pass.gi, settings);
+    {
+        const auto filt_region = framegraph.region("Filtering");
 
-    if(settings.temporal) {
-        static const FrameGraphPersistentResourceId persistent_color_id = FrameGraphPersistentResourceId::create();
-        static const FrameGraphPersistentResourceId persistent_motion_id = FrameGraphPersistentResourceId::create();
-        pass.gi = TAAPass::create(framegraph, gbuffer, pass.gi, persistent_color_id, persistent_motion_id).anti_aliased;
-    }
+        const u32 max = editor::debug_values().value<u32>("Reuse passes", 1);
+        for(u32 i = 0; i < max; ++i) {
+            pass.gi = rt_reuse(framegraph, gbuffer, pass.gi, settings);
+        }
 
-    if(settings.denoise) {
-        pass.gi = DenoisePass::create(framegraph, pass.gi, settings.denoise_settings).denoised;
+        if(settings.temporal) {
+            static const FrameGraphPersistentResourceId persistent_color_id = FrameGraphPersistentResourceId::create();
+            static const FrameGraphPersistentResourceId persistent_motion_id = FrameGraphPersistentResourceId::create();
+            pass.gi = TAAPass::create(framegraph, gbuffer, pass.gi, persistent_color_id, persistent_motion_id).anti_aliased;
+        }
+
+        if(settings.denoise) {
+            pass.gi = DenoisePass::create(framegraph, pass.gi, settings.denoise_settings).denoised;
+        }
     }
 
     return pass;

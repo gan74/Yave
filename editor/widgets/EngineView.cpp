@@ -184,7 +184,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
         builder.add_uniform_input_with_default(renderer.renderer.ao.ao, Descriptor(white));
-        builder.add_uniform_input(renderer.renderer.ddgi.gi);
+        builder.add_uniform_input(renderer.renderer.rtgi.gi);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             {
                 auto render_pass = recorder.bind_framebuffer(self->framebuffer());

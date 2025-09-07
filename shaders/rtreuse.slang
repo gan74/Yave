@@ -16,6 +16,12 @@ Sampler2D<uint> in_rt1;
 [[vk::binding(4)]]
 Sampler2D in_gi;
 
+[[vk::binding(5)]]
+cbuffer Params {
+    uint iterations;
+}
+
+
 
 [shader("compute")]
 [numthreads(8, 8)]

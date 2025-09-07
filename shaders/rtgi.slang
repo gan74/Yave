@@ -2,34 +2,34 @@
 #include "lib/rt.slang"
 
 [[vk::binding(0)]]
-RaytracingAccelerationStructure tlas;
+RWTexture2D out_image;
 
 [[vk::binding(1)]]
-ConstantBuffer<Camera> camera;
+RaytracingAccelerationStructure tlas;
 
 [[vk::binding(2)]]
-Sampler2D<float> in_depth;
+ConstantBuffer<Camera> camera;
 
 [[vk::binding(3)]]
-Sampler2D<uint> in_rt1;
+Sampler2D<float> in_depth;
 
 [[vk::binding(4)]]
-Sampler2D in_lit;
+Sampler2D<uint> in_rt1;
 
 [[vk::binding(5)]]
-StructuredBuffer<MaterialData> materials;
+Sampler2D in_lit;
 
 [[vk::binding(6)]]
-SamplerCube in_envmap;
+StructuredBuffer<MaterialData> materials;
 
 [[vk::binding(7)]]
-cbuffer SampleDirData { float4 sample_dirs[256]; };
+SamplerCube in_envmap;
 
 [[vk::binding(8)]]
-StructuredBuffer<DirectionalLight> lights;
+cbuffer SampleDirData { float4 sample_dirs[256]; };
 
 [[vk::binding(9)]]
-RWTexture2D out_image;
+StructuredBuffer<DirectionalLight> lights;
 
 [[vk::binding(10)]]
 cbuffer Params {
