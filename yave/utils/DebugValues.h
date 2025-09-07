@@ -33,16 +33,16 @@ namespace yave {
 
 class DebugValues : NonMovable {
     public:
-        using Value = std::variant<bool, isize, double>;
+        using Value = std::variant<bool, int, float>;
 
         template<typename T>
         T value(std::string_view name, T default_val = {}) {
             if constexpr(std::is_floating_point_v<T>) {
-                return T(value_inner<double>(name, double(default_val)));
+                return T(value_inner<float>(name, float(default_val)));
             } else if constexpr(std::is_same_v<T, bool>) {
                 return T(value_inner<bool>(name, default_val));
             } else if constexpr(std::is_integral_v<T>) {
-                return T(value_inner<isize>(name, isize(default_val)));
+                return T(value_inner<int>(name, int(default_val)));
             } else {
                 static_assert(false, "Value type not supported");
             }
