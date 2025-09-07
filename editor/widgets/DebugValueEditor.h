@@ -43,11 +43,15 @@ class DebugValueEditor : public Widget {
                     [&](bool& b) {
                         ImGui::Checkbox(name.data(), &b);
                     },
-                    [&](int& i) {
-                        ImGui::InputInt(name.data(), &i);
+                    [&](isize& i) {
+                        int x = int(i);
+                        ImGui::InputInt(name.data(), &x);
+                        i = x;
                     },
-                    [&](float& f) {
-                        ImGui::InputFloat(name.data(), &f);
+                    [&](double& f) {
+                        float x = float(f);
+                        ImGui::InputFloat(name.data(), &x);
+                        f = x;
                     },
                     [&](auto&&) {
                         ImGui::TextUnformatted(name.data());

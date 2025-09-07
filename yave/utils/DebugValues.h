@@ -33,10 +33,29 @@ namespace yave {
 
 class DebugValues : NonMovable {
     public:
-        using Value = std::variant<bool, int, float>;
+        using Value = std::variant<bool, isize, double>;
 
         template<typename T>
         T value(std::string_view name, T default_val = {}) {
+            if constexpr(std::is_floating_point_v<T>) {
+                return T(value_inner<double>(name, double(default_val)));
+            } else if constexpr(std::is_same_v<T, bool>) {
+                return T(value_inner<bool>(name, default_val));
+            } else if constexpr(std::is_integral_v<T>) {
+                return T(value_inner<isize>(name, isize(default_val)));
+            } else {
+                static_assert(false, "Value type not supported");
+            }
+        }
+
+
+        core::FlatHashMap<core::String, Value>& all_values() {
+            return _values;
+        }
+
+    private:
+        template<typename T>
+        T value_inner(std::string_view name, T default_val) {
             auto it = _values.find(name);
             if(it == _values.end()) {
                 using pair_type = typename decltype(_values)::value_type;
@@ -45,11 +64,6 @@ class DebugValues : NonMovable {
             return std::visit([](const auto& inner) { return T(inner); }, it->second);
         }
 
-        core::FlatHashMap<core::String, Value>& all_values() {
-            return _values;
-        }
-
-    private:
         core::FlatHashMap<core::String, Value> _values;
 
 };
