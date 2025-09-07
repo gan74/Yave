@@ -27,11 +27,11 @@ SOFTWARE.
 namespace yave {
 
 struct RTGISettings {
-    u32 sample_count = 4;
-    u32 resolution_scale = 1; // Resolution /= (1 << resolution_scale)
+    u32 sample_count = 1;
+    u32 resolution_scale = 0; // Resolution /= (1 << resolution_scale)
 
-    bool temporal = true;
-    bool denoise = true;
+    bool temporal = false;
+    bool denoise = false;
 
     DenoiseSettings denoise_settings = {};
 };

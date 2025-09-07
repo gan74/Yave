@@ -123,6 +123,7 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "bilateral_HORIZONTAL",
     "rtao",
     "rtgi",
+    "rtreuse",
     "place_probes",
     "trace_probes",
     "update_probes",
