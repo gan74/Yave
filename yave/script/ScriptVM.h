@@ -32,7 +32,7 @@ struct lua_State;
 namespace yave {
 
 enum class ScriptTypeIndex : u32 {
-    invalid_index = u32(-1),
+    InvalidIndex = u32(-1),
 };
 
 namespace detail {

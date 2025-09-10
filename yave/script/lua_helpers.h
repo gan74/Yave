@@ -124,7 +124,7 @@ void bind_func(lua_State* L, const char* name) {
             return 1;
         }
     };
-    
+
     lua_pushcfunction(L, adaptor);
     lua_setglobal(L, name);
 }
@@ -132,7 +132,7 @@ void bind_func(lua_State* L, const char* name) {
 
 template<typename T>
 void bind_type(lua_State* L, const char* name) {
-    core::SmallVector<luaL_Reg, 13> methods;
+    core::SmallVector<luaL_Reg, 16> methods;
 
     {
         if constexpr(!std::is_trivially_destructible_v<T>) {
@@ -151,6 +151,20 @@ void bind_type(lua_State* L, const char* name) {
             }
         );
 
+        if constexpr(std::is_copy_constructible_v<T>) {
+            methods.emplace_back(
+                "clone", [](lua_State* L) {
+                    const T& other = get_user_value<T>(L, 1);
+
+                    LuaUserData<T>* userdata = static_cast<LuaUserData<T>*>(lua_newuserdata(L, sizeof(LuaUserData<T>)));
+                    new (&userdata->value) T(other);
+                    luaL_getmetatable(L, metatable_name<T>());
+                    lua_setmetatable(L, -2);
+                    return 1;
+                }
+            );
+        }
+
         methods.emplace_back(nullptr, nullptr);
     }
 
@@ -160,6 +174,8 @@ void bind_type(lua_State* L, const char* name) {
     lua_pushvalue(L, -1);
     lua_setfield(L, -2, "__index");
 
+    lua_newtable(L);
+
     auto new_adaptor = [](lua_State* L) {
         LuaUserData<T>* userdata = static_cast<LuaUserData<T>*>(lua_newuserdata(L, sizeof(LuaUserData<T>)));
         new (&userdata->value) T();
@@ -168,10 +184,9 @@ void bind_type(lua_State* L, const char* name) {
         return 1;
     };
 
-    lua_newtable(L);
     lua_pushcfunction(L, new_adaptor);
-
     lua_setfield(L, -2, "new");
+
     lua_setglobal(L, name);
 }
 

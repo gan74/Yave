@@ -43,20 +43,31 @@ struct TestType {
     static inline usize init = 0;
 
     TestType() {
-        val = init;
-        log_msg(fmt("+ TestType({})", ++init));
+        val = ++init;
+        log_msg(fmt("+ TestType({})", val));
+    }
+
+    TestType(const TestType& other) {
+        val = ++init;
+        log_msg(fmt("> TestType({}) = TestType({})", val, other.val));
     }
 
     ~TestType() {
-        log_msg(fmt("- TestType({})", --init));
+        log_msg(fmt("- TestType({})", init--));
     }
 
     usize val = 0;
 };
 
+
+
+
 void test_func(const TestType& i) {
-    log_msg(fmt("test_func({})", i.val));
+    log_msg(fmt("test_func({}) = {}", i.val, static_cast<const void*>(&i)));
 }
+
+
+
 
 ScriptVM::ScriptVM() {
     _state = luaL_newstate();
