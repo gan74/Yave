@@ -23,7 +23,7 @@ SOFTWARE.
 #include <editor/Widget.h>
 #include <editor/EditorWorld.h>
 #include <editor/utils/memory.h>
-#include <editor/ThumbmailRenderer.h>
+#include <editor/ThumbnailRenderer.h>
 #include <editor/systems/UndoRedoSystem.h>
 
 #include <yave/scene/SceneView.h>
@@ -297,11 +297,11 @@ class UiDebug : public Widget {
 
     protected:
         void on_gui() override {
-            ThumbmailRenderer& tb = thumbmail_renderer();
-            ImGui::TextUnformatted(fmt_c_str("{} cached thumbmails", tb.cached_thumbmails()));
+            ThumbnailRenderer& tb = thumbnail_renderer();
+            ImGui::TextUnformatted(fmt_c_str("{} cached thumbnails", tb.cached_thumbnails()));
             ImGui::Separator();
-            ImGui::TextUnformatted(fmt_c_str("Thumbmail size: {}x{}", tb.thumbmail_size, tb.thumbmail_size));
-            ImGui::TextUnformatted(fmt_c_str("Total thumbmail memory: {}KB", (tb.cached_thumbmails() * tb.thumbmail_size * tb.thumbmail_size * 4) / 1024));
+            ImGui::TextUnformatted(fmt_c_str("Thumbnail size: {}x{}", tb.thumbnail_size, tb.thumbnail_size));
+            ImGui::TextUnformatted(fmt_c_str("Total thumbnail memory: {}KB", (tb.cached_thumbnails() * tb.thumbnail_size * tb.thumbnail_size * 4) / 1024));
         }
 };
 

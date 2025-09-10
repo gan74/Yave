@@ -67,6 +67,7 @@ static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Ve
                 );
             }
         } else {
+            y_debug_assert(static_mesh->sub_meshes().size() == materials.size());
             for(usize i = 0; i != materials.size(); ++i) {
                 if(const Material* mat = materials[i].get()) {
                     batches.emplace_back(

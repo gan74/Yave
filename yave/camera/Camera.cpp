@@ -61,7 +61,7 @@ math::Vec3 Camera::position_from_view(const math::Matrix4<>& view) {
 
 
 
-Camera::Camera() : Camera(math::look_at({2.0f, 0.0f, 0.0f}, math::Vec3{}, math::Vec3{0.0f, 0.0f, 1.0f}), math::perspective(math::to_rad(45.0f), 16.0f / 9.0f, 0.1f)) {
+Camera::Camera() : Camera(math::look_at({0.0f, 0.0f, 1.0f}, math::Vec3{}, math::Vec3{0.0f, 1.0f, 0.0f}), math::perspective(math::to_rad(45.0f), 16.0f / 9.0f, 0.1f)) {
 }
 
 Camera::Camera(const math::Matrix4<>& view, const math::Matrix4<>& proj) : _view(view), _proj(proj) {
@@ -179,10 +179,10 @@ Frustum Camera::frustum() const {
 Camera::operator shader::Camera() const {
     shader::Camera camera_data = {};
 
-    camera_data.cur.view_proj = view_proj_matrix();
-    camera_data.cur.inv_view_proj = inverse_matrix();
+    camera_data.curr.view_proj = view_proj_matrix();
+    camera_data.curr.inv_view_proj = inverse_matrix();
 
-    camera_data.prev = camera_data.cur;
+    camera_data.prev = camera_data.curr;
 
     camera_data.jitter = jitter();
     camera_data.prev_jitter = camera_data.jitter;

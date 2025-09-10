@@ -18,7 +18,7 @@ struct PixelStageIn {
 
 struct VertexStageOut {
     float4 sv_position  : SV_Position;
-    PixelStageIn vert;
+    PixelStageIn frag;
 };
 
 struct PixelStageOut {
@@ -49,7 +49,7 @@ VertexStageOut vert_main(StdVertexStageIn in) {
 
     const float3x3 model = float3x3(transformable.current);
 
-    const float4 current_position = mul(camera.cur.view_proj, mul(transformable.current, float4(in.position, 1.0)));
+    const float4 current_position = mul(camera.curr.view_proj, mul(transformable.current, float4(in.position, 1.0)));
     const float4 last_position = mul(camera.prev.view_proj, mul(transformable.last, float4(in.position, 1.0)));
 
     const float3 in_normal = unpack_2_10_10_10(in.packed_normal_tangent_sign.x).xyz;
@@ -59,13 +59,13 @@ VertexStageOut vert_main(StdVertexStageIn in) {
     {
         out.sv_position = current_position;
 
-        out.vert.normal = normalize(mul(model, in_normal));
-        out.vert.uv = in.uv;
-        out.vert.tangent = normalize(mul(model, in_tangent_sign.xyz));
-        out.vert.bitangent = cross(out.vert.tangent, out.vert.normal) * in_tangent_sign.w;
-        out.vert.screen_pos = current_position.xyw;
-        out.vert.last_screen_pos = last_position.xyw;
-        out.vert.instance_index = semantics.instance_index;
+        out.frag.normal = normalize(mul(model, in_normal));
+        out.frag.uv = in.uv;
+        out.frag.tangent = normalize(mul(model, in_tangent_sign.xyz));
+        out.frag.bitangent = cross(out.frag.tangent, out.frag.normal) * in_tangent_sign.w;
+        out.frag.screen_pos = current_position.xyw;
+        out.frag.last_screen_pos = last_position.xyw;
+        out.frag.instance_index = semantics.instance_index;
     }
     return out;
 }

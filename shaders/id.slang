@@ -14,7 +14,7 @@ VertexStageOut vert_main(StdVertexStageIn in) {
 
     VertexStageOut out;
     {
-        out.sv_position = mul(camera.cur.view_proj, mul(transformable.current, float4(in.position, 1.0)));
+        out.sv_position = mul(camera.curr.view_proj, mul(transformable.current, float4(in.position, 1.0)));
         out.instance_index = semantics.instance_index;
     }
     return out;

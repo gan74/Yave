@@ -12,7 +12,7 @@ RWTexture2D<float> out_depth;
 [shader("compute")]
 [numthreads(8, 8)]
 void comp_main() {
-    const int2 coord = int2(semantics.global_id.xy);
+    const uint2 coord = semantics.global_id.xy;
 
     const float depth = in_depth[coord];
     out_depth[coord] = linearize_depth(depth, camera.inv_proj);

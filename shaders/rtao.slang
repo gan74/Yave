@@ -16,7 +16,7 @@ RWTexture2D<float> out_ao;
 Sampler2D<float> in_depth;
 
 [[vk::binding(2)]]
-Sampler2D in_rt1;
+Sampler2D<uint> in_rt1;
 
 [[vk::binding(3)]]
 ConstantBuffer<Camera> camera;
@@ -45,7 +45,7 @@ float3 compute_sample_dir(float3 normal, uint i) {
 [shader("compute")]
 [numthreads(8, 8)]
 void main() {
-    const int2 coord = int2(semantics.global_id.xy);
+    const uint2 coord = semantics.global_id.xy;
     const uint2 size = image_size(in_depth);
 
     if(any(coord >= size)) {
@@ -57,7 +57,7 @@ void main() {
     float ao = 0;
     if(!is_depth_far(depth)) {
         const float2 uv = (coord + 0.5) / float2(size);
-        const float3 world_pos = unproject(uv, depth, camera.cur.inv_view_proj);
+        const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
         const float3 normal = decode_gbuffer({float4(0.0), in_rt1[coord]}).normal;
         const float view_dist = length(world_pos - camera.position);
         const float min_dist = lerp(0.001, 0.01, view_dist / (view_dist + 10.0));
@@ -74,5 +74,5 @@ void main() {
         ao /= sample_count;
     }
 
-    out_ao[semantics.global_id.xy] = ao;
+    out_ao[coord] = ao;
 }

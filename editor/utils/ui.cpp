@@ -24,7 +24,7 @@ SOFTWARE.
 #include "assets.h"
 
 #include <editor/ImGuiPlatform.h>
-#include <editor/ThumbmailRenderer.h>
+#include <editor/ThumbnailRenderer.h>
 #include <editor/EditorWorld.h>
 #include <editor/widgets/AssetSelector.h>
 #include <editor/widgets/FileBrowser.h>
@@ -195,7 +195,7 @@ bool text_input_multiline(const char* name, core::String& str, const math::Vec2&
 }
 
 void text_read_only(const char* name, std::string_view str) {
-    ImGui::InputText(name, const_cast<char*>(str.data()), str.size(), ImGuiInputTextFlags_ReadOnly);
+    ImGui::InputText(name, const_cast<char*>(str.data()), str.size() + 1, ImGuiInputTextFlags_ReadOnly);
 }
 
 bool position_input(const char* str_id, math::Vec3& position) {
@@ -251,7 +251,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
 
     bool ret = false;
     if(is_valid) {
-        if(const TextureView* img = thumbmail_renderer().thumbmail(id)) {
+        if(const TextureView* img = thumbnail_renderer().thumbnail_img(id)) {
             ret = ImGui::ImageButton("##tex", imgui_platform()->to_ui(*img), button_size);
         } else {
             ret = ImGui::Button(ICON_FA_HOURGLASS_HALF, padded_button_size);
@@ -323,7 +323,7 @@ bool path_selector(const char* text, std::string_view path) {
     ImGui::TextUnformatted(text);
 
     core::String path_copy = path;
-    ImGui::InputText("", path_copy.data(), path_copy.size(), ImGuiInputTextFlags_ReadOnly);
+    ImGui::InputText("", path_copy.data(), path_copy.size() + 1, ImGuiInputTextFlags_ReadOnly);
     ImGui::SameLine();
     const bool ret = ImGui::Button(ICON_FA_FOLDER_OPEN);
 

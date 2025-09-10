@@ -31,41 +31,38 @@ SOFTWARE.
 
 #include <string_view>
 #include <memory>
+#include <mutex>
 
 namespace yave {
 
 struct DirectVertex {
-        math::Vec3 pos;
-        u32 color;
+    math::Vec3 pos;
+    u32 color;
 };
 
 class DirectDrawPrimitive {
     public:
         DirectDrawPrimitive(std::string_view name);
 
-        void set_color(u32 color);
+        void add_line(u32 color, const math::Vec3& a, const math::Vec3& b);
+        void add_triangle(u32 color, const math::Vec3& a, const math::Vec3& b, const math::Vec3& c);
 
-        u32 color() const;
 
-        void add_line(const math::Vec3& a, const math::Vec3& b);
-        void add_circle(const math::Vec3& position, math::Vec3 x, math::Vec3 y, float radius = 1.0f, usize divs = 64);
-        void add_cone(const math::Vec3& position, math::Vec3 x, math::Vec3 y, float len, float angle, usize divs = 8, usize circle_subdivs = 8);
-        void add_box(const AABB& aabb, const math::Transform<>& transform = {});
+        void add_circle(u32 color, const math::Vec3& position, math::Vec3 x, math::Vec3 y, float radius = 1.0f, usize divs = 64);
+        void add_wire_cone(u32 color, const math::Vec3& position, math::Vec3 x, math::Vec3 y, float len, float angle, usize divs = 8, usize circle_subdivs = 8);
+        void add_wire_box(u32 color, const AABB& aabb, const math::Transform<>& transform = {});
+        void add_sphere_3circles(u32 color, const math::Vec3& position, float radius = 1.0f, usize divs = 64);
 
-        void add_sphere_3circles(const math::Vec3& position, float radius = 1.0f, usize divs = 64);
-
-        void add_marker(const math::Vec3& position, float size = 1.0f);
-
-        core::Span<DirectVertex> vertices() const;
+        void add_marker(u32 color, const math::Vec3& position, float size = 1.0f);
 
     private:
         friend class DirectDraw;
 
-        void push_vertex(const math::Vec3& v);
+        void push_wire_vertex(const math::Vec3& v, u32 color);
 
-        u32 _color = 0xFFFFFFFF;
+        core::Vector<DirectVertex> _wire_vertices;
+        core::Vector<DirectVertex> _triangle_vertices;
 
-        core::Vector<DirectVertex> _vertices;
         core::String _name;
 };
 
@@ -74,17 +71,13 @@ class DirectDraw : NonCopyable {
     public:
         void clear();
 
-        DirectDrawPrimitive* add_primitive(std::string_view name, u32 color = 0xFFFF0000);
-
-        core::Span<std::unique_ptr<DirectDrawPrimitive>> primtitives() const;
+        DirectDrawPrimitive* add_primitive(std::string_view name);
 
         void render(RenderPassRecorder& recorder, const math::Matrix4<>& view_proj) const;
 
-
     private:
+        mutable ProfiledLock<> _lock;
         core::SmallVector<std::unique_ptr<DirectDrawPrimitive>, 16> _primitives;
-
-
 };
 
 }

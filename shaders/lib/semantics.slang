@@ -39,7 +39,7 @@ property uint3 work_group_count {
 uint InterlockedAddRet(inout uint mem, uint data) {
     uint prev;
     InterlockedAdd(mem, data, prev);
-    return prev;   
+    return prev;
 }
 
 
@@ -83,6 +83,19 @@ uint3 image_size<T: ITexelElement>(RWTexture2DArray<T> smp) {
 
 
 
+[ForceInline]
+uint3 image_size<T: ITexelElement>(Sampler3D<T> smp) {
+    uint3 size;
+    smp.GetDimensions(size.x, size.y, size.z);
+    return size;
+}
+
+[ForceInline]
+uint3 image_size<T: ITexelElement>(RWTexture3D<T> smp) {
+    uint3 size;
+    smp.GetDimensions(size.x, size.y, size.z);
+    return size;
+}
 
 
 #endif

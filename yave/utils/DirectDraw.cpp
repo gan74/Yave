@@ -30,28 +30,25 @@ SOFTWARE.
 
 namespace yave {
 
-
 DirectDrawPrimitive::DirectDrawPrimitive(std::string_view name) : _name(name) {
 }
 
-void DirectDrawPrimitive::set_color(u32 color) {
-    _color = color;
+void DirectDrawPrimitive::push_wire_vertex(const math::Vec3& v, u32 color) {
+    _wire_vertices << DirectVertex{v, color};
 }
 
-u32 DirectDrawPrimitive::color() const {
-    return _color;
+void DirectDrawPrimitive::add_line(u32 color, const math::Vec3 &a, const math::Vec3 &b) {
+    push_wire_vertex(a, color);
+    push_wire_vertex(b, color);
 }
 
-void DirectDrawPrimitive::push_vertex(const math::Vec3& v) {
-    _vertices << DirectVertex{v, _color};
+void DirectDrawPrimitive::add_triangle(u32 color, const math::Vec3& a, const math::Vec3& b, const math::Vec3& c) {
+    _triangle_vertices << DirectVertex{a, color};
+    _triangle_vertices << DirectVertex{b, color};
+    _triangle_vertices << DirectVertex{c, color};
 }
 
-void DirectDrawPrimitive::add_line(const math::Vec3 &a, const math::Vec3 &b) {
-    push_vertex(a);
-    push_vertex(b);
-}
-
-void DirectDrawPrimitive::add_circle(const math::Vec3& position, math::Vec3 x, math::Vec3 y, float radius, usize divs) {
+void DirectDrawPrimitive::add_circle(u32 color, const math::Vec3& position, math::Vec3 x, math::Vec3 y, float radius, usize divs) {
     x *= radius;
     y *= radius;
     const float seg_ang_size = (1.0f / divs) * 2.0f * math::pi<float>;
@@ -59,25 +56,25 @@ void DirectDrawPrimitive::add_circle(const math::Vec3& position, math::Vec3 x, m
     math::Vec3 last = position + y;
     for(usize i = 1; i != divs + 1; ++i) {
         const math::Vec2 c(std::sin(i * seg_ang_size), std::cos(i * seg_ang_size));
-        push_vertex(last);
+        push_wire_vertex(last, color);
         last = (position + (x * c.x()) + (y * c.y()));
-        push_vertex(last);
+        push_wire_vertex(last, color);
     }
 }
 
-void DirectDrawPrimitive::add_cone(const math::Vec3& position, math::Vec3 x, math::Vec3 y, float len, float angle, usize divs, usize circle_subdivs) {
+void DirectDrawPrimitive::add_wire_cone(u32 color, const math::Vec3& position, math::Vec3 x, math::Vec3 y, float len, float angle, usize divs, usize circle_subdivs) {
     const math::Vec3 z = x.cross(y).normalized();
 
-    const usize beg = _vertices.size();
-    add_circle(position + x * (std::cos(angle) * len), y, z, std::sin(angle) * len, circle_subdivs * divs);
+    const usize beg = _wire_vertices.size();
+    add_circle(color, position + x * (std::cos(angle) * len), y, z, std::sin(angle) * len, circle_subdivs * divs);
 
     for(usize i = 0; i != divs; ++i) {
-        push_vertex(_vertices[beg + (i * 2) * circle_subdivs].pos);
-        push_vertex(position);
+        push_wire_vertex(_wire_vertices[beg + (i * 2) * circle_subdivs].pos, color);
+        push_wire_vertex(position, color);
     }
 }
 
-void DirectDrawPrimitive::add_box(const AABB& aabb, const math::Transform<>& transform) {
+void DirectDrawPrimitive::add_wire_box(u32 color, const AABB& aabb, const math::Transform<>& transform) {
     const math::Vec3 size = aabb.half_extent();
     const std::array corners = {
         size,
@@ -90,77 +87,96 @@ void DirectDrawPrimitive::add_box(const AABB& aabb, const math::Transform<>& tra
         for(usize i = 0; i != 3; ++i) {
             math::Vec3 b = a;
             b[i] *= -1.0f;
-            push_vertex(transform.transform_point(center + a));
-            push_vertex(transform.transform_point(center + b));
+            push_wire_vertex(transform.transform_point(center + a), color);
+            push_wire_vertex(transform.transform_point(center + b), color);
         }
     }
 }
 
-void DirectDrawPrimitive::add_sphere_3circles(const math::Vec3& position, float radius, usize divs) {
-    add_circle(position, math::Vec3(1.0f, 0.0f, 0.0f), math::Vec3(0.0f, 1.0f, 0.0f), radius, divs);
-    add_circle(position, math::Vec3(0.0f, 1.0f, 0.0f), math::Vec3(0.0f, 0.0f, 1.0f), radius, divs);
-    add_circle(position, math::Vec3(0.0f, 0.0f, 1.0f), math::Vec3(1.0f, 0.0f, 0.0f), radius, divs);
+void DirectDrawPrimitive::add_sphere_3circles(u32 color, const math::Vec3& position, float radius, usize divs) {
+    add_circle(color, position, math::Vec3(1.0f, 0.0f, 0.0f), math::Vec3(0.0f, 1.0f, 0.0f), radius, divs);
+    add_circle(color, position, math::Vec3(0.0f, 1.0f, 0.0f), math::Vec3(0.0f, 0.0f, 1.0f), radius, divs);
+    add_circle(color, position, math::Vec3(0.0f, 0.0f, 1.0f), math::Vec3(1.0f, 0.0f, 0.0f), radius, divs);
 }
 
-void DirectDrawPrimitive::add_marker(const math::Vec3& position, float size) {
+void DirectDrawPrimitive::add_marker(u32 color, const math::Vec3& position, float size) {
     for(usize i = 0; i != 3; ++i) {
         math::Vec3 dir;
         dir[i] = size;
-        add_line(position + dir, position - dir);
+        add_line(color, position + dir, position - dir);
     }
 }
 
-core::Span<DirectVertex> DirectDrawPrimitive::vertices() const {
-    return _vertices;
-}
+
+
 
 
 
 
 void DirectDraw::clear() {
+    auto lock = std::unique_lock(_lock);
     _primitives.clear();
 }
 
-DirectDrawPrimitive* DirectDraw::add_primitive(std::string_view name, u32 color) {
-    auto& prim = _primitives.emplace_back(std::make_unique<DirectDrawPrimitive>(name));
-    prim->set_color(color);
-
-    return prim.get();
-}
-
-core::Span<std::unique_ptr<DirectDrawPrimitive>> DirectDraw::primtitives() const {
-    return _primitives;
+DirectDrawPrimitive* DirectDraw::add_primitive(std::string_view name) {
+    auto lock = std::unique_lock(_lock);
+    return _primitives.emplace_back(std::make_unique<DirectDrawPrimitive>(name)).get();
 }
 
 void DirectDraw::render(RenderPassRecorder& recorder, const math::Matrix4<>& view_proj) const {
     y_profile();
 
-    usize vertex_count = 0;
+    auto lock = std::unique_lock(_lock);
+
+    usize wire_vertex_count = 0;
+    usize triangle_vertex_count = 0;
     for(const auto& prim : _primitives) {
-        vertex_count += prim->_vertices.size();
+        wire_vertex_count += prim->_wire_vertices.size();
+        triangle_vertex_count += prim->_triangle_vertices.size();
     }
 
+    const usize vertex_count = wire_vertex_count + triangle_vertex_count;
     if(!vertex_count) {
         return;
     }
 
     TypedAttribBuffer<DirectVertex, MemoryType::CpuVisible> vertices(vertex_count);
-    auto mapping = vertices.map(MappingAccess::WriteOnly);
-
     {
+        auto mapping = vertices.map(MappingAccess::WriteOnly);
+
         usize offset = 0;
         for(const auto& prim : _primitives) {
-            const core::Span<DirectVertex> verts = prim->vertices();
-            std::copy(verts.begin(), verts.end(), mapping.data() + offset);
-            offset += verts.size();
+            std::copy(prim->_wire_vertices.begin(), prim->_wire_vertices.end(), mapping.data() + offset);
+            offset += prim->_wire_vertices.size();
         }
+        y_debug_assert(offset == wire_vertex_count);
+
+        for(const auto& prim : _primitives) {
+            std::copy(prim->_triangle_vertices.begin(), prim->_triangle_vertices.end(), mapping.data() + offset);
+            offset += prim->_triangle_vertices.size();
+        }
+        y_debug_assert(offset == vertex_count);
     }
 
-    const auto* material = device_resources()[DeviceResources::WireFrameMaterialTemplate];
-    const auto descriptors = make_descriptor_set(InlineDescriptor(view_proj));
-    recorder.bind_material_template(material, DescriptorSetProxy(descriptors));
+    struct Params {
+        math::Matrix4<> view_proj;
+        math::Vec3 padding;
+        u32 lit;
+    };
+
     recorder.bind_attrib_buffers({vertices});
-    recorder.draw_array(vertex_count);
+    {
+        const Params params{view_proj, {}, 0};
+        const auto descriptors = make_descriptor_set(InlineDescriptor(params));
+        recorder.bind_material_template(device_resources()[DeviceResources::DirectDrawWireMaterialTemplate], DescriptorSetProxy(descriptors));
+        recorder.draw_array(wire_vertex_count, 1, 0);
+    }
+    {
+        const Params params{view_proj, {}, 1};
+        const auto descriptors = make_descriptor_set(InlineDescriptor(params));
+        recorder.bind_material_template(device_resources()[DeviceResources::DirectDrawMaterialTemplate], DescriptorSetProxy(descriptors));
+        recorder.draw_array(triangle_vertex_count, 1, wire_vertex_count);
+    }
 }
 
 }

@@ -126,8 +126,8 @@ template<typename T>
 consteval u32 header_type_hash() {
     using naked = deconst_t<T>;
 
-    if constexpr(is_range_v<T>) {
-        static_assert(!has_serde3_v<T>);
+    if constexpr(is_range<T>) {
+        static_assert(!has_serde3<T>);
         using value_type = typename T::value_type;
         u32 hash = header_type_hash<value_type>();
         hash_combine(hash, u32(0xd3189c20));
@@ -135,7 +135,7 @@ consteval u32 header_type_hash() {
     }
 
     u32 hash = u32(ct_type_hash_v<naked> & 0xFFFFFFFF);
-    if constexpr(has_serde3_v<T>) {
+    if constexpr(has_serde3<T>) {
         hash |= 0x01;
     } else {
         hash &= ~0x01;
@@ -178,7 +178,7 @@ consteval MembersHeader build_members_header() {
 template<typename T>
 constexpr auto build_header(NamedObject<T> obj) {
 #ifdef Y_SLIM_POD_HEADER
-    if constexpr(has_serde3_v<T>) {
+    if constexpr(has_serde3<T>) {
         return ObjectHeader {
             build_type_header(obj),
             build_members_header<T>()

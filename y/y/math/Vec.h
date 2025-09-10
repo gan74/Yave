@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <y/utils.h>
 
+#include <concepts>
 #include <cmath>
 
 namespace y {

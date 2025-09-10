@@ -191,7 +191,7 @@ class SparseIdSet final : public SparseIdSetBase {
         }
 };
 
-static_assert(is_iterable_v<SparseIdSet>);
+static_assert(is_iterable<SparseIdSet>);
 
 
 template<typename Elem>

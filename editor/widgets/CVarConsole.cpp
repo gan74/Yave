@@ -39,7 +39,7 @@ SOFTWARE.
 namespace editor {
 
 template<typename T>
-static constexpr bool is_printable_v =
+concept is_printable =
     std::is_arithmetic_v<T> ||
     //std::is_enum_v<T> ||
     (std::is_constructible_v<std::string_view, T> && std::is_constructible_v<T, std::string_view>);
@@ -110,7 +110,7 @@ static void collect_var(C& vars, const core::String& parent, std::string_view na
     unused(vars, parent, name, getter);
 
     const core::String full_name = parent + "." + name;
-    if constexpr(is_printable_v<T>) {
+    if constexpr(is_printable<T>) {
         vars.emplace_back(
             full_name,
             [=]{ return fmt_to_owned("{}", getter()); },
@@ -119,8 +119,8 @@ static void collect_var(C& vars, const core::String& parent, std::string_view na
             fmt_to_owned("{}", default_value),
             false
         );
-    } else if constexpr(is_iterable_v<T>) {
-        if constexpr(is_printable_v<typename T::value_type>) {
+    } else if constexpr(is_iterable<T>) {
+        if constexpr(is_printable<typename T::value_type>) {
             vars.emplace_back(
                 full_name,
                 [=]{ return fmt_to_owned("{}", getter()); },

@@ -274,7 +274,7 @@ static FrameGraphImageId filter_ao(FrameGraph& framegraph, const GBufferPass& gb
 
 
 
-AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const TemporalPrePass& temporal, const AOSettings& settings) {
+AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const AOSettings& settings) {
     const auto region = framegraph.region("AO");
 
     const AOSettings::AOMethod method = (settings.method == AOSettings::AOMethod::RTAO && !raytracing_enabled())
@@ -301,8 +301,9 @@ AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const 
                 ao = compute_rtao(framegraph, gbuffer, settings.rtao.ray_count, settings.rtao.max_dist);
 
                 if(settings.rtao.temporal) {
-                    static const FrameGraphPersistentResourceId persistent_id = FrameGraphPersistentResourceId::create();
-                    ao = TAAPass::create_simple(framegraph, temporal, ao, persistent_id).anti_aliased;
+                    static const FrameGraphPersistentResourceId persistent_color_id = FrameGraphPersistentResourceId::create();
+                    static const FrameGraphPersistentResourceId persistent_motion_id = FrameGraphPersistentResourceId::create();
+                    ao = TAAPass::create(framegraph, gbuffer, ao, persistent_color_id, persistent_motion_id).anti_aliased;
                 }
 
                 if(settings.rtao.filter_sigma > 0.0f) {

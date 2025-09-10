@@ -12,6 +12,8 @@ static const float inv_sqrt_2pi = 0.39894228040143267793994605993439;
 static const float euler = 2.7182818284590452353602874713526;
 static const float epsilon = 0.0000001;
 
+static const float golden = 1.618033988749;
+
 static const uint max_uint = uint(0xFFFFFFFF);
 static const float max_float = 3.402823e+38;
 
@@ -21,6 +23,7 @@ static const uint max_tile_lights = 32;
 static const float lum_histogram_offset = 8.0;
 static const float lum_histogram_mul = 8.0;
 static const uint lum_histogram_size = 256;
+
 
 
 
@@ -58,13 +61,14 @@ struct SurfaceInfo {
 
 struct RawGBuffer {
     float4 rt0;
-    float4 rt1;
+    uint rt1;
 
     __init() {
-        rt0 = rt1 = 0.0;
+        rt0 = 0.0;
+        rt1 = 0;
     }
 
-    __init(float4 r0, float4 r1) {
+    __init(float4 r0, uint r1) {
         rt0 = r0;
         rt1 = r1;
     }
@@ -92,17 +96,24 @@ void unpack_gbuffer_color(float4 buff, out float3 color, out float metallic) {
     metallic = buff.a;
 }
 
-void unpack_gbuffer_normal(float4 buff, out float3 normal, out float roughness) {
-    normal = octahedron_decode(buff.xy);
-    roughness = max(0.05, buff.z);
+void unpack_gbuffer_normal(uint buff, out float3 normal, out float roughness) {
+    const uint3 unpacked = uint3(
+        (buff >> 20) & 0xFFF,
+        (buff >> 8) & 0xFFF,
+        buff & 0xFF
+    );
+
+    normal = octahedron_decode(float2(unpacked.xy) / float2(0xFFF));
+    roughness = max(0.05, float(unpacked.z) / float(0xFF));
 }
 
 float4 pack_gbuffer_color(float3 color, float metallic) {
     return float4(color, metallic);
 }
 
-float4 pack_gbuffer_normal(float3 normal, float roughness) {
-    return float4(octahedron_encode(normal), roughness, 0.0);
+uint pack_gbuffer_normal(float3 normal, float roughness) {
+    const uint2 packed_normal = uint2(saturate(octahedron_encode(normal)) * 0xFFF);
+    return (packed_normal.x << 20) | (packed_normal.y << 8) | uint(saturate(roughness) * 0xFF);
 }
 
 
@@ -249,7 +260,13 @@ uint hash(uint2 x) {
     return 1103515245u * (q.x ^ (q.y >> 3u));
 }
 
+float component_max(float3 x) {
+    return max(x.x, max(x.y, x.z));
+}
 
+float component_min(float3 x) {
+    return min(x.x, min(x.y, x.z));
+}
 
 
 
@@ -294,12 +311,10 @@ float3 octahedron_decode(float2 f) {
     return normalize(n);
 }
 
-
 float3 unpack_normal_map(float2 normal) {
     normal = normal * 2.0 - 1.0;
     return float3(normal, 1.0 - sqrt(dot(normal, normal)));
 }
-
 
 float4 unpack_2_10_10_10(uint packed) {
     return float4(
@@ -329,6 +344,23 @@ float2 hammersley(uint i, uint N) {
     bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
     const float radical_inverse = float(bits) * 2.3283064365386963e-10;
     return float2(float(i) / float(N), radical_inverse);
+}
+
+// https://observablehq.com/@meetamit/fibonacci-lattices
+float2 fibonacci_square(uint i, uint count) {
+    return float2(
+        fract(i / golden),
+        i / (count - 0.9)
+        );
+}
+
+float3 fibonacci_sphere(uint i, uint count) {
+    const float2 sq = fibonacci_square(i, count);
+    const float2 theta_phi = float2(2.0 * pi * sq.x, acos(1.0 - 2.0 * sq.y));
+    return float3(
+        float2(cos(theta_phi.x), sin(theta_phi.x)) * sin(theta_phi.y),
+        cos(theta_phi.y)
+        );
 }
 
 bool is_depth_far(float z) {

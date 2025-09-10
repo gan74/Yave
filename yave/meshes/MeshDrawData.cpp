@@ -80,15 +80,14 @@ const MeshDrawCommand& MeshDrawData::draw_command() const {
     return _command;
 }
 
-const BLAS& MeshDrawData::blas() const {
-    return _blas;
+usize MeshDrawData::vertex_count() const {
+    return _vertex_count;
 }
 
 void MeshDrawData::swap(MeshDrawData& other) {
     std::swap(_command, other._command);
     std::swap(_vertex_count, other._vertex_count);
     std::swap(_mesh_buffers, other._mesh_buffers);
-    std::swap(_blas, other._blas);
 }
 
 }

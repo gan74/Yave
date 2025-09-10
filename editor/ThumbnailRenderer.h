@@ -19,53 +19,56 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_GLTFIMPORTER_H
-#define EDITOR_WIDGETS_GLTFIMPORTER_H
 
-#include "FileBrowser.h"
+#ifndef EDITOR_THUMBNAILRENDERER_H
+#define EDITOR_THUMBNAILRENDERER_H
 
-#include <editor/import/import.h>
+#include <editor/editor.h>
 
+#include <yave/graphics/images/ImageView.h>
+#include <yave/assets/AssetPtr.h>
+
+#include <y/core/HashMap.h>
 #include <y/concurrent/StaticThreadPool.h>
 
 namespace editor {
 
-class GltfImporter final : public Widget {
-
-    enum class State {
-        Browsing,
-        Parsing,
-        Settings,
-        Importing,
-        Done,
-        Failed,
-    };
-
+class ThumbnailRenderer : NonMovable {
     public:
-        GltfImporter();
-        GltfImporter(core::String dst_import_path);
+        static constexpr usize thumbnail_size = 256;
 
-    protected:
-        void on_gui() override;
+        enum class ThumbnailStatus {
+            Rendering,
+            Failed,
+            Done,
+        };
 
-        bool should_keep_alive() const override;
+        struct ThumbnailData : NonMovable {
+            TextureView view;
+            core::Vector<core::String> infos;
+
+            Texture texture;
+            std::atomic<ThumbnailStatus> status = ThumbnailStatus::Rendering;
+        };
+
+        ThumbnailRenderer(AssetLoader& loader);
+
+        const ThumbnailData* thumbnail_data(AssetId id);
+        const TextureView* thumbnail_img(AssetId id);
+
+        usize cached_thumbnails();
 
     private:
-        State _state = State::Browsing;
 
-        FileBrowser _browser;
-        core::Result<import::ParsedScene> _scene = core::Err();
+        std::unique_ptr<ThumbnailData> schedule_render(AssetId id);
 
-        struct {
-            core::String import_path;
-            bool import_child_prefabs_as_assets = false;
-        } _settings;
+        ProfiledMutexed<core::FlatHashMap<AssetId, std::unique_ptr<ThumbnailData>>> _thumbnails;
+        AssetLoader* _loader = nullptr;
 
-
-        concurrent::StaticThreadPool _thread_pool;
+        concurrent::WorkerThread _render_thread;
 };
 
 }
 
-#endif // EDITOR_WIDGETS_GLTFIMPORTER_H
+#endif // EDITOR_THUMBNAILRENDERER_H
 

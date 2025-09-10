@@ -31,6 +31,7 @@ struct SceneVisibility {
     core::Vector<const PointLightObject*> point_lights;
     core::Vector<const SpotLightObject*> spot_lights;
     core::Vector<const DirectionalLightObject*> directional_lights;
+    const SkyLightObject* sky_light = nullptr;
 };
 
 

@@ -115,16 +115,16 @@ inline void explore_named_tuple(T&& t, Tpl&& tpl, F&& func) {
 
 template<typename T, typename F>
 void explore_one(T&& t, F&& func) {
-    if constexpr(has_reflect_v<T>) {
+    if constexpr(has_reflect<T>) {
         auto elems = t._y_reflect_static();
         explore_named_tuple<0>(t, elems, func);
-    } else if constexpr(is_tuple_v<T>) {
+    } else if constexpr(is_tuple<T>) {
         explore_tuple<0>(t);
-    } else if constexpr(is_std_ptr_v<T> || std::is_pointer_v<T>) {
+    } else if constexpr(is_std_ptr<T> || std::is_pointer_v<T>) {
         if(t != nullptr) {
             explore_one(*t, func);
         }
-    } else if constexpr(is_iterable_v<T>) {
+    } else if constexpr(is_iterable<T>) {
         explore_collection(t, func);
     }
     func(t);
@@ -139,7 +139,7 @@ inline void explore_recursive(T&& t, F&& func) {
 
 template<typename T, typename F>
 inline constexpr void explore_members(F&& func) {
-    if constexpr(has_reflect_v<T>) {
+    if constexpr(has_reflect<T>) {
         constexpr auto elems = T::_y_reflect_static();
         detail::explore_member<0>(elems, func);
     }
@@ -147,7 +147,7 @@ inline constexpr void explore_members(F&& func) {
 
 template<typename T>
 inline consteval auto list_members() {
-    if constexpr(has_reflect_v<T>) {
+    if constexpr(has_reflect<T>) {
         return T::_y_reflect_static();
     } else {
         return std::tuple<>{};
@@ -171,7 +171,7 @@ static constexpr std::string_view _y_reflect_type_name = #Type;                 
 
 #define y_reflect_empty(Type)                                                                               \
 y_reflect_base(Type)                                                                                        \
-template<typename = void> static inline consteval auto _y_reflect_static() const { return std::tuple<>{}; }
+template<typename = void> static inline consteval auto _y_reflect_static() { return std::tuple<>{}; }
 
 #define y_reflect_static(Type, ...)                                                                         \
 y_reflect_base(Type);                                                                                       \

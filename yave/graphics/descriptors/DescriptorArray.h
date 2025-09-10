@@ -26,7 +26,6 @@ SOFTWARE.
 
 #include <y/core/HashMap.h>
 #include <y/core/Vector.h>
-#include <y/concurrent/Mutexed.h>
 
 namespace yave {
 
@@ -68,6 +67,7 @@ class DescriptorArray : NonMovable {
 
     public:
         static constexpr u32 upper_descriptor_count_limit = 1024 * 1024;
+        static constexpr u32 reserved_descriptor_count = 16;
 
         ~DescriptorArray();
 
@@ -101,9 +101,9 @@ class DescriptorArray : NonMovable {
         VkHandle<VkDescriptorSetLayout> _layout;
         std::atomic<VkDescriptorSet> _set = {};
 
-        concurrent::Mutexed<Allocator> allocator;
+        ProfiledMutexed<Allocator> allocator;
 
-        mutable std::mutex _set_lock; // Locks for writes on the set
+        mutable ProfiledLock<std::mutex> _set_lock; // Locks for writes on the set
 
         const VkDescriptorType _type;
 };

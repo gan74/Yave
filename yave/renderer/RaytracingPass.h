@@ -29,7 +29,7 @@ namespace yave {
 struct RaytracingPass {
     FrameGraphImageId raytraced;
 
-    static RaytracingPass create(FrameGraph& framegraph, const CameraBufferPass &camera, const math::Vec2ui& size);
+    static RaytracingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const math::Vec2ui& size);
 };
 
 }

@@ -92,10 +92,8 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData::screen("bloom_downscale"),
     DeviceMaterialData::screen("blur_HORIZONTAL", true),
     DeviceMaterialData::screen("blur_VERTICAL", true),
-    DeviceMaterialData{"wireframe", "wireframe", DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, true, PrimitiveType::Lines},
-    DeviceMaterialData::screen("temporal_mask"),
-    DeviceMaterialData::screen("taa_simple"),
-    DeviceMaterialData::screen("taa_resolve"),
+    DeviceMaterialData{"directdraw", "directdraw", DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, true, PrimitiveType::Lines},
+    DeviceMaterialData{"directdraw", "directdraw", DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, true},
     DeviceMaterialData::screen("denoise"),
     DeviceMaterialData{"id", "id", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
 };
@@ -116,14 +114,15 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "exposure_debug",
     "depth_bounds",
     "prev_camera",
+    "taa_resolve",
     "update_transforms",
     "filter_ao",
     "rtao",
+    "rt",
 };
 
 
 static constexpr std::array<std::string_view, usize(RaytracingPrograms::MaxRaytracingPrograms)> raytracing_datas = {
-    "basic_rt",
 };
 
 // ABGR

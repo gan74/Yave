@@ -98,13 +98,14 @@ int main(int argc, char** argv) {
         log_msg("Unable to setup crash handler", Log::Warning);
     }
 
-    Instance instance = create_instance();
-
-    init_device(instance);
-    y_defer(destroy_device());
-
-
     {
+        Instance instance = create_instance();
+
+        init_device(instance);
+        y_defer(destroy_device());
+
+
+
         ImGuiPlatform platform(multi_viewport);
         init_editor(&platform, Settings::load());
         y_defer(destroy_editor());

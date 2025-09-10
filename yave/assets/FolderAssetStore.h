@@ -124,7 +124,7 @@ class FolderAssetStore final : NonMovable, public AssetStore {
 
         mutable std::unique_ptr<core::FlatHashMap<AssetId, std::map<core::String, AssetData>::const_iterator>> _ids;
 
-        mutable std::recursive_mutex _lock;
+        mutable ProfiledLock<std::recursive_mutex> _lock;
 
         FolderFileSystemModel _filesystem;
 };

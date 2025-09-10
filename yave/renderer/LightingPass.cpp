@@ -54,13 +54,9 @@ static constexpr usize max_point_lights = 1024;
 static constexpr usize max_spot_lights = 1024;
 
 
-static std::tuple<const IBLProbe*, float, bool> find_probe(const SceneView& scene_view) {
-    for(const SkyLightObject& obj : scene_view.scene()->sky_lights()) {
-        if((obj.visibility_mask & scene_view.visibility_mask()) == 0) {
-            continue;
-        }
-
-        const SkyLightComponent& sky = obj.component;
+static std::tuple<const IBLProbe*, float, bool> find_probe(const SceneVisibility& visibility) {
+    if(const SkyLightObject* obj = visibility.sky_light) {
+        const SkyLightComponent& sky = obj->component;
         if(const IBLProbe* probe = sky.probe().get()) {
             y_debug_assert(!probe->is_null());
             return {probe, sky.intensity(), sky.display_sky()};
@@ -76,10 +72,9 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                                              const ShadowMapPass& shadow_pass,
                                              FrameGraphImageId ao) {
 
-    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
 
-    auto [ibl_probe, intensity, sky] = find_probe(scene_view);
+    auto [ibl_probe, intensity, sky] = find_probe(visibility);
     const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Ambient/Sun pass");
@@ -288,13 +283,14 @@ static void local_lights_pass_compute(FrameGraph& framegraph,
 
         const u32 point_count = fill_point_light_buffer(points.data(), visibility);
         const u32 spot_count = fill_spot_light_buffer<false>(spots.data(), visibility, shadow_pass);
+        const math::Vec2ui light_count(point_count, spot_count);
 
         if(point_count || spot_count) {
             const auto& program = device_resources()[debug_tiles ? DeviceResources::DeferredLocalsDebugProgram : DeviceResources::DeferredLocalsProgram];
 
             core::ScratchVector<Descriptor> descs(self->descriptor_set().descriptors().size() + 1);
             descs.push_back(self->descriptor_set().descriptors().begin(), self->descriptor_set().descriptors().end());
-            descs.emplace_back(InlineDescriptor(math::Vec2ui(point_count, spot_count)));
+            descs.emplace_back(InlineDescriptor(light_count));
             recorder.dispatch_threads(program, size, DescriptorSetProxy(descs));
         }
     });

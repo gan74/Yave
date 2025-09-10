@@ -73,7 +73,7 @@ class MeshAllocator : NonMovable {
 
         core::Vector<FreeBlock> _free_blocks;
         bool _should_compact = false;
-        mutable std::mutex _lock;
+        mutable ProfiledLock<> _lock;
 
         std::unique_ptr<MeshDrawBuffers> _mesh_buffers;
 };

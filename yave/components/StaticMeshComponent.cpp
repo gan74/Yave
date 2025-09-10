@@ -51,10 +51,6 @@ const AssetPtr<StaticMesh>& StaticMeshComponent::mesh() const {
     return _mesh;
 }
 
-const BLAS* StaticMeshComponent::blas() const {
-    return _mesh ? &_mesh->draw_data().blas() : nullptr;
-}
-
 core::MutableSpan<AssetPtr<Material>> StaticMeshComponent::materials() {
     return _materials;
 }
@@ -86,10 +82,10 @@ bool StaticMeshComponent::update_asset_loading_status() {
 }
 
 void StaticMeshComponent::load_assets(AssetLoadingContext& loading_ctx) {
-    _mesh.load(loading_ctx);
+    _mesh.load_async(loading_ctx);
 
     for(auto& material : _materials) {
-        material.load(loading_ctx);
+        material.load_async(loading_ctx);
     }
 }
 

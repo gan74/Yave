@@ -58,7 +58,7 @@ ExposurePass ExposurePass::create(FrameGraph& framegraph, FrameGraphImageId in_l
 
     FrameGraphComputePassBuilder params_builder = framegraph.add_compute_pass("Exposure compute pass");
 
-    const auto params = params_builder.declare_typed_buffer<shader::ExposureParams>(1);
+    const auto params = params_builder.declare_typed_buffer<shader::ExposureParams>();
 
     params_builder.add_storage_output(params);
     params_builder.add_uniform_input(histogram);

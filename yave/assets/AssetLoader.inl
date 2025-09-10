@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2022 Grégoire Angerand
+Copyright (c) 2016-2025 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,29 +37,23 @@ SOFTWARE.
 namespace yave {
 
 template<typename T>
-void AssetPtr<T>::load(AssetLoadingContext& context)  {
-    const AssetId id = _id;
-    if(id == AssetId::invalid_id()) {
+void AssetPtr<T>::load(AssetLoadingContext& context) {
+    if(_id == AssetId::invalid_id() || has_loader()) {
         return;
     }
 
-    if(has_loader()) {
-        return;
-    }
-
-    *this = context.load_async<T>(id);
+    *this = context.template load<T>(_id);
     y_debug_assert(loader());
-    flush_reload();
 }
 
 template<typename T>
-void AssetPtr<T>::reload() {
-    y_debug_assert(!_data || _data->id == _id);
-    if(has_loader()) {
-        flush_reload();
-        loader()->reload(*this);
-        flush_reload();
+void AssetPtr<T>::load_async(AssetLoadingContext& context) {
+    if(_id == AssetId::invalid_id() || has_loader()) {
+        return;
     }
+
+    *this = context.template load_async<T>(_id);
+    y_debug_assert(loader());
 }
 
 template<typename T>
@@ -144,32 +138,13 @@ AssetPtr<T> AssetLoader::Loader<T>::load_async(AssetId id) {
     return ptr;
 }
 
+
+namespace detail {
 template<typename T>
-AssetPtr<T> AssetLoader::Loader<T>::reload(const AssetPtr<T>& ptr) {
-    y_profile();
-
-    const AssetId id = ptr.id();
-    if(id == AssetId::invalid_id()) {
-        return AssetPtr<T>();
-    }
-
-    y_always_assert(!ptr.is_empty(), "Can not reload empty asset");
-
-    AssetPtr<T> reloaded(id, parent());
-    {
-        parent()->_thread_pool.add_loading_job(create_loading_job(reloaded));
-        parent()->wait_until_loaded(reloaded);
-        y_debug_assert(!reloaded.is_loading());
-    }
-
-    _loaded.locked([&](auto&& loaded) {
-        auto& weak = loaded[id];
-        if(auto orig = weak.lock()) {
-            orig->set_reloaded(reloaded._data);
-        }
-        weak = reloaded._data;
-    });
-    return reloaded;
+concept Loadable = requires(T t) {
+    t.load(std::declval<AssetLoadingContext&>());
+    t.load_async(std::declval<AssetLoadingContext&>());
+};
 }
 
 template<typename T>
@@ -204,8 +179,8 @@ std::unique_ptr<AssetLoader::LoadingJob> AssetLoader::Loader<T>::create_loading_
                     }
 
                     reflect::explore_recursive(_load_from, [this](auto& m) {
-                        if constexpr(is_asset_ptr_v<std::remove_cvref_t<decltype(m)>>) {
-                            m.load(loading_context());
+                        if constexpr(detail::Loadable<std::remove_cvref_t<decltype(m)>>) {
+                            m.load_async(loading_context());
                         }
                     });
 
@@ -339,6 +314,10 @@ AssetPtr<T> AssetLoadingContext::load(AssetId id) {
 
 template<typename T>
 AssetPtr<T> AssetLoadingContext::load_async(AssetId id) {
+    if((flags() & AssetLoadingFlags::SynchronousLoad) == AssetLoadingFlags::SynchronousLoad) {
+        return load<T>(id);
+    }
+
     auto ptr = _parent->load_async<T>(id);
     _dependencies.add_dependency(ptr);
     return ptr;

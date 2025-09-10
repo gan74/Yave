@@ -114,6 +114,8 @@ void UiManager::on_gui() {
     _auto_parent = nullptr;
 
    if(!to_destroy.is_empty()) {
+        y_profile_zone("destroy widgets");
+
         for(usize i = 0;  i != _widgets.size(); ++i) {
             Widget* wid = _widgets[i].get();
             bool destroy = to_destroy.contains(wid);
@@ -122,6 +124,7 @@ void UiManager::on_gui() {
             }
 
             if(destroy) {
+                y_profile_dyn_zone(fmt_c_str("destroying '{}'", wid->_title_with_id));
                 _ids[typeid(*wid)].released << wid->_id;
                 _widgets.erase_unordered(_widgets.begin() + i);
                 --i;

@@ -167,10 +167,10 @@ class EntityGroupProvider final : NonMovable {
 template<typename... Ts>
 class EntityGroup final : NonCopyable {
     static constexpr usize type_count = sizeof...(Ts);
-    static constexpr usize mutate_count = ((traits::is_component_mutable_v<Ts> ? 1 : 0) + ...);
+    static constexpr usize mutate_count = ((traits::is_component_mutable<Ts> ? 1 : 0) + ...);
 
-    static constexpr usize changed_count = ((traits::is_component_changed_v<Ts> ? 1 : 0) + ...);
-    static constexpr usize deleted_count = ((traits::is_component_deleted_v<Ts> ? 1 : 0) + ...);
+    static constexpr usize changed_count = ((traits::is_component_changed<Ts> ? 1 : 0) + ...);
+    static constexpr usize deleted_count = ((traits::is_component_deleted<Ts> ? 1 : 0) + ...);
     static constexpr usize filter_count = changed_count + deleted_count;
 
     using SetTuple = std::tuple<SparseComponentSet<traits::component_raw_type_t<Ts>>*...>;
@@ -189,7 +189,7 @@ class EntityGroup final : NonCopyable {
     void fill_one(const ContainerTuple& containers, usize& mut_index, usize& filter_index, usize& const_index) {
         std::get<I>(_sets) = &std::get<I>(containers)->_components;
 
-        if constexpr(traits::is_component_mutable_v<T>) {
+        if constexpr(traits::is_component_mutable<T>) {
             _write_locks[mut_index] = &std::get<I>(containers)->_lock;
             _mutate[mut_index] = &std::get<I>(containers)->_mutated;
             ++mut_index;
@@ -197,10 +197,10 @@ class EntityGroup final : NonCopyable {
             _read_locks[const_index++] = &std::get<I>(containers)->_lock;
         }
 
-        if constexpr(traits::is_component_changed_v<T>) {
+        if constexpr(traits::is_component_changed<T>) {
             _filter[filter_index++] = &std::get<I>(containers)->_mutated;
         }
-        if constexpr(traits::is_component_deleted_v<T>) {
+        if constexpr(traits::is_component_deleted<T>) {
             _filter[filter_index++] = &std::get<I>(containers)->_to_delete;
         }
     }

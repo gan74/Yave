@@ -58,7 +58,7 @@ bool SkyLightComponent::update_asset_loading_status() {
 }
 
 void SkyLightComponent::load_assets(AssetLoadingContext& loading_ctx) {
-    _probe.load(loading_ctx);
+    _probe.load_async(loading_ctx);
 }
 
 void SkyLightComponent::inspect(ecs::ComponentInspector* inspector) {

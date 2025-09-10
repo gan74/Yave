@@ -21,8 +21,8 @@ void comp_main() {
 
     GroupMemoryBarrierWithGroupSync();
 
-    const int2 coord = int2(semantics.global_id.xy);
-    const int2 size = image_size(in_depth);
+    const uint2 coord = semantics.global_id.xy;
+    const uint2 size = image_size(in_depth);
 
     const float depth = in_depth[coord];
     const uint udepth = asuint(depth);
@@ -35,7 +35,7 @@ void comp_main() {
     GroupMemoryBarrierWithGroupSync();
 
     if(semantics.local_index == 0) {
-        out_min_max[int2(semantics.work_group_id.xy)] = float2(asfloat(shared_min), asfloat(shared_max));
+        out_min_max[semantics.work_group_id.xy] = float2(asfloat(shared_min), asfloat(shared_max));
     }
 
 }

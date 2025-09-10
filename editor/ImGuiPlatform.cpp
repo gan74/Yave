@@ -519,8 +519,6 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
 
     _main_window = std::make_unique<PlatformWindow>(this, Window::Resizable);
 
-    log_msg(_main_window->swapchain.color_format().name());
-
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     viewport->PlatformHandle = _main_window.get();
 }
