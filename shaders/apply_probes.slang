@@ -1,5 +1,3 @@
-// #define DDGI_TRACE_PROBES
-
 #include "lib/ddgi.slang"
 
 [[vk::binding(0)]]
@@ -21,7 +19,10 @@ Sampler2D<float2> in_distance;
 ConstantBuffer<Camera> camera;
 
 [[vk::binding(6)]]
-RaytracingAccelerationStructure tlas;
+cbuffer Params {
+    float normal_bias;
+    float view_dir_bias;
+}
 
 
 
@@ -50,11 +51,13 @@ void comp() {
 
     const SurfaceInfo surface = decode_gbuffer({float4(0.0), in_rt1[coord]});
 
-#ifdef DDGI_TRACE_PROBES
-    const float3 irr = sample_irradiance(world_pos, surface.normal, camera.position, in_irradiance, tlas);
-#else
-    const float3 irr = sample_irradiance(world_pos, surface.normal, camera.position, in_irradiance, in_distance);
-#endif
+
+    IrradianceFieldSampleParams params;
+    {
+        params.sampling_normal_bias = normal_bias;
+        params.sampling_view_dir_bias = view_dir_bias;
+    }
+    const float3 irr = sample_irradiance(world_pos, surface.normal, camera.position, in_irradiance, in_distance, params);
 
     out_image[coord] = irr;
 }

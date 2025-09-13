@@ -71,17 +71,21 @@ float3 decode_irr(float3 irr) {
 
 // #define DDGI_SAMPLE_EXTENDED
 
-#ifdef DDGI_TRACE_PROBES
-float3 sample_irradiance(float3 world_pos, float3 normal, float3 cam_pos, Sampler2D<float3> irradiance_tex, RaytracingAccelerationStructure tlas) {
-#else
-float3 sample_irradiance(float3 world_pos, float3 normal, float3 cam_pos, Sampler2D<float3> irradiance_tex, Sampler2D<float2> distance_tex, IrradianceFieldSampleParams params = IrradianceFieldSampleParams()) {
-#endif
+
+float3 sample_irradiance(
+    float3 world_pos, 
+    float3 normal, 
+    float3 cam_pos, 
+    Sampler2D<float3> irradiance_tex, 
+    Sampler2D<float2> distance_tex, 
+    IrradianceFieldSampleParams params = IrradianceFieldSampleParams()) {
+
     const float2 inv_atlas_size = 1.0 / image_size(irradiance_tex);
 
     const float2 sample_coord = octahedron_encode(normal) * ddgi.probe_size_no_border;
 
     const float3 view_dir = normalize(cam_pos - world_pos);
-    const float3 bias = normal * 0.05 + view_dir * 0.05;
+    const float3 bias = normal * params.sampling_normal_bias + view_dir * params.sampling_view_dir_bias;
     const float3 biased_world_pos = world_pos + bias;
 
     float total = 0.0;
@@ -112,11 +116,6 @@ float3 sample_irradiance(float3 world_pos, float3 normal, float3 cam_pos, Sample
 
         float weight = 1.0;
 
-#ifdef DDGI_TRACE_PROBES
-        if(trace_inline(tlas, world_pos, probe_vec / probe_dist, 0.01, max(0.01, probe_dist)).hit) {
-            weight = 0.0;
-        }
-#else
         {
             const float2 dist_sample_coord = octahedron_encode(probe_vec) * ddgi.probe_size_no_border;
             const float2 dist_sample_uv = (probe_corner + dist_sample_coord) * inv_atlas_size;
@@ -133,7 +132,6 @@ float3 sample_irradiance(float3 world_pos, float3 normal, float3 cam_pos, Sample
             const float chebyshev_weight = max(0.0, sqr(chebyshev) - params.chebyshev_bias) / (1.0 - params.chebyshev_bias);
             weight *= (probe_dist <= mean) ? 1.0 : chebyshev_weight;
         }
-#endif
 
 #if 1
         {
@@ -163,10 +161,10 @@ float3 sample_irradiance(float3 world_pos, float3 normal, float3 cam_pos, Sample
         const float3 irr = irradiance_tex.SampleLevel(sample_uv, 0.0);
 
 #if 0
-if(weight > total) {
-    total = weight;
-    acc = encode_irr(identifying_color(probe_index)) * weight;
-}
+        if(weight > total) {
+            total = weight;
+            acc = encode_irr(identifying_color(probe_index)) * weight;
+        }
 #else
         total += weight;
         acc += encode_irr(irr) * weight;

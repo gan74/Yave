@@ -73,11 +73,13 @@ void comp() {
     DDGIRayHit out_hit;
     out_hit.position = hit.position;
 
-    if(hit.hit) {
+    if(!hit.front_face) {
+        out_hit.position = probe_pos;
+    } else if(hit.hit) {
         const float3 hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
         out_hit.position += hit_normal * 0.01;
 
-        float3 radiance = sample_irradiance(hit.position, hit_normal, camera.position, in_irradiance, in_distance) * inv_pi;
+        float3 radiance = 0.0; // sample_irradiance(hit.position, hit_normal, camera.position, in_irradiance, in_distance) * inv_pi;
 
         const DirectionalLight light = lights[0];
         const float NoL = dot(light.direction, hit_normal);

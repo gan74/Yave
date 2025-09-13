@@ -115,7 +115,7 @@ void comp() {
     const float step = 1.0 / sample_count;
     for(float t = 0.0; t < 1.0; t += step) {
         const float r = lerp(2.0, 32.0, t);
-        const float phi = lerp(0.0, pi * 2.0 * 5.0, t);
+        const float phi = lerp(0.0, pi * 2.0 * 5.0 / golden, t);
         const float2 sample_offset = float2(cos(phi + random_angle), sin(phi + random_angle)) * r;
         const float2 sample_uv = wrap_uv(uv + (sample_offset / size));
 

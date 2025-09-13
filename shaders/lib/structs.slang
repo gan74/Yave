@@ -185,11 +185,15 @@ struct IrradianceFieldSampleParams {
     float distance_bias;
     float variance_bias;
     float chebyshev_bias;
+    float sampling_normal_bias;
+    float sampling_view_dir_bias;
 
     SLANG_CTOR(IrradianceFieldSampleParams)() {
         distance_bias = 0.0;
         variance_bias = 0.02;
         chebyshev_bias = 0.07;
+        sampling_normal_bias = 0.05;
+        sampling_view_dir_bias = 0.25;
     }
 };
 

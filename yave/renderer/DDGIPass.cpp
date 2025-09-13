@@ -143,12 +143,15 @@ static void update_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 static FrameGraphImageId apply_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId irradiance, FrameGraphImageId distance) {
     const math::Vec2 size = framegraph.image_size(gbuffer.depth);
 
-    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
-    const TLAS& tlas = scene_view.scene()->tlas();
-
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Apply probes pass");
 
     const auto gi = builder.declare_image(VK_FORMAT_B10G11R11_UFLOAT_PACK32, size);
+
+    math::Vec2 params;
+    {
+        params.x() = editor::debug_values().value<float>("Normal bias", 0.05f);
+        params.y() = editor::debug_values().value<float>("View dir bias", 0.25f);
+    }
 
     builder.add_storage_output(gi);
     builder.add_uniform_input(gbuffer.depth);
@@ -156,7 +159,7 @@ static FrameGraphImageId apply_probes(FrameGraph& framegraph, const GBufferPass&
     builder.add_uniform_input(irradiance);
     builder.add_uniform_input(distance);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_external_input(tlas);
+    builder.add_inline_input(params);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::ApplyProbesProgram];
         recorder.dispatch_threads(program, size, self->descriptor_set());
