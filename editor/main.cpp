@@ -32,6 +32,7 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
+#include <y/concurrent/JobSystem.h>
 
 #ifdef Y_OS_WIN
 #include <windows.h>
@@ -90,7 +91,49 @@ static Instance create_instance() {
 
 
 int main(int argc, char** argv) {
-    concurrent::set_thread_name("Main thread");
+    {
+        y_profile();
+
+        concurrent::JobSystem js;
+        core::Vector<concurrent::JobSystem::JobHandle> handles;
+
+        auto h = js.schedule([] {
+            y_profile();
+            core::Duration::sleep(core::Duration::seconds(2));
+            log_msg(fmt("hello from {}", concurrent::thread_name()));
+        });
+
+        handles << h;
+
+        {
+            y_profile_zone("Level 1");
+            for(usize i = 0; i != 100; ++i) {
+                handles << js.schedule([] {
+                    y_profile();
+                    core::Duration::sleep(core::Duration::milliseconds(2));
+                    log_msg(fmt("hello after waiting from {}", concurrent::thread_name()));
+                }, h);
+            }
+        }
+
+        {
+            y_profile_zone("Level 2");
+            for(usize i = 0; i != 100; ++i) {
+                js.schedule([] {
+                    y_profile();
+                    core::Duration::sleep(core::Duration::milliseconds(2));
+                    log_msg(fmt("hello after waiting TWICE from {}", concurrent::thread_name()));
+                }, handles);
+            }
+        }
+
+        log_msg("done scheduling");
+    }
+    log_msg("shutting down...");
+
+
+
+    /*concurrent::set_thread_name("Main thread");
 
     parse_args(argc, argv);
 
@@ -117,6 +160,6 @@ int main(int argc, char** argv) {
 
     log_msg("exiting...");
 
-    return 0;
+    return 0;*/
 }
 
