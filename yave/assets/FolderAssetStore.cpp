@@ -464,7 +464,7 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::str
         return core::Err(ErrorType::InvalidName);
     }
 
-    const auto lock = std::unique_lock(_lock);
+    auto lock = std::unique_lock(_lock);
 
     if(!_filesystem.create_directory(strict_parent_path(dst_name))) {
         return core::Err(ErrorType::FilesytemError);
@@ -479,9 +479,12 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::str
 
     {
         y_profile_zone("writing");
+
+        lock.unlock();
         if(!io2::File::copy(data, data_file_name)) {
             return core::Err(ErrorType::FilesytemError);
         }
+        lock.lock();
     }
 
     const AssetDesc desc = { dst_name, type };
