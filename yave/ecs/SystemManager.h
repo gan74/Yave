@@ -25,7 +25,6 @@ SOFTWARE.
 #include "System.h"
 #include "EntityGroup.h"
 
-#include <y/concurrent/StaticThreadPool.h>
 #include <y/concurrent/JobSystem.h>
 
 
@@ -46,7 +45,6 @@ enum class SystemSchedule {
 
 class SystemScheduler : NonMovable {
     public:
-        using DependencyGroup = concurrent::DependencyGroup;
 
         struct FirstTime {
             bool value = false;
@@ -107,8 +105,6 @@ class SystemScheduler : NonMovable {
 
 class SystemManager : NonCopyable {
     public:
-        using DependencyGroup = concurrent::DependencyGroup;
-
         SystemManager(EntityWorld* world);
 
         void run_schedule_seq() const;

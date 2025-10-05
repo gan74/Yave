@@ -29,7 +29,6 @@ SOFTWARE.
 #include <yave/assets/AssetPtr.h>
 
 #include <y/core/HashMap.h>
-#include <y/concurrent/StaticThreadPool.h>
 
 namespace editor {
 

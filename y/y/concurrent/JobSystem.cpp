@@ -68,6 +68,10 @@ JobSystem::~JobSystem() {
     }
 }
 
+usize JobSystem::concurrency() const {
+    return _threads.size();
+}
+
 bool JobSystem::is_empty() const {
     const std::unique_lock lock(_lock);
     return !_total_jobs;

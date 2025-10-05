@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <yave/graphics/images/ImageData.h>
 
-#include <y/concurrent/StaticThreadPool.h>
+#include <y/concurrent/JobSystem.h>
 
 namespace editor {
 
@@ -57,7 +57,7 @@ class ImageImporter final : public Widget {
         core::String _import_path;
 
         State _state = State::Browsing;
-        concurrent::WorkerThread _thread_pool;
+        concurrent::JobSystem _job_system;
 };
 
 }

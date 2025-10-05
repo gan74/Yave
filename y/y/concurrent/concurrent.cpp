@@ -21,7 +21,8 @@ SOFTWARE.
 **********************************/
 #include "concurrent.h"
 
-#include "StaticThreadPool.h"
+#include <atomic>
+#include <algorithm>
 
 #ifdef Y_OS_WIN
 #include <windows.h>
