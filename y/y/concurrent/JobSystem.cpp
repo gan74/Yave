@@ -29,6 +29,19 @@ SOFTWARE.
 namespace y {
 namespace concurrent {
 
+
+JobSystem::JobHandle::JobHandle(JobSystem* p) : _parent(p) {
+}
+
+bool JobSystem::JobHandle::is_finished() const {
+    return _data && _data->finished;
+}
+
+void JobSystem::JobHandle::wait() const {
+    y_debug_assert(_parent && _data);
+    _parent->wait(*this);
+}
+
 JobSystem::JobSystem(usize thread_count) {
     for(usize i = 0; i != thread_count; ++i) {
         _threads.emplace_back([this, i] {
@@ -55,58 +68,8 @@ JobSystem::~JobSystem() {
     }
 }
 
-void JobSystem::worker() {
-    for(;;) {
-        std::unique_lock lock(_lock);
-        _condition.wait(lock, [this] { return !_jobs.is_empty() || (!_run && !_waiting); });
-
-        if(_jobs.is_empty()) {
-            if(!_run && !_waiting) {
-                break;
-            }
-            continue;
-        }
-
-        const std::shared_ptr<JobData> job = _jobs.pop_front();
-        lock.unlock();
-
-        y_debug_assert(job);
-        y_debug_assert(!job->dependencies);
-
-        job->func();
-
-        {
-            usize scheduled = 0;
-
-            {
-                const std::unique_lock job_lock(job->lock);
-
-                job->finished = true;
-                for(usize i = 0; i != job->outgoing_deps.size(); ++i) {
-                    auto& out = job->outgoing_deps[i];
-                    if(out->dependencies.fetch_sub(1) == 1) {
-                        if(scheduled++ == 0) {
-                            _lock.lock();
-                        }
-                        _jobs.emplace_back(std::move(out));
-                        --_waiting;
-
-                        job->outgoing_deps.erase_unordered(job->outgoing_deps.begin() + i);
-                        --i;
-                    }
-                }
-            }
-
-            if(scheduled) {
-                scheduled == 1 ? _condition.notify_one() : _condition.notify_all();
-                _lock.unlock();
-            }
-        }
-    }
-}
-
 JobSystem::JobHandle JobSystem::schedule(JobFunc&& func, core::Span<JobHandle> deps) {
-    JobHandle handle;
+    JobHandle handle(this);
     {
         handle._data = std::make_shared<JobData>();
         handle._data->func = std::move(func);
@@ -142,6 +105,83 @@ JobSystem::JobHandle JobSystem::schedule(JobFunc&& func, core::Span<JobHandle> d
 
     return handle;
 }
+
+
+void JobSystem::wait(const JobHandle& job) {
+    y_debug_assert(job._parent == this);
+
+    for(;;) {
+        std::unique_lock lock(_lock);
+        _condition.wait(lock, [this] { return !_jobs.is_empty(); });
+
+        if(process_one(lock)) {
+            if(job.is_finished()) {
+                break;
+            }
+        }
+    }
+}
+
+void JobSystem::worker() {
+    for(;;) {
+        std::unique_lock lock(_lock);
+        _condition.wait(lock, [this] { return !_jobs.is_empty() || (!_run && !_waiting); });
+
+        if(!process_one(lock)) {
+            y_debug_assert(lock.owns_lock());
+            if(!_run && !_waiting) {
+                break;
+            }
+        } else {
+            y_debug_assert(!lock.owns_lock());
+        }
+    }
+}
+
+bool JobSystem::process_one(std::unique_lock<std::mutex>& lock) {
+    if(_jobs.is_empty()) {
+        return false;
+    }
+
+    const std::shared_ptr<JobData> job = _jobs.pop_front();
+    lock.unlock();
+
+    y_debug_assert(job);
+    y_debug_assert(!job->dependencies);
+
+    job->func();
+
+    {
+        usize scheduled = 0;
+
+        {
+            const std::unique_lock job_lock(job->lock);
+
+            job->finished = true;
+            for(usize i = 0; i != job->outgoing_deps.size(); ++i) {
+                auto& out = job->outgoing_deps[i];
+                if(out->dependencies.fetch_sub(1) == 1) {
+                    if(scheduled++ == 0) {
+                        _lock.lock();
+                    }
+                    _jobs.emplace_back(std::move(out));
+                    --_waiting;
+
+                    job->outgoing_deps.erase_unordered(job->outgoing_deps.begin() + i);
+                    --i;
+                }
+            }
+        }
+
+        if(scheduled) {
+            scheduled == 1 ? _condition.notify_one() : _condition.notify_all();
+            _lock.unlock();
+        }
+    }
+
+    return true;
+}
+
 
 }
 }

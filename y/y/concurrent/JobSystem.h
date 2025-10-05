@@ -51,16 +51,23 @@ class JobSystem : NonMovable {
 
             std::mutex lock;
             core::SmallVector<std::shared_ptr<JobData>> outgoing_deps;
-            bool finished = false;
+            std::atomic<bool> finished = false;
         };
 
     public:
         class JobHandle {
             public:
+                bool is_finished() const;
+
+                void wait() const;
+
             private:
                 friend class JobSystem;
 
+                JobHandle(JobSystem* p);
+
                 std::shared_ptr<JobData> _data;
+                JobSystem* _parent = nullptr;
         };
 
 
@@ -81,10 +88,11 @@ class JobSystem : NonMovable {
 
         JobHandle schedule(JobFunc&& func, core::Span<JobHandle> deps = {});
 
+        void wait(const JobHandle& job);
 
     private:
-        void process_one(std::unique_lock<std::mutex>& lock);
         void worker();
+        bool process_one(std::unique_lock<std::mutex>& lock);
 
         mutable std::mutex _lock;
         std::condition_variable _condition;
