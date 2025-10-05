@@ -125,20 +125,18 @@ JobSystem::JobHandle JobSystem::schedule(JobFunc&& func, core::Span<JobHandle> d
     return handle;
 }
 
+void JobSystem::wait(core::Span<JobHandle> jobs) {
+    for(const JobHandle& job : jobs) {
+        y_debug_assert(job._parent == this);
 
-void JobSystem::wait(const JobHandle& job) {
-    y_debug_assert(job._parent == this);
-
-    for(;;) {
-        std::unique_lock lock(_lock);
-        _condition.wait(lock, [this] { return !_jobs.is_empty(); });
-
-        if(process_one(lock)) {
-            if(job.is_finished()) {
-                break;
-            }
+        while(!job.is_finished()) {
+            std::unique_lock lock(_lock);
+            Y_TODO(we deadlock if we wait here, so we have to spin)
+            process_one(lock);
         }
     }
+
+    y_debug_assert(std::all_of(jobs.begin(), jobs.end(), [](const JobHandle& j) { return j.is_finished(); }));
 }
 
 void JobSystem::worker() {

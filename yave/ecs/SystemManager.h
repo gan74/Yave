@@ -154,6 +154,8 @@ class SystemManager : NonCopyable {
         }
 
     private:
+        void run_seq(SystemSchedule schedule) const;
+
         void setup_system(System *system);
 
         core::Vector<std::unique_ptr<SystemScheduler>> _schedulers;

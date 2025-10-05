@@ -93,7 +93,7 @@ class JobSystem : NonMovable {
 
         JobHandle schedule(JobFunc&& func, core::Span<JobHandle> deps = {});
 
-        void wait(const JobHandle& job);
+        void wait(core::Span<JobHandle> jobs);
 
     private:
         void worker();
