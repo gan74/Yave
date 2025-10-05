@@ -53,7 +53,7 @@ JobSystem::JobSystem(usize thread_count) {
 
 JobSystem::~JobSystem() {
     {
-        const std::unique_lock lock(_lock);
+        const auto lock = std::unique_lock(_lock);
         _run = false;
         _condition.notify_all();
     }
@@ -63,7 +63,7 @@ JobSystem::~JobSystem() {
     }
 
     {
-        const std::unique_lock lock(_lock);
+        const auto lock = std::unique_lock(_lock);
         y_always_assert(_jobs.is_empty(), "Incomplete jobs remaining");
     }
 }
@@ -97,7 +97,7 @@ JobSystem::JobHandle JobSystem::schedule(JobFunc&& func, core::Span<JobHandle> d
             JobData* data = h._data.get();
             y_debug_assert(data);
 
-            const std::unique_lock job_lock(data->lock);
+            const auto job_lock = std::unique_lock(data->lock);
             if(!data->finished) {
                 data->outgoing_deps.emplace_back(handle._data);
                 ++dep_count;
@@ -106,7 +106,7 @@ JobSystem::JobHandle JobSystem::schedule(JobFunc&& func, core::Span<JobHandle> d
 
         if(dep_count) {
             handle._data->dependencies = dep_count;
-            const std::unique_lock lock(_lock);
+            const auto lock = std::unique_lock(_lock);
             ++_total_jobs;
             ++_waiting;
             return handle;
@@ -116,7 +116,7 @@ JobSystem::JobHandle JobSystem::schedule(JobFunc&& func, core::Span<JobHandle> d
     y_debug_assert(!handle._data->dependencies);
 
     {
-        const std::unique_lock lock(_lock);
+        const auto lock = std::unique_lock(_lock);
         ++_total_jobs;
         _jobs.emplace_back(handle._data);
         _condition.notify_one();
@@ -130,7 +130,7 @@ void JobSystem::wait(core::Span<JobHandle> jobs) {
         y_debug_assert(job._parent == this);
 
         while(!job.is_finished()) {
-            std::unique_lock lock(_lock);
+            auto lock = std::unique_lock(_lock);
             Y_TODO(we deadlock if we wait here, so we have to spin)
             process_one(lock);
         }
@@ -141,7 +141,7 @@ void JobSystem::wait(core::Span<JobHandle> jobs) {
 
 void JobSystem::worker() {
     for(;;) {
-        std::unique_lock lock(_lock);
+        auto lock = std::unique_lock(_lock);
         _condition.wait(lock, [this] { return !_jobs.is_empty() || (!_run && !_waiting); });
 
         if(!process_one(lock)) {
@@ -172,7 +172,7 @@ bool JobSystem::process_one(std::unique_lock<std::mutex>& lock) {
         usize scheduled = 0;
 
         {
-            const std::unique_lock job_lock(job->lock);
+            const auto job_lock = std::unique_lock(job->lock);
 
             job->finished = true;
             for(usize i = 0; i != job->outgoing_deps.size(); ++i) {
