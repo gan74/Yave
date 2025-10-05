@@ -32,7 +32,7 @@ SOFTWARE.
 #include <yave/assets/AssetLoader.h>
 #include <yave/utils/DirectDraw.h>
 #include <yave/scene/SceneView.h>
-#include <yave/scene/EcsScene.h>
+#include <yave/systems/SceneSystem.h>
 
 #include <y/io2/File.h>
 #include <y/serde3/archives.h>
@@ -69,7 +69,6 @@ std::unique_ptr<ThumbnailRenderer> thumbnail_renderer;
 std::unique_ptr<DirectDraw> debug_drawer;
 std::unique_ptr<UiManager> ui;
 std::unique_ptr<EditorWorld> world;
-std::unique_ptr<EcsScene> scene;
 
 std::unique_ptr<concurrent::JobSystem> job_system;
 
@@ -94,9 +93,8 @@ u32 deferred_actions = None;
 
 
 
-static void create_scene() {
-    application::scene = std::make_unique<EcsScene>(application::world.get());
-    application::default_scene_view = SceneView(application::scene.get());
+static void create_scene_view() {
+    application::default_scene_view = SceneView(&current_scene());
     set_scene_view(nullptr);
 }
 
@@ -139,7 +137,7 @@ static void load_world_deferred() {
     }
 
     application::world = std::move(world);
-    create_scene();
+    create_scene_view();
 
     log_msg("World loaded");
 }
@@ -156,7 +154,7 @@ void post_tick() {
 
     if(application::deferred_actions & application::New) {
         application::world = std::make_unique<EditorWorld>(*application::loader);
-        create_scene();
+        create_scene_view();
     }
 
     application::deferred_actions = application::None;
@@ -181,10 +179,9 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::loader = std::make_unique<AssetLoader>(application::asset_store, AssetLoadingFlags::SkipFailedDependenciesBit, 4);
     application::thumbnail_renderer = std::make_unique<ThumbnailRenderer>(*application::loader);
     application::world = std::make_unique<EditorWorld>(*application::loader);
-    application::scene = std::make_unique<EcsScene>(application::world.get());
     application::debug_drawer = std::make_unique<DirectDraw>();
 
-    create_scene();
+    create_scene_view();
 
     application::deferred_actions = application::Load;
 
@@ -194,7 +191,6 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
 
 void destroy_editor() {
     application::thumbnail_renderer = nullptr;
-    application::scene = nullptr;
     application::world = nullptr;
     application::scene_view  = nullptr;
     application::default_scene_view = {};
@@ -209,7 +205,6 @@ void destroy_editor() {
 void run_editor() {
     application::imgui_platform->exec([] {
         application::world->tick(*application::job_system);
-        application::scene->update_from_world();
         application::world->process_deferred_changes();
         application::ui->on_gui();
         post_tick();
@@ -260,8 +255,10 @@ EditorWorld& current_world() {
     return *application::world;
 }
 
-Scene& current_scene() {
-    return *application::scene;
+const Scene& current_scene() {
+    const Scene* sce = application::world->find_system<SceneSystem>()->scene();
+    y_debug_assert(sce);
+    return *sce;
 }
 
 void set_scene_view(SceneView* scene) {
