@@ -126,10 +126,9 @@ TickId EntityWorld::tick_id() const {
     return _tick_id;
 }
 
-void EntityWorld::tick(concurrent::StaticThreadPool& thread_pool) {
+void EntityWorld::tick(concurrent::JobSystem& job_system) {
     _tick_id = _tick_id.next();
-    _system_manager.run_schedule_seq();
-    _system_manager.run_schedule_mt(thread_pool);
+    _system_manager.run_schedule_mt(job_system);
 }
 
 void EntityWorld::process_deferred_changes() {

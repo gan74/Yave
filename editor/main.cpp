@@ -91,7 +91,7 @@ static Instance create_instance() {
 
 
 int main(int argc, char** argv) {
-    {
+    /*{
         y_profile();
 
         concurrent::JobSystem js;
@@ -104,6 +104,9 @@ int main(int argc, char** argv) {
             log_msg(fmt("hello from {}", concurrent::thread_name()));
             ++counter;
         });
+
+        y_debug_assert(!counter);
+        y_debug_assert(!js.is_empty());
 
         handles << h;
 
@@ -141,9 +144,10 @@ int main(int argc, char** argv) {
     }
     log_msg("shutting down...");
 
+    return 0;*/
 
 
-    /*concurrent::set_thread_name("Main thread");
+    concurrent::set_thread_name("Main thread");
 
     parse_args(argc, argv);
 
@@ -170,6 +174,6 @@ int main(int argc, char** argv) {
 
     log_msg("exiting...");
 
-    return 0;*/
+    return 0;
 }
 

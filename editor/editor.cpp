@@ -71,7 +71,7 @@ std::unique_ptr<UiManager> ui;
 std::unique_ptr<EditorWorld> world;
 std::unique_ptr<EcsScene> scene;
 
-std::unique_ptr<concurrent::StaticThreadPool> thread_pool;
+std::unique_ptr<concurrent::JobSystem> job_system;
 
 ImGuiPlatform* imgui_platform = nullptr;
 
@@ -171,7 +171,7 @@ void post_tick() {
 void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::settings = settings;
     application::imgui_platform = platform;
-    application::thread_pool = std::make_unique<concurrent::StaticThreadPool>();
+    application::job_system = std::make_unique<concurrent::JobSystem>();
 
     const auto& store_dir = app_settings().editor.asset_store;
 
@@ -203,12 +203,12 @@ void destroy_editor() {
     application::debug_drawer = nullptr;
     application::resources = nullptr;
     application::ui = nullptr;
-    application::thread_pool = nullptr;
+    application::job_system = nullptr;
 }
 
 void run_editor() {
     application::imgui_platform->exec([] {
-        application::world->tick(*application::thread_pool);
+        application::world->tick(*application::job_system);
         application::scene->update_from_world();
         application::world->process_deferred_changes();
         application::ui->on_gui();
@@ -236,8 +236,8 @@ ThumbnailRenderer& thumbnail_renderer() {
     return *application::thumbnail_renderer;
 }
 
-concurrent::StaticThreadPool& thread_pool() {
-    return *application::thread_pool;
+concurrent::JobSystem& job_system() {
+    return *application::job_system;
 }
 
 const EditorResources& resources() {

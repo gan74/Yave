@@ -58,23 +58,26 @@ SystemManager::SystemManager(EntityWorld* world) : _world(world) {
 void SystemManager::run_schedule_seq() const {
     y_profile();
 
-    for(const auto& scheduler : _schedulers) {
-        SystemScheduler::Schedule& sched = scheduler->_schedules[usize(SystemSchedule::TickSequential)];
-        for(usize i = 0; i != sched.tasks.size(); ++i) {
-            const auto& task = sched.tasks[i];
-            y_always_assert(sched.wait_groups[i].is_empty(), "TickSequential tasks can not have dependencies");
-            y_always_assert(sched.signals[i].is_empty(), "TickSequential tasks can not have signals");
-            y_profile_dyn_zone(fmt_c_str("{}: {}", scheduler->_system->name(), task.name));
-            task.func();
+    for(usize t = 0; t != usize(SystemSchedule::Max); ++t) {
+        for(const auto& scheduler : _schedulers) {
+            SystemScheduler::Schedule& sched = scheduler->_schedules[t];
+            for(usize i = 0; i != sched.tasks.size(); ++i) {
+                const auto& task = sched.tasks[i];
+                y_profile_dyn_zone(fmt_c_str("{}: {}", scheduler->_system->name(), task.name));
+                task.func();
+            }
         }
     }
 }
 
-void SystemManager::run_schedule_mt(concurrent::StaticThreadPool& thread_pool) const {
+void SystemManager::run_schedule_mt(concurrent::JobSystem& job_system) const {
     y_profile();
 
-    using DepGroups = core::Span<DependencyGroup>;
+    run_schedule_seq();
 
+    /*using DepGroups = core::Span<DependencyGroup>;
+
+    const usize dep_count = std::accumulate(_schedulers.begin(), _schedulers.end(), 0_uu, [](usize acc, const auto& s) {
     const usize dep_count = std::accumulate(_schedulers.begin(), _schedulers.end(), 0_uu, [](usize acc, const auto& s) {
         return acc + std::accumulate(s->_schedules.begin(), s->_schedules.end(), 0_uu, [](usize m, const auto& s) { return std::max(m, s.tasks.size()); });
     }) + 1;
@@ -131,7 +134,7 @@ void SystemManager::run_schedule_mt(concurrent::StaticThreadPool& thread_pool) c
     y_profile_zone("waiting for completion");
     thread_pool.process_until_complete(previous_stage);
 
-    y_debug_assert(completed == submitted);
+    y_debug_assert(completed == submitted);*/
 }
 
 

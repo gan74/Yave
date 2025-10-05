@@ -68,6 +68,18 @@ JobSystem::~JobSystem() {
     }
 }
 
+bool JobSystem::is_empty() const {
+    const std::unique_lock lock(_lock);
+    return !_total_jobs;
+}
+
+void JobSystem::cancel_pending_jobs() {
+    const std::unique_lock lock(_lock);
+    _jobs.make_empty();
+    _waiting = 0;
+    _total_jobs = 0;
+}
+
 JobSystem::JobHandle JobSystem::schedule(JobFunc&& func, core::Span<JobHandle> deps) {
     JobHandle handle(this);
     {
@@ -89,8 +101,10 @@ JobSystem::JobHandle JobSystem::schedule(JobFunc&& func, core::Span<JobHandle> d
         }
 
         if(dep_count) {
-            ++_waiting;
             handle._data->dependencies = dep_count;
+            const std::unique_lock lock(_lock);
+            ++_total_jobs;
+            ++_waiting;
             return handle;
         }
     }
@@ -99,6 +113,7 @@ JobSystem::JobHandle JobSystem::schedule(JobFunc&& func, core::Span<JobHandle> d
 
     {
         const std::unique_lock lock(_lock);
+        ++_total_jobs;
         _jobs.emplace_back(handle._data);
         _condition.notify_one();
     }
@@ -164,6 +179,8 @@ bool JobSystem::process_one(std::unique_lock<std::mutex>& lock) {
                     if(scheduled++ == 0) {
                         _lock.lock();
                     }
+                    y_debug_assert(!_lock.try_lock());
+
                     _jobs.emplace_back(std::move(out));
                     --_waiting;
 
@@ -178,6 +195,8 @@ bool JobSystem::process_one(std::unique_lock<std::mutex>& lock) {
             _lock.unlock();
         }
     }
+
+    --_total_jobs;
 
     return true;
 }

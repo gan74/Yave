@@ -30,7 +30,7 @@ SOFTWARE.
 #include "Settings.h"
 
 #include <y/core/Span.h>
-#include <y/concurrent/StaticThreadPool.h>
+#include <y/concurrent/JobSystem.h>
 
 #include <memory>
 #include <string_view>
@@ -54,7 +54,7 @@ UiManager& ui();
 AssetStore& asset_store();
 AssetLoader& asset_loader();
 ThumbnailRenderer& thumbnail_renderer();
-concurrent::StaticThreadPool& thread_pool();
+concurrent::JobSystem& job_system();
 
 const EditorResources& resources();
 

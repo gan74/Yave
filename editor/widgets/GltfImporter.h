@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <editor/import/import.h>
 
-#include <y/concurrent/StaticThreadPool.h>
+#include <y/concurrent/JobSystem.h>
 
 namespace editor {
 
@@ -62,7 +62,7 @@ class GltfImporter final : public Widget {
         } _settings;
 
 
-        concurrent::StaticThreadPool _thread_pool;
+        concurrent::JobSystem _job_system;
 };
 
 }

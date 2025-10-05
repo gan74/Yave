@@ -85,6 +85,8 @@ class JobSystem : NonMovable {
         JobSystem(usize thread_count  = std::max(4u, std::thread::hardware_concurrency()));
         ~JobSystem();
 
+        bool is_empty() const;
+        void cancel_pending_jobs();
 
         JobHandle schedule(JobFunc&& func, core::Span<JobHandle> deps = {});
 
@@ -101,6 +103,7 @@ class JobSystem : NonMovable {
 
         core::Vector<std::thread> _threads;
         std::atomic<u32> _waiting = 0;
+        std::atomic<u32> _total_jobs = 0;
 
         bool _run = true;
 };
