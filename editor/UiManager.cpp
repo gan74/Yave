@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <editor/Settings.h>
 #include <editor/utils/ui.h>
+#include <editor/utils/StringMatcher.h>
 #include <editor/widgets/PerformanceMetrics.h>
 #include <yave/graphics/device/Instance.h>
 
@@ -246,22 +247,13 @@ void UiManager::draw_menu_bar() {
                 imgui::search_bar(ICON_FA_SEARCH "##searchbar", _search_pattern.data(), _search_pattern.size());
 
                 if(imgui::begin_suggestion_popup()) {
-                    const core::Vector words = split_words(_search_pattern.data());
+                    StringMatcher matcher(_search_pattern.data());
                     for(const EditorAction* action : _actions) {
                         if(action->enabled && !(action->enabled()) || (action->flags & EditorAction::Contextual) == EditorAction::Contextual) {
                             continue;
                         }
 
-                        bool match = true;
-                        for(const std::string_view word : words) {
-                            const auto it = std::search(action->name.begin(), action->name.end(), word.begin(), word.end(), [](char a, char b) { return std::tolower(a) == std::tolower(b); });
-                            if(it == action->name.end()) {
-                                match = false;
-                                break;
-                            }
-                        }
-
-                        if(match) {
+                        if(matcher.matches(action->name)) {
                             const core::String shortcut = shortcut_text(action->shortcut);
                             if(imgui::suggestion_item(action->name.data(), shortcut.is_empty() ? nullptr : shortcut.data())) {
                                 action->function();

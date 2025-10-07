@@ -436,7 +436,7 @@ bool search_bar(const char* text, char* buffer, usize buffer_size) {
     search_bar_state.focussed = imgui_state;
 
     if(!search_bar_state.focussed) {
-        ImGui::InputText(text, buffer, buffer_size);
+        ImGui::InputText(text, buffer, buffer_size, ImGuiInputTextFlags_AutoSelectAll);
         return false;
     }
 
@@ -463,7 +463,7 @@ bool search_bar(const char* text, char* buffer, usize buffer_size) {
             return 0;
         };
 
-        search_bar_state.activated = ImGui::InputText(text, buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory, call_back, &search_bar_state);
+        search_bar_state.activated = ImGui::InputText(text, buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_AutoSelectAll, call_back, &search_bar_state);
     }
 
     if(was_activated_last_frame) {

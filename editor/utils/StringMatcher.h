@@ -19,38 +19,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_OUTLINER_H
-#define EDITOR_WIDGETS_OUTLINER_H
+#ifndef EDITOR_UTILS_STRINGMATCHER_H
+#define EDITOR_UTILS_STRINGMATCHER_H
 
-#include <yave/ecs/EntityWorld.h>
+#include <editor/editor.h>
 
-#include <editor/Widget.h>
+#include <y/core/String.h>
+#include <y/core/Vector.h>
 
 namespace editor {
 
-class Outliner final : public Widget {
-
-    editor_widget_open(Outliner)
-
+class StringMatcher : NonMovable {
     public:
-        Outliner();
+        StringMatcher(core::String pattern);
 
-    protected:
-        void on_gui() override;
+        bool is_empty() const;
+
+        bool matches(std::string_view str, bool case_sensitive = false) const;
 
     private:
-        void display_node(EditorWorld& world, ecs::EntityId id, bool recursive);
-        bool make_drop_target(EditorWorld& world, ecs::EntityId id);
+        core::SmallVector<std::string_view, 8> _words;
 
-        core::Vector<std::tuple<const char*, core::String, bool>> _tag_buttons;
-
-        ecs::EntityId _context_menu_target;
-        ecs::EntityId _click_target;
-
-        core::String _search_pattern;
+        core::String _pattern;
 };
 
 }
 
-#endif // EDITOR_WIDGETS_OUTLINER_H
+#endif // EDITOR_UTILS_STRINGMATCHER_H
 
