@@ -22,11 +22,9 @@ SOFTWARE.
 
 #include "EngineView.h"
 
-#include <editor/Picker.h>
 #include <editor/Settings.h>
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
-#include <editor/utils/CameraController.h>
 #include <editor/ImGuiPlatform.h>
 #include <editor/utils/ui.h>
 
@@ -36,11 +34,13 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/framegraph/FrameGraphResourcePool.h>
+#include <yave/renderer/IdBufferPass.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/commands/CmdTimestampPool.h>
 #include <yave/graphics/device/DeviceResources.h>
 
 #include <yave/utils/color.h>
+#include <yave/utils/DirectDraw.h>
 
 #include <editor/utils/ui.h>
 
@@ -172,7 +172,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     const math::Vec2ui output_size = _resolution < 0 ? content_size() : standard_resolutions()[_resolution].second;
 
     DstTexture output;
-    FrameGraph graph(_resource_pool);
+    FrameGraph framegraph(_resource_pool);
 
 
     EditorRendererSettings settings = _settings;
@@ -181,12 +181,11 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         settings.renderer_settings.taa.enable &= keep_taa(_view);
     }
 
-
-    const EditorRenderer renderer = EditorRenderer::create(graph, _scene_view, output_size, settings);
+    const EditorRenderer renderer = EditorRenderer::create(framegraph, _scene_view, output_size, settings);
     {
         const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
 
-        FrameGraphComputePassBuilder builder = graph.add_compute_pass("ImGui texture pass");
+        FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("ImGui texture pass");
 
         const auto output_image = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, output_size);
 
@@ -213,9 +212,20 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         });
     }
 
+    if(is_mouse_inside()) {
+        const math::Vec2 mouse_pos = to_y(ImGui::GetIO().MousePos) - to_y(ImGui::GetWindowPos());
+        const IdBufferPass id_buffer = IdBufferPass::create(framegraph, renderer.renderer);
+        _picking_requests.emplace_back(
+            picking_pass(framegraph, id_buffer, math::Vec2ui(mouse_pos)),
+            _scene_view.camera(),
+            mouse_pos / math::Vec2(content_size()),
+            recorder.create_fence()
+        );
+    }
+
     {
         CmdTimestampPool* ts_pool = _timestamp_pools.emplace_back(std::make_unique<CmdTimestampPool>(recorder)).get();
-        graph.render(recorder, ts_pool);
+        framegraph.render(recorder, ts_pool);
     }
 
     if(!output.is_null()) {
@@ -239,8 +249,21 @@ void EngineView::update() {
     bool focussed = ImGui::IsWindowFocused();
     if(is_clicked()) {
         ImGui::SetWindowFocus();
-        update_picking();
         focussed = true;
+
+        if(_picking_result.uv.x() > 0.0f && _picking_result.uv.y() > 0.0f &&
+           _picking_result.uv.x() < 1.0f && _picking_result.uv.y() < 1.0f) {
+
+            if(_camera_controller && _camera_controller->viewport_clicked(_picking_result)) {
+                // event has been eaten by the camera controller, don't proceed further
+                set_is_moving_camera(true);
+            } else if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                if(!is_dragging_gizmo()) {
+                    const ecs::EntityId picked_id = _picking_result.hit() ? dynamic_cast<const EcsScene*>(&current_scene())->id_from_index(_picking_result.entity_index) : ecs::EntityId();
+                    current_world().toggle_selected(picked_id, !ImGui::GetIO().KeyCtrl);
+                }
+            }
+        }
     }
 
     if(focussed) {
@@ -271,29 +294,20 @@ void EngineView::update_scene_view() {
 
 
 void EngineView::update_picking() {
-    const math::Vec2ui viewport_size = content_size();
-    const ImVec2 offset = ImGui::GetWindowPos();
-    const ImVec2 mouse = ImGui::GetIO().MousePos;
-    const math::Vec2 uv = to_y(mouse - offset) / math::Vec2(viewport_size);
-
-    if(uv.x() < 0.0f || uv.y() < 0.0f ||
-       uv.x() > 1.0f || uv.y() > 1.0f) {
-
-        return;
-    }
-
-    const PickingResult picking_data = Picker::pick_sync(_scene_view, uv, viewport_size);
-    if(_camera_controller && _camera_controller->viewport_clicked(picking_data)) {
-        // event has been eaten by the camera controller, don't proceed further
-        set_is_moving_camera(true);
-        return;
-    }
-
-    if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-        if(!is_dragging_gizmo()) {
-            const ecs::EntityId picked_id = picking_data.hit() ? dynamic_cast<const EcsScene*>(&current_scene())->id_from_index(picking_data.entity_index) : ecs::EntityId();
-            current_world().toggle_selected(picked_id, !ImGui::GetIO().KeyCtrl);
+    while(!_picking_requests.is_empty()) {
+        if(!_picking_requests.first().fence.is_ready()) {
+            break;
         }
+        const PickingRequest request = _picking_requests.pop_front();
+        const shader::PickingData pick_data = request.buffer.map(MappingAccess::ReadOnly)[0];
+        const math::Vec4 p = request.camera.inverse_matrix() * math::Vec4(request.uv * 2.0f - 1.0f, pick_data.depth, 1.0f);
+
+        _picking_result.world_pos = p.to<3>() / p.w();
+        _picking_result.uv = request.uv;
+        _picking_result.depth = pick_data.depth;
+        _picking_result.entity_index = pick_data.entity_index;
+
+        debug_drawer().add_primitive("debug")->add_marker(0xFF0000FF, _picking_result.world_pos);
     }
 }
 
@@ -343,6 +357,7 @@ void EngineView::on_gui() {
         }
 
 
+        update_picking();
         update();
 
 
@@ -588,7 +603,7 @@ void EngineView::draw_settings_menu() {
         ImGui::SliderFloat("Anti Flicker Strength", &taa.anti_flicker_strength, 0.0f, 8.0f);
 
         ImGui::Separator();
-        
+
         const char* jitter_names[] = {"Weyl", "R2", "Halton23"};
         if(ImGui::BeginCombo("Jitter", jitter_names[usize(jitter.jitter)])) {
             for(usize i = 0; i != sizeof(jitter_names) / sizeof(jitter_names[0]); ++i) {

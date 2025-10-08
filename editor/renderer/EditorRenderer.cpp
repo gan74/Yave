@@ -26,17 +26,17 @@ SOFTWARE.
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
 
-#include <yave/renderer/IdBufferPass.h>
-
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/renderer/IdBufferPass.h>
 #include <yave/scene/EcsScene.h>
 
 #include <yave/utils/DirectDraw.h>
 
 namespace editor {
+
 
 [[nodiscard]]
 static SceneVisibilitySubPass filter_selected(const SceneVisibilitySubPass& visibility) {
@@ -103,6 +103,7 @@ static FrameGraphImageId render_debug_drawer(FrameGraph& framegraph, const Scene
 
     return color;
 }
+
 
 
 

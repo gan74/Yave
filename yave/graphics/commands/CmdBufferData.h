@@ -49,11 +49,32 @@ class ResourceFence {
         u64 _value = 0;
 };
 
+class CmdBufferFence {
+    public:
+        CmdBufferFence() = default;
+
+        bool is_ready() const {
+            return !_ptr || _ptr->load();
+        }
+
+    private:
+        friend class CmdBufferData;
+        friend class CmdBufferPool;
+
+        void reset() {
+            if(_ptr) {
+                *_ptr = true;
+                _ptr = {};
+            }
+        }
+
+        std::shared_ptr<std::atomic<bool>> _ptr;
+};
+
 class CmdBufferData final : NonMovable {
     public:
         using InlineUniformBuffer = UniformBuffer<MemoryType::CpuVisible>;
         using InlineUniformSubBuffer = SubBuffer<BufferUsage::UniformBit, MemoryType::CpuVisible>;
-
 
         CmdBufferData(VkCommandBuffer buffer, CmdBufferPool* pool, VkCommandBufferLevel level);
         ~CmdBufferData();
@@ -70,6 +91,8 @@ class CmdBufferData final : NonMovable {
 
         ResourceFence resource_fence() const;
         TimelineFence timeline_fence() const;
+
+        const CmdBufferFence& create_fence();
 
         VkCommandBuffer vk_cmd_buffer() const;
 
@@ -90,6 +113,8 @@ class CmdBufferData final : NonMovable {
 
         ResourceFence _resource_fence;
         TimelineFence _timeline_fence;
+        CmdBufferFence _fence;
+
 
         core::Vector<CmdBufferData*> _secondaries;
 

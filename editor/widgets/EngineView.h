@@ -25,10 +25,15 @@ SOFTWARE.
 #include "Gizmo.h"
 
 #include <editor/Widget.h>
+#include <editor/Picker.h>
 #include <editor/renderer/EditorRenderer.h>
+#include <editor/utils/CameraController.h>
 
+#include <yave/graphics/commands/CmdBufferData.h>
 #include <yave/graphics/images/ImageView.h>
 #include <yave/scene/SceneView.h>
+
+#include <yave/graphics/shader_structs.h>
 
 #include <y/core/RingQueue.h>
 
@@ -96,11 +101,20 @@ class EngineView final : public Widget {
         bool is_dragging_gizmo() const;
         void set_is_moving_camera(bool moving);
 
+        struct PickingRequest {
+            TypedReadBackBuffer<shader::PickingData> buffer;
+            Camera camera;
+            math::Vec2 uv;
+            CmdBufferFence fence;
+        };
 
         RenderView _view = RenderView::Lit;
 
         std::shared_ptr<FrameGraphResourcePool> _resource_pool;
         core::RingQueue<std::unique_ptr<CmdTimestampPool>> _timestamp_pools;
+
+        core::RingQueue<PickingRequest> _picking_requests;
+        PickingResult _picking_result;
 
         EditorRendererSettings _settings;
 

@@ -117,6 +117,7 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "taa_resolve",
     "update_transforms",
     "filter_ao",
+    "picking",
     "rtao",
     "rt",
 };

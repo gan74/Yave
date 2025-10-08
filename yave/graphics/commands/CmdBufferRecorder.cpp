@@ -299,9 +299,9 @@ VkCommandBuffer CmdBufferRecorderBase::vk_cmd_buffer() const {
     return _data->vk_cmd_buffer();
 }
 
-ResourceFence CmdBufferRecorderBase::resource_fence() const {
+const CmdBufferFence& CmdBufferRecorderBase::create_fence() {
     y_debug_assert(_data);
-    return _data->resource_fence();
+    return _data->create_fence();
 }
 
 bool CmdBufferRecorderBase::is_inside_renderpass() const {

@@ -24,7 +24,11 @@ SOFTWARE.
 
 #include <yave/renderer/GBufferPass.h>
 
+#include <yave/graphics/shader_structs.h>
+
 namespace yave {
+
+TypedReadBackBuffer<shader::PickingData> picking_pass(FrameGraph& framegraph, const IdBufferPass& id, const math::Vec2ui& coord);
 
 struct IdBufferPass {
     SceneRenderSubPass scene_pass;
@@ -32,6 +36,7 @@ struct IdBufferPass {
     FrameGraphImageId depth;
     FrameGraphImageId id;
 
+    static IdBufferPass create(FrameGraph& framegraph, const DefaultRenderer& renderer);
     static IdBufferPass create(FrameGraph& framegraph, const CameraBufferPass& camera, const SceneVisibilitySubPass& visibility, const math::Vec2ui& size);
 };
 

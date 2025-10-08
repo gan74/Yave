@@ -32,7 +32,6 @@ class EditorResources final : NonMovable {
     public:
         enum ComputePrograms {
             ThumbnailProgram,
-            PickingProgram,
 
             MaxComputePrograms
         };

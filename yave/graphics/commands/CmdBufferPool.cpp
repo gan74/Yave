@@ -90,6 +90,8 @@ void CmdBufferPool::release(CmdBufferData* data) {
     y_debug_assert(data->is_ready());
     y_debug_assert(data->_secondaries.is_empty());
 
+    data->_fence.reset();
+
     _inline_buffers.locked([&](auto&& buffers) {
         std::move(data->_inline_buffers.begin(), data->_inline_buffers.end(), std::back_inserter(buffers));
         data->_inline_buffers.make_empty();
