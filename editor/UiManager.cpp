@@ -50,28 +50,6 @@ static core::String shortcut_text(KeyCombination shortcut) {
     return text;
 }
 
-static core::Vector<std::string_view> split_words(std::string_view str) {
-    core::Vector<std::string_view> words(1_uu, std::string_view{});
-    for(usize i = 0; i != str.size(); ++i) {
-        const char c = str[i];
-        if(std::isspace(c)) {
-            if(words.is_empty() || !words.last().empty()) {
-                words.emplace_back();
-            }
-        } else {
-            auto& last = words.last();
-            last = last.empty() ? std::string_view(str.data() + i, 1) : std::string_view(last.data(), last.size() + 1);
-        }
-    }
-
-    if(!words.is_empty() && words.last().empty()) {
-        words.pop();
-    }
-
-    return words;
-}
-
-
 UiManager::UiManager() {
     for(const EditorAction* action = all_actions(); action; action = action->next) {
         _actions << action;

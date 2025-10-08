@@ -159,7 +159,7 @@ void Outliner::on_gui() {
     ImGui::SameLine();
 
     ImGui::SetNextItemWidth(-1.0f);
-    imgui::text_input("##search", _search_pattern, ImGuiInputTextFlags_AutoSelectAll, "Search");
+    imgui::text_input("##search", _search_pattern, ImGuiInputTextFlags_AutoSelectAll, fmt_c_str("Search {} entities", world.entity_count()));
     const StringMatcher matcher(_search_pattern);
 
     if(ImGui::BeginPopup("##plusmenu")) {
