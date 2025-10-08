@@ -64,6 +64,8 @@ class EngineView final : public Widget {
         EngineView();
         ~EngineView() override;
 
+        void reset_camera();
+
         CmdTimestampPool* timestamp_pool() const;
 
     protected:

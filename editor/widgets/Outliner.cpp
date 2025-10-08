@@ -69,9 +69,6 @@ static void add_prefab() {
         });
 }
 
-
-
-
 static void add_debug_lights() {
     y_profile();
 
@@ -99,7 +96,6 @@ static void add_debug_lights() {
         world.get_or_add_component<PointLightComponent>(entity)->color() = identifying_color(rng());
     }
 }
-
 
 static void add_debug_cubes(bool animate) {
     y_profile();
@@ -130,11 +126,30 @@ static void add_debug_cubes(bool animate) {
     }
 }
 
+static void create_empty_entity() {
+    auto& world = current_world();
+    world.set_selected(world.create_named_entity("New entity"));
+}
+
+template<typename T>
+static void create_entity_with_component(std::string_view name) {
+    auto& world = current_world();
+    const ecs::EntityId id = world.create_named_entity(name);
+    world.add_or_replace_component<T>(id);
+    set_new_entity_pos(id);
+    world.set_selected(id);
+}
+
 
 
 editor_action("Add debug lights", add_debug_lights)
 editor_action("Add debug cubes", [] { add_debug_cubes(false); })
 editor_action("Add animated debug cubes", [] { add_debug_cubes(true); })
+
+editor_action("Add empty entity", create_empty_entity)
+editor_action("Add point light", [] { create_entity_with_component<PointLightComponent>("Point light"); })
+editor_action("Add spot light", [] { create_entity_with_component<SpotLightComponent>("Spot light"); })
+editor_action("Add prefab", add_prefab)
 
 editor_action_contextual(ICON_FA_TRASH " Delete selected",
     [] { add_child_widget<DeletionDialog>(current_world().selected_entities()); },

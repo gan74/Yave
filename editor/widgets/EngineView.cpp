@@ -46,6 +46,18 @@ SOFTWARE.
 
 namespace editor {
 
+
+
+editor_action_enable("Reset camera",
+    [] { last_focussed_widget_typed<EngineView>()->reset_camera(); },
+    [] { return last_focussed_widget_typed<EngineView>() != nullptr; }
+)
+
+
+
+
+
+
 static bool is_clicked() {
     return ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right) || ImGui::IsMouseClicked(ImGuiMouseButton_Middle);
 }
@@ -87,6 +99,10 @@ EngineView::EngineView() :
 
 EngineView::~EngineView() {
     unset_scene_view(&_scene_view);
+}
+
+void EngineView::reset_camera() {
+   _scene_view.camera().set_view(Camera().view_matrix());
 }
 
 CmdTimestampPool* EngineView::timestamp_pool() const {
@@ -434,7 +450,7 @@ void EngineView::draw_menu() {
 
     if(ImGui::BeginMenu("Camera")) {
         if(ImGui::MenuItem("Reset camera")) {
-            _scene_view.camera().set_view(Camera().view_matrix());
+            reset_camera();
         }
         ImGui::EndMenu();
     }

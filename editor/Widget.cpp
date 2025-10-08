@@ -53,8 +53,16 @@ void Widget::close() {
     _visible = false;
 }
 
+std::string_view Widget::title() const {
+    return _title;
+}
+
 bool Widget::is_visible() const {
     return _visible;
+}
+
+bool Widget::is_focussed() const {
+    return _focussed;
 }
 
 void Widget::set_visible(bool visible) {
@@ -128,6 +136,7 @@ void Widget::draw(bool inside) {
         ImGui::PopStyleColor();
     }
 
+    _focussed = opened && ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
     if(opened) {
         on_gui();
     }

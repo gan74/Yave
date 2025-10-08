@@ -77,18 +77,26 @@ void UiManager::on_gui() {
     update_shortcuts();
     draw_menu_bar();
 
-    core::FlatHashMap<Widget*, int> to_destroy;
 
+    Widget* focussed = nullptr;
+    core::FlatHashMap<Widget*, int> to_destroy;
     for(auto& widget : _widgets) {
         y_profile_dyn_zone(widget->_title_with_id.data());
 
         _auto_parent = widget.get();
         widget->draw(false);
 
+        if(widget->is_focussed()) {
+            focussed = widget.get();
+        }
+
         if(!widget->is_visible() && !widget->should_keep_alive()) {
             to_destroy[widget.get()];
         }
     }
+
+    _focussed = focussed;
+    _last_focussed = _focussed ? _focussed : _last_focussed;
 
     _auto_parent = nullptr;
 
@@ -104,6 +112,8 @@ void UiManager::on_gui() {
 
             if(destroy) {
                 y_profile_dyn_zone(fmt_c_str("destroying '{}'", wid->_title_with_id));
+                _focussed = _focussed == wid ? nullptr : _focussed;
+                _last_focussed = _last_focussed == wid ? nullptr : _last_focussed;
                 _ids[typeid(*wid)].released << wid->_id;
                 _widgets.erase_unordered(_widgets.begin() + i);
                 --i;
@@ -289,6 +299,14 @@ void UiManager::close_all() {
 
 core::Span<std::unique_ptr<Widget>> UiManager::widgets() const {
     return _widgets;
+}
+
+Widget* UiManager::focussed_widget() {
+    return _focussed;
+}
+
+Widget* UiManager::last_focussed_widget() {
+    return _last_focussed;
 }
 
 void UiManager::set_widget_id(Widget* widget) {

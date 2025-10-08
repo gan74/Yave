@@ -221,6 +221,7 @@ class EcsDebug : public Widget {
                     ImGui::TableSetupColumn("##actions",ImGuiTableColumnFlags_WidthFixed);
 
                     for(const core::String& tag : world.tags()) {
+                        ImGui::PushID(tag.data());
                         imgui::table_begin_next_row();
                         ImGui::TextUnformatted(tag.data());
                         ImGui::TableNextColumn();
@@ -230,6 +231,7 @@ class EcsDebug : public Widget {
                             world.clear_tag(tag);
                             y_debug_assert(world.tag_set(tag)->is_empty());
                         }
+                        ImGui::PopID();
                     }
                     ImGui::EndTable();
                 }
