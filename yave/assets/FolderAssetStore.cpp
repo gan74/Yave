@@ -23,9 +23,10 @@ SOFTWARE.
 #include "FolderAssetStore.h"
 
 #include <y/io2/File.h>
-#include <y/concurrent/StaticThreadPool.h>
 
 #include <y/core/Chrono.h>
+
+#include <y/concurrent/JobSystem.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -463,7 +464,7 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::str
         return core::Err(ErrorType::InvalidName);
     }
 
-    const auto lock = std::unique_lock(_lock);
+    auto lock = std::unique_lock(_lock);
 
     if(!_filesystem.create_directory(strict_parent_path(dst_name))) {
         return core::Err(ErrorType::FilesytemError);
@@ -478,9 +479,12 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::str
 
     {
         y_profile_zone("writing");
+
+        lock.unlock();
         if(!io2::File::copy(data, data_file_name)) {
             return core::Err(ErrorType::FilesytemError);
         }
+        lock.lock();
     }
 
     const AssetDesc desc = { dst_name, type };
@@ -782,18 +786,18 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
     {
         y_profile_zone("Reading descs");
         y_profile_msg(fmt_c_str("Reading descs for {} assets", desc_ids.size()));
-        concurrent::StaticThreadPool thread_pool;
+        concurrent::JobSystem job_system;
 
-        const usize tasks = thread_pool.concurency() * 8 + 1;
-        assets.set_min_size(tasks);
+        const usize jobs = job_system.concurrency() * 8 + 1;
+        assets.set_min_size(jobs);
 
         y_profile_zone("schedule");
         usize index = 0;
-        const usize split = (desc_ids.size() / (thread_pool.concurency() * 8)) + 1;
+        const usize split = (desc_ids.size() / (job_system.concurrency() * 8)) + 1;
         for(usize i = 0; i < desc_ids.size(); i += split) {
             const core::Range range(desc_ids.begin() + i, desc_ids.begin() + std::min(desc_ids.size(), i + split));
 
-            thread_pool.schedule([this, range, index, &assets, &asset_sizes] {
+            job_system.schedule([this, range, index, &assets, &asset_sizes] {
                 y_profile_zone("Reading descs internal");
                 for(const u64 uid : range) {
                     const AssetId id = AssetId::from_id(uid);

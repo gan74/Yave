@@ -20,52 +20,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#ifndef EDITOR_THUMBNAILRENDERER_H
-#define EDITOR_THUMBNAILRENDERER_H
+#include "SceneSystem.h"
 
-#include <editor/editor.h>
+namespace yave {
 
-#include <yave/graphics/images/ImageView.h>
-#include <yave/assets/AssetPtr.h>
-
-#include <y/core/HashMap.h>
-
-namespace editor {
-
-class ThumbnailRenderer : NonMovable {
-    public:
-        static constexpr usize thumbnail_size = 256;
-
-        enum class ThumbnailStatus {
-            Rendering,
-            Failed,
-            Done,
-        };
-
-        struct ThumbnailData : NonMovable {
-            TextureView view;
-            core::Vector<core::String> infos;
-
-            Texture texture;
-            std::atomic<ThumbnailStatus> status = ThumbnailStatus::Rendering;
-        };
-
-        ThumbnailRenderer(AssetLoader& loader);
-
-        const ThumbnailData* thumbnail_data(AssetId id);
-        const TextureView* thumbnail_img(AssetId id);
-
-        usize cached_thumbnails();
-
-    private:
-
-        std::unique_ptr<ThumbnailData> schedule_render(AssetId id);
-
-        ProfiledMutexed<core::FlatHashMap<AssetId, std::unique_ptr<ThumbnailData>>> _thumbnails;
-        AssetLoader* _loader = nullptr;
-};
-
+SceneSystem::SceneSystem() : ecs::System("SceneSystem") {
 }
 
-#endif // EDITOR_THUMBNAILRENDERER_H
+void SceneSystem::setup(ecs::SystemScheduler& sched) {
+    _scene = std::make_unique<EcsScene>(&world());
+
+    sched.schedule(ecs::SystemSchedule::PostUpdate, "Scene update", [&]() {
+        _scene->update_from_world();
+    });
+}
+
+
+}
 

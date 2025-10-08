@@ -19,53 +19,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_SYSTEMS_SCENESYSTEM_H
+#define YAVE_SYSTEMS_SCENESYSTEM_H
 
-#ifndef EDITOR_THUMBNAILRENDERER_H
-#define EDITOR_THUMBNAILRENDERER_H
+#include <yave/ecs/EntityWorld.h>
 
-#include <editor/editor.h>
+#include <yave/scene/EcsScene.h>
 
-#include <yave/graphics/images/ImageView.h>
-#include <yave/assets/AssetPtr.h>
+namespace yave {
 
-#include <y/core/HashMap.h>
-
-namespace editor {
-
-class ThumbnailRenderer : NonMovable {
+class SceneSystem : public ecs::System {
     public:
-        static constexpr usize thumbnail_size = 256;
+        SceneSystem();
 
-        enum class ThumbnailStatus {
-            Rendering,
-            Failed,
-            Done,
-        };
+        void setup(ecs::SystemScheduler& sched) override;
 
-        struct ThumbnailData : NonMovable {
-            TextureView view;
-            core::Vector<core::String> infos;
-
-            Texture texture;
-            std::atomic<ThumbnailStatus> status = ThumbnailStatus::Rendering;
-        };
-
-        ThumbnailRenderer(AssetLoader& loader);
-
-        const ThumbnailData* thumbnail_data(AssetId id);
-        const TextureView* thumbnail_img(AssetId id);
-
-        usize cached_thumbnails();
+        const Scene* scene() const {
+            return _scene.get();
+        }
 
     private:
+        std::unique_ptr<EcsScene> _scene;
 
-        std::unique_ptr<ThumbnailData> schedule_render(AssetId id);
-
-        ProfiledMutexed<core::FlatHashMap<AssetId, std::unique_ptr<ThumbnailData>>> _thumbnails;
-        AssetLoader* _loader = nullptr;
 };
 
 }
 
-#endif // EDITOR_THUMBNAILRENDERER_H
+#endif // YAVE_SYSTEMS_SCENESYSTEM_H
 

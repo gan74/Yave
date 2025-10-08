@@ -44,7 +44,7 @@ class EntityWorld : NonMovable {
 
         TickId tick_id() const;
 
-        void tick(concurrent::StaticThreadPool& thread_pool);
+        void tick(concurrent::JobSystem& job_system);
         void process_deferred_changes();
 
 

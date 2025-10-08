@@ -55,83 +55,60 @@ SystemManager::SystemManager(EntityWorld* world) : _world(world) {
     y_debug_assert(_world);
 }
 
-void SystemManager::run_schedule_seq() const {
+
+void SystemManager::run_seq(SystemSchedule schedule) const {
     y_profile();
 
     for(const auto& scheduler : _schedulers) {
-        SystemScheduler::Schedule& sched = scheduler->_schedules[usize(SystemSchedule::TickSequential)];
+        SystemScheduler::Schedule& sched = scheduler->_schedules[usize(schedule)];
         for(usize i = 0; i != sched.tasks.size(); ++i) {
             const auto& task = sched.tasks[i];
-            y_always_assert(sched.wait_groups[i].is_empty(), "TickSequential tasks can not have dependencies");
-            y_always_assert(sched.signals[i].is_empty(), "TickSequential tasks can not have signals");
             y_profile_dyn_zone(fmt_c_str("{}: {}", scheduler->_system->name(), task.name));
             task.func();
         }
     }
 }
 
-void SystemManager::run_schedule_mt(concurrent::StaticThreadPool& thread_pool) const {
+void SystemManager::run_schedule_seq() const {
     y_profile();
 
-    using DepGroups = core::Span<DependencyGroup>;
+    for(usize t = 0; t != usize(SystemSchedule::Max); ++t) {
+        run_seq(SystemSchedule(t));
+    }
+}
 
-    const usize dep_count = std::accumulate(_schedulers.begin(), _schedulers.end(), 0_uu, [](usize acc, const auto& s) {
-        return acc + std::accumulate(s->_schedules.begin(), s->_schedules.end(), 0_uu, [](usize m, const auto& s) { return std::max(m, s.tasks.size()); });
-    }) + 1;
+void SystemManager::run_schedule_mt(concurrent::JobSystem& job_system) const {
+    y_profile();
 
+    run_seq(SystemSchedule::TickSequential);
+
+    core::Vector<concurrent::JobSystem::JobHandle> prev;
+    core::Vector<concurrent::JobSystem::JobHandle> next;
 
     std::atomic<u32> completed = 0;
-    [[maybe_unused]] u32 submitted = 0;
-
-    core::ScratchVector<DependencyGroup> stage_deps(dep_count);
-    DependencyGroup previous_stage;
+    u32 submitted = 0;
 
     for(usize i = usize(SystemSchedule::Tick); i != usize(SystemSchedule::Max); ++i) {
         for(const auto& scheduler : _schedulers) {
-
             SystemScheduler::Schedule& sched = scheduler->_schedules[i];
-
-            for(usize k = 0; k != sched.tasks.size(); ++k) {
-                const auto& to_wait = sched.wait_groups[k];
-
-                core::ScratchVector<DependencyGroup> wait(to_wait.size() + 1);
-                std::copy(to_wait.begin(), to_wait.end(), std::back_inserter(wait));
-                if(!previous_stage.is_empty()) {
-                    wait.push_back(previous_stage);
-                }
-
-                DependencyGroup& signal = sched.signals[k];
-                signal.reset();
-
-                const SystemScheduler::Task& task = sched.tasks[k];
-                thread_pool.schedule([&]() {
+            for(const SystemScheduler::Task& task : sched.tasks) {
+                ++submitted;
+                next.emplace_back(job_system.schedule([&]() {
                     y_profile_dyn_zone(fmt_c_str("{}: {}", scheduler->_system->name(), task.name));
                     task.func();
                     ++completed;
-                }, &signal, wait);
-
-                stage_deps.push_back(signal);
-                ++submitted;
+                }, prev));
             }
         }
-
-        if(!previous_stage.is_empty()) {
-            stage_deps.push_back(previous_stage);
+        if(!next.is_empty()) {
+            prev.swap(next);
+            next.make_empty();
         }
-
-        DependencyGroup next;
-        thread_pool.schedule([&]() {
-            y_profile_msg("Stage sync");
-        }, &next, stage_deps);
-
-        stage_deps.make_empty();
-        previous_stage = next;
     }
 
-    y_profile_zone("waiting for completion");
-    thread_pool.process_until_complete(previous_stage);
+    job_system.wait(prev);
 
-    y_debug_assert(completed == submitted);
+    y_debug_assert(submitted == completed);
 }
 
 

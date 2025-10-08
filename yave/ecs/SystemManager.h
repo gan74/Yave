@@ -25,24 +25,19 @@ SOFTWARE.
 #include "System.h"
 #include "EntityGroup.h"
 
-#include <y/concurrent/StaticThreadPool.h>
+#include <y/concurrent/JobSystem.h>
 
 
 namespace yave {
 namespace ecs {
 
 enum class SystemSchedule {
-    // Tick is always first.
     TickSequential,
 
-    // Ticks for different systems might run in parallel
     Tick,
 
-    // Update happens after tick for a given system.
-    // Updates might still run while other systems are running their tick
     Update,
 
-    // Run after all updates are complete
     PostUpdate,
 
     Max
@@ -50,7 +45,6 @@ enum class SystemSchedule {
 
 class SystemScheduler : NonMovable {
     public:
-        using DependencyGroup = concurrent::DependencyGroup;
 
         struct FirstTime {
             bool value = false;
@@ -60,16 +54,15 @@ class SystemScheduler : NonMovable {
         SystemScheduler(System* sys, EntityWorld* world);
 
         template<typename Fn>
-        DependencyGroup schedule(SystemSchedule sched, core::String name, Fn&& func, core::Span<DependencyGroup> wait = {}) {
+        void schedule(SystemSchedule sched, core::String name, Fn&& func) {
             auto& s = _schedules[usize(sched)];
 
-            s.wait_groups.emplace_back(wait);
             s.tasks.emplace_back(std::move(name), [this, func]() {
                 std::array<ArgumentResolver, function_traits<Fn>::arg_count> args;
                 std::fill(args.begin(), args.end(), this);
                 std::apply(func, args);
             });
-            return s.signals.emplace_back();
+
         }
 
     private:
@@ -97,8 +90,6 @@ class SystemScheduler : NonMovable {
 
         struct Schedule {
             core::Vector<Task> tasks;
-            core::Vector<DependencyGroup> signals;
-            core::Vector<core::Vector<DependencyGroup>> wait_groups;
         };
 
         std::array<Schedule, usize(SystemSchedule::Max)> _schedules;
@@ -114,12 +105,10 @@ class SystemScheduler : NonMovable {
 
 class SystemManager : NonCopyable {
     public:
-        using DependencyGroup = concurrent::DependencyGroup;
-
         SystemManager(EntityWorld* world);
 
         void run_schedule_seq() const;
-        void run_schedule_mt(concurrent::StaticThreadPool& thread_pool) const;
+        void run_schedule_mt(concurrent::JobSystem& job_system) const;
 
         void reset() {
             _schedulers.make_empty();
@@ -165,6 +154,8 @@ class SystemManager : NonCopyable {
         }
 
     private:
+        void run_seq(SystemSchedule schedule) const;
+
         void setup_system(System *system);
 
         core::Vector<std::unique_ptr<SystemScheduler>> _schedulers;

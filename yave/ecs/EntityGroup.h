@@ -165,7 +165,7 @@ class EntityGroupProvider final : NonMovable {
 
 
 template<typename... Ts>
-class EntityGroup final : NonCopyable {
+class EntityGroup final : NonMovable {
     static constexpr usize type_count = sizeof...(Ts);
     static constexpr usize mutate_count = ((traits::is_component_mutable<Ts> ? 1 : 0) + ...);
 
