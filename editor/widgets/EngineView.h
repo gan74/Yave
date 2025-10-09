@@ -128,6 +128,7 @@ class EngineView final : public Widget {
         OrientationGizmo _orientation_gizmo;
 
         bool _moving_camera = false;
+        bool _picking_valid = false;
 
         isize _resolution = -1;
 };

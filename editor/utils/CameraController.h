@@ -39,6 +39,10 @@ class CameraController : NonMovable {
             return false;
         }
 
+        virtual bool continue_moving() {
+            return false;
+        }
+
         virtual void update_camera(Camera& camera, const math::Vec2ui& viewport_size) = 0;
         virtual void process_generic_shortcuts(Camera& camera);
 
@@ -49,6 +53,8 @@ class HoudiniCameraController final : public CameraController {
         HoudiniCameraController();
 
         bool viewport_clicked(const PickingResult& point) override;
+
+        bool continue_moving() override;
 
         void update_camera(Camera& camera, const math::Vec2ui& viewport_size) override;
 

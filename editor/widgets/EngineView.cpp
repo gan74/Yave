@@ -238,11 +238,10 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 // ---------------------------------------------- UPDATE ----------------------------------------------
 
 void EngineView::update() {
-    const bool hovered = ImGui::IsWindowHovered() && is_mouse_inside();
+    set_is_moving_camera(false);
 
-    set_is_moving_camera(!hovered);
-
-    if(!hovered) {
+    if(!ImGui::IsWindowHovered() || !is_mouse_inside()) {
+        _picking_valid = false;
         return;
     }
 
@@ -251,12 +250,12 @@ void EngineView::update() {
         ImGui::SetWindowFocus();
         focussed = true;
 
-        if(_picking_result.uv.x() > 0.0f && _picking_result.uv.y() > 0.0f &&
+        if(_picking_valid &&
+           _picking_result.uv.x() > 0.0f && _picking_result.uv.y() > 0.0f &&
            _picking_result.uv.x() < 1.0f && _picking_result.uv.y() < 1.0f) {
 
             if(_camera_controller && _camera_controller->viewport_clicked(_picking_result)) {
-                // event has been eaten by the camera controller, don't proceed further
-                set_is_moving_camera(true);
+                // Nothing
             } else if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                 if(!is_dragging_gizmo()) {
                     const ecs::EntityId picked_id = _picking_result.hit() ? dynamic_cast<const EcsScene*>(&current_scene())->id_from_index(_picking_result.entity_index) : ecs::EntityId();
@@ -268,15 +267,18 @@ void EngineView::update() {
 
     if(focussed) {
         set_scene_view(&_scene_view);
-    }
 
-    if(!is_dragging_gizmo() && _camera_controller) {
-        auto& camera = _scene_view.camera();
-        _camera_controller->process_generic_shortcuts(camera);
-        if(focussed) {
-            _camera_controller->update_camera(camera, content_size());
+        if(_camera_controller) {
+            auto& camera = _scene_view.camera();
+            _camera_controller->process_generic_shortcuts(camera);
+
+            if(!is_dragging_gizmo() && _camera_controller->continue_moving()) {
+                set_is_moving_camera(true);
+                _camera_controller->update_camera(camera, content_size());
+            }
         }
     }
+
 }
 
 void EngineView::update_scene_view() {
@@ -307,6 +309,9 @@ void EngineView::update_picking() {
         _picking_result.depth = pick_data.depth;
         _picking_result.entity_index = pick_data.entity_index;
 
+        _picking_valid = true;
+
+        // const float dist = (_picking_result.world_pos - request.camera.position()).length();
         debug_drawer().add_primitive("debug")->add_marker(0xFF0000FF, _picking_result.world_pos);
     }
 }
