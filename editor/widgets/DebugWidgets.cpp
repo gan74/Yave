@@ -229,15 +229,7 @@ class EcsDebug : public Widget {
                         ImGui::TextUnformatted(tag.data());
                         ImGui::TableNextColumn();
 
-                        const usize tag_count = world.tag_set(tag)->size();
-                        const usize entity_count = world.create_group<EditorComponent>(std::string_view(tag)).size();
-                        ImGui::TextColored(imgui::text_color(entity_count != tag_count), fmt_c_str("{} entities", tag_count));
-
-                        if(ImGui::IsItemHovered()) {
-                            ImGui::BeginTooltip();
-                            ImGui::TextUnformatted(fmt_c_str("{} editor components, {} tags", entity_count, tag_count));
-                            ImGui::EndTooltip();
-                        }
+                        ImGui::TextUnformatted(fmt_c_str("{} entities", world.tag_set(tag)->size()));
 
                         ImGui::TableNextColumn();
                         if(ImGui::SmallButton(ICON_FA_TRASH)) {
@@ -452,9 +444,9 @@ class VisibilityDebug : public Widget {
                     const usize hidden = current_world().create_group<T>(ecs::tags::hidden).size();
                     ImGui::TextUnformatted(fmt_c_str("{} {} ({} hidden)", total, name, hidden));
                 };
-                row<StaticMeshComponent>("meshes");
-                row<PointLightComponent>("point lights");
-                row<SpotLightComponent>("spot lights");
+                row.template operator()<StaticMeshComponent>("meshes");
+                row.template operator()<PointLightComponent>("point lights");
+                row.template operator()<SpotLightComponent>("spot lights");
             }
         }
 };
