@@ -92,6 +92,8 @@ JobSystem::JobHandle JobSystem::schedule(JobFunc&& func, core::Span<JobHandle> d
         handle._data->location = loc;
     }
 
+    const auto lock = std::unique_lock(_lock);
+
     if(!deps.is_empty()) {
         u32 dep_count = 0;
         for(const JobHandle& h : deps) {
@@ -100,14 +102,13 @@ JobSystem::JobHandle JobSystem::schedule(JobFunc&& func, core::Span<JobHandle> d
 
             const auto job_lock = std::unique_lock(data->lock);
             if(!data->finished) {
-                data->outgoing_deps.emplace_back(handle._data);
                 ++dep_count;
+                data->outgoing_deps.emplace_back(handle._data);
             }
         }
 
         if(dep_count) {
             handle._data->dependencies = dep_count;
-            const auto lock = std::unique_lock(_lock);
             ++_total_jobs;
             ++_waiting;
             return handle;
@@ -115,13 +116,9 @@ JobSystem::JobHandle JobSystem::schedule(JobFunc&& func, core::Span<JobHandle> d
     }
 
     y_debug_assert(!handle._data->dependencies);
-
-    {
-        const auto lock = std::unique_lock(_lock);
-        ++_total_jobs;
-        _jobs.emplace_back(handle._data);
-        _condition.notify_one();
-    }
+    ++_total_jobs;
+    _jobs.emplace_back(handle._data);
+    _condition.notify_one();
 
     return handle;
 }
@@ -171,6 +168,7 @@ bool JobSystem::process_one(std::unique_lock<std::mutex>& lock) {
 
     {
         usize scheduled = 0;
+        lock.lock();
 
         {
             const auto job_lock = std::unique_lock(job->lock);
@@ -179,25 +177,18 @@ bool JobSystem::process_one(std::unique_lock<std::mutex>& lock) {
             for(usize i = 0; i != job->outgoing_deps.size(); ++i) {
                 auto& out = job->outgoing_deps[i];
                 if(out->dependencies.fetch_sub(1) == 1) {
-                    if(scheduled++ == 0) {
-                        lock.lock();
-                    }
-                    
-                    y_debug_assert(lock.owns_lock());
-
+                    ++scheduled;
                     _jobs.emplace_back(std::move(out));
                     --_waiting;
-
-                    job->outgoing_deps.erase_unordered(job->outgoing_deps.begin() + i);
-                    --i;
                 }
             }
         }
 
         if(scheduled) {
             scheduled == 1 ? _condition.notify_one() : _condition.notify_all();
-            lock.unlock();
         }
+
+        lock.unlock();
     }
 
     --_total_jobs;
