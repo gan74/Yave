@@ -25,11 +25,14 @@ SOFTWARE.
 #include <editor/utils/memory.h>
 #include <editor/ThumbnailRenderer.h>
 #include <editor/systems/UndoRedoSystem.h>
+#include <editor/components/EditorComponent.h>
 
 #include <yave/scene/SceneView.h>
 #include <yave/graphics/device/MeshAllocator.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/components/PointLightComponent.h>
+#include <yave/components/SpotLightComponent.h>
 #include <yave/renderer/SceneVisibilitySubPass.h>
 
 #include <y/core/Chrono.h>
@@ -225,7 +228,17 @@ class EcsDebug : public Widget {
                         imgui::table_begin_next_row();
                         ImGui::TextUnformatted(tag.data());
                         ImGui::TableNextColumn();
-                        ImGui::TextUnformatted(fmt_c_str("{} entities", world.tag_set(tag)->size()));
+
+                        const usize tag_count = world.tag_set(tag)->size();
+                        const usize entity_count = world.create_group<EditorComponent>(std::string_view(tag)).size();
+                        ImGui::TextColored(imgui::text_color(entity_count != tag_count), fmt_c_str("{} entities", tag_count));
+
+                        if(ImGui::IsItemHovered()) {
+                            ImGui::BeginTooltip();
+                            ImGui::TextUnformatted(fmt_c_str("{} editor components, {} tags", entity_count, tag_count));
+                            ImGui::EndTooltip();
+                        }
+
                         ImGui::TableNextColumn();
                         if(ImGui::SmallButton(ICON_FA_TRASH)) {
                             world.clear_tag(tag);
@@ -367,7 +380,7 @@ class RaytracingDebug : public Widget {
 
 class UndoRedoDebug : public Widget {
 
-    editor_widget_open(UndoRedoDebug)
+    editor_widget(UndoRedoDebug)
 
     public:
         UndoRedoDebug() : Widget("Undo Redo") {
@@ -415,6 +428,34 @@ class UndoRedoDebug : public Widget {
             }
 
             ImGui::EndChild();
+        }
+};
+
+
+class VisibilityDebug : public Widget {
+
+    editor_widget(VisibilityDebug)
+
+    public:
+        VisibilityDebug() : Widget("Visibility debug") {
+        }
+
+        void on_gui() override {
+            const std::shared_ptr<SceneVisibility> visible = SceneVisibilitySubPass::create(scene_view()).visible;
+            ImGui::TextUnformatted(fmt_c_str("{} visible meshes", visible->meshes.size()));
+            ImGui::TextUnformatted(fmt_c_str("{} visible point lights", visible->point_lights.size()));
+            ImGui::TextUnformatted(fmt_c_str("{} visible spot lights", visible->spot_lights.size()));
+
+            if(ImGui::CollapsingHeader("ECS")) {
+                auto row = []<typename T>(std::string_view name) {
+                    const usize total = current_world().create_group<T>().size();
+                    const usize hidden = current_world().create_group<T>(ecs::tags::hidden).size();
+                    ImGui::TextUnformatted(fmt_c_str("{} {} ({} hidden)", total, name, hidden));
+                };
+                row<StaticMeshComponent>("meshes");
+                row<PointLightComponent>("point lights");
+                row<SpotLightComponent>("spot lights");
+            }
         }
 };
 

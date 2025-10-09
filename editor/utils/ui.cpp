@@ -122,6 +122,13 @@ u32 gizmo_color(usize axis) {
     return colors[axis];
 }
 
+ImVec4 text_color(bool error) {
+    if(error) {
+        return error_text_color;
+    }
+    return ImGui::GetStyleColorVec4(ImGuiCol_Text);
+}
+
 bool should_open_context_menu() {
     return ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right);
 }
