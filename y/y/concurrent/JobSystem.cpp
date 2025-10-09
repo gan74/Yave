@@ -84,11 +84,12 @@ void JobSystem::cancel_pending_jobs() {
     _total_jobs = 0;
 }
 
-JobSystem::JobHandle JobSystem::schedule(JobFunc&& func, core::Span<JobHandle> deps) {
+JobSystem::JobHandle JobSystem::schedule(JobFunc&& func, core::Span<JobHandle> deps, std::source_location loc) {
     JobHandle handle(this);
     {
         handle._data = std::make_shared<JobData>();
         handle._data->func = std::move(func);
+        handle._data->location = loc;
     }
 
     if(!deps.is_empty()) {
@@ -179,9 +180,10 @@ bool JobSystem::process_one(std::unique_lock<std::mutex>& lock) {
                 auto& out = job->outgoing_deps[i];
                 if(out->dependencies.fetch_sub(1) == 1) {
                     if(scheduled++ == 0) {
-                        _lock.lock();
+                        lock.lock();
                     }
-                    y_debug_assert(!_lock.try_lock());
+                    
+                    y_debug_assert(lock.owns_lock());
 
                     _jobs.emplace_back(std::move(out));
                     --_waiting;
@@ -194,7 +196,7 @@ bool JobSystem::process_one(std::unique_lock<std::mutex>& lock) {
 
         if(scheduled) {
             scheduled == 1 ? _condition.notify_one() : _condition.notify_all();
-            _lock.unlock();
+            lock.unlock();
         }
     }
 

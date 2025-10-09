@@ -52,6 +52,8 @@ class JobSystem : NonMovable {
             std::mutex lock;
             core::SmallVector<std::shared_ptr<JobData>> outgoing_deps;
             std::atomic<bool> finished = false;
+
+            std::source_location location;
         };
 
     public:
@@ -91,7 +93,7 @@ class JobSystem : NonMovable {
         void cancel_pending_jobs();
 
 
-        JobHandle schedule(JobFunc&& func, core::Span<JobHandle> deps = {});
+        JobHandle schedule(JobFunc&& func, core::Span<JobHandle> deps = {}, std::source_location loc = std::source_location::current());
 
         void wait(core::Span<JobHandle> jobs);
 
