@@ -444,6 +444,9 @@ serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
 
     y_always_assert(!entity_count(), "World should be empty before loading");
 
+    _groups.locked([](auto&& groups) { groups.clear(); });
+    _matrix.clear();
+    
     decltype(_containers) containers;
 
     y_try(arc.deserialize(_entities));
