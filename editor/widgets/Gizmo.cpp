@@ -45,7 +45,7 @@ static constexpr float gizmo_quad_offset = 0.25f;
 static constexpr float gizmo_quad_size = 0.3f;
 static constexpr u32 gizmo_quad_alpha = 0xB0000000;
 
-static const u32 gizmo_hover_color = pack_to_u32(sRGB_to_linear(unpack_from_u32(0x001A80FF)));
+static const u32 gizmo_hover_color = 0x001A80FF;
 
 
 
