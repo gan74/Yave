@@ -237,7 +237,11 @@ void UiManager::draw_menu_bar() {
                 if(imgui::begin_suggestion_popup()) {
                     StringMatcher matcher(_search_pattern.data());
                     for(const EditorAction* action : _actions) {
-                        if(action->enabled && !(action->enabled()) || (action->flags & EditorAction::Contextual) == EditorAction::Contextual) {
+                        if((action->flags & EditorAction::Contextual) == EditorAction::Contextual) {
+                            continue;
+                        }
+
+                        if(action->enabled && !(action->enabled())) {
                             continue;
                         }
 

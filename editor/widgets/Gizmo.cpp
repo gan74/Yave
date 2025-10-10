@@ -618,10 +618,8 @@ void OrientationGizmo::draw() {
     const math::Vec2 center = offset + viewport - (orientation_gizmo_size * 2.0f);
 
     Camera& camera = _scene_view->camera();
-    const auto view_proj = camera.view_proj_matrix();
     const auto view = camera.view_matrix();
-
-    const float ratio = viewport.x() / viewport.y();
+    const auto view_proj = math::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f) * view;
 
     std::array<i32, 4> axes = {
         -1, 0, 1, 2
@@ -655,8 +653,8 @@ void OrientationGizmo::draw() {
 
         math::Vec4 v;
         v[i] = orientation_gizmo_size + orientation_gizmo_end_point_width;
-        const math::Vec2 axis = ((view_proj * v).to<2>() * 0.5f + 0.5f) * math::Vec2(ratio, 1.0f);
-        const math::Vec2 end = center + axis.normalized() * orientation_gizmo_size;
+        const math::Vec2 axis = ((view_proj * v).to<2>() * 0.5f + 0.5f);
+        const math::Vec2 end = center + axis * orientation_gizmo_size * 0.075f;
 
         if(axis.length() > orientation_gizmo_end_point_width) {
             const math::Vec2 dir = axis.normalized();

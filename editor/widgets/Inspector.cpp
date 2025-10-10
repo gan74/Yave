@@ -563,13 +563,11 @@ void Inspector::on_gui() {
         return;
     }
 
-
-
+    y_defer(ImGui::EndChild());
     if(!ImGui::BeginChild("##inspectorpanel")) {
         return;
     }
 
-    y_defer(ImGui::EndChild());
 
     {
         ImGui::BeginGroup();
