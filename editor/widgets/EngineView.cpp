@@ -105,6 +105,10 @@ void EngineView::reset_camera() {
    _scene_view.camera().set_view(Camera().view_matrix());
 }
 
+const math::Vec3& EngineView::cursor_world_pos() const {
+    return _cursor_world_pos;
+}
+
 CmdTimestampPool* EngineView::timestamp_pool() const {
     if(!_timestamp_pools.is_empty() && _timestamp_pools.first()->is_ready()) {
         return _timestamp_pools.first().get();
@@ -301,6 +305,7 @@ void EngineView::update_picking() {
             break;
         }
         const PickingRequest request = _picking_requests.pop_front();
+
         const shader::PickingData pick_data = request.buffer.map(MappingAccess::ReadOnly)[0];
         const math::Vec4 p = request.camera.inverse_matrix() * math::Vec4(request.uv * 2.0f - 1.0f, pick_data.depth, 1.0f);
 
@@ -311,9 +316,13 @@ void EngineView::update_picking() {
 
         _picking_valid = true;
 
-        // const float dist = (_picking_result.world_pos - request.camera.position()).length();
-        debug_drawer().add_primitive("debug")->add_marker(0xFF0000FF, _picking_result.world_pos);
+        if(ImGui::IsWindowFocused()) {
+            _cursor_world_pos = _picking_result.world_pos;
+        }
     }
+
+    // const float dist = (_picking_result.world_pos - request.camera.position()).length();
+    debug_drawer().add_primitive("debug")->add_marker(0xFF0000FF, _cursor_world_pos);
 }
 
 void EngineView::make_drop_target() {
@@ -372,7 +381,11 @@ void EngineView::on_gui() {
 
         if(ImGui::BeginPopup("##contextmenu")) {
             for(const EditorAction* action = all_actions(); action; action = action->next) {
-                if(action->enabled && !(action->enabled()) || (action->flags & EditorAction::Contextual) != EditorAction::Contextual) {
+                if((action->flags & EditorAction::Contextual) != EditorAction::Contextual) {
+                    continue;
+                }
+
+                if(action->enabled && !(action->enabled())) {
                     continue;
                 }
 

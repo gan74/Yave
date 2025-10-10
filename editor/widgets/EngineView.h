@@ -71,6 +71,8 @@ class EngineView final : public Widget {
 
         void reset_camera();
 
+        const math::Vec3& cursor_world_pos() const;
+
         CmdTimestampPool* timestamp_pool() const;
 
     protected:
@@ -115,6 +117,7 @@ class EngineView final : public Widget {
 
         core::RingQueue<PickingRequest> _picking_requests;
         PickingResult _picking_result;
+        math::Vec3 _cursor_world_pos;
 
         EditorRendererSettings _settings;
 

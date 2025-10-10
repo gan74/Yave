@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include <editor/Settings.h>
 #include <editor/EditorWorld.h>
+#include <editor/widgets/EngineView.h>
 #include <editor/components/EditorComponent.h>
 
 #include <yave/graphics/device/DeviceResources.h>
@@ -49,24 +50,29 @@ static math::Vec3 new_entity_pos(float size) {
     return camera.position() + camera.forward() * size;
 }
 
-static void set_new_entity_pos(ecs::EntityId id) {
+static void set_new_entity_pos(ecs::EntityId id, bool on_cursor) {
     if(!id.is_valid()) {
         return;
     }
     EditorWorld& world = current_world();
     if(TransformableComponent* transformable = world.component_mut<TransformableComponent>(id)) {
-        transformable->set_position(new_entity_pos(10.0f));
+        if(const EngineView* en = last_focussed_widget_typed<EngineView>(); en && on_cursor) {
+            transformable->set_position(en->cursor_world_pos());
+        } else {
+            transformable->set_position(new_entity_pos(10.0f));
+        }
     }
 }
 
-static void add_prefab() {
+static void add_prefab(bool on_cursor = false) {
     add_detached_widget<AssetSelector>(AssetType::Prefab, "Add prefab")->set_selected_callback(
-        [](AssetId asset) {
+        [on_cursor](AssetId asset) {
             const ecs::EntityId id = current_world().add_prefab(asset);
             current_world().set_selected(id);
-            set_new_entity_pos(id);
+            set_new_entity_pos(id, on_cursor);
             return id.is_valid();
-        });
+        }
+    );
 }
 
 static void add_debug_lights() {
@@ -132,14 +138,17 @@ static void create_empty_entity() {
 }
 
 template<typename T>
-static void create_entity_with_component(std::string_view name) {
+static void create_entity_with_component(std::string_view name, bool on_cursor = false) {
     auto& world = current_world();
     const ecs::EntityId id = world.create_named_entity(name);
     world.add_or_replace_component<T>(id);
-    set_new_entity_pos(id);
+    set_new_entity_pos(id, on_cursor);
     world.set_selected(id);
 }
 
+static bool is_engine_view_focussed() {
+    return last_focussed_widget_typed<EngineView>() != nullptr;
+}
 
 
 editor_action("Add debug lights", add_debug_lights)
@@ -150,6 +159,10 @@ editor_action("Add empty entity", create_empty_entity)
 editor_action("Add point light", [] { create_entity_with_component<PointLightComponent>("Point light"); })
 editor_action("Add spot light", [] { create_entity_with_component<SpotLightComponent>("Spot light"); })
 editor_action("Add prefab", add_prefab)
+
+editor_action_contextual("Add point light here", ([] { create_entity_with_component<PointLightComponent>("Point light", true); }), is_engine_view_focussed)
+editor_action_contextual("Add spot light here", ([] { create_entity_with_component<SpotLightComponent>("Spot light", true); }), is_engine_view_focussed)
+editor_action_contextual("Add prefab here", [] { add_prefab(true); }, is_engine_view_focussed)
 
 editor_action_contextual(ICON_FA_TRASH " Delete selected",
     [] { add_child_widget<DeletionDialog>(current_world().selected_entities()); },
