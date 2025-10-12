@@ -29,6 +29,13 @@ property uint3 work_group_count {
     get { return spirv_asm { result: $$uint3 = OpLoad builtin(NumWorkgroups: uint3); }; }
 }
 
+property uint2 pixel_coord {
+    [require(compute)]
+    get { return global_id.xy; }
+    [require(fragment)]
+    get { return uint2(frag_coord.xy); }
+}
+
 }
 
 

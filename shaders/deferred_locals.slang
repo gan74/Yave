@@ -292,7 +292,7 @@ void comp_main() {
     {
         const float total_lights = float(tile_point_count + tile_spot_count);
         float3 heat = heat_spectrum(total_lights / 16.0f);
-        heat = lerp(heat, float3(1.0) - heat, print_value(semantics.local_id.xy * 2.0, float2(0.0), float2(8.0, 15.0), total_lights, 2.0, 0.0));
+        heat = lerp(heat, float3(1.0) - heat, debug.print_value(semantics.local_id.xy * 2.0, float2(0.0), float2(8.0, 15.0), total_lights, 2.0, 0.0));
         irradiance = lerp(heat, irradiance, 0.8);
     }
 #endif

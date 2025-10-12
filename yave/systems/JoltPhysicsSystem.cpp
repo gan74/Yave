@@ -265,6 +265,8 @@ static JPH::Ref<JPH::Shape> create_static_shape(JoltData* data, const StaticMesh
     if(!shape.GetPtr()) {
         y_profile();
 
+        core::DebugTimer timer("Create static shape");
+
         const MeshTriangleData& triangle_data = mesh->triangle_data();
         JPH::Array<JPH::Float3> vertices(triangle_data.positions.size());
         JPH::Array<JPH::IndexedTriangle> triangles(triangle_data.triangles.size());
@@ -284,6 +286,8 @@ static JPH::Ref<JPH::Shape> create_movable_shape(JoltData* data, const StaticMes
 
     if(!shape.GetPtr()) {
         y_profile();
+
+        core::DebugTimer timer("Create movable shape");
 
         const MeshTriangleData& triangle_data = mesh->triangle_data();
         JPH::Array<JPH::Vec3> vertices(triangle_data.positions.size());
