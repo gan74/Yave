@@ -187,7 +187,8 @@ struct JoltData : NonMovable {
 
     JPH::PhysicsSystem physics_system;
 
-    core::FlatHashMap<const void*, JPH::Ref<JPH::Shape>> static_shapes;
+    core::FlatHashMap<const StaticMesh*, JPH::Ref<JPH::Shape>> static_shapes;
+    core::FlatHashMap<const StaticMesh*, JPH::Ref<JPH::Shape>> movable_shapes;
 
 
     JoltData(ecs::EntityWorld* world) : activation_listener(world), temp_allocator(1024 * 1024 * 8), thread_pool(2048, 8, std::thread::hardware_concurrency() - 1) {
@@ -265,6 +266,47 @@ static void init_jolt() {
     JPH::RegisterTypes();
 }
 
+static JPH::Ref<JPH::Shape> create_static_shape(JoltData* data, const StaticMesh* mesh) {
+    auto& shape = data->static_shapes[mesh];
+
+    if(!shape.GetPtr()) {
+        y_profile();
+
+        const MeshTriangleData& triangle_data = mesh->triangle_data();
+        JPH::Array<JPH::Float3> vertices(triangle_data.positions.size());
+        JPH::Array<JPH::IndexedTriangle> triangles(triangle_data.triangles.size());
+        std::transform(triangle_data.positions.begin(), triangle_data.positions.end(), vertices.begin(), [&](math::Vec3 p) { return to_jph_float3(p); });
+        std::transform(triangle_data.triangles.begin(), triangle_data.triangles.end(), triangles.begin(), [](IndexedTriangle t) { return to_jph(t); });
+
+        const JPH::MeshShapeSettings shape_settings(vertices, triangles);
+        shape = shape_settings.Create().Get();
+    }
+
+    y_debug_assert(shape.GetPtr());
+    return shape;
+}
+
+static JPH::Ref<JPH::Shape> create_movable_shape(JoltData* data, const StaticMesh* mesh) {
+    auto& shape = data->movable_shapes[mesh];
+
+    if(!shape.GetPtr()) {
+        y_profile();
+
+        const MeshTriangleData& triangle_data = mesh->triangle_data();
+        JPH::Array<JPH::Vec3> vertices(triangle_data.positions.size());
+        std::transform(triangle_data.positions.begin(), triangle_data.positions.end(), vertices.begin(), [&](math::Vec3 p) { return to_jph(p); });
+
+        const JPH::ConvexHullShapeSettings shape_settings(vertices.data(), int(vertices.size()));
+        shape = shape_settings.Create().Get();
+    }
+
+    y_debug_assert(shape.GetPtr());
+    return shape;
+}
+
+
+
+
 
 
 JoltPhysicsSystem::JoltPhysicsSystem() : ecs::System("JoltPhysicsSystem") {
@@ -302,40 +344,26 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
                 const math::Transform<>& transform = tr.transform();
                 const auto [translation, rotation, scale] = transform.decompose();
 
-                JPH::ShapeSettings::ShapeResult shape_result = {};
-                if(coll._type == ColliderComponent::Type::Static) {
-                    const MeshTriangleData& triangle_data = static_mesh->triangle_data();
-                    JPH::Array<JPH::Float3> vertices(triangle_data.positions.size());
-                    JPH::Array<JPH::IndexedTriangle> triangles(triangle_data.triangles.size());
-                    std::transform(triangle_data.positions.begin(), triangle_data.positions.end(), vertices.begin(), [&](math::Vec3 p) { return to_jph_float3(p); });
-                    std::transform(triangle_data.triangles.begin(), triangle_data.triangles.end(), triangles.begin(), [](IndexedTriangle t) { return to_jph(t); });
-
-                    const JPH::MeshShapeSettings shape_settings(vertices, triangles);
-                    shape_result = shape_settings.Create();
-                } else {
-                    const MeshTriangleData& triangle_data = static_mesh->triangle_data();
-                    JPH::Array<JPH::Vec3> vertices(triangle_data.positions.size());
-                    std::transform(triangle_data.positions.begin(), triangle_data.positions.end(), vertices.begin(), [&](math::Vec3 p) { return to_jph(p); });
-
-                    const JPH::ConvexHullShapeSettings shape_settings(vertices.data(), int(vertices.size()));
-                    shape_result = shape_settings.Create();
-                }
+                JPH::Ref<JPH::Shape> shape = coll._type == ColliderComponent::Type::Static
+                    ? create_static_shape(_jolt.get(), static_mesh.get())
+                    : create_movable_shape(_jolt.get(), static_mesh.get())
+                ;
 
                 {
-                    JPH::ScaledShapeSettings scaled_settings(shape_result.Get(), to_jph(scale));
-                    shape_result = scaled_settings.Create();
+                    JPH::ScaledShapeSettings scaled_settings(shape, to_jph(scale));
+                    shape = scaled_settings.Create().Get();
                 }
 
-                JPH::BodyCreationSettings body_settings = JPH::BodyCreationSettings(shape_result.Get(), to_jph(translation), to_jph(rotation), to_jph(coll._type), JPH::ObjectLayer(0));
+                JPH::BodyCreationSettings body_settings = JPH::BodyCreationSettings(shape, to_jph(translation), to_jph(rotation), to_jph(coll._type), JPH::ObjectLayer(0));
                 body_settings.mUserData = id.as_u64();
 
                 coll._scale = scale;
                 coll._body_id = _jolt->body_interface->CreateAndAddBody(body_settings, JPH::EActivation::Activate);
-
-                // log_msg(fmt("body created: {}", coll._body_id.GetIndexAndSequenceNumber()));
             }
         }
     });
+
+
 
     const auto physics_job = sched.schedule(ecs::SystemSchedule::Update, "Update physics", [this](const ecs::EntityWorld& world) {
         const float dt = TimeSystem::dt(world);
