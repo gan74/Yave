@@ -35,11 +35,15 @@ class JoltPhysicsSystem : public ecs::System {
         JoltPhysicsSystem();
         ~JoltPhysicsSystem();
 
+        void set_debug_draw(bool enable);
+
         void setup(ecs::SystemScheduler& sched) override;
 
     private:
         std::unique_ptr<JoltData> _jolt;
         core::StopWatch _time;
+
+        bool _debug_draw = false;
 };
 
 }

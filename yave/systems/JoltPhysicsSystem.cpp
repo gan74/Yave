@@ -266,6 +266,10 @@ JoltPhysicsSystem::~JoltPhysicsSystem() {
 
 }
 
+void JoltPhysicsSystem::set_debug_draw(bool enable) {
+    _debug_draw = enable;
+}
+
 void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
     _jolt = std::make_unique<JoltData>(&world());
 
@@ -320,12 +324,12 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
         }
     });
 
-    sched.schedule(ecs::SystemSchedule::Update, "Update physics", [this]() {
+    const auto physics_job = sched.schedule(ecs::SystemSchedule::Update, "Update physics", [this]() {
         const double dt = _time.reset().to_secs();
         _jolt->update(float(std::min(dt, 0.1)));
     }, collect_job);
 
-    sched.schedule(ecs::SystemSchedule::PostUpdate, "Copy transforms", [this](ecs::EntityGroup<
+    sched.schedule(ecs::SystemSchedule::Update, "Copy transforms", [this](ecs::EntityGroup<
             JoltActiveComponent,
             ColliderComponent,
             ecs::Mutate<TransformableComponent>
@@ -345,9 +349,12 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
 
             tr.set_transform(math::Transform<>(to_y(body.GetPosition()), to_y(body.GetRotation()), coll._scale));
         }
-    });
+    }, physics_job);
 
     sched.schedule(ecs::SystemSchedule::PostUpdate, "Debug draw", [this]() {
+        if(!_debug_draw) {
+            return;
+        }
         DebugDrawer renderer;
         _jolt->physics_system.DrawBodies(JPH::BodyManager::DrawSettings{}, &renderer);
     });
