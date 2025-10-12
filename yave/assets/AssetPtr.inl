@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2022 Grégoire Angerand
+Copyright (c) 2016-2025 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -93,11 +93,6 @@ void AssetPtrData<T>::finalize_loading(T t) {
     y_debug_assert(!is_loading());
 }
 
-template<typename T>
-void AssetPtrData<T>::set_reloaded(const std::shared_ptr<AssetPtrData<T>>& other) {
-    y_always_assert(other && other->id == id && other->loader() == loader(), "Invalid reload");
-    std::atomic_store(&reloaded, other);
-}
 }
 
 
@@ -120,10 +115,6 @@ template<typename T>
 AssetPtr<T>::AssetPtr(std::shared_ptr<Data> ptr) : _data(std::move(ptr)) {
     if(_data) {
         _id = _data->id;
-        if(_data->is_loaded()) {
-            flush_reload();
-            y_debug_assert(_data->is_loaded());
-        }
     }
 }
 
@@ -178,21 +169,6 @@ template<typename T>
 AssetLoadingErrorType AssetPtr<T>::error() const {
     y_debug_assert(is_failed());
     return _data->error();
-}
-
-template<typename T>
-bool AssetPtr<T>::flush_reload() {
-    if(_data) {
-        y_debug_assert(_data->id == _id);
-        if(auto reloaded = _data->reloaded.load()) {
-            y_debug_assert(reloaded->is_loaded());
-            y_debug_assert(reloaded->id == _id);
-            *this = reloaded;
-            flush_reload(); // in case the we reloaded several time
-            return true;
-        }
-    }
-    return false;
 }
 
 template<typename T>

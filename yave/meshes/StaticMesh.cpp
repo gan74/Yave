@@ -41,6 +41,13 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
             cmd.vertex_offset
         };
     });
+
+    if(raytracing_enabled()) {
+        _blases = std::make_unique<BLAS[]>(_sub_meshes.size());
+        std::transform(_sub_meshes.begin(), _sub_meshes.end(), _blases.get(), [this](const MeshDrawCommand& draw_cmd) {
+            return BLAS(_draw_data, draw_cmd);
+        });
+    }
 }
 
 StaticMesh::~StaticMesh() {
@@ -59,12 +66,16 @@ const MeshDrawCommand& StaticMesh::draw_command() const {
     return _draw_data.draw_command();
 }
 
-const core::Span<MeshDrawCommand> StaticMesh::sub_meshes() const {
+core::Span<MeshDrawCommand> StaticMesh::sub_meshes() const {
     return _sub_meshes;
 }
 
 const MeshTriangleData& StaticMesh::triangle_data() const {
     return _triangle_data;
+}
+
+core::Span<BLAS> StaticMesh::blases() const {
+    return core::Span<BLAS>(_blases.get(), _sub_meshes.size());
 }
 
 float StaticMesh::radius() const {

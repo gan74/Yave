@@ -31,7 +31,6 @@ SOFTWARE.
 #include "tags.h"
 #include "traits.h"
 
-#include <y/concurrent/Mutexed.h>
 #include <y/utils/log.h>
 
 namespace yave {
@@ -45,7 +44,7 @@ class EntityWorld : NonMovable {
 
         TickId tick_id() const;
 
-        void tick(concurrent::StaticThreadPool& thread_pool);
+        void tick(concurrent::JobSystem& job_system);
         void process_deferred_changes();
 
 
@@ -287,7 +286,7 @@ class EntityWorld : NonMovable {
 
 
         core::Vector<std::unique_ptr<ComponentContainerBase>> _containers;
-        concurrent::Mutexed<core::Vector<std::unique_ptr<EntityGroupProvider>>> _groups;
+        ProfiledMutexed<core::Vector<std::unique_ptr<EntityGroupProvider>>> _groups;
 
         ComponentMatrix _matrix;
         EntityPool _entities;

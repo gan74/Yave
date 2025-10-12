@@ -25,7 +25,6 @@ SOFTWARE.
 #include <y/core/Span.h>
 #include <y/core/Range.h>
 
-#include <y/utils/detect.h>
 #include <y/utils/traits.h>
 
 #include <memory>
@@ -33,13 +32,10 @@ SOFTWARE.
 namespace y {
 namespace reflect {
 
-namespace detail {
 template<typename T>
-using has_reflect_static_t = decltype(std::declval<T>()._y_reflect_static());
-}
-
-template<typename T>
-static constexpr bool has_reflect_v = is_detected_v<detail::has_reflect_static_t, T>;
+concept has_reflect = requires(T t) {
+    t._y_reflect_static();
+};
 
 
 namespace detail {
@@ -111,20 +107,20 @@ struct IsArray<std::array<T, N>> {
 
 
 template<typename T>
-static constexpr bool is_range_v = detail::IsRange<std::remove_cvref_t<T>>::value;
+concept is_range = detail::IsRange<std::remove_cvref_t<T>>::value;
 
 template<typename T>
-static constexpr bool is_tuple_v = detail::IsTuple<std::remove_cvref_t<T>>::value;
+concept is_tuple = detail::IsTuple<std::remove_cvref_t<T>>::value;
 
 template<typename T>
-static constexpr bool is_std_ptr_v = detail::StdPtr<std::remove_cvref_t<T>>::is_std_ptr;
+concept is_std_ptr = detail::StdPtr<std::remove_cvref_t<T>>::is_std_ptr;
 
 template<typename T>
-static constexpr bool is_array_v = detail::IsArray<std::remove_cvref_t<T>>::value;
+concept is_array = detail::IsArray<std::remove_cvref_t<T>>::value;
 
 template<typename T>
 auto make_std_ptr() {
-    static_assert(is_std_ptr_v<T>);
+    static_assert(is_std_ptr<T>);
     return detail::StdPtr<T>::make();
 }
 

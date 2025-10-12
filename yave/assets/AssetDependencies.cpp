@@ -69,5 +69,9 @@ AssetLoadingErrorType AssetDependencies::error() const {
     return AssetLoadingErrorType::Unknown;
 }
 
+AssetLoadingFlags AssetDependencies::flags() const {
+    return _flags;
+}
+
 }
 

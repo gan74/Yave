@@ -57,6 +57,9 @@ class UiManager : NonMovable {
 
         core::Span<std::unique_ptr<Widget>> widgets() const;
 
+        Widget* focussed_widget();
+        Widget* last_focussed_widget();
+
     private:
         void update_fps_counter();
         void draw_fps_counter();
@@ -68,6 +71,8 @@ class UiManager : NonMovable {
         core::FlatHashMap<std::type_index, WidgetIdStack> _ids;
 
         Widget* _auto_parent = nullptr;
+        Widget* _focussed = nullptr;
+        Widget* _last_focussed = nullptr;
 
         core::Vector<const EditorAction*> _actions;
         core::Vector<std::pair<const EditorAction*, bool>> _shortcuts;

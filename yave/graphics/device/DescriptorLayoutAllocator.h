@@ -24,8 +24,6 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
-#include <y/concurrent/Mutexed.h>
-
 #include <y/core/Span.h>
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>
@@ -74,7 +72,7 @@ class DescriptorLayoutAllocator : NonMovable {
         };
 
 
-        concurrent::Mutexed<core::FlatHashMap<core::Vector<VkDescriptorSetLayoutBinding>, VkHandle<VkDescriptorSetLayout>, KeyHash, KeyEqual>> _layouts;
+        ProfiledMutexed<core::FlatHashMap<core::Vector<VkDescriptorSetLayoutBinding>, VkHandle<VkDescriptorSetLayout>, KeyHash, KeyEqual>> _layouts;
 };
 
 }

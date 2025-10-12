@@ -56,11 +56,15 @@ class DeviceResources final : NonMovable {
             ExposureDebugProgram,
             DepthBoundProgram,
             PrevCameraProgram,
+            TAAResolveProgram,
             UpdateTransformsProgram,
             FilterAOProgram,
+            PickingProgram,
 
             MaxNonRTComputePrograms,
             RTAOProgram = MaxNonRTComputePrograms,
+
+            RTProgram,
 
             MaxComputePrograms
         };
@@ -94,10 +98,6 @@ class DeviceResources final : NonMovable {
             DirectDrawWireMaterialTemplate,
             DirectDrawMaterialTemplate,
 
-            TemporalMaskMaterialTemplate,
-            TAASimpleMaterialTemplate,
-            TAAResolveMaterialTemplate,
-
             DenoiseMaterialTemplate,
 
             IdMaterialTemplate,
@@ -106,8 +106,6 @@ class DeviceResources final : NonMovable {
         };
 
         enum RaytracingPrograms {
-            BasicRaytracingProgram,
-
             MaxRaytracingPrograms
         };
 

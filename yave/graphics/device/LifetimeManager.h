@@ -28,7 +28,6 @@ SOFTWARE.
 #include <yave/material/MaterialDrawData.h>
 #include <yave/meshes/MeshDrawData.h>
 
-#include <y/concurrent/Mutexed.h>
 #include <y/core/RingQueue.h>
 
 #include <variant>
@@ -57,9 +56,6 @@ YAVE_GRAPHIC_HANDLE_TYPES(YAVE_GENERATE_RT_VARIANT)
 
         void shutdown_collector_thread();
 
-        ResourceFence create_fence();
-        void register_pending(core::Span<CmdBufferData*> datas);
-
         usize pending_deletions() const;
         usize pending_cmd_buffers() const;
 
@@ -76,11 +72,18 @@ YAVE_GRAPHIC_HANDLE_TYPES(YAVE_GENERATE_DESTROY)
 #undef YAVE_GENERATE_DESTROY
 
     private:
+        friend class CmdQueue;
+        friend class CmdBufferData;
+
+        ResourceFence create_fence();
+        void register_pending(core::Span<CmdBufferData*> datas);
+
+    private:
         void clear_resources(u64 up_to);
         void destroy_resource(ManagedResource& resource) const;
 
-        concurrent::Mutexed<core::RingQueue<std::pair<u64, ManagedResource>>> _to_destroy;
-        concurrent::Mutexed<core::RingQueue<CmdBufferData*>, std::recursive_mutex> _in_flight;
+        ProfiledMutexed<core::RingQueue<std::pair<u64, ManagedResource>>> _to_destroy;
+        ProfiledMutexed<core::RingQueue<CmdBufferData*>, std::recursive_mutex> _in_flight;
 
         std::atomic<u64> _create_counter = 0;
         u64 _next_to_collect = 0; // Guarded by _in_flight

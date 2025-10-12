@@ -31,8 +31,7 @@ namespace editor {
 class EditorResources final : NonMovable {
     public:
         enum ComputePrograms {
-            DepthAlphaProgram,
-            PickingProgram,
+            ThumbnailProgram,
 
             MaxComputePrograms
         };

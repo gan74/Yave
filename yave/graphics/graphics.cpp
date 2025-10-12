@@ -37,7 +37,6 @@ SOFTWARE.
 #include <yave/graphics/images/TextureLibrary.h>
 #include <yave/graphics/device/DiagnosticCheckpoints.h>
 
-#include <y/concurrent/Mutexed.h>
 #include <y/core/ScratchPad.h>
 
 #include <y/utils/log.h>
@@ -121,9 +120,9 @@ static void init_vma() {
         create_info.device = device::vk_device;
         create_info.instance = device::instance->vk_instance();
         create_info.pAllocationCallbacks = vk_allocation_callbacks();
-        create_info.flags = 
-            VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE4_BIT | 
-            VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE5_BIT | 
+        create_info.flags =
+            VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE4_BIT |
+            VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE5_BIT |
             VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT
         ;
     }

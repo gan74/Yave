@@ -23,7 +23,6 @@ SOFTWARE.
 #define Y_UTILS_TRAITS_H
 
 #include "types.h"
-#include "detect.h"
 
 #include <type_traits>
 
@@ -45,11 +44,6 @@ void do_not_destroy(T&& t) {
     } u;
     ::new(&u.t) std::remove_reference_t<T>(y_fwd(t));
 }
-
-
-
-template<bool B>
-using bool_type = typename std::integral_constant<bool, B>;
 
 template<bool C, typename T>
 using const_type_t = std::conditional_t<C, const T, T>;
@@ -93,68 +87,57 @@ struct function_traits<Ret(Args...)> {
 
 };
 
-
-namespace detail {
 template<typename T>
-static auto has_begin(T*) -> bool_type<!std::is_void_v<decltype(std::declval<T>().begin())>>;
-template<typename T>
-static auto has_begin(...) -> std::false_type;
-
-template<typename T>
-static auto has_end(T*) -> bool_type<!std::is_void_v<decltype(std::declval<T>().end())>>;
-template<typename T>
-static auto has_end(...) -> std::false_type;
-}
+concept is_iterable = requires(T t) {
+    t.begin();
+    t.end();
+};
 
 template<typename T>
-using is_iterable = bool_type<
-        decltype(detail::has_begin<std::remove_reference_t<T>>(nullptr))::value &&
-        decltype(detail::has_end<std::remove_reference_t<T>>(nullptr))::value
-    >;
+concept has_at_end = requires(T t) {
+    { t.at_end() } -> std::same_as<bool>;
+};
 
 template<typename T>
-static constexpr bool is_iterable_v = is_iterable<T>::value;
+concept has_size = requires(T t) {
+    { t.size() } -> std::convertible_to<usize>;
+};
 
-template<typename T> requires(is_iterable_v<T>)
+template<typename T>
+concept has_reserve = requires(T t) {
+    t.reserve(std::declval<usize>());
+};
+
+template<typename T>
+concept has_resize = requires(T t) {
+    t.resize(std::declval<usize>());
+};
+
+template<typename T>
+concept has_emplace_back = requires(T t) {
+    t.emplace_back();
+};
+
+template<typename T>
+concept has_clear = requires(T t) {
+    t.clear();
+};
+
+template<typename T>
+concept has_make_empty = requires(T t) {
+    t.make_empty();
+};
+
+template<typename T, typename U>
+concept has_append = requires(T t, U u) {
+    t.append(u);
+};
+
+
+template<typename T> requires(is_iterable<T>)
 using element_type_t = std::remove_cvref_t<decltype(*std::declval<T>().begin())>;
 
-namespace detail {
-template<typename T>
-using has_at_end_t = decltype(std::declval<T&>().at_end());
-template<typename T>
-using has_size_t = decltype(std::declval<T&>().size());
-template<typename T>
-using has_reserve_t = decltype(std::declval<T&>().reserve(std::declval<usize>()));
-template<typename T>
-using has_resize_t = decltype(std::declval<T&>().resize(std::declval<usize>()));
-template<typename T>
-using has_emplace_back_t = decltype(std::declval<T&>().emplace_back());
-template<typename T>
-using has_clear_t = decltype(std::declval<T&>().clear());
-template<typename T>
-using has_make_empty_t = decltype(std::declval<T&>().make_empty());
 
-template<typename T, typename U>
-using has_append_t = decltype(std::declval<T&>().append(std::declval<U>()));
-}
-
-template<typename T>
-static constexpr bool has_at_end_v = is_detected_v<detail::has_at_end_t, T>;
-template<typename T>
-static constexpr bool has_size_v = is_detected_v<detail::has_size_t, T>;
-template<typename T>
-static constexpr bool has_reserve_v = is_detected_v<detail::has_reserve_t, T>;
-template<typename T>
-static constexpr bool has_resize_v = is_detected_v<detail::has_resize_t, T>;
-template<typename T>
-static constexpr bool has_emplace_back_v = is_detected_v<detail::has_emplace_back_t, T>;
-template<typename T>
-static constexpr bool has_clear_v = is_detected_v<detail::has_clear_t, T>;
-template<typename T>
-static constexpr bool has_make_empty_v = is_detected_v<detail::has_make_empty_t, T>;
-
-template<typename T, typename U>
-static constexpr bool has_append_v = is_detected_v<detail::has_append_t, T, U>;
 }
 
 

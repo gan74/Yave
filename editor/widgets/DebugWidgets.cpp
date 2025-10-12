@@ -23,13 +23,16 @@ SOFTWARE.
 #include <editor/Widget.h>
 #include <editor/EditorWorld.h>
 #include <editor/utils/memory.h>
-#include <editor/ThumbmailRenderer.h>
+#include <editor/ThumbnailRenderer.h>
 #include <editor/systems/UndoRedoSystem.h>
+#include <editor/components/EditorComponent.h>
 
 #include <yave/scene/SceneView.h>
 #include <yave/graphics/device/MeshAllocator.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/components/PointLightComponent.h>
+#include <yave/components/SpotLightComponent.h>
 #include <yave/renderer/SceneVisibilitySubPass.h>
 
 #include <y/core/Chrono.h>
@@ -221,15 +224,19 @@ class EcsDebug : public Widget {
                     ImGui::TableSetupColumn("##actions",ImGuiTableColumnFlags_WidthFixed);
 
                     for(const core::String& tag : world.tags()) {
+                        ImGui::PushID(tag.data());
                         imgui::table_begin_next_row();
                         ImGui::TextUnformatted(tag.data());
                         ImGui::TableNextColumn();
+
                         ImGui::TextUnformatted(fmt_c_str("{} entities", world.tag_set(tag)->size()));
+
                         ImGui::TableNextColumn();
                         if(ImGui::SmallButton(ICON_FA_TRASH)) {
                             world.clear_tag(tag);
                             y_debug_assert(world.tag_set(tag)->is_empty());
                         }
+                        ImGui::PopID();
                     }
                     ImGui::EndTable();
                 }
@@ -297,11 +304,11 @@ class UiDebug : public Widget {
 
     protected:
         void on_gui() override {
-            ThumbmailRenderer& tb = thumbmail_renderer();
-            ImGui::TextUnformatted(fmt_c_str("{} cached thumbmails", tb.cached_thumbmails()));
+            ThumbnailRenderer& tb = thumbnail_renderer();
+            ImGui::TextUnformatted(fmt_c_str("{} cached thumbnails", tb.cached_thumbnails()));
             ImGui::Separator();
-            ImGui::TextUnformatted(fmt_c_str("Thumbmail size: {}x{}", tb.thumbmail_size, tb.thumbmail_size));
-            ImGui::TextUnformatted(fmt_c_str("Total thumbmail memory: {}KB", (tb.cached_thumbmails() * tb.thumbmail_size * tb.thumbmail_size * 4) / 1024));
+            ImGui::TextUnformatted(fmt_c_str("Thumbnail size: {}x{}", tb.thumbnail_size, tb.thumbnail_size));
+            ImGui::TextUnformatted(fmt_c_str("Total thumbnail memory: {}KB", (tb.cached_thumbnails() * tb.thumbnail_size * tb.thumbnail_size * 4) / 1024));
         }
 };
 
@@ -413,6 +420,34 @@ class UndoRedoDebug : public Widget {
             }
 
             ImGui::EndChild();
+        }
+};
+
+
+class VisibilityDebug : public Widget {
+
+    editor_widget(VisibilityDebug)
+
+    public:
+        VisibilityDebug() : Widget("Visibility debug") {
+        }
+
+        void on_gui() override {
+            const std::shared_ptr<SceneVisibility> visible = SceneVisibilitySubPass::create(scene_view()).visible;
+            ImGui::TextUnformatted(fmt_c_str("{} visible meshes", visible->meshes.size()));
+            ImGui::TextUnformatted(fmt_c_str("{} visible point lights", visible->point_lights.size()));
+            ImGui::TextUnformatted(fmt_c_str("{} visible spot lights", visible->spot_lights.size()));
+
+            if(ImGui::CollapsingHeader("ECS")) {
+                auto row = []<typename T>(std::string_view name) {
+                    const usize total = current_world().create_group<T>().size();
+                    const usize hidden = current_world().create_group<T>(ecs::tags::hidden).size();
+                    ImGui::TextUnformatted(fmt_c_str("{} {} ({} hidden)", total, name, hidden));
+                };
+                row.template operator()<StaticMeshComponent>("meshes");
+                row.template operator()<PointLightComponent>("point lights");
+                row.template operator()<SpotLightComponent>("spot lights");
+            }
         }
 };
 

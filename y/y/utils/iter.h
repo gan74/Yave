@@ -89,9 +89,8 @@ class TransformIterator : private Transform {
         inline TransformIterator(iterator_type it, const Transform& tr = Transform()) : Transform(tr), _it(it) {
         }
 
-        //template<typename = std::enable_if_t<has_at_end_v<iterator_type>>>
         inline bool at_end() const {
-            static_assert(has_at_end_v<iterator_type>);
+            static_assert(has_at_end<iterator_type>);
             return _it.at_end();
         }
 

@@ -27,9 +27,15 @@ SOFTWARE.
 namespace editor {
 namespace import {
 
+enum class ImageCompression {
+    BC1,
+    BC4,    // 1 channel
+    BC5,    // 2 channels
+    BC7,
+};
+
 [[nodiscard]] ImageData compute_mipmaps(const ImageData& image);
-[[nodiscard]] ImageData compress_bc1(const ImageData& image);
-[[nodiscard]] ImageData compress_bc4(const ImageData& image);
+[[nodiscard]] ImageData compress(const ImageData& image, ImageCompression compression);
 
 }
 }

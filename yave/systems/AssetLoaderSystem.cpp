@@ -26,13 +26,13 @@ SOFTWARE.
 
 namespace yave {
 
-AssetLoaderSystem::AssetLoaderSystem(AssetLoader& loader) : ecs::System("AssetLoaderSystem"), _loader(&loader) {
+AssetLoaderSystem::AssetLoaderSystem(AssetLoader& loader, AssetLoadingFlags flags) : ecs::System("AssetLoaderSystem"), _loader(&loader), _flags(flags) {
 }
 
 void AssetLoaderSystem::setup(ecs::SystemScheduler& sched) {
     for(const LoadableComponentTypeInfo& info : _infos) {
         sched.schedule(ecs::SystemSchedule::Tick, fmt("Tick for {}", info.type_name), [&](ecs::SystemScheduler::FirstTime first_time) {
-            AssetLoadingContext loading_ctx(_loader);
+            AssetLoadingContext loading_ctx(_loader, _flags);
             (first_time.value ? info.load_all : info.load_recent)(world(), loading_ctx);
             info.update_status(world());
         });

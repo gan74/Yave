@@ -33,47 +33,45 @@ namespace serde3 {
 
 namespace detail {
 template<typename T>
-using has_no_serde3_t = decltype(std::declval<T>()._y_serde3_no_serde);
+concept has_no_serde3_defined = requires(T t) {
+    t._y_serde3_no_serde;
+};
 
 template<typename T>
 static inline consteval bool has_no_serde3_impl() {
-    if constexpr(is_detected_v<has_no_serde3_t, T>) {
+    if constexpr(has_no_serde3_defined<T>) {
         return T::_y_serde3_no_serde;
     }
     return false;
 }
-
-
-template<typename T, typename... Args>
-using has_serde3_post_deser_t = decltype(std::declval<T>().post_deserialize(std::declval<Args>()...));
-template<typename T, typename... Args>
-using has_serde3_post_deser_poly_t = decltype(std::declval<T>().post_deserialize_poly(std::declval<Args>()...));
-
-
-template<typename T>
-using has_serde3_poly_t = decltype(std::declval<T>()._y_serde3_poly_base);
-template<typename T>
-using has_serde3_ptr_poly_t = decltype(std::declval<T>()->_y_serde3_poly_base);
-
 }
 
 template<typename T>
-static constexpr bool has_serde3_v = has_reflect_v<T>;
+concept has_serde3 = has_reflect<T>;
 
 template<typename T>
-static constexpr bool has_no_serde3_v = detail::has_no_serde3_impl<T>();
+concept has_no_serde3 = detail::has_no_serde3_impl<T>();
 
 
 template<typename T, typename... Args>
-static constexpr bool has_serde3_post_deser_v = is_detected_v<detail::has_serde3_post_deser_t, T, Args...>;
+concept has_serde3_post_deser = requires(T t, Args... args) {
+    t.post_deserialize(args...);
+};
 
 template<typename T, typename... Args>
-static constexpr bool has_serde3_post_deser_poly_v = is_detected_v<detail::has_serde3_post_deser_poly_t, T, Args...>;
-template<typename T>
-static constexpr bool has_serde3_poly_v = is_detected_v<detail::has_serde3_poly_t, T>;
+concept has_serde3_post_deser_poly = requires(T t, Args... args) {
+    t.post_deserialize_poly(args...);
+};
 
 template<typename T>
-static constexpr bool has_serde3_ptr_poly_v = is_detected_v<detail::has_serde3_ptr_poly_t, T>;
+concept has_serde3_poly = requires(T t) {
+    t._y_serde3_poly_base;
+};
+
+template<typename T>
+concept has_serde3_ptr_poly = requires(T t) {
+    t->_y_serde3_poly_base;
+};
 
 
 
@@ -94,20 +92,20 @@ struct IsProperty<detail::Property<T, G, S>> {
 
 template<typename T, typename value_type = std::remove_cvref_t<typename T::value_type>>
 constexpr bool use_collection_fast_path =
-        (has_resize_v<T> || has_emplace_back_v<T>) &&
+        (has_resize<T> || has_emplace_back<T>) &&
         std::is_pointer_v<decltype(std::declval<T>().begin())> &&
         std::is_trivially_copyable_v<value_type> &&
-        !has_serde3_v<value_type> &&
+        !has_serde3<value_type> &&
         !std::is_pointer_v<value_type>;
 
 template<typename T>
-static constexpr bool is_pod_base_v = std::is_trivially_copyable_v<std::remove_cvref_t<T>> && std::is_trivially_copy_constructible_v<std::remove_cvref_t<T>>;
+concept is_pod_base = std::is_trivially_copyable_v<std::remove_cvref_t<T>> && std::is_trivially_copy_constructible_v<std::remove_cvref_t<T>>;
 
 template<typename T>
 consteval bool is_pod_iterable() {
-    if constexpr(is_iterable_v<T>) {
+    if constexpr(is_iterable<T>) {
         using value_type = decltype(*std::declval<T>().begin());
-        return is_pod_base_v<value_type>;
+        return is_pod_base<value_type>;
     }
     return true;
 }
@@ -116,10 +114,10 @@ consteval bool is_pod_iterable() {
 
 // Warning: some types like Range and Span are can be POD (Span is handled separatly tho)
 template<typename T>
-static constexpr bool is_pod_v = detail::is_pod_base_v<T> && detail::is_pod_iterable<std::remove_cvref_t<T>>();
+concept is_pod = detail::is_pod_base<T> && detail::is_pod_iterable<std::remove_cvref_t<T>>();
 
 template<typename T>
-static constexpr bool is_property_v = detail::IsProperty<std::remove_cvref_t<T>>::value;
+concept is_property = detail::IsProperty<std::remove_cvref_t<T>>::value;
 
 }
 }

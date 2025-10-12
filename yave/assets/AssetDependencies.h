@@ -40,6 +40,7 @@ class AssetDependencies {
         bool is_empty() const;
         AssetLoadingState state() const;
         AssetLoadingErrorType error() const;
+        AssetLoadingFlags flags() const;
 
 
     private:

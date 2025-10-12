@@ -32,7 +32,7 @@ namespace yave {
 
 class AssetLoaderSystem : public ecs::System {
     public:
-        AssetLoaderSystem(AssetLoader& loader);
+        AssetLoaderSystem(AssetLoader& loader, AssetLoadingFlags flags = AssetLoadingFlags::None);
 
         void setup(ecs::SystemScheduler& sched) override;
 
@@ -92,6 +92,7 @@ class AssetLoaderSystem : public ecs::System {
 
         core::Vector<LoadableComponentTypeInfo> _infos;
         AssetLoader* _loader = nullptr;
+        AssetLoadingFlags _flags = AssetLoadingFlags::None;
 
 };
 

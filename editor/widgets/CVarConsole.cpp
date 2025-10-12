@@ -23,6 +23,8 @@ SOFTWARE.
 
 #include "CVarConsole.h"
 
+#include <editor/utils/StringMatcher.h>
+
 #include <editor/utils/ui.h>
 #include <editor/Settings.h>
 
@@ -39,7 +41,7 @@ SOFTWARE.
 namespace editor {
 
 template<typename T>
-static constexpr bool is_printable_v =
+concept is_printable =
     std::is_arithmetic_v<T> ||
     //std::is_enum_v<T> ||
     (std::is_constructible_v<std::string_view, T> && std::is_constructible_v<T, std::string_view>);
@@ -110,7 +112,7 @@ static void collect_var(C& vars, const core::String& parent, std::string_view na
     unused(vars, parent, name, getter);
 
     const core::String full_name = parent + "." + name;
-    if constexpr(is_printable_v<T>) {
+    if constexpr(is_printable<T>) {
         vars.emplace_back(
             full_name,
             [=]{ return fmt_to_owned("{}", getter()); },
@@ -119,8 +121,8 @@ static void collect_var(C& vars, const core::String& parent, std::string_view na
             fmt_to_owned("{}", default_value),
             false
         );
-    } else if constexpr(is_iterable_v<T>) {
-        if constexpr(is_printable_v<typename T::value_type>) {
+    } else if constexpr(is_iterable<T>) {
+        if constexpr(is_printable<typename T::value_type>) {
             vars.emplace_back(
                 full_name,
                 [=]{ return fmt_to_owned("{}", getter()); },
@@ -154,14 +156,14 @@ CVarConsole::CVarConsole() : Widget(ICON_FA_STREAM " CVars") {
 
 void CVarConsole::on_gui() {
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(ICON_FA_FILTER " ").x);
-    imgui::text_input(ICON_FA_FILTER "##filter", _search_pattern);
-    const bool search_empty = _search_pattern.is_empty();
+    imgui::text_input(ICON_FA_FILTER "##search", _search_pattern, ImGuiInputTextFlags_AutoSelectAll, "Search");
+    const StringMatcher matcher(_search_pattern);
 
     const ImGuiTableFlags table_flags =
-            ImGuiTableFlags_SizingFixedFit |
-            ImGuiTableFlags_BordersInnerV |
-            ImGuiTableFlags_Resizable |
-            ImGuiTableFlags_RowBg;
+        ImGuiTableFlags_SizingFixedFit |
+        ImGuiTableFlags_BordersInnerV |
+        ImGuiTableFlags_Resizable |
+        ImGuiTableFlags_RowBg;
 
     if(ImGui::BeginChild("##entities", ImVec2(), true)) {
         if(ImGui::BeginTable("##cvars", 3, table_flags)) {
@@ -172,12 +174,12 @@ void CVarConsole::on_gui() {
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.0f, 1.0f));
             y_defer(ImGui::PopStyleVar());
 
-            const std::regex regex = search_empty ? std::regex() : std::regex(_search_pattern.data(), std::regex::icase);
             int id = 0;
             for(auto& var : _cvars) {
-                if(!search_empty && !std::regex_search(var.full_name.data(), regex)) {
+                if(!matcher.is_empty() && !matcher.matches(var.full_name)) {
                     continue;
                 }
+
                 ImGui::PushID(id++);
 
                 imgui::table_begin_next_row();

@@ -22,24 +22,16 @@ SOFTWARE.
 #ifndef YAVE_RENDERER_TAAPASS_H
 #define YAVE_RENDERER_TAAPASS_H
 
-#include "TemporalPrePass.h"
+#include "GBufferPass.h"
 
 namespace yave {
 
 struct TAASettings {
-    enum class WeightingMode : u32 {
-        None,
-        Luminance,
-        Log,
-    };
-
-    WeightingMode weighting_mode = WeightingMode::Log;
-
-    float blending_factor = 0.9f;
-
     bool use_clamping = true;
-    bool use_previous_matching = true;
-    bool use_weighted_clamp = true;
+    bool use_denoise = false;
+
+    float clamping_range = 1.0f;
+    float anti_flicker_strength = 1.0f;
 
     bool enable = true;
 };
@@ -48,8 +40,8 @@ struct TAASettings {
 struct TAAPass {
     FrameGraphImageId anti_aliased;
 
-    static TAAPass create_simple(FrameGraph& framegraph, const TemporalPrePass& temporal, FrameGraphImageId in_color, FrameGraphPersistentResourceId persistent_id);
-    static TAAPass create(FrameGraph& framegraph, const TemporalPrePass& temporal, FrameGraphImageId in_color, const TAASettings& settings = {});
+    static TAAPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_color, FrameGraphPersistentResourceId persistent_color_id, FrameGraphPersistentResourceId persistent_motion_id, const TAASettings& settings = {});
+    static TAAPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_color, const TAASettings& settings = {});
 };
 
 

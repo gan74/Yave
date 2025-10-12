@@ -93,6 +93,13 @@ TimelineFence CmdBufferData::timeline_fence() const {
     return _timeline_fence;
 }
 
+const CmdBufferFence& CmdBufferData::create_fence() {
+    if(!_fence._ptr) {
+        _fence._ptr  = std::make_shared<std::atomic<bool>>(false);
+    }
+    return _fence;
+}
+
 bool CmdBufferData::is_ready() const {
     return _timeline_fence.is_valid() && _timeline_fence.is_ready();
 }
@@ -104,8 +111,9 @@ void CmdBufferData::reset() {
 
     _resource_fence = lifetime_manager().create_fence();
     _timeline_fence = {};
-}
 
+    y_debug_assert(!_fence._ptr);
+}
 
 }
 

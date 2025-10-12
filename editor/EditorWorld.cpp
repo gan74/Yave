@@ -40,6 +40,7 @@ SOFTWARE.
 
 #include <yave/systems/AssetLoaderSystem.h>
 #include <yave/systems/JoltPhysicsSystem.h>
+#include <yave/systems/SceneSystem.h>
 
 #include <editor/systems/DebugAnimateSystem.h>
 #include <editor/systems/UndoRedoSystem.h>
@@ -61,6 +62,7 @@ EditorWorld::EditorWorld(AssetLoader& loader) {
     add_system<DebugAnimateSystem>();
     add_system<UndoRedoSystem>();
     add_system<JoltPhysicsSystem>();
+    add_system<SceneSystem>();
 }
 
 bool EditorWorld::set_entity_name(ecs::EntityId id, std::string_view name) {

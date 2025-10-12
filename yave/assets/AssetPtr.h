@@ -53,9 +53,11 @@ enum class AssetLoadingErrorType : u32 {
     Unknown
 };
 
-enum class AssetLoadingFlags : u32 {
-    None = 0,
-    SkipFailedDependenciesBit = 0x01
+enum class
+    AssetLoadingFlags : u32 {
+    None                        = 0x00,
+    SkipFailedDependenciesBit   = 0x01,
+    SynchronousLoad             = 0x02,
 };
 
 inline constexpr AssetLoadingFlags operator|(AssetLoadingFlags l, AssetLoadingFlags r) {
@@ -120,13 +122,11 @@ template<typename T>
 class AssetPtrData final : public AssetPtrDataBase {
     public:
         T asset;
-        std::atomic<std::shared_ptr<AssetPtrData<T>>> reloaded;
 
         inline AssetPtrData(AssetId id, AssetLoader* loader);
         inline AssetPtrData(AssetId id, AssetLoader* loader, T t);
 
         inline void finalize_loading(T t);
-        inline void set_reloaded(const std::shared_ptr<AssetPtrData<T>>& other);
 };
 
 }
@@ -146,8 +146,6 @@ class AssetPtr {
         inline AssetId id() const;
 
         inline void wait_until_loaded() const;
-        inline bool flush_reload();
-        inline void reload();
 
         inline bool is_empty() const;
         inline bool has_loader() const;
@@ -174,6 +172,7 @@ class AssetPtr {
         inline bool operator!=(const AssetPtr& other) const;
 
         void load(AssetLoadingContext& context);
+        void load_async(AssetLoadingContext& context);
 
         y_reflect(AssetPtr, _id)
 
@@ -291,24 +290,6 @@ class GenericAssetPtr {
         u32 _type_index = u32(-1);
         AssetId _id;
 };
-
-
-
-
-namespace detail {
-template<typename T>
-struct IsAssetPtr {
-    static constexpr bool value = false;
-};
-template<typename T>
-struct IsAssetPtr<AssetPtr<T>> {
-    static constexpr bool value = true;
-    using type = T;
-};
-}
-
-template<typename T>
-static constexpr bool is_asset_ptr_v = detail::IsAssetPtr<T>::value;
 
 
 }

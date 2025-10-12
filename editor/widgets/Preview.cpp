@@ -44,6 +44,7 @@ SOFTWARE.
 #include <yave/components/SkyLightComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/systems/SceneSystem.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/assets/AssetLoader.h>
 #include <yave/utils/color.h>
@@ -122,8 +123,7 @@ void Preview::update_camera() {
 
 void Preview::reset_world() {
     _world = std::make_unique<EditorWorld>(asset_loader());
-    _scene = std::make_unique<EcsScene>(_world.get());
-    _view = SceneView(_scene.get());
+    _view = SceneView(_world->find_system<SceneSystem>()->scene());
 
     {
         const ecs::EntityId sky_id = _world->create_entity();

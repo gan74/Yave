@@ -19,24 +19,53 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_TEMPORALPREPASS_H
-#define YAVE_RENDERER_TEMPORALPREPASS_H
 
-#include "GBufferPass.h"
+#ifndef EDITOR_THUMBNAILRENDERER_H
+#define EDITOR_THUMBNAILRENDERER_H
 
-namespace yave {
+#include <editor/editor.h>
 
-struct TemporalPrePass {
-    FrameGraphImageId mask;
-    FrameGraphImageId motion;
-    FrameGraphImageId depth;
+#include <yave/graphics/images/ImageView.h>
+#include <yave/assets/AssetPtr.h>
 
-    FrameGraphTypedBufferId<shader::Camera> camera;
+#include <y/core/HashMap.h>
 
-    static TemporalPrePass create(FrameGraph& framegraph, const GBufferPass& gbuffer);
+namespace editor {
+
+class ThumbnailRenderer : NonMovable {
+    public:
+        static constexpr usize thumbnail_size = 256;
+
+        enum class ThumbnailStatus {
+            Rendering,
+            Failed,
+            Done,
+        };
+
+        struct ThumbnailData : NonMovable {
+            TextureView view;
+            core::Vector<core::String> infos;
+
+            Texture texture;
+            std::atomic<ThumbnailStatus> status = ThumbnailStatus::Rendering;
+        };
+
+        ThumbnailRenderer(AssetLoader& loader);
+
+        const ThumbnailData* thumbnail_data(AssetId id);
+        const TextureView* thumbnail_img(AssetId id);
+
+        usize cached_thumbnails();
+
+    private:
+
+        std::unique_ptr<ThumbnailData> schedule_render(AssetId id);
+
+        ProfiledMutexed<core::FlatHashMap<AssetId, std::unique_ptr<ThumbnailData>>> _thumbnails;
+        AssetLoader* _loader = nullptr;
 };
 
 }
 
-#endif // YAVE_RENDERER_TEMPORALPREPASS_H
+#endif // EDITOR_THUMBNAILRENDERER_H
 

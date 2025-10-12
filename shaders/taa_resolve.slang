@@ -1,7 +1,9 @@
+
+
 #include "lib/utils.slang"
 
-
-// -------------------------------- I/O --------------------------------
+#define TAA_CLIP
+// #define TAA_DENOISE
 
 
 [[vk::binding(0)]]
@@ -11,226 +13,202 @@ Sampler2D in_color;
 Sampler2D in_prev_color;
 
 [[vk::binding(2)]]
-Sampler2D<float> in_depth;
-
-[[vk::binding(3)]]
 Sampler2D<float2> in_motion;
 
+[[vk::binding(3)]]
+Sampler2D<float2> in_prev_motion;
+
 [[vk::binding(4)]]
-Sampler2D<uint> in_mask;
+Sampler2D<float> in_depth;
 
 [[vk::binding(5)]]
 ConstantBuffer<Camera> camera;
 
 [[vk::binding(6)]]
-cbuffer Settings_Inline {
+cbuffer Params {
     TAAFeatureBits flags;
-    uint weighting_mode;
-    float blending_factor;
-};
+    float clamping_range;
+    float anti_flicker_strength;
+}
+
+
+[[vk::binding(7)]]
+RWTexture2D out_color;
 
 
 
 
-// -------------------------------- Utils --------------------------------
 
-struct ClampingInfo {
-    float3 max_color;
-    float3 min_color;
-};
 
-ClampingInfo gather_clamping_info(Sampler2D color, int2 coord) {
-    ClampingInfo info;
-    info.max_color = float3(0.0);
-    info.min_color = float3(999999.0);
+static float3 local_neighbourhood[9];
 
-    for(int x = -1; x <= 1; ++x) {
-        for(int y = -1; y <= 1; ++y) {
-            const float3 smp = max(float3(0.0), color[coord + int2(x, y)].rgb);
-            info.max_color = max(info.max_color, smp);
-            info.min_color = min(info.min_color, smp);
+
+static const int2 offsets[9] = int2[9](
+    int2(-1, -1),
+    int2(0, -1),
+    int2(1, -1),
+    int2(-1, 0),
+    int2(0, 0),
+    int2(1, 0),
+    int2(-1, 1),
+    int2(0, 1),
+    int2(1, 1)
+);
+
+
+
+
+
+
+void load_loca_data() {
+    for(uint i = 0; i != 9; ++i) {
+        local_neighbourhood[i] = in_color[semantics.global_id.xy + offsets[i]].rgb;
+    }
+}
+
+int2 find_nearest_pixel() {
+    float depth = 0.0;
+    int2 offset = int2(0);
+    for(uint i = 0; i != 9; ++i) {
+        const float curr_depth = in_depth[semantics.global_id.xy + offsets[i]];
+        if(curr_depth > depth) {
+            depth = curr_depth;
+            offset = offsets[i];
         }
     }
 
-    return info;
+    return offset;
 }
 
-float3 blend_weighted(float3 curr, float3 prev, float factor) {
-    switch(weighting_mode) {
-        case 0:     // None
-            return lerp(curr, prev, factor);
-
-        case 1: {   // Lum
-            const float curr_weight = (1.0 - factor) / luminance(curr);
-            const float prev_weight = factor / luminance(prev);
-            const float total_weight = curr_weight + prev_weight;
-            return (curr * curr_weight + prev * prev_weight) / total_weight;
-        }
-
-        case 2: {   // Log
-            const float3 log_curr = log(max(curr, epsilon));
-            const float3 log_prev = log(max(prev, epsilon));
-            return exp(lerp(log_curr, log_prev, factor));
-        }
-
-        default:
-        break;
+void compute_variance_min_max(inout float3 aabb_min, inout float3 aabb_max) {
+    float3 m1 = float3(0.0);
+    float3 m2 = float3(0.0);
+    for(int i = 0; i != 9; ++i) {
+        const float3 color = local_neighbourhood[i];
+        m1 += color;
+        m2 += sqr(color);
     }
 
-    return curr;
+    const float inv_sample_count = 1.0 / 9.0;
+    const float gamma = 1.0;
+
+    const float3 mu = m1 * inv_sample_count;
+    const float3 sigma = sqrt(abs((m2 * inv_sample_count) - sqr(mu)));
+    aabb_min = mu - gamma * sigma;
+    aabb_max = mu + gamma * sigma;
 }
 
-float3 clamp_weighted(float3 color, ClampingInfo info) {
-    // Always use log
-    const float3 log_color = log(max(color, epsilon));
-    const float3 log_min = log(max(info.min_color, epsilon));
-    const float3 log_max = log(max(info.max_color, epsilon));
-    return exp(clamp(log_color, log_min, log_max));
-}
-
-float filter_weight(float x) {
-    const float B = 0.0;
-    const float C = 0.5;
-
-    const float x2 = x * x;
-    const float x3 = x * x * x;
-
-    float y = 0.0f;
-    if(x < 1.0) {
-        y = (12.0 - 9.0 * B - 6.0 * C) * x3 + (-18.0 + 12.0 * B + 6.0 * C) * x2 + (6.0 - 2.0 * B);
-    } else if(x <= 2) {
-        y = (-B - 6.0 * C) * x3 + (6.0 * B + 30.0 * C) * x2 + (-12.0 * B - 48.0 * C) * x + (8.0 * B + 24.0 * C);
+float copy_sign(float x, float sign) {
+    if(sign < 0.0) {
+        return -abs(x);
     }
-
-    return y / 6.0f;
+    return abs(x);
 }
 
-// https://github.com/TheRealMJP/MSAAFilter/blob/master/MSAAFilter/Resolve.hlsl
-float3 sample_history(float2 prev_coord) {
-    float3 sum = float3(0.0);
-    float total = 0.0;
-    for(int x = -1; x <= 1; ++x) {
-        for(int y = -1; y <= 1; ++y) {
-            const float2 sample_coord = floor(prev_coord + float2(x, y)) + 0.5;
-            const float3 prev_sample = in_prev_color[int2(sample_coord)].rgb;
+float clip_bbox(float3 box_min, float3 box_max, float3 prev, float3 curr) {
+    float3 dir = curr - prev;
 
-            const float2 sample_delta = abs(sample_coord - prev_coord);
-            const float weight = filter_weight(sample_delta.x) * filter_weight(sample_delta.y);
+    // Make sure dir isn't zero
+    dir.x = abs(dir.x) < epsilon ? copy_sign(epsilon, dir.x) : dir.x;
+    dir.y = abs(dir.y) < epsilon ? copy_sign(epsilon, dir.y) : dir.y;
+    dir.z = abs(dir.z) < epsilon ? copy_sign(epsilon, dir.z) : dir.z;
 
-            sum += prev_sample * weight;
-            total += weight;
-        }
-    }
+    const float3 inv_dir = 1.0 / dir;
 
-    return sum / total;
+    const float3 t0 = (box_min - prev) * inv_dir;
+    const float3 t1 = (box_max - prev) * inv_dir;
+
+    return component_max(min(t0, t1));
 }
 
-float2 sample_closest_velocity(int2 coord) {
-#if 0
-    int2 closest_pos = coord;
-    float closest_depth = 0.0;
-    for(int x = -1; x <= 1; ++x) {
-        for(int y = -1; y <= 1; ++y) {
-            const int2 sample_pos = coord + int2(x, y);
-            const float depth = in_depth[sample_pos];
-            if (depth > closest_depth) {
-                closest_depth = depth;
-                closest_pos = sample_pos;
-            }
-        }
-    }
-
-    return in_motion[closest_pos];
-#else
-    return in_motion[coord];
-#endif
-}
-
-float2 camera_reproject(float2 uv) {
-    const float3 w = unproject(uv, 0.000001, camera.cur.inv_view_proj);
-    const float2 reproj = project(w, camera.prev.view_proj).xy;
-    return (reproj - uv) - camera.combined_jitter * 0.5;
+float3 sample_prev(float2 uv) {
+    return in_prev_color.SampleLevel(uv, 0).rgb;
 }
 
 
-struct PixelStageIn {
-    float3 screen_pos;
-    float3 last_screen_pos;
-};
+// Implementation from https://github.com/tippesi/Atlas-Engine/blob/master/data/shader/taa.csh
+[shader("compute")]
+[numthreads(8, 8)]
+void comp_main() {
+    load_loca_data();
 
-struct VertexStageOut {
-    float4 sv_position : SV_Position;
-    PixelStageIn frag;
+    const int2 offset = find_nearest_pixel();
 
-};
+    const float3 tl = local_neighbourhood[0];
+    const float3 tc = local_neighbourhood[1];
+    const float3 tr = local_neighbourhood[2];
+    const float3 ml = local_neighbourhood[3];
+    const float3 mc = local_neighbourhood[4];
+    const float3 mr = local_neighbourhood[5];
+    const float3 bl = local_neighbourhood[6];
+    const float3 bc = local_neighbourhood[7];
+    const float3 br = local_neighbourhood[8];
 
-float2 camera_reproject(PixelStageIn in) {
-    return ((in.last_screen_pos.xy / in.last_screen_pos.z) - (in.screen_pos.xy / in.screen_pos.z) - camera.combined_jitter) * 0.5;
-}
+    // 3x3 box pattern
+    const float3 box_min = min(tl, min(tc, min(tr, min(ml, min(mc, min(mr, min(bl, min(bc, br))))))));
+    const float3 box_max = max(tl, max(tc, max(tr, max(ml, max(mc, max(mr, max(bl, max(bc, br))))))));
 
+    // 5 sample cross pattern
+    const float3 cross_min = min(tc, min(ml, min(mc, min(mr, bc))));
+    const float3 cross_max = max(tc, max(ml, max(mc, max(mr, bc))));
 
+    // Average both bounding boxes to get a more rounded shape
+    float3 local_neighbourhood_min = 0.5 * (box_min + cross_min);
+    float3 local_neighbourhood_max = 0.5 * (box_max + cross_max);
 
+    const float3 average = 0.5 * (local_neighbourhood_min + local_neighbourhood_max);
 
-// -------------------------------- Main --------------------------------
-[shader("vertex")]
-VertexStageOut vert_main() {
-    static const float2 uvs[] = {
-        float2(0.0, 0.0),
-        float2(0.0, 2.0),
-        float2(2.0, 0.0),
-    };
+    compute_variance_min_max(local_neighbourhood_min, local_neighbourhood_max);
 
-    const float2 uv = uvs[semantics.vertex_index];
+    const uint2 coord = semantics.global_id.xy;
+    const int2 velocity_coord = coord + offset;
+    const float2 velocity = in_motion[velocity_coord];
+    const float2 last_velocity = in_prev_motion[coord];
 
-    const float3 unproj = unproject(uv, 0.000001, camera.cur.inv_view_proj);
-    const float4 current_position = mul(camera.cur.view_proj, float4(unproj, 1.0));
-    const float4 last_position = mul(camera.prev.view_proj, float4(unproj, 1.0));
+    const float velocity_blend = saturate(600.0 * max(length(velocity), length(last_velocity)));
 
-    VertexStageOut out;
-    {
-        out.sv_position = float4((uv * 2.0 - 1.0), 0.0, 1.0);
-        out.frag.screen_pos = current_position.xyw;
-        out.frag.last_screen_pos = last_position.xyw;
-    }
-    return out;
-}
+    const float2 uv = (float2(coord) + float2(0.5)) / image_size(in_color) + velocity;
 
+    float3 prev_color = sample_prev(uv);
+    float3 curr_color = mc;
 
-// https://www.elopezr.com/temporal-aa-and-the-quest-for-the-holy-trail/
-[shader("fragment")]
-float4 frag_main(PixelStageIn in) : SV_Target0 {
-    const int2 coord = int2(semantics.frag_coord.xy);
+    const float curr_lum = luminance(curr_color);
+    const float prev_lum = luminance(prev_color);
 
-    const float3 current = in_color[coord].rgb;
+    const float prev_contrast = saturate(abs(curr_lum - prev_lum) / component_max(float3(0.2, curr_lum, prev_lum)));
+    const float anti_flicker = lerp(0.0, anti_flicker_strength, 1.0 - velocity_blend);
+    float range = clamping_range;
 
-    const uint mask = in_mask[coord];
-    if(mask != TAAMask::None && mask != TAAMask::DepthOutOfBounds) {
-        return float4(current, 1.0);
-    }
-
-    const float2 size = float2(image_size(in_color).xy);
-    const float2 uv = semantics.frag_coord.xy / size;
-
-    float2 motion = mask == TAAMask::DepthOutOfBounds ? camera_reproject(in) : sample_closest_velocity(coord);
-    const float2 prev_uv = uv + motion;
-
-    float3 prev = current;
-
-    if((flags & TAAFeatureBits::MatchPrevBit) != 0) {
-        prev = sample_history(prev_uv * size);
+    if((flags & TAAFeatureBits::DenoiseBit) != 0) {
+        range += anti_flicker;
     } else {
-        prev = in_prev_color.Sample(prev_uv).rgb;
+        range += lerp(0.0, anti_flicker, prev_contrast);
     }
+
+    local_neighbourhood_min = average - range * (average - local_neighbourhood_min);
+    local_neighbourhood_max = average + range * (local_neighbourhood_max - average);
 
     if((flags & TAAFeatureBits::ClampingBit) != 0) {
-        const ClampingInfo clamping_info = gather_clamping_info(in_color, coord);
-        if((flags & TAAFeatureBits::WeightedClampBit) != 0) {
-            prev = clamp_weighted(prev, clamping_info);
-        } else {
-            prev = clamp(prev, clamping_info.min_color, clamping_info.max_color);
-        }
+        const float clip_blend = clip_bbox(local_neighbourhood_min, local_neighbourhood_max, prev_color, curr_color);
+        const float adj_clip_blend = saturate(clip_blend);
+        prev_color = lerp(prev_color, curr_color, adj_clip_blend);
+    } else {
+        prev_color = clamp(prev_color, local_neighbourhood_min, local_neighbourhood_max);
     }
 
-    return float4(blend_weighted(current, prev, blending_factor), 1.0);
+    const float min_velocity_blend = 0.05;
+    const float max_velocity_blend = 0.2;
+    const float blend_factor = (any(saturate(uv) != uv)) ? 1.0 : lerp(min_velocity_blend, max_velocity_blend, velocity_blend);
+
+    const float prev_weight = (1.0 - blend_factor) / (1.0 + luminance(prev_color));
+    const float curr_weight =  blend_factor / (1.0 + luminance(curr_color));
+
+    const float3 resolved = abs(((prev_color * prev_weight) + (curr_color * curr_weight)) / (prev_weight + curr_weight));
+
+    if (any(isnan(resolved))) {
+        out_color[coord] = float4(1.0, 0.0, 0.0, 1.0);
+    } else {
+        out_color[coord] = float4(resolved, 1.0);
+    }
 }
 

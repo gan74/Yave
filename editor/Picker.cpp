@@ -32,6 +32,7 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/framegraph/FrameGraphResourcePool.h>
 #include <yave/graphics/commands/CmdQueue.h>
+#include <yave/graphics/device/DeviceResources.h>
 
 #include <yave/graphics/shaders/ComputeProgram.h>
 
@@ -74,14 +75,11 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
         builder.add_uniform_input(entity_pass.depth);
         builder.add_uniform_input(entity_pass.id);
         builder.add_descriptor_binding(Descriptor(buffer));
+        builder.add_inline_input(math::Vec2ui(uv * math::Vec2(size)));
 
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-            const auto& program = resources()[EditorResources::PickingProgram];
-
-            core::ScratchVector<Descriptor> descs(self->descriptor_set().descriptors().size() + 1);
-            descs.push_back(self->descriptor_set().descriptors().begin(), self->descriptor_set().descriptors().end());
-            descs.emplace_back(InlineDescriptor(uv));
-            recorder.dispatch(program, math::Vec3ui(1), DescriptorSetProxy(descs));
+            const auto& program = device_resources()[DeviceResources::PickingProgram];
+            recorder.dispatch(program, math::Vec3ui(1), self->descriptor_set());
         });
     }
 

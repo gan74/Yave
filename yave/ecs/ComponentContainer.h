@@ -82,8 +82,7 @@ class ComponentContainerBase : NonMovable {
         core::FixedArray<ComponentContainerBase*> _required;
         core::Vector<ComponentTypeIndex> _required_by;
 
-
-        y_profile_shared_lock(std::shared_mutex, _lock);
+        ProfiledSharedLock<> _lock;
 
     public:
         using lock_type = decltype(_lock);
@@ -180,7 +179,7 @@ class ComponentContainer final : public ComponentContainerBase {
         y_serde3_poly(ComponentContainer)
         y_reflect(ComponentContainer, _components)
 
-        y_no_serde3_expr(serde3::has_no_serde3_v<T>);
+        y_no_serde3_expr(serde3::has_no_serde3<T>);
 
     private:
         friend class EntityWorld;

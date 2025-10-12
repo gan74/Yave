@@ -84,7 +84,7 @@ class MeshDrawData : NonCopyable {
 
         const MeshDrawCommand& draw_command() const;
 
-        const BLAS& blas() const;
+        usize vertex_count() const;
 
     private:
         friend class LifetimeManager;
@@ -99,8 +99,6 @@ class MeshDrawData : NonCopyable {
         u32 _vertex_count = 0;
 
         MeshDrawBuffers* _mesh_buffers = nullptr;
-
-        BLAS _blas;
 };
 
 }

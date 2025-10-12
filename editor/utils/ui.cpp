@@ -24,7 +24,7 @@ SOFTWARE.
 #include "assets.h"
 
 #include <editor/ImGuiPlatform.h>
-#include <editor/ThumbmailRenderer.h>
+#include <editor/ThumbnailRenderer.h>
 #include <editor/EditorWorld.h>
 #include <editor/widgets/AssetSelector.h>
 #include <editor/widgets/FileBrowser.h>
@@ -120,6 +120,13 @@ u32 gizmo_color(usize axis) {
     //    pack_to_u32(sRGB_to_linear(unpack_from_u32(0x00E3832F))),
     constexpr u32 colors[] = { 0x005236F6, 0x001BA56F, 0x00E3832F };
     return colors[axis];
+}
+
+ImVec4 text_color(bool error) {
+    if(error) {
+        return error_text_color;
+    }
+    return ImGui::GetStyleColorVec4(ImGuiCol_Text);
 }
 
 bool should_open_context_menu() {
@@ -251,7 +258,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
 
     bool ret = false;
     if(is_valid) {
-        if(const TextureView* img = thumbmail_renderer().thumbmail(id)) {
+        if(const TextureView* img = thumbnail_renderer().thumbnail_img(id)) {
             ret = ImGui::ImageButton("##tex", imgui_platform()->to_ui(*img), button_size);
         } else {
             ret = ImGui::Button(ICON_FA_HOURGLASS_HALF, padded_button_size);
@@ -436,7 +443,7 @@ bool search_bar(const char* text, char* buffer, usize buffer_size) {
     search_bar_state.focussed = imgui_state;
 
     if(!search_bar_state.focussed) {
-        ImGui::InputText(text, buffer, buffer_size);
+        ImGui::InputText(text, buffer, buffer_size, ImGuiInputTextFlags_AutoSelectAll);
         return false;
     }
 
@@ -463,7 +470,7 @@ bool search_bar(const char* text, char* buffer, usize buffer_size) {
             return 0;
         };
 
-        search_bar_state.activated = ImGui::InputText(text, buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory, call_back, &search_bar_state);
+        search_bar_state.activated = ImGui::InputText(text, buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_AutoSelectAll, call_back, &search_bar_state);
     }
 
     if(was_activated_last_frame) {

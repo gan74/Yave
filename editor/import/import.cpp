@@ -1,7 +1,7 @@
 /*******************************
 Copyright (c) 2016-2025 Grégoire Angerand
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
+Permission is hereby granted, free of charge, to any person obtaining as_alb copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
@@ -160,18 +160,8 @@ core::Result<ImageData> import_image(core::Span<u8> image_data, ImageImportFlags
     }
 
     if((flags & ImageImportFlags::Compress) == ImageImportFlags::Compress) {
-        switch(bpp) {
-            case 3:
-                img = compress_bc1(img);
-            break;
-
-            /* case 1:
-                img = compress_bc4(img);
-            break; */
-
-            default:
-                log_msg("Compression is not supported for the given image format", Log::Warning);
-        }
+        const bool normal = (flags & ImageImportFlags::IsNormalMap) == ImageImportFlags::IsNormalMap;
+        img = compress(img, normal ? ImageCompression::BC5 : ImageCompression::BC7);
     }
 
     return core::Ok(std::move(img));
@@ -683,12 +673,18 @@ core::Result<ImageData> ParsedScene::create_image(int index, bool compress) cons
     }
 
     ImageImportFlags flags = ImageImportFlags::None;
-    if(compress && !images[index].as_normal) {
+    if(compress) {
         flags = flags | ImageImportFlags::Compress;
     }
-    if(images[index].as_sRGB) {
+
+    if(images[index].as_sRGB && !images[index].as_normal) {
         flags = flags | ImageImportFlags::ImportAsSRGB;
     }
+
+    if(!images[index].as_sRGB && images[index].as_normal) {
+        flags = flags | ImageImportFlags::IsNormalMap;
+    }
+
     if(images[index].generate_mips) {
         flags = flags | ImageImportFlags::GenerateMipmaps;
     }

@@ -18,7 +18,7 @@ Sampler2D<float> in_depth;
 Sampler2D in_rt0;
 
 [[vk::binding(2)]]
-Sampler2D in_rt1;
+Sampler2D<uint> in_rt1;
 
 [[vk::binding(3)]]
 Sampler2DShadow in_shadows;
@@ -57,7 +57,7 @@ cbuffer Params {
 // -------------------------------- HELPERS --------------------------------
 
 float3 view_direction(Camera camera, float2 uv) {
-    return normalize(camera.position - unproject(uv, 0.5, camera.cur.inv_view_proj));
+    return normalize(camera.position - unproject(uv, 0.5, camera.curr.inv_view_proj));
 }
 
 uint shadow_cascade_index(uint4 indices, float3 world_pos) {
@@ -141,7 +141,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
             in_rt1[coord],
         });
 
-        const float3 world_pos = unproject(in_uv, depth, camera.cur.inv_view_proj);
+        const float3 world_pos = unproject(in_uv, depth, camera.curr.inv_view_proj);
         const float3 view_dir = normalize(camera.position - world_pos);
 
         // directional lights

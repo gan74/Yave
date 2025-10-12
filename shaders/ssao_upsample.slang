@@ -174,7 +174,7 @@ void comp_main() {
     const float2 inv_lo_res = 1.0 / float2(image_size(in_lo_depth).xy);
     const float2 inv_hi_res = 1.0 / float2(image_size(in_hi_depth).xy);
 
-    prefetch(semantics.local_id.x << 1 | semantics.local_id.y << 5, int2(semantics.global_id.xy + semantics.local_id.xy - 2) * inv_lo_res);
+    prefetch(semantics.local_id.x << 1 | semantics.local_id.y << 5, uint2(semantics.global_id.xy + semantics.local_id.xy - 2) * inv_lo_res);
 
     GroupMemoryBarrierWithGroupSync();
 
@@ -208,7 +208,7 @@ void comp_main() {
     const float4 lo_depths = in_lo_depth.Gather(uv);
     const float4 hi_depths = in_hi_depth.Gather(uv);
 
-    const int2 out_coord = int2(semantics.global_id.xy) << 1;
+    const uint2 out_coord = semantics.global_id.xy << 1;
     out_ao[out_coord + int2(-1,  0)] = bilateral_upsample(hi_depths.x, hi_samples.x, lo_depths.xyzw, lo_samples.xyzw);
     out_ao[out_coord + int2( 0,  0)] = bilateral_upsample(hi_depths.y, hi_samples.y, lo_depths.yzwx, lo_samples.yzwx);
     out_ao[out_coord + int2( 0, -1)] = bilateral_upsample(hi_depths.z, hi_samples.z, lo_depths.zwxy, lo_samples.zwxy);

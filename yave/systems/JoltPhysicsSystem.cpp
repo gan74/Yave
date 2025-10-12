@@ -269,7 +269,7 @@ JoltPhysicsSystem::~JoltPhysicsSystem() {
 void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
     _jolt = std::make_unique<JoltData>(&world());
 
-    const auto dep = sched.schedule(ecs::SystemSchedule::Update, "Collect colliders", [this](ecs::EntityGroup<
+    const auto collect_job = sched.schedule(ecs::SystemSchedule::Update, "Collect colliders", [this](ecs::EntityGroup<
             ecs::AnyChanged<ColliderComponent>,
             ecs::AnyChanged<StaticMeshComponent>,
             TransformableComponent
@@ -323,7 +323,7 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
     sched.schedule(ecs::SystemSchedule::Update, "Update physics", [this]() {
         const double dt = _time.reset().to_secs();
         _jolt->update(float(std::min(dt, 0.1)));
-    }, dep);
+    }, collect_job);
 
     sched.schedule(ecs::SystemSchedule::PostUpdate, "Copy transforms", [this](ecs::EntityGroup<
             JoltActiveComponent,

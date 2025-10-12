@@ -28,8 +28,7 @@ namespace yave {
 
 class AssetLoadingContext {
     public:
-        AssetLoadingContext(AssetLoader* loader);
-        AssetLoadingContext(AssetLoader* loader, AssetLoadingFlags flags/* = AssetLoadingFlags::None*/);
+        AssetLoadingContext(AssetLoader* loader, AssetLoadingFlags flags = AssetLoadingFlags::None);
 
         template<typename T>
         inline AssetPtr<T> load(AssetId id);
@@ -39,6 +38,7 @@ class AssetLoadingContext {
 
         const AssetDependencies& dependencies() const;
         AssetLoader* parent() const;
+        AssetLoadingFlags flags() const;
 
     private:
         template<typename T>

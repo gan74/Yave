@@ -98,7 +98,7 @@ core::String fmt_to_owned(std::format_string<Args...> fmt_str, Args&&... args) {
 template<typename T>
 core::String core::String::operator+(const T& r) const {
     core::String l(*this);
-    if constexpr(has_append_v<core::String, T>) {
+    if constexpr(has_append<core::String, T>) {
         l += y_fwd(r);
     } else {
         fmt_into(l, "{}", r);
@@ -117,11 +117,11 @@ concept is_formattable = requires(T& v, std::format_context ctx) {
 
 
 template<typename T, typename C>
-concept Formatable = requires(T t) {
+concept is_formatable = requires(T t) {
     { std::formatter<T, C>{}.parse(std::declval<std::format_parse_context&>()) };
 };
 
-template<typename T, typename C> requires(y::is_iterable_v<T> && !Formatable<T, C>)
+template<typename T, typename C> requires(y::is_iterable<T> && !is_formatable<T, C>)
 struct std::formatter<T, C> : std::formatter<y::element_type_t<T>, C> {
     template<typename Ctx>
     auto format(const T& t, Ctx& ctx) const {

@@ -30,7 +30,7 @@ SOFTWARE.
 #include "Settings.h"
 
 #include <y/core/Span.h>
-#include <y/concurrent/StaticThreadPool.h>
+#include <y/concurrent/JobSystem.h>
 
 #include <memory>
 #include <string_view>
@@ -53,8 +53,8 @@ Settings& app_settings();
 UiManager& ui();
 AssetStore& asset_store();
 AssetLoader& asset_loader();
-ThumbmailRenderer& thumbmail_renderer();
-concurrent::StaticThreadPool& thread_pool();
+ThumbnailRenderer& thumbnail_renderer();
+concurrent::JobSystem& job_system();
 
 const EditorResources& resources();
 
@@ -62,7 +62,7 @@ void save_world();
 void load_world();
 void new_world();
 EditorWorld& current_world();
-Scene& current_scene();
+const Scene& current_scene();
 
 void set_scene_view(SceneView* scene);
 void unset_scene_view(SceneView* scene);
@@ -76,6 +76,19 @@ const SceneView& scene_view();
 DebugValues& debug_values();
 DirectDraw& debug_drawer();
 
+
+
+Widget* focussed_widget();
+Widget* last_focussed_widget();
+
+template<typename T>
+T* focussed_widget_typed() {
+    return dynamic_cast<T*>(focussed_widget());
+}
+template<typename T>
+T* last_focussed_widget_typed() {
+    return dynamic_cast<T*>(last_focussed_widget());
+}
 
 
 
@@ -145,6 +158,7 @@ void register_action(EditorAction* action);
 #define editor_action_shortcut(name, shortcut, func, ...)   editor_action_(name, "", EditorAction::None, shortcut, func, nullptr, __VA_ARGS__)
 #define editor_action_desc(name, desc, func, ...)           editor_action_(name, desc, EditorAction::None, /* no shortcut */, func, nullptr, __VA_ARGS__)
 #define editor_action_contextual(name, func, enabled, ...)  editor_action_(name, "", EditorAction::Contextual, /* no shortcut */, func, enabled, __VA_ARGS__)
+#define editor_action_enable(name, func, enabled, ...)      editor_action_(name, "", EditorAction::None, /* no shortcut */, func, enabled, __VA_ARGS__)
 
 #define editor_action(name, func, ...)  editor_action_desc(name, "", func, __VA_ARGS__)
 

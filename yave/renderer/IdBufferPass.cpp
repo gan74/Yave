@@ -21,16 +21,42 @@ SOFTWARE.
 **********************************/
 
 #include "IdBufferPass.h"
+#include "DefaultRenderer.h"
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 
+#include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
 namespace yave {
+
+TypedReadBackBuffer<shader::PickingData> picking_pass(FrameGraph& framegraph, const IdBufferPass& id, const math::Vec2ui& coord) {
+    y_profile();
+
+    TypedReadBackBuffer<shader::PickingData> buffer(1);
+
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Picking pass");
+
+    builder.add_uniform_input(id.depth);
+    builder.add_uniform_input(id.id);
+    builder.add_descriptor_binding(Descriptor(buffer));
+    builder.add_inline_input(coord);
+
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        const auto& program = device_resources()[DeviceResources::PickingProgram];
+        recorder.dispatch(program, math::Vec3ui(1), self->descriptor_set());
+    });
+
+    return buffer;
+}
+
+IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const DefaultRenderer& renderer) {
+    return IdBufferPass::create(framegraph, renderer.camera, renderer.visibility, framegraph.image_size(renderer.gbuffer.depth));
+}
 
 IdBufferPass IdBufferPass::create(FrameGraph& framegraph, const CameraBufferPass& camera, const SceneVisibilitySubPass& visibility, const math::Vec2ui& size) {
     static constexpr ImageFormat depth_format = VK_FORMAT_D32_SFLOAT;

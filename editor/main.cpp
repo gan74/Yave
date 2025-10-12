@@ -32,6 +32,7 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
+#include <y/concurrent/JobSystem.h>
 
 #ifdef Y_OS_WIN
 #include <windows.h>
@@ -90,6 +91,62 @@ static Instance create_instance() {
 
 
 int main(int argc, char** argv) {
+    /*{
+        y_profile();
+
+        concurrent::JobSystem js;
+        std::atomic<u32> counter = 0;
+        core::Vector<concurrent::JobSystem::JobHandle> handles;
+
+        auto h = js.schedule([&] {
+            y_profile();
+            core::Duration::sleep(core::Duration::seconds(2));
+            log_msg(fmt("hello from {}", concurrent::thread_name()));
+            ++counter;
+        });
+
+        y_debug_assert(!counter);
+        y_debug_assert(!js.is_empty());
+
+        handles << h;
+
+        {
+            y_profile_zone("Level 1");
+            for(usize i = 0; i != 100; ++i) {
+                handles << js.schedule([&] {
+                    y_profile();
+                    // core::Duration::sleep(core::Duration::microseconds(2));
+                    log_msg(fmt("hello after waiting from {}", concurrent::thread_name()));
+                    ++counter;
+                }, h);
+            }
+        }
+
+        {
+            y_profile_zone("Level 2");
+            for(usize i = 0; i != 100; ++i) {
+                js.schedule([&] {
+                    y_profile();
+                    // core::Duration::sleep(core::Duration::microseconds(20));
+                    log_msg(fmt("hello after waiting TWICE from {}", concurrent::thread_name()));
+                    ++counter;
+                }, handles);
+            }
+        }
+
+        log_msg("done scheduling");
+
+        log_msg("waiting...");
+        h.wait();
+        log_msg("done...");
+        y_debug_assert(h.is_finished());
+        y_debug_assert(counter >= 1);
+    }
+    log_msg("shutting down...");
+
+    return 0;*/
+
+
     concurrent::set_thread_name("Main thread");
 
     parse_args(argc, argv);
@@ -98,13 +155,14 @@ int main(int argc, char** argv) {
         log_msg("Unable to setup crash handler", Log::Warning);
     }
 
-    Instance instance = create_instance();
-
-    init_device(instance);
-    y_defer(destroy_device());
-
-
     {
+        Instance instance = create_instance();
+
+        init_device(instance);
+        y_defer(destroy_device());
+
+
+
         ImGuiPlatform platform(multi_viewport);
         init_editor(&platform, Settings::load());
         y_defer(destroy_editor());

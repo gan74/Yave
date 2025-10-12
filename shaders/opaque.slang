@@ -49,7 +49,7 @@ VertexStageOut vert_main(StdVertexStageIn in) {
 
     const float3x3 model = float3x3(transformable.current);
 
-    const float4 current_position = mul(camera.cur.view_proj, mul(transformable.current, float4(in.position, 1.0)));
+    const float4 current_position = mul(camera.curr.view_proj, mul(transformable.current, float4(in.position, 1.0)));
     const float4 last_position = mul(camera.prev.view_proj, mul(transformable.last, float4(in.position, 1.0)));
 
     const float3 in_normal = unpack_2_10_10_10(in.packed_normal_tangent_sign.x).xyz;
@@ -106,11 +106,11 @@ float metalic_from_specular(float3 diffuse, float3 specular) {
 PixelStageOut frag_main(PixelStageIn in) {
     const MaterialData material = materials[transform_material_indices[in.instance_index].y];
 
-    const Sampler2D albedo_tex = all_textures[material.texture_indices[uint(TextureSlots::Albedo)]];
-    const Sampler2D normal_tex = all_textures[material.texture_indices[uint(TextureSlots::Normal)]];
-    const Sampler2D emissive_tex = all_textures[material.texture_indices[uint(TextureSlots::Emissive)]];
-    const Sampler2D metal_rough_spec_tex = all_textures[material.texture_indices[uint(TextureSlots::MetallicRoughnessSpecular)]];
-    const Sampler2D spec_color_tex = all_textures[material.texture_indices[uint(TextureSlots::SpecularColor)]];
+    const Sampler2D albedo_tex = all_textures[NonUniformResourceIndex(material.texture_indices[uint(TextureSlots::Albedo)])];
+    const Sampler2D normal_tex = all_textures[NonUniformResourceIndex(material.texture_indices[uint(TextureSlots::Normal)])];
+    const Sampler2D emissive_tex = all_textures[NonUniformResourceIndex(material.texture_indices[uint(TextureSlots::Emissive)])];
+    const Sampler2D metal_rough_spec_tex = all_textures[NonUniformResourceIndex(material.texture_indices[uint(TextureSlots::MetallicRoughnessSpecular)])];
+    const Sampler2D spec_color_tex = all_textures[NonUniformResourceIndex(material.texture_indices[uint(TextureSlots::SpecularColor)])];
 
     const float3 normal = unpack_normal_map(normal_tex.Sample(in.uv).xy);
     const float3 mapped_front_face_normal = normal.x * in.tangent + normal.y * in.bitangent + normal.z * in.normal;

@@ -17,7 +17,7 @@ Sampler2D<float> in_depth;
 Sampler2D in_rt0;
 
 [[vk::binding(2)]]
-Sampler2D in_rt1;
+Sampler2D<uint> in_rt1;
 
 [[vk::binding(3)]]
 Sampler2DShadow in_shadows;
@@ -71,12 +71,12 @@ uint2 dispatch_range(uint num) {
 
 void compute_tile_culling_info(float2 image_size) {
     const float2 corner_uv = (semantics.work_group_id.xy * semantics.work_group_size.xy) / image_size;
-    const float3 corner_unproj = unproject_ndc(float3(corner_uv * 2.0 - 1.0, 1.0), camera.cur.inv_view_proj);
+    const float3 corner_unproj = unproject_ndc(float3(corner_uv * 2.0 - 1.0, 1.0), camera.curr.inv_view_proj);
     const float3 corner_dir = normalize(corner_unproj - camera.position);
 
 
     const float2 center_uv = ((semantics.work_group_id.xy + 0.5) * semantics.work_group_size.xy) / image_size;
-    const float3 unproj = unproject_ndc(float3(center_uv * 2.0 - 1.0, 1.0), camera.cur.inv_view_proj);
+    const float3 unproj = unproject_ndc(float3(center_uv * 2.0 - 1.0, 1.0), camera.curr.inv_view_proj);
     tile_dir = normalize(unproj - camera.position);
 
     const float tile_cos_alpha = dot(tile_dir, corner_dir);
@@ -222,13 +222,13 @@ void cull_lights() {
 [shader("compute")]
 [numthreads(16, 16)]
 void comp_main() {
-    const int2 coord = int2(semantics.global_id.xy);
+    const uint2 coord = semantics.global_id.xy;
     const float2 image_size = float2(image_size(out_color).xy);
     const float2 uv = (semantics.global_id.xy + 0.5) / image_size;
 
     const float depth = in_depth[coord];
 
-    const float3 world_pos = unproject(uv, depth, camera.cur.inv_view_proj);
+    const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
 
     float3 view_dir = (camera.position - world_pos);
     const float view_dist = length(view_dir);

@@ -31,13 +31,35 @@ void Scene::update_tlas() {
 
     y_profile();
 
-    auto instances = core::Vector<BLASInstance>::with_capacity(_meshes.size());
+    auto instances = core::Vector<BLASInstance>::with_capacity(_meshes.size() * 2);
 
     {
         y_profile_zone("gather instances");
-        for(const StaticMeshObject& mesh : _meshes) {
-            if(const BLAS* blas = mesh.component.blas()) {
-                instances << TLAS::make_instance(transform(mesh), *blas);
+        for(const StaticMeshObject& mesh_obj : _meshes) {
+            if(const StaticMesh* mesh = mesh_obj.component.mesh().get()) {
+                const math::Transform<>& tr = transform(mesh_obj);
+
+                const auto blases = mesh->blases();
+                const auto materials = mesh_obj.component.materials();
+                if(materials.is_empty()) {
+                    continue;
+                }
+                if(materials.size() == 1) {
+                    if(const Material* material = materials[0].get()) {
+                        const u32 index = material->draw_data().index();
+                        for(usize i = 0; i != blases.size(); ++i) {
+                            instances << TLAS::make_instance(tr, blases[i], index);
+                        }
+                    }
+                } else {
+                    y_debug_assert(blases.size() == materials.size());
+                    for(usize i = 0; i != blases.size(); ++i) {
+                        if(const Material* material = materials[i].get()) {
+                            instances << TLAS::make_instance(tr, blases[i], material->draw_data().index());
+                        }
+                    }
+                }
+                
             }
         }
     }

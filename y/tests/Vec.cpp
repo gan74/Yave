@@ -28,7 +28,7 @@ namespace {
 using namespace y;
 using namespace y::math;
 
-static_assert(is_iterable_v<Vec3>);
+static_assert(is_iterable<Vec3>);
 
 y_test_func("Vec creation") {
     const Vec<2> a(1, 2);

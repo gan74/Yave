@@ -57,6 +57,7 @@ class BLAS : public AccelerationStructure {
         BLAS() = default;
 
         BLAS(const MeshDrawData& mesh);
+        BLAS(const MeshDrawData& mesh, const MeshDrawCommand& draw_cmd);
 };
 
 class TLAS : public AccelerationStructure {
@@ -64,7 +65,7 @@ class TLAS : public AccelerationStructure {
         TLAS() = default;
         TLAS(core::Span<BLASInstance> instances);
 
-        static BLASInstance make_instance(const math::Transform<> &tr, const BLAS &blas);
+        static BLASInstance make_instance(const math::Transform<> &tr, const BLAS &blas, u32 index = 0);
 };
 
 }

@@ -86,7 +86,7 @@ class WritableArchive final {
     using size_type = detail::size_type;
 
     template<typename T>
-    static constexpr bool need_size_patch = has_serde3_v<T>;
+    static constexpr bool need_size_patch = has_serde3<T>;
 
     static constexpr usize buffer_size = 64 * 1024;
 
@@ -184,28 +184,27 @@ class WritableArchive final {
         inline Result serialize_one(NamedObject<T> non_const_object) {
             const auto object = non_const_object.make_const_ref();
 
-            if constexpr(!has_no_serde3_v<T>) { 
-                if constexpr(is_property_v<T>) {
-                    return serialize_property(object);
-                } else if constexpr(has_serde3_v<T>) {
-                    return serialize_object(object);
-                } else if constexpr(has_serde3_ptr_poly_v<T> || has_serde3_poly_v<T>) {
-                    return serialize_poly(object);
-                } else if constexpr(is_tuple_v<T>) {
-                    return serialize_tuple(object);
-                } else if constexpr(is_range_v<T>) {
-                    return serialize_range(object);
-                } else if constexpr(is_pod_v<T>) {
-                    return serialize_pod(object);
-                } else if constexpr(is_std_ptr_v<T>) {
-                    return serialize_ptr(object);
-                } else if constexpr(is_iterable_v<T>) {
-                    return serialize_collection(object);
-                } else {
-                    return write_header(object);
-                }
+            // We might have poly object with no serde.
+            // static_assert(!has_no_serde3<T>, "Type has serialization disabled");
+
+            if constexpr(is_property<T>) {
+                return serialize_property(object);
+            } else if constexpr(has_serde3<T>) {
+                return serialize_object(object);
+            } else if constexpr(has_serde3_ptr_poly<T> || has_serde3_poly<T>) {
+                return serialize_poly(object);
+            } else if constexpr(is_tuple<T>) {
+                return serialize_tuple(object);
+            } else if constexpr(is_range<T>) {
+                return serialize_range(object);
+            } else if constexpr(is_pod<T>) {
+                return serialize_pod(object);
+            } else if constexpr(is_std_ptr<T>) {
+                return serialize_ptr(object);
+            } else if constexpr(is_iterable<T>) {
+                return serialize_collection(object);
             } else {
-                return core::Ok(Success::Full);
+                return write_header(object);
             }
         }
 
@@ -218,10 +217,9 @@ class WritableArchive final {
 
 
         // ------------------------------- PTR -------------------------------
-        template<typename T>
+        template<is_std_ptr T>
         inline Result serialize_ptr(NamedObject<T> object) {
             static_assert(std::is_const_v<T>);
-            static_assert(is_std_ptr_v<T>);
 
             if(object.object == nullptr) {
                 return write_one(u8(0));
@@ -242,10 +240,9 @@ class WritableArchive final {
             return serialize_collection(object);
         }
 
-        template<typename T>
+        template<is_iterable T>
         inline Result serialize_collection(NamedObject<T> object) {
             static_assert(std::is_const_v<T>);
-            static_assert(is_iterable_v<T>);
 
             if constexpr(detail::use_collection_fast_path<std::remove_cvref_t<T>>) {
                 y_try(write_one(size_type(object.object.size())));
@@ -273,7 +270,7 @@ class WritableArchive final {
         template<typename T>
         inline Result serialize_poly(NamedObject<T> object) {
             static_assert(std::is_const_v<T>);
-            static_assert(is_std_ptr_v<T> || std::is_pointer_v<T>);
+            static_assert(is_std_ptr<T> || std::is_pointer_v<T>);
 
             if(object.object == nullptr) {
                 return write_one(size_type(0));
@@ -282,15 +279,15 @@ class WritableArchive final {
             SizePatch size_patch{tell(), 0};
             y_try(write_one(size_type(0)));
 
-            if constexpr(is_std_ptr_v<T>) {
-                static_assert(has_serde3_ptr_poly_v<T>);
+            if constexpr(is_std_ptr<T>) {
+                static_assert(has_serde3_ptr_poly<T>);
 
                 y_try(write_one(object.object->_y_serde3_poly_type_id()));
                 y_try(object.object->_y_serde3_poly_serialize(*this));
 
             } else {
-                static_assert(has_serde3_poly_v<T>);
-                static_assert(!has_serde3_v<T>);
+                static_assert(has_serde3_poly<T>);
+                static_assert(!has_serde3<T>);
 
                 y_try(write_one(object.object._y_serde3_poly_type_id()));
                 y_try(object.object._y_serde3_poly_serialize(*this));
@@ -304,10 +301,9 @@ class WritableArchive final {
 
 
         // ------------------------------- POD -------------------------------
-        template<typename T>
+        template<is_pod T>
         inline Result serialize_pod(NamedObject<T> object) {
             static_assert(std::is_const_v<T>);
-            static_assert(is_pod_v<T>);
             static_assert(!std::is_pointer_v<T>);
 
             {
@@ -323,7 +319,7 @@ class WritableArchive final {
         template<typename T>
         inline Result serialize_object(NamedObject<T> object) {
             static_assert(std::is_const_v<T>);
-            static_assert(!has_serde3_ptr_poly_v<T>);
+            static_assert(!has_serde3_ptr_poly<T>);
 
             {
                 y_try(write_header(object));
@@ -556,35 +552,36 @@ class ReadableArchive final {
 
         template<typename T>
         inline Result deserialize_one(NamedObject<T> object) {
+            // We might have poly object with no serde.
+            // static_assert(!has_no_serde3<T>, "Type has serialization disabled");
+
             Result res = core::Ok(Success::Full);
 
-            if constexpr(!has_no_serde3_v<T>) {
-                if constexpr(is_property_v<T>) {
-                    res = deserialize_property(object);
-                } else if constexpr(has_serde3_v<T>) {
-                    res = deserialize_object(object);
-                } else if constexpr(has_serde3_ptr_poly_v<T> || has_serde3_poly_v<T>) {
-                    res = deserialize_poly(object);
-                } else if constexpr(is_tuple_v<T>) {
-                    res = deserialize_tuple(object);
-                } else if constexpr(is_range_v<T>) {
-                    res = deserialize_range(object);
-                } else if constexpr(is_pod_v<T>) {
-                    res = deserialize_pod(object);
-                } else if constexpr(is_std_ptr_v<T>) {
-                    res = deserialize_ptr(object);
-                } else if constexpr(is_iterable_v<T>) {
-                    res = deserialize_collection(object);
-                } else {
-                    res = check_header(object);
-                }
+            if constexpr(is_property<T>) {
+                res = deserialize_property(object);
+            } else if constexpr(has_serde3<T>) {
+                res = deserialize_object(object);
+            } else if constexpr(has_serde3_ptr_poly<T> || has_serde3_poly<T>) {
+                res = deserialize_poly(object);
+            } else if constexpr(is_tuple<T>) {
+                res = deserialize_tuple(object);
+            } else if constexpr(is_range<T>) {
+                res = deserialize_range(object);
+            } else if constexpr(is_pod<T>) {
+                res = deserialize_pod(object);
+            } else if constexpr(is_std_ptr<T>) {
+                res = deserialize_ptr(object);
+            } else if constexpr(is_iterable<T>) {
+                res = deserialize_collection(object);
+            } else {
+                res = check_header(object);
             }
 
             if(res.is_ok()) {
-                if constexpr(has_serde3_post_deser_v<T>) {
+                if constexpr(has_serde3_post_deser<T>) {
                     object.object.post_deserialize();
                 }
-                if constexpr(has_serde3_post_deser_poly_v<T>) {
+                if constexpr(has_serde3_post_deser_poly<T>) {
                     object.object.post_deserialize_poly();
                 }
             }
@@ -608,10 +605,8 @@ class ReadableArchive final {
 
 
         // ------------------------------- PTR -------------------------------
-        template<typename T>
+        template<is_std_ptr T>
         inline Result deserialize_ptr(NamedObject<T> object) {
-            static_assert(is_std_ptr_v<T>);
-
             u8 non_null = 0;
             y_try(read_one(non_null));
 
@@ -632,15 +627,14 @@ class ReadableArchive final {
             return deserialize_collection<T, true>(object);
         }
 
-        template<typename T, bool IsRange = false>
+        template<is_iterable T, bool IsRange = false>
         inline Result deserialize_collection(NamedObject<T> object) {
-            static_assert(is_iterable_v<T>);
             static_assert(!std::is_const_v<T>);
 
             if constexpr(!IsRange) {
-                if constexpr(has_make_empty_v<T>) {
+                if constexpr(has_make_empty<T>) {
                     object.object.make_empty();
-                } else if constexpr(has_clear_v<T>) {
+                } else if constexpr(has_clear<T>) {
                     object.object.clear();
                 } else {
                     object.object = T();
@@ -662,10 +656,10 @@ class ReadableArchive final {
                     if(collection_size) {
                         y_try_status(check_header(y_create_named_object(*object.object.begin(), detail::collection_version_string)));
                         if constexpr(!IsRange) {
-                            if constexpr(has_resize_v<T>) {
+                            if constexpr(has_resize<T>) {
                                 object.object.resize(collection_size);
                             } else {
-                                if constexpr(has_reserve_v<T>) {
+                                if constexpr(has_reserve<T>) {
                                     object.object.reserve(collection_size);
                                 }
                                 while(object.object.size() < collection_size) {
@@ -679,22 +673,22 @@ class ReadableArchive final {
                     }
 
                 } else {
-                    if constexpr(has_reserve_v<T>) {
+                    if constexpr(has_reserve<T>) {
                         object.object.reserve(collection_size);
                     }
 
-                    if constexpr(has_emplace_back_v<T>) {
+                    if constexpr(has_emplace_back<T>) {
                         for(size_type i = 0; i != collection_size; ++i) {
                             object.object.emplace_back();
                             y_try_status(deserialize_one(y_create_named_object(object.object.last(), detail::collection_version_string)));
                         }
-                    } else if constexpr(has_resize_v<T>) {
+                    } else if constexpr(has_resize<T>) {
                         object.object.resize(collection_size);
                         for(size_type i = 0; i != collection_size; ++i) {
                             y_try_status(deserialize_one(y_create_named_object(object.object[usize(i)], detail::collection_version_string)));
                         }
                     } else {
-                        if constexpr(is_array_v<T> || IsRange) {
+                        if constexpr(is_array<T> || IsRange) {
                             for(size_type i = 0; i != collection_size; ++i) {
                                 y_try_status(deserialize_one(y_create_named_object(object.object[i], detail::collection_version_string)));
                             }
@@ -709,7 +703,7 @@ class ReadableArchive final {
                     }
                 }
 
-                if constexpr(has_size_v<T>) {
+                if constexpr(has_size<T>) {
                     if(object.object.size() != collection_size) {
                         return core::Err(Error(ErrorType::SizeError, object.name.data()));
                     }
@@ -736,8 +730,8 @@ class ReadableArchive final {
                 y_try(read_one(type_id));
 
                 const bool propagate_poly_failure = (_flags & DeserializationFlags::DontPropagatePolyFailure) == DeserializationFlags::None;
-                if constexpr(is_std_ptr_v<T>) {
-                    static_assert(!has_serde3_v<T>);
+                if constexpr(is_std_ptr<T>) {
+                    static_assert(!has_serde3<T>);
 
                     using element_type = typename T::element_type;
                     const auto* poly_type = element_type::_y_serde3_poly_base.find_id(type_id);
@@ -758,8 +752,8 @@ class ReadableArchive final {
                         return core::Ok(Success::Partial);
                     }
                 } else {
-                    static_assert(has_serde3_poly_v<T>);
-                    static_assert(!has_serde3_v<T>);
+                    static_assert(has_serde3_poly<T>);
+                    static_assert(!has_serde3<T>);
 
                     if(type_id != object.object._y_serde3_poly_type_id()) {
                         return core::Err(Error(ErrorType::UnknownPolyError, object.name.data()));
@@ -768,12 +762,12 @@ class ReadableArchive final {
                     return object.object._y_serde3_poly_deserialize(*this);
                 }
             } else {
-                if constexpr(is_std_ptr_v<T>) {
-                    static_assert(!has_serde3_v<T>);
+                if constexpr(is_std_ptr<T>) {
+                    static_assert(!has_serde3<T>);
                     object.object = nullptr;
                 } else {
-                    static_assert(has_serde3_poly_v<T>);
-                    static_assert(!has_serde3_v<T>);
+                    static_assert(has_serde3_poly<T>);
+                    static_assert(!has_serde3<T>);
                     return core::Err(Error(ErrorType::UnknownPolyError, object.name.data()));
                 }
 
@@ -783,9 +777,8 @@ class ReadableArchive final {
 
 
         // ------------------------------- POD -------------------------------
-        template<typename T>
+        template<is_pod T>
         inline Result deserialize_pod(NamedObject<T> object) {
-            static_assert(is_pod_v<T>);
             static_assert(!std::is_pointer_v<T>);
 
             detail::ObjectHeader header;
@@ -805,10 +798,9 @@ class ReadableArchive final {
 
 
         // ------------------------------- OBJECT -------------------------------
-        template<typename T>
+        template<has_serde3 T>
         inline Result deserialize_object(NamedObject<T> object) {
-            static_assert(has_serde3_v<T>);
-            static_assert(!has_serde3_ptr_poly_v<T>);
+            static_assert(!has_serde3_ptr_poly<T>);
 
             detail::ObjectHeader header;
             y_try(read_header(header));
@@ -997,7 +989,7 @@ namespace detail {
 template<typename T>
 Result serialize_one(WritableArchive& arc, const T& t) {
     unused(arc, t);
-    if constexpr(has_no_serde3_v<T>) {
+    if constexpr(has_no_serde3<T>) {
         return core::Ok(Success::Full);
     } else {
         return arc.serialize(t);
@@ -1007,7 +999,7 @@ Result serialize_one(WritableArchive& arc, const T& t) {
 template<typename T>
 Result deserialize_one(ReadableArchive& arc, T& t) {
     unused(arc, t);
-    if constexpr(has_no_serde3_v<T>) {
+    if constexpr(has_no_serde3<T>) {
         return core::Ok(Success::Full);
     } else {
         return arc.deserialize(t);

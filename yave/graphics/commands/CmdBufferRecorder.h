@@ -113,7 +113,7 @@ class CmdBufferRecorderBase : NonMovable {
         CmdQueue* queue() const;
 
         VkCommandBuffer vk_cmd_buffer() const;
-        ResourceFence resource_fence() const;
+        const CmdBufferFence& create_fence();
 
         bool is_inside_renderpass() const;
 

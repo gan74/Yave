@@ -12,8 +12,7 @@ enum TextureSlots : uint32_t {
 
 enum TAAFeatureBits : uint32_t {
     ClampingBit                 = 0x01,
-    MatchPrevBit                = 0x02,
-    WeightedClampBit            = 0x04,
+    DenoiseBit                  = 0x02,
 };
 
 enum TAAMask : uint32_t {
@@ -36,7 +35,7 @@ struct CameraMatrices {
 };
 
 struct Camera {
-    CameraMatrices cur;
+    CameraMatrices curr;
     CameraMatrices prev;
 
     float2 jitter;
@@ -147,6 +146,11 @@ struct AtmosphereParams {
 
     float3 sun_color;
     float density_falloff;
+};
+
+struct PickingData {
+    float depth;
+    uint entity_index;
 };
 
 #endif

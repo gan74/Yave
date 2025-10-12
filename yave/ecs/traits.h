@@ -118,19 +118,19 @@ template<typename T>
 using discard_query_qualifiers_t = typename component_type<T>::discard_query_quals;
 
 template<typename T>
-static constexpr bool is_component_changed_v = component_type<T>::changed;
+concept is_component_changed = component_type<T>::changed;
 
 template<typename T>
-static constexpr bool is_component_filter_any_v = component_type<T>::any;
+concept is_component_filter_any = component_type<T>::any;
 
 template<typename T>
-static constexpr bool is_component_const_v = std::is_const_v<typename component_type<T>::type>;
+concept is_component_const = std::is_const_v<typename component_type<T>::type>;
 
 template<typename T>
-static constexpr bool is_component_mutable_v = !is_component_const_v<T>;
+concept is_component_mutable = !is_component_const<T>;
 
 template<typename T>
-static constexpr bool is_component_deleted_v = component_type<T>::deleted;
+concept is_component_deleted = component_type<T>::deleted;
 
 }
 

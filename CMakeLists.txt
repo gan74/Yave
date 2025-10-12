@@ -144,13 +144,14 @@ file(GLOB_RECURSE YAVE_FILES
     "yave/*.cpp"
 )
 
-set(TRACY_FILES
-    "external/tracy/public/TracyClient.cpp"
-)
-
 set(SPIRV_REFLECT_FILES
     "external/spirv_reflect/spirv_reflect.c"
     "external/spirv_reflect/spirv_reflect.h"
+)
+
+set(BC7ENC_FILES
+    "external/bc7enc_rdo/rgbcx.cpp"
+    "external/bc7enc_rdo/bc7enc.cpp"
 )
 
 # Editor files
@@ -228,21 +229,20 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "copy.slang" "")
     add_slang_shader(${SHADER_TARGET} "screen.slang" "")
     add_slang_shader(${SHADER_TARGET} "tonemap.slang" "")
-    add_slang_shader(${SHADER_TARGET} "temporal_mask.slang" "")
-    add_slang_shader(${SHADER_TARGET} "taa_simple.slang" "")
+
     add_slang_shader(${SHADER_TARGET} "taa_resolve.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "denoise.slang" "")
+    add_slang_shader(${SHADER_TARGET} "picking.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "rtao.slang" "")
     add_slang_shader(${SHADER_TARGET} "filter_ao.slang" "")
 
-    add_slang_shader(${SHADER_TARGET} "basic_rt.slang" "")
+    add_slang_shader(${SHADER_TARGET} "rt.slang" "")
 endfunction(build_engine_shaders)
 
 function(build_editor_shaders SHADER_TARGET)
-    add_slang_shader(${SHADER_TARGET} "editor/depth_alpha.slang" "")
-    add_slang_shader(${SHADER_TARGET} "editor/picking.slang" "")
+    add_slang_shader(${SHADER_TARGET} "editor/thumbnail.slang" "")
     add_slang_shader(${SHADER_TARGET} "editor/imgui.slang" "")
     add_slang_shader(${SHADER_TARGET} "editor/selection.slang" "")
     add_slang_shader(${SHADER_TARGET} "editor/engine_view.slang" "")
@@ -261,24 +261,17 @@ if(YAVE_BUILD_YAVE)
     add_library(yave STATIC ${YAVE_FILES} ${SPIRV_REFLECT_FILES} ${SHADER_FILES} ${SHADER_LIBS})
 
     if(UNIX)
-        target_link_libraries(yave xcb)
+        target_link_libraries(yave PRIVATE xcb)
     endif()
 
     if(YAVE_TRACY_PROFILING)
-        add_library(tracy STATIC ${TRACY_FILES})
-        if(WIN32)
-            target_link_libraries(tracy ws2_32 dbghelp advapi32 user32)
-        endif()
-        target_compile_options(tracy PUBLIC "-DTRACY_ENABLE")
-        target_link_libraries(yave tracy)
+        option(TRACY_ENABLE "" ON)
+        add_subdirectory(external/tracy)
+        target_link_libraries(yave PUBLIC Tracy::TracyClient)
     endif()
 
-    target_link_libraries(yave y luajit Jolt)
-
-    if(NOT MSVC)
-        target_link_libraries(yave stdc++fs)
-    endif()
-
+    target_link_libraries(yave PUBLIC y luajit Jolt)
+    
     add_custom_target(shaders)
     add_custom_target(shaders_optim)
     build_engine_shaders(shaders)
@@ -291,11 +284,14 @@ if(YAVE_BUILD_EDITOR)
     add_library(imgui ${IMGUI_FILES})
     target_include_directories(imgui PRIVATE external/imgui)
 
+    add_library(bc7enc ${BC7ENC_FILES})
+    target_include_directories(bc7enc PRIVATE external/bc7enc_rdo)
+
     add_executable(editor ${EDITOR_FILES} ${EDITOR_EXTERNAL_FILES})
 
     build_editor_shaders(shaders)
     add_dependencies(editor shaders)
 
-    target_link_libraries(editor yave imgui)
+    target_link_libraries(editor yave imgui bc7enc)
 endif()
 

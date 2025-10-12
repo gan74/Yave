@@ -74,7 +74,7 @@ class ImageBase : NonCopyable {
         VkHandle<VkImageView> _view;
 };
 
-static_assert(is_safe_base<ImageBase>::value);
+static_assert(is_safe_base<ImageBase>);
 
 template<ImageUsage Usage, ImageType Type = ImageType::TwoD>
 class Image : public ImageBase {

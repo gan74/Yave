@@ -296,6 +296,7 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
             }
 
             y_profile_zone("vkQueueSubmit");
+            y_profile_msg(fmt_c_str("Waiting for {} semaphores", wait_count));
             vk_check(vkQueueSubmit(queue, 1, &submit_info, fence));
         });
     }

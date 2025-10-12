@@ -48,8 +48,9 @@ class StaticMesh : NonCopyable {
 
         const MeshDrawData& draw_data() const;
         const MeshDrawCommand& draw_command() const;
-        const core::Span<MeshDrawCommand> sub_meshes() const;
-        
+        core::Span<MeshDrawCommand> sub_meshes() const;
+        core::Span<BLAS> blases() const;
+
         const MeshTriangleData& triangle_data() const;
 
         float radius() const;
@@ -58,6 +59,7 @@ class StaticMesh : NonCopyable {
     private:
         MeshDrawData _draw_data = {};
         core::FixedArray<MeshDrawCommand> _sub_meshes;
+        std::unique_ptr<BLAS[]> _blases;
         AABB _aabb;
 
         MeshTriangleData _triangle_data;
