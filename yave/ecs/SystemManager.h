@@ -43,26 +43,46 @@ enum class SystemSchedule {
     Max
 };
 
+class SystemJobHandle {
+    public:
+        SystemJobHandle() = default;
+
+        bool is_valid() const {
+            return _handle != u32(-1);
+        }
+
+    private:
+        friend class SystemScheduler;
+        friend class SystemManager;
+
+        SystemJobHandle(u32 h) : _handle(h) {
+        }
+
+        u32 _handle = u32(-1);
+};
+
 class SystemScheduler : NonMovable {
     public:
-
         struct FirstTime {
             bool value = false;
         };
 
     public:
-        SystemScheduler(System* sys, EntityWorld* world);
+        SystemScheduler(System* sys, SystemManager* manager, EntityWorld* world);
 
         template<typename Fn>
-        void schedule(SystemSchedule sched, core::String name, Fn&& func) {
+        SystemJobHandle schedule(SystemSchedule sched, core::String name, Fn&& func, SystemJobHandle dep = {}) {
             auto& s = _schedules[usize(sched)];
 
-            s.tasks.emplace_back(std::move(name), [this, func]() {
+            const SystemJobHandle handle = create_job_handle();
+
+            s.tasks.emplace_back(std::move(name), handle, dep, [this, func]() {
                 std::array<ArgumentResolver, function_traits<Fn>::arg_count> args;
                 std::fill(args.begin(), args.end(), this);
                 std::apply(func, args);
             });
 
+            return handle;
         }
 
     private:
@@ -85,6 +105,8 @@ class SystemScheduler : NonMovable {
 
         struct Task {
             core::String name;
+            SystemJobHandle handle;
+            SystemJobHandle wait_for;
             std::function<void()> func;
         };
 
@@ -92,9 +114,12 @@ class SystemScheduler : NonMovable {
             core::Vector<Task> tasks;
         };
 
+        SystemJobHandle create_job_handle();
+
         std::array<Schedule, usize(SystemSchedule::Max)> _schedules;
 
         System* _system = nullptr;
+        SystemManager* _manager = nullptr;
         EntityWorld* _world = nullptr;
 
         TickId _first_tick;
@@ -103,12 +128,14 @@ class SystemScheduler : NonMovable {
 
 
 
-class SystemManager : NonCopyable {
+class SystemManager : NonMovable {
     public:
         SystemManager(EntityWorld* world);
 
         void run_schedule_seq() const;
         void run_schedule_mt(concurrent::JobSystem& job_system) const;
+
+        SystemJobHandle create_job_handle();
 
         void reset() {
             _schedulers.make_empty();
@@ -153,13 +180,15 @@ class SystemManager : NonCopyable {
             return nullptr;
         }
 
+
     private:
-        void run_seq(SystemSchedule schedule) const;
+        void run_stage_seq(SystemSchedule schedule) const;
 
         void setup_system(System *system);
 
         core::Vector<std::unique_ptr<SystemScheduler>> _schedulers;
         core::Vector<std::unique_ptr<System>> _systems;
+        u32 _next_handle = 0;
 
         EntityWorld* _world = nullptr;
 };
