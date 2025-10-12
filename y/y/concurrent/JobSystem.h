@@ -49,7 +49,6 @@ class JobSystem : NonMovable {
             JobFunc func;
             std::atomic<u32> dependencies = 0;
 
-            std::mutex lock;
             core::SmallVector<std::shared_ptr<JobData>> outgoing_deps;
             std::atomic<bool> finished = false;
 
@@ -59,6 +58,9 @@ class JobSystem : NonMovable {
     public:
         class JobHandle {
             public:
+                JobHandle() = default;
+
+                bool is_empty() const;
                 bool is_finished() const;
 
                 void wait() const;

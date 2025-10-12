@@ -47,16 +47,25 @@ SystemScheduler::ArgumentResolver::operator SystemScheduler::FirstTime() const {
     return FirstTime { _parent->_world->tick_id() == _parent->_first_tick };
 }
 
-SystemScheduler::SystemScheduler(System* sys, EntityWorld* world) : _system(sys), _world(world), _first_tick(_world->tick_id().next()) {
+SystemScheduler::SystemScheduler(System* sys, SystemManager* manager, EntityWorld *world) : _system(sys), _manager(manager), _world(world), _first_tick(_world->tick_id().next()) {
 }
+
+SystemJobHandle SystemScheduler::create_job_handle() {
+    return _manager->create_job_handle();
+}
+
+
+
+
+
+
 
 
 SystemManager::SystemManager(EntityWorld* world) : _world(world) {
     y_debug_assert(_world);
 }
 
-
-void SystemManager::run_seq(SystemSchedule schedule) const {
+void SystemManager::run_stage_seq(SystemSchedule schedule) const {
     y_profile();
 
     for(const auto& scheduler : _schedulers) {
@@ -73,17 +82,31 @@ void SystemManager::run_schedule_seq() const {
     y_profile();
 
     for(usize t = 0; t != usize(SystemSchedule::Max); ++t) {
-        run_seq(SystemSchedule(t));
+        run_stage_seq(SystemSchedule(t));
     }
 }
 
 void SystemManager::run_schedule_mt(concurrent::JobSystem& job_system) const {
     y_profile();
 
-    run_seq(SystemSchedule::TickSequential);
+    run_stage_seq(SystemSchedule::TickSequential);
 
-    core::Vector<concurrent::JobSystem::JobHandle> prev;
-    core::Vector<concurrent::JobSystem::JobHandle> next;
+    usize task_count = 0;
+    usize max_tasks = 0;
+    {
+        for(usize i = usize(SystemSchedule::Tick); i != usize(SystemSchedule::Max); ++i) {
+            for(const auto& scheduler : _schedulers) {
+                SystemScheduler::Schedule& sched = scheduler->_schedules[i];
+                task_count += sched.tasks.size();
+                max_tasks = std::max(max_tasks, sched.tasks.size());
+            }
+        }
+    }
+
+
+    auto handles = core::ScratchPad<concurrent::JobSystem::JobHandle>(_next_handle);
+    auto prev = core::Vector<concurrent::JobSystem::JobHandle>::with_capacity(max_tasks + 1);
+    auto next = core::Vector<concurrent::JobSystem::JobHandle>::with_capacity(max_tasks);
 
     std::atomic<u32> completed = 0;
     u32 submitted = 0;
@@ -93,11 +116,28 @@ void SystemManager::run_schedule_mt(concurrent::JobSystem& job_system) const {
             SystemScheduler::Schedule& sched = scheduler->_schedules[i];
             for(const SystemScheduler::Task& task : sched.tasks) {
                 ++submitted;
-                next.emplace_back(job_system.schedule([&]() {
+
+                if(task.wait_for.is_valid()) {
+                    if(const auto h = handles[task.wait_for._handle]; !h.is_empty()) {
+                        prev.emplace_back(handles[task.wait_for._handle]);
+                    }
+                }
+
+                auto job = job_system.schedule([&]() {
                     y_profile_dyn_zone(fmt_c_str("{}: {}", scheduler->_system->name(), task.name));
                     task.func();
                     ++completed;
-                }, prev));
+                }, prev);
+
+
+                if(task.wait_for.is_valid()) {
+                    prev.pop();
+                }
+
+                y_debug_assert(handles[task.handle._handle].is_empty());
+                handles[task.handle._handle] = job;
+
+                next.emplace_back(std::move(job));
             }
         }
         if(!next.is_empty()) {
@@ -113,10 +153,14 @@ void SystemManager::run_schedule_mt(concurrent::JobSystem& job_system) const {
 
 
 void SystemManager::setup_system(System* system) {
-    SystemScheduler& sched = *_schedulers.emplace_back(std::make_unique<SystemScheduler>(system, _world));
+    SystemScheduler& sched = *_schedulers.emplace_back(std::make_unique<SystemScheduler>(system, this, _world));
 
     y_profile_zone("setup");
     system->setup(sched);
+}
+
+SystemJobHandle SystemManager::create_job_handle() {
+    return _next_handle++;
 }
 
 }

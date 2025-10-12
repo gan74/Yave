@@ -33,6 +33,10 @@ namespace concurrent {
 JobSystem::JobHandle::JobHandle(JobSystem* p) : _parent(p) {
 }
 
+bool JobSystem::JobHandle::is_empty() const {
+    return !_data;
+}
+
 bool JobSystem::JobHandle::is_finished() const {
     return _data && _data->finished;
 }
@@ -100,7 +104,6 @@ JobSystem::JobHandle JobSystem::schedule(JobFunc&& func, core::Span<JobHandle> d
             JobData* data = h._data.get();
             y_debug_assert(data);
 
-            const auto job_lock = std::unique_lock(data->lock);
             if(!data->finished) {
                 ++dep_count;
                 data->outgoing_deps.emplace_back(handle._data);
@@ -170,17 +173,13 @@ bool JobSystem::process_one(std::unique_lock<std::mutex>& lock) {
         usize scheduled = 0;
         lock.lock();
 
-        {
-            const auto job_lock = std::unique_lock(job->lock);
-
-            job->finished = true;
-            for(usize i = 0; i != job->outgoing_deps.size(); ++i) {
-                auto& out = job->outgoing_deps[i];
-                if(out->dependencies.fetch_sub(1) == 1) {
-                    ++scheduled;
-                    _jobs.emplace_back(std::move(out));
-                    --_waiting;
-                }
+        job->finished = true;
+        for(usize i = 0; i != job->outgoing_deps.size(); ++i) {
+            auto& out = job->outgoing_deps[i];
+            if(out->dependencies.fetch_sub(1) == 1) {
+                ++scheduled;
+                _jobs.emplace_back(std::move(out));
+                --_waiting;
             }
         }
 
