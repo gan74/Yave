@@ -79,6 +79,10 @@ y_force_inline static JPH::Vec3 to_jph(const math::Vec3& v) {
     return JPH::Vec3(v.x(), v.y(), v.z());
 }
 
+y_force_inline static JPH::Float3 to_jph_float3(const math::Vec3& v) {
+    return JPH::Float3(v.x(), v.y(), v.z());
+}
+
 y_force_inline static JPH::Quat to_jph(const math::Quaternion<>& q) {
     return JPH::Quat(q.x(), q.y(), q.z(), q.w());
 }
@@ -192,6 +196,7 @@ struct JoltData : NonMovable {
 
         physics_system.SetGravity(JPH::Vec3(0.0f, -9.81f, 0.0f));
 
+#if 0
         // Next we can create a rigid body to serve as the floor, we make a large box
         // Create the settings for the collision volume (the shape).
         // Note that for simple shapes (like boxes) you can also directly construct a BoxShape.
@@ -229,6 +234,7 @@ struct JoltData : NonMovable {
         // You should definitely not call this every frame or when e.g. streaming in a new level section as it is an expensive operation.
         // Instead insert all new objects in batches instead of 1 at a time to keep the broad phase efficient.
         physics_system.OptimizeBroadPhase();
+#endif
     }
 
 
@@ -300,7 +306,7 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
                     const MeshTriangleData& triangle_data = static_mesh->triangle_data();
                     JPH::Array<JPH::Float3> vertices(triangle_data.positions.size());
                     JPH::Array<JPH::IndexedTriangle> triangles(triangle_data.triangles.size());
-                    std::transform(triangle_data.positions.begin(), triangle_data.positions.end(), vertices.begin(), [&](math::Vec3 p) { p *= scale; return JPH::Float3(p[0], p[1], p[2]) ; });
+                    std::transform(triangle_data.positions.begin(), triangle_data.positions.end(), vertices.begin(), [&](math::Vec3 p) { return to_jph_float3(p * scale); });
                     std::transform(triangle_data.triangles.begin(), triangle_data.triangles.end(), triangles.begin(), [](IndexedTriangle t) { return to_jph(t); });
 
                     const JPH::MeshShapeSettings shape_settings(vertices, triangles);
@@ -308,7 +314,7 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
                 } else {
                     const MeshTriangleData& triangle_data = static_mesh->triangle_data();
                     JPH::Array<JPH::Vec3> vertices(triangle_data.positions.size());
-                    std::transform(triangle_data.positions.begin(), triangle_data.positions.end(), vertices.begin(), [&](math::Vec3 p) { p *= scale; return to_jph(p); });
+                    std::transform(triangle_data.positions.begin(), triangle_data.positions.end(), vertices.begin(), [&](math::Vec3 p) { return to_jph(p * scale); });
 
                     const JPH::ConvexHullShapeSettings shape_settings(vertices.data(), int(vertices.size()));
                     shape_result = shape_settings.Create();
@@ -320,7 +326,7 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
                 coll._scale = scale;
                 coll._body_id = _jolt->body_interface->CreateAndAddBody(body_settings, JPH::EActivation::Activate);
 
-                log_msg(fmt("body created: {}", coll._body_id.GetIndexAndSequenceNumber()));
+                // log_msg(fmt("body created: {}", coll._body_id.GetIndexAndSequenceNumber()));
             }
         }
     });
@@ -328,7 +334,7 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
     const auto physics_job = sched.schedule(ecs::SystemSchedule::Update, "Update physics", [this](const ecs::EntityWorld& world) {
         const float dt = TimeSystem::dt(world);
         if(dt > 0.0f) {
-            _jolt->update(std::min(dt, 0.1f));
+            _jolt->update(std::min(dt, 0.2f));
         }
     }, collect_job);
 
