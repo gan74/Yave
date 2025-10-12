@@ -10,4 +10,3 @@
 [submodule "external/bc7enc_rdo"]
 	path = external/bc7enc_rdo
 	url = https://github.com/richgel999/bc7enc_rdo.git
->>>>>>> master
