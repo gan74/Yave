@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/meshes/MeshData.h>
 #include <yave/ecs/EntityWorld.h>
+#include <yave/systems/TimeSystem.h>
 
 
 // Jolt includes
@@ -324,9 +325,11 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
         }
     });
 
-    const auto physics_job = sched.schedule(ecs::SystemSchedule::Update, "Update physics", [this]() {
-        const double dt = _time.reset().to_secs();
-        _jolt->update(float(std::min(dt, 0.1)));
+    const auto physics_job = sched.schedule(ecs::SystemSchedule::Update, "Update physics", [this](const ecs::EntityWorld& world) {
+        const float dt = TimeSystem::dt(world);
+        if(dt > 0.0f) {
+            _jolt->update(std::min(dt, 0.1f));
+        }
     }, collect_job);
 
     sched.schedule(ecs::SystemSchedule::Update, "Copy transforms", [this](ecs::EntityGroup<

@@ -19,33 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SYSTEMS_JOLTPHYSICSSYSTEM_H
-#define YAVE_SYSTEMS_JOLTPHYSICSSYSTEM_H
 
-#include <yave/ecs/EntityWorld.h>
+#include "TimeSystem.h"
 
-#include <y/core/Chrono.h>
+#include <yave/ecs/SystemManager.h>
 
 namespace yave {
 
-struct JoltData;
-
-class JoltPhysicsSystem : public ecs::System {
-    public:
-        JoltPhysicsSystem();
-        ~JoltPhysicsSystem();
-
-        void set_debug_draw(bool enable);
-
-        void setup(ecs::SystemScheduler& sched) override;
-
-    private:
-        std::unique_ptr<JoltData> _jolt;
-
-        bool _debug_draw = false;
-};
-
+TimeSystem::TimeSystem(float scale) : ecs::System("TimeSystem"), _scale(scale) {
 }
 
-#endif // YAVE_SYSTEMS_JOLTPHYSICSSYSTEM_H
+void TimeSystem::setup(ecs::SystemScheduler& sched) {
+    sched.schedule(ecs::SystemSchedule::TickSequential, "Update time", [this]() {
+        _duration = _timer.reset();
+    });
+}
+
+float TimeSystem::dt() const {
+    return std::max(0.0f, float(_duration.to_secs()) * _scale);
+}
+
+void TimeSystem::set_time_scale(float scale) {
+    _scale = scale;
+}
+
+float TimeSystem::time_scale() const {
+    return _scale;
+}
+
+float TimeSystem::dt(const ecs::EntityWorld& world) {
+    if(const TimeSystem* s = world.find_system<TimeSystem>()) {
+        return s->dt();
+    }
+    return 0.0f;
+}
+
+}
 

@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SYSTEMS_JOLTPHYSICSSYSTEM_H
-#define YAVE_SYSTEMS_JOLTPHYSICSSYSTEM_H
+#ifndef YAVE_SYSTEMS_TIMESYSTEM_H
+#define YAVE_SYSTEMS_TIMESYSTEM_H
 
 #include <yave/ecs/EntityWorld.h>
 
@@ -28,24 +28,28 @@ SOFTWARE.
 
 namespace yave {
 
-struct JoltData;
-
-class JoltPhysicsSystem : public ecs::System {
+class TimeSystem : public ecs::System {
     public:
-        JoltPhysicsSystem();
-        ~JoltPhysicsSystem();
-
-        void set_debug_draw(bool enable);
+        TimeSystem(float scale = 1.0);
 
         void setup(ecs::SystemScheduler& sched) override;
 
-    private:
-        std::unique_ptr<JoltData> _jolt;
+        float dt() const;
 
-        bool _debug_draw = false;
+        void set_time_scale(float scale);
+        float time_scale() const;
+
+
+        static float dt(const ecs::EntityWorld& world);
+
+    private:
+        float _scale = 1.0;
+
+        core::Duration _duration;
+        core::StopWatch _timer;
 };
 
 }
 
-#endif // YAVE_SYSTEMS_JOLTPHYSICSSYSTEM_H
+#endif // YAVE_SYSTEMS_TIMESYSTEM_H
 

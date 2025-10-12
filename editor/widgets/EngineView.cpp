@@ -34,10 +34,15 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/framegraph/FrameGraphResourcePool.h>
+
 #include <yave/renderer/IdBufferPass.h>
+
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/commands/CmdTimestampPool.h>
 #include <yave/graphics/device/DeviceResources.h>
+
+#include <yave/systems/TimeSystem.h>
+
 
 #include <yave/utils/color.h>
 #include <yave/utils/DirectDraw.h>
@@ -440,6 +445,15 @@ void EngineView::draw_toolbar_and_gizmos() {
         if(_resolution >= 0) {
             if(ImGui::Button(standard_resolutions()[_resolution].first)) {
                 ImGui::OpenPopup("##resolutions");
+            }
+        }
+
+        if(TimeSystem* time = current_world().find_system<TimeSystem>()) {
+            ImGui::SameLine();
+
+            const bool paused = time->time_scale() <= 0.0f;
+            if(ImGui::Button(paused ? ICON_FA_PLAY : ICON_FA_PAUSE)) {
+                time->set_time_scale(paused ? 1.0f : 0.0f);
             }
         }
 

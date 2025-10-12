@@ -41,6 +41,7 @@ SOFTWARE.
 #include <yave/systems/AssetLoaderSystem.h>
 #include <yave/systems/JoltPhysicsSystem.h>
 #include <yave/systems/SceneSystem.h>
+#include <yave/systems/TimeSystem.h>
 
 #include <editor/systems/DebugAnimateSystem.h>
 #include <editor/systems/UndoRedoSystem.h>
@@ -57,12 +58,17 @@ editor_action_shortcut(ICON_FA_UNDO " Undo", Key::Ctrl + Key::Z, [] { current_wo
 editor_action_shortcut(ICON_FA_REDO " Redo", Key::Ctrl + Key::Y, [] { current_world().redo(); })
 
 
+editor_action_enable(ICON_FA_PLAY " Play", [] { current_world().find_system<TimeSystem>()->set_time_scale(1.0f); }, [] { return !!current_world().find_system<TimeSystem>(); })
+editor_action_enable(ICON_FA_PAUSE " Pause", [] { current_world().find_system<TimeSystem>()->set_time_scale(0.0f); }, [] { return !!current_world().find_system<TimeSystem>(); })
+
+
 EditorWorld::EditorWorld(AssetLoader& loader) {
     add_system<AssetLoaderSystem>(loader);
     add_system<DebugAnimateSystem>();
     add_system<UndoRedoSystem>();
     add_system<JoltPhysicsSystem>();
     add_system<SceneSystem>();
+    add_system<TimeSystem>(0.0f);
 }
 
 bool EditorWorld::set_entity_name(ecs::EntityId id, std::string_view name) {
