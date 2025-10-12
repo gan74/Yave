@@ -33,6 +33,7 @@ SOFTWARE.
 #include <yave/utils/DirectDraw.h>
 #include <yave/scene/SceneView.h>
 #include <yave/systems/SceneSystem.h>
+#include <yave/systems/JoltPhysicsSystem.h>
 
 #include <y/io2/File.h>
 #include <y/serde3/archives.h>
@@ -144,20 +145,26 @@ static void load_world_deferred() {
 
 void post_tick() {
     y_profile();
-    if(application::deferred_actions & application::Save) {
-        save_world_deferred();
+    {
+        if(application::deferred_actions & application::Save) {
+            save_world_deferred();
+        }
+
+        if(application::deferred_actions & application::Load) {
+            load_world_deferred();
+        }
+
+        if(application::deferred_actions & application::New) {
+            application::world = std::make_unique<EditorWorld>(*application::loader);
+            create_scene_view();
+        }
+
+        application::deferred_actions = application::None;
     }
 
-    if(application::deferred_actions & application::Load) {
-        load_world_deferred();
+    if(JoltPhysicsSystem* jolt = application::world->find_system<JoltPhysicsSystem>()) {
+        jolt->set_debug_draw(application::settings.debug.display_colliders);
     }
-
-    if(application::deferred_actions & application::New) {
-        application::world = std::make_unique<EditorWorld>(*application::loader);
-        create_scene_view();
-    }
-
-    application::deferred_actions = application::None;
 }
 
 

@@ -41,6 +41,7 @@ class UndoRedoSystem : public ecs::System {
 
     using PropertyValue = std::variant<
         core::String,
+        usize,
         math::Transform<>,
         math::Vec3,
         float,

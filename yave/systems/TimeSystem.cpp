@@ -19,55 +19,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESHES_STATICMESH_H
-#define YAVE_MESHES_STATICMESH_H
 
-#include "AABB.h"
-#include "MeshDrawData.h"
-#include "MeshData.h"
+#include "TimeSystem.h"
 
-#include <yave/assets/AssetTraits.h>
-
-#include <y/core/FixedArray.h>
-
-Y_TODO(move into graphics?)
+#include <yave/ecs/SystemManager.h>
 
 namespace yave {
 
-class StaticMesh : NonCopyable {
-    public:
-        StaticMesh() = default;
-        StaticMesh(const MeshData& mesh_data);
-
-        StaticMesh(StaticMesh&&) = default;
-        StaticMesh& operator=(StaticMesh&&) = default;
-
-        ~StaticMesh();
-
-        bool is_null() const;
-
-        const MeshDrawData& draw_data() const;
-        const MeshDrawCommand& draw_command() const;
-        core::Span<MeshDrawCommand> sub_meshes() const;
-        core::Span<BLAS> blases() const;
-
-        const MeshTriangleData& triangle_data() const;
-
-        float radius() const;
-        const AABB& aabb() const;
-
-    private:
-        MeshDrawData _draw_data = {};
-        core::FixedArray<MeshDrawCommand> _sub_meshes;
-        std::unique_ptr<BLAS[]> _blases;
-        AABB _aabb;
-
-        MeshTriangleData _triangle_data;
-};
-
-YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(StaticMesh, MeshData, AssetType::Mesh);
-
+TimeSystem::TimeSystem(float scale) : ecs::System("TimeSystem"), _scale(scale) {
 }
 
-#endif // YAVE_MESHES_STATICMESH_H
+void TimeSystem::setup(ecs::SystemScheduler& sched) {
+    sched.schedule(ecs::SystemSchedule::TickSequential, "Update time", [this]() {
+        _duration = _timer.reset();
+    });
+}
+
+float TimeSystem::dt() const {
+    return std::max(0.0f, float(_duration.to_secs()) * _scale);
+}
+
+void TimeSystem::set_time_scale(float scale) {
+    _scale = scale;
+}
+
+float TimeSystem::time_scale() const {
+    return _scale;
+}
+
+float TimeSystem::dt(const ecs::EntityWorld& world) {
+    if(const TimeSystem* s = world.find_system<TimeSystem>()) {
+        return s->dt();
+    }
+    return 0.0f;
+}
+
+}
 

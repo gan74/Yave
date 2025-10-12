@@ -28,6 +28,8 @@ SOFTWARE.
 
 #include <yave/utils/color.h>
 
+#include <algorithm>
+
 namespace yave {
 
 DirectDrawPrimitive::DirectDrawPrimitive(std::string_view name) : _name(name) {
@@ -46,6 +48,22 @@ void DirectDrawPrimitive::add_triangle(u32 color, const math::Vec3& a, const mat
     _triangle_vertices << DirectVertex{a, color};
     _triangle_vertices << DirectVertex{b, color};
     _triangle_vertices << DirectVertex{c, color};
+}
+
+void DirectDrawPrimitive::add_triangles(u32 color, core::Span<math::Vec3> vertices) {
+    y_always_assert(vertices.size() % 3 == 0, "vertices size should be a multiple of 3");
+    _triangle_vertices.set_capacity(_triangle_vertices.size() + vertices.size());
+    std::transform(vertices.begin(), vertices.end(), std::back_inserter(_triangle_vertices), [&](const math::Vec3& v) {
+        return DirectVertex{v, color};
+    });
+}
+
+void DirectDrawPrimitive::add_triangles(u32 color, const math::Transform<>& tr, core::Span<math::Vec3> vertices) {
+    y_always_assert(vertices.size() % 3 == 0, "vertices size should be a multiple of 3");
+    _triangle_vertices.set_capacity(_triangle_vertices.size() + vertices.size());
+    std::transform(vertices.begin(), vertices.end(), std::back_inserter(_triangle_vertices), [&](const math::Vec3& v) {
+        return DirectVertex{tr.transform_point(v), color};
+    });
 }
 
 void DirectDrawPrimitive::add_circle(u32 color, const math::Vec3& position, math::Vec3 x, math::Vec3 y, float radius, usize divs) {

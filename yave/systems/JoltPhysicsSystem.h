@@ -19,55 +19,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESHES_STATICMESH_H
-#define YAVE_MESHES_STATICMESH_H
+#ifndef YAVE_SYSTEMS_JOLTPHYSICSSYSTEM_H
+#define YAVE_SYSTEMS_JOLTPHYSICSSYSTEM_H
 
-#include "AABB.h"
-#include "MeshDrawData.h"
-#include "MeshData.h"
+#include <yave/ecs/EntityWorld.h>
 
-#include <yave/assets/AssetTraits.h>
-
-#include <y/core/FixedArray.h>
-
-Y_TODO(move into graphics?)
+#include <y/core/Chrono.h>
 
 namespace yave {
 
-class StaticMesh : NonCopyable {
+struct JoltData;
+
+class JoltPhysicsSystem : public ecs::System {
     public:
-        StaticMesh() = default;
-        StaticMesh(const MeshData& mesh_data);
+        JoltPhysicsSystem();
+        ~JoltPhysicsSystem();
 
-        StaticMesh(StaticMesh&&) = default;
-        StaticMesh& operator=(StaticMesh&&) = default;
+        void set_debug_draw(bool enable);
 
-        ~StaticMesh();
-
-        bool is_null() const;
-
-        const MeshDrawData& draw_data() const;
-        const MeshDrawCommand& draw_command() const;
-        core::Span<MeshDrawCommand> sub_meshes() const;
-        core::Span<BLAS> blases() const;
-
-        const MeshTriangleData& triangle_data() const;
-
-        float radius() const;
-        const AABB& aabb() const;
+        void setup(ecs::SystemScheduler& sched) override;
 
     private:
-        MeshDrawData _draw_data = {};
-        core::FixedArray<MeshDrawCommand> _sub_meshes;
-        std::unique_ptr<BLAS[]> _blases;
-        AABB _aabb;
+        std::unique_ptr<JoltData> _jolt;
 
-        MeshTriangleData _triangle_data;
+        bool _debug_draw = false;
 };
-
-YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(StaticMesh, MeshData, AssetType::Mesh);
 
 }
 
-#endif // YAVE_MESHES_STATICMESH_H
+#endif // YAVE_SYSTEMS_JOLTPHYSICSSYSTEM_H
 

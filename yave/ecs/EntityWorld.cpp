@@ -45,7 +45,11 @@ static auto create_component_containers() {
 
             const usize index = usize(container->type_id());
             containers.set_min_size(index + 1);
+
+            y_debug_assert(!containers[index]);
             containers[index] = std::move(container);
+        } else {
+            log_msg(fmt("Could not create '{}'", poly_base->name), Log::Warning);
         }
     }
     return containers;
@@ -242,7 +246,7 @@ EntityPrefab EntityWorld::create_prefab_from_entity(EntityId id) const {
         }
     }
 
-    for(const EntityId child : children(id)) {
+    for(const EntityId child : direct_children(id)) {
         prefab.add_child(std::make_unique<EntityPrefab>(create_prefab_from_entity(child)));
     }
 
@@ -457,7 +461,7 @@ serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
         _matrix.add_entity(id);
     }
 
-    _containers.clear();
+    _containers = create_component_containers();
     for(auto&& container : containers) {
         if(container) {
             const usize index = usize(container->type_id());

@@ -71,11 +71,14 @@ class Quaternion {
         }
 
         inline constexpr T angle() const {
-            return std::acos(w() * T(2.0f));
+            y_debug_assert(std::abs(w()) <= T(1.0f));
+            const T angle = std::acos(w()) * T(2.0f);
+            y_debug_assert(!std::isnan(angle));
+            return angle;
         }
 
         inline constexpr Vec<3, T> axis() const {
-            return Vec<3, T>(_quat.template to<3>() / std::sqrt(T(1.0f) - w() * w()));
+            return _quat.template to<3>().normalized();
         }
 
         inline constexpr Quaternion inverse() const {

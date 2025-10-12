@@ -78,6 +78,12 @@ class EntityId {
             return EntityId(index, u32(-1));
         }
 
+        static EntityId from_u64(u64 id) {
+            const EntityId e(u32(id >> 32), u32(id));
+            y_debug_assert(e.as_u64() == id);
+            return e;
+        }
+
         void invalidate() {
             _index = invalid_index;
         }

@@ -110,7 +110,7 @@ class EntityWorld : NonMovable {
             return _entities.parents(id);
         }
 
-        auto children(EntityId id) const {
+        auto direct_children(EntityId id) const {
             return _entities.children(id);
         }
 

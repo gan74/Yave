@@ -19,55 +19,51 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_MESHES_STATICMESH_H
-#define YAVE_MESHES_STATICMESH_H
+#ifndef YAVE_COMPONENTS_COLLIDERCOMPONENT_H
+#define YAVE_COMPONENTS_COLLIDERCOMPONENT_H
 
-#include "AABB.h"
-#include "MeshDrawData.h"
-#include "MeshData.h"
+#include <yave/ecs/ecs.h>
 
-#include <yave/assets/AssetTraits.h>
+#include <yave/meshes/StaticMesh.h>
+#include <yave/material/Material.h>
 
-#include <y/core/FixedArray.h>
 
-Y_TODO(move into graphics?)
+#include <Jolt/Jolt.h>
+#include <Jolt/Physics/Body/BodyID.h>
+
 
 namespace yave {
 
-class StaticMesh : NonCopyable {
+class ColliderComponent final {
+
     public:
-        StaticMesh() = default;
-        StaticMesh(const MeshData& mesh_data);
+        enum class Type {
+            Static,
+            Kinematic,
+            Dynamic,
+        };
 
-        StaticMesh(StaticMesh&&) = default;
-        StaticMesh& operator=(StaticMesh&&) = default;
+        ColliderComponent() = default;
 
-        ~StaticMesh();
+        void set_type(Type t) {
+            _type = t;
+        }
 
-        bool is_null() const;
+        void inspect(ecs::ComponentInspector* inspector);
 
-        const MeshDrawData& draw_data() const;
-        const MeshDrawCommand& draw_command() const;
-        core::Span<MeshDrawCommand> sub_meshes() const;
-        core::Span<BLAS> blases() const;
-
-        const MeshTriangleData& triangle_data() const;
-
-        float radius() const;
-        const AABB& aabb() const;
+        y_reflect(ColliderComponent, _type)
 
     private:
-        MeshDrawData _draw_data = {};
-        core::FixedArray<MeshDrawCommand> _sub_meshes;
-        std::unique_ptr<BLAS[]> _blases;
-        AABB _aabb;
+        friend class JoltPhysicsSystem;
 
-        MeshTriangleData _triangle_data;
+        Type _type = Type::Static;
+
+        mutable JPH::BodyID _body_id = {};
+        mutable math::Vec3 _scale = math::Vec3(1.0f);
 };
 
-YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(StaticMesh, MeshData, AssetType::Mesh);
 
 }
 
-#endif // YAVE_MESHES_STATICMESH_H
+#endif // YAVE_COMPONENTS_COLLIDERCOMPONENT_H
 

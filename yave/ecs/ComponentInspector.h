@@ -59,6 +59,8 @@ class ComponentInspector : NonCopyable {
 
         virtual void inspect(const core::String& name, core::String& str) = 0;
 
+        virtual void inspect(const core::String& name, usize& e, core::Span<std::string_view> values) = 0;
+
         virtual void inspect(const core::String& name, math::Transform<>& t) = 0;
 
         virtual void inspect(const core::String& name, math::Vec3& v, Vec3Role role = Vec3Role::None) = 0;
@@ -73,6 +75,13 @@ class ComponentInspector : NonCopyable {
         virtual void inspect(const core::String& name, GenericAssetPtr& p) = 0;
 
         virtual void inspect(const core::String& name, EntityId& id, ComponentTypeIndex type = ComponentTypeIndex::invalid_index) = 0;
+
+        template<typename T> requires std::is_enum_v<T>
+        void inspect(const core::String& name, T& e, core::Span<std::string_view> values) {
+            usize value = usize(e);
+            inspect(name, value, values);
+            e = T(value);
+        }
 
         template<typename T, typename... Args>
         void inspect(const core::String& name, core::MutableSpan<T> items, Args&&... args) {
@@ -112,6 +121,10 @@ class TemplateComponentInspector : public ComponentInspector {
 
         void inspect(const core::String& name, core::String& str) override {
             static_cast<Derived*>(this)->visit(name, str);
+        }
+
+        void inspect(const core::String& name, usize& e, core::Span<std::string_view>) override {
+            static_cast<Derived*>(this)->visit(name, e);
         }
 
         void inspect(const core::String& name, math::Transform<>& t) override {

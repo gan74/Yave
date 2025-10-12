@@ -235,6 +235,21 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             log_msg("String property is not supported");
         }
 
+        void inspect(const core::String& name, usize& e, core::Span<std::string_view> values) override {
+            auto row = begin_property_row(name);
+            if(ImGui::BeginCombo("###combo", fmt_c_str("{}", values[e]))) {
+                for(usize i = 0; i != values.size(); ++i) {
+                    ImGui::PushID(int(i));
+                    if(ImGui::Selectable(fmt_c_str("{}", values[i]))) {
+                        e = i;
+                    }
+                    ImGui::PopID();
+                }
+                ImGui::EndCombo();
+            }
+        }
+
+
         void inspect(const core::String& name, math::Transform<>& tr) override {
             ImGui::PushID(name.data());
             y_defer(ImGui::PopID());

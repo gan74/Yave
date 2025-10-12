@@ -137,6 +137,15 @@ core::Span<SkinWeights> MeshData::skin() const {
     return _skeleton->skin;
 }
 
+MeshTriangleData MeshData::triangle_data() const {
+    y_profile();
+
+    return MeshTriangleData {
+        core::Span<IndexedTriangle>(_triangles), 
+        _vertex_streams.stream<VertexStreamType::Position>()
+    };
+}
+
 bool MeshData::has_skeleton() const {
     return bool(_skeleton);
 }

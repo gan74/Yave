@@ -184,7 +184,8 @@ class WritableArchive final {
         inline Result serialize_one(NamedObject<T> non_const_object) {
             const auto object = non_const_object.make_const_ref();
 
-            static_assert(!has_no_serde3<T>, "Type has serialization disabled");
+            // We might have poly object with no serde.
+            // static_assert(!has_no_serde3<T>, "Type has serialization disabled");
 
             if constexpr(is_property<T>) {
                 return serialize_property(object);
@@ -551,7 +552,8 @@ class ReadableArchive final {
 
         template<typename T>
         inline Result deserialize_one(NamedObject<T> object) {
-            static_assert(!has_no_serde3<T>, "Type has serialization disabled");
+            // We might have poly object with no serde.
+            // static_assert(!has_no_serde3<T>, "Type has serialization disabled");
 
             Result res = core::Ok(Success::Full);
 

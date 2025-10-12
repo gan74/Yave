@@ -94,7 +94,7 @@ static AABB compute_entity_aabb(const ecs::EntityWorld& world, ecs::EntityId id)
         }
     }
 
-    for(const ecs::EntityId child : world.children(id)) {
+    for(const ecs::EntityId child : world.direct_children(id)) {
         aabb = merge_empty_aabb(aabb, compute_entity_aabb(world, child));
     }
 

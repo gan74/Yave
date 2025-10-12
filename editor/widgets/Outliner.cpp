@@ -345,7 +345,7 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id, bool recursive
 
     if(open) {
         if(recursive) {
-            const auto children = core::Vector<ecs::EntityId>::from_range(world.children(id));
+            const auto children = core::Vector<ecs::EntityId>::from_range(world.direct_children(id));
             for(const ecs::EntityId child : children) {
                 display_node(world, child, true);
             }
