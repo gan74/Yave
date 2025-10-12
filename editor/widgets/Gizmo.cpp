@@ -357,7 +357,7 @@ void TranslationGizmo::draw() {
 
         for(usize i : rev_indices) {
             if(is_hovering_axis(gizmo_screen_center, screen_end_points[i])) {
-                _hover_mask |= (1 << i);
+                _hover_mask = (1 << i);
                 break;
             }
         }
