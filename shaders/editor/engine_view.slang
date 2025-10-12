@@ -28,10 +28,10 @@ Sampler2D<float> in_ao;
 float4 frag_main(float2 in_uv) : SV_Target0 {
     const int2 coord = int2(semantics.frag_coord.xy);
 
-    const SurfaceInfo surface = decode_gbuffer({
+    const SurfaceInfo surface = decode_gbuffer(RawGBuffer(
         in_rt0[coord],
         in_rt1[coord],
-    });
+    ));
 
     const float3 final = in_final[coord].rgb;
 

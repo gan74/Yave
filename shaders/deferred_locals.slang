@@ -244,10 +244,10 @@ void comp_main() {
 
     float3 irradiance = out_color[coord].rgb;
 
-    const SurfaceInfo surface = decode_gbuffer({
+    const SurfaceInfo surface = decode_gbuffer(RawGBuffer(
         in_rt0[coord],
         in_rt1[coord],
-    });
+    ));
 
 
     // -------------------------------- POINTS --------------------------------

@@ -136,10 +136,10 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
             }
         }
     } else {
-        const SurfaceInfo surface = decode_gbuffer({
+        const SurfaceInfo surface = decode_gbuffer(RawGBuffer(
             in_rt0[coord],
             in_rt1[coord],
-        });
+        ));
 
         const float3 world_pos = unproject(in_uv, depth, camera.curr.inv_view_proj);
         const float3 view_dir = normalize(camera.position - world_pos);

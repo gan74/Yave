@@ -54,10 +54,10 @@ void comp() {
     const float2 in_uv = px_center / float2(size);
 
     const float depth = in_depth[coord];
-    const SurfaceInfo surface = decode_gbuffer({
+    const SurfaceInfo surface = decode_gbuffer(RawGBuffer(
         in_rt0[coord],
         in_rt1[coord],
-    });
+    ));
 
 #if 1
     const float3 world_pos = unproject(in_uv, depth, camera.curr.inv_view_proj);
