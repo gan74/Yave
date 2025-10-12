@@ -165,12 +165,14 @@ class EntityGroupProvider final : NonMovable {
 
 
 template<typename... Ts>
-class EntityGroup final : NonCopyable {
+class EntityGroup final : NonMovable {
     static constexpr usize type_count = sizeof...(Ts);
     static constexpr usize mutate_count = ((traits::is_component_mutable<Ts> ? 1 : 0) + ...);
 
+    static constexpr bool has_any = (traits::is_component_filter_any<Ts> || ...);
     static constexpr usize changed_count = ((traits::is_component_changed<Ts> ? 1 : 0) + ...);
     static constexpr usize deleted_count = ((traits::is_component_deleted<Ts> ? 1 : 0) + ...);
+
     static constexpr usize filter_count = changed_count + deleted_count;
 
     using SetTuple = std::tuple<SparseComponentSet<traits::component_raw_type_t<Ts>>*...>;
@@ -178,7 +180,7 @@ class EntityGroup final : NonCopyable {
     using ComponentTuple = std::tuple<traits::component_type_t<Ts>&...>;
 
     using MutateContainers = std::array<SparseIdSet*, mutate_count>;
-    using FilterContainers = std::array<const SparseIdSet*, filter_count>;
+    using FilterContainers = std::array<std::pair<const SparseIdSet*, bool>, filter_count>;
 
     template<typename T>
     static inline T& get_component(const SetTuple& sets, EntityId id) {
@@ -187,6 +189,8 @@ class EntityGroup final : NonCopyable {
 
     template<typename T, usize I>
     void fill_one(const ContainerTuple& containers, usize& mut_index, usize& filter_index, usize& const_index) {
+        y_debug_assert(std::get<I>(containers));
+
         std::get<I>(_sets) = &std::get<I>(containers)->_components;
 
         if constexpr(traits::is_component_mutable<T>) {
@@ -198,10 +202,16 @@ class EntityGroup final : NonCopyable {
         }
 
         if constexpr(traits::is_component_changed<T>) {
-            _filter[filter_index++] = &std::get<I>(containers)->_mutated;
+            _filter[filter_index++] = {
+                &std::get<I>(containers)->_mutated,
+                traits::is_component_filter_any<T>
+            };
         }
         if constexpr(traits::is_component_deleted<T>) {
-            _filter[filter_index++] = &std::get<I>(containers)->_to_delete;
+            _filter[filter_index++] = {
+                &std::get<I>(containers)->_to_delete,
+                traits::is_component_filter_any<T>
+            };
         }
     }
 
@@ -213,7 +223,7 @@ class EntityGroup final : NonCopyable {
         (fill_one<Ts, Is>(containers, mut_index, filter_index, const_index), ...);
 
         y_debug_assert(std::all_of(_mutate.begin(), _mutate.end(), [](const auto* s) { return s; }));
-        y_debug_assert(std::all_of(_filter.begin(), _filter.end(), [](const auto* s) { return s; }));
+        y_debug_assert(std::all_of(_filter.begin(), _filter.end(), [](auto s) { return s.first; }));
         y_debug_assert(std::all_of(_write_locks.begin(), _write_locks.end(), [](const auto* s) { return s; }));
         y_debug_assert(std::all_of(_read_locks.begin(), _read_locks.end(), [](const auto* s) { return s; }));
     }
@@ -346,24 +356,48 @@ class EntityGroup final : NonCopyable {
             if constexpr(filter_count) {
                 y_profile_zone("finding changed entities");
 
-                std::array<const SparseIdSet*, filter_count + 1> matches = {};
+                std::array<std::pair<const SparseIdSet*, bool>, filter_count + 1> matches = {};
                 std::copy_n(_filter.begin(), filter_count, matches.begin());
-                matches[filter_count] = &_provider->ids();
+                matches[filter_count] = {&_provider->ids(), false};
 
-                std::sort(matches.begin(), matches.end(), [](const SparseIdSet* a, const SparseIdSet* b) {
-                    return a->size() < b->size();
+                std::sort(matches.begin(), matches.end(), [](const auto& a, const auto& b) {
+                    if(a.second != b.second) {
+                        return b.second;
+                    }
+                    return a.first->size() < b.first->size();
                 });
 
-                _ids.set_min_capacity(matches[0]->ids().size());
+                y_debug_assert(!matches[0].second);
 
-                for(const EntityId id : matches[0]->ids()) {
+                const usize or_matches = std::count_if(matches.begin(), matches.end(), [](const auto& m) { return m.second; });
+                const usize and_matches = filter_count - or_matches + 1;
+                y_debug_assert(and_matches + or_matches == matches.size());
+                y_debug_assert(!!or_matches == has_any);
+
+                _ids.set_min_capacity(matches[0].first->ids().size());
+
+                for(const EntityId id : matches[0].first->ids()) {
                     bool match = true;
-                    for(usize i = 1; i != matches.size(); ++i) {
-                        if(!matches[i]->contains(id)) {
+                    for(usize i = 1; i != and_matches; ++i) {
+                        y_debug_assert(!matches[i].second);
+                        if(!matches[i].first->contains(id)) {
                             match = false;
                             break;
                         }
                     }
+                    if constexpr(has_any) {
+                        if(match) {
+                            match = false;
+                            for(usize i = and_matches; i != matches.size(); ++i) {
+                                y_debug_assert(matches[i].second);
+                                if(matches[i].first->contains(id)) {
+                                    match = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
                     if(match) {
                         _ids << id;
                     }
@@ -395,7 +429,7 @@ class EntityGroup final : NonCopyable {
 
             auto unlock = [&] {
                 for(usize i = 0; i != read_index; ++i) {
-                    _read_locks[i]->unlock();
+                    _read_locks[i]->unlock_shared();
                 }
                 for(usize i = 0; i != write_index; ++i) {
                     _write_locks[i]->unlock();

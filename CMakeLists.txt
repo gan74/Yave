@@ -86,6 +86,11 @@ function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
 endfunction(add_slang_shader)
 
 
+set(DEBUG_RENDERER_IN_DISTRIBUTION ON)
+set(PHYSICS_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/external/JoltPhysics")
+include("${CMAKE_CURRENT_SOURCE_DIR}/external/JoltPhysics/Jolt/Jolt.cmake")
+
+
 
 option(YAVE_BUILD_YAVE "Build yave" ON)
 option(YAVE_BUILD_EDITOR "Build editor" ON)
@@ -224,10 +229,11 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "copy.slang" "")
     add_slang_shader(${SHADER_TARGET} "screen.slang" "")
     add_slang_shader(${SHADER_TARGET} "tonemap.slang" "")
-    
+
     add_slang_shader(${SHADER_TARGET} "taa_resolve.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "denoise.slang" "")
+    add_slang_shader(${SHADER_TARGET} "picking.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "rtao.slang" "")
     add_slang_shader(${SHADER_TARGET} "filter_ao.slang" "")
@@ -237,7 +243,6 @@ endfunction(build_engine_shaders)
 
 function(build_editor_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "editor/thumbnail.slang" "")
-    add_slang_shader(${SHADER_TARGET} "editor/picking.slang" "")
     add_slang_shader(${SHADER_TARGET} "editor/imgui.slang" "")
     add_slang_shader(${SHADER_TARGET} "editor/selection.slang" "")
     add_slang_shader(${SHADER_TARGET} "editor/engine_view.slang" "")
@@ -265,8 +270,8 @@ if(YAVE_BUILD_YAVE)
         target_link_libraries(yave PUBLIC Tracy::TracyClient)
     endif()
 
-    target_link_libraries(yave PUBLIC y luajit)
-
+    target_link_libraries(yave PUBLIC y luajit Jolt)
+    
     add_custom_target(shaders)
     add_custom_target(shaders_optim)
     build_engine_shaders(shaders)

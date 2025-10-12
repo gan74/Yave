@@ -46,6 +46,8 @@ class DirectDrawPrimitive {
 
         void add_line(u32 color, const math::Vec3& a, const math::Vec3& b);
         void add_triangle(u32 color, const math::Vec3& a, const math::Vec3& b, const math::Vec3& c);
+        void add_triangles(u32 color, core::Span<math::Vec3> vertices);
+        void add_triangles(u32 color, const math::Transform<>& tr, core::Span<math::Vec3> vertices);
 
 
         void add_circle(u32 color, const math::Vec3& position, math::Vec3 x, math::Vec3 y, float radius = 1.0f, usize divs = 64);

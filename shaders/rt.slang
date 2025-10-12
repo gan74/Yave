@@ -96,7 +96,7 @@ void comp() {
             const uint material_id = rayQueryGetIntersectionInstanceCustomIndexEXT(ray_query, true);
             const MaterialData material = materials[material_id];
             const uint albedo_id = material.texture_indices[uint(TextureSlots::Albedo)];
-            const float4 albedo = all_textures[albedo_id].SampleLevel(float2(0.5), 100.0);
+            const float4 albedo = all_textures[NonUniformResourceIndex(albedo_id)].SampleLevel(float2(0.5), 100.0);
             hit_color = albedo.rgb * surface.albedo;
 
             if(albedo.a < 0.9) {

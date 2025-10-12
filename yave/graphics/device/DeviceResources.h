@@ -59,6 +59,7 @@ class DeviceResources final : NonMovable {
             TAAResolveProgram,
             UpdateTransformsProgram,
             FilterAOProgram,
+            PickingProgram,
 
             MaxNonRTComputePrograms,
             RTAOProgram = MaxNonRTComputePrograms,

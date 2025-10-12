@@ -148,4 +148,9 @@ struct AtmosphereParams {
     float density_falloff;
 };
 
+struct PickingData {
+    float depth;
+    uint entity_index;
+};
+
 #endif

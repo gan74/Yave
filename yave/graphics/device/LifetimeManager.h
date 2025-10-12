@@ -56,9 +56,6 @@ YAVE_GRAPHIC_HANDLE_TYPES(YAVE_GENERATE_RT_VARIANT)
 
         void shutdown_collector_thread();
 
-        ResourceFence create_fence();
-        void register_pending(core::Span<CmdBufferData*> datas);
-
         usize pending_deletions() const;
         usize pending_cmd_buffers() const;
 
@@ -73,6 +70,13 @@ YAVE_GRAPHIC_HANDLE_TYPES(YAVE_GENERATE_RT_VARIANT)
         }
 YAVE_GRAPHIC_HANDLE_TYPES(YAVE_GENERATE_DESTROY)
 #undef YAVE_GENERATE_DESTROY
+
+    private:
+        friend class CmdQueue;
+        friend class CmdBufferData;
+
+        ResourceFence create_fence();
+        void register_pending(core::Span<CmdBufferData*> datas);
 
     private:
         void clear_resources(u64 up_to);

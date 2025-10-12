@@ -80,7 +80,10 @@ class Widget : NonMovable {
         virtual ~Widget();
 
         void close();
+
+        std::string_view title() const;
         bool is_visible() const;
+        bool is_focussed() const;
 
         void set_visible(bool visible);
 
@@ -119,6 +122,7 @@ class Widget : NonMovable {
 
         bool _visible = true;
         bool _modal = false;
+        bool _focussed = false;
 
         Widget* _parent = nullptr;
         int _flags = 0;

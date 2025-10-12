@@ -25,10 +25,15 @@ SOFTWARE.
 #include "Gizmo.h"
 
 #include <editor/Widget.h>
+#include <editor/Picker.h>
 #include <editor/renderer/EditorRenderer.h>
+#include <editor/utils/CameraController.h>
 
+#include <yave/graphics/commands/CmdBufferData.h>
 #include <yave/graphics/images/ImageView.h>
 #include <yave/scene/SceneView.h>
+
+#include <yave/graphics/shader_structs.h>
 
 #include <y/core/RingQueue.h>
 
@@ -64,6 +69,10 @@ class EngineView final : public Widget {
         EngineView();
         ~EngineView() override;
 
+        void reset_camera();
+
+        const math::Vec3& cursor_world_pos() const;
+
         CmdTimestampPool* timestamp_pool() const;
 
     protected:
@@ -94,11 +103,21 @@ class EngineView final : public Widget {
         bool is_dragging_gizmo() const;
         void set_is_moving_camera(bool moving);
 
+        struct PickingRequest {
+            TypedReadBackBuffer<shader::PickingData> buffer;
+            Camera camera;
+            math::Vec2 uv;
+            CmdBufferFence fence;
+        };
 
         RenderView _view = RenderView::Lit;
 
         std::shared_ptr<FrameGraphResourcePool> _resource_pool;
         core::RingQueue<std::unique_ptr<CmdTimestampPool>> _timestamp_pools;
+
+        core::RingQueue<PickingRequest> _picking_requests;
+        PickingResult _picking_result;
+        math::Vec3 _cursor_world_pos;
 
         EditorRendererSettings _settings;
 
@@ -112,6 +131,7 @@ class EngineView final : public Widget {
         OrientationGizmo _orientation_gizmo;
 
         bool _moving_camera = false;
+        bool _picking_valid = false;
 
         isize _resolution = -1;
 };

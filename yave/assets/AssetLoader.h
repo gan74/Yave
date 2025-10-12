@@ -77,14 +77,14 @@ class AssetLoader : NonMovable {
 
             public:
                 Loader(AssetLoader* parent);
-                ~Loader();
+                ~Loader() override;
 
                 inline AssetPtr<T> load(AssetId id);
                 inline AssetPtr<T> load_async(AssetId id);
 
                 inline AssetPtr<T> reload(const AssetPtr<T>& ptr);
 
-                AssetType type() const {
+                AssetType type() const override {
                     return traits::type;
                 }
 
