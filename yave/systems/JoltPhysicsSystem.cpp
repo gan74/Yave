@@ -36,6 +36,7 @@ SOFTWARE.
 #include <Jolt/Core/Factory.h>
 #include <Jolt/Core/TempAllocator.h>
 #include <Jolt/Core/JobSystemThreadPool.h>
+#include <Jolt/Core/JobSystemSingleThreaded.h>
 #include <Jolt/Physics/PhysicsSettings.h>
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
@@ -179,7 +180,7 @@ struct BodyActivationListener : JPH::BodyActivationListener, NonMovable {
 struct JoltData : NonMovable {
     BodyActivationListener activation_listener;
     JPH::TempAllocatorImpl temp_allocator;
-    JPH::JobSystemThreadPool thread_pool;
+    JPH::JobSystemSingleThreaded job_system;
     BPLayerInterface bp_layer_interface;
     ObjectVsPBLayerFilter obj_vs_bp_layer_filter;
     ObjectLayerPairFilter obj_vs_obj_layer_filter;
@@ -191,7 +192,7 @@ struct JoltData : NonMovable {
     core::FlatHashMap<const StaticMesh*, JPH::Ref<JPH::Shape>> movable_shapes;
 
 
-    JoltData(ecs::EntityWorld* world) : activation_listener(world), temp_allocator(1024 * 1024 * 8), thread_pool(2048, 8, std::thread::hardware_concurrency() - 1) {
+    JoltData(ecs::EntityWorld* world) : activation_listener(world), temp_allocator(1024 * 1024 * 8), job_system(256) {
 
         physics_system.Init(16 * 1024, 0, 1024, 1024, bp_layer_interface, obj_vs_bp_layer_filter, obj_vs_obj_layer_filter);
         physics_system.SetBodyActivationListener(&activation_listener);
@@ -242,7 +243,7 @@ struct JoltData : NonMovable {
 
 
     void update(float dt) {
-        physics_system.Update(dt, 1, &temp_allocator, &thread_pool);
+        physics_system.Update(dt, 1, &temp_allocator, &job_system);
     }
 };
 
