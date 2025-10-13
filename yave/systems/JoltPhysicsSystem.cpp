@@ -334,21 +334,21 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
             TransformableComponent
         >&& group) {
 
-        for(auto&& [id, coll, mesh, tr] : group.id_components()) {
+        for(auto&& [id, body, mesh, tr] : group.id_components()) {
             if(!mesh.is_fully_loaded()) {
                 continue;
             }
 
-            if(coll._body_id != ColliderComponent::invalid_index) {
-                _jolt->body_interface->RemoveBody(JPH::BodyID(coll._body_id));
-                coll._body_id = ColliderComponent::invalid_index;
+            if(body._body_id != ColliderComponent::invalid_index) {
+                _jolt->body_interface->RemoveBody(JPH::BodyID(body._body_id));
+                body._body_id = ColliderComponent::invalid_index;
             }
 
             if(const AssetPtr<StaticMesh>& static_mesh = mesh.mesh()) {
                 const math::Transform<>& transform = tr.transform();
                 const auto [translation, rotation, scale] = transform.decompose();
 
-                JPH::Ref<JPH::Shape> shape = coll._type == ColliderComponent::Type::Static
+                JPH::Ref<JPH::Shape> shape = body._type == ColliderComponent::Type::Static
                     ? create_static_shape(_jolt.get(), static_mesh.get())
                     : create_movable_shape(_jolt.get(), static_mesh.get())
                 ;
@@ -358,23 +358,30 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
                     shape = scaled_settings.Create().Get();
                 }
 
-                JPH::BodyCreationSettings body_settings = JPH::BodyCreationSettings(shape, to_jph(translation), to_jph(rotation), to_jph(coll._type), JPH::ObjectLayer(0));
+                JPH::BodyCreationSettings body_settings = JPH::BodyCreationSettings(shape, to_jph(translation), to_jph(rotation), to_jph(body._type), JPH::ObjectLayer(0));
                 body_settings.mUserData = id.as_u64();
 
-                coll._scale = scale;
-                coll._body_id = _jolt->body_interface->CreateAndAddBody(body_settings, JPH::EActivation::Activate).GetIndexAndSequenceNumber();
+                body._scale = scale;
+                body._body_id = _jolt->body_interface->CreateAndAddBody(body_settings, JPH::EActivation::Activate).GetIndexAndSequenceNumber();
             }
         }
     });
 
-
+    const auto delete_job = sched.schedule(ecs::SystemSchedule::Update, "Delete colliders", [this](ecs::EntityGroup<ecs::Deleted<ColliderComponent>>&& group) {
+        for(auto&& [body] : group) {
+            if(body._body_id != ColliderComponent::invalid_index) {
+                _jolt->body_interface->RemoveBody(JPH::BodyID(body._body_id));
+                body._body_id = ColliderComponent::invalid_index;
+            }
+        }
+    }, collect_job);
 
     const auto physics_job = sched.schedule(ecs::SystemSchedule::Update, "Update physics", [this](const ecs::EntityWorld& world) {
         const float dt = TimeSystem::dt(world);
         if(dt > 0.0f) {
             _jolt->update(std::min(dt, 0.2f));
         }
-    }, collect_job);
+    }, delete_job);
 
     sched.schedule(ecs::SystemSchedule::Update, "Copy transforms", [this](ecs::EntityGroup<
             JoltActiveComponent,

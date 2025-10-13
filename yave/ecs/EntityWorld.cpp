@@ -136,6 +136,8 @@ void EntityWorld::tick(concurrent::JobSystem& job_system) {
 }
 
 void EntityWorld::process_deferred_changes() {
+    y_profile();
+
     _groups.locked([&](auto&& groups) {
         y_profile_zone("Clear removed groups");
         for(auto& group : groups) {
@@ -144,7 +146,7 @@ void EntityWorld::process_deferred_changes() {
     });
 
     for(auto& container : _ordered_containers) {
-        container->process_deferred_changes();
+        container->process_deferred_changes(_to_delete.ids());
     }
 
     for(const EntityId id : _to_delete) {
@@ -450,7 +452,7 @@ serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
 
     _groups.locked([](auto&& groups) { groups.clear(); });
     _matrix.clear();
-    
+
     decltype(_containers) containers;
 
     y_try(arc.deserialize(_entities));

@@ -72,7 +72,7 @@ class ComponentContainerBase : NonMovable {
 
         virtual void register_component_type(System* system) const = 0;
         virtual void post_load() = 0;
-        virtual void process_deferred_changes() = 0;
+        virtual void process_deferred_changes(core::Span<EntityId> deleted_entities) = 0;
 
 
         const ComponentTypeIndex _type_id;
@@ -206,7 +206,9 @@ class ComponentContainer final : public ComponentContainerBase {
             }
         }
 
-        void process_deferred_changes() override {
+        void process_deferred_changes(core::Span<EntityId> deleted_entities) override {
+            y_profile();
+
             for(const EntityId id : _to_delete) {
                 if(is_component_required(id)) {
                     // log_msg(fmt("{} #{} can't be removed as it is required by other components", runtime_info().clean_component_name(), id.index()), Log::Warning);
@@ -216,6 +218,14 @@ class ComponentContainer final : public ComponentContainerBase {
                 _matrix->remove_component<T>(id);
                 _components.erase(id);
             }
+
+            for(const EntityId id : deleted_entities) {
+                if(_components.contains(id)) {
+                    _matrix->remove_component<T>(id);
+                    _components.erase(id);
+                }
+            }
+
             _to_delete.make_empty();
             _mutated.make_empty();
         }
