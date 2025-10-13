@@ -59,6 +59,7 @@ class GltfImporter final : public Widget {
         struct {
             core::String import_path;
             bool import_child_prefabs_as_assets = false;
+            bool create_colliders = false;
         } _settings;
 
 

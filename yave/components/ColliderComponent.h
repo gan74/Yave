@@ -28,10 +28,6 @@ SOFTWARE.
 #include <yave/material/Material.h>
 
 
-#include <Jolt/Jolt.h>
-#include <Jolt/Physics/Body/BodyID.h>
-
-
 namespace yave {
 
 class ColliderComponent final {
@@ -56,9 +52,11 @@ class ColliderComponent final {
     private:
         friend class JoltPhysicsSystem;
 
+        static constexpr u32 invalid_index = u32(-1);
+        
         Type _type = Type::Static;
 
-        mutable JPH::BodyID _body_id = {};
+        mutable u32 _body_id = invalid_index;
         mutable math::Vec3 _scale = math::Vec3(1.0f);
 };
 

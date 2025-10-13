@@ -130,6 +130,7 @@ struct BPLayerInterface final : JPH::BroadPhaseLayerInterface {
     }
 
     JPH::BroadPhaseLayer GetBroadPhaseLayer(JPH::ObjectLayer layer) const override {
+        unused(layer);
         y_debug_assert(!layer);
         return JPH::BroadPhaseLayer(0);
     }
@@ -199,46 +200,6 @@ struct JoltData : NonMovable {
         body_interface = &physics_system.GetBodyInterface();
 
         physics_system.SetGravity(JPH::Vec3(0.0f, -9.81f, 0.0f));
-
-#if 0
-        // Next we can create a rigid body to serve as the floor, we make a large box
-        // Create the settings for the collision volume (the shape).
-        // Note that for simple shapes (like boxes) you can also directly construct a BoxShape.
-        JPH::BoxShapeSettings floor_shape_settings(JPH::Vec3(100.0f, 10.0f, 100.0f));
-        // floor_shape_settings.SetEmbedded(); // A ref counted object on the stack (base class RefTarget) should be marked as such to prevent it from being freed when its reference count goes to 0.
-
-        // Create the shape
-        JPH::ShapeSettings::ShapeResult floor_shape_result = floor_shape_settings.Create();
-        JPH::ShapeRefC floor_shape = floor_shape_result.Get(); // We don't expect an error here, but you can check floor_shape_result for HasError() / GetError()
-
-        // Create the settings for the body itself. Note that here you can also set other properties like the restitution / friction.
-        JPH::BodyCreationSettings floor_settings(floor_shape, JPH::RVec3(0.0f, -10.0f, 0.0f), JPH::Quat::sIdentity(), JPH::EMotionType::Static, JPH::ObjectLayer(0));
-        floor_settings.mUserData = ecs::EntityId().as_u64();
-
-        // Create the actual rigid body
-        JPH::Body *floor = body_interface->CreateBody(floor_settings); // Note that if we run out of bodies this can return nullptr
-
-        // Add it to the world
-        body_interface->AddBody(floor->GetID(), JPH::EActivation::DontActivate);
-
-        // Now create a dynamic body to bounce on the floor
-        // Note that this uses the shorthand version of creating and adding a body to the world
-        JPH::BodyCreationSettings sphere_settings(new JPH::SphereShape(0.5f), JPH::RVec3(0.0f, 2.0f, 0.0f), JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, JPH::ObjectLayer(0));
-        sphere_settings.mUserData = ecs::EntityId().as_u64();
-        sphere_settings.mRestitution = 1.0f;
-
-        JPH::BodyID sphere_id = body_interface->CreateAndAddBody(sphere_settings, JPH::EActivation::Activate);
-
-        // Now you can interact with the dynamic body, in this case we're going to give it a velocity.
-        // (note that if we had used CreateBody then we could have set the velocity straight on the body before adding it to the physics system)
-        body_interface->SetLinearVelocity(sphere_id, JPH::Vec3(0.0f, -5.0f, 0.0f));
-
-
-        // Optional step: Before starting the physics simulation you can optimize the broad phase. This improves collision detection performance (it's pointless here because we only have 2 bodies).
-        // You should definitely not call this every frame or when e.g. streaming in a new level section as it is an expensive operation.
-        // Instead insert all new objects in batches instead of 1 at a time to keep the broad phase efficient.
-        physics_system.OptimizeBroadPhase();
-#endif
     }
 
 
@@ -260,6 +221,15 @@ static void init_jolt() {
     }
 
     init = true;
+
+    JPH::Trace = [](const char* fmt, ...) {
+        va_list args;
+        va_start(args, fmt);
+        char buffer[512] = {};
+        vsnprintf(buffer, sizeof(buffer), fmt, args);
+        va_end(args);
+        log_msg(buffer, Log::Warning);
+    };
 
     JPH::RegisterDefaultAllocator();
 
@@ -336,9 +306,9 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
                 continue;
             }
 
-            if(!coll._body_id.IsInvalid()) {
-                _jolt->body_interface->RemoveBody(coll._body_id);
-                coll._body_id = {};
+            if(coll._body_id != ColliderComponent::invalid_index) {
+                _jolt->body_interface->RemoveBody(JPH::BodyID(coll._body_id));
+                coll._body_id = ColliderComponent::invalid_index;
             }
 
             if(const AssetPtr<StaticMesh>& static_mesh = mesh.mesh()) {
@@ -359,7 +329,7 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
                 body_settings.mUserData = id.as_u64();
 
                 coll._scale = scale;
-                coll._body_id = _jolt->body_interface->CreateAndAddBody(body_settings, JPH::EActivation::Activate);
+                coll._body_id = _jolt->body_interface->CreateAndAddBody(body_settings, JPH::EActivation::Activate).GetIndexAndSequenceNumber();
             }
         }
     });
