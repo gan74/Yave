@@ -163,7 +163,9 @@ void post_tick() {
     }
 
     if(JoltPhysicsSystem* jolt = application::world->find_system<JoltPhysicsSystem>()) {
-        jolt->set_debug_draw(application::settings.debug.display_colliders);
+        jolt->set_debug_drawer(&debug_drawer());
+        jolt->set_debug_draw_static(application::settings.debug.display_static_colliders);
+        jolt->set_debug_draw_movable(application::settings.debug.display_movable_colliders);
     }
 }
 

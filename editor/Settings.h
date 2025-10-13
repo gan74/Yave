@@ -71,9 +71,10 @@ struct DebugSettings {
     bool display_selected_bbox = false;
     bool display_hidden_entities = false;
     bool display_debug_drawer = true;
-    bool display_colliders = false;
+    bool display_static_colliders = false;
+    bool display_movable_colliders = false;
 
-    y_reflect(DebugSettings, entity_count, entity_spacing, display_selected_bbox, display_hidden_entities, display_debug_drawer, display_colliders)
+    y_reflect(DebugSettings, entity_count, entity_spacing, display_selected_bbox, display_hidden_entities, display_debug_drawer, display_static_colliders, display_movable_colliders)
 };
 
 

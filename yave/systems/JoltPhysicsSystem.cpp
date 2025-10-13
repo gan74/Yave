@@ -47,6 +47,7 @@ SOFTWARE.
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
+#include <Jolt/Physics/Body/BodyFilter.h>
 #include <Jolt/Renderer/DebugRenderer.h>
 #include <Jolt/Renderer/DebugRendererSimple.h>
 
@@ -98,9 +99,31 @@ y_force_inline static JPH::IndexedTriangle to_jph(IndexedTriangle t) {
 
 
 
+
+struct DebugDrawFilter final : public JPH::BodyDrawFilter {
+    public:
+        DebugDrawFilter(bool draw_static, bool draw_movable) : _draw_static(draw_static), _draw_movable(draw_movable) {
+        }
+
+        bool ShouldDraw(const JPH::Body& body) const override {
+            switch(body.GetMotionType()) {
+                case JPH::EMotionType::Static:
+                    return _draw_static;
+                case JPH::EMotionType::Kinematic:
+                case JPH::EMotionType::Dynamic:
+                    return _draw_movable;
+            }
+            return true;
+        }
+
+    private:
+        bool _draw_static;
+        bool _draw_movable;
+};
+
 class DebugDrawer final : public JPH::DebugRendererSimple {
     public:
-        DebugDrawer() : _prim(editor::debug_drawer().add_primitive("Jolt Debug")) {
+        DebugDrawer(DirectDraw* drawer) : _prim(drawer->add_primitive("Jolt Debug")) {
             JPH::DebugRenderer::Initialize();
         }
 
@@ -175,7 +198,6 @@ struct BodyActivationListener : JPH::BodyActivationListener, NonMovable {
     }
 
     ecs::EntityWorld* world = nullptr;
-
 };
 
 struct JoltData : NonMovable {
@@ -285,11 +307,18 @@ JoltPhysicsSystem::JoltPhysicsSystem() : ecs::System("JoltPhysicsSystem") {
 }
 
 JoltPhysicsSystem::~JoltPhysicsSystem() {
-
 }
 
-void JoltPhysicsSystem::set_debug_draw(bool enable) {
-    _debug_draw = enable;
+void JoltPhysicsSystem::set_debug_drawer(DirectDraw* drawer) {
+    _drawer = drawer;
+}
+
+void JoltPhysicsSystem::set_debug_draw_static(bool enable) {
+    _debug_draw_static = enable;
+}
+
+void JoltPhysicsSystem::set_debug_draw_movable(bool enable) {
+    _debug_draw_movable = enable;
 }
 
 void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
@@ -366,11 +395,13 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
     }, physics_job);
 
     sched.schedule(ecs::SystemSchedule::PostUpdate, "Debug draw", [this]() {
-        if(!_debug_draw) {
+        if(!_drawer || (!_debug_draw_static && !_debug_draw_movable)) {
             return;
         }
-        DebugDrawer renderer;
-        _jolt->physics_system.DrawBodies(JPH::BodyManager::DrawSettings{}, &renderer);
+
+        DebugDrawer renderer(_drawer);
+        DebugDrawFilter filter(_debug_draw_static, _debug_draw_movable);
+        _jolt->physics_system.DrawBodies(JPH::BodyManager::DrawSettings{}, &renderer, &filter);
     });
 }
 

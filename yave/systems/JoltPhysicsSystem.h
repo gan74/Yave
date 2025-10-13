@@ -35,14 +35,18 @@ class JoltPhysicsSystem : public ecs::System {
         JoltPhysicsSystem();
         ~JoltPhysicsSystem();
 
-        void set_debug_draw(bool enable);
+        void set_debug_drawer(DirectDraw* drawer);
+        void set_debug_draw_static(bool enable);
+        void set_debug_draw_movable(bool enable);
 
         void setup(ecs::SystemScheduler& sched) override;
 
     private:
         std::unique_ptr<JoltData> _jolt;
 
-        bool _debug_draw = false;
+        DirectDraw* _drawer = nullptr;
+        bool _debug_draw_static = false;
+        bool _debug_draw_movable = false;
 };
 
 }
