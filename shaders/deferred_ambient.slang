@@ -159,7 +159,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
 
             if(att > 0.0) {
                 const float3 radiance = light.color * att;
-                irradiance += radiance * eval_lighting(surface, view_dir, light_dir);
+                irradiance += radiance * eval_brdf(surface, view_dir, light_dir);
             }
         }
 

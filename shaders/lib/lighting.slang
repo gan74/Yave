@@ -20,53 +20,64 @@ float spot_attenuation(float cos_angle, float2 scale_offset) {
 
 
 
-float V_GGX(float NdotL, float NdotV, float sqr_alpha) {
-    const float GGXV = NdotL * sqrt(NdotV * NdotV * (1.0 - sqr_alpha) + sqr_alpha);
-    const float GGXL = NdotV * sqrt(NdotL * NdotL * (1.0 - sqr_alpha) + sqr_alpha);
-    const float GGX = GGXV + GGXL;
-    return GGX > 0.0 ? 0.5 / GGX : 0.0;
+
+float g1_ggx(float n_v, float sqr_alpha) {
+    const float d = n_v + sqrt(sqr_alpha + (1.0f - sqr_alpha) * n_v * n_v);
+    return (2.0 * n_v) / max(d, epsilon);
 }
 
-float D_GGX(float NdotH, float sqr_alpha) {
-    const float f = (NdotH * NdotH) * (sqr_alpha - 1.0) + 1.0;
+float g_ggx(float n_l, float n_v, float sqr_alpha) {
+    return g1_ggx(n_l, sqr_alpha) * g1_ggx(n_v, sqr_alpha);
+}
+
+float d_ggx(float n_h, float sqr_alpha) {
+    const float f = (n_h * n_h) * (sqr_alpha - 1.0) + 1.0;
     return sqr_alpha / (pi * sqr(f));
 }
 
+float3 f_shlick(float l_h, float3 f0) {
+    const float k = 1.0 - l_h;
+    return f0 + (float3(1.0) - f0) * sqr(sqr(k)) * k;
+}
 
 
-float3 eval_diffuse(SurfaceInfo info, float3 f0, float3 f90, float3 V, float3 N, float3 L, float3 H) {
+
+
+float3 eval_lambert_diffuse(SurfaceInfo info, float3 v, float3 n, float3 l, float3 h) {
     return info.albedo * (inv_pi * (1.0 - info.metallic));
 }
 
-float3 eval_specular(SurfaceInfo info, float3 f0, float3 f90, float3 Vi, float3 N, float3 L, float3 H) {
-    const float NdotL = max(dot(N, L), epsilon);
-    const float NdotV = max(abs(dot(N, Vi)), epsilon);
-    const float NdotH = dot(N, H);
-    const float LdotH = dot(L, H);
-    const float VdotH = dot(Vi, H);
-
-    const float3 F = F_Schlick(f0, f90, VdotH);
-    const float V = V_GGX(NdotL, NdotV, info.alpha2());
-    const float D = D_GGX(NdotH, info.alpha2());
-
-    return F * V * D;
-}
-
-float3 eval_lighting(SurfaceInfo info, float3 V, float3 L) {
-
-   const float3 N = info.normal;
-   const float NdotL = dot(N, L);
-
-    if(NdotL < 0.0) {
+float3 eval_ggx_specular(SurfaceInfo info, float3 v, float3 n, float3 l, float3 h) {
+    if(info.perceptual_roughness < epsilon) {
         return float3(0.0);
     }
 
-    const float3 H = normalize(L + V);
+    const float n_l = max(dot(n, l), epsilon);
+    const float n_v = max(abs(dot(v, v)), epsilon);
+    const float n_h = dot(n, h);
+    const float l_h = dot(l, h);
 
-    const float3 diffuse_contrib = eval_diffuse(info, info.f0(), info.f90(), V, N, L, H);
-    const float3 specular_contrib = eval_specular(info, info.f0(), info.f90(), V, N, L, H);
+    const float3 f = f_shlick(l_h, info.f0());
+    const float g = g_ggx(n_l, n_l, info.alpha2());
+    const float d = d_ggx(n_h, info.alpha2());
 
-    return (diffuse_contrib + specular_contrib) * NdotL;
+    return f * (d * g / (4.0 * n_l * n_v));
+}
+
+float3 eval_brdf(SurfaceInfo info, float3 v, float3 l) {
+   const float3 n = info.normal;
+   const float n_l = dot(n, l);
+
+    if(n_l <= 0.0) {
+        return float3(0.0);
+    }
+
+    const float3 h = normalize(l + v);
+
+    const float3 diffuse_contrib = eval_lambert_diffuse(info, v, n, l, h);
+    const float3 specular_contrib = eval_ggx_specular(info, v, n, l, h);
+
+    return (diffuse_contrib + specular_contrib) * n_l;
 }
 
 
