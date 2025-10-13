@@ -30,7 +30,7 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/PointLightComponent.h>
-#include <yave/components/ColliderComponent.h>
+#include <yave/components/RigidBodyComponent.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/material/Material.h>
 
@@ -110,7 +110,7 @@ static std::pair<std::unique_ptr<ecs::EntityPrefab>, core::String> create_prefab
             prefab->add(StaticMeshComponent(make_asset_with_id<StaticMesh>(mesh.asset_id), std::move(materials)));
 
             if(settings.create_colliders) {
-                prefab->add(ColliderComponent());
+                prefab->add(RigidBodyComponent());
             }
         }
     }

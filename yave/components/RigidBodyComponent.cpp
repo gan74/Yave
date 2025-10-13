@@ -20,13 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "ColliderComponent.h"
+#include "RigidBodyComponent.h"
 
 #include <yave/ecs/ComponentInspector.h>
 
 namespace yave {
 
-void ColliderComponent::inspect(ecs::ComponentInspector* inspector) {
+void RigidBodyComponent::inspect(ecs::ComponentInspector* inspector) {
     const std::array<std::string_view, 3> values = {"Static", "Kinematic", "Dynamic"};
     inspector->inspect("Type", _type, values);
 }

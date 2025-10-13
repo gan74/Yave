@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "JoltPhysicsSystem.h"
 
-#include <yave/components/ColliderComponent.h>
+#include <yave/components/RigidBodyComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/meshes/MeshData.h>
@@ -89,7 +89,7 @@ y_force_inline static JPH::Quat to_jph(const math::Quaternion<>& q) {
     return JPH::Quat(q.x(), q.y(), q.z(), q.w());
 }
 
-y_force_inline static JPH::EMotionType to_jph(ColliderComponent::Type type) {
+y_force_inline static JPH::EMotionType to_jph(RigidBodyComponent::Type type) {
     return JPH::EMotionType(type);
 }
 
@@ -329,7 +329,7 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
     _jolt = std::make_unique<JoltData>(&world());
 
     const auto collect_job = sched.schedule(ecs::SystemSchedule::Update, "Collect colliders", [this](ecs::EntityGroup<
-            ecs::AnyChanged<ColliderComponent>,
+            ecs::AnyChanged<RigidBodyComponent>,
             ecs::AnyChanged<StaticMeshComponent>,
             TransformableComponent
         >&& group) {
@@ -339,16 +339,16 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
                 continue;
             }
 
-            if(body._body_id != ColliderComponent::invalid_index) {
+            if(body._body_id != RigidBodyComponent::invalid_index) {
                 _jolt->body_interface->RemoveBody(JPH::BodyID(body._body_id));
-                body._body_id = ColliderComponent::invalid_index;
+                body._body_id = RigidBodyComponent::invalid_index;
             }
 
             if(const AssetPtr<StaticMesh>& static_mesh = mesh.mesh()) {
                 const math::Transform<>& transform = tr.transform();
                 const auto [translation, rotation, scale] = transform.decompose();
 
-                JPH::Ref<JPH::Shape> shape = body._type == ColliderComponent::Type::Static
+                JPH::Ref<JPH::Shape> shape = body._type == RigidBodyComponent::Type::Static
                     ? create_static_shape(_jolt.get(), static_mesh.get())
                     : create_movable_shape(_jolt.get(), static_mesh.get())
                 ;
@@ -367,11 +367,11 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
         }
     });
 
-    const auto delete_job = sched.schedule(ecs::SystemSchedule::Update, "Delete colliders", [this](ecs::EntityGroup<ecs::Deleted<ColliderComponent>>&& group) {
+    const auto delete_job = sched.schedule(ecs::SystemSchedule::Update, "Delete colliders", [this](ecs::EntityGroup<ecs::Deleted<RigidBodyComponent>>&& group) {
         for(auto&& [body] : group) {
-            if(body._body_id != ColliderComponent::invalid_index) {
+            if(body._body_id != RigidBodyComponent::invalid_index) {
                 _jolt->body_interface->RemoveBody(JPH::BodyID(body._body_id));
-                body._body_id = ColliderComponent::invalid_index;
+                body._body_id = RigidBodyComponent::invalid_index;
             }
         }
     }, collect_job);
@@ -385,7 +385,7 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
 
     sched.schedule(ecs::SystemSchedule::Update, "Copy transforms", [this](ecs::EntityGroup<
             JoltActiveComponent,
-            ColliderComponent,
+            RigidBodyComponent,
             ecs::Mutate<TransformableComponent>
         >&& group) {
 

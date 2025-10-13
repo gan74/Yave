@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_COMPONENTS_COLLIDERCOMPONENT_H
-#define YAVE_COMPONENTS_COLLIDERCOMPONENT_H
+#ifndef YAVE_COMPONENTS_RigidBodyComponent_H
+#define YAVE_COMPONENTS_RigidBodyComponent_H
 
 #include <yave/ecs/ecs.h>
 
@@ -30,7 +30,7 @@ SOFTWARE.
 
 namespace yave {
 
-class ColliderComponent final {
+class RigidBodyComponent final {
 
     public:
         enum class Type {
@@ -39,7 +39,7 @@ class ColliderComponent final {
             Dynamic,
         };
 
-        ColliderComponent() = default;
+        RigidBodyComponent() = default;
 
         void set_type(Type t) {
             _type = t;
@@ -47,13 +47,13 @@ class ColliderComponent final {
 
         void inspect(ecs::ComponentInspector* inspector);
 
-        y_reflect(ColliderComponent, _type)
+        y_reflect(RigidBodyComponent, _type)
 
     private:
         friend class JoltPhysicsSystem;
 
         static constexpr u32 invalid_index = u32(-1);
-        
+
         Type _type = Type::Static;
 
         mutable u32 _body_id = invalid_index;
@@ -63,5 +63,5 @@ class ColliderComponent final {
 
 }
 
-#endif // YAVE_COMPONENTS_COLLIDERCOMPONENT_H
+#endif // YAVE_COMPONENTS_RigidBodyComponent_H
 
