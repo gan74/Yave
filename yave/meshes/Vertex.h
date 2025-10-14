@@ -93,8 +93,8 @@ static_assert(sizeof(IndexedTriangle) == 3 * sizeof(u32));
 struct SkinWeights {
     static constexpr usize size = 4;
 
-    math::Vec<size, u32> indices;
-    math::Vec<size, float> weights;
+    math::Vec<size, u16> indices;
+    math::Vec<size, u16> weights;
 };
 
 struct SkinnedVertex {

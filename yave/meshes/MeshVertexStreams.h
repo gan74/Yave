@@ -86,7 +86,6 @@ class MeshVertexStreams {
 
         usize vertex_count() const;
 
-        bool has_stream(VertexStreamType type) const;
         bool is_empty() const;
 
         u8* data(VertexStreamType type);

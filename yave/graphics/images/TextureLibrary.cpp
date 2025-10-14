@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-TextureLibrary::TextureLibrary() : DescriptorArray(VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+TextureLibrary::TextureLibrary() : ManagedDescriptorArray(VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
 }
 
 u32 TextureLibrary::add_texture(const TextureView& tex, SamplerType sampler) {

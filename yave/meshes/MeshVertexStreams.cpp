@@ -96,10 +96,6 @@ bool MeshVertexStreams::is_empty() const {
     return !_vertex_count;
 }
 
-bool MeshVertexStreams::has_stream(VertexStreamType type) const {
-    return data(type);
-}
-
 u8* MeshVertexStreams::data(VertexStreamType type) {
     const usize offset = _stream_offsets[usize(type)];
     return _storage.data() + offset;

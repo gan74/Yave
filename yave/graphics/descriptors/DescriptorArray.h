@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace yave {
 
-class DescriptorArray : NonMovable {
+class ManagedDescriptorArray : NonMovable {
     struct Entry {
         u32 index = 0;
         u32 ref_count = 0;
@@ -69,7 +69,7 @@ class DescriptorArray : NonMovable {
         static constexpr u32 upper_descriptor_count_limit = 1024 * 1024;
         static constexpr u32 reserved_descriptor_count = 16;
 
-        ~DescriptorArray();
+        ~ManagedDescriptorArray();
 
         usize descriptor_count() const;
 
@@ -78,7 +78,7 @@ class DescriptorArray : NonMovable {
         VkDescriptorSetLayout descriptor_set_layout() const;
 
     protected:
-        DescriptorArray(VkDescriptorType type, u32 starting_capacity = 1024);
+        ManagedDescriptorArray(VkDescriptorType type, u32 starting_capacity = 1024);
 
         u32 add_descriptor(const Descriptor& desc);
         void remove_descriptor(const Descriptor& desc);
@@ -95,7 +95,7 @@ class DescriptorArray : NonMovable {
             VkHandle<VkDescriptorPool> pool;
             u32 capacity = 0;
 
-            VkDescriptorSet alloc_set(u32 size, const DescriptorArray* parent);
+            VkDescriptorSet alloc_set(u32 size, const ManagedDescriptorArray* parent);
         };
 
         VkHandle<VkDescriptorSetLayout> _layout;
@@ -107,6 +107,9 @@ class DescriptorArray : NonMovable {
 
         const VkDescriptorType _type;
 };
+
+
+
 
 }
 

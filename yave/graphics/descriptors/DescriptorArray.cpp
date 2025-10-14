@@ -90,10 +90,10 @@ static VkHandle<VkDescriptorSetLayout> create_libray_layout(VkDescriptorType typ
     VkDescriptorSetLayoutBinding binding = {};
     {
         const u32 max_descs = max_descriptor_of_type(type);
-        y_always_assert(max_descs > 2 * DescriptorArray::reserved_descriptor_count, "not enough descriptors of type {}", string_VkDescriptorType(type));
+        y_always_assert(max_descs > 2 * ManagedDescriptorArray::reserved_descriptor_count, "not enough descriptors of type {}", string_VkDescriptorType(type));
 
         binding.descriptorType = type;
-        binding.descriptorCount = std::min(max_descs - DescriptorArray::reserved_descriptor_count, DescriptorArray::upper_descriptor_count_limit);
+        binding.descriptorCount = std::min(max_descs - ManagedDescriptorArray::reserved_descriptor_count, ManagedDescriptorArray::upper_descriptor_count_limit);
         binding.stageFlags = VK_SHADER_STAGE_ALL;
     }
 
@@ -130,7 +130,7 @@ static VkDescriptorSet create_array_set(VkDescriptorPool pool, VkDescriptorSetLa
     return set;
 }
 
-DescriptorArray::DescriptorArray(VkDescriptorType type, u32 starting_capacity) :
+ManagedDescriptorArray::ManagedDescriptorArray(VkDescriptorType type, u32 starting_capacity) :
         _layout(create_libray_layout(type)),
         _type(type) {
 
@@ -145,7 +145,7 @@ DescriptorArray::DescriptorArray(VkDescriptorType type, u32 starting_capacity) :
 #endif
 }
 
-DescriptorArray::~DescriptorArray() {
+ManagedDescriptorArray::~ManagedDescriptorArray() {
     allocator.locked([&](auto&& allocator) {
         y_always_assert(allocator.descriptors.is_empty(), "Some bindless descriptors have not been released"); // Do we care?
         destroy_graphic_resource(std::move(allocator.pool));
@@ -153,7 +153,7 @@ DescriptorArray::~DescriptorArray() {
     destroy_graphic_resource(std::move(_layout));
 }
 
-VkDescriptorSet DescriptorArray::Allocator::alloc_set(u32 size, const DescriptorArray* parent) {
+VkDescriptorSet ManagedDescriptorArray::Allocator::alloc_set(u32 size, const ManagedDescriptorArray* parent) {
     y_profile();
     y_debug_assert(size > capacity);
 
@@ -173,7 +173,7 @@ VkDescriptorSet DescriptorArray::Allocator::alloc_set(u32 size, const Descriptor
 }
 
 
-DescriptorArray::DescriptorKey DescriptorArray::descriptor_key(const Descriptor& desc) {
+ManagedDescriptorArray::DescriptorKey ManagedDescriptorArray::descriptor_key(const Descriptor& desc) {
     DescriptorKey key;
 
     const auto& info = desc.descriptor_info();
@@ -188,7 +188,7 @@ DescriptorArray::DescriptorKey DescriptorArray::descriptor_key(const Descriptor&
     return key;
 }
 
-u32 DescriptorArray::add_descriptor(const Descriptor& desc) {
+u32 ManagedDescriptorArray::add_descriptor(const Descriptor& desc) {
     y_debug_assert(desc.vk_descriptor_type() == _type);
 
     const DescriptorKey key = descriptor_key(desc);
@@ -216,7 +216,7 @@ u32 DescriptorArray::add_descriptor(const Descriptor& desc) {
     return entry_index;
 }
 
-void DescriptorArray::remove_descriptor(const Descriptor& desc) {
+void ManagedDescriptorArray::remove_descriptor(const Descriptor& desc) {
     y_debug_assert(desc.vk_descriptor_type() == _type);
 
     const DescriptorKey key = descriptor_key(desc);
@@ -231,7 +231,7 @@ void DescriptorArray::remove_descriptor(const Descriptor& desc) {
     });
 }
 
-VkWriteDescriptorSet DescriptorArray::descriptor_write(VkDescriptorSet set, const DescriptorKey& key, u32 index) const {
+VkWriteDescriptorSet ManagedDescriptorArray::descriptor_write(VkDescriptorSet set, const DescriptorKey& key, u32 index) const {
     VkWriteDescriptorSet write = vk_struct();
     {
         write.descriptorType = _type;
@@ -251,22 +251,22 @@ VkWriteDescriptorSet DescriptorArray::descriptor_write(VkDescriptorSet set, cons
     return write;
 }
 
-void DescriptorArray::add_descriptor_to_set(const DescriptorKey& desc, u32 index) {
+void ManagedDescriptorArray::add_descriptor_to_set(const DescriptorKey& desc, u32 index) {
     const VkWriteDescriptorSet write = descriptor_write(_set, desc, index);
 
     const auto lock = std::unique_lock(_set_lock);
     vkUpdateDescriptorSets(vk_device(), 1, &write, 0, nullptr);
 }
 
-usize DescriptorArray::descriptor_count() const {
+usize ManagedDescriptorArray::descriptor_count() const {
     return allocator.locked([&](auto&& allocator) { return allocator.descriptors.size(); });
 }
 
-DescriptorSetProxy DescriptorArray::descriptor_set() const {
+DescriptorSetProxy ManagedDescriptorArray::descriptor_set() const {
     return DescriptorSetProxy(_set);
 }
 
-VkDescriptorSetLayout DescriptorArray::descriptor_set_layout() const {
+VkDescriptorSetLayout ManagedDescriptorArray::descriptor_set_layout() const {
     return _layout;
 }
 
