@@ -29,7 +29,49 @@ SOFTWARE.
 
 namespace yave {
 
-class ManagedDescriptorArray : NonMovable {
+class DescriptorArray : NonMovable {
+    public:
+        static constexpr u32 upper_descriptor_count_limit = 1024 * 1024;
+        static constexpr u32 reserved_descriptor_count = 16;
+
+        ~DescriptorArray();
+
+        VkDescriptorType descriptor_type() const;
+
+        DescriptorSetProxy descriptor_set() const;
+
+        VkDescriptorSetLayout descriptor_set_layout() const;
+
+    protected:
+        DescriptorArray(VkDescriptorType type, u32 starting_capacity = 1024);
+
+        u32 add_descriptor(const Descriptor& desc);
+        void remove_descriptor(u32 index);
+
+        void add_descriptor_to_set(const Descriptor& desc, u32 index);
+
+    private:
+        VkWriteDescriptorSet descriptor_write(VkDescriptorSet set, const Descriptor& desc, u32 index) const;
+
+        void alloc_set(u32 size);
+
+        std::atomic<VkDescriptorSet> _set = {};
+        u32 _capacity = 0;
+
+        core::Vector<u32> _free;
+
+        VkHandle<VkDescriptorSetLayout> _layout;
+        VkHandle<VkDescriptorPool> _pool;
+
+        const VkDescriptorType _type;
+
+    protected:
+        mutable ProfiledLock<std::recursive_mutex> _set_lock; // Locks for writes on the set
+};
+
+
+
+class ManagedDescriptorArray : public DescriptorArray {
     struct Entry {
         u32 index = 0;
         u32 ref_count = 0;
@@ -66,46 +108,18 @@ class ManagedDescriptorArray : NonMovable {
 
 
     public:
-        static constexpr u32 upper_descriptor_count_limit = 1024 * 1024;
-        static constexpr u32 reserved_descriptor_count = 16;
-
         ~ManagedDescriptorArray();
-
-        usize descriptor_count() const;
-
-        DescriptorSetProxy descriptor_set() const;
-
-        VkDescriptorSetLayout descriptor_set_layout() const;
 
     protected:
         ManagedDescriptorArray(VkDescriptorType type, u32 starting_capacity = 1024);
 
-        u32 add_descriptor(const Descriptor& desc);
-        void remove_descriptor(const Descriptor& desc);
+        u32 add_descriptor_managed(const Descriptor& desc);
+        void remove_descriptor_managed(const Descriptor& desc);
 
     private:
         static DescriptorKey descriptor_key(const Descriptor& desc);
 
-        VkWriteDescriptorSet descriptor_write(VkDescriptorSet set, const DescriptorKey& desc, u32 index) const;
-        void add_descriptor_to_set(const DescriptorKey& desc, u32 index);
-
-        struct Allocator {
-            core::FlatHashMap<DescriptorKey, Entry, Hasher> descriptors;
-            core::Vector<u32> free;
-            VkHandle<VkDescriptorPool> pool;
-            u32 capacity = 0;
-
-            VkDescriptorSet alloc_set(u32 size, const ManagedDescriptorArray* parent);
-        };
-
-        VkHandle<VkDescriptorSetLayout> _layout;
-        std::atomic<VkDescriptorSet> _set = {};
-
-        ProfiledMutexed<Allocator> allocator;
-
-        mutable ProfiledLock<std::mutex> _set_lock; // Locks for writes on the set
-
-        const VkDescriptorType _type;
+        core::FlatHashMap<DescriptorKey, Entry, Hasher> _descriptors;
 };
 
 
