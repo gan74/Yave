@@ -45,7 +45,7 @@ Sampler2D all_textures[];
 
 [shader("vertex")]
 VertexStageOut vert_main(StdVertexStageIn in) {
-    const TransformableData transformable = transformables[transform_material_indices[semantics.instance_index].x];
+    const TransformableData transformable = transformables[mesh_objects[semantics.instance_index].transform_index];
 
     const float3x3 model = float3x3(transformable.current);
 
@@ -104,7 +104,7 @@ float metalic_from_specular(float3 diffuse, float3 specular) {
 
 [shader("fragment")]
 PixelStageOut frag_main(PixelStageIn in) {
-    const MaterialData material = materials[transform_material_indices[in.instance_index].y];
+    const MaterialData material = materials[mesh_objects[in.instance_index].material_index];
 
     const Sampler2D albedo_tex = all_textures[NonUniformResourceIndex(material.texture_indices[uint(TextureSlots::Albedo)])];
     const Sampler2D normal_tex = all_textures[NonUniformResourceIndex(material.texture_indices[uint(TextureSlots::Normal)])];

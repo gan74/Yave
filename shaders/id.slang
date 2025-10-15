@@ -10,7 +10,7 @@ struct VertexStageOut {
 
 [shader("vertex")]
 VertexStageOut vert_main(StdVertexStageIn in) {
-    const TransformableData transformable = transformables[transform_material_indices[semantics.instance_index].x];
+    const TransformableData transformable = transformables[mesh_objects[semantics.instance_index].transform_index];
 
     VertexStageOut out;
     {
@@ -23,5 +23,5 @@ VertexStageOut vert_main(StdVertexStageIn in) {
 
 [shader("fragment")]
 uint frag_main(uint in_instance_index) : SV_Target0 {
-    return transform_material_indices[in_instance_index].y + 1;
+    return mesh_objects[in_instance_index].material_index + 1;
 }

@@ -13,6 +13,6 @@ StructuredBuffer<TransformableData> transformables;
 StructuredBuffer<MaterialData> materials;
 
 [[vk::binding(3)]]
-StructuredBuffer<uint2> transform_material_indices;
+StructuredBuffer<MeshObject> mesh_objects;
 
 #endif

@@ -41,7 +41,7 @@ namespace yave {
 struct StaticMeshBatch {
     const MaterialTemplate* material_template = nullptr;
     VkDrawIndexedIndirectCommand cmd = {};
-    math::Vec2ui indices;
+    shader::MeshObject mesh_object;
 };
 
 
@@ -63,7 +63,7 @@ static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Ve
                 batches.emplace_back(
                     mat->material_template(),
                     static_mesh->draw_command().vk_indirect_data(),
-                    math::Vec2ui(transform_index, mat->draw_data().index())
+                    shader::MeshObject{transform_index, mat->draw_data().index()}
                 );
             }
         } else {
@@ -73,7 +73,7 @@ static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Ve
                     batches.emplace_back(
                         mat->material_template(),
                         static_mesh->sub_meshes()[i].vk_indirect_data(),
-                        math::Vec2ui(transform_index, mat->draw_data().index())
+                        shader::MeshObject{transform_index, mat->draw_data().index()}
                     );
                 }
             }
@@ -101,7 +101,7 @@ static void collect_batches_for_id(core::Span<const StaticMeshObject*> meshes, c
         batches.emplace_back(
             nullptr,
             static_mesh->draw_command().vk_indirect_data(index),
-            math::Vec2ui(transform_index, mesh->entity_index)
+            shader::MeshObject{transform_index, mesh->entity_index}
         );
 
         ++index;
@@ -138,15 +138,15 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc
 
 
 
-    const auto indices_buffer = builder.declare_typed_buffer<math::Vec2ui>(batch_count);
-    builder.map_buffer(indices_buffer);
+    const auto object_buffer = builder.declare_typed_buffer<shader::MeshObject>(batch_count);
+    builder.map_buffer(object_buffer);
 
     const auto indirect_buffer = builder.declare_typed_buffer<VkDrawIndexedIndirectCommand>(batch_count);
     builder.map_buffer(indirect_buffer);
 
     builder.add_external_input(Descriptor(_transform_manager.transform_buffer()), PipelineStage::None, desc_set_index);
     builder.add_external_input(Descriptor(material_allocator().material_buffer()), PipelineStage::None, desc_set_index);
-    builder.add_storage_input(indices_buffer, PipelineStage::None, desc_set_index);
+    builder.add_storage_input(object_buffer, PipelineStage::None, desc_set_index);
 
     builder.add_indrect_input(indirect_buffer);
 
@@ -159,7 +159,7 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc
         const IndirectSubBuffer buffer = pass->resources().buffer<BufferUsage::IndirectBit>(indirect_buffer);
 
         auto indirect_mapping = pass->resources().map_buffer(indirect_buffer);
-        auto indices_mapping = pass->resources().map_buffer(indices_buffer);
+        auto object_mapping = pass->resources().map_buffer(object_buffer);
 
         render_pass.bind_mesh_buffers(mesh_allocator().mesh_buffers());
 
@@ -195,7 +195,7 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc
                     batch.cmd.firstInstance = u32(i);
 
                     indirect_mapping[i] = batch.cmd;
-                    indices_mapping[i] = batch.indices;
+                    object_mapping[i] = batch.mesh_object;
 
                     push_batch(batch.material_template, i);
                 }
@@ -206,7 +206,7 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc
                 for(usize i = 0; i != batches.size(); ++i) {
                     const StaticMeshBatch& batch = batches[i];
                     indirect_mapping[i] = batch.cmd;
-                    indices_mapping[i] = batch.indices;
+                    object_mapping[i] = batch.mesh_object;
                 }
                 y_debug_assert(buffer.size() == batch_count);
                 render_pass.bind_material_template(device_resources()[DeviceResources::IdMaterialTemplate], pass->descriptor_set(desc_set_index));

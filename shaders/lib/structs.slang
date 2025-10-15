@@ -153,4 +153,9 @@ struct PickingData {
     uint entity_index;
 };
 
+struct MeshObject {
+    uint transform_index;
+    uint material_index;
+};
+
 #endif
