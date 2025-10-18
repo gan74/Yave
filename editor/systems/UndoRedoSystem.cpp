@@ -33,7 +33,6 @@ SOFTWARE.
 
 namespace editor {
 
-
 template<typename T>
 static io2::Buffer serialize_to_buffer(const T& t) {
     io2::Buffer buffer;
@@ -56,6 +55,7 @@ class UndoRedoSystem::GetterInspector final : public ecs::TemplateComponentInspe
                 _properties.emplace_back(name, t.unlinked());
             } else {
                 _properties.emplace_back(name, t);
+                y_debug_assert(!std::holds_alternative<GenericAssetPtr>(_properties.last().value));
             }
         }
 
@@ -191,8 +191,6 @@ void UndoRedoSystem::setup(ecs::SystemScheduler& sched) {
 
                 const ecs::ComponentTypeIndex type_id = container->type_id();
 
-                Y_TODO(We dont clear component box, they may still contain live assetptrs)
-
                 for(const ecs::EntityId id : container->mutated_ids()) {
                     if(_snapshot->exists(id) && _snapshot->has_component(id, type_id)) {
                         const ComponentKey key{id, type_id};
@@ -201,12 +199,16 @@ void UndoRedoSystem::setup(ecs::SystemScheduler& sched) {
                     } else {
                         std::unique_ptr<ecs::ComponentBoxBase> comp = world().create_box_from_component(id, type_id);
                         y_debug_assert(comp);
+                        comp->unlink_assets();
                         state.added_components.emplace_back(id, std::move(comp));
                     }
                 }
 
                 for(const ecs::EntityId id : container->pending_deletions()) {
-                    state.removed_components.emplace_back(id, world().create_box_from_component(id, type_id));
+                    std::unique_ptr<ecs::ComponentBoxBase> comp = world().create_box_from_component(id, type_id);
+                    y_debug_assert(comp);
+                    comp->unlink_assets();
+                    state.removed_components.emplace_back(id, std::move(comp));
                 }
             }
 

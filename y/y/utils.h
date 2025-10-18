@@ -60,6 +60,11 @@ constexpr bool is_pow_of_2(T n) {
 template<typename... Args>
 constexpr void unused(Args&&...) {}
 
+template<typename... Ts>
+struct Overloaded : Ts... { using Ts::operator()...; };
+
+template<typename... Ts>
+Overloaded(Ts...) -> Overloaded<Ts...>;
 
 
 inline constexpr bool is_64_bits() {
