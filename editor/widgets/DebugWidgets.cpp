@@ -396,13 +396,13 @@ class UndoRedoDebug : public Widget {
                     if(ImGui::TreeNodeEx(fmt_c_str("State #{}", i), ImGuiTreeNodeFlags_SpanAvailWidth | (current ? ImGuiTreeNodeFlags_Selected : 0)))  {
                         ImGui::Indent();
 
-                        for(const auto& [id, comp] : states[i].removed_components) {
-                            const auto type_name = current_world().component_type_name(comp->runtime_info().type_id);
+                        for(const auto& [id, data] : states[i].removed_components) {
+                            const auto type_name = current_world().component_type_name(data.type_id);
                             ImGui::TextUnformatted(fmt_c_str("({:08x}:{:08x}).{} deleted", id.index(), id.version(), type_name));
                         }
 
-                        for(const auto& [id, comp] : states[i].added_components) {
-                            const auto type_name = current_world().component_type_name(comp->runtime_info().type_id);
+                        for(const auto& [id, data] : states[i].added_components) {
+                            const auto type_name = current_world().component_type_name(data.type_id);
                             ImGui::TextUnformatted(fmt_c_str("({:08x}:{:08x}).{} added", id.index(), id.version(), type_name));
                         }
 
