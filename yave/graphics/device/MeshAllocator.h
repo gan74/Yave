@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_GRAPHICS_DEVICE_MESHALLOCATOR_H
 
 #include <yave/graphics/buffers/Buffer.h>
+#include <yave/graphics/descriptors/DescriptorArray.h>
 #include <yave/meshes/MeshDrawData.h>
 
 #include <y/core/Span.h>
@@ -32,6 +33,24 @@ SOFTWARE.
 #include <mutex>
 
 namespace yave {
+
+class MeshBufferArray final : public DescriptorArray {
+    public:
+        static constexpr usize stream_count = usize(VertexStreamType::Max);
+
+        using Indices = std::array<u32, stream_count>;
+
+        MeshBufferArray();
+
+        Indices create_buffers(const MeshVertexStreams& streams, TransferCmdBufferRecorder& recorder);
+        void remove_buffers(Indices indices);
+
+    private:
+        using DataBuffer = Buffer<BufferUsage::StorageBit | BufferUsage::TransferDstBit, MemoryType::DeviceLocal>;
+
+
+        core::Vector<DataBuffer> _buffers;
+};
 
 class MeshAllocator : NonMovable {
     using MutableTriangleSubBuffer = SubBuffer<BufferUsage::IndexBit | BufferUsage::TransferDstBit>;

@@ -88,10 +88,20 @@ class MeshVertexStreams {
 
         bool is_empty() const;
 
+        usize stream_byte_size(VertexStreamType type) const;
+
         u8* data(VertexStreamType type);
         const u8* data(VertexStreamType type) const;
 
         PackedVertex operator[](usize index) const;
+
+        inline auto stream_data(VertexStreamType type) {
+            return core::MutableSpan<u8>(data(type), stream_byte_size(type));
+        }
+
+        inline auto stream_data(VertexStreamType type) const {
+            return core::Span<u8>(data(type), stream_byte_size(type));
+        }
 
         template<VertexStreamType Type>
         inline auto stream() {

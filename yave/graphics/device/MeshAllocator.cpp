@@ -32,6 +32,46 @@ SOFTWARE.
 
 namespace yave {
 
+
+
+MeshBufferArray::MeshBufferArray() : DescriptorArray(VkDescriptorType::VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+}
+
+MeshBufferArray::Indices MeshBufferArray::create_buffers(const MeshVertexStreams& streams, TransferCmdBufferRecorder& recorder) {
+
+    auto stage_copy = [&](const SubBuffer<BufferUsage::TransferDstBit>& dst, const void* data) {
+        y_debug_assert(data);
+        const u64 dst_size = dst.byte_size();
+        const StagingBuffer buffer(dst_size);
+        std::memcpy(buffer.map_bytes(MappingAccess::WriteOnly).raw_data(), data, dst_size);
+        recorder.unbarriered_copy(buffer, dst);
+    };
+
+    Indices indices = {};
+    for(usize i = 0; i != stream_count; ++i) {
+        const core::Span<u8> data = streams.stream_data(VertexStreamType(i));
+        y_debug_assert(!data.is_empty());
+
+        DataBuffer buffer(data.size());
+        stage_copy(buffer, data.data());
+
+        indices[i] = add_descriptor(buffer);
+        _buffers.set_min_size(indices[i] + 1);
+        _buffers[indices[i]] = std::move(buffer);
+    }
+    return indices;
+}
+
+void MeshBufferArray::remove_buffers(Indices indices) {
+    for(usize i = 0; i != stream_count; ++i) {
+        remove_descriptor(indices[i]);
+        _buffers[indices[i]] = {};
+    }
+}
+
+
+
+
 MeshAllocator::MeshAllocator() :
         _attrib_buffer(default_vertex_count * MeshVertexStreams::total_vertex_size),
         _triangle_buffer(default_triangle_count) {
