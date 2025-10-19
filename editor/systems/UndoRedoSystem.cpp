@@ -25,10 +25,10 @@ SOFTWARE.
 #include <yave/ecs/EntityWorld.h>
 #include <yave/ecs/ComponentBox.h>
 
-#include <y/io2/Buffer.h>
-
 #include <y/utils/log.h>
 #include <y/utils/format.h>
+
+#include <y/serde3/archives.h>
 
 
 namespace editor {
@@ -85,6 +85,17 @@ class UndoRedoSystem::SetterInspector final : public ecs::TemplateComponentInspe
 };
 
 
+static std::unique_ptr<ecs::ComponentBoxBase> read_component(io2::Buffer& buffer) {
+    std::unique_ptr<ecs::ComponentBoxBase> comp;
+
+    buffer.reset();
+    serde3::ReadableArchive(buffer).deserialize(comp).unwrap();
+
+    return comp;
+}
+
+
+
 void UndoRedoSystem::UndoState::undo(ecs::EntityWorld& world) {
     y_profile();
 
@@ -101,12 +112,14 @@ void UndoRedoSystem::UndoState::undo(ecs::EntityWorld& world) {
         world.remove_entity(id);
     }
 
-    for(const auto& [id, comp] : removed_components) {
-        comp->add_or_replace(world, id);
+    for(auto&& [id, data] : removed_components) {
+        // comp->add_or_replace(world, id);
+        read_component(data.buffer)->add_or_replace(world, id);
     }
 
-    for(const auto& [id, comp] : added_components) {
-        world.remove_component(id, comp->runtime_info().type_id);
+    for(auto&& [id, data] : added_components) {
+        // world.remove_component(id, comp->runtime_info().type_id);
+        world.remove_component(id, data.type_id);
     }
 
     for(const auto& [id, parent] : removed_entities) {
@@ -134,12 +147,14 @@ void UndoRedoSystem::UndoState::redo(ecs::EntityWorld& world) {
         world.create_entity_with_id(id);
     }
 
-    for(const auto& [id, comp] : removed_components) {
-        world.remove_component(id, comp->runtime_info().type_id);
+    for(auto&& [id, data] : removed_components) {
+        //world.remove_component(id, comp->runtime_info().type_id);
+        world.remove_component(id, data.type_id);
     }
 
-    for(const auto& [id, comp] : added_components) {
-        comp->add_or_replace(world, id);
+    for(auto&& [id, data] : added_components) {
+        // comp->add_or_replace(world, id);
+        read_component(data.buffer)->add_or_replace(world, id);
     }
 
     for(const auto& [id, prev, next] : parent_changed) {
@@ -197,18 +212,18 @@ void UndoRedoSystem::setup(ecs::SystemScheduler& sched) {
                         GetterInspector inspector(state.redo_properties.emplace_back(key, core::Vector<Property>()).second);
                         world().inspect_components(id, &inspector, container->type_id());
                     } else {
-                        std::unique_ptr<ecs::ComponentBoxBase> comp = world().create_box_from_component(id, type_id);
-                        y_debug_assert(comp);
-                        comp->unlink_assets();
-                        state.added_components.emplace_back(id, std::move(comp));
+                        ComponentData& data = state.removed_components.emplace_back(id, ComponentData{}).second;
+                        data.type_id = type_id;
+                        serde3::WritableArchive arc(data.buffer);
+                        arc.serialize(world().create_box_from_component(id, type_id)).unwrap();
                     }
                 }
 
                 for(const ecs::EntityId id : container->pending_deletions()) {
-                    std::unique_ptr<ecs::ComponentBoxBase> comp = world().create_box_from_component(id, type_id);
-                    y_debug_assert(comp);
-                    comp->unlink_assets();
-                    state.removed_components.emplace_back(id, std::move(comp));
+                    ComponentData& data = state.removed_components.emplace_back(id, ComponentData{}).second;
+                    data.type_id = type_id;
+                    serde3::WritableArchive arc(data.buffer);
+                    arc.serialize(world().create_box_from_component(id, type_id)).unwrap();
                 }
             }
 

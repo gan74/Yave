@@ -29,7 +29,12 @@ namespace io2 {
 
 class Buffer final : public Reader, public Writer {
     public:
-        Buffer(usize size = 0);
+        Buffer() = default;
+
+        Buffer(Buffer&&) = default;
+        Buffer& operator=(Buffer&&) = default;
+
+        Buffer(usize size);
         ~Buffer() override;
 
         bool at_end() const override;
@@ -56,7 +61,6 @@ class Buffer final : public Reader, public Writer {
     private:
         core::Vector<u8> _buffer;
         usize _cursor = 0;
-
 };
 
 }
