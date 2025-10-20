@@ -49,7 +49,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
         color = float3(pow(depth, 0.35));
     } else if(target_index == 6) {
         const float2 motion = in_motion[coord];
-        color = float3(clamp(motion * 10.0, -0.5, 0.5) + 0.5, length(motion) > epsilon ? 0.75 : 0.5);
+        color = float3(clamp(motion * 10.0, -0.5, 0.5) + 0.5, length(motion) > constants.epsilon ? 0.75 : 0.5);
     } else if(target_index == 7) {
         color = float3(in_ao.Sample(in_uv));
     }

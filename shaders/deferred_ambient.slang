@@ -1,5 +1,5 @@
 #include "lib/utils.slang"
-#include "lib/lighting.slang"
+#include "lib/brdf.slang"
 
 // -------------------------------- DEFINES --------------------------------
 
