@@ -109,9 +109,9 @@ float clip_bbox(float3 box_min, float3 box_max, float3 prev, float3 curr) {
     float3 dir = curr - prev;
 
     // Make sure dir isn't zero
-    dir.x = abs(dir.x) < epsilon ? copy_sign(epsilon, dir.x) : dir.x;
-    dir.y = abs(dir.y) < epsilon ? copy_sign(epsilon, dir.y) : dir.y;
-    dir.z = abs(dir.z) < epsilon ? copy_sign(epsilon, dir.z) : dir.z;
+    dir.x = abs(dir.x) < constants.epsilon ? copy_sign(constants.epsilon, dir.x) : dir.x;
+    dir.y = abs(dir.y) < constants.epsilon ? copy_sign(constants.epsilon, dir.y) : dir.y;
+    dir.z = abs(dir.z) < constants.epsilon ? copy_sign(constants.epsilon, dir.z) : dir.z;
 
     const float3 inv_dir = 1.0 / dir;
 

@@ -33,7 +33,7 @@ void draw_line(float lum, int x_offset, int image_height, float3 color) {
 }
 
 [shader("compute")]
-[numthreads(lum_histogram_size)]
+[numthreads(constants.lum_histogram_size)]
 void comp_main() {
     const uint bin_size = in_histogram[int2(semantics.local_index, 0)];
 

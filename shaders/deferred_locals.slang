@@ -1,5 +1,5 @@
 #include "lib/utils.slang"
-#include "lib/lighting.slang"
+#include "lib/brdf.slang"
 #include "lib/debug.slang"
 
 
@@ -46,7 +46,7 @@ cbuffer LightCount {
 
 // -------------------------------- SHARED --------------------------------
 
-groupshared uint light_indices[max_tile_lights];
+groupshared uint light_indices[constants.max_tile_lights];
 groupshared uint tile_point_count;
 groupshared uint tile_spot_count;
 
@@ -88,7 +88,7 @@ void compute_tile_infos(float2 image_size, float view_dist, bool is_oob) {
         compute_tile_culling_info(image_size);
         tile_point_count = 0;
         tile_spot_count = 0;
-        tile_dist_bounds =  uint2(asuint(max_float), 0);
+        tile_dist_bounds =  uint2(asuint(constants.max_float), 0);
     }
 
     GroupMemoryBarrierWithGroupSync();
@@ -183,7 +183,7 @@ void cull_points() {
     for(uint i = range.x; i != range.y; ++i) {
         if(is_inside(point_lights[i])) {
             const uint light_index = InterlockedAddRet(tile_point_count, 1);
-            if(light_index >= max_tile_lights) {
+            if(light_index >= constants.max_tile_lights) {
                 break;
             }
             light_indices[light_index] = i;
@@ -197,7 +197,7 @@ void cull_spots() {
     for(uint i = range.x; i != range.y; ++i) {
         if(is_inside(spot_lights[i])) {
             const uint light_index = InterlockedAddRet(tile_spot_count, 1) + tile_point_count;
-            if(light_index >= max_tile_lights) {
+            if(light_index >= constants.max_tile_lights) {
                 break;
             }
             light_indices[light_index] = i;
@@ -252,7 +252,7 @@ void comp_main() {
 
     // -------------------------------- POINTS --------------------------------
     const uint point_begin = 0;
-    const uint point_end = min(max_tile_lights, tile_point_count);
+    const uint point_end = min(constants.max_tile_lights, tile_point_count);
     for(uint i = point_begin; i < point_end; ++i) {
         const PointLight light = point_lights[light_indices[i]];
         const AreaLightInfo area = karis_area_light(surface, light, world_pos, view_dir);
@@ -266,7 +266,7 @@ void comp_main() {
 
     // -------------------------------- SPOTS --------------------------------
     const uint spot_begin = tile_point_count;
-    const uint spot_end = min(max_tile_lights, spot_begin + tile_spot_count);
+    const uint spot_end = min(constants.max_tile_lights, spot_begin + tile_spot_count);
     for(uint i = spot_begin; i < spot_end; ++i) {
         const SpotLight light = spot_lights[light_indices[i]];
         const AreaLightInfo area = karis_area_light(surface, light, world_pos, view_dir);
