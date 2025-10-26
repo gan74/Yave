@@ -13,6 +13,11 @@ StructuredBuffer<TransformableData> transformables;
 StructuredBuffer<MaterialData> materials;
 
 [[vk::binding(3)]]
+StructuredBuffer<StaticMeshData> mesh_datas;
+
+[[vk::binding(4)]]
 StructuredBuffer<MeshObject> mesh_objects;
+
+
 
 #endif

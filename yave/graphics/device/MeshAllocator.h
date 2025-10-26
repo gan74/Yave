@@ -26,6 +26,8 @@ SOFTWARE.
 #include <yave/graphics/descriptors/DescriptorArray.h>
 #include <yave/meshes/MeshDrawData.h>
 
+#include <yave/graphics/shader_structs.h>
+
 #include <y/core/Span.h>
 #include <y/core/Vector.h>
 
@@ -48,13 +50,15 @@ class MeshBufferArray final : public DescriptorArray {
     private:
         using DataBuffer = Buffer<BufferUsage::StorageBit | BufferUsage::TransferDstBit, MemoryType::DeviceLocal>;
 
-
         core::Vector<DataBuffer> _buffers;
 };
 
 class MeshAllocator : NonMovable {
     using MutableTriangleSubBuffer = SubBuffer<BufferUsage::IndexBit | BufferUsage::TransferDstBit>;
     using MutableAttribSubBuffer = SubBuffer<BufferUsage::AttributeBit | BufferUsage::TransferDstBit>;
+
+    template<typename T>
+    using TypedDataBuffer = TypedBuffer<T, BufferUsage::StorageBit | BufferUsage::TransferDstBit | BufferUsage::TransferSrcBit, MemoryType::DeviceLocal>;
 
     struct FreeBlock {
         u64 vertex_offset;
@@ -79,6 +83,9 @@ class MeshAllocator : NonMovable {
 
         const MeshDrawBuffers& mesh_buffers() const;
 
+        const MeshBufferArray& mesh_buffer_array() const;
+        SubBuffer<BufferUsage::StorageBit> mesh_data_buffer() const;
+
     private:
         friend class MeshDrawData;
 
@@ -95,6 +102,10 @@ class MeshAllocator : NonMovable {
         mutable ProfiledLock<> _lock;
 
         std::unique_ptr<MeshDrawBuffers> _mesh_buffers;
+
+        core::Vector<u32> _free;
+        TypedDataBuffer<shader::StaticMeshData> _mesh_datas;
+        MeshBufferArray _mesh_buffer_array;
 };
 
 }

@@ -55,6 +55,12 @@ MeshBufferArray::Indices MeshBufferArray::create_buffers(const MeshVertexStreams
         DataBuffer buffer(data.size());
         stage_copy(buffer, data.data());
 
+#ifdef Y_DEBUG
+        if(const auto* debug = debug_utils()) {
+            debug->set_resource_name(buffer.vk_buffer(), fmt_c_str("Mesh vertex {} stream", vertex_stream_name(VertexStreamType(i))));
+        }
+#endif
+
         indices[i] = add_descriptor(buffer);
         _buffers.set_min_size(indices[i] + 1);
         _buffers[indices[i]] = std::move(buffer);
@@ -137,57 +143,92 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
     y_always_assert(triangle_begin + triangle_count <= global_triangle_buffer.size(), "Triangle buffer pool is full");
     y_always_assert(vertex_begin + vertex_count <= global_attrib_buffer.byte_size() / sizeof(PackedVertex), "Vertex buffer pool is full");
 
-    {
-        TransferCmdBufferRecorder recorder = create_disposable_transfer_cmd_buffer();
 
-        auto stage_copy = [&](const SubBuffer<BufferUsage::TransferDstBit>& dst, const void* data) {
-            y_debug_assert(data);
-            const u64 dst_size = dst.byte_size();
-            const StagingBuffer buffer(dst_size);
-            std::memcpy(buffer.map_bytes(MappingAccess::WriteOnly).raw_data(), data, dst_size);
-            recorder.unbarriered_copy(buffer, dst);
+    TransferCmdBufferRecorder recorder = create_disposable_transfer_cmd_buffer();
+
+    auto stage_copy = [&](const SubBuffer<BufferUsage::TransferDstBit>& dst, const void* data) {
+        y_debug_assert(data);
+        const u64 dst_size = dst.byte_size();
+        const StagingBuffer buffer(dst_size);
+        std::memcpy(buffer.map_bytes(MappingAccess::WriteOnly).raw_data(), data, dst_size);
+        recorder.unbarriered_copy(buffer, dst);
+    };
+
+    {
+        MutableTriangleSubBuffer triangle_buffer(global_triangle_buffer, triangle_count * sizeof(IndexedTriangle), triangle_begin * sizeof(IndexedTriangle));
+        stage_copy(triangle_buffer, triangles.data());
+        mesh_data._command.first_index = u32(triangle_begin * 3);
+    }
+
+    {
+        const auto region = recorder.region("Mesh upload");
+
+        const auto attribs_sub_buffers = _mesh_buffers->_attrib_buffers;
+        const u64 buffer_elem_count = u64(_mesh_buffers->_vertex_count);
+        {
+            y_debug_assert(buffer_elem_count);
+            for(usize i = 0; i != attribs_sub_buffers.size(); ++i) {
+                const AttribSubBuffer& sub_buffer = attribs_sub_buffers[i];
+                const u64 elem_size = sub_buffer.byte_size() / buffer_elem_count;
+                const u64 byte_len = vertex_count * elem_size;
+                y_debug_assert(sub_buffer.byte_offset() % elem_size == 0);
+                const u64 byte_offset = sub_buffer.byte_offset() + vertex_begin * elem_size;
+
+                stage_copy(
+                    SubBuffer<BufferUsage::TransferDstBit>(global_attrib_buffer, byte_len, byte_offset),
+                    streams.data(VertexStreamType(i))
+                );
+            }
+        }
+    }
+
+
+
+    {
+        y_profile_zone("uploading mesh data");
+
+        const auto lock = std::unique_lock(_lock);
+
+        if(_free.is_empty()) {
+            const usize new_size = std::max(1024_uu, _mesh_datas.size() * 2);
+            TypedDataBuffer<shader::StaticMeshData> new_mesh_datas(new_size);
+            recorder.unbarriered_copy(_mesh_datas, SubBuffer<BufferUsage::TransferDstBit>(new_mesh_datas, _mesh_datas.byte_size(), 0));
+            for(usize i = new_mesh_datas.size(); i != _mesh_datas.size(); --i) {
+                _free << u32(i - 1);
+            }
+            _mesh_datas = std::move(new_mesh_datas);
+        }
+
+        const auto indices = _mesh_buffer_array.create_buffers(streams, recorder);
+
+        TypedStagingBuffer<shader::StaticMeshData> staging(1);
+        staging.map(MappingAccess::WriteOnly)[0] = shader::StaticMeshData {
+            indices[usize(VertexStreamType::Position)],
+            indices[usize(VertexStreamType::NormalTangent)],
+            indices[usize(VertexStreamType::Uv)],
+            u32(999999)
         };
 
-        {
-            MutableTriangleSubBuffer triangle_buffer(global_triangle_buffer, triangle_count * sizeof(IndexedTriangle), triangle_begin * sizeof(IndexedTriangle));
-            stage_copy(triangle_buffer, triangles.data());
-            mesh_data._command.first_index = u32(triangle_begin * 3);
-        }
+        const u32 index = _free.pop();
 
-        {
-            const auto region = recorder.region("Mesh upload");
+        const u64 item_size = sizeof(shader::StaticMeshData);
+        recorder.unbarriered_copy(staging, SubBuffer<BufferUsage::TransferDstBit>(_mesh_datas, item_size, item_size * index));
 
-            const auto attribs_sub_buffers = _mesh_buffers->_attrib_buffers;
-            const u64 buffer_elem_count = u64(_mesh_buffers->_vertex_count);
-            {
-                y_debug_assert(buffer_elem_count);
-                for(usize i = 0; i != attribs_sub_buffers.size(); ++i) {
-                    const AttribSubBuffer& sub_buffer = attribs_sub_buffers[i];
-                    const u64 elem_size = sub_buffer.byte_size() / buffer_elem_count;
-                    const u64 byte_len = vertex_count * elem_size;
-                    y_debug_assert(sub_buffer.byte_offset() % elem_size == 0);
-                    const u64 byte_offset = sub_buffer.byte_offset() + vertex_begin * elem_size;
-
-                    stage_copy(
-                        SubBuffer<BufferUsage::TransferDstBit>(global_attrib_buffer, byte_len, byte_offset),
-                        streams.data(VertexStreamType(i))
-                    );
-                }
-            }
-
-            mesh_data._command.vertex_offset = i32(vertex_begin);
-        }
-
-        recorder.submit_async();
+        mesh_data.mesh_data_index = index;
     }
+
+    recorder.submit_async();
 
     return mesh_data;
 }
 
 void MeshAllocator::recycle(MeshDrawData* data) {
     y_debug_assert(data->_mesh_buffers == _mesh_buffers.get());
+    y_debug_assert(data->mesh_data_index != u32(-1));
 
     const auto lock = std::unique_lock(_lock);
+
+    _free << data->mesh_data_index;
 
     _free_blocks << FreeBlock {
         u64(data->_command.vertex_offset),
@@ -283,6 +324,14 @@ usize MeshAllocator::free_blocks() const {
 
 const MeshDrawBuffers& MeshAllocator::mesh_buffers() const {
     return *_mesh_buffers;
+}
+
+const MeshBufferArray& MeshAllocator::mesh_buffer_array() const {
+    return _mesh_buffer_array;
+}
+
+SubBuffer<BufferUsage::StorageBit> MeshAllocator::mesh_data_buffer() const {
+    return _mesh_datas;
 }
 
 }

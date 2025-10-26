@@ -45,6 +45,8 @@ enum class VertexStreamType : u32 {
 template<VertexStreamType Type>
 struct VertexStreamInfo {};
 
+
+
 #define DECLARE_STREAM_INFOS(VST, Type) template<> struct VertexStreamInfo<VertexStreamType::VST> {  using type = Type; }
     DECLARE_STREAM_INFOS(Position, math::Vec3);
     DECLARE_STREAM_INFOS(NormalTangent, math::Vec2ui);
@@ -63,6 +65,21 @@ inline constexpr usize vertex_stream_element_size(VertexStreamType type) {
     }
 #undef STREAM_CASE
 }
+
+inline constexpr std::string_view vertex_stream_name(VertexStreamType type) {
+#define STREAM_CASE(Type) case VertexStreamType::Type: return #Type;
+    switch(type) {
+        STREAM_CASE(Position);
+        STREAM_CASE(NormalTangent);
+        STREAM_CASE(Uv);
+        default:
+            y_fatal("Unknown stream type");
+    }
+#undef STREAM_CASE
+}
+
+
+
 
 inline constexpr usize compute_total_vertex_streams_size() {
     usize total_size = 0;

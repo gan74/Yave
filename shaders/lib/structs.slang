@@ -156,6 +156,15 @@ struct PickingData {
 struct MeshObject {
     uint transform_index;
     uint material_index;
+    uint mesh_data_index;
+};
+
+struct StaticMeshData {
+    uint position_buffer;
+    uint tbn_buffer;
+    uint uv_buffer;
+
+    uint base_vertex;
 };
 
 #endif

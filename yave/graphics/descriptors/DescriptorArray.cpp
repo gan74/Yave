@@ -183,7 +183,7 @@ void DescriptorArray::alloc_set(u32 size) {
     }
 
     for(u32 i = _capacity; i < size; ++i) {
-        _free << size - i - 1;
+        _free << i;
     }
 
     _capacity = size;

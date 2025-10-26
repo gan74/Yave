@@ -60,10 +60,11 @@ static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Ve
         const core::Span materials = mesh->component.materials();
         if(materials.size() == 1) {
             if(const Material* mat = materials[0].get()) {
+                y_debug_assert(!static_mesh->draw_command().vk_indirect_data().vertexOffset);
                 batches.emplace_back(
                     mat->material_template(),
                     static_mesh->draw_command().vk_indirect_data(),
-                    shader::MeshObject{transform_index, mat->draw_data().index()}
+                    shader::MeshObject{transform_index, mat->draw_data().index(), static_mesh->mesh_data_index()}
                 );
             }
         } else {
@@ -73,7 +74,7 @@ static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Ve
                     batches.emplace_back(
                         mat->material_template(),
                         static_mesh->sub_meshes()[i].vk_indirect_data(),
-                        shader::MeshObject{transform_index, mat->draw_data().index()}
+                        shader::MeshObject{transform_index, mat->draw_data().index(), static_mesh->mesh_data_index()}
                     );
                 }
             }
@@ -101,7 +102,7 @@ static void collect_batches_for_id(core::Span<const StaticMeshObject*> meshes, c
         batches.emplace_back(
             nullptr,
             static_mesh->draw_command().vk_indirect_data(index),
-            shader::MeshObject{transform_index, mesh->entity_index}
+            shader::MeshObject{transform_index, mesh->entity_index, static_mesh->mesh_data_index()}
         );
 
         ++index;
@@ -146,6 +147,7 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc
 
     builder.add_external_input(Descriptor(_transform_manager.transform_buffer()), PipelineStage::None, desc_set_index);
     builder.add_external_input(Descriptor(material_allocator().material_buffer()), PipelineStage::None, desc_set_index);
+    builder.add_external_input(Descriptor(mesh_allocator().mesh_data_buffer()), PipelineStage::None, desc_set_index);
     builder.add_storage_input(object_buffer, PipelineStage::None, desc_set_index);
 
     builder.add_indrect_input(indirect_buffer);
@@ -166,9 +168,10 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc
         switch(pass_type) {
             case PassType::Depth:
             case PassType::GBuffer: {
-                const std::array<DescriptorSetProxy, 2> desc_sets = {
+                const std::array<DescriptorSetProxy, 3> desc_sets = {
                     pass->descriptor_set(desc_set_index),
-                    texture_library().descriptor_set()
+                    texture_library().descriptor_set(),
+                    mesh_allocator().mesh_buffer_array().descriptor_set()
                 };
 
                 usize start_of_batch = 0;
@@ -209,7 +212,13 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc
                     object_mapping[i] = batch.mesh_object;
                 }
                 y_debug_assert(buffer.size() == batch_count);
-                render_pass.bind_material_template(device_resources()[DeviceResources::IdMaterialTemplate], pass->descriptor_set(desc_set_index));
+
+                const std::array<DescriptorSetProxy, 2> desc_sets = {
+                    pass->descriptor_set(desc_set_index),
+                    mesh_allocator().mesh_buffer_array().descriptor_set()
+                };
+
+                render_pass.bind_material_template(device_resources()[DeviceResources::IdMaterialTemplate], desc_sets);
                 render_pass.draw_indirect(buffer);
             } break;
         }

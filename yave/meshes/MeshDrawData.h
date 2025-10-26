@@ -86,6 +86,8 @@ class MeshDrawData : NonCopyable {
 
         usize vertex_count() const;
 
+        u32 mesh_data_index = u32(-1);
+
     private:
         friend class LifetimeManager;
         friend class MeshAllocator;

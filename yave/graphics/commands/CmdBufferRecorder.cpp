@@ -492,6 +492,10 @@ void CmdBufferRecorderBase::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuf
 
     y_always_assert(src.byte_size() == dst.byte_size(), "Buffer size do not match");
 
+    if(!src.byte_size()) {
+        return;
+    }
+
     VkBufferCopy copy = {};
     {
         copy.size = src.byte_size();

@@ -287,6 +287,7 @@ VkPhysicalDeviceVulkan11Features required_device_features_1_1() {
 
     {
         // We don't actually need anything here...
+        required.shaderDrawParameters = true;
     }
 
     return required;
@@ -303,7 +304,9 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2() {
     required.descriptorBindingPartiallyBound = true;
     required.descriptorBindingUpdateUnusedWhilePending = true;
     required.descriptorBindingSampledImageUpdateAfterBind = true;
+    required.descriptorBindingStorageBufferUpdateAfterBind = true;
     required.shaderSampledImageArrayNonUniformIndexing = true;
+    required.shaderStorageBufferArrayNonUniformIndexing = true;
 
     return required;
 }
@@ -311,7 +314,7 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2() {
 VkPhysicalDeviceVulkan13Features required_device_features_1_3() {
     VkPhysicalDeviceVulkan13Features required = vk_struct();
 
-    required.maintenance4 = true; 
+    required.maintenance4 = true;
 
     return required;
 }

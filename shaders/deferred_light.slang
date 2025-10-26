@@ -46,7 +46,7 @@ struct VertexStageOut {
 
 
 [shader("vertex")]
-VertexStageOut vert_main(StdVertexStageIn in) {
+VertexStageOut vert_main(float3 position) {
     const Light light = lights[semantics.instance_index];
 
     VertexStageOut out;
@@ -55,10 +55,10 @@ VertexStageOut vert_main(StdVertexStageIn in) {
         out.instance_index = semantics.instance_index;
 
 #ifdef SPOT
-        out.sv_position = mul(camera.curr.view_proj, mul(light.draw_model, float4(in.position, 1.0)));
+        out.sv_position = mul(camera.curr.view_proj, mul(light.draw_model, float4(position, 1.0)));
 #else
         const float scale = light.range * 1.1;
-        out.sv_position = mul(camera.curr.view_proj, float4(in.position * scale + light.position, 1.0));
+        out.sv_position = mul(camera.curr.view_proj, float4(position * scale + light.position, 1.0));
 #endif
 
     }

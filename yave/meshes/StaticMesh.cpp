@@ -86,6 +86,10 @@ const AABB& StaticMesh::aabb() const {
     return _aabb;
 }
 
+u32 StaticMesh::mesh_data_index() const {
+    return _draw_data.mesh_data_index;
+}
+
 
 }
 

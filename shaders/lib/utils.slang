@@ -31,11 +31,53 @@ static const uint lum_histogram_size = 256;
 
 
 
-struct StdVertexStageIn {
+
+
+
+
+struct StdVertexData {
     float3 position;
     uint2 packed_normal_tangent_sign;
     float2 uv;
 };
+
+StdVertexData read_vertex(StructuredBuffer<uint> buffers[], uint vertex_index, StaticMeshData mesh_data) {
+    StdVertexData vert;
+
+    {
+        const StructuredBuffer<uint> buffer = buffers[mesh_data.position_buffer];
+
+        vert.position = float3(
+            asfloat(buffer[vertex_index * 3 + 0]),
+            asfloat(buffer[vertex_index * 3 + 1]),
+            asfloat(buffer[vertex_index * 3 + 2])
+        );
+    }
+
+    {
+        const StructuredBuffer<uint> buffer = buffers[mesh_data.tbn_buffer];
+
+        vert.packed_normal_tangent_sign = uint2(
+            buffer[vertex_index * 2 + 0],
+            buffer[vertex_index * 2 + 1]
+        );
+    }
+
+    {
+        const StructuredBuffer<uint> buffer = buffers[mesh_data.uv_buffer];
+
+        vert.uv = float2(
+            asfloat(buffer[vertex_index * 2 + 0]),
+            asfloat(buffer[vertex_index * 2 + 1])
+        );
+    }
+
+    return vert;
+}
+
+
+
+
 
 
 struct SurfaceInfo {

@@ -88,6 +88,7 @@ void MeshDrawData::swap(MeshDrawData& other) {
     std::swap(_command, other._command);
     std::swap(_vertex_count, other._vertex_count);
     std::swap(_mesh_buffers, other._mesh_buffers);
+    std::swap(mesh_data_index, other.mesh_data_index);
 }
 
 }

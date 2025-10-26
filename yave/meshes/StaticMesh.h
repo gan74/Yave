@@ -56,6 +56,8 @@ class StaticMesh : NonCopyable {
         float radius() const;
         const AABB& aabb() const;
 
+        u32 mesh_data_index() const;
+
     private:
         MeshDrawData _draw_data = {};
         core::FixedArray<MeshDrawCommand> _sub_meshes;
