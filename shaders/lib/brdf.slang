@@ -165,7 +165,28 @@ float3 eval_ibl(SamplerCube probe, Sampler2D<float2> brdf_lut, float3 v, Surface
 
 
 
+struct SpecularContrib {
+    float3 ks;
+    float contrib;
+};
 
+SpecularContrib eval_ggx_specular(SurfaceInfo info, float3 v, float3 n, float3 l, float3 h) {
+    const float l_h = dot(l, h);
+    const float3 f = f_shlick(l_h, info.f0());
+
+    if(info.perceptual_roughness < constants.epsilon) {
+        return SpecularContrib(f, 0.0);
+    }
+
+    const float n_l = max(dot(n, l), constants.epsilon);
+    const float n_v = max(abs(dot(v, v)), constants.epsilon);
+    const float n_h = dot(n, h);
+
+    const float g = g_ggx(n_l, n_l, info.alpha2());
+    const float d = d_ggx(n_h, info.alpha2());
+
+    return SpecularContrib(f, d * g / (4.0 * n_l * n_v));
+}
 
 
 
@@ -173,22 +194,8 @@ float3 eval_lambert_diffuse(SurfaceInfo info, float3 v, float3 n, float3 l, floa
     return info.albedo * (constants.inv_pi * (1.0 - info.metallic));
 }
 
-float3 eval_ggx_specular(SurfaceInfo info, float3 v, float3 n, float3 l, float3 h) {
-    if(info.perceptual_roughness < constants.epsilon) {
-        return float3(0.0);
-    }
 
-    const float n_l = max(dot(n, l), constants.epsilon);
-    const float n_v = max(abs(dot(v, v)), constants.epsilon);
-    const float n_h = dot(n, h);
-    const float l_h = dot(l, h);
 
-    const float3 f = f_shlick(l_h, info.f0());
-    const float g = g_ggx(n_l, n_l, info.alpha2());
-    const float d = d_ggx(n_h, info.alpha2());
-
-    return f * (d * g / (4.0 * n_l * n_v));
-}
 
 float3 eval_brdf(SurfaceInfo info, float3 v, float3 l) {
    const float3 n = info.normal;
@@ -200,10 +207,12 @@ float3 eval_brdf(SurfaceInfo info, float3 v, float3 l) {
 
     const float3 h = normalize(l + v);
 
+    const SpecularContrib specular = eval_ggx_specular(info, v, n, l, h);
     const float3 diffuse_contrib = eval_lambert_diffuse(info, v, n, l, h);
-    const float3 specular_contrib = eval_ggx_specular(info, v, n, l, h);
 
-    return (diffuse_contrib + specular_contrib) * n_l;
+    const float3 kd = saturate(1.0 - specular.ks);
+
+    return (diffuse_contrib * kd + specular.contrib * specular.ks) * n_l;
 }
 
 
