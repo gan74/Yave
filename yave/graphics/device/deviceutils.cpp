@@ -135,13 +135,6 @@ VkSamplerMipmapMode vk_mip_filter(SamplerType type) {
     }
 }
 
-VkDeviceAddress vk_buffer_device_address(const SubBufferBase& buffer) {
-    VkBufferDeviceAddressInfo info = vk_struct();
-    info.buffer = buffer.vk_buffer();
-
-    return vkGetBufferDeviceAddress(vk_device(), &info) + buffer.byte_offset();
-}
-
 VkHandle<VkSampler> create_sampler(SamplerType type) {
 
     VkSamplerCreateInfo create_info = vk_struct();
@@ -311,7 +304,7 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2() {
 VkPhysicalDeviceVulkan13Features required_device_features_1_3() {
     VkPhysicalDeviceVulkan13Features required = vk_struct();
 
-    required.maintenance4 = true; 
+    required.maintenance4 = true;
 
     return required;
 }

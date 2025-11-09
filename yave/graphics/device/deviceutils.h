@@ -41,8 +41,6 @@ VkSamplerAddressMode vk_address_mode(SamplerType type);
 VkFilter vk_filter(SamplerType type);
 VkSamplerMipmapMode vk_mip_filter(SamplerType type);
 
-VkDeviceAddress vk_buffer_device_address(const SubBufferBase& buffer);
-
 VkHandle<VkSampler> create_sampler(SamplerType type);
 
 
