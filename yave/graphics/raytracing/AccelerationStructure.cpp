@@ -57,7 +57,7 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
     Buffer<BufferUsage::AccelStructureBit> buffer(size_infos.accelerationStructureSize);
     Buffer<BufferUsage::AccelStructureScratchBit> scratch(size_infos.buildScratchSize);
 
-    build_info.scratchData.deviceAddress = vk_buffer_device_address(SubBuffer(scratch));
+    build_info.scratchData.deviceAddress = scratch.vk_device_address();
 
     VkAccelerationStructureCreateInfoKHR create_info = vk_struct();
     {
@@ -96,11 +96,11 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
 
         triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
         triangles.vertexStride = sizeof(math::Vec3);
-        triangles.vertexData.deviceAddress = vk_buffer_device_address(position_buffer);
+        triangles.vertexData.deviceAddress = position_buffer.vk_device_address();
         triangles.maxVertex = u32(mesh_buffers.vertex_count());
 
         triangles.indexType = VK_INDEX_TYPE_UINT32;
-        triangles.indexData.deviceAddress = vk_buffer_device_address(mesh_buffers.triangle_buffer());
+        triangles.indexData.deviceAddress = mesh_buffers.triangle_buffer().vk_device_address();
     }
 
     VkAccelerationStructureGeometryKHR geometry = vk_struct();
@@ -133,7 +133,7 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
 
     VkAccelerationStructureGeometryInstancesDataKHR geo_instances = vk_struct();
     {
-        geo_instances.data.deviceAddress = vk_buffer_device_address(SubBuffer(instance_buffer));
+        geo_instances.data.deviceAddress = instance_buffer.vk_device_address();
     }
 
     VkAccelerationStructureGeometryKHR geometry = vk_struct();

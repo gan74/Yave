@@ -135,13 +135,6 @@ VkSamplerMipmapMode vk_mip_filter(SamplerType type) {
     }
 }
 
-VkDeviceAddress vk_buffer_device_address(const SubBufferBase& buffer) {
-    VkBufferDeviceAddressInfo info = vk_struct();
-    info.buffer = buffer.vk_buffer();
-
-    return vkGetBufferDeviceAddress(vk_device(), &info) + buffer.byte_offset();
-}
-
 VkHandle<VkSampler> create_sampler(SamplerType type) {
 
     VkSamplerCreateInfo create_info = vk_struct();

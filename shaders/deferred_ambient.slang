@@ -57,7 +57,7 @@ cbuffer Params {
 // -------------------------------- HELPERS --------------------------------
 
 float3 view_direction(Camera camera, float2 uv) {
-    return normalize(camera.position - unproject(uv, 0.5, camera.curr.inv_view_proj));
+    return normalize(camera.position - unproject(uv, 0.001, camera.curr.inv_view_proj));
 }
 
 uint shadow_cascade_index(uint4 indices, float3 world_pos) {

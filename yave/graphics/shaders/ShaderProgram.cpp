@@ -315,12 +315,11 @@ VkPipelineLayout RaytracingProgram::vk_pipeline_layout() const {
 
 
 std::array<VkStridedDeviceAddressRegionKHR, 4> RaytracingProgram::vk_binding_tables() const {
-    const VkDeviceAddress base_addr = vk_buffer_device_address(SubBuffer(_binding_tables));
     const u32 table_aligned_size = device_properties().shader_group_handle_size_base_aligned;
 
     std::array<VkStridedDeviceAddressRegionKHR, 4> tables = {};
     for(usize i = 0; i != 3; ++i) {
-        tables[i].deviceAddress = base_addr + (i * table_aligned_size);
+        tables[i].deviceAddress = _binding_tables.vk_device_address() + (i * table_aligned_size);
         tables[i].size = table_aligned_size;
         tables[i].stride = table_aligned_size;
     }
