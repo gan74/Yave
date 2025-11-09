@@ -168,10 +168,9 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc
         switch(pass_type) {
             case PassType::Depth:
             case PassType::GBuffer: {
-                const std::array<DescriptorSetProxy, 3> desc_sets = {
+                const std::array<DescriptorSetProxy, 2> desc_sets = {
                     pass->descriptor_set(desc_set_index),
-                    texture_library().descriptor_set(),
-                    mesh_allocator().mesh_buffer_array().descriptor_set()
+                    texture_library().descriptor_set()
                 };
 
                 usize start_of_batch = 0;
@@ -213,12 +212,7 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc
                 }
                 y_debug_assert(buffer.size() == batch_count);
 
-                const std::array<DescriptorSetProxy, 2> desc_sets = {
-                    pass->descriptor_set(desc_set_index),
-                    mesh_allocator().mesh_buffer_array().descriptor_set()
-                };
-
-                render_pass.bind_material_template(device_resources()[DeviceResources::IdMaterialTemplate], desc_sets);
+                render_pass.bind_material_template(device_resources()[DeviceResources::IdMaterialTemplate], pass->descriptor_set(desc_set_index));
                 render_pass.draw_indirect(buffer);
             } break;
         }

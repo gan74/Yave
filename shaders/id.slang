@@ -2,10 +2,6 @@
 #include "lib/std_bindings.slang"
 
 
-[[vk::binding(0, 1)]]
-StructuredBuffer<uint> attrib_buffers[];
-
-
 struct VertexStageOut {
     float4 sv_position  : SV_Position;
     uint instance_index;
@@ -15,7 +11,7 @@ struct VertexStageOut {
 [shader("vertex")]
 VertexStageOut vert_main() {
     const MeshObject mesh = mesh_objects[semantics.instance_index];
-    const StdVertexData vert = read_vertex(attrib_buffers, semantics.vertex_index, mesh_datas[mesh.mesh_data_index]);
+    const StdVertexData vert = read_vertex(semantics.vertex_index, mesh_datas[mesh.mesh_data_index]);
     const TransformableData transformable = transformables[mesh.transform_index];
 
     VertexStageOut out;

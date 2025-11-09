@@ -158,10 +158,6 @@ ShaderProgramBase::ShaderProgramBase(core::Span<const ShaderModuleBase*> shaders
                         _layouts[i] = texture_library().descriptor_set_layout();
                     break;
 
-                    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-                        _layouts[i] = mesh_allocator().mesh_buffer_array().descriptor_set_layout();
-                    break;
-
                     default:
                         y_fatal("Unsupported variable descriptor set type");
                 }

@@ -2,6 +2,13 @@
 #define STRUCT_SLANG
 
 
+#ifdef __cplusplus
+#define Ptr(type) u64
+#else
+#define Ptr(type) type*
+#endif
+
+
 enum TextureSlots : uint32_t {
     Albedo                      = 0,
     Normal                      = 1,
@@ -159,12 +166,21 @@ struct MeshObject {
     uint mesh_data_index;
 };
 
-struct StaticMeshData {
-    uint position_buffer;
-    uint tbn_buffer;
-    uint uv_buffer;
 
-    uint base_vertex;
+struct UnalignedFloat3 {
+    float x, y, z;
+
+    float3 to_float3() {
+        return float3(x, y, z);
+    }
+};
+
+struct StaticMeshData {
+    Ptr(UnalignedFloat3) positions;
+    Ptr(uint2) tbns;
+    Ptr(float2) uvs;
+    Ptr(uint) padding_1;
+
 };
 
 #endif

@@ -32,12 +32,7 @@ SOFTWARE.
 
 namespace yave {
 
-
-
-MeshBufferArray::MeshBufferArray() : DescriptorArray(VkDescriptorType::VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
-}
-
-MeshBufferArray::Indices MeshBufferArray::create_buffers(const MeshVertexStreams& streams, TransferCmdBufferRecorder& recorder) {
+MeshBufferArray::Buffers MeshBufferArray::create_buffers(const MeshVertexStreams& streams, TransferCmdBufferRecorder& recorder) {
 
     auto stage_copy = [&](const SubBuffer<BufferUsage::TransferDstBit>& dst, const void* data) {
         y_debug_assert(data);
@@ -47,7 +42,7 @@ MeshBufferArray::Indices MeshBufferArray::create_buffers(const MeshVertexStreams
         recorder.unbarriered_copy(buffer, dst);
     };
 
-    Indices indices = {};
+    Buffers buffers = {};
     for(usize i = 0; i != stream_count; ++i) {
         const core::Span<u8> data = streams.stream_data(VertexStreamType(i));
         y_debug_assert(!data.is_empty());
@@ -61,17 +56,16 @@ MeshBufferArray::Indices MeshBufferArray::create_buffers(const MeshVertexStreams
         }
 #endif
 
-        indices[i] = add_descriptor(buffer);
-        _buffers.set_min_size(indices[i] + 1);
-        _buffers[indices[i]] = std::move(buffer);
+        buffers[i] = buffer.vk_device_address();
+        _buffers[buffer.vk_device_address()] = std::move(buffer);
     }
-    return indices;
+
+    return buffers;
 }
 
-void MeshBufferArray::remove_buffers(Indices indices) {
-    for(usize i = 0; i != stream_count; ++i) {
-        remove_descriptor(indices[i]);
-        _buffers[indices[i]] = {};
+void MeshBufferArray::remove_buffers(const Buffers& buffers) {
+    for(const VkDeviceAddress addr : buffers) {
+        _buffers[addr] = {};
     }
 }
 
@@ -199,14 +193,14 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
             _mesh_datas = std::move(new_mesh_datas);
         }
 
-        const auto indices = _mesh_buffer_array.create_buffers(streams, recorder);
+        const auto buffers = _mesh_buffer_array.create_buffers(streams, recorder);
 
         TypedStagingBuffer<shader::StaticMeshData> staging(1);
         staging.map(MappingAccess::WriteOnly)[0] = shader::StaticMeshData {
-            indices[usize(VertexStreamType::Position)],
-            indices[usize(VertexStreamType::NormalTangent)],
-            indices[usize(VertexStreamType::Uv)],
-            u32(999999)
+            buffers[usize(VertexStreamType::Position)],
+            buffers[usize(VertexStreamType::NormalTangent)],
+            buffers[usize(VertexStreamType::Uv)],
+            {}
         };
 
         const u32 index = _free.pop();

@@ -41,36 +41,12 @@ struct StdVertexData {
     float2 uv;
 };
 
-StdVertexData read_vertex(StructuredBuffer<uint> buffers[], uint vertex_index, StaticMeshData mesh_data) {
+StdVertexData read_vertex(uint vertex_index, StaticMeshData mesh_data) {
     StdVertexData vert;
 
-    {
-        const StructuredBuffer<uint> buffer = buffers[mesh_data.position_buffer];
-
-        vert.position = float3(
-            asfloat(buffer[vertex_index * 3 + 0]),
-            asfloat(buffer[vertex_index * 3 + 1]),
-            asfloat(buffer[vertex_index * 3 + 2])
-        );
-    }
-
-    {
-        const StructuredBuffer<uint> buffer = buffers[mesh_data.tbn_buffer];
-
-        vert.packed_normal_tangent_sign = uint2(
-            buffer[vertex_index * 2 + 0],
-            buffer[vertex_index * 2 + 1]
-        );
-    }
-
-    {
-        const StructuredBuffer<uint> buffer = buffers[mesh_data.uv_buffer];
-
-        vert.uv = float2(
-            asfloat(buffer[vertex_index * 2 + 0]),
-            asfloat(buffer[vertex_index * 2 + 1])
-        );
-    }
+    vert.position = mesh_data.positions[vertex_index].to_float3();
+    vert.packed_normal_tangent_sign = mesh_data.tbns[vertex_index];
+    vert.uv = mesh_data.uvs[vertex_index];
 
     return vert;
 }

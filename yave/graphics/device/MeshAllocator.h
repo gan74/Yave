@@ -36,21 +36,19 @@ SOFTWARE.
 
 namespace yave {
 
-class MeshBufferArray final : public DescriptorArray {
+class MeshBufferArray {
     public:
         static constexpr usize stream_count = usize(VertexStreamType::Max);
 
-        using Indices = std::array<u32, stream_count>;
+        using Buffers = std::array<VkDeviceAddress, stream_count>;
 
-        MeshBufferArray();
-
-        Indices create_buffers(const MeshVertexStreams& streams, TransferCmdBufferRecorder& recorder);
-        void remove_buffers(Indices indices);
+        Buffers create_buffers(const MeshVertexStreams& streams, TransferCmdBufferRecorder& recorder);
+        void remove_buffers(const Buffers& buffers);
 
     private:
         using DataBuffer = Buffer<BufferUsage::StorageBit | BufferUsage::TransferDstBit, MemoryType::DeviceLocal>;
 
-        core::Vector<DataBuffer> _buffers;
+        core::FlatHashMap<VkDeviceAddress, DataBuffer> _buffers;
 };
 
 class MeshAllocator : NonMovable {
