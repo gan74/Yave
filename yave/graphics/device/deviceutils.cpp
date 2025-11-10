@@ -270,6 +270,8 @@ VkPhysicalDeviceFeatures required_device_features() {
         required.fragmentStoresAndAtomics = true;
         required.independentBlend = true;
         required.samplerAnisotropy = true;
+        required.shaderStorageImageReadWithoutFormat = true;
+        required.shaderStorageImageWriteWithoutFormat = true;
     }
 
     return required;
