@@ -21,7 +21,8 @@ SOFTWARE.
 **********************************/
 
 #include "AccelerationStructure.h"
-#include "yave/graphics/device/deviceutils.h"
+#include <yave/graphics/device/deviceutils.h>
+#include <yave/graphics/device/MeshAllocator.h>
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
@@ -85,22 +86,23 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
 
 
 static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::AccelStructureBit>> create_blas(const MeshDrawData& mesh, const MeshDrawCommand& draw_cmd) {
-    const MeshDrawBuffers& mesh_buffers = mesh.mesh_buffers();
+    const MeshDrawBuffers mesh_buffers = mesh.mesh_buffers();
 
     const u32 prim_count = draw_cmd.index_count / 3;
     y_debug_assert(prim_count * 3 == draw_cmd.index_count);
 
     VkAccelerationStructureGeometryTrianglesDataKHR triangles = vk_struct();
     {
-        const AttribSubBuffer& position_buffer = mesh_buffers.attrib_buffers()[usize(VertexStreamType::Position)];
+        const VkDeviceAddress position_buffer = mesh_buffers.attribs[usize(VertexStreamType::Position)].vk_device_address();
 
         triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
         triangles.vertexStride = sizeof(math::Vec3);
-        triangles.vertexData.deviceAddress = position_buffer.vk_device_address();
-        triangles.maxVertex = u32(mesh_buffers.vertex_count());
+        triangles.vertexData.deviceAddress = position_buffer;
+        triangles.maxVertex = mesh.vertex_count();
 
         triangles.indexType = VK_INDEX_TYPE_UINT32;
-        triangles.indexData.deviceAddress = mesh_buffers.triangle_buffer().vk_device_address();
+
+        triangles.indexData.deviceAddress = mesh.triangle_buffer().vk_device_address();
     }
 
     VkAccelerationStructureGeometryKHR geometry = vk_struct();
@@ -113,7 +115,7 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
     VkAccelerationStructureBuildRangeInfoKHR range = {};
     {
         range.primitiveCount = prim_count;
-        range.primitiveOffset = u32(mesh.triangle_buffer().byte_offset()) + (draw_cmd.first_index * sizeof(u32));
+        range.primitiveOffset = (draw_cmd.first_index * sizeof(u32));
         range.firstVertex = draw_cmd.vertex_offset;
     }
 

@@ -3,9 +3,9 @@
 
 
 #ifdef __cplusplus
-#define Ptr(type) u64
+#define Address(type) u64
 #else
-#define Ptr(type) type*
+#define Address(type) type*
 #endif
 
 
@@ -176,10 +176,10 @@ struct UnalignedFloat3 {
 };
 
 struct StaticMeshData {
-    Ptr(UnalignedFloat3) positions;
-    Ptr(uint2) tbns;
-    Ptr(float2) uvs;
-    Ptr(uint) padding_1;
+    Address(UnalignedFloat3) positions;
+    Address(uint2) tbns;
+    Address(float2) uvs;
+    Address(uint) padding_1;
 
 };
 

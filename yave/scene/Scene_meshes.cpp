@@ -163,7 +163,7 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc
         auto indirect_mapping = pass->resources().map_buffer(indirect_buffer);
         auto object_mapping = pass->resources().map_buffer(object_buffer);
 
-        render_pass.bind_mesh_buffers(mesh_allocator().mesh_buffers());
+        render_pass.bind_index_buffer(mesh_allocator().triangle_buffer());
 
         switch(pass_type) {
             case PassType::Depth:

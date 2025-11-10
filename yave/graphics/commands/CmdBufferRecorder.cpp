@@ -139,7 +139,7 @@ void RenderPassRecorder::bind_material_template(const MaterialTemplate* material
 void RenderPassRecorder::draw(const MeshDrawData& draw_data, u32 instance_count, u32 instance_index) {
     Y_VK_CMD
 
-    bind_mesh_buffers(draw_data.mesh_buffers());
+    bind_index_buffer(draw_data.triangle_buffer());
     draw(draw_data.draw_command().vk_indirect_data(instance_index, instance_count));
 }
 
@@ -195,25 +195,14 @@ void RenderPassRecorder::draw_array(usize vertex_count, usize instance_count, us
     draw(command);
 }
 
-void RenderPassRecorder::bind_mesh_buffers(const MeshDrawBuffers& mesh_buffers) {
-    if(_cache.mesh_buffers != &mesh_buffers) {
-        bind_index_buffer(mesh_buffers.triangle_buffer());
-        bind_attrib_buffers(mesh_buffers.attrib_buffers());
-        _cache.mesh_buffers = &mesh_buffers;
-    }
-}
-
 void RenderPassRecorder::bind_index_buffer(IndexSubBuffer indices) {
     Y_VK_CMD
 
-    _cache.mesh_buffers = nullptr;
     vkCmdBindIndexBuffer(vk_cmd_buffer(), indices.vk_buffer(), indices.byte_offset(), VK_INDEX_TYPE_UINT32);
 }
 
 void RenderPassRecorder::bind_attrib_buffers(core::Span<AttribSubBuffer> attribs) {
     Y_VK_CMD
-
-    _cache.mesh_buffers = nullptr;
 
     const u32 attrib_count = u32(attribs.size());
 

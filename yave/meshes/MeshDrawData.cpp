@@ -26,24 +26,6 @@ SOFTWARE.
 
 namespace yave {
 
-core::Span<AttribSubBuffer> MeshDrawBuffers::attrib_buffers() const {
-    return _attrib_buffers;
-}
-
-usize MeshDrawBuffers::vertex_count() const {
-    return _vertex_count;
-}
-
-const TriangleSubBuffer& MeshDrawBuffers::triangle_buffer() const {
-    return _triangle_buffer;
-}
-
-MeshAllocator* MeshDrawBuffers::parent() const {
-    return _parent;
-}
-
-
-
 MeshDrawData::MeshDrawData(MeshDrawData&& other) {
     swap(other);
 }
@@ -54,41 +36,49 @@ MeshDrawData& MeshDrawData::operator=(MeshDrawData&& other) {
 }
 
 MeshDrawData::~MeshDrawData() {
-    y_debug_assert(is_null());
+    y_debug_assert(!_parent);
 }
 
 void MeshDrawData::recycle() {
-    y_debug_assert(_mesh_buffers);
-    _mesh_buffers->parent()->recycle(this);
-}
-
-bool MeshDrawData::is_null() const {
-    return !_mesh_buffers;
-}
-
-const TriangleSubBuffer& MeshDrawData::triangle_buffer() const {
-    y_debug_assert(_mesh_buffers);
-    return _mesh_buffers->triangle_buffer();
-}
-
-const MeshDrawBuffers& MeshDrawData::mesh_buffers() const {
-    y_debug_assert(_mesh_buffers);
-    return *_mesh_buffers;
-}
-
-const MeshDrawCommand& MeshDrawData::draw_command() const {
-    return _command;
-}
-
-usize MeshDrawData::vertex_count() const {
-    return _vertex_count;
+    if(_parent) {
+        _parent->recycle(this);
+    }
 }
 
 void MeshDrawData::swap(MeshDrawData& other) {
-    std::swap(_command, other._command);
+    std::swap(_cmd, other._cmd);
     std::swap(_vertex_count, other._vertex_count);
-    std::swap(_mesh_buffers, other._mesh_buffers);
-    std::swap(mesh_data_index, other.mesh_data_index);
+    std::swap(_mesh_data_index, other._mesh_data_index);
+    std::swap(_parent, other._parent);
+}
+
+bool MeshDrawData::is_null() const {
+    y_debug_assert(!_parent == (_mesh_data_index == u32(-1)));
+    return !_parent;
+}
+
+const MeshAllocator* MeshDrawData::parent() const {
+    return _parent;
+}
+
+MeshDrawBuffers MeshDrawData::mesh_buffers() const {
+    return _parent->mesh_buffers(*this);
+}
+
+TriangleSubBuffer MeshDrawData::triangle_buffer() const {
+    return _parent->triangle_buffer();
+}
+
+const MeshDrawCommand& MeshDrawData::draw_command() const {
+    return _cmd;
+}
+
+u32 MeshDrawData::mesh_data_index() const {
+    return _mesh_data_index;
+}
+
+u32 MeshDrawData::vertex_count() const {
+    return _vertex_count;
 }
 
 }

@@ -59,6 +59,12 @@ static std::tuple<VkHandle<VkBuffer>, DeviceMemory> alloc_buffer(u64 buffer_size
         "Uniform buffer size exceeds maxUniformBufferRange ({})", device_properties().max_uniform_buffer_size
     );
 
+
+    const u64 raytracing_bits = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+    usage = raytracing_enabled() ? usage : (usage & BufferUsage(~raytracing_bits));
+
+    y_debug_assert(usage != BufferUsage::None);
+
     VkBufferCreateInfo buffer_create_info = vk_struct();
     {
         buffer_create_info.size = buffer_size;

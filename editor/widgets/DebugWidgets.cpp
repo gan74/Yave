@@ -254,16 +254,9 @@ class MeshAllocatorDebug : public Widget {
 
     protected:
         void on_gui() override {
-            auto [vert, tris] = mesh_allocator().allocated();
 
             {
-                ImGui::TextUnformatted("Vertex buffer:");
-                ImGui::SameLine();
-                ImGui::ProgressBar(float(vert) / MeshAllocator::default_vertex_count, ImVec2(-1.0f, 0.0f),
-                    fmt_c_str("{}k / {}k", vert / 1000, MeshAllocator::default_vertex_count / 1000)
-                );
-            }
-            {
+                auto tris = mesh_allocator().allocated();
                 ImGui::TextUnformatted("Triangle buffer:");
                 ImGui::SameLine();
                 ImGui::ProgressBar(float(tris) / MeshAllocator::default_triangle_count, ImVec2(-1.0f, 0.0f),

@@ -66,6 +66,10 @@ const MeshDrawCommand& StaticMesh::draw_command() const {
     return _draw_data.draw_command();
 }
 
+u32 StaticMesh::mesh_data_index() const {
+    return _draw_data.mesh_data_index();
+}
+
 core::Span<MeshDrawCommand> StaticMesh::sub_meshes() const {
     return _sub_meshes;
 }
@@ -84,10 +88,6 @@ float StaticMesh::radius() const {
 
 const AABB& StaticMesh::aabb() const {
     return _aabb;
-}
-
-u32 StaticMesh::mesh_data_index() const {
-    return _draw_data.mesh_data_index;
 }
 
 
