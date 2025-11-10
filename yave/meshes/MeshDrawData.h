@@ -49,8 +49,7 @@ struct MeshDrawCommand {
 struct MeshDrawBuffers {
     static constexpr usize stream_count = usize(VertexStreamType::Max);
 
-    std::array<SubBuffer<BufferUsage::StorageBit>, stream_count> attribs;
-    // TriangleSubBuffer triangles;
+    std::array<SubBuffer<BufferUsage::StorageBit | BufferUsage::AccelStructureInputBit>, stream_count> attribs;
 };
 
 class MeshDrawData : NonCopyable {
@@ -87,6 +86,7 @@ class MeshDrawData : NonCopyable {
         u32 _mesh_data_index = u32(-1);
 
         MeshAllocator* _parent = nullptr;
+        MeshDrawBuffers _mesh_buffers = {};
 };
 
 }

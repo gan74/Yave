@@ -37,7 +37,10 @@ namespace yave {
 class MeshAllocator : NonMovable {
     using MutableTriangleSubBuffer = SubBuffer<BufferUsage::IndexBit | BufferUsage::TransferDstBit>;
 
-    using DataBuffer = Buffer<BufferUsage::StorageBit | BufferUsage::TransferDstBit, MemoryType::DeviceLocal>;
+    using VertexBuffer = Buffer<BufferUsage::StorageBit | BufferUsage::AccelStructureInputBit | BufferUsage::TransferDstBit, MemoryType::DeviceLocal>;
+
+    static constexpr usize stream_count = usize(VertexStreamType::Max);
+    using Buffers = std::array<VertexBuffer, stream_count>;
 
     template<typename T>
     using TypedDataBuffer = TypedBuffer<T, BufferUsage::StorageBit | BufferUsage::TransferDstBit | BufferUsage::TransferSrcBit, MemoryType::DeviceLocal>;
@@ -48,17 +51,10 @@ class MeshAllocator : NonMovable {
     };
 
     public:
-        static constexpr usize stream_count = usize(VertexStreamType::Max);
-
-        using Buffers = std::array<DataBuffer, stream_count>;
-
         static const u64 default_triangle_count = 8 * 1024 * 1024;
 
         MeshAllocator();
         ~MeshAllocator();
-
-        MeshDrawBuffers mesh_buffers(const MeshDrawData& draw_data) const;
-        // TriangleSubBuffer triangle_buffer(const MeshDrawData& draw_data) const;
 
         MeshDrawData alloc_mesh(const MeshVertexStreams& streams, core::Span<IndexedTriangle> triangles);
 

@@ -50,6 +50,7 @@ void MeshDrawData::swap(MeshDrawData& other) {
     std::swap(_vertex_count, other._vertex_count);
     std::swap(_mesh_data_index, other._mesh_data_index);
     std::swap(_parent, other._parent);
+    std::swap(_mesh_buffers, other._mesh_buffers);
 }
 
 bool MeshDrawData::is_null() const {
@@ -62,7 +63,7 @@ const MeshAllocator* MeshDrawData::parent() const {
 }
 
 MeshDrawBuffers MeshDrawData::mesh_buffers() const {
-    return _parent->mesh_buffers(*this);
+    return _mesh_buffers;
 }
 
 TriangleSubBuffer MeshDrawData::triangle_buffer() const {

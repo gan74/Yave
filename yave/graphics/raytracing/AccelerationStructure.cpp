@@ -90,6 +90,7 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
 
     const u32 prim_count = draw_cmd.index_count / 3;
     y_debug_assert(prim_count * 3 == draw_cmd.index_count);
+    y_debug_assert(mesh.vertex_count());
 
     VkAccelerationStructureGeometryTrianglesDataKHR triangles = vk_struct();
     {
@@ -100,8 +101,9 @@ static std::pair<VkHandle<VkAccelerationStructureKHR>, Buffer<BufferUsage::Accel
         triangles.vertexData.deviceAddress = position_buffer;
         triangles.maxVertex = mesh.vertex_count();
 
-        triangles.indexType = VK_INDEX_TYPE_UINT32;
+        y_debug_assert(triangles.vertexData.deviceAddress);
 
+        triangles.indexType = VK_INDEX_TYPE_UINT32;
         triangles.indexData.deviceAddress = mesh.triangle_buffer().vk_device_address();
     }
 

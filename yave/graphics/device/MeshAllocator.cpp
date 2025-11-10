@@ -55,35 +55,6 @@ MeshAllocator::~MeshAllocator() {
     y_always_assert(_free_blocks.size() == 1, "Not all mesh memory has been released: mesh heap fragmented");
 }
 
-MeshDrawBuffers MeshAllocator::mesh_buffers(const MeshDrawData& draw_data) const {
-    y_debug_assert(draw_data._parent == this);
-    y_debug_assert(draw_data._mesh_data_index != u32(-1));
-    y_debug_assert(_mesh_buffers.size() > draw_data._mesh_data_index);
-    y_debug_assert(!_mesh_buffers[draw_data._mesh_data_index][0].is_null());
-
-    const Buffers& buffers = _mesh_buffers[draw_data._mesh_data_index];
-
-    MeshDrawBuffers draw_buffers = {};
-    // draw_buffers.triangles = triangle_buffer(draw_data);
-
-    for(usize i = 0; i != draw_buffers.attribs.size(); ++i) {
-        const DataBuffer& b = buffers[i];
-        draw_buffers.attribs[i] = b;
-    }
-
-    return draw_buffers;
-}
-
-/*TriangleSubBuffer MeshAllocator::triangle_buffer(const MeshDrawData& draw_data) const {
-    y_debug_assert(draw_data._parent == this);
-    y_debug_assert(draw_data._mesh_data_index != u32(-1));
-
-    const u64 triangle_count = draw_data.draw_command().index_count / 3;
-    const u64 first_triangle = draw_data.draw_command().first_index / 3;
-
-    return TriangleSubBuffer(_triangle_buffer, triangle_count, first_triangle);
-}*/
-
 MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::Span<IndexedTriangle> triangles) {
     y_profile();
 
@@ -100,7 +71,7 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
 
     TransferCmdBufferRecorder recorder = create_disposable_transfer_cmd_buffer();
 
-    auto stage_copy = [&](const SubBuffer<BufferUsage::TransferDstBit>& dst, const void* data) {
+    auto staged_copy = [&](const SubBuffer<BufferUsage::TransferDstBit>& dst, const void* data) {
         y_debug_assert(data);
         const u64 dst_size = dst.byte_size();
         const StagingBuffer buffer(dst_size);
@@ -109,8 +80,12 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
     };
 
     {
+        /*
+         * We can not simply realloc the triangle buffer as some systems call triangle_buffer unsynchronized
+         * Locking in triangle_buffer might be the best option
+         */
         MutableTriangleSubBuffer triangle_buffer(_triangle_buffer, triangle_count * sizeof(IndexedTriangle), triangle_begin * sizeof(IndexedTriangle));
-        stage_copy(triangle_buffer, triangles.data());
+        staged_copy(triangle_buffer, triangles.data());
         mesh_data._cmd.first_index = u32(triangle_begin * 3);
     }
 
@@ -140,8 +115,8 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
             const core::Span<u8> data = streams.stream_data(VertexStreamType(i));
             y_debug_assert(!data.is_empty());
 
-            buffers[i] = DataBuffer(data.size());
-            stage_copy(buffers[i], data.data());
+            mesh_data._mesh_buffers.attribs[i] = (buffers[i] = VertexBuffer(data.size()));
+            staged_copy(buffers[i], data.data());
 
 #ifdef Y_DEBUG
             if(const auto* debug = debug_utils()) {
@@ -186,6 +161,7 @@ void MeshAllocator::recycle(MeshDrawData* data) {
     {
         data->_parent = nullptr;
         data->_mesh_data_index = u32(-1);
+        data->_mesh_buffers = {};
     }
     y_debug_assert(data->is_null());
 }
