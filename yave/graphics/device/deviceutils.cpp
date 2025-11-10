@@ -297,9 +297,9 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2() {
     required.descriptorBindingPartiallyBound = true;
     required.descriptorBindingUpdateUnusedWhilePending = true;
     required.descriptorBindingSampledImageUpdateAfterBind = true;
-    required.descriptorBindingStorageBufferUpdateAfterBind = true;
     required.shaderSampledImageArrayNonUniformIndexing = true;
-    required.shaderStorageBufferArrayNonUniformIndexing = true;
+    // required.descriptorBindingStorageBufferUpdateAfterBind = true;
+    // required.shaderStorageBufferArrayNonUniformIndexing = true;
 
     return required;
 }
