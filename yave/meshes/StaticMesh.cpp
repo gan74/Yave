@@ -51,6 +51,7 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
 }
 
 StaticMesh::~StaticMesh() {
+    _draw_data.is_null();
     destroy_graphic_resource(std::move(_draw_data));
 }
 

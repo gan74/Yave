@@ -91,6 +91,7 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
     y_debug_assert(triangle_count);
 
     MeshDrawData mesh_data;
+    mesh_data._parent = this;
     mesh_data._vertex_count = u32(streams.vertex_count());
     mesh_data._cmd.index_count = u32(triangles.size() * 3);
 
@@ -182,7 +183,11 @@ void MeshAllocator::recycle(MeshDrawData* data) {
     _free << data->_mesh_data_index;
     _mesh_buffers[data->_mesh_data_index] = {};
 
-    *data = {};
+    {
+        data->_parent = nullptr;
+        data->_mesh_data_index = u32(-1);
+    }
+    y_debug_assert(data->is_null());
 }
 
 
