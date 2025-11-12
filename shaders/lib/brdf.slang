@@ -41,8 +41,9 @@ float g_smith(float n_v, float n_l, float roughness) {
     return g_schlick_ggx(max(0.0, n_v), roughness) * g_schlick_ggx(max(0.0, n_l), roughness);
 }
 
-T f_schlick<T: IFloat>(T f0, T f90, float v_h) {
-    return f0 + (f90 - f0) * T(pow(saturate(1.0 - v_h), 5.0));
+float3 f_schlick_roughness(float n_v, float3 f0, float roughness) {
+    const float3 f90 = max(float3(1.0 - roughness), f0);
+    return f0 + (f90 - f0) * pow(saturate(1.0 - n_v), 5.0);
 }
 
 
@@ -148,7 +149,7 @@ float3 eval_ibl(SamplerCube probe, Sampler2D<float2> brdf_lut, float3 v, Surface
 
     const float n_v = max(0.0, dot(n, v));
 
-    const float3 f = f_schlick(info.f0(), info.f90(), n_v);
+    const float3 f = f_schlick_roughness(n_v, info.f0(), info.perceptual_roughness);
 
     const float3 k_s = f;
     const float3 k_d = (1.0 - k_s) * (1.0 - info.metallic);
@@ -162,7 +163,6 @@ float3 eval_ibl(SamplerCube probe, Sampler2D<float2> brdf_lut, float3 v, Surface
 
     return diffuse + specular;
 }
-
 
 
 struct SpecularContrib {
