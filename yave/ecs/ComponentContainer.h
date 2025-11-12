@@ -152,7 +152,7 @@ class ComponentContainer final : public ComponentContainerBase {
                 return;
             }
 
-            Y_TODO(lock??)
+            Y_TODO(lock?)
 
             if constexpr(Inspectable<T>) {
                 if(inspector->inspect_component_type(runtime_info(), true)) {
@@ -179,7 +179,7 @@ class ComponentContainer final : public ComponentContainerBase {
         y_serde3_poly(ComponentContainer)
         y_reflect(ComponentContainer, _components)
 
-        y_no_serde3_expr(serde3::has_no_serde3<T>);
+        y_no_serde3_expr(serde3::has_no_serde3<T>)
 
     private:
         friend class EntityWorld;

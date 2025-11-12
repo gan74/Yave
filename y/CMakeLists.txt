@@ -24,20 +24,6 @@ if(MSVC)
     # Allow some inlining in debug to make stepping easier
     # string(REPLACE "/Ob0" "/Ob1" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
 else()
-    # -Wsign-conversion -Wshadow
-    set(Y_EXTRA_WARNINGS
-            -Wzero-as-null-pointer-constant
-            -Wfloat-conversion
-            -Woverloaded-virtual
-            -Wnon-virtual-dtor
-            -Wlogical-op
-            -Wredundant-decls
-            -Wundef
-            -Wno-gnu-zero-variadic-macro-arguments
-        )
-    set(Y_COMPILE_OPTIONS -pedantic -Wall -Wextra
-        ${Y_EXTRA_WARNINGS})
-
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
     set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wodr")
 endif()

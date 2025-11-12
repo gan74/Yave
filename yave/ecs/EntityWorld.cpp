@@ -412,7 +412,7 @@ void EntityWorld::register_containers() {
 
 
         {
-            const core::Span required_types = container->runtime_info().required;
+            const core::Span<ecs::ComponentTypeIndex> required_types = container->runtime_info().required;
 
             container->_required = core::FixedArray<ComponentContainerBase*>(required_types.size());
             for(usize i = 0; i != required_types.size(); ++i) {

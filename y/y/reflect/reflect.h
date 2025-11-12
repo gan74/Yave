@@ -174,7 +174,7 @@ y_reflect_base(Type)                                                            
 template<typename = void> static inline consteval auto _y_reflect_static() { return std::tuple<>{}; }
 
 #define y_reflect_static(Type, ...)                                                                         \
-y_reflect_base(Type);                                                                                       \
+y_reflect_base(Type)                                                                                        \
 template<typename = void> static inline consteval auto _y_reflect_static() {                                \
     using _y_refl_self_type = Type;                                                                         \
     return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_reflect_create_member, __VA_ARGS__))};                      \

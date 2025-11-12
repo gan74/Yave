@@ -23,8 +23,11 @@ SOFTWARE.
 #define Y_MATH_MATH_H
 
 #include <y/utils.h>
-#include <limits>
+
 #include "Matrix.h"
+
+#include <limits>
+#include <array>
 
 namespace y {
 namespace math {

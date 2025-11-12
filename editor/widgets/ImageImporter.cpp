@@ -82,7 +82,7 @@ void ImageImporter::import(const core::String& filename) {
     y_debug_assert(_state == State::Browsing);
     _state = State::Importing;
 
-    _job_system.schedule( [=] {
+    _job_system.schedule( [=, this] {
         auto result = import::import_image(filename, import::ImageImportFlags::GenerateMipmaps | import::ImageImportFlags::Compress);
         if(result.is_error()) {
             log_msg("Unable to import image", Log::Error);
@@ -93,14 +93,14 @@ void ImageImporter::import(const core::String& filename) {
         io2::Buffer buffer;
         serde3::WritableArchive arc(buffer);
         if(!arc.serialize(result.unwrap())) {
-            log_msg("Unable serialize image", Log::Error);
+            log_msg("Unable to serialize image", Log::Error);
             return;
         }
         buffer.reset();
 
         const core::String full_name = asset_store().filesystem()->join(_import_path, import::clean_asset_name(filename));
         if(!asset_store().import(buffer, full_name, AssetType::Image)) {
-            log_msg("Unable import image", Log::Error);
+            log_msg("Unable to import image", Log::Error);
         }
     });
 }

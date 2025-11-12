@@ -57,7 +57,7 @@ static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Ve
             continue;
         }
 
-        const core::Span materials = mesh->component.materials();
+        const core::Span<AssetPtr<Material>> materials = mesh->component.materials();
         if(materials.size() == 1) {
             if(const Material* mat = materials[0].get()) {
                 y_debug_assert(!static_mesh->draw_command().vk_indirect_data().vertexOffset);

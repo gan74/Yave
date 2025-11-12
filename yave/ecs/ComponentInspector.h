@@ -115,7 +115,7 @@ class ComponentInspector : NonCopyable {
 template<typename Derived>
 class TemplateComponentInspector : public ComponentInspector {
     public:
-        bool ComponentInspector::inspect_component_type(ComponentRuntimeInfo, bool) override {
+        bool inspect_component_type(ComponentRuntimeInfo, bool) override {
             return true;
         }
 

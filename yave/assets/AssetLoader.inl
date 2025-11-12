@@ -90,7 +90,7 @@ AssetLoader::Loader<T>::Loader(AssetLoader* parent) : LoaderBase(parent) {
 }
 
 template<typename T>
-AssetLoader::Loader<T>::~Loader<T>() {
+AssetLoader::Loader<T>::~Loader() {
     y_profile();
      _loaded.locked([&](auto&& loaded) {
         for(auto&& [id, ptr] : loaded) {
