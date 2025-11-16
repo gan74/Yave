@@ -25,8 +25,9 @@ SOFTWARE.
 #include "ecs.h"
 #include "ComponentRuntimeInfo.h"
 
-#include <y/core/AssocVector.h>
+#include <yave/assets/AssetPtr.h>
 
+#include <y/core/AssocVector.h>
 #include <y/serde3/archives.h>
 
 namespace yave {

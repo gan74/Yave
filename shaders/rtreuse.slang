@@ -47,7 +47,7 @@ static uint depth_rejection = 0;
 float4 take_sample(float2 sample_uv, float3 world_pos, float3 normal, bool reject_depth, bool reject_normal) {
     const float sample_depth = in_depth.SampleLevel(sample_uv, 0.0);
     const float3 sample_world_pos = unproject(sample_uv, sample_depth, camera.curr.inv_view_proj);
-    const float3 sample_normal = decode_gbuffer({float4(0.0), in_rt1.SampleLevel(sample_uv, 0.0)}).normal;
+    const float3 sample_normal = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1.SampleLevel(sample_uv, 0.0))).normal;
 
     if(is_depth_far(sample_depth)) {
         return float4(0.0);
@@ -95,7 +95,7 @@ void comp() {
 
     const float2 uv = (coord + 0.5) / size;
     const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
-    const float3 normal = decode_gbuffer({float4(0.0), in_rt1[coord]}).normal;
+    const float3 normal = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1[coord])).normal;
 
 #if 0
     float4 acc = 0.0;
@@ -110,12 +110,12 @@ void comp() {
     float4 acc = float4(in_gi.SampleLevel(uv, 0.0).rgb, 1.0);
 
     const float random = float((hash(semantics.global_index) ^ seed) & 0x0FFFFFF) / 0x0FFFFFF;
-    const float random_angle = random * pi * 2.0;
+    const float random_angle = random * constants.pi * 2.0;
 
     const float step = 1.0 / sample_count;
     for(float t = 0.0; t < 1.0; t += step) {
         const float r = lerp(2.0, 32.0, t);
-        const float phi = lerp(0.0, pi * 2.0 * 5.0 / golden, t);
+        const float phi = lerp(0.0, constants.pi * 2.0 * 5.0 / constants.golden, t);
         const float2 sample_offset = float2(cos(phi + random_angle), sin(phi + random_angle)) * r;
         const float2 sample_uv = wrap_uv(uv + (sample_offset / size));
 

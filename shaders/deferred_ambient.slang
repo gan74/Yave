@@ -1,5 +1,5 @@
 #include "lib/utils.slang"
-#include "lib/lighting.slang"
+#include "lib/brdf.slang"
 
 // -------------------------------- DEFINES --------------------------------
 
@@ -57,7 +57,7 @@ cbuffer Params {
 // -------------------------------- HELPERS --------------------------------
 
 float3 view_direction(Camera camera, float2 uv) {
-    return normalize(camera.position - unproject(uv, 0.5, camera.curr.inv_view_proj));
+    return normalize(camera.position - unproject(uv, 0.001, camera.curr.inv_view_proj));
 }
 
 uint shadow_cascade_index(uint4 indices, float3 world_pos) {
@@ -136,10 +136,10 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
             }
         }
     } else {
-        const SurfaceInfo surface = decode_gbuffer({
+        const SurfaceInfo surface = decode_gbuffer(RawGBuffer(
             in_rt0[coord],
             in_rt1[coord],
-        });
+        ));
 
         const float3 world_pos = unproject(in_uv, depth, camera.curr.inv_view_proj);
         const float3 view_dir = normalize(camera.position - world_pos);
@@ -159,7 +159,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
 
             if(att > 0.0) {
                 const float3 radiance = light.color * att;
-                irradiance += radiance * eval_lighting(surface, view_dir, light_dir);
+                irradiance += radiance * eval_brdf(surface, view_dir, light_dir);
             }
         }
 

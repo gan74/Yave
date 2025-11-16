@@ -122,6 +122,13 @@ u32 gizmo_color(usize axis) {
     return colors[axis];
 }
 
+ImVec4 text_color(bool error) {
+    if(error) {
+        return error_text_color;
+    }
+    return ImGui::GetStyleColorVec4(ImGuiCol_Text);
+}
+
 bool should_open_context_menu() {
     return ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right);
 }
@@ -436,7 +443,7 @@ bool search_bar(const char* text, char* buffer, usize buffer_size) {
     search_bar_state.focussed = imgui_state;
 
     if(!search_bar_state.focussed) {
-        ImGui::InputText(text, buffer, buffer_size);
+        ImGui::InputText(text, buffer, buffer_size, ImGuiInputTextFlags_AutoSelectAll);
         return false;
     }
 
@@ -463,7 +470,7 @@ bool search_bar(const char* text, char* buffer, usize buffer_size) {
             return 0;
         };
 
-        search_bar_state.activated = ImGui::InputText(text, buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory, call_back, &search_bar_state);
+        search_bar_state.activated = ImGui::InputText(text, buffer, buffer_size, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_AutoSelectAll, call_back, &search_bar_state);
     }
 
     if(was_activated_last_frame) {

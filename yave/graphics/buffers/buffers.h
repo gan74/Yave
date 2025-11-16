@@ -92,6 +92,10 @@ using IndirectSubBuffer = TypedSubBuffer<VkDrawIndexedIndirectCommand, BufferUsa
 template<typename T>
 using TypedAttribSubBuffer = TypedSubBuffer<T, BufferUsage::AttributeBit>;
 
+
+template<typename T>
+using TypedReadBackBuffer = TypedBuffer<T, BufferUsage::StorageBit, MemoryType::CpuVisible>;
+
 }
 
 #endif // YAVE_GRAPHICS_BUFFERS_BUFFERS_H

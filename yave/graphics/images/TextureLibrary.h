@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace yave {
 
-class TextureLibrary final : public DescriptorArray {
+class TextureLibrary final : public ManagedDescriptorArray {
     public:
         TextureLibrary();
 

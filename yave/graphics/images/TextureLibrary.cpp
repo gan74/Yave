@@ -24,15 +24,15 @@ SOFTWARE.
 
 namespace yave {
 
-TextureLibrary::TextureLibrary() : DescriptorArray(VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+TextureLibrary::TextureLibrary() : ManagedDescriptorArray(VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
 }
 
 u32 TextureLibrary::add_texture(const TextureView& tex, SamplerType sampler) {
-    return add_descriptor(Descriptor(tex, sampler));
+    return add_descriptor_managed(Descriptor(tex, sampler));
 }
 
 void TextureLibrary::remove_texture(const TextureView& tex, SamplerType sampler) {
-    remove_descriptor(Descriptor(tex, sampler));
+    remove_descriptor_managed(Descriptor(tex, sampler));
 }
 
 }

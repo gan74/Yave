@@ -45,7 +45,7 @@ static constexpr float gizmo_quad_offset = 0.25f;
 static constexpr float gizmo_quad_size = 0.3f;
 static constexpr u32 gizmo_quad_alpha = 0xB0000000;
 
-static const u32 gizmo_hover_color = pack_to_u32(sRGB_to_linear(unpack_from_u32(0x001A80FF)));
+static const u32 gizmo_hover_color = 0x001A80FF;
 
 
 
@@ -67,7 +67,7 @@ static void move_recursive(EditorWorld& world, ecs::EntityId id, math::Transform
         new_parent_transform = component->transform();
     }
 
-    for(const ecs::EntityId child : world.children(id)) {
+    for(const ecs::EntityId child : world.direct_children(id)) {
         move_recursive(world, child, old_parent_transform, new_parent_transform);
     }
 }
@@ -357,7 +357,7 @@ void TranslationGizmo::draw() {
 
         for(usize i : rev_indices) {
             if(is_hovering_axis(gizmo_screen_center, screen_end_points[i])) {
-                _hover_mask |= (1 << i);
+                _hover_mask = (1 << i);
                 break;
             }
         }
@@ -618,10 +618,8 @@ void OrientationGizmo::draw() {
     const math::Vec2 center = offset + viewport - (orientation_gizmo_size * 2.0f);
 
     Camera& camera = _scene_view->camera();
-    const auto view_proj = camera.view_proj_matrix();
     const auto view = camera.view_matrix();
-
-    const float ratio = viewport.x() / viewport.y();
+    const auto view_proj = math::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f) * view;
 
     std::array<i32, 4> axes = {
         -1, 0, 1, 2
@@ -655,8 +653,8 @@ void OrientationGizmo::draw() {
 
         math::Vec4 v;
         v[i] = orientation_gizmo_size + orientation_gizmo_end_point_width;
-        const math::Vec2 axis = ((view_proj * v).to<2>() * 0.5f + 0.5f) * math::Vec2(ratio, 1.0f);
-        const math::Vec2 end = center + axis.normalized() * orientation_gizmo_size;
+        const math::Vec2 axis = ((view_proj * v).to<2>() * 0.5f + 0.5f);
+        const math::Vec2 end = center + axis * orientation_gizmo_size * 0.075f;
 
         if(axis.length() > orientation_gizmo_end_point_width) {
             const math::Vec2 dir = axis.normalized();

@@ -43,7 +43,8 @@ ImageImporter::ImageImporter() : ImageImporter(asset_store().filesystem()->curre
 
 ImageImporter::ImageImporter(core::String dst_import_path) :
         Widget("Image importer"),
-        _import_path(std::move(dst_import_path)) {
+        _import_path(std::move(dst_import_path)),
+        _job_system(1) {
 
     _browser.set_selection_filter(import::supported_image_extensions());
     _browser.set_selected_callback([this](const auto& filename) { import(filename); return true; });
@@ -61,7 +62,7 @@ void ImageImporter::on_gui()  {
 
         case State::Importing:
             ImGui::Text("Loading%s", imgui::ellipsis());
-            if(_thread_pool.is_empty()) {
+            if(_job_system.is_empty()) {
                 _state = State::Done;
             }
         break;
@@ -74,14 +75,14 @@ void ImageImporter::on_gui()  {
 }
 
 bool ImageImporter::should_keep_alive() const {
-     return !_thread_pool.is_empty();
+     return !_job_system.is_empty();
 }
 
 void ImageImporter::import(const core::String& filename) {
     y_debug_assert(_state == State::Browsing);
     _state = State::Importing;
 
-    _thread_pool.schedule([=] {
+    _job_system.schedule( [=] {
         auto result = import::import_image(filename, import::ImageImportFlags::GenerateMipmaps | import::ImageImportFlags::Compress);
         if(result.is_error()) {
             log_msg("Unable to import image", Log::Error);

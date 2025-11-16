@@ -61,15 +61,14 @@ static std::tuple<VkHandle<VkBuffer>, DeviceMemory> alloc_buffer(u64 buffer_size
 
 
     const u64 raytracing_bits = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
-    usage = raytracing_enabled()
-        ? (usage | BufferUsage(VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT))
-        : (usage & BufferUsage(~raytracing_bits))
-    ;
+    usage = raytracing_enabled() ? usage : (usage & BufferUsage(~raytracing_bits));
+
+    y_debug_assert(usage != BufferUsage::None);
 
     VkBufferCreateInfo buffer_create_info = vk_struct();
     {
         buffer_create_info.size = buffer_size;
-        buffer_create_info.usage = VkBufferUsageFlags(usage);
+        buffer_create_info.usage = VkBufferUsageFlags(usage) | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     }
 
@@ -79,7 +78,7 @@ static std::tuple<VkHandle<VkBuffer>, DeviceMemory> alloc_buffer(u64 buffer_size
             alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
             alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT  | VMA_ALLOCATION_CREATE_MAPPED_BIT;
         break;
-        
+
         case MemoryType::Staging:
             alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
             alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT  | VMA_ALLOCATION_CREATE_MAPPED_BIT;
@@ -108,6 +107,7 @@ SubBufferBase::SubBufferBase(const BufferBase& base, u64 byte_len, u64 byte_off)
         _size(byte_len),
         _offset(byte_off),
         _buffer(base.vk_buffer()),
+        _address(base.vk_device_address() + byte_off),
         _memory(base.device_memory()) {
 
     y_debug_assert(base.byte_size() >= byte_len + byte_off);
@@ -117,6 +117,7 @@ SubBufferBase::SubBufferBase(const SubBufferBase& base, u64 byte_len, u64 byte_o
         _size(byte_len),
         _offset(byte_off + base.byte_offset()),
         _buffer(base.vk_buffer()),
+        _address(base.vk_device_address() + byte_off),
         _memory(base.device_memory()) {
 
     y_debug_assert(base.byte_size() >= byte_len + byte_off);
@@ -146,6 +147,10 @@ VkBuffer SubBufferBase::vk_buffer() const {
     return _buffer;
 }
 
+VkDeviceAddress SubBufferBase::vk_device_address() const {
+    return _address;
+}
+
 DeviceMemoryView SubBufferBase::device_memory() const {
     return _memory;
 }
@@ -161,7 +166,7 @@ VkDescriptorBufferInfo SubBufferBase::vk_descriptor_info() const {
 }
 
 bool SubBufferBase::operator==(const SubBufferBase& other) const {
-    return (_buffer == other._buffer) && (_offset == other._offset) && (_size == other._size);
+    return _address == other._address;
 }
 
 bool SubBufferBase::operator!=(const SubBufferBase& other) const {
@@ -169,8 +174,17 @@ bool SubBufferBase::operator!=(const SubBufferBase& other) const {
 }
 
 
+
+
 BufferBase::BufferBase(u64 byte_size, BufferUsage usage, MemoryType type, MemoryAllocFlags alloc_flags) : _size(byte_size), _usage(usage) {
     std::tie(_buffer, _memory) = alloc_buffer(byte_size, usage, type, alloc_flags);
+
+    {
+        VkBufferDeviceAddressInfo info = vk_struct();
+        info.buffer = _buffer;
+
+        _address = vkGetBufferDeviceAddress(vk_device(), &info);
+    }
 }
 
 BufferBase::~BufferBase() {
@@ -194,6 +208,10 @@ VkBuffer BufferBase::vk_buffer() const {
     return _buffer;
 }
 
+VkDeviceAddress BufferBase::vk_device_address() const {
+    return _address;
+}
+
 const DeviceMemory& BufferBase::device_memory() const {
     return _memory;
 }
@@ -206,7 +224,6 @@ VkDescriptorBufferInfo BufferBase::vk_descriptor_info() const {
         info.range = byte_size();
     }
     return info;
-
 }
 
 }

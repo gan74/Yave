@@ -174,6 +174,8 @@ class AssetPtr {
         void load(AssetLoadingContext& context);
         void load_async(AssetLoadingContext& context);
 
+        void unlink();
+
         y_reflect(AssetPtr, _id)
 
     protected:

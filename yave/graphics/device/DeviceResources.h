@@ -61,6 +61,7 @@ class DeviceResources final : NonMovable {
             FilterAOProgram,
             BilateralVerticalProgram,
             BilateralHorizontalProgram,
+            PickingProgram,
 
             MaxNonRTComputePrograms,
             RTAOProgram = MaxNonRTComputePrograms,

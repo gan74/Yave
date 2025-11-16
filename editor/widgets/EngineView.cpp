@@ -22,11 +22,9 @@ SOFTWARE.
 
 #include "EngineView.h"
 
-#include <editor/Picker.h>
 #include <editor/Settings.h>
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
-#include <editor/utils/CameraController.h>
 #include <editor/ImGuiPlatform.h>
 #include <editor/utils/ui.h>
 
@@ -36,15 +34,34 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/framegraph/FrameGraphResourcePool.h>
+
+#include <yave/renderer/IdBufferPass.h>
+
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/commands/CmdTimestampPool.h>
 #include <yave/graphics/device/DeviceResources.h>
 
+#include <yave/systems/TimeSystem.h>
+
+
 #include <yave/utils/color.h>
+#include <yave/utils/DirectDraw.h>
 
 #include <editor/utils/ui.h>
 
 namespace editor {
+
+
+
+editor_action_enable("Reset camera",
+    [] { last_focussed_widget_typed<EngineView>()->reset_camera(); },
+    [] { return last_focussed_widget_typed<EngineView>() != nullptr; }
+)
+
+
+
+
+
 
 static bool is_clicked() {
     return ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right) || ImGui::IsMouseClicked(ImGuiMouseButton_Middle);
@@ -87,6 +104,14 @@ EngineView::EngineView() :
 
 EngineView::~EngineView() {
     unset_scene_view(&_scene_view);
+}
+
+void EngineView::reset_camera() {
+   _scene_view.camera().set_view(Camera().view_matrix());
+}
+
+const math::Vec3& EngineView::cursor_world_pos() const {
+    return _cursor_world_pos;
 }
 
 CmdTimestampPool* EngineView::timestamp_pool() const {
@@ -156,7 +181,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     const math::Vec2ui output_size = _resolution < 0 ? content_size() : standard_resolutions()[_resolution].second;
 
     DstTexture output;
-    FrameGraph graph(_resource_pool);
+    FrameGraph framegraph(_resource_pool);
 
 
     EditorRendererSettings settings = _settings;
@@ -165,12 +190,11 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         settings.renderer_settings.taa.enable &= keep_taa(_view);
     }
 
-
-    const EditorRenderer renderer = EditorRenderer::create(graph, _scene_view, output_size, settings);
+    const EditorRenderer renderer = EditorRenderer::create(framegraph, _scene_view, output_size, settings);
     {
         const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
 
-        FrameGraphComputePassBuilder builder = graph.add_compute_pass("ImGui texture pass");
+        FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("ImGui texture pass");
 
         const auto output_image = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, output_size);
 
@@ -198,9 +222,20 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         });
     }
 
+    if(is_mouse_inside()) {
+        const math::Vec2 mouse_pos = to_y(ImGui::GetIO().MousePos) - to_y(ImGui::GetWindowPos());
+        const IdBufferPass id_buffer = IdBufferPass::create(framegraph, renderer.renderer);
+        _picking_requests.emplace_back(
+            picking_pass(framegraph, id_buffer, math::Vec2ui(mouse_pos)),
+            _scene_view.camera(),
+            mouse_pos / math::Vec2(content_size()),
+            recorder.create_fence()
+        );
+    }
+
     {
         CmdTimestampPool* ts_pool = _timestamp_pools.emplace_back(std::make_unique<CmdTimestampPool>(recorder)).get();
-        graph.render(recorder, ts_pool);
+        framegraph.render(recorder, ts_pool);
     }
 
     if(!output.is_null()) {
@@ -213,32 +248,47 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 // ---------------------------------------------- UPDATE ----------------------------------------------
 
 void EngineView::update() {
-    const bool hovered = ImGui::IsWindowHovered() && is_mouse_inside();
+    set_is_moving_camera(false);
 
-    set_is_moving_camera(!hovered);
-
-    if(!hovered) {
+    if(!ImGui::IsWindowHovered() || !is_mouse_inside()) {
+        _picking_valid = false;
         return;
     }
 
     bool focussed = ImGui::IsWindowFocused();
     if(is_clicked()) {
         ImGui::SetWindowFocus();
-        update_picking();
         focussed = true;
+
+        if(_picking_valid &&
+           _picking_result.uv.x() > 0.0f && _picking_result.uv.y() > 0.0f &&
+           _picking_result.uv.x() < 1.0f && _picking_result.uv.y() < 1.0f) {
+
+            if(_camera_controller && _camera_controller->viewport_clicked(_picking_result)) {
+                // Nothing
+            } else if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                if(!is_dragging_gizmo()) {
+                    const ecs::EntityId picked_id = _picking_result.hit() ? dynamic_cast<const EcsScene*>(&current_scene())->id_from_index(_picking_result.entity_index) : ecs::EntityId();
+                    current_world().toggle_selected(picked_id, !ImGui::GetIO().KeyCtrl);
+                }
+            }
+        }
     }
 
     if(focussed) {
         set_scene_view(&_scene_view);
-    }
 
-    if(!is_dragging_gizmo() && _camera_controller) {
-        auto& camera = _scene_view.camera();
-        _camera_controller->process_generic_shortcuts(camera);
-        if(focussed) {
-            _camera_controller->update_camera(camera, content_size());
+        if(_camera_controller) {
+            auto& camera = _scene_view.camera();
+            _camera_controller->process_generic_shortcuts(camera);
+
+            if(!is_dragging_gizmo() && _camera_controller->continue_moving()) {
+                set_is_moving_camera(true);
+                _camera_controller->update_camera(camera, content_size());
+            }
         }
     }
+
 }
 
 void EngineView::update_scene_view() {
@@ -256,30 +306,29 @@ void EngineView::update_scene_view() {
 
 
 void EngineView::update_picking() {
-    const math::Vec2ui viewport_size = content_size();
-    const ImVec2 offset = ImGui::GetWindowPos();
-    const ImVec2 mouse = ImGui::GetIO().MousePos;
-    const math::Vec2 uv = to_y(mouse - offset) / math::Vec2(viewport_size);
+    while(!_picking_requests.is_empty()) {
+        if(!_picking_requests.first().fence.is_ready()) {
+            break;
+        }
+        const PickingRequest request = _picking_requests.pop_front();
 
-    if(uv.x() < 0.0f || uv.y() < 0.0f ||
-       uv.x() > 1.0f || uv.y() > 1.0f) {
+        const shader::PickingData pick_data = request.buffer.map(MappingAccess::ReadOnly)[0];
+        const math::Vec4 p = request.camera.inverse_matrix() * math::Vec4(request.uv * 2.0f - 1.0f, pick_data.depth, 1.0f);
 
-        return;
-    }
+        _picking_result.world_pos = p.to<3>() / p.w();
+        _picking_result.uv = request.uv;
+        _picking_result.depth = pick_data.depth;
+        _picking_result.entity_index = pick_data.entity_index;
 
-    const PickingResult picking_data = Picker::pick_sync(_scene_view, uv, viewport_size);
-    if(_camera_controller && _camera_controller->viewport_clicked(picking_data)) {
-        // event has been eaten by the camera controller, don't proceed further
-        set_is_moving_camera(true);
-        return;
-    }
+        _picking_valid = true;
 
-    if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-        if(!is_dragging_gizmo()) {
-            const ecs::EntityId picked_id = picking_data.hit() ? dynamic_cast<const EcsScene*>(&current_scene())->id_from_index(picking_data.entity_index) : ecs::EntityId();
-            current_world().toggle_selected(picked_id, !ImGui::GetIO().KeyCtrl);
+        if(ImGui::IsWindowFocused()) {
+            _cursor_world_pos = _picking_result.world_pos;
         }
     }
+
+    // const float dist = (_picking_result.world_pos - request.camera.position()).length();
+    debug_drawer().add_primitive("debug")->add_marker(0xFF0000FF, _cursor_world_pos);
 }
 
 void EngineView::make_drop_target() {
@@ -328,6 +377,7 @@ void EngineView::on_gui() {
         }
 
 
+        update_picking();
         update();
 
 
@@ -337,7 +387,11 @@ void EngineView::on_gui() {
 
         if(ImGui::BeginPopup("##contextmenu")) {
             for(const EditorAction* action = all_actions(); action; action = action->next) {
-                if(action->enabled && !(action->enabled()) || (action->flags & EditorAction::Contextual) != EditorAction::Contextual) {
+                if((action->flags & EditorAction::Contextual) != EditorAction::Contextual) {
+                    continue;
+                }
+
+                if(action->enabled && !(action->enabled())) {
                     continue;
                 }
 
@@ -395,6 +449,15 @@ void EngineView::draw_toolbar_and_gizmos() {
             }
         }
 
+        if(TimeSystem* time = current_world().find_system<TimeSystem>()) {
+            ImGui::SameLine();
+
+            const bool paused = time->time_scale() <= 0.0f;
+            if(ImGui::Button(paused ? ICON_FA_PLAY : ICON_FA_PAUSE)) {
+                time->set_time_scale(paused ? 1.0f : 0.0f);
+            }
+        }
+
         ImGui::PopStyleColor(2);
     }
 
@@ -435,7 +498,7 @@ void EngineView::draw_menu() {
 
     if(ImGui::BeginMenu("Camera")) {
         if(ImGui::MenuItem("Reset camera")) {
-            _scene_view.camera().set_view(Camera().view_matrix());
+            reset_camera();
         }
         ImGui::EndMenu();
     }

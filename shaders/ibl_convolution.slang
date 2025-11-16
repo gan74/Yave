@@ -1,4 +1,5 @@
 #include "lib/utils.slang"
+#include "lib/brdf.slang"
 
 
 #ifdef CUBE

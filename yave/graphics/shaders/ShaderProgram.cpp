@@ -26,6 +26,7 @@ SOFTWARE.
 #include <yave/graphics/device/DeviceProperties.h>
 #include <yave/graphics/device/DescriptorLayoutAllocator.h>
 #include <yave/graphics/images/TextureLibrary.h>
+#include <yave/graphics/device/MeshAllocator.h>
 
 
 #include <y/core/ScratchPad.h>
@@ -134,26 +135,32 @@ ShaderProgramBase::ShaderProgramBase(core::Span<const ShaderModuleBase*> shaders
         create_stage_info(_stages, *shader);
     }
 
-    const usize max_variable_binding = std::accumulate(shaders.begin(), shaders.end(), 0_uu, [](usize sum, const ShaderModuleBase* s) { return sum + s->variable_size_bindings().size(); });
-    core::ScratchVector<u32> variable_bindings(max_variable_binding);
+    core::ScratchVector<u32> variable_sets(_bindings.size());
     for(const ShaderModuleBase* shader : shaders) {
-        for(const u32 var : shader->variable_size_bindings()) {
-            if(std::find(variable_bindings.begin(), variable_bindings.end(), var) == variable_bindings.end()) {
-                variable_bindings.emplace_back(var);
+        for(const u32 set : shader->variable_size_sets()) {
+            if(std::find(variable_sets.begin(), variable_sets.end(), set) == variable_sets.end()) {
+                variable_sets.emplace_back(set);
             }
         }
     }
 
-    y_always_assert((_bindings.size() - variable_bindings.size()) <= 1, "Multiple descriptor sets are not supported");
+    y_always_assert((_bindings.size() - variable_sets.size()) <= 1, "Multiple descriptor sets are not supported");
 
     if(!_bindings.is_empty()) {
         _layouts.set_min_size(_bindings.size());
         for(usize i = 0; i != _bindings.size(); ++i) {
             const auto& bindings = _bindings[i];
             validate_bindings(bindings);
-            if(std::find(variable_bindings.begin(), variable_bindings.end(), i) != variable_bindings.end()) {
+            if(std::find(variable_sets.begin(), variable_sets.end(), i) != variable_sets.end()) {
                 y_always_assert(bindings.size() == 1, "Variable size descriptor bindings must be alone in descriptor set");
-                _layouts[i] = texture_library().descriptor_set_layout();
+                switch(bindings[0].descriptorType) {
+                    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+                        _layouts[i] = texture_library().descriptor_set_layout();
+                    break;
+
+                    default:
+                        y_fatal("Unsupported variable descriptor set type");
+                }
             } else {
                 _layouts[i] = layout_allocator().create_layout(bindings);
             }
@@ -304,12 +311,11 @@ VkPipelineLayout RaytracingProgram::vk_pipeline_layout() const {
 
 
 std::array<VkStridedDeviceAddressRegionKHR, 4> RaytracingProgram::vk_binding_tables() const {
-    const VkDeviceAddress base_addr = vk_buffer_device_address(SubBuffer(_binding_tables));
     const u32 table_aligned_size = device_properties().shader_group_handle_size_base_aligned;
 
     std::array<VkStridedDeviceAddressRegionKHR, 4> tables = {};
     for(usize i = 0; i != 3; ++i) {
-        tables[i].deviceAddress = base_addr + (i * table_aligned_size);
+        tables[i].deviceAddress = _binding_tables.vk_device_address() + (i * table_aligned_size);
         tables[i].size = table_aligned_size;
         tables[i].stride = table_aligned_size;
     }

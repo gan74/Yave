@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <editor/Settings.h>
 #include <editor/utils/ui.h>
+#include <editor/utils/StringMatcher.h>
 #include <editor/widgets/PerformanceMetrics.h>
 #include <editor/widgets/DebugValueEditor.h>
 #include <yave/graphics/device/Instance.h>
@@ -49,28 +50,6 @@ static core::String shortcut_text(KeyCombination shortcut) {
     }
     return text;
 }
-
-static core::Vector<std::string_view> split_words(std::string_view str) {
-    core::Vector<std::string_view> words(1_uu, std::string_view{});
-    for(usize i = 0; i != str.size(); ++i) {
-        const char c = str[i];
-        if(std::isspace(c)) {
-            if(words.is_empty() || !words.last().empty()) {
-                words.emplace_back();
-            }
-        } else {
-            auto& last = words.last();
-            last = last.empty() ? std::string_view(str.data() + i, 1) : std::string_view(last.data(), last.size() + 1);
-        }
-    }
-
-    if(!words.is_empty() && words.last().empty()) {
-        words.pop();
-    }
-
-    return words;
-}
-
 
 UiManager::UiManager() {
     for(const EditorAction* action = all_actions(); action; action = action->next) {
@@ -99,18 +78,26 @@ void UiManager::on_gui() {
     update_shortcuts();
     draw_menu_bar();
 
-    core::FlatHashMap<Widget*, int> to_destroy;
 
+    Widget* focussed = nullptr;
+    core::FlatHashMap<Widget*, int> to_destroy;
     for(auto& widget : _widgets) {
         y_profile_dyn_zone(widget->_title_with_id.data());
 
         _auto_parent = widget.get();
         widget->draw(false);
 
+        if(widget->is_focussed()) {
+            focussed = widget.get();
+        }
+
         if(!widget->is_visible() && !widget->should_keep_alive()) {
             to_destroy[widget.get()];
         }
     }
+
+    _focussed = focussed;
+    _last_focussed = _focussed ? _focussed : _last_focussed;
 
     _auto_parent = nullptr;
 
@@ -126,6 +113,8 @@ void UiManager::on_gui() {
 
             if(destroy) {
                 y_profile_dyn_zone(fmt_c_str("destroying '{}'", wid->_title_with_id));
+                _focussed = _focussed == wid ? nullptr : _focussed;
+                _last_focussed = _last_focussed == wid ? nullptr : _last_focussed;
                 _ids[typeid(*wid)].released << wid->_id;
                 _widgets.erase_unordered(_widgets.begin() + i);
                 --i;
@@ -251,22 +240,17 @@ void UiManager::draw_menu_bar() {
                 imgui::search_bar(ICON_FA_SEARCH "##searchbar", _search_pattern.data(), _search_pattern.size());
 
                 if(imgui::begin_suggestion_popup()) {
-                    const core::Vector words = split_words(_search_pattern.data());
+                    StringMatcher matcher(_search_pattern.data());
                     for(const EditorAction* action : _actions) {
-                        if(action->enabled && !(action->enabled()) || (action->flags & EditorAction::Contextual) == EditorAction::Contextual) {
+                        if((action->flags & EditorAction::Contextual) == EditorAction::Contextual) {
                             continue;
                         }
 
-                        bool match = true;
-                        for(const std::string_view word : words) {
-                            const auto it = std::search(action->name.begin(), action->name.end(), word.begin(), word.end(), [](char a, char b) { return std::tolower(a) == std::tolower(b); });
-                            if(it == action->name.end()) {
-                                match = false;
-                                break;
-                            }
+                        if(action->enabled && !(action->enabled())) {
+                            continue;
                         }
 
-                        if(match) {
+                        if(matcher.matches(action->name)) {
                             const core::String shortcut = shortcut_text(action->shortcut);
                             if(imgui::suggestion_item(action->name.data(), shortcut.is_empty() ? nullptr : shortcut.data())) {
                                 action->function();
@@ -324,6 +308,14 @@ void UiManager::close_all() {
 
 core::Span<std::unique_ptr<Widget>> UiManager::widgets() const {
     return _widgets;
+}
+
+Widget* UiManager::focussed_widget() {
+    return _focussed;
+}
+
+Widget* UiManager::last_focussed_widget() {
+    return _last_focussed;
 }
 
 void UiManager::set_widget_id(Widget* widget) {

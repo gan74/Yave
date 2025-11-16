@@ -38,11 +38,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_message_callback(
 
 
     {
-        constexpr i32 black_listed[] = {
-            0x609a13b,          // UNASSIGNED-CoreValidation-Shader-OutputNotConsumed
+        constexpr std::string_view filtered_names[] = {
+            "VUID-vkCmdWriteTimestamp-None-00830",
         };
-        for(const i32 id : black_listed) {
-            if(id == callback_data->messageIdNumber) {
+
+        const std::string_view callback_name = callback_data->pMessageIdName;
+        for(const std::string_view name : filtered_names) {
+            if(name == callback_name) {
                 return false;
             }
         }
@@ -78,7 +80,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_message_callback(
         labels += " > ";
     }
 
-    log_msg(fmt_to_owned("Vk: @[{}] {}:\n{}\n", src, labels, callback_data->pMessage),  level);
+    log_msg(fmt_to_owned("Vk: @[{}][{}] {}:\n{}\n", src, callback_data->pMessageIdName, labels, callback_data->pMessage),  level);
 
     if(severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
         y_breakpoint;

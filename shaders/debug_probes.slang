@@ -30,7 +30,7 @@ struct VertexStageOut {
 
 
 [shader("vertex")]
-VertexStageOut vert_main(StdVertexStageIn in) {
+VertexStageOut vert_main(StdVertexData in) {
     const int3 coord = ddgi.compute_grid_coord(semantics.instance_index);
     const float3 position = ddgi.compute_world_coord(coord, camera.position);
 

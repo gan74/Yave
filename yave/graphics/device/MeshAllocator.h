@@ -25,28 +25,32 @@ SOFTWARE.
 #include <yave/graphics/buffers/Buffer.h>
 #include <yave/meshes/MeshDrawData.h>
 
+#include <yave/graphics/shader_structs.h>
+
 #include <y/core/Span.h>
 #include <y/core/Vector.h>
 
-#include <atomic>
 #include <mutex>
 
 namespace yave {
 
 class MeshAllocator : NonMovable {
     using MutableTriangleSubBuffer = SubBuffer<BufferUsage::IndexBit | BufferUsage::TransferDstBit>;
-    using MutableAttribSubBuffer = SubBuffer<BufferUsage::AttributeBit | BufferUsage::TransferDstBit>;
+
+    using VertexBuffer = Buffer<BufferUsage::StorageBit | BufferUsage::AccelStructureInputBit | BufferUsage::TransferDstBit, MemoryType::DeviceLocal>;
+
+    static constexpr usize stream_count = usize(VertexStreamType::Max);
+    using Buffers = std::array<VertexBuffer, stream_count>;
+
+    template<typename T>
+    using TypedDataBuffer = TypedBuffer<T, BufferUsage::StorageBit | BufferUsage::TransferDstBit | BufferUsage::TransferSrcBit, MemoryType::DeviceLocal>;
 
     struct FreeBlock {
-        u64 vertex_offset;
-        u64 vertex_count;
-
         u64 triangle_offset;
         u64 triangle_count;
     };
 
     public:
-        static const u64 default_vertex_count = 8 * 1024 * 1024;
         static const u64 default_triangle_count = 8 * 1024 * 1024;
 
         MeshAllocator();
@@ -54,28 +58,30 @@ class MeshAllocator : NonMovable {
 
         MeshDrawData alloc_mesh(const MeshVertexStreams& streams, core::Span<IndexedTriangle> triangles);
 
-        std::pair<u64, u64> available() const; // slow!
-        std::pair<u64, u64> allocated() const; // slow!
+        SubBuffer<BufferUsage::StorageBit> mesh_data_buffer() const;
+
+        u64 available() const; // slow!
+        u64 allocated() const; // slow!
         usize free_blocks() const;
 
-        const MeshDrawBuffers& mesh_buffers() const;
+        const TriangleBuffer<>& triangle_buffer() const;
 
     private:
         friend class MeshDrawData;
 
-        std::pair<u64, u64> alloc_block(u64 vertex_count, u64 triangle_count);
+        void recycle(MeshDrawData* data);
+        u64 alloc_block(u64 triangle_count);
         void sort_and_compact_blocks();
 
-        void recycle(MeshDrawData* data);
-
-        AttribBuffer<> _attrib_buffer;
         TriangleBuffer<> _triangle_buffer;
 
         core::Vector<FreeBlock> _free_blocks;
         bool _should_compact = false;
         mutable ProfiledLock<> _lock;
 
-        std::unique_ptr<MeshDrawBuffers> _mesh_buffers;
+        core::Vector<u32> _free;
+        core::Vector<Buffers> _mesh_buffers;
+        TypedDataBuffer<shader::StaticMeshData> _mesh_datas;
 };
 
 }

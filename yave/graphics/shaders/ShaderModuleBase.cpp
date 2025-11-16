@@ -135,7 +135,7 @@ ShaderModuleBase::ShaderModuleBase(const SpirVData& spirv, ShaderType type) : _m
                 y_debug_assert(refl_binding.count <= 1);
 
                 if(!refl_binding.count) {
-                    _variable_size_bindings << set->set;
+                    _variable_size_sets << set->set;
                 }
 
                 VkDescriptorSetLayoutBinding& binding = set_bindings.emplace_back();

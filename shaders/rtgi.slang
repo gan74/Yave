@@ -50,7 +50,7 @@ bool is_on_screen(float3 world_pos, out float2 screen_uv) {
         return false;
     }
 
-    return in_depth.SampleLevel(proj.xy, 0) <= proj.z + epsilon;
+    return in_depth.SampleLevel(proj.xy, 0) <= proj.z + constants.epsilon;
 }
 
 float4 eval_material_color(uint instance_id) {
@@ -84,10 +84,10 @@ void comp() {
     const float2 in_uv = px_center / float2(size);
 
     const float depth = in_depth[scaled_coord];
-    const SurfaceInfo surface = decode_gbuffer({
+    const SurfaceInfo surface = decode_gbuffer(RawGBuffer(
         float4(0.0),
         in_rt1[scaled_coord],
-    });
+    ));
 
     const float3 world_pos = unproject(in_uv, depth, camera.curr.inv_view_proj);
 

@@ -136,13 +136,6 @@ VkSamplerMipmapMode vk_mip_filter(SamplerType type) {
     }
 }
 
-VkDeviceAddress vk_buffer_device_address(const SubBufferBase& buffer) {
-    VkBufferDeviceAddressInfo info = vk_struct();
-    info.buffer = buffer.vk_buffer();
-
-    return vkGetBufferDeviceAddress(vk_device(), &info) + buffer.byte_offset();
-}
-
 VkHandle<VkSampler> create_sampler(SamplerType type) {
 
     VkSamplerCreateInfo create_info = vk_struct();
@@ -278,6 +271,8 @@ VkPhysicalDeviceFeatures required_device_features() {
         required.fragmentStoresAndAtomics = true;
         required.independentBlend = true;
         required.samplerAnisotropy = true;
+        required.shaderStorageImageReadWithoutFormat = true;
+        required.shaderStorageImageWriteWithoutFormat = true;
     }
 
     return required;
@@ -288,6 +283,7 @@ VkPhysicalDeviceVulkan11Features required_device_features_1_1() {
 
     {
         // We don't actually need anything here...
+        required.shaderDrawParameters = true;
     }
 
     return required;
@@ -305,6 +301,8 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2() {
     required.descriptorBindingUpdateUnusedWhilePending = true;
     required.descriptorBindingSampledImageUpdateAfterBind = true;
     required.shaderSampledImageArrayNonUniformIndexing = true;
+    // required.descriptorBindingStorageBufferUpdateAfterBind = true;
+    // required.shaderStorageBufferArrayNonUniformIndexing = true;
 
     return required;
 }
@@ -312,7 +310,7 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2() {
 VkPhysicalDeviceVulkan13Features required_device_features_1_3() {
     VkPhysicalDeviceVulkan13Features required = vk_struct();
 
-    required.maintenance4 = true; 
+    required.maintenance4 = true;
 
     return required;
 }

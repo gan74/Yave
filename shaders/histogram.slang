@@ -3,7 +3,7 @@
 
 // https://bruop.github.io/exposure/
 static const uint thread_count = 64;
-static const uint bin_per_thread = lum_histogram_size / thread_count;
+static const uint bin_per_thread = constants.lum_histogram_size / thread_count;
 
 
 [[vk::binding(0)]]
@@ -13,7 +13,7 @@ RWTexture2D<uint> out_histogram;
 Sampler2D in_color;
 
 
-groupshared uint histogram[lum_histogram_size];
+groupshared uint histogram[constants.lum_histogram_size];
 
 
 uint compute_index(uint i) {

@@ -32,10 +32,10 @@ Sampler2D in_gi;
 float4 frag_main(float2 in_uv) : SV_Target0 {
     const int2 coord = int2(semantics.frag_coord.xy);
 
-    const SurfaceInfo surface = decode_gbuffer({
+    const SurfaceInfo surface = decode_gbuffer(RawGBuffer(
         in_rt0[coord],
         in_rt1[coord],
-    });
+    ));
 
     const float3 final = in_final[coord].rgb;
 
@@ -53,7 +53,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
         color = float3(pow(depth, 0.35));
     } else if(target_index == 6) {
         const float2 motion = in_motion[coord];
-        color = float3(clamp(motion * 10.0, -0.5, 0.5) + 0.5, length(motion) > epsilon ? 0.75 : 0.5);
+        color = float3(clamp(motion * 10.0, -0.5, 0.5) + 0.5, length(motion) > constants.epsilon ? 0.75 : 0.5);
     } else if(target_index == 7) {
         color = float3(in_ao.Sample(in_uv));
     } else if(target_index == 8) {

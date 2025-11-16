@@ -39,13 +39,15 @@ class Outliner final : public Widget {
         void on_gui() override;
 
     private:
-        void display_node(EditorWorld& world, ecs::EntityId id);
+        void display_node(EditorWorld& world, ecs::EntityId id, bool recursive);
         bool make_drop_target(EditorWorld& world, ecs::EntityId id);
 
         core::Vector<std::tuple<const char*, core::String, bool>> _tag_buttons;
 
         ecs::EntityId _context_menu_target;
         ecs::EntityId _click_target;
+
+        core::String _search_pattern;
 };
 
 }

@@ -39,7 +39,7 @@ Sampler2D all_textures[];
 
 
 float3 sample_sphere_uniform(uint i, uint count) {
-    const float theta = 2.0 * pi * i * golden;
+    const float theta = 2.0 * i * constants.pi * constants.golden;
     const float phi = acos(1.0 - 2.0 * i / float(count));
     return float3(float2(cos(theta), sin(theta)) * sin(phi), cos(phi));
 }
@@ -50,8 +50,7 @@ float3 sample_sphere_uniform_rotated(uint i, uint count) {
 }
 
 float4 eval_material_color(uint instance_id) {
-    const MaterialData material = materials[instance_id];
-    const uint albedo_id = material.texture_indices[uint(TextureSlots::Albedo)];
+    const MaterialData material = materials[instance_id]; const uint albedo_id = material.texture_indices[uint(TextureSlots::Albedo)];
     return all_textures[albedo_id].SampleLevel(float2(0.5), 100.0);
 }
 

@@ -92,8 +92,8 @@ class ShaderModuleBase : NonMovable {
             return _bindings;
         }
 
-        core::Span<u32> variable_size_bindings() const {
-            return _variable_size_bindings;
+        core::Span<u32> variable_size_sets() const {
+            return _variable_size_sets;
         }
 
     private:
@@ -101,7 +101,7 @@ class ShaderModuleBase : NonMovable {
         core::String _entry_point = "main";
         ShaderType _type = ShaderType::None;
         core::Vector<core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
-        core::Vector<u32> _variable_size_bindings;
+        core::Vector<u32> _variable_size_sets;
         core::Vector<Attribute> _attribs;
         core::Vector<u32> _stage_output;
         math::Vec3ui _local_size;

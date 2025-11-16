@@ -34,6 +34,8 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 #include <yave/scene/EcsScene.h>
 #include <yave/utils/DebugValues.h>
+#include <yave/systems/SceneSystem.h>
+#include <yave/systems/JoltPhysicsSystem.h>
 
 #include <y/io2/File.h>
 #include <y/serde3/archives.h>
@@ -70,9 +72,8 @@ std::unique_ptr<ThumbnailRenderer> thumbnail_renderer;
 std::unique_ptr<DirectDraw> debug_drawer;
 std::unique_ptr<UiManager> ui;
 std::unique_ptr<EditorWorld> world;
-std::unique_ptr<EcsScene> scene;
 
-std::unique_ptr<concurrent::StaticThreadPool> thread_pool;
+std::unique_ptr<concurrent::JobSystem> job_system;
 
 ImGuiPlatform* imgui_platform = nullptr;
 
@@ -95,9 +96,8 @@ u32 deferred_actions = None;
 
 
 
-static void create_scene() {
-    application::scene = std::make_unique<EcsScene>(application::world.get());
-    application::default_scene_view = SceneView(application::scene.get());
+static void create_scene_view() {
+    application::default_scene_view = SceneView(&current_scene());
     set_scene_view(nullptr);
 }
 
@@ -140,27 +140,35 @@ static void load_world_deferred() {
     }
 
     application::world = std::move(world);
-    create_scene();
+    create_scene_view();
 
     log_msg("World loaded");
 }
 
 void post_tick() {
     y_profile();
-    if(application::deferred_actions & application::Save) {
-        save_world_deferred();
+    {
+        if(application::deferred_actions & application::Save) {
+            save_world_deferred();
+        }
+
+        if(application::deferred_actions & application::Load) {
+            load_world_deferred();
+        }
+
+        if(application::deferred_actions & application::New) {
+            application::world = std::make_unique<EditorWorld>(*application::loader);
+            create_scene_view();
+        }
+
+        application::deferred_actions = application::None;
     }
 
-    if(application::deferred_actions & application::Load) {
-        load_world_deferred();
+    if(JoltPhysicsSystem* jolt = application::world->find_system<JoltPhysicsSystem>()) {
+        jolt->set_debug_drawer(&debug_drawer());
+        jolt->set_debug_draw_static(application::settings.debug.display_static_colliders);
+        jolt->set_debug_draw_movable(application::settings.debug.display_movable_colliders);
     }
-
-    if(application::deferred_actions & application::New) {
-        application::world = std::make_unique<EditorWorld>(*application::loader);
-        create_scene();
-    }
-
-    application::deferred_actions = application::None;
 }
 
 
@@ -172,7 +180,7 @@ void post_tick() {
 void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::settings = settings;
     application::imgui_platform = platform;
-    application::thread_pool = std::make_unique<concurrent::StaticThreadPool>();
+    application::job_system = std::make_unique<concurrent::JobSystem>();
 
     const auto& store_dir = app_settings().editor.asset_store;
 
@@ -182,10 +190,9 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::loader = std::make_unique<AssetLoader>(application::asset_store, AssetLoadingFlags::SkipFailedDependenciesBit, 4);
     application::thumbnail_renderer = std::make_unique<ThumbnailRenderer>(*application::loader);
     application::world = std::make_unique<EditorWorld>(*application::loader);
-    application::scene = std::make_unique<EcsScene>(application::world.get());
     application::debug_drawer = std::make_unique<DirectDraw>();
 
-    create_scene();
+    create_scene_view();
 
     application::deferred_actions = application::Load;
 
@@ -195,7 +202,6 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
 
 void destroy_editor() {
     application::thumbnail_renderer = nullptr;
-    application::scene = nullptr;
     application::world = nullptr;
     application::scene_view  = nullptr;
     application::default_scene_view = {};
@@ -204,13 +210,12 @@ void destroy_editor() {
     application::debug_drawer = nullptr;
     application::resources = nullptr;
     application::ui = nullptr;
-    application::thread_pool = nullptr;
+    application::job_system = nullptr;
 }
 
 void run_editor() {
     application::imgui_platform->exec([] {
-        application::world->tick(*application::thread_pool);
-        application::scene->update_from_world();
+        application::world->tick(*application::job_system);
         application::world->process_deferred_changes();
         application::ui->on_gui();
         post_tick();
@@ -237,8 +242,8 @@ ThumbnailRenderer& thumbnail_renderer() {
     return *application::thumbnail_renderer;
 }
 
-concurrent::StaticThreadPool& thread_pool() {
-    return *application::thread_pool;
+concurrent::JobSystem& job_system() {
+    return *application::job_system;
 }
 
 const EditorResources& resources() {
@@ -261,8 +266,10 @@ EditorWorld& current_world() {
     return *application::world;
 }
 
-Scene& current_scene() {
-    return *application::scene;
+const Scene& current_scene() {
+    const Scene* sce = application::world->find_system<SceneSystem>()->scene();
+    y_debug_assert(sce);
+    return *sce;
 }
 
 void set_scene_view(SceneView* scene) {
@@ -302,6 +309,13 @@ DirectDraw& debug_drawer() {
 
 
 
+Widget* focussed_widget() {
+    return ui().focussed_widget();
+}
+
+Widget* last_focussed_widget() {
+    return ui().last_focussed_widget();
+}
 
 Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent) {
     return ui().add_widget(std::move(widget), auto_parent);

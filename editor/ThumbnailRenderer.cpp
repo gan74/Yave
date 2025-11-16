@@ -94,7 +94,7 @@ static AABB compute_entity_aabb(const ecs::EntityWorld& world, ecs::EntityId id)
         }
     }
 
-    for(const ecs::EntityId child : world.children(id)) {
+    for(const ecs::EntityId child : world.direct_children(id)) {
         aabb = merge_empty_aabb(aabb, compute_entity_aabb(world, child));
     }
 
@@ -179,7 +179,7 @@ static Texture render_prefab(const AssetPtr<ecs::EntityPrefab>& prefab) {
         Y_TODO(we should not have to do this)
         y_profile_zone("world tick");
         world.add_system<AssetLoaderSystem>(asset_loader(), AssetLoadingFlags::SynchronousLoad);
-        world.tick(thread_pool());
+        world.tick(job_system());
     }
 
     return render_world(world);
@@ -245,7 +245,7 @@ std::unique_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_re
     y_profile_zone("schedule render");
 
     auto data = std::make_unique<ThumbnailData>();
-    _render_thread.schedule([this, data = data.get(), id]() {
+    job_system().schedule([this, data = data.get(), id]() {
         y_debug_assert(data->status == ThumbnailStatus::Rendering);
 
         const AssetType asset_type = _loader->store().asset_type(id).unwrap_or(AssetType::Unknown);

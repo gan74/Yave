@@ -1,9 +1,12 @@
 #ifndef STRUCT_SLANG
 #define STRUCT_SLANG
 
+
 #ifdef __cplusplus
+#define Address(type) u64
 #define SLANG_CTOR(Type) Type
 #else
+#define Address(type) type*
 #define SLANG_CTOR(Type) __init
 #endif
 
@@ -200,6 +203,33 @@ struct IrradianceFieldSampleParams {
 struct ProbeData {
     float3 position;
     float padding;
+};
+
+struct PickingData {
+    float depth;
+    uint entity_index;
+};
+
+struct MeshObject {
+    uint transform_index;
+    uint material_index;
+    uint mesh_data_index;
+};
+
+
+struct UnalignedFloat3 {
+    float x, y, z;
+
+    float3 to_float3() {
+        return float3(x, y, z);
+    }
+};
+
+struct StaticMeshData {
+    Address(UnalignedFloat3) positions;
+    Address(uint2) tbns;
+    Address(float2) uvs;
+    Address(uint) padding_1;
 };
 
 #endif

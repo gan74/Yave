@@ -72,7 +72,6 @@ class RenderPassRecorder final : NonMovable {
         void draw_indexed(usize index_count);
         void draw_array(usize vertex_count, usize instance_count = 1, usize first_vertex = 0);
 
-        void bind_mesh_buffers(const MeshDrawBuffers& mesh_buffers);
         void bind_index_buffer(IndexSubBuffer indices);
         void bind_attrib_buffers(core::Span<AttribSubBuffer> attribs);
 
@@ -94,10 +93,6 @@ class RenderPassRecorder final : NonMovable {
 
         CmdBufferRecorder& _cmd_buffer;
         Viewport _viewport;
-
-        struct {
-            const MeshDrawBuffers* mesh_buffers = nullptr;
-        } _cache;
 };
 
 
@@ -113,7 +108,7 @@ class CmdBufferRecorderBase : NonMovable {
         CmdQueue* queue() const;
 
         VkCommandBuffer vk_cmd_buffer() const;
-        ResourceFence resource_fence() const;
+        const CmdBufferFence& create_fence();
 
         bool is_inside_renderpass() const;
 

@@ -77,11 +77,11 @@ void comp() {
 
 #if 0
     const float blend_factor = probe_moved ? 0.0 : 0.98;
-    out_irradiance[coord] = lerp(irr / max(epsilon, total), out_irradiance[coord], blend_factor);
-    out_distance[coord] = lerp(dist / max(epsilon, dist_total), out_distance[coord], blend_factor);
+    out_irradiance[coord] = lerp(irr / max(constants.epsilon, total), out_irradiance[coord], blend_factor);
+    out_distance[coord] = lerp(dist / max(constants.epsilon, dist_total), out_distance[coord], blend_factor);
 #else
-    out_irradiance[coord] = irr / max(epsilon, total);
-    out_distance[coord] = dist / max(epsilon, dist_total) * 0.5;
+    out_irradiance[coord] = irr / max(constants.epsilon, total);
+    out_distance[coord] = dist / max(constants.epsilon, dist_total) * 0.5;
 #endif
 
 

@@ -24,9 +24,9 @@ SOFTWARE.
 
 #include "MeshVertexStreams.h"
 
-#include <yave/graphics/raytracing/AccelerationStructure.h>
+#include <yave/graphics/buffers/Buffer.h>
+#include <yave/graphics/buffers/buffers.h>
 
-#include <memory>
 
 namespace yave {
 
@@ -46,59 +46,47 @@ struct MeshDrawCommand {
     }
 };
 
-class MeshDrawBuffers : NonMovable {
-    public:
-        static constexpr usize vertex_stream_count = MeshVertexStreams::stream_count;
+struct MeshDrawBuffers {
+    static constexpr usize stream_count = usize(VertexStreamType::Max);
 
-        MeshDrawBuffers() = default;
-
-        core::Span<AttribSubBuffer> attrib_buffers() const;
-        const TriangleSubBuffer& triangle_buffer() const;
-
-        usize vertex_count() const;
-
-        MeshAllocator* parent() const;
-
-    private:
-        friend class MeshAllocator;
-
-        usize _vertex_count = 0;
-        std::array<AttribSubBuffer, vertex_stream_count> _attrib_buffers;
-        TriangleSubBuffer _triangle_buffer;
-
-        MeshAllocator* _parent = nullptr;
+    std::array<SubBuffer<BufferUsage::StorageBit | BufferUsage::AccelStructureInputBit>, stream_count> attribs;
 };
 
 class MeshDrawData : NonCopyable {
     public:
         MeshDrawData() = default;
+        ~MeshDrawData();
+
         MeshDrawData(MeshDrawData&& other);
         MeshDrawData& operator=(MeshDrawData&& other);
 
-        ~MeshDrawData();
-
         bool is_null() const;
 
-        const MeshDrawBuffers& mesh_buffers() const;
-        const TriangleSubBuffer& triangle_buffer() const;
+        const MeshAllocator* parent() const;
 
         const MeshDrawCommand& draw_command() const;
 
-        usize vertex_count() const;
+        MeshDrawBuffers mesh_buffers() const;
+        TriangleSubBuffer triangle_buffer() const;
+
+        u32 mesh_data_index() const;
+        u32 vertex_count() const;
+
 
     private:
-        friend class LifetimeManager;
         friend class MeshAllocator;
+        friend class LifetimeManager;
 
         void recycle();
-
-    private:
         void swap(MeshDrawData& other);
 
-        MeshDrawCommand _command = {};
-        u32 _vertex_count = 0;
+        MeshDrawCommand _cmd;
 
-        MeshDrawBuffers* _mesh_buffers = nullptr;
+        u32 _vertex_count = 0;
+        u32 _mesh_data_index = u32(-1);
+
+        MeshAllocator* _parent = nullptr;
+        MeshDrawBuffers _mesh_buffers = {};
 };
 
 }

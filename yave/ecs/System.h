@@ -29,7 +29,7 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-class System : NonCopyable {
+class System : public NonCopyable {
     public:
         System(core::String name);
         virtual ~System() = default;

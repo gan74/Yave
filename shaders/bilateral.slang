@@ -52,7 +52,7 @@ void half_kernel(inout float4 acc, inout float total, int2 dir, float center_dep
         }
 
         {
-            const float3 normal = decode_gbuffer({float4(0.0), in_rt1.SampleLevel(uv, 0.0)}).normal;
+            const float3 normal = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1.SampleLevel(uv, 0.0))).normal;
             const float delta = saturate(dot(center_normal, normal));
             weight *= min(pow(delta, normal_phi), 1.0);
         }
@@ -79,7 +79,7 @@ void comp() {
     float4 acc = in_color.SampleLevel(center_uv, 0.0) * total;
 
     const float depth = in_depth.SampleLevel(center_uv, 0.0);
-    const float3 normal = decode_gbuffer({float4(0.0), in_rt1.SampleLevel(center_uv, 0.0)}).normal;
+    const float3 normal = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1.SampleLevel(center_uv, 0.0))).normal;
 
     half_kernel(acc, total, direction, depth, normal, center_uv, inv_size);
     half_kernel(acc, total, -direction, depth, normal, center_uv, inv_size);

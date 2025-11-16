@@ -1,4 +1,5 @@
 #include "lib/utils.slang"
+#include "lib/brdf.slang"
 
 [[vk::binding(0)]]
 RWTexture2D<float2> out_image;

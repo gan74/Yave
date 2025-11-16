@@ -121,6 +121,7 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "filter_ao",
     "bilateral",
     "bilateral_HORIZONTAL",
+    "picking",
     "rtao",
     "rtgi",
     "rtreuse",

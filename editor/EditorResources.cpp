@@ -58,7 +58,6 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
 
 static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputePrograms)> compute_datas = {
     "thumbnail",
-    "picking",
 };
 
 

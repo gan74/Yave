@@ -27,10 +27,10 @@ SOFTWARE.
 namespace editor {
 
 struct PickingResult {
-    const math::Vec3 world_pos;
-    const float depth;
-    const math::Vec2 uv;
-    const u32 entity_index;
+    math::Vec3 world_pos;
+    float depth;
+    math::Vec2 uv;
+    u32 entity_index;
 
     bool hit() const;
 };

@@ -34,33 +34,30 @@ struct PixelStageOut {
 
 
 
-
-
-
 [[vk::binding(0, 1)]]
 Sampler2D all_textures[];
 
 
-
-
 [shader("vertex")]
-VertexStageOut vert_main(StdVertexStageIn in) {
-    const TransformableData transformable = transformables[transform_material_indices[semantics.instance_index].x];
+VertexStageOut vert_main() {
+    const MeshObject mesh = mesh_objects[semantics.instance_index];
+    const StdVertexData vert = read_vertex(semantics.vertex_index, mesh_datas[mesh.mesh_data_index]);
+    const TransformableData transformable = transformables[mesh.transform_index];
 
     const float3x3 model = float3x3(transformable.current);
 
-    const float4 current_position = mul(camera.curr.view_proj, mul(transformable.current, float4(in.position, 1.0)));
-    const float4 last_position = mul(camera.prev.view_proj, mul(transformable.last, float4(in.position, 1.0)));
+    const float4 current_position = mul(camera.curr.view_proj, mul(transformable.current, float4(vert.position, 1.0)));
+    const float4 last_position = mul(camera.prev.view_proj, mul(transformable.last, float4(vert.position, 1.0)));
 
-    const float3 in_normal = unpack_2_10_10_10(in.packed_normal_tangent_sign.x).xyz;
-    const float4 in_tangent_sign = unpack_2_10_10_10(in.packed_normal_tangent_sign.y);
+    const float3 in_normal = unpack_2_10_10_10(vert.packed_normal_tangent_sign.x).xyz;
+    const float4 in_tangent_sign = unpack_2_10_10_10(vert.packed_normal_tangent_sign.y);
 
     VertexStageOut out;
     {
         out.sv_position = current_position;
 
         out.frag.normal = normalize(mul(model, in_normal));
-        out.frag.uv = in.uv;
+        out.frag.uv = vert.uv;
         out.frag.tangent = normalize(mul(model, in_tangent_sign.xyz));
         out.frag.bitangent = cross(out.frag.tangent, out.frag.normal) * in_tangent_sign.w;
         out.frag.screen_pos = current_position.xyw;
@@ -104,13 +101,14 @@ float metalic_from_specular(float3 diffuse, float3 specular) {
 
 [shader("fragment")]
 PixelStageOut frag_main(PixelStageIn in) {
-    const MaterialData material = materials[transform_material_indices[in.instance_index].y];
+    const MaterialData material = materials[mesh_objects[in.instance_index].material_index];
 
-    const Sampler2D albedo_tex = all_textures[material.texture_indices[uint(TextureSlots::Albedo)]];
-    const Sampler2D normal_tex = all_textures[material.texture_indices[uint(TextureSlots::Normal)]];
-    const Sampler2D emissive_tex = all_textures[material.texture_indices[uint(TextureSlots::Emissive)]];
-    const Sampler2D metal_rough_spec_tex = all_textures[material.texture_indices[uint(TextureSlots::MetallicRoughnessSpecular)]];
-    const Sampler2D spec_color_tex = all_textures[material.texture_indices[uint(TextureSlots::SpecularColor)]];
+
+    const Sampler2D albedo_tex = all_textures[NonUniformResourceIndex(material.texture_indices[uint(TextureSlots::Albedo)])];
+    const Sampler2D normal_tex = all_textures[NonUniformResourceIndex(material.texture_indices[uint(TextureSlots::Normal)])];
+    const Sampler2D emissive_tex = all_textures[NonUniformResourceIndex(material.texture_indices[uint(TextureSlots::Emissive)])];
+    const Sampler2D metal_rough_spec_tex = all_textures[NonUniformResourceIndex(material.texture_indices[uint(TextureSlots::MetallicRoughnessSpecular)])];
+    const Sampler2D spec_color_tex = all_textures[NonUniformResourceIndex(material.texture_indices[uint(TextureSlots::SpecularColor)])];
 
     const float3 normal = unpack_normal_map(normal_tex.Sample(in.uv).xy);
     const float3 mapped_front_face_normal = /*normal.x * in.tangent + normal.y * in.bitangent + normal.z */ in.normal;
@@ -118,6 +116,7 @@ PixelStageOut frag_main(PixelStageIn in) {
 
     const float4 albedo_alpha = albedo_tex.SampleLevel(in.uv, 99999.0);
     const float3 albedo = albedo_alpha.rgb * material.base_color_factor;
+    // const float3 albedo = heat_spectrum(frac(mesh_objects[in.instance_index].mesh_data_index / 128.0));
 
 #ifdef ALPHA_TEST
     if(albedo_alpha.a < 0.5) {

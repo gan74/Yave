@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include <mutex>
 #include <shared_mutex>
+#include <atomic>
 
 namespace y {
 namespace concurrent {

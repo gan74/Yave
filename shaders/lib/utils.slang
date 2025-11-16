@@ -5,6 +5,8 @@
 #include "structs.slang"
 
 
+namespace constants {
+
 static const float pi = 3.1415926535897932384626433832795;
 static const float inv_pi = 0.31830988618379067153776752674503;
 static const float inv_sqrt_2pi = 0.39894228040143267793994605993439;
@@ -25,14 +27,32 @@ static const float lum_histogram_offset = 8.0;
 static const float lum_histogram_mul = 8.0;
 static const uint lum_histogram_size = 256;
 
+}
 
 
 
-struct StdVertexStageIn {
+
+
+
+struct StdVertexData {
     float3 position;
     uint2 packed_normal_tangent_sign;
     float2 uv;
 };
+
+StdVertexData read_vertex(uint vertex_index, StaticMeshData mesh_data) {
+    StdVertexData vert;
+
+    vert.position = mesh_data.positions[vertex_index].to_float3();
+    vert.packed_normal_tangent_sign = mesh_data.tbns[vertex_index];
+    vert.uv = mesh_data.uvs[vertex_index];
+
+    return vert;
+}
+
+
+
+
 
 
 struct SurfaceInfo {
@@ -252,15 +272,15 @@ float3 reinhard(float3 x) {
 }
 
 uint lum_to_histogram_bin(float lum) {
-    const float log_lum = log2(lum) + lum_histogram_offset;
+    const float log_lum = log2(lum) + constants.lum_histogram_offset;
     if(log_lum <= 0.0) {
         return 0;
     }
-    return min(lum_histogram_size - 1, uint(log_lum * lum_histogram_mul));
+    return min(constants.lum_histogram_size - 1, uint(log_lum * constants.lum_histogram_mul));
 }
 
 float histogram_bin_to_lum(uint bin) {
-    const float log_lum = bin / lum_histogram_mul - lum_histogram_offset;
+    const float log_lum = bin / constants.lum_histogram_mul - constants.lum_histogram_offset;
     return exp2(log_lum);
 }
 
@@ -359,27 +379,27 @@ float4 unpack_color(uint packed) {
     ) / 255.0;
 }
 
-float2 hammersley(uint i, uint N) {
+float2 hammersley(uint i, uint num) {
     uint bits = (i << 16u) | (i >> 16u);
     bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
     bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
     bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
     bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
     const float radical_inverse = float(bits) * 2.3283064365386963e-10;
-    return float2(float(i) / float(N), radical_inverse);
+    return float2(float(i) / float(num), radical_inverse);
 }
 
 // https://observablehq.com/@meetamit/fibonacci-lattices
 float2 fibonacci_square(uint i, uint count) {
     return float2(
-        fract(i / golden),
+        fract(i / constants.golden),
         i / (count - 0.9)
     );
 }
 
 float3 fibonacci_sphere(uint i, uint count) {
     const float2 sq = fibonacci_square(i, count);
-    const float2 theta_phi = float2(2.0 * pi * sq.x, acos(1.0 - 2.0 * sq.y));
+    const float2 theta_phi = float2(2.0 * constants.pi * sq.x, acos(1.0 - 2.0 * sq.y));
     return float3(
         float2(cos(theta_phi.x), sin(theta_phi.x)) * sin(theta_phi.y),
         cos(theta_phi.y)
@@ -421,10 +441,19 @@ float3 build_orthogonal(float3 v) {
     return normalize(cross(v, t));
 }
 
+float attenuation(float distance, float range, float light_radius) {
+    const float num = max(0.0, 1.0 - sqr(sqr(distance / range)));
+    return sqr(num / max(distance, light_radius));
+}
+
+float spot_attenuation(float cos_angle, float2 scale_offset) {
+    const float att = saturate(cos_angle * scale_offset.x + scale_offset.y);
+    return sqr(att);
+}
 
 
 
-struct CubeMap : IEnvmap {
+struct CubeMap : Envmap {
     SamplerCube<float4> sampler;
 
     float4 SampleCube(float3 dir, float level = 0.0) {
@@ -432,7 +461,7 @@ struct CubeMap : IEnvmap {
     }
 };
 
-struct EquirecMap : IEnvmap {
+struct EquirecMap : Envmap {
     Sampler2D sampler;
 
     float4 SampleCube(float3 dir, float level = 0.0) {
@@ -441,133 +470,19 @@ struct EquirecMap : IEnvmap {
 };
 
 
-interface IEnvmap {
+interface Envmap {
     float4 SampleCube(float3 dir, float level = 0.0);
 }
-
-
-
 
 
 float2 to_equirec(float3 v) {
     return -float2(atan2(-v.y, v.x), asin(v.z)) * float2(0.1591, 0.3183) + 0.5;
 }
 
-
-float3 importance_sample_GGX(float2 Xi, float3 N, float roughness) {
-    const float sqr_alpha = sqr(sqr(roughness));
-
-    const float phi = 2.0 * pi * Xi.x;
-    const float cos_theta = sqrt((1.0 - Xi.y) / (1.0 + (sqr_alpha - 1.0) * Xi.y));
-    const float sin_theta = sqrt(1.0 - sqr(cos_theta));
-
-    const float3 H = float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
-
-    const float3 up = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
-    const float3 T = normalize(cross(up, N));
-    const float3 B = cross(N, T);
-
-    return normalize(T * H.x + B * H.y + N * H.z);
-}
-
-float3 diffuse_convolution<T: IEnvmap>(T envmap, float3 N) {
-    float3 up = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
-    const float3 right = normalize(cross(up, N));
-    up = cross(N, right);
-
-    float3 acc = float3(0.0);
-    float samples = 0.0;
-
-    const float sample_delta = 0.05;
-    for(float phi = 0.0; phi < 2.0 * pi; phi += sample_delta) {
-        for(float theta = 0.0; theta < 0.5 * pi; theta += sample_delta) {
-            const float3 T = float3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
-            const float3 sample_dir = T.x * right + T.y * up + T.z * N;
-
-            acc += envmap.SampleCube(sample_dir).rgb * cos(theta) * sin(theta);
-            ++samples;
-        }
-    }
-    return (acc / samples) * pi;
-}
-
-float3 specular_convolution<T: IEnvmap>(T envmap, float3 N, float roughness) {
-    const float3 V = N;
-
-    float total = 0.0;
-    float3 acc = float3(0.0);
-
-    const uint sample_count = 1024;
-    for(uint i = 0; i != sample_count; ++i) {
-        const float2 Xi = hammersley(i, sample_count);
-        const float3 H  = importance_sample_GGX(Xi, N, roughness);
-        const float3 L  = normalize(2.0 * dot(V, H) * H - V);
-
-        const float NdotL = max(0.0, dot(N, L));
-
-        if(NdotL > 0.0) {
-            acc += envmap.SampleCube(L).rgb * NdotL;
-            total += NdotL;
-        }
-    }
-    return acc / total;
-}
-
-float2 integrate_brdf(float NdotV, float roughness) {
-    const float3 V = float3(sqrt(1.0 - sqr(NdotV)), 0.0, NdotV);
-
-    float A = 0.0;
-    float B = 0.0;
-
-    const float3 N = float3(0.0, 0.0, 1.0);
-    const uint SAMPLE_COUNT = 1024;
-    for(uint i = 0; i != SAMPLE_COUNT; ++i) {
-        const float2 Xi = hammersley(i, SAMPLE_COUNT);
-        const float3 H  = importance_sample_GGX(Xi, N, roughness);
-        const float3 L  = normalize(2.0 * dot(V, H) * H - V);
-
-        const float NdotL = max(0.0, L.z);
-        const float NdotH = max(0.0, H.z);
-        const float VdotH = max(0.0, dot(V, H));
-
-        if(NdotL > 0.0) {
-            float G = G_Smith(NdotV, NdotL, roughness);
-            float G_Vis = (G * VdotH) / (NdotH * NdotV);
-            float Fc = pow(1.0 - VdotH, 5.0);
-
-            A += (1.0 - Fc) * G_Vis;
-            B += Fc * G_Vis;
-        }
-    }
-    return float2(A, B) / SAMPLE_COUNT;
-}
-
 float roughness_to_mip(float roughness, uint mip) {
     return roughness * mip;
 }
 
-float3 eval_ibl(SamplerCube probe, Sampler2D<float2> brdf_lut, float3 V, SurfaceInfo info) {
-    const uint probe_mips = image_mips(probe);
-
-    const float3 N = info.normal;
-    const float3 R = reflect(-V, N);
-
-    const float NdotV = max(0.0, dot(N, V));
-
-    const float3 F = F_Schlick(info.f0(), info.f90(), NdotV);
-
-    const float3 kS = F;
-    const float3 kD = (1.0 - kS) * (1.0 - info.metallic);
-
-    const float3 irradiance = probe.SampleLevel(N, probe_mips - 1).rgb;
-    const float3 diffuse = kD * irradiance * info.albedo;
-
-    const float2 brdf = brdf_lut.Sample(float2(NdotV, info.perceptual_roughness)).xy;
-    const float3 prefiltered = probe.SampleLevel(R, roughness_to_mip(info.perceptual_roughness, probe_mips - 1)).rgb;
-    const float3 specular = prefiltered * (kS * brdf.x + brdf.y);
-
-    return diffuse + specular;
-}
 
 
 
@@ -695,19 +610,6 @@ SurfaceInfo alpha_corrected_surface(SurfaceInfo surface, AreaLightInfo area) {
 
 
 
-T F_Schlick<T: IFloat>(T f0, T f90, float VdotH) {
-    return f0 + (f90 - f0) * T(pow(saturate(1.0 - VdotH), 5.0));
-}
-
-float G_Schlick_GGX(float NdotV, float alpha) {
-    const float k = alpha * 0.5;
-    const float denom = NdotV * (1.0 - k) + k;
-    return NdotV / denom;
-}
-
-float G_Smith(float NdotV, float NdotL, float alpha) {
-    return G_Schlick_GGX(NdotV, alpha) * G_Schlick_GGX(NdotL, alpha);
-}
 
 float3 approx_F0(float metallic, float3 albedo) {
     return lerp(float3(0.04), albedo, metallic);

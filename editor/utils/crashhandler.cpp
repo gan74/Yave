@@ -48,20 +48,35 @@ static decltype(&::SymFunctionTableAccess64) func_table = nullptr;
 static decltype(&::SymGetModuleBase64) module_base = nullptr;
 static decltype(&::StackWalk64) stack_walk = nullptr;
 static decltype(&::SymGetSymFromAddr64) sym_from_addr = nullptr;
+static decltype(&::SymGetLineFromAddr64) line_from_addr = nullptr;
 
 
 static int print_addr(STACKFRAME64 frame) {
     const void* ptr = reinterpret_cast<const void*>(frame.AddrPC.Offset);
 #ifdef Y_MSVC
     static constexpr int max_name_len = 255;
-    char buffer[sizeof(IMAGEHLP_SYMBOL64) + max_name_len * sizeof(TCHAR)] = {};
-    IMAGEHLP_SYMBOL64* symbol = reinterpret_cast<IMAGEHLP_SYMBOL64*>(buffer);
+    char sym_buffer[sizeof(IMAGEHLP_SYMBOL64) + max_name_len * sizeof(TCHAR)] = {};
+    IMAGEHLP_SYMBOL64* symbol = reinterpret_cast<IMAGEHLP_SYMBOL64*>(sym_buffer);
     symbol->SizeOfStruct  = sizeof(IMAGEHLP_SYMBOL64);
     symbol->MaxNameLength = max_name_len;
     if(sym_from_addr && sym_from_addr(::GetCurrentProcess(), frame.AddrPC.Offset, nullptr, symbol)) {
-        std::printf("%p: %s\n", ptr, symbol->Name);
+        std::printf("%p: %s", ptr, symbol->Name);
     } else {
-        std::printf("%p: ??\n", ptr);
+        std::printf("%p: ??", ptr);
+    }
+    
+    IMAGEHLP_LINE line = {};
+    line.SizeOfStruct  = sizeof(IMAGEHLP_LINE);
+    DWORD displacement = 0;
+    if(line_from_addr && line_from_addr(::GetCurrentProcess(), frame.AddrPC.Offset, &displacement, &line)) {
+        for(char* i = line.FileName; i && *i; ++i) {
+            if(*i == '\\' || *i == '/') {
+                line.FileName = i + 1;
+            }
+        }
+        std::printf(" in %s at line %u\n", line.FileName, unsigned(line.LineNumber));
+    } else {
+        std::printf("\n");
     }
 
     return 0;
@@ -118,6 +133,7 @@ bool setup_handler() {
         module_base = reinterpret_cast<decltype(module_base)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymGetModuleBase64")));
         stack_walk = reinterpret_cast<decltype(stack_walk)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "StackWalk64")));
         sym_from_addr = reinterpret_cast<decltype(sym_from_addr)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymGetSymFromAddr64")));
+        line_from_addr = reinterpret_cast<decltype(line_from_addr)>(reinterpret_cast<void*>(::GetProcAddress(img_help, "SymGetLineFromAddr64")));
     }
     if(sym_init && sym_cleanup && func_table && module_base && stack_walk) {
         std::signal(SIGSEGV, handler);

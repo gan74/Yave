@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include <editor/Settings.h>
 #include <editor/EditorWorld.h>
+#include <editor/widgets/EngineView.h>
 #include <editor/components/EditorComponent.h>
 
 #include <yave/graphics/device/DeviceResources.h>
@@ -36,6 +37,7 @@ SOFTWARE.
 #include <yave/scene/SceneView.h>
 
 #include <editor/components/DebugAnimateComponent.h>
+#include <editor/utils/StringMatcher.h>
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
 
@@ -48,28 +50,30 @@ static math::Vec3 new_entity_pos(float size) {
     return camera.position() + camera.forward() * size;
 }
 
-static void set_new_entity_pos(ecs::EntityId id) {
+static void set_new_entity_pos(ecs::EntityId id, bool on_cursor) {
     if(!id.is_valid()) {
         return;
     }
     EditorWorld& world = current_world();
     if(TransformableComponent* transformable = world.component_mut<TransformableComponent>(id)) {
-        transformable->set_position(new_entity_pos(10.0f));
+        if(const EngineView* en = last_focussed_widget_typed<EngineView>(); en && on_cursor) {
+            transformable->set_position(en->cursor_world_pos());
+        } else {
+            transformable->set_position(new_entity_pos(10.0f));
+        }
     }
 }
 
-static void add_prefab() {
+static void add_prefab(bool on_cursor = false) {
     add_detached_widget<AssetSelector>(AssetType::Prefab, "Add prefab")->set_selected_callback(
-        [](AssetId asset) {
+        [on_cursor](AssetId asset) {
             const ecs::EntityId id = current_world().add_prefab(asset);
             current_world().set_selected(id);
-            set_new_entity_pos(id);
+            set_new_entity_pos(id, on_cursor);
             return id.is_valid();
-        });
+        }
+    );
 }
-
-
-
 
 static void add_debug_lights() {
     y_profile();
@@ -98,7 +102,6 @@ static void add_debug_lights() {
         world.get_or_add_component<PointLightComponent>(entity)->color() = identifying_color(rng());
     }
 }
-
 
 static void add_debug_cubes(bool animate) {
     y_profile();
@@ -129,11 +132,37 @@ static void add_debug_cubes(bool animate) {
     }
 }
 
+static void create_empty_entity() {
+    auto& world = current_world();
+    world.set_selected(world.create_named_entity("New entity"));
+}
+
+template<typename T>
+static void create_entity_with_component(std::string_view name, bool on_cursor = false) {
+    auto& world = current_world();
+    const ecs::EntityId id = world.create_named_entity(name);
+    world.add_or_replace_component<T>(id);
+    set_new_entity_pos(id, on_cursor);
+    world.set_selected(id);
+}
+
+static bool is_engine_view_focussed() {
+    return last_focussed_widget_typed<EngineView>() != nullptr;
+}
 
 
 editor_action("Add debug lights", add_debug_lights)
 editor_action("Add debug cubes", [] { add_debug_cubes(false); })
 editor_action("Add animated debug cubes", [] { add_debug_cubes(true); })
+
+editor_action("Add empty entity", create_empty_entity)
+editor_action("Add point light", [] { create_entity_with_component<PointLightComponent>("Point light"); })
+editor_action("Add spot light", [] { create_entity_with_component<SpotLightComponent>("Spot light"); })
+editor_action("Add prefab", add_prefab)
+
+editor_action_contextual("Add point light here", ([] { create_entity_with_component<PointLightComponent>("Point light", true); }), is_engine_view_focussed)
+editor_action_contextual("Add spot light here", ([] { create_entity_with_component<SpotLightComponent>("Spot light", true); }), is_engine_view_focussed)
+editor_action_contextual("Add prefab here", [] { add_prefab(true); }, is_engine_view_focussed)
 
 editor_action_contextual(ICON_FA_TRASH " Delete selected",
     [] { add_child_widget<DeletionDialog>(current_world().selected_entities()); },
@@ -154,6 +183,12 @@ void Outliner::on_gui() {
     if(ImGui::Button(ICON_FA_PLUS)) {
         ImGui::OpenPopup("##plusmenu");
     }
+
+    ImGui::SameLine();
+
+    ImGui::SetNextItemWidth(-1.0f);
+    imgui::text_input("##search", _search_pattern, ImGuiInputTextFlags_AutoSelectAll, fmt_c_str("Search {} entities", world.entity_count()));
+    const StringMatcher matcher(_search_pattern);
 
     if(ImGui::BeginPopup("##plusmenu")) {
         if(ImGui::MenuItem("Empty entity")) {
@@ -177,12 +212,20 @@ void Outliner::on_gui() {
             ImGui::TableSetupColumn("##name", ImGuiTableColumnFlags_WidthStretch);
             ImGui::TableSetupColumn("##tagbuttons",ImGuiTableColumnFlags_WidthFixed);
 
-            for(const ecs::EntityId id : world.component_set<EditorComponent>().ids()) {
-                if(world.has_parent(id)) {
-                    continue;
+            if(!matcher.is_empty()) {
+                for(const auto& [id, comp] : world.component_set<EditorComponent>()) {
+                    if(matcher.matches(comp.name())) {
+                        display_node(world, id, false);
+                    }
                 }
+            } else {
+                for(const ecs::EntityId id : world.component_set<EditorComponent>().ids()) {
+                    if(world.has_parent(id)) {
+                        continue;
+                    }
 
-                display_node(world, id);
+                    display_node(world, id, true);
+                }
             }
 
             ImGui::EndTable();
@@ -198,7 +241,7 @@ void Outliner::on_gui() {
     ImGui::EndChild();
 }
 
-void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
+void Outliner::display_node(EditorWorld& world, ecs::EntityId id, bool recursive) {
     const EditorComponent* component = world.component<EditorComponent>(id);
     if(!component) {
         return;
@@ -236,7 +279,7 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
         ImGuiTreeNodeFlags_SpanAvailWidth |
         ImGuiTreeNodeFlags_OpenOnArrow |
         (is_selected ? ImGuiTreeNodeFlags_Selected : 0) |
-        (has_children ? 0 : ImGuiTreeNodeFlags_Leaf)
+        (has_children && recursive ? 0 : ImGuiTreeNodeFlags_Leaf)
     ;
 
     const bool open = ImGui::TreeNodeEx(fmt_c_str("###{}", id.as_u64()), flags);
@@ -301,9 +344,11 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id) {
 
 
     if(open) {
-        const auto children = core::Vector<ecs::EntityId>::from_range(world.children(id));
-        for(const ecs::EntityId child : children) {
-            display_node(world, child);
+        if(recursive) {
+            const auto children = core::Vector<ecs::EntityId>::from_range(world.direct_children(id));
+            for(const ecs::EntityId child : children) {
+                display_node(world, child, true);
+            }
         }
 
         ImGui::TreePop();

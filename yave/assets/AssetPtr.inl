@@ -178,6 +178,11 @@ AssetId AssetPtr<T>::id() const {
 }
 
 template<typename T>
+void AssetPtr<T>::unlink()  {
+    _data = {};
+}
+
+template<typename T>
 const T* AssetPtr<T>::get() const {
     return !is_loaded() ? nullptr : &_data->asset;
 }

@@ -96,8 +96,8 @@ bool MeshVertexStreams::is_empty() const {
     return !_vertex_count;
 }
 
-bool MeshVertexStreams::has_stream(VertexStreamType type) const {
-    return data(type);
+usize MeshVertexStreams::stream_byte_size(VertexStreamType type) const {
+    return _vertex_count * vertex_stream_element_size(type);
 }
 
 u8* MeshVertexStreams::data(VertexStreamType type) {

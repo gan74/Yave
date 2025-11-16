@@ -48,6 +48,11 @@ class Duration {
             return div(ms, 1'000.0);
         }
 
+        static constexpr Duration microseconds(double ms) {
+            return div(ms, 1'000'000.0);
+        }
+
+
         static constexpr Duration nanoseconds(u64 ns) {
             return Duration(ns / 1'000'000'000, ns % 1'000'000'000);
         }

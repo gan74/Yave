@@ -6,13 +6,13 @@ RWStructuredBuffer<ExposureParams> exposure_params;
 [[vk::binding(1)]]
 Sampler2D<uint> in_histogram;
 
-groupshared uint histogram[lum_histogram_size];
+groupshared uint histogram[constants.lum_histogram_size];
 groupshared uint total;
 
 
 
 [shader("compute")]
-[numthreads(lum_histogram_size)]
+[numthreads(constants.lum_histogram_size)]
 void comp_main() {
     const uint index = semantics.local_index;
     uint bin_size = in_histogram[int2(index, 0)];
@@ -30,7 +30,7 @@ void comp_main() {
 
     // Make this not serial
     if(index == 0) {
-        for(uint i = 1; i < lum_histogram_size; ++i) {
+        for(uint i = 1; i < constants.lum_histogram_size; ++i) {
             histogram[i] += histogram[i - 1];
         }
     }
@@ -52,7 +52,7 @@ void comp_main() {
 
     // Make this not serial
     if(index == 0) {
-        for(uint i = lum_histogram_size - 1; i != 0; --i) {
+        for(uint i = constants.lum_histogram_size - 1; i != 0; --i) {
             histogram[i - 1] += histogram[i];
         }
     }
@@ -64,7 +64,7 @@ void comp_main() {
         const uint black = bin_size;
         const uint non_black = max(total, black + 1) - black;
 
-        const float log_avg = (weighted / (lum_histogram_mul * non_black)) - lum_histogram_offset;
+        const float log_avg = (weighted / (constants.lum_histogram_mul * non_black)) - constants.lum_histogram_offset;
         const float avg = exp2(log_avg);
 
         const float EV100 = avg_to_EV100(exposure_params[0].avg_lum);

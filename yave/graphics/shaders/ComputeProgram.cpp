@@ -41,7 +41,7 @@ ComputeProgram::ComputeProgram(const ComputeShader& comp) : _local_size(comp.loc
     core::ScratchPad<VkDescriptorSetLayout> layouts(bindings.size());
 
     for(usize i = 0; i != bindings.size(); ++i) {
-        if(std::find(comp.variable_size_bindings().begin(), comp.variable_size_bindings().end(), i) != comp.variable_size_bindings().end()) {
+        if(std::find(comp.variable_size_sets().begin(), comp.variable_size_sets().end(), i) != comp.variable_size_sets().end()) {
             y_always_assert(bindings[i].size() == 1, "Variable size descriptor bindings must be alone in descriptor set");
             layouts[i] = texture_library().descriptor_set_layout();
         } else {

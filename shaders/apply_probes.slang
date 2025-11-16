@@ -48,8 +48,10 @@ void comp() {
         return;
     }
 
-
-    const SurfaceInfo surface = decode_gbuffer({float4(0.0), in_rt1[coord]});
+    const SurfaceInfo surface = decode_gbuffer(RawGBuffer(
+        float4(0.0),
+        in_rt1[coord]
+    ));
 
 
     IrradianceFieldSampleParams params;

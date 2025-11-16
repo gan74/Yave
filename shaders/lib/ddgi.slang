@@ -73,11 +73,11 @@ float3 decode_irr(float3 irr) {
 
 
 float3 sample_irradiance(
-    float3 world_pos, 
-    float3 normal, 
-    float3 cam_pos, 
-    Sampler2D<float3> irradiance_tex, 
-    Sampler2D<float2> distance_tex, 
+    float3 world_pos,
+    float3 normal,
+    float3 cam_pos,
+    Sampler2D<float3> irradiance_tex,
+    Sampler2D<float2> distance_tex,
     IrradianceFieldSampleParams params = IrradianceFieldSampleParams()) {
 
     const float2 inv_atlas_size = 1.0 / image_size(irradiance_tex);
@@ -143,7 +143,7 @@ float3 sample_irradiance(
 
         const float crush_threshold = 0.2;
         if (weight < crush_threshold) {
-            weight = max(epsilon, weight);
+            weight = max(constants.epsilon, weight);
             weight *= weight * weight * (1.0 / sqr(crush_threshold));
         }
 
@@ -172,7 +172,7 @@ float3 sample_irradiance(
     }
 
 
-    return total > epsilon ? (decode_irr(acc / total) * 0.5 * pi) : float3(0.0);
+    return total > constants.epsilon ? (decode_irr(acc / total) * 0.5 * constants.pi) : float3(0.0);
 }
 
 

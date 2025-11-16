@@ -77,12 +77,6 @@ inline constexpr usize operator"" _uu(unsigned long long int t) {
     return usize(t);
 }
 
-template<typename... Ts>
-struct Overloaded : Ts... { using Ts::operator()...; };
-
-template<typename... Ts>
-Overloaded(Ts...) -> Overloaded<Ts...>;
-
 template<typename T>
 class Uninitialized : NonMovable {
     public:

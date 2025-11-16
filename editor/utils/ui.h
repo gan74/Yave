@@ -62,6 +62,7 @@ static constexpr ImVec4 warning_text_color = to_im(math::Vec4(1.0f, 0.8f, 0.4f, 
 const u32 folder_icon_color = 0xFF62D6FF;    // Light yellow
 
 u32 gizmo_color(usize axis);
+ImVec4 text_color(bool error = false);
 
 bool should_open_context_menu();
 

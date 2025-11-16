@@ -1,20 +1,44 @@
 #ifndef DEBUG_SLANG
 #define DEBUG_SLANG
 
+#include "semantics.slang"
+
 #ifdef DEBUG
 
 // 4 * 5 bitmaps
 #define CHAR_MINUS      0x000700
 #define CHAR_DOT        0x000002
 #define CHAR_COLON      0x002020
+#define CHAR_QUESTION   0x074602
+
+#define CHAR_SPACE      0x000000
 
 #define CHAR_A          0x075755
+#define CHAR_B          0x035353
+#define CHAR_C          0x071117
+#define CHAR_D          0x035553
 #define CHAR_E          0x071717
+#define CHAR_F          0x071711
 #define CHAR_G          0x071157
-#define CHAR_P          0x075711
+#define CHAR_H          0x055755
+#define CHAR_I          0x022222
+#define CHAR_J          0x022223
+#define CHAR_K          0x055355
+#define CHAR_L          0x022226
 #define CHAR_M          0x057555
+#define CHAR_N          0x055575
+#define CHAR_O          0x075557
+#define CHAR_P          0x075711
+#define CHAR_Q          0x075574
+#define CHAR_R          0x075755
+#define CHAR_S          0x071747
+#define CHAR_T          0x072222
+#define CHAR_U          0x055557
 #define CHAR_V          0x055552
+
 #define CHAR_X          0x055255
+#define CHAR_Y          0x055222
+#define CHAR_Z          0x074217
 
 #define CHAR_0          0x075557
 #define CHAR_1          0x022222
@@ -27,6 +51,7 @@
 #define CHAR_8          0x075757
 #define CHAR_9          0x075747
 
+namespace debug {
 
 // https://www.shadertoy.com/view/4sBSWW
 float print_char(float2 pos, uint char_bits) {
@@ -102,15 +127,17 @@ float print_char(float2 coord, float2 px_coord, float2 font_size, uint char_bits
 namespace print_state {
 
 static float2 font_size = float2(8.0, 15.0);
-static float2 coord = float2(0.0, 0.0);
 static float2 px_coord = float2(0.0, 0.0);
 static float print = 0.0;
 
 }
 
+void set_coord(uint2 coord) {
+    print_state.px_coord = coord;
+}
 
 void putc(uint char_bits) {
-    print_state.print += print_char(print_state.coord, print_state.px_coord, print_state.font_size, char_bits);
+    print_state.print += print_char(semantics.pixel_coord, print_state.px_coord, print_state.font_size, char_bits);
     print_state.px_coord.x += print_state.font_size.x;
 }
 
@@ -130,7 +157,7 @@ void putc(uint a, uint b, uint c, uint d) {
 }
 
 void putf(float value, float max_digits, float decimals) {
-    print_state.print += print_value(print_state.coord, print_state.px_coord, print_state.font_size, value, max_digits, decimals);
+    print_state.print += print_value(semantics.pixel_coord, print_state.px_coord, print_state.font_size, value, max_digits, decimals);
     print_state.px_coord.x += print_state.font_size.x * (max_digits + decimals);
 }
 
@@ -141,6 +168,8 @@ void next_line() {
 
 float print() {
     return print_state.print;
+}
+
 }
 
 #endif

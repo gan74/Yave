@@ -1,5 +1,5 @@
 #include "lib/utils.slang"
-#include "lib/lighting.slang"
+#include "lib/brdf.slang"
 
 #ifdef POINT
 typealias Light = PointLight;
@@ -46,7 +46,7 @@ struct VertexStageOut {
 
 
 [shader("vertex")]
-VertexStageOut vert_main(StdVertexStageIn in) {
+VertexStageOut vert_main(float3 position) {
     const Light light = lights[semantics.instance_index];
 
     VertexStageOut out;
@@ -55,10 +55,10 @@ VertexStageOut vert_main(StdVertexStageIn in) {
         out.instance_index = semantics.instance_index;
 
 #ifdef SPOT
-        out.sv_position = mul(camera.curr.view_proj, mul(light.draw_model, float4(in.position, 1.0)));
+        out.sv_position = mul(camera.curr.view_proj, mul(light.draw_model, float4(position, 1.0)));
 #else
         const float scale = light.range * 1.1;
-        out.sv_position = mul(camera.curr.view_proj, float4(in.position * scale + light.position, 1.0));
+        out.sv_position = mul(camera.curr.view_proj, float4(position * scale + light.position, 1.0));
 #endif
 
     }
@@ -73,10 +73,10 @@ float4 frag_main(uint in_instance_index) : SV_Target0 {
 
     const float depth = in_depth[coord];
 
-    const SurfaceInfo surface = decode_gbuffer({
+    const SurfaceInfo surface = decode_gbuffer(RawGBuffer(
         in_rt0[coord],
         in_rt1[coord],
-    });
+    ));
 
     const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
     const float3 view_dir = normalize(camera.position - world_pos);
@@ -101,7 +101,7 @@ float4 frag_main(uint in_instance_index) : SV_Target0 {
 
         if(att > 0.0) {
             const float3 radiance = light.color * att;
-            irradiance += radiance * eval_lighting(alpha_corrected_surface(surface, area), view_dir, area.light_dir);
+            irradiance += radiance * eval_brdf(alpha_corrected_surface(surface, area), view_dir, area.light_dir);
         }
     }
 

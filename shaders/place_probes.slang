@@ -38,10 +38,10 @@ void comp() {
         return;
     }
 
-    const SurfaceInfo surface = decode_gbuffer({
+    const SurfaceInfo surface = decode_gbuffer(RawGBuffer(
         float4(0.0),
         in_rt1[coord],
-    });
+    ));
 
     const float3 world_pos = unproject(in_uv, depth, camera.curr.inv_view_proj);
     const int3 probe_id = ddgi.compute_grid_coord(world_pos, surface.normal);

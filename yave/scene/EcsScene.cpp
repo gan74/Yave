@@ -97,6 +97,7 @@ void EcsScene::process_component_visibility(u32 ObjectIndices::* index_ptr, S& s
 
     const std::array tag = {ecs::tags::hidden};
     const ecs::EntityGroupProvider* group_provider = _world->get_or_create_group_provider<T>(tag);
+    y_debug_assert(group_provider->tags().size() == 1 && group_provider->tags()[0] == ecs::tags::hidden);
 
     for(const ecs::EntityId id : group_provider->added_ids()) {
         update_visibility(id, 0);

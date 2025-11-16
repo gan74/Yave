@@ -9,9 +9,9 @@ typealias Sampler2DShadow = Sampler2D<float>;
 namespace semantics {
 
 in float4 frag_coord : SV_Position;
-in int instance_index : SV_InstanceID;
+in int instance_index : SV_VulkanInstanceID;
 in bool is_front_face : SV_IsFrontFace;
-in int vertex_index : SV_VertexID;
+in int vertex_index : SV_VulkanVertexID;
 
 in uint3 global_id : SV_DispatchThreadID;
 in uint3 work_group_id : SV_GroupID;
@@ -72,8 +72,14 @@ property uint global_index {
     }
 }
 
+property uint2 pixel_coord {
+    [require(compute)]
+    get { return global_id.xy; }
+    [require(fragment)]
+    get { return uint2(frag_coord.xy); }
 }
 
+}
 
 
 
