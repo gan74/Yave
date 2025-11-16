@@ -91,6 +91,10 @@ static FrameGraphImageId rt_reuse(FrameGraph& framegraph, const GBufferPass& gbu
 
 
 RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_lit, const RTGISettings& settings) {
+    if(!raytracing_enabled()) {
+        return {in_lit};
+    }
+
     const auto region = framegraph.region("RTGI");
 
     const auto sample_dirs = generate_sample_dirs<256>(framegraph.frame_id());

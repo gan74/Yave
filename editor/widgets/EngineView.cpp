@@ -193,6 +193,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     const EditorRenderer renderer = EditorRenderer::create(framegraph, _scene_view, output_size, settings);
     {
         const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
+        const Texture& black = *device_resources()[DeviceResources::BlackTexture];
 
         FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("ImGui texture pass");
 
@@ -208,7 +209,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
         builder.add_uniform_input_with_default(renderer.renderer.ao.ao, Descriptor(white));
-        builder.add_uniform_input(renderer.renderer.ddgi.gi);
+        builder.add_uniform_input_with_default(renderer.renderer.ddgi.gi, Descriptor(black));
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             {
                 auto render_pass = recorder.bind_framebuffer(self->framebuffer());
