@@ -64,7 +64,7 @@ struct Camera {
     float aspect;
 
     float3 prev_position;
-    float3 padding_0;
+    uint padding_0;
 
     float3 forward;
     uint padding_1;
