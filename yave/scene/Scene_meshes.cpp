@@ -90,6 +90,8 @@ static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Ve
 static void collect_batches_for_id(core::Span<const StaticMeshObject*> meshes, core::Vector<StaticMeshBatch>& batches) {
     y_profile();
 
+    batches.set_min_capacity(meshes.size());
+
     u32 index = 0;
     for(const StaticMeshObject* mesh : meshes) {
         const u32 transform_index = mesh->transform_index;
@@ -154,6 +156,8 @@ Scene::RenderFunc Scene::prepare_render(FrameGraphPassBuilder& builder, i32 desc
 
 
     return [=](RenderPassRecorder& render_pass, const FrameGraphPass* pass) {
+        y_profile_zone("scene render");
+
         y_debug_assert(!static_mesh_batches->is_empty());
 
         const core::Span<StaticMeshBatch> batches = *static_mesh_batches;
