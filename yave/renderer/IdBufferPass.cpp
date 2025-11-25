@@ -34,15 +34,15 @@ SOFTWARE.
 
 namespace yave {
 
-TypedReadBackBuffer<shader::PickingData> picking_pass(FrameGraph& framegraph, const IdBufferPass& id, const math::Vec2ui& coord) {
+TypedReadBackBuffer<shader::PickingData> picking_pass(FrameGraph& framegraph, FrameGraphImageId id, FrameGraphImageId depth, const math::Vec2ui& coord) {
     y_profile();
 
     TypedReadBackBuffer<shader::PickingData> buffer(1);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Picking pass");
 
-    builder.add_uniform_input(id.depth);
-    builder.add_uniform_input(id.id);
+    builder.add_uniform_input(depth);
+    builder.add_uniform_input(id);
     builder.add_descriptor_binding(Descriptor(buffer));
     builder.add_inline_input(coord);
 
