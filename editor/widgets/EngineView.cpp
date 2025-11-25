@@ -589,10 +589,8 @@ void EngineView::draw_settings_menu() {
             ImGui::SliderInt("Ray count", &ray, 1, 16);
             ImGui::SliderFloat("Max ray length", &settings.rtao.max_dist, 0.25f, 8.0f);
             ImGui::Separator();
-            ImGui::Checkbox("Temporal stabilisation", &settings.rtao.temporal);
-            ImGui::Separator();
-            ImGui::SliderFloat("Filter sigma", &settings.rtao.filter_sigma, 0.0f, 8.0f);
-            settings.rtao.ray_count = ray;
+            ImGui::SliderFloat("Cell size", &settings.rtao.base_cell_size, 0.01f, 0.5f);
+            ImGui::SliderFloat("LoD distance", &settings.rtao.lod_dist, 1.0f, 100.0f);
             ImGui::EndMenu();
         }
 
