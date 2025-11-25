@@ -101,7 +101,7 @@ static math::Vec3 intersect_ray_plane(const math::Vec3& orig, const math::Vec3& 
     return orig + dir * t;
 }
 
-static [[nodiscard]] bool intersect_lines(const math::Vec3& start_a, const math::Vec3& end_a, const math::Vec3& start_b, const math::Vec3& end_b, math::Vec3& closest) {
+[[nodiscard]] static bool intersect_lines(const math::Vec3& start_a, const math::Vec3& end_a, const math::Vec3& start_b, const math::Vec3& end_b, math::Vec3& closest) {
     const math::Vec3 starts = start_a - start_b;
     const math::Vec3 ends = end_b - start_b;
     const math::Vec3 dir_a = end_a - start_a;

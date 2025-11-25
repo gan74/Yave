@@ -141,7 +141,7 @@ class MeshVertexStreams {
         }
 
 
-        y_reflect(MeshVertexStreams, _vertex_count, _stream_offsets, _storage);
+        y_reflect(MeshVertexStreams, _vertex_count, _stream_offsets, _storage)
 
     private:
         void set_vertex(usize index, PackedVertex vertex);

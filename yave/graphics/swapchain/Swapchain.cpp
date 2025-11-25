@@ -340,7 +340,7 @@ core::Result<FrameToken> Swapchain::next_frame() {
 
     const usize current_frame_index = _frame_id % image_count();
     // we need to do the lookup every time, in case _sync_objects gets rebuild
-    auto current_sync = [=]() -> FrameSyncObjects& { return _sync_objects[current_frame_index]; };
+    auto current_sync = [=, this]() -> FrameSyncObjects& { return _sync_objects[current_frame_index]; };
 
     vk_check(vkWaitForFences(vk_device(), 1, &current_sync().fence.get(), true, u64(-1)));
 

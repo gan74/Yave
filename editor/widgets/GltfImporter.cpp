@@ -210,7 +210,7 @@ GltfImporter::GltfImporter(core::String dst_import_path) :
     _browser.set_selection_filter(import::supported_scene_extensions());
     _browser.set_canceled_callback([this] { close(); return true; });
     _browser.set_selected_callback([this](const auto& filename) {
-        _job_system.schedule([=] {
+        _job_system.schedule([=, this] {
             y_profile_zone("parsing import");
             _scene = import::parse_scene(filename);
         });

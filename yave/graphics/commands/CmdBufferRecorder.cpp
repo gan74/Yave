@@ -500,7 +500,7 @@ void CmdBufferRecorderBase::bind_descriptor_set(VkPipelineBindPoint bind_point, 
 
     y_debug_assert(!ds.descriptors().data() != !ds.vk_descriptor_set());
 
-    const core::Span descriptors = ds.descriptors();
+    const core::Span<Descriptor> descriptors = ds.descriptors();
     const usize descriptor_count = descriptors.size();
     if(descriptor_count) {
         core::ScratchPad<VkWriteDescriptorSet> writes(descriptor_count);

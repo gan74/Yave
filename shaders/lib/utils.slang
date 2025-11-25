@@ -73,10 +73,6 @@ struct SurfaceInfo {
     float3 f0() {
         return approx_F0(metallic, albedo);
     }
-
-    float3 f90() {
-        return F90_from_F0(f0());
-    }
 };
 
 
@@ -614,12 +610,6 @@ SurfaceInfo alpha_corrected_surface(SurfaceInfo surface, AreaLightInfo area) {
 float3 approx_F0(float metallic, float3 albedo) {
     return lerp(float3(0.04), albedo, metallic);
 }
-
-float3 F90_from_F0(float3 f0) {
-    const float reflectance = max(max(f0.r, f0.g), f0.b);
-    return saturate(reflectance * 50.0);
-}
-
 
 
 #endif

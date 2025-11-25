@@ -58,7 +58,7 @@ class IndexAllocator {
 
     private:
         core::Vector<index_type> _free;
-        usize _max = 0;
+        index_type _max = {};
 };
 
 }

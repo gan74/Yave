@@ -52,7 +52,7 @@ class TransientMipView : TransientMipViewContainer, public ImageView<Usage, Type
         TransientMipView(const Image<U, T>& img, u32 mip) :
                 TransientMipViewContainer(img, mip),
                 ImageView<Usage, Type>(
-                    img.image_size().to<2>() / (1 << mip),
+                    img.image_size().template to<2>() / (1 << mip),
                     img.usage(),
                     img.format(),
                     _view_handle,

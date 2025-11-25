@@ -82,7 +82,7 @@ class Settings {
     public:
         Settings() = default;
 
-        static [[nodiscard]] Settings load();
+        [[nodiscard]] static Settings load();
         void save() const;
 
         EditorSettings editor;

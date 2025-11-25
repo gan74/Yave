@@ -29,6 +29,7 @@ SOFTWARE.
 
 #include <format>
 #include <string_view>
+#include <concepts>
 
 
 #undef y_fatal
@@ -116,27 +117,16 @@ concept is_formattable = requires(T& v, std::format_context ctx) {
 
 
 
-template<typename T, typename C>
-concept is_formatable = requires(T t) {
-    { std::formatter<T, C>{}.parse(std::declval<std::format_parse_context&>()) };
+
+// https://www.en.cppreference.com/w/cpp/utility/format/formattable.html
+template<typename T, class Context, typename Formatter = typename Context::template formatter_type<std::remove_const_t<T>>>
+concept is_formatable = std::semiregular<Formatter> &&
+    requires (Formatter& f, const Formatter& cf, T&& t, Context fc, std::basic_format_parse_context<typename Context::char_type> pc) {
+    { f.parse(pc) } -> std::same_as<typename decltype(pc)::iterator>;
+    { cf.format(t, fc) } -> std::same_as<typename Context::iterator>;
 };
 
-template<typename T, typename C> requires(y::is_iterable<T> && !is_formatable<T, C>)
-struct std::formatter<T, C> : std::formatter<y::element_type_t<T>, C> {
-    template<typename Ctx>
-    auto format(const T& t, Ctx& ctx) const {
-        std::format_to(ctx.out(), "[");
-        bool separator = false;
-        for(const auto& e : t) {
-            if(separator) {
-                std::format_to(ctx.out(), ", ");
-            }
-            separator = true;
-            std::formatter<y::element_type_t<T>, C>::format(e, ctx);
-        }
-        return std::format_to(ctx.out(), "]");
-    }
-};
+
 
 template<>
 struct std::formatter<y::core::String, char> : std::formatter<std::string_view, char> {
@@ -152,6 +142,23 @@ struct std::formatter<T, C> : std::formatter<std::underlying_type_t<T>, C> {
     template<typename Ctx>
     auto format(const T& t, Ctx& ctx) const {
         return std::formatter<std::underlying_type_t<T>, C>::format(std::underlying_type_t<T>(t), ctx);
+    }
+};
+
+template<typename T, typename C> requires(y::is_iterable<T>)
+struct std::formatter<T, C> : std::formatter<y::element_type_t<T>, C> {
+    template<typename Ctx>
+    auto format(const T& t, Ctx& ctx) const {
+        std::format_to(ctx.out(), "[");
+        bool separator = false;
+        for(const auto& e : t) {
+            if(separator) {
+                std::format_to(ctx.out(), ", ");
+            }
+            separator = true;
+            std::formatter<y::element_type_t<T>, C>::format(e, ctx);
+        }
+        return std::format_to(ctx.out(), "]");
     }
 };
 

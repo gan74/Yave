@@ -232,6 +232,14 @@ struct JoltData : NonMovable {
 
 
 
+static void jph_trace_func(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    char buffer[512] = {};
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+    log_msg(buffer, Log::Warning);
+}
 
 
 
@@ -244,15 +252,7 @@ static void init_jolt() {
 
     init = true;
 
-    JPH::Trace = [](const char* fmt, ...) {
-        va_list args;
-        va_start(args, fmt);
-        char buffer[512] = {};
-        vsnprintf(buffer, sizeof(buffer), fmt, args);
-        va_end(args);
-        log_msg(buffer, Log::Warning);
-    };
-
+    JPH::Trace = jph_trace_func;
     JPH::RegisterDefaultAllocator();
 
     JPH::Factory::sInstance = new JPH::Factory();

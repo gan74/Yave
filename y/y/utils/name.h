@@ -25,6 +25,7 @@ SOFTWARE.
 #include <y/defines.h>
 
 #include <string_view>
+#include <array>
 
 namespace y {
 namespace detail {
@@ -46,7 +47,10 @@ template<typename T>
 static constexpr std::array ct_type_name_buffer = [] {
     constexpr std::string_view inner = ct_type_name<T>();
     std::array<char, inner.size() + 1> buffer = {};
-    std::copy_n(inner.begin(), inner.size(), buffer.begin());
+    // std::copy_n(inner.begin(), inner.size(), buffer.begin());
+    for(usize i = 0; i != inner.size(); ++i) {
+        buffer[i] = inner[i];
+    }
     return buffer;
 }();
 }

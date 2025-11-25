@@ -302,8 +302,11 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneVisibilit
         for(usize i = 0; i != passes.size(); ++i) {
             const ShadowSubPass& pass = passes[i];
             shadow_infos[i] = pass.info;
+            
+            const char* pass_name = pass.scene_pass.scene_view.camera().is_orthographic() ? "Directional cascade" : "Spot light";
+            y_profile_dyn_zone(pass_name);
 
-            const auto region = render_pass.region(pass.scene_pass.scene_view.camera().is_orthographic() ? "Directional cascade" : "Spot light");
+            const auto region = render_pass.region(pass_name);
             render_pass.set_viewport(Viewport(math::Vec2(float(pass.viewport_size)), pass.viewport_offset));
             pass.scene_pass.render(render_pass, self);
         }

@@ -578,9 +578,10 @@ core::Result<MaterialData> ParsedScene::create_material(int index) const {
         return core::Err();
     }
 
-
     const tinygltf::Material& material = gltf->materials[index];
     const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
+
+    const std::string emissive_strength_ext_name = "KHR_materials_emissive_strength";
 
     bool use_specular = false;
     int specular_texture_index = -1;
@@ -633,9 +634,14 @@ core::Result<MaterialData> ParsedScene::create_material(int index) const {
         data.normal = find_texture(material.normalTexture.index);
         data.emissive = find_texture(material.emissiveTexture.index);
 
+        float emissive_factor = 1.0f;
+        if(const auto it = material.extensions.find(emissive_strength_ext_name); it != material.extensions.end()) {
+            emissive_factor = float(it->second.Get("emissiveStrength").GetNumberAsDouble());
+        }
+
         for(usize i = 0; i != 3; ++i) {
             data.color_factor[i] = float(material.pbrMetallicRoughness.baseColorFactor[i]);
-            data.emissive_factor[i] = float(material.emissiveFactor[i]);
+            data.emissive_factor[i] = float(material.emissiveFactor[i]) * emissive_factor;
         }
 
         data.alpha_tested = (material.alphaMode != "OPAQUE");

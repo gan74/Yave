@@ -197,7 +197,7 @@ class EntityWorld : NonMovable {
             y_profile();
             return _groups.locked([&](auto&& groups) -> const EntityGroupProvider* {
                 for(const auto& group : groups) {
-                    if(group->matches<Ts...>(tags, filters)) {
+                    if(group->template matches<Ts...>(tags, filters)) {
                         return group.get();
                     }
                 }

@@ -54,7 +54,7 @@ static void* alloc_internal(usize size, usize alignment = max_alignment) {
         #ifdef Y_MSVC
             return _aligned_malloc(size, alignment);
         #else
-            return std::aligned_alloc(alignment, size);
+            return _mm_malloc(size, alignment);
         #endif
     };
 
@@ -86,7 +86,7 @@ static void free_internal(void* ptr) {
 #ifdef Y_MSVC
     _aligned_free(ptr);
 #else
-    std::free(ptr);
+    _mm_free(ptr);
 #endif
 }
 }

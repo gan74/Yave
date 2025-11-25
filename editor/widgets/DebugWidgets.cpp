@@ -335,7 +335,7 @@ class UndoRedoDebug : public Widget {
 
         void on_gui() override {
             UndoRedoSystem* system = current_world().find_system<UndoRedoSystem>();
-            const core::Span states = system->undo_states();
+            const auto states = system->undo_states();
 
             ImGui::Text("%u items in stack (current: %u)", u32(states.size()), u32(system->stack_top()));
 
