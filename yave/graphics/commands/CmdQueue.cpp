@@ -347,6 +347,10 @@ CmdBufferPool& CmdQueue::cmd_pool_for_thread() {
     });
 }
 
+const ProfiledMutexed<VkQueue>& CmdQueue::queue() const {
+    return _queue;
+}
+
 void CmdQueue::clear_thread(u32 thread_id) {
     y_profile();
 
