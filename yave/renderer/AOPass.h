@@ -54,6 +54,7 @@ struct AOSettings {
         u32 hash_size = 21;
         float lod_dist = 10.0f;
         float base_cell_size = 0.05f;
+        float filter_sigma = 4.0f;
     } rtao;
 };
 

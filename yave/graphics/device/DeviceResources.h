@@ -58,6 +58,7 @@ class DeviceResources final : NonMovable {
             PrevCameraProgram,
             TAAResolveProgram,
             UpdateTransformsProgram,
+            FilterAOProgram,
             PickingProgram,
 
             MaxNonRTComputePrograms,

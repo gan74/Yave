@@ -273,7 +273,32 @@ static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass&
     return ao;
 }
 
+static FrameGraphImageId filter_ao(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_ao, bool vertical, float sigma) {
+    const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass(vertical ? "Filter RTAO vertical pass" : "Filter RTAO horizontal pass");
+
+    const auto filtered = builder.declare_image(VK_FORMAT_R8_UNORM, size);
+
+    const auto weights = math::compute_gaussian_weights<float, 4>(sigma);
+
+    struct Params {
+            std::array<float, 4> weights;
+            math::Vec2i offset;
+    };
+
+    builder.add_uniform_input(in_ao);
+    builder.add_uniform_input(gbuffer.depth);
+    builder.add_uniform_input(gbuffer.normal);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
+    builder.add_storage_output(filtered);
+    builder.add_inline_input(Params{weights, vertical ? math::Vec2i(0, 1) : math::Vec2i(1, 0)});
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        recorder.dispatch_threads(device_resources()[DeviceResources::FilterAOProgram], size, self->descriptor_set());
+    });
+
+    return filtered;
+}
 
 
 
@@ -302,6 +327,11 @@ AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const 
         case AOSettings::AOMethod::RTAO: {
             if(raytracing_enabled()) {
                 ao = compute_rtao(framegraph, gbuffer, settings.rtao);
+
+                if(settings.rtao.filter_sigma > 0.0f) {
+                    ao = filter_ao(framegraph, gbuffer, ao, false, settings.rtao.filter_sigma);
+                    ao = filter_ao(framegraph, gbuffer, ao, true, settings.rtao.filter_sigma);
+                }
             }
         } break;
 

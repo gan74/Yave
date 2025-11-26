@@ -592,6 +592,8 @@ void EngineView::draw_settings_menu() {
             ImGui::Separator();
             ImGui::SliderFloat("Cell size", &settings.rtao.base_cell_size, 0.01f, 0.5f);
             ImGui::SliderFloat("LoD distance", &settings.rtao.lod_dist, 1.0f, 100.0f);
+            ImGui::Separator();
+            ImGui::SliderFloat("Filter sigma", &settings.rtao.filter_sigma, 0.0f, 8.0f);
             ImGui::EndMenu();
 
             settings.rtao.ray_count = u32(rays);
