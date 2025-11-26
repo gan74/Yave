@@ -51,7 +51,7 @@ struct AOSettings {
     struct RTAOSettings {
         u32 ray_count = 1;
         float max_dist = 2.0f;
-        u32 hash_size = 20;
+        u32 hash_size = 21;
         float lod_dist = 10.0f;
         float base_cell_size = 0.05f;
     } rtao;

@@ -585,13 +585,16 @@ void EngineView::draw_settings_menu() {
         }
 
         if(ImGui::BeginMenu("RTAO")) {
-            int ray = int(settings.rtao.ray_count);
-            ImGui::SliderInt("Ray count", &ray, 1, 16);
+            int rays = int(settings.rtao.ray_count);
+
+            ImGui::SliderInt("Ray count", &rays, 1, 16);
             ImGui::SliderFloat("Max ray length", &settings.rtao.max_dist, 0.25f, 8.0f);
             ImGui::Separator();
             ImGui::SliderFloat("Cell size", &settings.rtao.base_cell_size, 0.01f, 0.5f);
             ImGui::SliderFloat("LoD distance", &settings.rtao.lod_dist, 1.0f, 100.0f);
             ImGui::EndMenu();
+
+            settings.rtao.ray_count = u32(rays);
         }
 
         ImGui::EndMenu();

@@ -97,8 +97,12 @@ uint find_bucket(uint2 h) {
     for(uint i = 0; i != 8; ++i) {
         const uint index = (h.x + i) & hash_mask;
 
+#ifdef UPDATE
         uint prev = 0;
         InterlockedCompareExchange(hash_table[checksum_index(index)], 0, check, prev);
+#else
+        const uint prev = hash_table[checksum_index(index)];
+#endif
 
         if(prev == 0 || prev == check) {
             return index;
