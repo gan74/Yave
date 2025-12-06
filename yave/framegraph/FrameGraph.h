@@ -149,6 +149,15 @@ class FrameGraph : NonMovable {
             return usize(buffer_byte_size(res) / sizeof(T));
         }
 
+        template<typename T, BufferUsage Usage>
+        std::pair<TypedSubBuffer<T, Usage>, bool> create_scratch_buffer(FrameGraphPersistentResourceId id, usize size = 1) {
+            const auto [buffer, reset] = create_scratch_buffer(sizeof(T) * std::max(usize(1u), size), Usage, id);
+            return {
+                TypedSubBuffer<T, Usage>(TransientSubBuffer<Usage>(buffer)),
+                reset
+            };
+        }
+
     private:
         friend class FrameGraphPassBuilderBase;
         friend class FrameGraphPass;
@@ -159,6 +168,8 @@ class FrameGraph : NonMovable {
         FrameGraphMutableImageId declare_image(ImageFormat format, const math::Vec2ui& size, u32 mips);
         FrameGraphMutableVolumeId declare_volume(ImageFormat format, const math::Vec3ui& size);
         FrameGraphMutableBufferId declare_buffer(u64 byte_size);
+
+        std::pair<const TransientBuffer&, bool> create_scratch_buffer(u64 byte_size, BufferUsage usage, FrameGraphPersistentResourceId persistent_id);
 
         const ImageCreateInfo& info(FrameGraphImageId res) const;
         const ImageCreateInfo& info(FrameGraphVolumeId res) const;

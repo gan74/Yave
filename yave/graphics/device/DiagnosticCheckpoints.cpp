@@ -22,11 +22,12 @@ SOFTWARE.
 
 #include "DiagnosticCheckpoints.h"
 
+#include <yave/graphics/commands/CmdQueue.h>
+
 #include <y/core/FixedArray.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
-
 
 #include <vulkan/vk_enum_string_helper.h>
 
@@ -41,30 +42,31 @@ DiagnosticCheckpoints::DiagnosticCheckpoints() : _checkpoints(1024) {
     y_always_assert(vkGetQueueCheckpointDataNV, VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME " not loaded");
 }
 
-
-void DiagnosticCheckpoints::register_queue(VkQueue queue) {
-    _queues << queue;
+void DiagnosticCheckpoints::register_queue(const CmdQueue& queue) {
+    _queues << &queue;
 }
 
 void DiagnosticCheckpoints::dump_checkpoints() const {
     log_msg("Dumping " VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME " checkpoints:", Log::Error);
-    for(const VkQueue queue : _queues) {
-        u32 count = 0;
-        vkGetQueueCheckpointDataNV(queue, &count, nullptr);
+    for(const CmdQueue* q : _queues) {
+        q->queue().locked([this](VkQueue queue) {
+            u32 count = 0;
+            vkGetQueueCheckpointDataNV(queue, &count, nullptr);
 
-        core::Vector<VkCheckpointDataNV> datas(count, vk_struct());
-        vkGetQueueCheckpointDataNV(queue, &count, datas.data());
+            core::Vector<VkCheckpointDataNV> datas(count, vk_struct());
+            vkGetQueueCheckpointDataNV(queue, &count, datas.data());
 
-        log_msg(fmt("  {} last checkpoints executed in queue:", count), Log::Error);
-        for(const VkCheckpointDataNV& data : datas) {
-            const usize index = std::bit_cast<usize>(data.pCheckpointMarker);
-            const auto& ck = _checkpoints[index % _checkpoints.size()];
-            if(ck.first != index) {
-                log_msg(fmt("    {}: ???", string_VkPipelineStageFlagBits(data.stage)), Log::Error);
-            } else {
-                log_msg(fmt("    {}: {}", string_VkPipelineStageFlagBits(data.stage), ck.second), Log::Error);
+            log_msg(fmt("  {} last checkpoints executed in queue:", count), Log::Error);
+            for(const VkCheckpointDataNV& data : datas) {
+                const usize index = std::bit_cast<usize>(data.pCheckpointMarker);
+                const auto& ck = _checkpoints[index % _checkpoints.size()];
+                if(ck.first != index) {
+                    log_msg(fmt("    {}: ???", string_VkPipelineStageFlagBits(data.stage)), Log::Error);
+                } else {
+                    log_msg(fmt("    {}: {}", string_VkPipelineStageFlagBits(data.stage), ck.second), Log::Error);
+                }
             }
-        }
+        });
     }
 }
 

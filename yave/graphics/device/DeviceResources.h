@@ -64,7 +64,9 @@ class DeviceResources final : NonMovable {
             PickingProgram,
 
             MaxNonRTComputePrograms,
-            RTAOProgram = MaxNonRTComputePrograms,
+            RTAOUpdateProgram = MaxNonRTComputePrograms,
+            RTAOTrimProgram,
+            RTAOProgram,
 
             RTGIProgram,
             RTReuseProgram,

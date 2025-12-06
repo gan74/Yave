@@ -23,6 +23,7 @@ SOFTWARE.
 #include "FrameGraph.h"
 #include "FrameGraphPass.h"
 #include "FrameGraphFrameResources.h"
+#include "FrameGraphResourcePool.h"
 
 #include <yave/graphics/commands/CmdQueue.h>
 
@@ -493,6 +494,10 @@ FrameGraphMutableBufferId FrameGraph::declare_buffer(u64 byte_size) {
     }
 
     return i;
+}
+
+std::pair<const TransientBuffer&, bool> FrameGraph::create_scratch_buffer(u64 byte_size, BufferUsage usage, FrameGraphPersistentResourceId persistent_id) {
+    return _resources->_pool->create_scratch_buffer(byte_size, usage, persistent_id);
 }
 
 FrameGraphPass* FrameGraph::create_pass(std::string_view name) {

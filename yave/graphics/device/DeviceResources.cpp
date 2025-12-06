@@ -122,6 +122,8 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "bilateral",
     "bilateral_HORIZONTAL",
     "picking",
+    "rtao_UPDATE",
+    "rtao_TRIM",
     "rtao",
     "rtgi",
     "rtreuse",

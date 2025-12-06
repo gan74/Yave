@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace yave {
 
-TypedReadBackBuffer<shader::PickingData> picking_pass(FrameGraph& framegraph, const IdBufferPass& id, const math::Vec2ui& coord);
+TypedReadBackBuffer<shader::PickingData> picking_pass(FrameGraph& framegraph, FrameGraphImageId id, FrameGraphImageId depth, const math::Vec2ui& coord);
 
 struct IdBufferPass {
     SceneRenderSubPass scene_pass;

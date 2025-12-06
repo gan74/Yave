@@ -238,6 +238,8 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "bilateral.slang" "")
     add_slang_shader(${SHADER_TARGET} "bilateral.slang" "HORIZONTAL")
 
+    add_slang_shader(${SHADER_TARGET} "rtao.slang" "UPDATE")
+    add_slang_shader(${SHADER_TARGET} "rtao.slang" "TRIM")
     add_slang_shader(${SHADER_TARGET} "rtao.slang" "")
     add_slang_shader(${SHADER_TARGET} "filter_ao.slang" "")
 
@@ -282,7 +284,7 @@ if(YAVE_BUILD_YAVE)
     endif()
 
     target_link_libraries(yave PUBLIC y luajit Jolt)
-    
+
     add_custom_target(shaders)
     add_custom_target(shaders_optim)
     build_engine_shaders(shaders)

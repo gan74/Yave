@@ -232,15 +232,13 @@ static void init_vk_device() {
         log_msg("Raytracing disabled", Log::Warning);
     }
 
-    core::SmallVector<VkQueue> queues;
-    device::queue.init(main_queue_index, queues.emplace_back(create_queue(device::vk_device, main_queue_index, 0)));
+    const VkQueue queue = create_queue(device::vk_device, main_queue_index, 0);
+    device::queue.init(main_queue_index, queue);
 
     if(diagnostic_checkpoints) {
         log_msg("Vulkan diagnostic checkpoints enabled");
         device::diagnostic_checkpoints = std::make_unique<DiagnosticCheckpoints>();
-        for(const VkQueue q : queues) {
-            device::diagnostic_checkpoints->register_queue(q);
-        }
+        device::diagnostic_checkpoints->register_queue(*device::queue);
     }
 }
 

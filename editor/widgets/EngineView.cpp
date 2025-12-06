@@ -47,6 +47,7 @@ SOFTWARE.
 #include <yave/utils/color.h>
 #include <yave/utils/DirectDraw.h>
 
+#include <editor/renderer/EditorPass.h>
 #include <editor/utils/ui.h>
 
 namespace editor {
@@ -225,9 +226,12 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 
     if(is_mouse_inside()) {
         const math::Vec2 mouse_pos = to_y(ImGui::GetIO().MousePos) - to_y(ImGui::GetWindowPos());
+
         const IdBufferPass id_buffer = IdBufferPass::create(framegraph, renderer.renderer);
+        const EditorPass editor_pass = EditorPass::create(framegraph, id_buffer.scene_pass.scene_view, id_buffer.scene_pass.visibility, id_buffer.depth, FrameGraphImageId(), id_buffer.id);
+
         _picking_requests.emplace_back(
-            picking_pass(framegraph, id_buffer, math::Vec2ui(mouse_pos)),
+            picking_pass(framegraph, editor_pass.id, editor_pass.depth, math::Vec2ui(mouse_pos)),
             _scene_view.camera(),
             mouse_pos / math::Vec2(content_size()),
             recorder.create_fence()
@@ -604,15 +608,18 @@ void EngineView::draw_settings_menu() {
         }
 
         if(ImGui::BeginMenu("RTAO")) {
-            int ray = int(settings.rtao.ray_count);
-            ImGui::SliderInt("Ray count", &ray, 1, 16);
+            int rays = int(settings.rtao.ray_count);
+
+            ImGui::SliderInt("Ray count", &rays, 1, 16);
             ImGui::SliderFloat("Max ray length", &settings.rtao.max_dist, 0.25f, 8.0f);
             ImGui::Separator();
-            ImGui::Checkbox("Temporal stabilisation", &settings.rtao.temporal);
+            ImGui::SliderFloat("Cell size", &settings.rtao.base_cell_size, 0.01f, 0.5f);
+            ImGui::SliderFloat("LoD distance", &settings.rtao.lod_dist, 1.0f, 100.0f);
             ImGui::Separator();
             ImGui::SliderFloat("Filter sigma", &settings.rtao.filter_sigma, 0.0f, 8.0f);
-            settings.rtao.ray_count = ray;
             ImGui::EndMenu();
+
+            settings.rtao.ray_count = u32(rays);
         }
 
         ImGui::EndMenu();
