@@ -282,23 +282,6 @@ float histogram_bin_to_lum(uint bin) {
 
 
 
-
-
-
-uint hash(uint x) {
-    x += (x << 10u);
-    x ^= (x >>  6u);
-    x += (x <<  3u);
-    x ^= (x >> 11u);
-    x += (x << 15u);
-    return x;
-}
-
-uint hash(uint2 x) {
-    const uint2 q = 1103515245u * ((x >> 1u) ^ x.yx);
-    return 1103515245u * (q.x ^ (q.y >> 3u));
-}
-
 float component_max(float3 x) {
     return max(x.x, max(x.y, x.z));
 }

@@ -1,5 +1,5 @@
 #include "lib/utils.slang"
-
+#include "lib/hash.slang"
 
 [[vk::binding(0)]]
 RWTexture2D out_image;
@@ -109,7 +109,7 @@ void comp() {
 #else
     float4 acc = float4(in_gi.SampleLevel(uv, 0.0).rgb, 1.0);
 
-    const float random = float((hash(semantics.global_index) ^ seed) & 0x0FFFFFF) / 0x0FFFFFF;
+    const float random = float((hash.xorshift(semantics.global_index) ^ seed) & 0x0FFFFFF) / 0x0FFFFFF;
     const float random_angle = random * constants.pi * 2.0;
 
     const float step = 1.0 / sample_count;

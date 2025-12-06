@@ -1,5 +1,6 @@
 #include "lib/utils.slang"
 #include "lib/rt.slang"
+#include "lib/hash.slang"
 
 [[vk::binding(0)]]
 RWTexture2D out_image;
@@ -98,7 +99,7 @@ void comp() {
 #else
     float3 acc = float3(0.0);
     for(uint k = 0; k != sample_count; ++k) {
-        const float3 sample_dir = sample_dirs[hash(uint2(semantics.work_group_index, semantics.local_index * sample_count + k)) & 0xFF].xyz;
+        const float3 sample_dir = sample_dirs[hash.xorshift(semantics.work_group_index + hash.xorshift(semantics.local_index * sample_count + k)) & 0xFF].xyz;
         const float3 trace_dir = dot(surface.normal, sample_dir) < 0.0 ? -sample_dir : sample_dir;
 
         const float tmin = 0.001;
