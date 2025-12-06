@@ -2,6 +2,7 @@
 #define RT_SLANG
 
 #include "utils.slang"
+#include "hash.slang"
 
 struct HitInfo {
     bool hit;
@@ -67,5 +68,18 @@ HitInfo trace_inline_flags<uint flags>(RaytracingAccelerationStructure accel, fl
 HitInfo trace_inline(RaytracingAccelerationStructure accel, float3 origin, float3 dir, float min_dist, float max_dist) {
     return trace_inline_flags<RAY_FLAG_FORCE_OPAQUE>(accel, origin, dir, min_dist, max_dist);
 }
+
+float3 create_sample_dir(float3 normal, uint i) {
+    const uint h = hash.xx32(i);
+
+    float3 s;
+    for(uint k = 0; k != 3; ++k) {
+        s[k] = (hash.pcg(k + h) & 0xFFFF) / float(0xFFFF);
+    }
+    s = normalize(s * 2.0 - 1.0);
+
+    return dot(normal, s) < 0.0 ? -s : s;
+}
+
 
 #endif // RT_SLANG

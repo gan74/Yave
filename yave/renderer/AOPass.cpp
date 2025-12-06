@@ -197,24 +197,6 @@ static FrameGraphImageId compute_mini_ao(FrameGraph& framegraph, FrameGraphImage
 
 
 
-static auto generate_sample_dirs(u64 seed) {
-    y_profile();
-
-    std::array<math::Vec4, 256> dirs;
-    const float golden = (1.0f + std::sqrt(5.0f)) * 0.5f;
-    for(usize i = 0; i != dirs.size(); ++i) {
-        const float wrapped_index = float((i + usize(seed)) % dirs.size());
-
-        const float theta = 2.0f * math::pi<float> * wrapped_index * golden;
-        const float phi = std::acos(1.0f - 2.0f * wrapped_index / float(dirs.size()));
-        dirs[i] = math::Vec4(math::Vec2(std::cos(theta), std::sin(theta)) * std::sin(phi), std::cos(phi), 0.0f);
-    }
-
-    std::shuffle(dirs.begin(), dirs.end(), math::FastRandom(seed));
-
-    return dirs;
-}
-
 static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass& gbuffer, const AOSettings::RTAOSettings& settings) {
     const u32 hash_size = u32(1) << std::min(settings.hash_size, 30u);
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
@@ -226,10 +208,6 @@ static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass&
     const auto [hash, reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size * 3);
 
     const auto ao = builder.declare_image(VK_FORMAT_R8_UNORM, size);
-
-    const auto sample_dirs = generate_sample_dirs(framegraph.frame_id());
-    const auto sample_dir_buffer = builder.declare_typed_buffer<std::remove_cvref_t<decltype(sample_dirs)>>();
-    builder.map_buffer(sample_dir_buffer, sample_dirs);
 
     const struct Params {
         u32 sample_count;
@@ -256,7 +234,6 @@ static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass&
     builder.add_uniform_input(gbuffer.depth);
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_uniform_input(sample_dir_buffer);
     builder.add_inline_input(params);
     builder.add_descriptor_binding(Descriptor(tlas));
     builder.add_descriptor_binding(Descriptor(hash));

@@ -27,15 +27,14 @@ StructuredBuffer<MaterialData> materials;
 SamplerCube in_envmap;
 
 [[vk::binding(8)]]
-cbuffer SampleDirData { float4 sample_dirs[256]; };
-
-[[vk::binding(9)]]
 StructuredBuffer<DirectionalLight> lights;
 
-[[vk::binding(10)]]
+[[vk::binding(9)]]
 cbuffer Params {
     uint sample_count;
     uint resolution_scale;
+    uint frame_id;
+    uint padding;
 };
 
 [[vk::binding(0, 1)]]
@@ -98,9 +97,10 @@ void comp() {
     out_image[coord] = eval_hit_color(hit);
 #else
     float3 acc = float3(0.0);
+
+    const uint sample_index_offset = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
     for(uint k = 0; k != sample_count; ++k) {
-        const float3 sample_dir = sample_dirs[hash.xorshift(semantics.work_group_index + hash.xorshift(semantics.local_index * sample_count + k)) & 0xFF].xyz;
-        const float3 trace_dir = dot(surface.normal, sample_dir) < 0.0 ? -sample_dir : sample_dir;
+        const float3 trace_dir = create_sample_dir(surface.normal, sample_index_offset * sample_count + k);
 
         const float tmin = 0.001;
         const float tmax = 10000.0;

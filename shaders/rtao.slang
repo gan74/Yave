@@ -4,11 +4,6 @@
 #include "lib/hash.slang"
 #include "lib/spatial_hash.slang"
 
-
-// -------------------------------- DEFINES --------------------------------
-
-#define SAMPLE_BUFFER_SIZE 256
-
 // -------------------------------- I/O --------------------------------
 
 
@@ -25,11 +20,6 @@ Sampler2D<uint> in_rt1;
 ConstantBuffer<Camera> camera;
 
 [[vk::binding(4)]]
-cbuffer SampleDirData {
-    float4 sample_dirs[SAMPLE_BUFFER_SIZE];
-};
-
-[[vk::binding(5)]]
 cbuffer Params {
     uint sample_count;
     float max_dist;
@@ -42,18 +32,11 @@ cbuffer Params {
     uint reset_hash;
 };
 
-[[vk::binding(6)]]
+[[vk::binding(5)]]
 RaytracingAccelerationStructure tlas;
 
-[[vk::binding(7)]]
+[[vk::binding(6)]]
 RWStructuredBuffer<uint> hash_table;
-
-
-float3 compute_sample_dir(float3 normal, uint i) {
-    const float3 s = sample_dirs[i % SAMPLE_BUFFER_SIZE].xyz;
-    return dot(normal, s) < 0.0 ? -s : s;
-}
-
 
 uint payload_index(uint h) {
     return hash_size + h;
@@ -89,14 +72,15 @@ void main() {
     const HashKey key = HashKey.make_key(world_pos, normal, view_dist, base_cell_size, lod_dist);
 
 #ifdef UPDATE
-    const uint hash_index = find_bucket_index<true>(hash_table, key, hash_size);
+    bool inserted = false;
+    const uint hash_index = find_update_bucket_index(hash_table, key, hash_size, inserted);
     if(hash_index != constants.max_uint) {
         const float min_dist = lerp(0.001, 0.01, view_dist / (view_dist + 10.0));
-        const uint sample_index_offset = hash.xorshift(semantics.global_id.x + hash.xorshift(semantics.global_id.y));
+        const uint sample_index_offset = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
 
         uint occ = 0;
         for(uint i = 0; i != sample_count; ++i) {
-            const float3 sample_dir = compute_sample_dir(normal, i * 7 + sample_index_offset);
+            const float3 sample_dir = create_sample_dir(normal, i + sample_index_offset * sample_count);
             if(!trace_inline(tlas, world_pos, sample_dir, min_dist, max_dist).hit) {
                 ++occ;
             }
@@ -108,7 +92,7 @@ void main() {
         hash_table[timestamp_index(hash_index)] = frame_id;
     }
 #else
-    const uint hash_index = find_bucket_index<false>(hash_table, key, hash_size);
+    const uint hash_index = find_bucket_index(hash_table, key, hash_size);
     if(hash_index != constants.max_uint) {
         const uint payload = hash_table[payload_index(hash_index)];
         const float ao = float(payload >> 16) / float(payload & 0xFFFF);

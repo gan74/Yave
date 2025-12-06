@@ -4,6 +4,9 @@
 #include "utils.slang"
 #include "hash.slang"
 
+
+static const uint max_probe_len = 8;
+
 struct HashKey {
     uint prim;
     uint sec;
@@ -39,21 +42,36 @@ struct HashKey {
     }
 };
 
-uint find_bucket_index<let update : bool>(RWStructuredBuffer<uint> hash_table, HashKey key, uint hash_size) {
+
+uint find_update_bucket_index(RWStructuredBuffer<uint> hash_table, HashKey key, uint hash_size, out bool inserted) {
     const uint check = max(1, key.sec);
     const uint hash_mask = hash_size - 1;
 
-    for(uint i = 0; i != 8; ++i) {
+    for(uint i = 0; i != max_probe_len; ++i) {
         const uint index = (key.prim + i) & hash_mask;
 
         uint prev = 0;
-        if(update) {
-            InterlockedCompareExchange(hash_table[index], 0, check, prev);
-        } else {
-            prev = hash_table[index];
-        }
+        InterlockedCompareExchange(hash_table[index], 0, check, prev);
 
+        inserted = prev == 0;
         if(prev == 0 || prev == check) {
+            return index;
+        }
+    }
+
+    return constants.max_uint;
+}
+
+uint find_bucket_index(RWStructuredBuffer<uint> hash_table, HashKey key, uint hash_size) {
+    const uint check = max(1, key.sec);
+    const uint hash_mask = hash_size - 1;
+
+    for(uint i = 0; i != max_probe_len; ++i) {
+        const uint index = (key.prim + i) & hash_mask;
+
+        const uint prev = hash_table[index];
+
+        if(prev == check) {
             return index;
         }
     }
