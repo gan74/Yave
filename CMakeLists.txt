@@ -243,19 +243,9 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "rtao.slang" "")
     add_slang_shader(${SHADER_TARGET} "filter_ao.slang" "")
 
-    add_slang_shader(${SHADER_TARGET} "rtgi2.slang" "UPDATE")
-    add_slang_shader(${SHADER_TARGET} "rtgi2.slang" "APPLY")
-    add_slang_shader(${SHADER_TARGET} "rtgi2.slang" "TRIM")
-
-    add_slang_shader(${SHADER_TARGET} "rtgi.slang" "")
-    add_slang_shader(${SHADER_TARGET} "rtreuse.slang" "")
-
-    add_slang_shader(${SHADER_TARGET} "place_probes.slang" "")
-    add_slang_shader(${SHADER_TARGET} "trace_probes.slang" "")
-    add_slang_shader(${SHADER_TARGET} "update_probes.slang" "")
-    add_slang_shader(${SHADER_TARGET} "debug_probes.slang" "")
-    add_slang_shader(${SHADER_TARGET} "debug_hits.slang" "")
-    add_slang_shader(${SHADER_TARGET} "apply_probes.slang" "")
+    add_slang_shader(${SHADER_TARGET} "rtgi.slang" "UPDATE")
+    add_slang_shader(${SHADER_TARGET} "rtgi.slang" "APPLY")
+    add_slang_shader(${SHADER_TARGET} "rtgi.slang" "TRIM")
 endfunction(build_engine_shaders)
 
 function(build_editor_shaders SHADER_TARGET)

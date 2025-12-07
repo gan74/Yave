@@ -68,17 +68,9 @@ class DeviceResources final : NonMovable {
             RTAOTrimProgram,
             RTAOProgram,
 
-            RTGI2UpdateProgram,
-            RTGI2ApplyProgram,
-            RTGI2TrimProgram,
-
-            RTGIProgram,
-            RTReuseProgram,
-
-            PlaceProbesProgram,
-            TraceProbesProgram,
-            UpdateProbesProgram,
-            ApplyProbesProgram,
+            RTGIUpdateProgram,
+            RTGIApplyProgram,
+            RTGITrimProgram,
 
             MaxComputePrograms
         };
@@ -115,9 +107,6 @@ class DeviceResources final : NonMovable {
             DenoiseMaterialTemplate,
 
             IdMaterialTemplate,
-
-            DebugProbesTemplate,
-            DebugHitsTemplate,
 
             MaxMaterialTemplates
         };

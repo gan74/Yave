@@ -31,7 +31,6 @@ SOFTWARE.
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/device/DeviceResources.h>
 
-#include <y/math/random.h>
 
 namespace yave {
 

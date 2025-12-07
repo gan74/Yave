@@ -161,50 +161,6 @@ struct AtmosphereParams {
     float density_falloff;
 };
 
-struct SHBase {
-    float Y00, Y11, Y10, Y1_1, Y21, Y2_1, Y2_2, Y20, Y22;
-
-    SLANG_CTOR(SHBase)() {
-        Y00 = Y11 = Y10 = Y1_1 = Y21 = Y2_1 = Y2_2 = Y20 = Y22 = 0.0;
-    }
-};
-
-struct DDGIRayHit {
-    float3 position;
-    uint padding0;
-
-    float3 radiance;
-    uint padding1;
-
-    SLANG_CTOR(DDGIRayHit)() {
-        position = float3(0.0);
-        radiance = float3(0.0);
-        padding0 = 0;
-        padding1 = 0;
-    }
-};
-
-struct IrradianceFieldSampleParams {
-    float distance_bias;
-    float variance_bias;
-    float chebyshev_bias;
-    float sampling_normal_bias;
-    float sampling_view_dir_bias;
-
-    SLANG_CTOR(IrradianceFieldSampleParams)() {
-        distance_bias = 0.0;
-        variance_bias = 0.02;
-        chebyshev_bias = 0.07;
-        sampling_normal_bias = 0.05;
-        sampling_view_dir_bias = 0.25;
-    }
-};
-
-struct ProbeData {
-    float3 position;
-    float padding;
-};
-
 struct PickingData {
     float depth;
     uint entity_index;

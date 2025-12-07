@@ -564,22 +564,14 @@ void EngineView::draw_settings_menu() {
 
     if(ImGui::BeginMenu("RTGI")) {
         RTGISettings& settings = _settings.renderer_settings.rtgi;
+        int rays = int(settings.ray_count);
 
-        int samples = int(settings.sample_count);
-        int scale = int(settings.resolution_scale);
-        int denoise_iter = int(settings.denoise_iterations);
-        int denoise_samples = int(settings.denoise_sample_count);
-        ImGui::SliderInt("Samples", &samples, 1, 16);
-        ImGui::SliderInt("Resolution scale", &scale, 0, 4);
-        ImGui::Checkbox("Temporal stabilisation", &settings.temporal);
+        ImGui::SliderInt("Ray count", &rays, 1, 16);
         ImGui::Separator();
-        ImGui::SliderInt("Denoise samples", &denoise_samples, 1, 128);
-        ImGui::SliderInt("Denoise iterations", &denoise_iter, 0, 16);
+        ImGui::SliderFloat("Cell size", &settings.base_cell_size, 0.01f, 0.5f);
+        ImGui::SliderFloat("LoD distance", &settings.lod_dist, 1.0f, 100.0f);
+        settings.ray_count = u32(rays);
 
-        settings.sample_count = samples;
-        settings.resolution_scale = scale;
-        settings.denoise_iterations = denoise_iter;
-        settings.denoise_sample_count = denoise_samples;
         ImGui::EndMenu();
     }
 
@@ -617,9 +609,9 @@ void EngineView::draw_settings_menu() {
             ImGui::SliderFloat("LoD distance", &settings.rtao.lod_dist, 1.0f, 100.0f);
             ImGui::Separator();
             ImGui::SliderFloat("Filter sigma", &settings.rtao.filter_sigma, 0.0f, 8.0f);
-            ImGui::EndMenu();
 
             settings.rtao.ray_count = u32(rays);
+            ImGui::EndMenu();
         }
 
         ImGui::EndMenu();

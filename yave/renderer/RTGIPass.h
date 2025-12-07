@@ -27,14 +27,12 @@ SOFTWARE.
 namespace yave {
 
 struct RTGISettings {
-    u32 sample_count = 1;
+    u32 ray_count = 4;
 
-    u32 resolution_scale = 0; // Resolution /= (1 << resolution_scale)
+    u32 hash_size = 21;
+    float lod_dist = 10.0f;
+    float base_cell_size = 0.05f;
 
-    u32 denoise_iterations = 1;
-    u32 denoise_sample_count = 16;
-
-    bool temporal = true;
 };
 
 struct RTGIPass {

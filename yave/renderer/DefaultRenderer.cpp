@@ -44,7 +44,6 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     renderer.ao             = AOPass::create(framegraph, renderer.gbuffer, settings.ao);
     renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ao.ao, settings.lighting);
     renderer.rtgi           = RTGIPass::create(framegraph, renderer.gbuffer, renderer.lighting.lit, settings.rtgi);
-    // renderer.ddgi           = DDGIPass::create(framegraph, renderer.gbuffer, renderer.lighting.lit);
 
     renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.lighting.lit);
 

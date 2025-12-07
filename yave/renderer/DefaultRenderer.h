@@ -31,7 +31,6 @@ SOFTWARE.
 #include "BloomPass.h"
 #include "TAAPass.h"
 #include "RTGIPass.h"
-#include "DDGIPass.h"
 
 namespace yave {
 
@@ -52,7 +51,6 @@ struct DefaultRenderer {
     AOPass ao;
     LightingPass lighting;
     RTGIPass rtgi;
-    DDGIPass ddgi;
     AtmospherePass atmosphere;
     ExposurePass exposure;
     BloomPass bloom;
