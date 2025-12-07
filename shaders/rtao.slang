@@ -121,11 +121,11 @@ void main() {
     }
 
     const float min_dist = lerp(0.001, 0.01, view_dist / (view_dist + 10.0));
-    const uint sample_index_offset = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
+    const uint seed = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
 
     uint occ = 0;
     for(uint i = 0; i != sample_count; ++i) {
-        const float3 sample_dir = sample_hemisphere(normal, sample_index_offset * sample_count + i);
+        const float3 sample_dir = sample_hemisphere(normal, seed * sample_count + i);
         if(!trace_inline(tlas, world_pos, sample_dir, min_dist, max_dist).hit) {
             ++occ;
         }

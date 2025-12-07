@@ -26,9 +26,9 @@ struct HashKey {
         return uint(exp2(floor(log2(1.0 + (view_dist / lod_dist)))));
     }
 
-    static HashKey make_key(float3 world_pos, float3 normal, float base_cell_size, uint lod) {
+    static HashKey make_key(float3 world_pos, float3 normal, float base_cell_size, uint lod, float3 jitter = float3(0.0)) {
         const float cell_size = base_cell_size * lod;
-        const int3 p_i = int3(floor(world_pos / cell_size));
+        const int3 p_i = int3(floor(world_pos / cell_size + jitter));
         const int3 n_i = int3(normal * 3.0);
 
         HashKey k;
