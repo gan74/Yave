@@ -25,6 +25,11 @@ cbuffer Params {
     float lod_dist;
     float base_cell_size;
     uint frame_id;
+
+    uint reset_hash;
+    float max_samples;
+    uint padding1;
+    uint padding2;
 };
 
 
@@ -53,10 +58,13 @@ float4 eval_material_color(uint instance_id) {
     return all_textures[albedo_id].SampleLevel(float2(0.5), 100.0);
 }
 
+uint timestamp_index(uint h) {
+    return hash_size + h;
+}
 
 
 
-
+#ifndef TRIM
 [shader("compute")]
 [numthreads(8, 8)]
 void main() {
@@ -78,7 +86,6 @@ void main() {
     const SurfaceInfo surface = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1[coord]));
     const float3 view_vec = (world_pos - camera.position);
     const float view_dist = length(view_vec);
-    const float3 view_dir = view_vec / view_dist;
 
     const HashKey key = HashKey.make_key(world_pos, surface.normal, view_dist, base_cell_size, lod_dist);
 
@@ -127,13 +134,41 @@ void main() {
         }
     }
 
+    hash_table[timestamp_index(hash_index)] = frame_id;
+
     if(acc.a > 0.0) {
         for(uint i = 0; i != 4; ++i) {
             float prev;
             InterlockedAdd(sum_table[hash_index * 4 + i], acc[i], prev);
         }
     }
-
 #endif
 }
+#else
+[shader("compute")]
+[numthreads(64)]
+void main() {
+    const uint h = semantics.global_index;
 
+    if(reset_hash > 0 || hash_table[timestamp_index(h)] == (frame_id - 4)) {
+        hash_table[h] = 0;
+        for(uint i = 0; i != 4; ++i) {
+            sum_table[h * 4 + i] = 0.0;
+        }
+    } else {
+        float4 acc;
+        for(uint i = 0; i != 4; ++i) {
+            acc[i] = sum_table[h * 4 + i];
+        }
+
+        if(acc.a > max_samples) {
+            acc.rgb *= max_samples / acc.a;
+            acc.a = max_samples;
+
+            for(uint i = 0; i != 4; ++i) {
+                sum_table[h * 4 + i] = acc[i];
+            }
+        }
+    }
+}
+#endif

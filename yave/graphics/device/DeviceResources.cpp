@@ -127,6 +127,7 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "rtao",
     "rtgi2",
     "rtgi2_APPLY",
+    "rtgi2_TRIM",
     "rtgi",
     "rtreuse",
     "place_probes",

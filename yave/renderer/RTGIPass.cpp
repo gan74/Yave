@@ -87,19 +87,29 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     static const FrameGraphPersistentResourceId persistent_hash_id = FrameGraphPersistentResourceId::create();
     static const FrameGraphPersistentResourceId persistent_sum_id = FrameGraphPersistentResourceId::create();
-    const auto [hash, hash_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size);
+    const auto [hash, hash_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size * 2);
     const auto [sum, sum_reset] = framegraph.create_scratch_buffer<math::Vec4, BufferUsage::StorageBit>(persistent_sum_id, hash_size);
 
     const struct Params {
         u32 hash_size;
         float lod_dist;
         float base_cell_size;
-        u32 padding;
+        u32 frame_id;
+
+        u32 reset_hash;
+        float max_samples;
+        u32 padding1;
+        u32 padding2;
     } params {
         hash_size,
         10.0f,
         0.05f,
         u32(framegraph.frame_id()),
+
+        (hash_reset || sum_reset) ? 1 : 0,
+        1024.0f,
+        0,
+        0
     };
 
 
@@ -148,6 +158,8 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
             BufferBarrier(sum, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
         };
 
+        recorder.dispatch_threads(device_resources()[DeviceResources::RTGI2TrimProgram], math::Vec2ui(hash_size, 1), desc_sets);
+        recorder.barriers(barriers);
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGI2Program], size, desc_sets);
         recorder.barriers(barriers);
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGI2ApplyProgram], size, desc_sets);

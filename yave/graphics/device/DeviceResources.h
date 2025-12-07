@@ -70,6 +70,7 @@ class DeviceResources final : NonMovable {
 
             RTGI2Program,
             RTGI2ApplyProgram,
+            RTGI2TrimProgram,
 
             RTGIProgram,
             RTReuseProgram,

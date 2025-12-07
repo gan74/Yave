@@ -245,6 +245,7 @@ function(build_engine_shaders SHADER_TARGET)
 
     add_slang_shader(${SHADER_TARGET} "rtgi2.slang" "")
     add_slang_shader(${SHADER_TARGET} "rtgi2.slang" "APPLY")
+    add_slang_shader(${SHADER_TARGET} "rtgi2.slang" "TRIM")
 
     add_slang_shader(${SHADER_TARGET} "rtgi.slang" "")
     add_slang_shader(${SHADER_TARGET} "rtreuse.slang" "")
