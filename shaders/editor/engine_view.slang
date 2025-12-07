@@ -57,7 +57,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     } else if(target_index == 7) {
         color = float3(in_ao.Sample(in_uv));
     } else if(target_index == 8) {
-        color = is_depth_far(depth) ? float3(0.0) : in_gi.Sample(in_uv).rgb;
+        color = is_depth_far(depth) ? float3(0.0) : (in_gi.Sample(in_uv).rgb * constants.pi);
     }
 
     return float4(color, 1.0);

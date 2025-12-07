@@ -11,6 +11,7 @@
 
 
 #define REINJECT
+// #define EMISSIVE
 
 
 [[vk::binding(0)]]
@@ -200,7 +201,9 @@ void main() {
         if(hit.hit) {
             const float3 hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
             const RTGIMaterial material = eval_material(hit.instance_id);
+#ifdef EMISSIVE
             acc.rgb += material.emissive;
+#endif
             for(uint k = 0; k != light_count; ++k) {
                 const DirectionalLight light = lights[k];
                 const float n_l = dot(light.direction, hit_normal);
