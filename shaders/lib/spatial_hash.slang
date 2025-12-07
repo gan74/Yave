@@ -17,7 +17,7 @@ struct HashKey {
     }
 
     [mutating]
-    void append(uint val) {
+    private void append(uint val) {
         prim = hash.pcg(prim + val);
         sec = hash.xx32(sec + val);
     }

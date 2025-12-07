@@ -10,6 +10,9 @@
 #endif
 
 
+#define REINJECT
+
+
 [[vk::binding(0)]]
 Sampler2D<float> in_depth;
 
@@ -98,6 +101,17 @@ void main() {
 
 
 #if defined(UPDATE) || defined(APPLY)
+
+float4 value_at(uint index) {
+    float4 acc;
+    for(uint i = 0; i != 4; ++i) {
+        acc[i] = sum_table[index * 4 + i];
+    }
+    return acc;
+}
+
+
+
 [shader("compute")]
 [numthreads(8, 8)]
 void main() {
@@ -127,10 +141,7 @@ void main() {
     if(hash_index == constants.max_uint) {
         out_image[coord] = float4(0.0);
     } else {
-        float4 acc;
-        for(uint i = 0; i != 4; ++i) {
-            acc[i] = sum_table[hash_index * 4 + i];
-        }
+        const float4 acc = value_at(hash_index);
         out_image[coord] = float4(acc.rgb / acc.a, 1.0);
     }
 #endif
@@ -142,12 +153,29 @@ void main() {
         return;
     }
 
+    float4 acc = float4(0.0);
+
+#ifdef REINJECT
+    if(inserted) {
+        {
+            const uint index = find_bucket_index(hash_table, HashKey.make_key(world_pos, surface.normal, base_cell_size, lod_level + 1), hash_size);
+            if(index != constants.max_uint) {
+                acc += value_at(index);
+            }
+        }
+        if(lod_level > 0) {
+            const uint index = find_bucket_index(hash_table, HashKey.make_key(world_pos, surface.normal, base_cell_size, lod_level - 1), hash_size);
+            if(index != constants.max_uint) {
+                acc += value_at(index);
+            }
+        }
+    }
+#endif
+
     const float samples = sum_table[hash_index * 4 + 3];
     const float lod_factor = (1.0 + lod_level);
     const float ray_factor = pow(1.0 - saturate(samples * lod_factor / max_samples), 6.0);
     const uint ray_count = uint(ceil(lerp(1.0, float(max_ray_count), ray_factor)));
-
-    float3 acc = float3(0.0);
 
     const uint sample_index_offset = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
     for(uint i = 0; i != ray_count; ++i) {
@@ -167,20 +195,21 @@ void main() {
                 if(!trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
                     const float4 albedo = eval_material_color(hit.instance_id);
                     const float3 diffuse = albedo.rgb * light.color * n_l;
-                    acc += diffuse * n_t; // div by PI
+                    acc.rgb += diffuse * n_t; // div by PI
                 }
             }
         } else {
-            acc += in_envmap.SampleLevel(trace_dir, 0.0).rgb * n_t;
+            acc.rgb += in_envmap.SampleLevel(trace_dir, 0.0).rgb * n_t;
         }
+
+        acc.a += 1.0;
     }
 
     hash_table[timestamp_index(hash_index)] = frame_id;
 
-    float prev;
-    InterlockedAdd(sum_table[hash_index * 4 + 3], float(ray_count), prev);
-    for(uint i = 0; i != 3; ++i) {
+    for(uint i = 0; i != 4; ++i) {
         if(acc[i] > 0.0) {
+            float prev;
             InterlockedAdd(sum_table[hash_index * 4 + i], acc[i], prev);
         }
     }
