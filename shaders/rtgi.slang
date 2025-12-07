@@ -61,10 +61,20 @@ RWTexture2D out_image;
 Sampler2D all_textures[];
 
 
-float4 eval_material_color(uint instance_id) {
+
+struct RTGIMaterial {
+    float3 albedo;
+    float3 emissive;
+};
+
+RTGIMaterial eval_material(uint instance_id) {
     const MaterialData material = materials[instance_id];
     const uint albedo_id = material.texture_indices[uint(TextureSlots::Albedo)];
-    return all_textures[albedo_id].SampleLevel(float2(0.5), 100.0);
+    const uint emissive_id = material.texture_indices[uint(TextureSlots::Emissive)];
+    return RTGIMaterial(
+        all_textures[NonUniformResourceIndex(albedo_id)].SampleLevel(float2(0.5), 100.0).rgb * material.base_color_factor,
+        all_textures[NonUniformResourceIndex(emissive_id)].SampleLevel(float2(0.5), 100.0).rgb * material.emissive_factor,
+    );
 }
 
 uint timestamp_index(uint h) {
@@ -189,14 +199,14 @@ void main() {
 
         if(hit.hit) {
             const float3 hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
+            const RTGIMaterial material = eval_material(hit.instance_id);
+            acc.rgb += material.emissive;
             for(uint k = 0; k != light_count; ++k) {
                 const DirectionalLight light = lights[k];
                 const float n_l = dot(light.direction, hit_normal);
                 if(n_l > 0.0) {
                     if(!trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
-                        const float4 albedo = eval_material_color(hit.instance_id);
-                        const float3 diffuse = albedo.rgb * light.color * n_l;
-                        acc.rgb += diffuse * n_t;
+                        acc.rgb += (material.albedo * light.color * n_l * n_t);
                     }
                 }
             }
