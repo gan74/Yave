@@ -107,7 +107,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         u32(framegraph.frame_id()),
 
         (hash_reset || sum_reset) ? 1 : 0,
-        1024.0f,
+        float(16 * 1024),
         0,
         0
     };

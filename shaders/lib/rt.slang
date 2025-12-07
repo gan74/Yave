@@ -69,7 +69,7 @@ HitInfo trace_inline(RaytracingAccelerationStructure accel, float3 origin, float
     return trace_inline_flags<RAY_FLAG_FORCE_OPAQUE>(accel, origin, dir, min_dist, max_dist);
 }
 
-float3 create_sample_dir(float3 normal, uint i) {
+float3 sample_hemisphere(float3 normal, uint i) {
     const uint h = hash.xx32(i);
 
     float3 s;

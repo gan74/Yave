@@ -109,10 +109,11 @@ void main() {
 
     float4 acc = float4(0.0);
 
-    const uint sample_count = 1;
+    const uint sample_count = 16;
     const uint sample_index_offset = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
     for(uint k = 0; k != sample_count; ++k) {
-        const float3 trace_dir = create_sample_dir(surface.normal, sample_index_offset * sample_count + k);
+        const float3 trace_dir = sample_hemisphere(surface.normal, sample_index_offset * sample_count + k);
+        const float n_t = dot(surface.normal, trace_dir);
 
         const float tmin = 0.001;
         const float tmax = 10000.0;
@@ -126,11 +127,14 @@ void main() {
             if(n_l > 0.0) {
                 if(!trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
                     const float4 albedo = eval_material_color(hit.instance_id);
-                    acc += float4(albedo.rgb * light.color * n_l * dot(surface.normal, trace_dir), 1.0);
+                    const float3 diffuse = albedo.rgb * light.color * n_l;
+                    acc.rgb += diffuse * n_t; // div by PI
+                    acc.a += 1.0;
                 }
             }
         } else {
-            acc += float4(in_envmap.SampleLevel(trace_dir, 0.0).rgb, 1.0);
+            acc.rgb += in_envmap.SampleLevel(trace_dir, 0.0).rgb * n_t;
+            acc.a += 1.0;
         }
     }
 

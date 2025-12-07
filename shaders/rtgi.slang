@@ -100,7 +100,7 @@ void comp() {
 
     const uint sample_index_offset = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
     for(uint k = 0; k != sample_count; ++k) {
-        const float3 trace_dir = create_sample_dir(surface.normal, sample_index_offset * sample_count + k);
+        const float3 trace_dir = sample_hemisphere(surface.normal, sample_index_offset * sample_count + k);
 
         const float tmin = 0.001;
         const float tmax = 10000.0;

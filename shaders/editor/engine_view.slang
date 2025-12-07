@@ -38,6 +38,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     ));
 
     const float3 final = in_final[coord].rgb;
+    const float depth = in_depth[coord];
 
     float3 color = linear_to_sRGB(final);
     if(target_index == 1) {
@@ -49,7 +50,6 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     } else if(target_index == 4) {
         color = float3(surface.perceptual_roughness);
     } else if(target_index == 5) {
-        const float depth = in_depth[coord];
         color = float3(pow(depth, 0.35));
     } else if(target_index == 6) {
         const float2 motion = in_motion[coord];
@@ -57,7 +57,7 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     } else if(target_index == 7) {
         color = float3(in_ao.Sample(in_uv));
     } else if(target_index == 8) {
-        color = in_gi.Sample(in_uv).rgb;
+        color = is_depth_far(depth) ? float3(0.0) : in_gi.Sample(in_uv).rgb;
     }
 
     return float4(color, 1.0);

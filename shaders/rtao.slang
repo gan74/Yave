@@ -80,7 +80,7 @@ void main() {
 
         uint occ = 0;
         for(uint i = 0; i != sample_count; ++i) {
-            const float3 sample_dir = create_sample_dir(normal, i + sample_index_offset * sample_count);
+            const float3 sample_dir = sample_hemisphere(normal, i + sample_index_offset * sample_count);
             if(!trace_inline(tlas, world_pos, sample_dir, min_dist, max_dist).hit) {
                 ++occ;
             }
