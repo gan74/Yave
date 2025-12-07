@@ -239,8 +239,9 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "bilateral.slang" "HORIZONTAL")
 
     add_slang_shader(${SHADER_TARGET} "rtao.slang" "UPDATE")
+    add_slang_shader(${SHADER_TARGET} "rtao.slang" "APPLY")
     add_slang_shader(${SHADER_TARGET} "rtao.slang" "TRIM")
-    add_slang_shader(${SHADER_TARGET} "rtao.slang" "")
+
     add_slang_shader(${SHADER_TARGET} "filter_ao.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "rtgi.slang" "UPDATE")
