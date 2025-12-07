@@ -146,7 +146,9 @@ static void init_vk_device() {
     const usize queue_count = 1;
 
     device::enabled_extensions.make_empty();
-    device::enabled_extensions << VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+    for(const char* ext : required_extensions()) {
+        y_always_assert(try_enable_extension(device::enabled_extensions, ext, physical_device()), "Device doesn't support required extension ({})", ext);
+    }
 
     if(raytracing_enabled()) {
         for(const char* ext_name : raytracing_extensions()) {
@@ -163,6 +165,8 @@ static void init_vk_device() {
     auto required_features_1_2 = required_device_features_1_2();
     auto required_features_1_3 = required_device_features_1_3();
     auto required_features_1_4 = required_device_features_1_4();
+
+    auto required_features_shader_float_atomic = required_device_features_shader_float_atomic();
 
     auto required_features_accel = required_device_features_accel_struct();
     auto required_features_raytracing = required_device_features_raytracing_pipeline();
@@ -193,6 +197,7 @@ static void init_vk_device() {
         required_features_1_1.pNext = &required_features_1_2;
         required_features_1_2.pNext = &required_features_1_3;
         required_features_1_3.pNext = &required_features_1_4;
+        required_features_1_4.pNext = &required_features_shader_float_atomic;
     }
 
     if(raytracing_enabled()) {

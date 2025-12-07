@@ -101,6 +101,8 @@ VK_STRUCT_TYPE(VkDebugUtilsLabelEXT,                                VK_STRUCTURE
 VK_STRUCT_TYPE(VkDebugUtilsObjectNameInfoEXT,                       VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT)
 VK_STRUCT_TYPE(VkValidationFeaturesEXT,                             VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT)
 
+VK_STRUCT_TYPE(VkPhysicalDeviceShaderAtomicFloatFeaturesEXT,        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT)
+
 VK_STRUCT_TYPE(VkCheckpointDataNV,                                  VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV)
 
 
