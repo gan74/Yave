@@ -72,34 +72,38 @@ void main() {
     const HashKey key = HashKey.make_key(world_pos, normal, view_dist, base_cell_size, lod_dist);
 
 #ifdef UPDATE
-    bool inserted = false;
+    /*bool inserted = false;
     const uint hash_index = find_update_bucket_index(hash_table, key, hash_size, inserted);
-    if(hash_index != constants.max_uint) {
-        const float min_dist = lerp(0.001, 0.01, view_dist / (view_dist + 10.0));
-        const uint sample_index_offset = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
+    if(hash_index == constants.max_uint) {
+        return;
+    }*/
 
-        uint occ = 0;
-        for(uint i = 0; i != sample_count; ++i) {
-            const float3 sample_dir = sample_hemisphere(normal, i + sample_index_offset * sample_count);
-            if(!trace_inline(tlas, world_pos, sample_dir, min_dist, max_dist).hit) {
-                ++occ;
-            }
+    const float min_dist = lerp(0.001, 0.01, view_dist / (view_dist + 10.0));
+    const uint sample_index_offset = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
+
+    uint occ = 0;
+    for(uint i = 0; i != sample_count; ++i) {
+        const float3 sample_dir = sample_hemisphere(normal, sample_index_offset * sample_count + i);
+        if(!trace_inline(tlas, world_pos, sample_dir, min_dist, max_dist).hit) {
+            ++occ;
         }
-        const uint payload = (occ << 16) + sample_count;
-
-        uint prev;
-        InterlockedAdd(hash_table[payload_index(hash_index)], payload, prev);
-        hash_table[timestamp_index(hash_index)] = frame_id;
     }
+    /*const uint payload = (occ << 16) + sample_count;
+
+    uint prev;
+    InterlockedAdd(hash_table[payload_index(hash_index)], payload, prev);
+    hash_table[timestamp_index(hash_index)] = frame_id;*/
+
+    out_ao[coord] = occ / float(sample_count);
 #else
-    const uint hash_index = find_bucket_index(hash_table, key, hash_size);
-    if(hash_index != constants.max_uint) {
+    /*const uint hash_index = find_bucket_index(hash_table, key, hash_size);
+    if(hash_index == constants.max_uint) {
         const uint payload = hash_table[payload_index(hash_index)];
         const float ao = float(payload >> 16) / float(payload & 0xFFFF);
         out_ao[coord] = ao;
     } else {
         out_ao[coord] = 0.0;
-    }
+    }*/
 #endif
 }
 #else

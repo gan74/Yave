@@ -84,8 +84,7 @@ void main() {
     const float2 uv = (coord + 0.5) / float2(size);
     const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
     const SurfaceInfo surface = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1[coord]));
-    const float3 view_vec = (world_pos - camera.position);
-    const float view_dist = length(view_vec);
+    const float view_dist = length(world_pos - camera.position);
 
     const HashKey key = HashKey.make_key(world_pos, surface.normal, view_dist, base_cell_size, lod_dist);
 
@@ -94,11 +93,11 @@ void main() {
     if(hash_index == constants.max_uint) {
         out_image[coord] = float4(0.0);
     } else {
-        float4 gi = float4(0.0);
+        float4 acc;
         for(uint i = 0; i != 4; ++i) {
-            gi[i] = sum_table[hash_index * 4 + i];
+            acc[i] = sum_table[hash_index * 4 + i];
         }
-        out_image[coord] = float4(gi.rgb / gi.a, 1.0);
+        out_image[coord] = float4(acc.rgb / acc.a, 1.0);
     }
 #else
     bool inserted = false;
@@ -107,11 +106,11 @@ void main() {
         return;
     }
 
-    float4 acc = float4(0.0);
+    float3 acc = float3(0.0);
 
     const uint sample_index_offset = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
-    for(uint k = 0; k != sample_count; ++k) {
-        const float3 trace_dir = sample_hemisphere(surface.normal, sample_index_offset * sample_count + k);
+    for(uint i = 0; i != sample_count; ++i) {
+        const float3 trace_dir = sample_hemisphere(surface.normal, sample_index_offset * sample_count + i);
         const float n_t = dot(surface.normal, trace_dir);
 
         const float tmin = 0.001;
@@ -127,21 +126,20 @@ void main() {
                 if(!trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
                     const float4 albedo = eval_material_color(hit.instance_id);
                     const float3 diffuse = albedo.rgb * light.color * n_l;
-                    acc.rgb += diffuse * n_t; // div by PI
-                    acc.a += 1.0;
+                    acc += diffuse * n_t; // div by PI
                 }
             }
         } else {
-            acc.rgb += in_envmap.SampleLevel(trace_dir, 0.0).rgb * n_t;
-            acc.a += 1.0;
+            acc += in_envmap.SampleLevel(trace_dir, 0.0).rgb * n_t;
         }
     }
 
     hash_table[timestamp_index(hash_index)] = frame_id;
 
-    if(acc.a > 0.0) {
-        for(uint i = 0; i != 4; ++i) {
-            float prev;
+    float prev;
+    InterlockedAdd(sum_table[hash_index * 4 + 3], float(sample_count), prev);
+    for(uint i = 0; i != 3; ++i) {
+        if(acc[i] > 0.0) {
             InterlockedAdd(sum_table[hash_index * 4 + i], acc[i], prev);
         }
     }
