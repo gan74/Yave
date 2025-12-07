@@ -243,7 +243,7 @@ static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass&
         recorder.barriers(barrier);
         recorder.dispatch_threads(device_resources()[DeviceResources::RTAOUpdateProgram], size, self->descriptor_set());
         recorder.barriers(barrier);
-        recorder.dispatch_threads(device_resources()[DeviceResources::RTAOProgram], size, self->descriptor_set());
+        recorder.dispatch_threads(device_resources()[DeviceResources::RTAOApplyProgram], size, self->descriptor_set());
     });
 
     return ao;
@@ -259,8 +259,8 @@ static FrameGraphImageId filter_ao(FrameGraph& framegraph, const GBufferPass& gb
     const auto weights = math::compute_gaussian_weights<float, 4>(sigma);
 
     struct Params {
-            std::array<float, 4> weights;
-            math::Vec2i offset;
+        std::array<float, 4> weights;
+        math::Vec2i offset;
     };
 
     builder.add_uniform_input(in_ao);

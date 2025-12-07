@@ -195,6 +195,7 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "atmosphere.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "deferred_ambient.slang" "")
+    add_slang_shader(${SHADER_TARGET} "deferred_ambient.slang" "GI")
 
     add_slang_shader(${SHADER_TARGET} "blur.slang" "HORIZONTAL")
     add_slang_shader(${SHADER_TARGET} "blur.slang" "VERTICAL")

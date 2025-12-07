@@ -34,14 +34,21 @@ SOFTWARE.
 
 namespace yave {
 
+enum class AmbientPipe {
+    GI,
+    IBLOcclusion,
+};
+
 struct RendererSettings {
     ToneMappingSettings tone_mapping;
     AOSettings ao;
-    LightingSettings lighting;
     RTGISettings rtgi;
+    LightingSettings lighting;
     BloomSettings bloom;
     JitterSettings jitter;
     TAASettings taa;
+
+    AmbientPipe ambient_pipe = AmbientPipe::GI;
 };
 
 struct DefaultRenderer {
@@ -49,8 +56,8 @@ struct DefaultRenderer {
     CameraBufferPass camera;
     GBufferPass gbuffer;
     AOPass ao;
-    LightingPass lighting;
     RTGIPass rtgi;
+    LightingPass lighting;
     AtmospherePass atmosphere;
     ExposurePass exposure;
     BloomPass bloom;

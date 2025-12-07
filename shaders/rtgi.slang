@@ -38,7 +38,7 @@ cbuffer Params {
     uint reset_hash;
     float max_samples;
     uint max_ray_count;
-    uint padding;
+    uint light_count;
 };
 
 
@@ -174,13 +174,13 @@ void main() {
 
     const float samples = sum_table[hash_index * 4 + 3];
     const float lod_factor = (1.0 + lod_level);
-    const float ray_factor = pow(1.0 - saturate(samples * lod_factor / max_samples), 6.0);
+    const float ray_factor = sqr(1.0 - saturate(samples * lod_factor / max_samples));
     const uint ray_count = uint(ceil(lerp(1.0, float(max_ray_count), ray_factor)));
 
     const uint sample_index_offset = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
     for(uint i = 0; i != ray_count; ++i) {
         const float3 trace_dir = sample_hemisphere(surface.normal, sample_index_offset * max_ray_count + i);
-        const float n_t = dot(surface.normal, trace_dir);
+        const float n_t = dot(surface.normal, trace_dir) * constants.inv_pi;
 
         const float tmin = 0.001;
         const float tmax = 10000.0;
@@ -188,14 +188,16 @@ void main() {
         const HitInfo hit = trace_inline(tlas, world_pos, trace_dir, tmin, tmax);
 
         if(hit.hit) {
-            const DirectionalLight light = lights[0];
             const float3 hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
-            const float n_l = dot(light.direction, hit_normal);
-            if(n_l > 0.0) {
-                if(!trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
-                    const float4 albedo = eval_material_color(hit.instance_id);
-                    const float3 diffuse = albedo.rgb * light.color * n_l;
-                    acc.rgb += diffuse * n_t; // div by PI
+            for(uint k = 0; k != light_count; ++k) {
+                const DirectionalLight light = lights[k];
+                const float n_l = dot(light.direction, hit_normal);
+                if(n_l > 0.0) {
+                    if(!trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
+                        const float4 albedo = eval_material_color(hit.instance_id);
+                        const float3 diffuse = albedo.rgb * light.color * n_l;
+                        acc.rgb += diffuse * n_t;
+                    }
                 }
             }
         } else {

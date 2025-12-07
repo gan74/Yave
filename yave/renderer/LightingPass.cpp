@@ -22,6 +22,9 @@ SOFTWARE.
 
 #include "LightingPass.h"
 
+#include "AOPass.h"
+#include "RTGIPass.h"
+
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
@@ -56,7 +59,8 @@ static constexpr usize max_spot_lights = 1024;
 static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                                              const GBufferPass& gbuffer,
                                              const ShadowMapPass& shadow_pass,
-                                             FrameGraphImageId ao) {
+                                             FrameGraphImageId ao_or_gi,
+                                             bool is_gi) {
 
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
 
@@ -77,7 +81,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.add_uniform_input(gbuffer.color);
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow);
-    builder.add_uniform_input_with_default(ao, Descriptor(white));
+    builder.add_uniform_input_with_default(ao_or_gi, Descriptor(white));
     builder.add_external_input(*ibl_probe);
     builder.add_external_input(Descriptor(device_resources().brdf_lut(), SamplerType::LinearClamp));
     builder.add_uniform_input(gbuffer.scene_pass.camera);
@@ -125,7 +129,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
             };
         }
 
-        const auto* material = device_resources()[DeviceResources::DeferredAmbientMaterialTemplate];
+        const auto* material = device_resources()[is_gi ? DeviceResources::DeferredGIMaterialTemplate : DeviceResources::DeferredAmbientMaterialTemplate];
         render_pass.bind_material_template(material, self->descriptor_set());
         render_pass.draw_array(3);
     });
@@ -356,13 +360,13 @@ static void local_lights_pass(FrameGraph& framegraph,
     }
 }
 
-LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId ao, const LightingSettings& settings) {
+static LightingPass create_ao_or_gi(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId ao_or_gi, bool is_gi, const LightingSettings& settings) {
     const auto region = framegraph.region("Lighting");
 
     LightingPass pass;
     pass.shadow_pass = ShadowMapPass::create(framegraph, gbuffer.scene_pass.visibility, settings.shadow_settings);
 
-    const auto lit = ambient_pass(framegraph, gbuffer, pass.shadow_pass, ao);
+    const auto lit = ambient_pass(framegraph, gbuffer, pass.shadow_pass, ao_or_gi, is_gi);
 
     if(settings.use_compute_for_locals) {
         local_lights_pass_compute(framegraph, lit, gbuffer, pass.shadow_pass, settings.debug_tiles);
@@ -373,6 +377,17 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
     pass.lit = lit;
     return pass;
 }
+
+
+
+LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const AOPass &ao, const LightingSettings& settings) {
+    return create_ao_or_gi(framegraph, gbuffer, ao.ao, false, settings);
+}
+
+LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const RTGIPass& gi, const LightingSettings& settings) {
+    return create_ao_or_gi(framegraph, gbuffer, gi.gi, true, settings);
+}
+
 
 }
 

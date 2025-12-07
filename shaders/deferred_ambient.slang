@@ -3,9 +3,6 @@
 
 // -------------------------------- DEFINES --------------------------------
 
-#define USE_IBL
-#define USE_AO
-
 // #define DEBUG_CASCADES
 
 // -------------------------------- I/O --------------------------------
@@ -23,8 +20,13 @@ Sampler2D<uint> in_rt1;
 [[vk::binding(3)]]
 Sampler2DShadow in_shadows;
 
+#ifdef GI
+[[vk::binding(4)]]
+Sampler2D in_gi;
+#else
 [[vk::binding(4)]]
 Sampler2D<float> in_ao;
+#endif
 
 [[vk::binding(5)]]
 SamplerCube in_envmap;
@@ -123,11 +125,9 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     if(is_depth_far(depth)) {
         const float3 view_dir = -view_direction(camera, in_uv);
 
-#if defined(USE_IBL)
         if(display_sky != 0) {
             irradiance = in_envmap.SampleLevel(view_dir, 0.0).rgb;
         }
-#endif
 
         for(uint i = 0; i != light_count; ++i) {
             const DirectionalLight light = lights[i];
@@ -163,12 +163,10 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
             }
         }
 
-#ifdef USE_IBL
-        irradiance += eval_ibl(in_envmap, brdf_lut, view_dir, surface) * ibl_intensity;
-#endif
-
-#ifdef USE_AO
-        irradiance *= in_ao.Sample(in_uv);
+#ifdef GI
+        irradiance += surface.albedo * in_gi[coord].rgb;
+#else
+        irradiance += eval_ibl(in_envmap, brdf_lut, view_dir, surface) * ibl_intensity * in_ao.Sample(in_uv);
 #endif
 
 #if defined(DEBUG_CASCADES)

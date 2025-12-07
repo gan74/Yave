@@ -48,9 +48,16 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     const u32 hash_size = u32(1) << std::min(settings.hash_size, 30u);
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
+    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
+    const TLAS& tlas = scene_view.scene()->tlas();
+
+    const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
+    const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
+
+
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("RTGI pass");
 
-    const auto gi = builder.declare_image(VK_FORMAT_R16G16B16A16_SFLOAT, size);
+    const auto gi = builder.declare_image(VK_FORMAT_B10G11R11_UFLOAT_PACK32, size);
 
     static const FrameGraphPersistentResourceId persistent_hash_id = FrameGraphPersistentResourceId::create();
     static const FrameGraphPersistentResourceId persistent_sum_id = FrameGraphPersistentResourceId::create();
@@ -66,7 +73,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         u32 reset_hash;
         float max_samples;
         u32 max_ray_count;
-        u32 padding;
+        u32 light_count;
     } params {
         hash_size,
         settings.lod_dist,
@@ -76,15 +83,8 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         u32(hash_reset || sum_reset ? 1 : 0),
         4096.0f,
         settings.max_ray_count,
-        0,
+        u32(visibility.directional_lights.size()),
     };
-
-
-    const SceneView& scene_view = gbuffer.scene_pass.scene_view;
-    const TLAS& tlas = scene_view.scene()->tlas();
-
-    const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
-    const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
 
     const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
     builder.map_buffer(directional_buffer);

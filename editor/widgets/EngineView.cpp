@@ -530,6 +530,22 @@ void EngineView::draw_resolution_menu() {
 }
 
 void EngineView::draw_settings_menu() {
+
+    {
+        RendererSettings& settings = _settings.renderer_settings;
+        const char* ambient_pipe[] = {"GI", "IBL + AO"};
+        if(ImGui::BeginCombo("Ambient pipe", ambient_pipe[usize(settings.ambient_pipe)])) {
+            for(usize i = 0; i != sizeof(ambient_pipe) / sizeof(ambient_pipe[0]); ++i) {
+                const bool selected = usize(settings.ambient_pipe) == i;
+                if(ImGui::Selectable(ambient_pipe[i], selected)) {
+                    settings.ambient_pipe = AmbientPipe(i);
+                }
+            }
+            ImGui::EndCombo();
+        }
+    }
+
+
     if(ImGui::BeginMenu("Tone mapping")) {
         ToneMappingSettings& settings = _settings.renderer_settings.tone_mapping;
         ImGui::Checkbox("Auto exposure", &settings.auto_exposure);

@@ -38,7 +38,8 @@ struct LightingPass {
 
     ShadowMapPass shadow_pass;
 
-    static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId ao = FrameGraphImageId(), const LightingSettings& settings = LightingSettings());
+    static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const AOPass& ao, const LightingSettings& settings = LightingSettings());
+    static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const RTGIPass& gi, const LightingSettings& settings = LightingSettings());
 };
 
 

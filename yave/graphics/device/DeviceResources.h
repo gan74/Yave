@@ -64,9 +64,10 @@ class DeviceResources final : NonMovable {
             PickingProgram,
 
             MaxNonRTComputePrograms,
+
             RTAOUpdateProgram = MaxNonRTComputePrograms,
+            RTAOApplyProgram,
             RTAOTrimProgram,
-            RTAOProgram,
 
             RTGIUpdateProgram,
             RTGIApplyProgram,
@@ -87,6 +88,7 @@ class DeviceResources final : NonMovable {
             DeferredPointLightMaterialTemplate,
             DeferredSpotLightMaterialTemplate,
             DeferredAmbientMaterialTemplate,
+            DeferredGIMaterialTemplate,
             AtmosphereMaterialTemplate,
             ToneMappingMaterialTemplate,
 
