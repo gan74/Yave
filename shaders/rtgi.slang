@@ -119,7 +119,8 @@ void main() {
     const SurfaceInfo surface = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1[coord]));
     const float view_dist = length(world_pos - camera.position);
 
-    const HashKey key = HashKey.make_key(world_pos, surface.normal, view_dist, base_cell_size, lod_dist);
+    const uint lod_level = HashKey.lod_level(view_dist, lod_dist);
+    const HashKey key = HashKey.make_key(world_pos, surface.normal, base_cell_size, lod_level);
 
 #ifdef APPLY
     const uint hash_index = find_bucket_index(hash_table, key, hash_size);
@@ -142,9 +143,9 @@ void main() {
     }
 
     const float samples = sum_table[hash_index * 4 + 3];
-    const float lod_factor = HashKey.lod_level(view_dist, lod_dist);
-    const float ray_target = lerp(float(max_ray_count), 1.0, saturate(samples * lod_factor / max_samples));
-    const uint ray_count = uint(ceil(ray_target));
+    const float lod_factor = (1.0 + lod_level);
+    const float ray_factor = pow(1.0 - saturate(samples * lod_factor / max_samples), 6.0);
+    const uint ray_count = uint(ceil(lerp(1.0, float(max_ray_count), ray_factor)));
 
     float3 acc = float3(0.0);
 

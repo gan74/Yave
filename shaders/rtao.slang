@@ -69,7 +69,8 @@ void main() {
     const float3 normal = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1[coord])).normal;
     const float view_dist = length(world_pos - camera.position);
 
-    const HashKey key = HashKey.make_key(world_pos, normal, view_dist, base_cell_size, lod_dist);
+    const uint lod_level = HashKey.lod_level(view_dist, lod_dist);
+    const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level);
 
 #ifdef UPDATE
     /*bool inserted = false;
