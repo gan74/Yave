@@ -34,8 +34,8 @@ cbuffer Params {
 
     uint reset_hash;
     float max_samples;
-    uint sample_count;
-    uint padding2;
+    uint max_ray_count;
+    uint padding;
 };
 
 
@@ -141,11 +141,16 @@ void main() {
         return;
     }
 
+    const float samples = sum_table[hash_index * 4 + 3];
+    const float lod_factor = HashKey.lod_level(view_dist, lod_dist);
+    const float ray_target = lerp(float(max_ray_count), 1.0, saturate(samples * lod_factor / max_samples));
+    const uint ray_count = uint(ceil(ray_target));
+
     float3 acc = float3(0.0);
 
     const uint sample_index_offset = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
-    for(uint i = 0; i != sample_count; ++i) {
-        const float3 trace_dir = sample_hemisphere(surface.normal, sample_index_offset * sample_count + i);
+    for(uint i = 0; i != ray_count; ++i) {
+        const float3 trace_dir = sample_hemisphere(surface.normal, sample_index_offset * max_ray_count + i);
         const float n_t = dot(surface.normal, trace_dir);
 
         const float tmin = 0.001;
@@ -172,7 +177,7 @@ void main() {
     hash_table[timestamp_index(hash_index)] = frame_id;
 
     float prev;
-    InterlockedAdd(sum_table[hash_index * 4 + 3], float(sample_count), prev);
+    InterlockedAdd(sum_table[hash_index * 4 + 3], float(ray_count), prev);
     for(uint i = 0; i != 3; ++i) {
         if(acc[i] > 0.0) {
             InterlockedAdd(sum_table[hash_index * 4 + i], acc[i], prev);

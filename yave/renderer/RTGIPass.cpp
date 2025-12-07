@@ -65,7 +65,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
         u32 reset_hash;
         float max_samples;
-        u32 sample_count;
+        u32 max_ray_count;
         u32 padding;
     } params {
         hash_size,
@@ -74,8 +74,8 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         u32(framegraph.frame_id()),
 
         u32(hash_reset || sum_reset ? 1 : 0),
-        float(16 * 1024),
-        settings.ray_count,
+        4096.0f,
+        settings.max_ray_count,
         0,
     };
 

@@ -27,7 +27,7 @@ SOFTWARE.
 namespace yave {
 
 struct RTGISettings {
-    u32 ray_count = 4;
+    u32 max_ray_count = 8;
 
     u32 hash_size = 21;
     float lod_dist = 10.0f;

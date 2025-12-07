@@ -22,8 +22,12 @@ struct HashKey {
         sec = hash.xx32(sec + val);
     }
 
+    static uint lod_level(float view_dist, float lod_dist) {
+        return uint(exp2(floor(log2(1.0 + (view_dist / lod_dist)))));
+    }
+
     static HashKey make_key(float3 world_pos, float3 normal, float view_dist, float base_cell_size, float lod_dist) {
-        const uint lod = uint(exp2(floor(log2(1.0 + (view_dist / lod_dist)))));
+        const uint lod = lod_level(view_dist, lod_dist);
         const float cell_size = base_cell_size * lod;
         const int3 p_i = int3(floor(world_pos / cell_size));
         const int3 n_i = int3(normal * 3.0);
