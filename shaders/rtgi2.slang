@@ -28,7 +28,7 @@ cbuffer Params {
 
     uint reset_hash;
     float max_samples;
-    uint padding1;
+    uint sample_count;
     uint padding2;
 };
 
@@ -109,7 +109,6 @@ void main() {
 
     float4 acc = float4(0.0);
 
-    const uint sample_count = 16;
     const uint sample_index_offset = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
     for(uint k = 0; k != sample_count; ++k) {
         const float3 trace_dir = sample_hemisphere(surface.normal, sample_index_offset * sample_count + k);

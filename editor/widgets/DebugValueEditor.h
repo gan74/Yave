@@ -54,6 +54,10 @@ class DebugValueEditor : public Widget {
                     }
                 }, val);
             }
+
+            for(auto&& [name, val] : debug_values().all_commands()) {
+                val = ImGui::Button(name.data());
+            }
         }
 };
 

@@ -48,9 +48,16 @@ class DebugValues : NonMovable {
             }
         }
 
+        bool command(std::string_view name) {
+            return _commands[name];
+        }
 
         core::FlatHashMap<core::String, Value>& all_values() {
             return _values;
+        }
+
+        core::FlatHashMap<core::String, bool>& all_commands() {
+            return _commands;
         }
 
     private:
@@ -65,6 +72,7 @@ class DebugValues : NonMovable {
         }
 
         core::FlatHashMap<core::String, Value> _values;
+        core::FlatHashMap<core::String, bool> _commands;
 
 };
 

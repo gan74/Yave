@@ -90,6 +90,8 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     const auto [hash, hash_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size * 2);
     const auto [sum, sum_reset] = framegraph.create_scratch_buffer<math::Vec4, BufferUsage::StorageBit>(persistent_sum_id, hash_size);
 
+    const bool reset = hash_reset || sum_reset || editor::debug_values().command("Reset RTGI");
+
     const struct Params {
         u32 hash_size;
         float lod_dist;
@@ -98,7 +100,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
         u32 reset_hash;
         float max_samples;
-        u32 padding1;
+        u32 sample_count;
         u32 padding2;
     } params {
         hash_size,
@@ -106,9 +108,9 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         0.05f,
         u32(framegraph.frame_id()),
 
-        (hash_reset || sum_reset) ? 1 : 0,
+        reset ? 1 : 0,
         float(16 * 1024),
-        0,
+        u32(editor::debug_values().value<int>("RTGI sample count", 16)),
         0
     };
 
