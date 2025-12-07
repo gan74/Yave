@@ -68,7 +68,7 @@ class DeviceResources final : NonMovable {
             RTAOTrimProgram,
             RTAOProgram,
 
-            RTGI2Program,
+            RTGI2UpdateProgram,
             RTGI2ApplyProgram,
             RTGI2TrimProgram,
 

@@ -100,18 +100,18 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
         u32 reset_hash;
         float max_samples;
+        float diminish_samples;
         u32 sample_count;
-        u32 padding2;
     } params {
         hash_size,
         10.0f,
         0.05f,
         u32(framegraph.frame_id()),
 
-        reset ? 1 : 0,
+        u32(reset ? 1 : 0),
         float(16 * 1024),
+        128.0f,
         u32(editor::debug_values().value<int>("RTGI sample count", 16)),
-        0
     };
 
 
@@ -120,6 +120,9 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
     const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
+
+
+    const auto ray_count_buffer = builder.declare_typed_buffer<u32>();
 
     const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
     builder.map_buffer(directional_buffer);
@@ -138,6 +141,8 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     builder.add_storage_output(gi);
 
+    builder.add_storage_output(ray_count_buffer);
+
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto mapping = self->resources().map_buffer(directional_buffer);
         for(usize i = 0; i != visibility.directional_lights.size(); ++i) {
@@ -155,14 +160,15 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
             texture_library().descriptor_set()
         };
 
-        const std::array<BufferBarrier, 2> barriers = {
+        const std::array<BufferBarrier, 3> barriers = {
+            self->resources().barrier(ray_count_buffer, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
             BufferBarrier(hash, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
             BufferBarrier(sum, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
         };
 
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGI2TrimProgram], math::Vec2ui(hash_size, 1), desc_sets);
         recorder.barriers(barriers);
-        recorder.dispatch_threads(device_resources()[DeviceResources::RTGI2Program], size, desc_sets);
+        recorder.dispatch_threads(device_resources()[DeviceResources::RTGI2UpdateProgram], size, desc_sets);
         recorder.barriers(barriers);
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGI2ApplyProgram], size, desc_sets);
     });

@@ -243,7 +243,7 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "rtao.slang" "")
     add_slang_shader(${SHADER_TARGET} "filter_ao.slang" "")
 
-    add_slang_shader(${SHADER_TARGET} "rtgi2.slang" "")
+    add_slang_shader(${SHADER_TARGET} "rtgi2.slang" "UPDATE")
     add_slang_shader(${SHADER_TARGET} "rtgi2.slang" "APPLY")
     add_slang_shader(${SHADER_TARGET} "rtgi2.slang" "TRIM")
 

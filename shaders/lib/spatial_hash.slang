@@ -53,7 +53,7 @@ uint find_update_bucket_index(RWStructuredBuffer<uint> hash_table, HashKey key, 
         uint prev = 0;
         InterlockedCompareExchange(hash_table[index], 0, check, prev);
 
-        inserted = prev == 0;
+        inserted = (prev == 0);
         if(prev == 0 || prev == check) {
             return index;
         }
