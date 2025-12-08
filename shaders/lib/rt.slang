@@ -69,16 +69,27 @@ HitInfo trace_inline(RaytracingAccelerationStructure accel, float3 origin, float
     return trace_inline_flags<RAY_FLAG_FORCE_OPAQUE>(accel, origin, dir, min_dist, max_dist);
 }
 
-float3 sample_hemisphere(float3 normal, uint i) {
+
+
+float3 random_unit_vec(uint i) {
     const uint h = hash.xx32(i);
 
-    float3 s;
+    float3 v;
     for(uint k = 0; k != 3; ++k) {
-        s[k] = (hash.pcg(k + h) & 0xFFFF) / float(0xFFFF);
+        v[k] = (hash.pcg(k + h) & 0xFFFFFF) / float(0xFFFFFF);
     }
-    s = normalize(s * 2.0 - 1.0);
 
+    return normalize(v * 2.0 - 1.0);
+}
+
+float3 sample_hemisphere(float3 normal, uint i) {
+    const float3 s = random_unit_vec(i);
     return dot(normal, s) < 0.0 ? -s : s;
+}
+
+// https://pema.dev/obsidian/math/light-transport/cosine-weighted-sampling.html
+float3 cosine_sample_hemisphere(float3 normal, uint i) {
+    return normalize(normal + random_unit_vec(i));
 }
 
 

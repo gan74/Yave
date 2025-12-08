@@ -122,12 +122,9 @@ float4 value_at(uint index) {
 }
 
 float3 jitter_position(float3 normal) {
-    const uint jit_seed = hash.xx32(semantics.global_index + hash.xx32(frame_id));
-    const float3 tangent = build_orthogonal(normal);
-    const float3 bitangent = cross(normal, tangent);
-    const float angle = (float(jit_seed & 0xFFFF) / float(0xFFFF)) * constants.pi * 2.0;
-    const float radius = (float(jit_seed >> 16) / float(0xFFFF)) * 2.0;
-    return (cos(angle) * tangent + sin(angle) * bitangent) * radius;
+    const uint seed = hash.xx32(semantics.global_index + hash.xx32(frame_id));
+    const float3 v = random_unit_vec(seed);
+    return (v - normal * dot(v, normal)) * 2.0;
 }
 
 
@@ -163,7 +160,7 @@ void main() {
     } else {
         const float4 acc = value_at(hash_index);
         out_image[coord] = float4(acc.rgb / acc.a, 1.0);
-        // out_image[coord] = float4(identifying_color(hash_index & 0xFFFF) * 0.5, 1.0);
+        // out_image[coord] = float4(identifying_color(hash_index) * 0.5, 1.0);
     }
 #endif
 
@@ -200,8 +197,8 @@ void main() {
 
     const uint seed = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
     for(uint i = 0; i != ray_count; ++i) {
-        const float3 trace_dir = sample_hemisphere(surface.normal, seed * max_ray_count + i);
-        const float n_t = dot(surface.normal, trace_dir) * constants.inv_pi;
+        const float3 trace_dir = cosine_sample_hemisphere(surface.normal, seed * max_ray_count + i);
+        const float n_t = constants.inv_pi;
 
         const float tmin = 0.001;
         const float tmax = 10000.0;

@@ -30,7 +30,7 @@ struct RTGISettings {
     u32 max_ray_count = 8;
 
     u32 hash_size = 21;
-    float lod_dist = 10.0f;
+    float lod_dist = 5.0f;
     float base_cell_size = 0.05f;
 
 };
