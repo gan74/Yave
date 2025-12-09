@@ -112,7 +112,7 @@ class EngineView final : public Widget {
             CmdBufferFence fence;
         };
 
-        RenderView _view = RenderView::GI;
+        RenderView _view = RenderView::Lit;
 
         std::shared_ptr<FrameGraphResourcePool> _resource_pool;
         core::RingQueue<std::unique_ptr<CmdTimestampPool>> _timestamp_pools;
