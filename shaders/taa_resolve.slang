@@ -212,7 +212,7 @@ void comp_main() {
     const float3 resolved = abs(((prev_color * prev_weight) + (curr_color * curr_weight)) / (prev_weight + curr_weight));
 
     if (any(isnan(resolved))) {
-        out_color[coord] = float4(1.0, 0.0, 0.0, 1.0);
+        out_color[coord] = float4(1.0, 0.0, 1.0, 1.0);
     } else {
         out_color[coord] = float4(resolved, 1.0);
     }

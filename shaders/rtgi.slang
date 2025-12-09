@@ -167,7 +167,7 @@ void main() {
         }
     }
 
-    out_image[coord] = acc / acc.a;
+    out_image[coord] = acc / max(1.0, acc.a);
 #endif
 
 #ifdef UPDATE
@@ -186,6 +186,7 @@ void main() {
         if(hit.hit) {
             const float3 hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
             const RTGIMaterial material = eval_material(hit.instance_id);
+
 #ifdef EMISSIVE
             acc.rgb += material.emissive;
 #endif
