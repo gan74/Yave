@@ -94,6 +94,9 @@ void main() {
         return;
     }
 
+    const uint seed = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
+    HashRng rng = HashRng(seed);
+
     const float2 uv = (coord + 0.5) / float2(size);
     const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
     const float3 normal = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1[coord])).normal;
@@ -121,11 +124,10 @@ void main() {
     }
 
     const float min_dist = lerp(0.001, 0.01, view_dist / (view_dist + 10.0));
-    const uint seed = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
 
     uint occ = 0;
     for(uint i = 0; i != sample_count; ++i) {
-        const float3 sample_dir = sample_hemisphere(normal, seed * sample_count + i);
+        const float3 sample_dir = sample_hemisphere(normal, rng);
         if(!trace_inline(tlas, world_pos, sample_dir, min_dist, max_dist).hit) {
             ++occ;
         }

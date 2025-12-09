@@ -121,9 +121,8 @@ float4 value_at(uint index) {
     return acc;
 }
 
-float3 jitter_position(float3 normal) {
-    const uint seed = hash.xx32(semantics.global_index + hash.xx32(frame_id));
-    const float3 v = random_unit_vec(seed);
+float3 jitter_position<T: Rng>(float3 normal, inout T rng) {
+    const float3 v = rng.next_unit();
     return (v - normal * dot(v, normal)) * 2.0;
 }
 
@@ -145,13 +144,16 @@ void main() {
         return;
     }
 
+    const uint seed = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
+    HashRng rng = HashRng(seed);
+
     const float2 uv = (coord + 0.5) / float2(size);
     const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
     const SurfaceInfo surface = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1[coord]));
     const float view_dist = length(world_pos - camera.position);
 
     const uint lod_level = HashKey.lod_level(view_dist, lod_dist);
-    const HashKey key = HashKey.make_key(world_pos, surface.normal, base_cell_size, lod_level, jitter_position(surface.normal));
+    const HashKey key = HashKey.make_key(world_pos, surface.normal, base_cell_size, lod_level, jitter_position(surface.normal, rng));
 
 #ifdef APPLY
     const uint hash_index = find_bucket_index(hash_table, key, hash_size);
@@ -195,9 +197,8 @@ void main() {
     const float ray_factor = sqr(1.0 - saturate(samples * lod_factor / max_samples));
     const uint ray_count = uint(ceil(lerp(1.0, float(max_ray_count), ray_factor)));
 
-    const uint seed = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
     for(uint i = 0; i != ray_count; ++i) {
-        const float3 trace_dir = cosine_sample_hemisphere(surface.normal, seed * max_ray_count + i);
+        const float3 trace_dir = cosine_sample_hemisphere(surface.normal, rng);
         const float n_t = constants.inv_pi;
 
         const float tmin = 0.001;

@@ -2,7 +2,7 @@
 #define RT_SLANG
 
 #include "utils.slang"
-#include "hash.slang"
+#include "rng.slang"
 
 struct HitInfo {
     bool hit;
@@ -71,25 +71,16 @@ HitInfo trace_inline(RaytracingAccelerationStructure accel, float3 origin, float
 
 
 
-float3 random_unit_vec(uint i) {
-    const uint h = hash.xx32(i);
 
-    float3 v;
-    for(uint k = 0; k != 3; ++k) {
-        v[k] = (hash.pcg(k + h) & 0xFFFFFF) / float(0xFFFFFF);
-    }
 
-    return normalize(v * 2.0 - 1.0);
-}
-
-float3 sample_hemisphere(float3 normal, uint i) {
-    const float3 s = random_unit_vec(i);
+float3 sample_hemisphere<T: Rng>(float3 normal, inout T rng) {
+    const float3 s = rng.next_unit();
     return dot(normal, s) < 0.0 ? -s : s;
 }
 
 // https://pema.dev/obsidian/math/light-transport/cosine-weighted-sampling.html
-float3 cosine_sample_hemisphere(float3 normal, uint i) {
-    return normalize(normal + random_unit_vec(i));
+float3 cosine_sample_hemisphere<T: Rng>(float3 normal, inout T rng) {
+    return normalize(normal + rng.next_unit());
 }
 
 
