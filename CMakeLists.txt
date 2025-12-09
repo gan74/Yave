@@ -274,9 +274,11 @@ if(YAVE_BUILD_YAVE)
     endif()
 
     if(YAVE_TRACY_PROFILING)
-        option(TRACY_ENABLE "" ON)
+        set(TRACY_ENABLE ON CACHE "" INTERNAL FORCE)
+        set(TRACY_ON_DEMAND ON CACHE "" INTERNAL FORCE)
+        set(TRACY_ONLY_LOCALHOST ON CACHE "" INTERNAL FORCE)
         add_subdirectory(external/tracy)
-        target_link_libraries(yave PUBLIC Tracy::TracyClient)
+        target_link_libraries(yave PUBLIC TracyClient)
     endif()
 
     target_link_libraries(yave PUBLIC y luajit Jolt)

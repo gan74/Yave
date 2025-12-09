@@ -32,6 +32,9 @@ SOFTWARE.
 #define YAVE_PROFILING
 #define YAVE_GPU_PROFILING
 #define YAVE_LOCK_PROFILING
+#ifndef TRACY_ON_DEMAND
+#error "TRACY_ON_DEMAND is not defined"
+#endif
 #endif
 
 #if defined(YAVE_PROFILING) && !defined(TRACY_ENABLE)
