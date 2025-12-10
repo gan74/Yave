@@ -30,14 +30,19 @@ RWStructuredBuffer<float> sum_table;
 [[vk::binding(5)]]
 cbuffer Params {
     uint hash_size;
+    uint frame_id;
+    uint reset_hash;
+    uint padding_0;
+
     float lod_dist;
     float base_cell_size;
-    uint frame_id;
+    float pos_jitter_strength;
+    float norm_jitter_strength;
 
-    uint reset_hash;
-    float max_samples;
     uint max_ray_count;
+    float max_samples;
     uint light_count;
+    uint padding_1;
 };
 
 
@@ -123,7 +128,7 @@ float4 value_at(uint index) {
 
 float3 jitter_position<T: Rng>(float3 normal, inout T rng) {
     const float3 v = rng.next_unit();
-    return (v - normal * dot(v, normal)) * 2.0;
+    return (v - normal * dot(v, normal));
 }
 
 
@@ -153,15 +158,16 @@ void main() {
     const float view_dist = length(world_pos - camera.position);
 
     const uint lod_level = HashKey.lod_level(view_dist, lod_dist);
-    const float3 jitter = jitter_position(normal, rng);
+    const float3 pos_jitter = jitter_position(normal, rng) * pos_jitter_strength;
+    const float3 norm_jitter = rng.next_unit() * norm_jitter_strength;
 
 #ifdef APPLY
     float4 acc = float4(0.0);
 
     for(uint k = 0; k != written_lod_count; ++k) {
-        const HashKey lod_key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level + k, jitter);
+        const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level + k, pos_jitter, norm_jitter);
 
-        const uint index = find_bucket_index(hash_table, lod_key, hash_size);
+        const uint index = find_bucket_index(hash_table, key, hash_size);
         if(index != constants.max_uint) {
             acc += value_at(index);
         }
@@ -207,10 +213,10 @@ void main() {
     }
 
     for(uint k = 0; k != written_lod_count; ++k) {
-        const HashKey lod_key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level + k, jitter);
+        const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level + k, pos_jitter, norm_jitter);
 
         bool inserted;
-        const uint index = find_update_bucket_index(hash_table, lod_key, hash_size, inserted);
+        const uint index = find_update_bucket_index(hash_table, key, hash_size, inserted);
         if(index == constants.max_uint) {
             continue;
         }

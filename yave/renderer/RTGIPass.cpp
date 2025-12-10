@@ -70,24 +70,34 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     const struct Params {
         u32 hash_size;
+        u32 frame_id;
+        u32 reset_hash;
+        u32 padding_0;
+
         float lod_dist;
         float base_cell_size;
-        u32 frame_id;
+        float pos_jitter_strength;
+        float norm_jitter_strength;
 
-        u32 reset_hash;
-        float max_samples;
         u32 max_ray_count;
+        float max_samples;
         u32 light_count;
+        u32 padding_1;
     } params {
         hash_size,
+        u32(framegraph.frame_id()),
+        u32(hash_reset || sum_reset || reset ? 1 : 0),
+        0,
+
         settings.lod_dist,
         settings.base_cell_size,
-        u32(framegraph.frame_id()),
+        settings.pos_jitter,
+        settings.norm_jitter,
 
-        u32(hash_reset || sum_reset || reset ? 1 : 0),
-        4096.0f,
         settings.max_ray_count,
+        4096.0f,
         u32(visibility.directional_lights.size()),
+        0
     };
 
     const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
