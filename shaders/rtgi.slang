@@ -9,6 +9,8 @@
 #define APPLY
 #endif
 
+// #define DEBUG_CELLS
+// #define DEBUG_RAY_COUNT
 // #define EMISSIVE
 
 
@@ -174,6 +176,24 @@ void main() {
     }
 
     out_image[coord] = acc / max(1.0, acc.a);
+
+#ifdef DEBUG_CELLS
+    {
+        const uint index = find_bucket_index(hash_table, HashKey.make_key(world_pos, normal, base_cell_size, lod_level), hash_size);
+        out_image[coord] = float4(identifying_color(index, 0.33) * 0.33, 1.0);
+    }
+#endif
+
+#ifdef DEBUG_RAY_COUNT
+    {
+        const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level);
+
+        const uint index = find_bucket_index(hash_table, key, hash_size);
+        const float rays = (index == constants.max_uint) ? 0.0 : sum_table[index * 4 + 3];
+        const float t = saturate(rays / max_samples);
+        out_image[coord] = float4(lerp(float3(1, 0, 0), float3(0, 1, 0), t), 1.0);
+    }
+#endif
 #endif
 
 #ifdef UPDATE

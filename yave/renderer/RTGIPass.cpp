@@ -34,7 +34,6 @@ SOFTWARE.
 #include <yave/graphics/device/MaterialAllocator.h>
 #include <yave/graphics/images/TextureLibrary.h>
 #include <yave/components/SkyLightComponent.h>
-#include <yave/components/SkyLightComponent.h>
 
 #include <yave/graphics/shader_structs.h>
 
