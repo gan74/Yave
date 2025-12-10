@@ -86,18 +86,18 @@ property uint2 pixel_coord {
 
 [ForceInline]
 uint image_mips<T: ITexelElement>(Sampler2D<T> smp) {
-    uint mip;
+    uint mips;
     uint2 size;
-    smp.GetDimensions(0, size.x, size.y, mip);
-    return 0;
+    smp.GetDimensions(0, size.x, size.y, mips);
+    return mips;
 }
 
 [ForceInline]
 uint image_mips<T: ITexelElement>(SamplerCube<T> smp) {
-    uint mip;
+    uint mips;
     uint2 size;
-    smp.GetDimensions(0, size.x, size.y, mip);
-    return 0;
+    smp.GetDimensions(0, size.x, size.y, mips);
+    return mips;
 }
 
 [ForceInline]
