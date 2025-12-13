@@ -22,8 +22,12 @@ struct HashKey {
         sec = hash.xx32(sec + val);
     }
 
+    static float float_lod_level(float view_dist, float lod_dist) {
+        return log2(1.0 + (view_dist / lod_dist)) - log2(1.0);
+    }
+
     static uint lod_level(float view_dist, float lod_dist) {
-        return uint(floor(log2(1.0 + (view_dist / lod_dist))));
+        return uint(float_lod_level(view_dist, lod_dist));
     }
 
     static HashKey make_key(float3 world_pos, float3 normal, float base_cell_size, uint lod, float3 pos_jitter = float3(0.0), float3 norm_jitter = float3(0.0)) {
@@ -44,6 +48,12 @@ struct HashKey {
         return k;
     }
 };
+
+
+
+bool operator!=(HashKey a, HashKey b) {
+    return a.prim != b.prim || a.sec != b.sec;
+}
 
 
 uint find_update_bucket_index(RWStructuredBuffer<uint> hash_table, HashKey key, uint hash_size, out bool inserted) {

@@ -5,13 +5,20 @@
 
 #ifdef __cplusplus
 #define TRIM
+#define COUNT
 #define UPDATE
 #define APPLY
 #endif
 
 // #define DEBUG_CELLS
 // #define DEBUG_RAY_COUNT
+// #define DEBUG_LOD
+
 // #define EMISSIVE
+// #define BROADCAST_SAMPLES
+
+static const bool lerp_between_lods = true;
+static const uint extra_sample_count = 8;
 
 
 [[vk::binding(0)]]
@@ -34,17 +41,17 @@ cbuffer Params {
     uint hash_size;
     uint frame_id;
     uint reset_hash;
-    uint padding_0;
+    float lod_jitter_strength;
 
     float lod_dist;
     float base_cell_size;
     float pos_jitter_strength;
     float norm_jitter_strength;
 
-    uint max_ray_count;
-    float max_samples;
+    float target_samples;
+    float min_ray_count;
+    float max_ray_count;
     uint light_count;
-    uint padding_1;
 };
 
 
@@ -87,6 +94,14 @@ uint timestamp_index(uint h) {
     return hash_size + h;
 }
 
+uint count_index(uint h) {
+    return hash_size * 2 + h;
+}
+
+uint samples_index(uint h) {
+    return hash_size * 3 + h;
+}
+
 
 
 #ifdef TRIM
@@ -94,6 +109,9 @@ uint timestamp_index(uint h) {
 [numthreads(64)]
 void main() {
     const uint h = semantics.global_index;
+
+    hash_table[count_index(h)] = 0;
+    hash_table[samples_index(h)] = uint(sum_table[h * 4 + 3]);
 
     if(reset_hash > 0 || hash_table[timestamp_index(h)] == (frame_id - 4)) {
         hash_table[h] = 0;
@@ -103,10 +121,10 @@ void main() {
     } else {
         const float weight = sum_table[h * 4 + 3];
 
-        if(weight > 2.0 * max_samples) {
-            const float norm_factor = max_samples / weight;
+        if(weight > 2.0 * target_samples) {
+            const float norm_factor = target_samples / weight;
 
-            sum_table[h * 4 + 3] = max_samples;
+            sum_table[h * 4 + 3] = target_samples;
             for(uint i = 0; i != 3; ++i) {
                 sum_table[h * 4 + i] *= norm_factor;
             }
@@ -116,11 +134,9 @@ void main() {
 #endif
 
 
-#if defined(UPDATE) || defined(APPLY)
+#if defined(COUNT) || defined(UPDATE) || defined(APPLY)
 
-static const uint written_lod_count = 3;
-
-float4 value_at(uint index) {
+float4 read_value(uint index) {
     float4 acc;
     for(uint i = 0; i != 4; ++i) {
         acc[i] = sum_table[index * 4 + i];
@@ -128,11 +144,27 @@ float4 value_at(uint index) {
     return acc;
 }
 
+void write_value(uint index, float4 acc) {
+    hash_table[timestamp_index(index)] = frame_id;
+    for(uint i = 0; i != 4; ++i) {
+        if(acc[i] > 0.0) {
+            float prev;
+            InterlockedAdd(sum_table[index * 4 + i], acc[i], prev);
+        }
+    }
+}
+
 float3 jitter_position<T: Rng>(float3 normal, inout T rng) {
     const float3 v = rng.next_unit();
     return (v - normal * dot(v, normal));
 }
 
+float compute_ray_count(uint index) {
+    const uint threads_in_cell = hash_table[count_index(index)];
+    const float samples_in_cell = float(hash_table[samples_index(index)]);
+    const float samples_needed = max(0.0, target_samples - samples_in_cell);
+    return clamp(samples_needed / threads_in_cell, min_ray_count, max_ray_count);
+}
 
 
 [shader("compute")]
@@ -159,19 +191,39 @@ void main() {
     const float3 normal = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1[coord])).normal;
     const float view_dist = length(world_pos - camera.position);
 
-    const uint lod_level = HashKey.lod_level(view_dist, lod_dist);
-    const float3 pos_jitter = jitter_position(normal, rng) * pos_jitter_strength;
-    const float3 norm_jitter = rng.next_unit() * norm_jitter_strength;
+    const float float_lod_level = HashKey.float_lod_level(view_dist, lod_dist) + rng.next_unorm() * lod_jitter_strength;
+    const float lod_blend = frac(float_lod_level);
+    const uint lod_level = uint(float_lod_level);
+
+    const float3 base_pos_jitter = jitter_position(normal, rng) * pos_jitter_strength;
+    const float3 base_norm_jitter = rng.next_unit() * norm_jitter_strength;
+    const HashKey base_key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level, base_pos_jitter, base_norm_jitter);
+    const HashKey base_key_lo = HashKey.make_key(world_pos, normal, base_cell_size, lod_level + 1, base_pos_jitter * 0.5, base_norm_jitter);
 
 #ifdef APPLY
-    float4 acc = float4(0.0);
+    const uint base_index = find_bucket_index(hash_table, base_key, hash_size);
+    if(base_index == constants.max_uint) {
+        return;
+    }
 
-    for(uint k = 0; k != written_lod_count; ++k) {
-        const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level + k, pos_jitter, norm_jitter);
+    float4 acc = read_value(base_index);
 
-        const uint index = find_bucket_index(hash_table, key, hash_size);
+    if(lerp_between_lods) {
+        const uint index = find_bucket_index(hash_table, base_key_lo, hash_size);
         if(index != constants.max_uint) {
-            acc += value_at(index);
+            acc = lerp(acc, read_value(index), lod_blend);
+        }
+    }
+
+    for(uint k = 0; k != extra_sample_count; ++k) {
+        const float3 pos_jitter = jitter_position(normal, rng) * pos_jitter_strength;
+        const float3 norm_jitter = rng.next_unit() * norm_jitter_strength;
+        const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level, pos_jitter, norm_jitter);
+        if(key != base_key) {
+            const uint index = find_bucket_index(hash_table, key, hash_size);
+            if(index != constants.max_uint) {
+                acc += read_value(index);
+            }
         }
     }
 
@@ -179,27 +231,56 @@ void main() {
 
 #ifdef DEBUG_CELLS
     {
-        const uint index = find_bucket_index(hash_table, HashKey.make_key(world_pos, normal, base_cell_size, lod_level), hash_size);
-        out_image[coord] = float4(identifying_color(index, 0.33) * 0.33, 1.0);
+        out_image[coord] = float4(identifying_color(base_index) * 0.33, 1.0);
     }
 #endif
 
 #ifdef DEBUG_RAY_COUNT
     {
-        const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level);
-
-        const uint index = find_bucket_index(hash_table, key, hash_size);
-        const float rays = (index == constants.max_uint) ? 0.0 : sum_table[index * 4 + 3];
-        const float t = saturate(rays / max_samples);
-        out_image[coord] = float4(lerp(float3(1, 0, 0), float3(0, 1, 0), t), 1.0);
+        const float ray_count = compute_ray_count(base_index);
+        const float t = saturate((ray_count - min_ray_count) / (max_ray_count - min_ray_count));
+        out_image[coord] = float4(lerp(float3(0, 1, 0), float3(1, 0, 0), t), 1.0);
     }
 #endif
+
+#ifdef DEBUG_LOD
+    {
+        out_image[coord] = float4(frac(float_lod_level).xxx, 1.0);
+        // out_image[coord] = float4(lerp(identifying_color(lod_level), identifying_color(lod_level + 1), frac(float_lod_level)) * 0.33, 1.0);
+    }
 #endif
 
-#ifdef UPDATE
-    float4 acc = float4(0.0);
-    const uint ray_count = max_ray_count;
+#endif
 
+#ifdef COUNT
+    bool inserted;
+    const uint base_index = find_update_bucket_index(hash_table, base_key, hash_size, inserted);
+    if(base_index == constants.max_uint) {
+        return;
+    }
+
+    if(lerp_between_lods) {
+        find_update_bucket_index(hash_table, base_key_lo, hash_size, inserted);
+    }
+
+    uint prev;
+    InterlockedAdd(hash_table[count_index(base_index)], 1, prev);
+#endif
+
+
+#ifdef UPDATE
+    const uint base_index = find_bucket_index(hash_table, base_key, hash_size);
+    if(base_index == constants.max_uint) {
+        return;
+    }
+
+    const float float_ray_count = compute_ray_count(base_index);
+    const uint ray_count = uint(float_ray_count) + (rng.next_unorm() < frac(float_ray_count) ? 1 : 0);
+    if(ray_count == 0) {
+        return;
+    }
+
+    float3 acc = float3(0.0);
     for(uint i = 0; i != ray_count; ++i) {
         const float3 trace_dir = cosine_sample_hemisphere(normal, rng);
         const float n_t = constants.inv_pi;
@@ -216,40 +297,45 @@ void main() {
 #ifdef EMISSIVE
             acc.rgb += material.emissive;
 #endif
+
             for(uint k = 0; k != light_count; ++k) {
                 const DirectionalLight light = lights[k];
                 const float n_l = dot(light.direction, hit_normal);
                 if(n_l > 0.0) {
                     if(!trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
-                        acc.rgb += (material.albedo * light.color * n_l * n_t);
+                        acc += (material.albedo * light.color * n_l * n_t);
                     }
                 }
             }
         } else {
-            acc.rgb += in_envmap.SampleLevel(trace_dir, 0.0).rgb * n_t;
+            acc += in_envmap.SampleLevel(trace_dir, 0.0).rgb * n_t;
         }
-
-        acc.a += 1.0;
     }
 
-    for(uint k = 0; k != written_lod_count; ++k) {
-        const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level + k, pos_jitter, norm_jitter);
+    write_value(base_index, float4(acc, ray_count));
 
-        bool inserted;
-        const uint index = find_update_bucket_index(hash_table, key, hash_size, inserted);
-        if(index == constants.max_uint) {
-            continue;
+    if(lerp_between_lods) {
+        const uint index = find_bucket_index(hash_table, base_key_lo, hash_size);
+        if(index != constants.max_uint) {
+            write_value(index, float4(acc, ray_count));
         }
+    }
 
-        hash_table[timestamp_index(index)] = frame_id;
+#ifdef BROADCAST_SAMPLES
+    for(uint k = 0; k != extra_sample_count; ++k) {
+        const float3 pos_jitter = jitter_position(normal, rng) * pos_jitter_strength;
+        const float3 norm_jitter = rng.next_unit() * norm_jitter_strength;
+        const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level, pos_jitter, norm_jitter);
 
-        for(uint i = 0; i != 4; ++i) {
-            if(acc[i] > 0.0) {
-                float prev;
-                InterlockedAdd(sum_table[index * 4 + i], acc[i], prev);
+        if(key != base_key) {
+            bool inserted;
+            const uint index = find_update_bucket_index(hash_table, key, hash_size, inserted);
+            if(index != constants.max_uint) {
+                write_value(index, float4(acc, ray_count));
             }
         }
     }
+#endif
 #endif
 }
 #endif

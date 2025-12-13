@@ -565,9 +565,8 @@ void EngineView::draw_settings_menu() {
     if(ImGui::BeginMenu("RTGI")) {
         RTGISettings& settings = _settings.renderer_settings.rtgi;
 
-        int rays = int(settings.max_ray_count);
-        ImGui::SliderInt("Max ray count", &rays, 1, 32);
-        settings.max_ray_count = u32(rays);
+        ImGui::SliderFloat("Min ray count", &settings.min_ray_count, 0.0f, 16.0f);
+        ImGui::SliderFloat("Max ray count", &settings.max_ray_count, 1.0f, 16.0f);
 
         ImGui::Separator();
 
@@ -575,7 +574,8 @@ void EngineView::draw_settings_menu() {
         ImGui::SliderFloat("LoD distance", &settings.lod_dist, 1.0f, 100.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
 
         ImGui::Separator();
-        
+
+        ImGui::SliderFloat("LoD jitter", &settings.lod_jitter, 0.0f, 1.0f);
         ImGui::SliderFloat("Position jitter", &settings.pos_jitter, 0.0f, 4.0f);
         ImGui::SliderFloat("Normal jitter", &settings.norm_jitter, 0.0f, 2.0f);
 
