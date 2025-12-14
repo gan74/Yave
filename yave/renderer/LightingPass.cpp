@@ -22,9 +22,6 @@ SOFTWARE.
 
 #include "LightingPass.h"
 
-#include "AOPass.h"
-#include "RTGIPass.h"
-
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
@@ -32,14 +29,11 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
 #include <yave/scene/Scene.h>
-#include <yave/meshes/StaticMesh.h>
-#include <yave/graphics/images/IBLProbe.h>
 
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
-#include <yave/components/SkyLightComponent.h>
 #include <yave/ecs/EntityWorld.h>
 
 #include <y/core/ScratchPad.h>
@@ -47,101 +41,42 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
-#include <bit>
-
-
 namespace yave {
 
 static constexpr usize max_directional_lights = 16;
 static constexpr usize max_point_lights = 1024;
 static constexpr usize max_spot_lights = 1024;
 
-static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
-                                             const GBufferPass& gbuffer,
-                                             const ShadowMapPass& shadow_pass,
-                                             FrameGraphImageId ao_or_gi,
-                                             bool is_gi) {
 
-    const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
+static u32 fill_directional_light_buffer(shader::DirectionalLight* directionals, const SceneVisibilitySubPass& visibility, const ShadowMapPass& shadow_pass) {
+    y_profile();
 
-    auto [ibl_probe, intensity, sky] = visibility.ibl_probe();
-    const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
+    u32 count = 0;
+    for(const DirectionalLightObject* obj : visibility.visible->directional_lights) {
+        const auto& light = obj->component;
 
-    FrameGraphPassBuilder builder = framegraph.add_pass("Ambient/Sun pass");
-
-    const bool display_sky = sky;
-    const float ibl_intensity = intensity;
-
-    const auto lit = builder.declare_copy(gbuffer.emissive);
-
-    const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(max_directional_lights);
-    const auto params_buffer = builder.declare_typed_buffer<math::Vec4ui>();
-
-    builder.add_uniform_input(gbuffer.depth);
-    builder.add_uniform_input(gbuffer.color);
-    builder.add_uniform_input(gbuffer.normal);
-    builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow);
-    builder.add_uniform_input_with_default(ao_or_gi, Descriptor(white));
-    builder.add_external_input(*ibl_probe);
-    builder.add_external_input(Descriptor(device_resources().brdf_lut(), SamplerType::LinearClamp));
-    builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_storage_input(directional_buffer);
-    builder.add_storage_input(shadow_pass.shadow_infos);
-    builder.add_uniform_input(params_buffer);
-    builder.add_color_output(lit);
-    builder.map_buffer(directional_buffer);
-    builder.map_buffer(params_buffer);
-    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        u32 count = 0;
-        auto mapping = self->resources().map_buffer(directional_buffer);
-
-        for(const DirectionalLightObject* obj : visibility.directional_lights) {
-            const auto& [light, id, _] = *obj;
-
-            auto shadow_indices = math::Vec4ui(u32(-1));
-            if(light.cast_shadow()) {
-                if(const auto it = shadow_pass.shadow_indices->find(&light); it != shadow_pass.shadow_indices->end()) {
-                    shadow_indices = it->second;
-                }
-            }
-
-            mapping[count++] = {
-                -light.direction().normalized(),
-                std::cos(light.disk_size()),
-                light.color() * light.intensity(),
-                u32(light.cast_shadow() ? 1 : 0),
-                shadow_indices
-            };
-
-            if(count == mapping.size()) {
-                log_msg("Too many directional lights, discarding...", Log::Warning);
-                break;
+        auto shadow_indices = math::Vec4ui(u32(-1));
+        if(light.cast_shadow()) {
+            if(const auto it = shadow_pass.shadow_indices->find(&light); it != shadow_pass.shadow_indices->end()) {
+                shadow_indices = it->second;
             }
         }
 
-        {
-            auto params = self->resources().map_buffer(params_buffer);
-            params[0] = {
-                count,
-                display_sky ? 1 : 0,
-                std::bit_cast<u32>(ibl_intensity),
-                0
-            };
+        directionals[count++] = {
+            -light.direction().normalized(),
+            std::cos(light.disk_size()),
+            light.color() * light.intensity(),
+            u32(light.cast_shadow() ? 1 : 0),
+            shadow_indices
+        };
+
+        if(count == max_directional_lights) {
+            log_msg("Too many directional lights, discarding...", Log::Warning);
+            break;
         }
-
-        const auto* material = device_resources()[is_gi ? DeviceResources::DeferredGIMaterialTemplate : DeviceResources::DeferredAmbientMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_set());
-        render_pass.draw_array(3);
-    });
-
-    return lit;
+    }
+    return count;
 }
-
-
-
-
-
-
 
 static u32 fill_point_light_buffer(shader::PointLight* points, const SceneVisibilitySubPass& visibility) {
     y_profile();
@@ -174,7 +109,6 @@ static u32 fill_point_light_buffer(shader::PointLight* points, const SceneVisibi
     }
     return count;
 }
-
 
 template<bool SetTransform>
 static u32 fill_spot_light_buffer(shader::SpotLight* spots, const SceneVisibilitySubPass& visibility, const ShadowMapPass& shadow_pass) {
@@ -242,152 +176,62 @@ static u32 fill_spot_light_buffer(shader::SpotLight* spots, const SceneVisibilit
     return count;
 }
 
-static void local_lights_pass_compute(FrameGraph& framegraph,
-                              FrameGraphMutableImageId lit,
-                              const GBufferPass& gbuffer,
-                              const ShadowMapPass& shadow_pass,
-                              bool debug_tiles = false) {
 
-    const math::Vec2ui size = framegraph.image_size(lit);
-    const SceneVisibilitySubPass visibility = gbuffer.scene_pass.visibility;
+LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const LightingSettings& settings) {
+    LightingPass pass;
+    pass.shadow_pass = ShadowMapPass::create(framegraph, gbuffer.scene_pass.visibility, settings.shadow_settings);
 
-    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Lighting pass");
+    {
+        const SceneVisibilitySubPass visibility = gbuffer.scene_pass.visibility;
 
-    const auto point_buffer = builder.declare_typed_buffer<shader::PointLight>(max_point_lights);
-    const auto spot_buffer = builder.declare_typed_buffer<shader::SpotLight>(max_spot_lights);
+        FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Lighting pass");
 
-    builder.add_uniform_input(gbuffer.depth);
-    builder.add_uniform_input(gbuffer.color);
-    builder.add_uniform_input(gbuffer.normal);
-    builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow);
-    builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_storage_input(point_buffer);
-    builder.add_storage_input(spot_buffer);
-    builder.add_storage_input(shadow_pass.shadow_infos);
-    builder.add_storage_output(lit);
-    builder.map_buffer(point_buffer);
-    builder.map_buffer(spot_buffer);
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        auto points = self->resources().map_buffer(point_buffer);
-        auto spots = self->resources().map_buffer(spot_buffer);
+        const auto lit = builder.declare_copy(gbuffer.emissive);
+        const math::Vec2ui size = framegraph.image_size(lit);
 
-        const u32 point_count = fill_point_light_buffer(points.data(), visibility);
-        const u32 spot_count = fill_spot_light_buffer<false>(spots.data(), visibility, shadow_pass);
-        const math::Vec2ui light_count(point_count, spot_count);
+        const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(max_directional_lights);
+        const auto point_buffer = builder.declare_typed_buffer<shader::PointLight>(max_point_lights);
+        const auto spot_buffer = builder.declare_typed_buffer<shader::SpotLight>(max_spot_lights);
 
-        if(point_count || spot_count) {
-            const auto& program = device_resources()[debug_tiles ? DeviceResources::DeferredLocalsDebugProgram : DeviceResources::DeferredLocalsProgram];
+        builder.add_uniform_input(gbuffer.depth);
+        builder.add_uniform_input(gbuffer.color);
+        builder.add_uniform_input(gbuffer.normal);
+        builder.add_uniform_input(pass.shadow_pass.shadow_map, SamplerType::Shadow);
+        builder.add_uniform_input(gbuffer.scene_pass.camera);
+        builder.add_storage_input(directional_buffer);
+        builder.add_storage_input(point_buffer);
+        builder.add_storage_input(spot_buffer);
+        builder.add_storage_input(pass.shadow_pass.shadow_infos);
+
+        builder.add_storage_output(lit);
+
+        builder.map_buffer(directional_buffer);
+        builder.map_buffer(point_buffer);
+        builder.map_buffer(spot_buffer);
+
+        builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+            auto directionals = self->resources().map_buffer(directional_buffer);
+            auto points = self->resources().map_buffer(point_buffer);
+            auto spots = self->resources().map_buffer(spot_buffer);
+
+            const u32 directional_count = fill_directional_light_buffer(directionals.data(), visibility, pass.shadow_pass);
+            const u32 point_count = fill_point_light_buffer(points.data(), visibility);
+            const u32 spot_count = fill_spot_light_buffer<false>(spots.data(), visibility, pass.shadow_pass);
+            const math::Vec4ui light_count(directional_count, point_count, spot_count, 0);
+
+            const auto& program = device_resources()[settings.debug_tiles ? DeviceResources::DeferredSingleDebugPassProgram : DeviceResources::DeferredSinglePassProgram];
 
             core::ScratchVector<Descriptor> descs(self->descriptor_set().descriptors().size() + 1);
             descs.push_back(self->descriptor_set().descriptors().begin(), self->descriptor_set().descriptors().end());
             descs.emplace_back(InlineDescriptor(light_count));
             recorder.dispatch_threads(program, size, DescriptorSetProxy(descs));
-        }
-    });
-}
-
-static void local_lights_pass(FrameGraph& framegraph,
-                              FrameGraphMutableImageId lit,
-                              const GBufferPass& gbuffer,
-                              const ShadowMapPass& shadow_pass) {
-
-    const SceneVisibilitySubPass visibility = gbuffer.scene_pass.visibility;
-
-    FrameGraphMutableImageId copied_depth;
-
-    {
-        FrameGraphPassBuilder builder = framegraph.add_pass("Point light pass");
-
-        const auto point_buffer = builder.declare_typed_buffer<shader::PointLight>(max_point_lights);
-
-        // Moving this down causes a reused resource assert
-        copied_depth = builder.declare_copy(gbuffer.depth); // extra copy for nothing =(
-
-        builder.add_uniform_input(gbuffer.scene_pass.camera, PipelineStage::VertexBit);
-        builder.add_storage_input(point_buffer, PipelineStage::VertexBit);
-        builder.add_uniform_input(gbuffer.depth);
-        builder.add_uniform_input(gbuffer.color);
-        builder.add_uniform_input(gbuffer.normal);
-        builder.add_depth_output(copied_depth);
-        builder.add_color_output(lit);
-        builder.map_buffer(point_buffer);
-        builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-            auto points = self->resources().map_buffer(point_buffer);
-            const u32 point_count = fill_point_light_buffer(points.data(), visibility);
-
-            if(!point_count) {
-                return;
-            }
-
-            const auto* material = device_resources()[DeviceResources::DeferredPointLightMaterialTemplate];
-            render_pass.bind_material_template(material, self->descriptor_set());
-            {
-                const StaticMesh& sphere = *device_resources()[DeviceResources::SimpleSphereMesh];
-                render_pass.draw(sphere.draw_data(), point_count);
-            }
         });
+
+        pass.lit = lit;
     }
 
-    {
-        FrameGraphPassBuilder builder = framegraph.add_pass("Spot light pass");
-
-        const auto spot_buffer = builder.declare_typed_buffer<shader::SpotLight>(max_spot_lights);
-
-        builder.add_uniform_input(gbuffer.scene_pass.camera);
-        builder.add_storage_input(spot_buffer);
-        builder.add_uniform_input(gbuffer.depth);
-        builder.add_uniform_input(gbuffer.color);
-        builder.add_uniform_input(gbuffer.normal);
-        builder.add_uniform_input(shadow_pass.shadow_map, SamplerType::Shadow);
-        builder.add_storage_input(shadow_pass.shadow_infos);
-        builder.add_depth_output(copied_depth);
-        builder.add_color_output(lit);
-        builder.map_buffer(spot_buffer);
-        builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-            auto spots = self->resources().map_buffer(spot_buffer);
-            const u32 spot_count = fill_spot_light_buffer<true>(spots.data(), visibility, shadow_pass);
-
-            if(!spot_count) {
-                return;
-            }
-
-            const auto* material = device_resources()[DeviceResources::DeferredSpotLightMaterialTemplate];
-            render_pass.bind_material_template(material, self->descriptor_set());
-
-            const StaticMesh& cone = *device_resources()[DeviceResources::ConeMesh];
-            render_pass.draw(cone.draw_data(), spot_count);
-        });
-    }
-}
-
-static LightingPass create_ao_or_gi(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId ao_or_gi, bool is_gi, const LightingSettings& settings) {
-    const auto region = framegraph.region("Lighting");
-
-    LightingPass pass;
-    pass.shadow_pass = ShadowMapPass::create(framegraph, gbuffer.scene_pass.visibility, settings.shadow_settings);
-
-    const auto lit = ambient_pass(framegraph, gbuffer, pass.shadow_pass, ao_or_gi, is_gi);
-
-    if(settings.use_compute_for_locals) {
-        local_lights_pass_compute(framegraph, lit, gbuffer, pass.shadow_pass, settings.debug_tiles);
-    } else {
-        local_lights_pass(framegraph, lit, gbuffer, pass.shadow_pass);
-    }
-
-    pass.lit = lit;
     return pass;
 }
-
-
-
-LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const AOPass &ao, const LightingSettings& settings) {
-    return create_ao_or_gi(framegraph, gbuffer, ao.ao, false, settings);
-}
-
-LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const RTGIPass& gi, const LightingSettings& settings) {
-    return create_ao_or_gi(framegraph, gbuffer, gi.gi, true, settings);
-}
-
 
 }
 

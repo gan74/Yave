@@ -31,6 +31,7 @@ SOFTWARE.
 #include "BloomPass.h"
 #include "TAAPass.h"
 #include "RTGIPass.h"
+#include "AmbientPass.h"
 
 namespace yave {
 
@@ -55,9 +56,10 @@ struct DefaultRenderer {
     SceneVisibilitySubPass visibility;
     CameraBufferPass camera;
     GBufferPass gbuffer;
+    LightingPass lighting;
     AOPass ao;
     RTGIPass rtgi;
-    LightingPass lighting;
+    AmbientPass ambient;
     AtmospherePass atmosphere;
     ExposurePass exposure;
     BloomPass bloom;

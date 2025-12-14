@@ -44,8 +44,10 @@ class DeviceResources final : NonMovable {
             EquirecConvolutionProgram,
             CubemapConvolutionProgram,
             BRDFIntegratorProgram,
-            DeferredLocalsProgram,
-            DeferredLocalsDebugProgram,
+            DeferredSinglePassProgram,
+            DeferredSingleDebugPassProgram,
+            DeferredAmbientGIProgram,
+            DeferredAmbientAOProgram,
             LinearizeDepthProgram,
             SSAOProgram,
             SSAOUpsampleProgram,
@@ -86,10 +88,6 @@ class DeviceResources final : NonMovable {
             TexturedSpecularAlphaMaterialTemplate,
             TexturedSpecularAlphaDoubleSidedMaterialTemplate,
 
-            DeferredPointLightMaterialTemplate,
-            DeferredSpotLightMaterialTemplate,
-            DeferredAmbientMaterialTemplate,
-            DeferredGIMaterialTemplate,
             AtmosphereMaterialTemplate,
             ToneMappingMaterialTemplate,
 

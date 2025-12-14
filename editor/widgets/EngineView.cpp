@@ -643,7 +643,6 @@ void EngineView::draw_settings_menu() {
     if(ImGui::BeginMenu("Lighting")) {
         LightingSettings& settings = _settings.renderer_settings.lighting;
 
-        ImGui::Checkbox("Use compute", &settings.use_compute_for_locals);
         ImGui::Checkbox("Debug tiles", &settings.debug_tiles);
 
         ImGui::EndMenu();

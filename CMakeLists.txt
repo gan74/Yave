@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.24)
 project(yave)
 
 function(build_luajit LUAJIT_TARGET)
@@ -182,20 +183,17 @@ file(GLOB_RECURSE SHADER_FILES
 
 
 function(build_engine_shaders SHADER_TARGET)
-    add_slang_shader(${SHADER_TARGET} "deferred_light.slang" "POINT")
-    add_slang_shader(${SHADER_TARGET} "deferred_light.slang" "SPOT")
+    add_slang_shader(${SHADER_TARGET} "deferred_single_pass.slang" "")
+    add_slang_shader(${SHADER_TARGET} "deferred_single_pass.slang" "DEBUG")
 
-    add_slang_shader(${SHADER_TARGET} "deferred_locals.slang" "")
-    add_slang_shader(${SHADER_TARGET} "deferred_locals.slang" "DEBUG")
+    add_slang_shader(${SHADER_TARGET} "deferred_ambient.slang" "GI")
+    add_slang_shader(${SHADER_TARGET} "deferred_ambient.slang" "AO")
 
     add_slang_shader(${SHADER_TARGET} "ssao.slang" "")
     add_slang_shader(${SHADER_TARGET} "ssao_upsample.slang" "")
     add_slang_shader(${SHADER_TARGET} "ssao_upsample.slang" "COMBINE_HIGH")
 
     add_slang_shader(${SHADER_TARGET} "atmosphere.slang" "")
-
-    add_slang_shader(${SHADER_TARGET} "deferred_ambient.slang" "")
-    add_slang_shader(${SHADER_TARGET} "deferred_ambient.slang" "GI")
 
     add_slang_shader(${SHADER_TARGET} "blur.slang" "HORIZONTAL")
     add_slang_shader(${SHADER_TARGET} "blur.slang" "VERTICAL")
