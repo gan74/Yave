@@ -36,13 +36,13 @@ namespace yave {
 static u32 taa_flags(const TAASettings& settings) {
     u32 flags = 0;
     if(settings.use_clamping) {
-        flags |= shader::TAAFeatureBits::ClampingBit;
+        flags |= u32(shader::TAAFeatureBits::ClampingBit);
     }
     if(settings.use_denoise) {
-        flags |= shader::TAAFeatureBits::DenoiseBit;
+        flags |= u32(shader::TAAFeatureBits::DenoiseBit);
     }
     if(settings.luminance_weighting) {
-        flags |= shader::TAAFeatureBits::LumWeightBit;
+        flags |= u32(shader::TAAFeatureBits::LumWeightBit);
     }
     return flags;
 }

@@ -3,15 +3,17 @@
 
 
 #ifdef __cplusplus
-#define Address(type) u64
+#define SLANG_PTR(type) u64
 #define SLANG_CTOR(Type) Type
+#define SLANG_CONST const
 #else
-#define Address(type) type*
+#define SLANG_PTR(type) type*
 #define SLANG_CTOR(Type) __init
+#define SLANG_CONST
 #endif
 
 
-enum TextureSlots : uint32_t {
+enum /*class*/ TextureSlots : uint32_t {
     Albedo                      = 0,
     Normal                      = 1,
     Emissive                    = 2,
@@ -19,13 +21,18 @@ enum TextureSlots : uint32_t {
     SpecularColor               = 4,
 };
 
-enum TAAFeatureBits : uint32_t {
+enum class MaterialFlags : uint32_t {
+    None                        = 0x00,
+    AlphaTested                 = 0x01,
+};
+
+enum class TAAFeatureBits : uint32_t {
     ClampingBit                 = 0x01,
     DenoiseBit                  = 0x02,
     LumWeightBit                = 0x04,
 };
 
-enum TAAMask : uint32_t {
+enum class TAAMask : uint32_t {
     None                        = 0,
     UvOutOfBounds               = 1,
     MotionMismatch              = 2,
@@ -83,7 +90,12 @@ struct MaterialData {
     float3 specular_color_factor;
     float specular_factor;
 
-    uint texture_indices[8];
+    uint texture_indices[7];
+    MaterialFlags flags;
+
+    bool is(MaterialFlags f) SLANG_CONST {
+        return (uint(flags) & uint(f)) == uint(f);
+    }
 };
 
 struct ExposureParams {
@@ -176,16 +188,16 @@ struct MeshObject {
 struct UnalignedFloat3 {
     float x, y, z;
 
-    float3 to_float3() {
+    float3 to_float3() SLANG_CONST {
         return float3(x, y, z);
     }
 };
 
 struct StaticMeshData {
-    Address(UnalignedFloat3) positions;
-    Address(uint2) tbns;
-    Address(float2) uvs;
-    Address(uint) padding_1;
+    SLANG_PTR(UnalignedFloat3) positions;
+    SLANG_PTR(uint2) tbns;
+    SLANG_PTR(float2) uvs;
+    SLANG_PTR(uint) padding_1;
 };
 
 #endif

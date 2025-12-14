@@ -88,6 +88,10 @@ MaterialDrawData MaterialAllocator::allocate_material(const MaterialData& materi
         for(usize i = 0; i != textures.size(); ++i) {
             data.texture_indices[i] = texture_library().add_texture(textures[i]);
         }
+
+        if(material.alpha_tested()) {
+            data.flags = shader::MaterialFlags(u32(data.flags) | u32(shader::MaterialFlags::AlphaTested));
+        }
     }
 
     const u32 index = _free.locked([&](auto&& free) {
