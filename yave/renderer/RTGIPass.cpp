@@ -93,7 +93,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         settings.pos_jitter,
         settings.norm_jitter,
 
-        256.0f,
+        4096.0f,
         settings.min_ray_count,
         settings.max_ray_count,
         u32(visibility.directional_lights.size()),
@@ -102,19 +102,22 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
     builder.map_buffer(directional_buffer);
 
+    builder.add_storage_output(gi);
+
+    builder.add_descriptor_binding(Descriptor(hash));
+    builder.add_descriptor_binding(Descriptor(sum));
+
+    builder.add_descriptor_binding(Descriptor(tlas));
+
     builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_descriptor_binding(Descriptor(hash));
-    builder.add_descriptor_binding(Descriptor(sum));
-    builder.add_inline_input(params);
 
-    builder.add_descriptor_binding(Descriptor(tlas));
+    builder.add_external_input(ibl_probe ? *ibl_probe : *device_resources().empty_probe());
     builder.add_external_input(Descriptor(material_allocator().material_buffer()));
     builder.add_storage_input(directional_buffer);
-    builder.add_external_input(ibl_probe ? *ibl_probe : *device_resources().empty_probe());
 
-    builder.add_storage_output(gi);
+    builder.add_inline_input(params);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         auto mapping = self->resources().map_buffer(directional_buffer);

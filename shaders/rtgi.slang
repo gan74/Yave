@@ -22,21 +22,36 @@ static const uint extra_sample_count = 8;
 
 
 [[vk::binding(0)]]
-Sampler2D<float> in_depth;
+RWTexture2D out_image;
 
 [[vk::binding(1)]]
-Sampler2D<uint> in_rt1;
-
-[[vk::binding(2)]]
-ConstantBuffer<Camera> camera;
-
-[[vk::binding(3)]]
 RWStructuredBuffer<uint> hash_table;
 
-[[vk::binding(4)]]
+[[vk::binding(2)]]
 RWStructuredBuffer<float> sum_table;
 
+[[vk::binding(3)]]
+RaytracingAccelerationStructure tlas;
+
+[[vk::binding(4)]]
+Sampler2D<float> in_depth;
+
 [[vk::binding(5)]]
+Sampler2D<uint> in_rt1;
+
+[[vk::binding(6)]]
+ConstantBuffer<Camera> camera;
+
+[[vk::binding(7)]]
+SamplerCube in_envmap;
+
+[[vk::binding(8)]]
+StructuredBuffer<MaterialData> materials;
+
+[[vk::binding(9)]]
+StructuredBuffer<DirectionalLight> lights;
+
+[[vk::binding(10)]]
 cbuffer Params {
     uint hash_size;
     uint frame_id;
@@ -53,22 +68,6 @@ cbuffer Params {
     float max_ray_count;
     uint light_count;
 };
-
-
-[[vk::binding(6)]]
-RaytracingAccelerationStructure tlas;
-
-[[vk::binding(7)]]
-StructuredBuffer<MaterialData> materials;
-
-[[vk::binding(8)]]
-StructuredBuffer<DirectionalLight> lights;
-
-[[vk::binding(9)]]
-SamplerCube in_envmap;
-
-[[vk::binding(10)]]
-RWTexture2D out_image;
 
 [[vk::binding(0, 1)]]
 Sampler2D all_textures[];
