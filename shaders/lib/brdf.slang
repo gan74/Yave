@@ -45,7 +45,13 @@ struct RTGIProbe : GISource {
         }
 
         float3 specular(float3 dir, float roughness) {
-            return ibl.specular(dir, roughness);
+            // TODO TODO TODO
+            // Giant filthy hack:
+            // Since the specular contrib from IBL doesn't incorporate any kind of occlusion,
+            // it overpowers everything that does.
+            // We set its luminance to match that of the diffuse GI to fix
+            const float3 spec = ibl.specular(dir, roughness);
+            return spec * (luminance(diffuse_gi) / luminance(ibl.diffuse(dir)));
         }
 };
 

@@ -46,7 +46,7 @@ float3 tone_map(float3 hdr, float exposure, uint mode) {
 
 [shader("fragment")]
 float4 frag_main() {
-    const float3 hdr = in_color[int2(semantics.frag_coord.xy)].rgb;
+    const float3 hdr = max(0.0, in_color[int2(semantics.frag_coord.xy)].rgb);
 
     const float3 tone_mapped = tone_map(hdr, params.exposure * exposure, tone_mapper);
     return float4(tone_mapped, 1.0);
