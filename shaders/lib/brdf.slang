@@ -199,7 +199,7 @@ float3 eval_ibl<T: GISource>(T probe, Sampler2D<float2> brdf_lut, float3 v, Surf
 
     const float3 diffuse = k_d * probe.diffuse(n) * info.albedo;
 
-    const float2 brdf = brdf_lut.Sample(float2(n_v, info.perceptual_roughness)).xy;
+    const float2 brdf = brdf_lut.SampleLevel(float2(n_v, info.perceptual_roughness), 0.0).xy;
     const float3 specular = probe.specular(r, info.perceptual_roughness) * (k_s * brdf.x + brdf.y);
 
     return diffuse + specular;
