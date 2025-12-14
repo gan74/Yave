@@ -8,7 +8,46 @@
 // https://github.com/nvpro-samples/vk_raytrace/blob/master/shaders/pbr_gltf.glsl
 
 
+interface GISource {
+    float3 diffuse(float3 normal);
+    float3 specular(float3 dir, float roughness);
+};
 
+struct IBLProbe : GISource {
+    SamplerCube probe;
+    uint last_mip;
+
+    __init(SamplerCube p) {
+        probe = p;
+        last_mip = image_mips(p);
+    }
+
+    float3 diffuse(float3 normal) {
+        return probe.SampleLevel(normal, last_mip).rgb;
+    }
+
+    float3 specular(float3 dir, float roughness) {
+        return probe.SampleLevel(dir, roughness_to_mip(roughness, last_mip)).rgb;
+    }
+};
+
+struct RTGIProbe : GISource {
+        IBLProbe ibl;
+        float3 diffuse_gi;
+
+        __init(SamplerCube p, float3 d) {
+            ibl = IBLProbe(p);
+            diffuse_gi = d;
+        }
+
+        float3 diffuse(float3 normal) {
+            return diffuse_gi;
+        }
+
+        float3 specular(float3 dir, float roughness) {
+            return ibl.specular(dir, roughness);
+        }
+};
 
 
 
@@ -141,9 +180,7 @@ float2 integrate_brdf(float n_v, float roughness) {
     return float2(a, b) / sample_count;
 }
 
-float3 eval_ibl(SamplerCube probe, Sampler2D<float2> brdf_lut, float3 v, SurfaceInfo info) {
-    const uint probe_mips = image_mips(probe);
-
+float3 eval_ibl<T: GISource>(T probe, Sampler2D<float2> brdf_lut, float3 v, SurfaceInfo info) {
     const float3 n = info.normal;
     const float3 r = reflect(-v, n);
 
@@ -154,12 +191,10 @@ float3 eval_ibl(SamplerCube probe, Sampler2D<float2> brdf_lut, float3 v, Surface
     const float3 k_s = f;
     const float3 k_d = (1.0 - k_s) * (1.0 - info.metallic);
 
-    const float3 irradiance = probe.SampleLevel(n, probe_mips - 1).rgb;
-    const float3 diffuse = k_d * irradiance * info.albedo;
+    const float3 diffuse = k_d * probe.diffuse(n) * info.albedo;
 
     const float2 brdf = brdf_lut.Sample(float2(n_v, info.perceptual_roughness)).xy;
-    const float3 prefiltered = probe.SampleLevel(r, roughness_to_mip(info.perceptual_roughness, probe_mips - 1)).rgb;
-    const float3 specular = prefiltered * (k_s * brdf.x + brdf.y);
+    const float3 specular = probe.specular(r, info.perceptual_roughness) * (k_s * brdf.x + brdf.y);
 
     return diffuse + specular;
 }

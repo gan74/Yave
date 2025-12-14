@@ -298,6 +298,7 @@ void main() {
             acc.rgb += material.emissive;
 #endif
 
+            acc += material.albedo * in_envmap.SampleLevel(hit_normal, 999.0).rgb * n_t;
             for(uint k = 0; k != light_count; ++k) {
                 const DirectionalLight light = lights[k];
                 const float n_l = dot(light.direction, hit_normal);

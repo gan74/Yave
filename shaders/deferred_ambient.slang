@@ -163,10 +163,11 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
             }
         }
 
+
 #ifdef GI
-        irradiance += surface.albedo * in_gi[coord].rgb;
+        irradiance += eval_ibl(RTGIProbe(in_envmap, in_gi[coord].rgb), brdf_lut, view_dir, surface) * ibl_intensity;
 #else
-        irradiance += eval_ibl(in_envmap, brdf_lut, view_dir, surface) * ibl_intensity * in_ao.Sample(in_uv);
+        irradiance += eval_ibl(IBLProbe(in_envmap), brdf_lut, view_dir, surface) * ibl_intensity * in_ao.Sample(in_uv);
 #endif
 
 #if defined(DEBUG_CASCADES)
