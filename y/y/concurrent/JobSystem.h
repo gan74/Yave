@@ -41,19 +41,21 @@ namespace concurrent {
 
 
 class JobSystem : NonMovable {
-    public:
-        using JobFunc = std::function<void()>;
 
-    private:
-        struct JobData : NonMovable {
-            JobFunc func;
-            std::atomic<u32> dependencies = 0;
+    using JobFunc = std::function<void(u32)>;
 
-            core::SmallVector<std::shared_ptr<JobData>> outgoing_deps;
-            std::atomic<bool> finished = false;
+    struct JobData : NonMovable {
+        JobFunc func;
+        u32 count = 0;
 
-            std::source_location location;
-        };
+        std::atomic<u32> started = 0;
+        std::atomic<u32> finished = 0;
+
+        std::atomic<u32> dependencies = 0;
+        core::SmallVector<std::shared_ptr<JobData>> outgoing_deps;
+
+        std::source_location location;
+    };
 
     public:
         class JobHandle {
@@ -74,18 +76,6 @@ class JobSystem : NonMovable {
                 JobSystem* _parent = nullptr;
         };
 
-
-        /*class JobSet {
-            public:
-                void add_job(JobFunc&& func) {
-                    _jobs.emplace_back(std::move(func));
-                }
-
-            private:
-                core::Vector<JobFunc> _jobs;
-        };*/
-
-
         JobSystem(usize thread_count  = std::max(4u, std::thread::hardware_concurrency()));
         ~JobSystem();
 
@@ -94,12 +84,29 @@ class JobSystem : NonMovable {
         bool is_empty() const;
         void cancel_pending_jobs();
 
-
-        JobHandle schedule(JobFunc&& func, core::Span<JobHandle> deps = {}, std::source_location loc = std::source_location::current());
-
         void wait(core::Span<JobHandle> jobs);
 
+        template<typename F>
+        JobHandle schedule(F&& func, core::Span<JobHandle> deps = {}, std::source_location loc = std::source_location::current()) {
+            return schedule_n([func](u32) { func(); }, 1, deps, loc);
+        }
+
+        template<typename It, typename F>
+        JobHandle parallel_for(It begin, It end, F&& func, core::Span<JobHandle> deps = {}, std::source_location loc = std::source_location::current()) {
+            const usize size = usize(end - begin);
+            const u32 target_task_count = u32(_threads.size() * 4);
+            const u32 granularity = size ? u32(size / target_task_count) + 1 : 0;
+            const u32 task_count = size ? u32((size / granularity) + (size % granularity ? 1 : 0)) : 1;
+            return schedule_n([=](u32 index) {
+                const It a = It(begin + usize(index * granularity));
+                const It b = It(begin + std::min(size, usize((index + 1) * granularity)));
+                func(a, b);
+            }, task_count, deps, loc); // Need min 1 task to handle deps
+        }
+
     private:
+        JobHandle schedule_n(JobFunc&& func, u32 count, core::Span<JobHandle> deps, std::source_location loc);
+
         void worker();
         bool process_one(std::unique_lock<std::mutex>& lock);
 
