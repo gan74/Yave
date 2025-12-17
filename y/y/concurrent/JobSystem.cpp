@@ -204,8 +204,14 @@ bool JobSystem::process_one(std::unique_lock<std::mutex>& lock) {
                 auto& out = job->outgoing_deps[i];
                 if(out->dependencies.fetch_sub(1) == 1) {
                     scheduled += out->count;
-                    // Put new jobs at the front of the queue to avoid long trailing dependency chains
-                    _jobs.emplace_front(std::move(out));
+
+                    if(out->outgoing_deps.is_empty()) {
+                        _jobs.emplace_back(std::move(out));
+                    } else {
+                        // Put at the front of the queue to avoid long trailing dependency chains
+                        _jobs.emplace_front(std::move(out));
+                    }
+
                     --_waiting;
                 }
             }
