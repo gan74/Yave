@@ -92,31 +92,89 @@ static Instance create_instance() {
 
 
 
+void sleep() {
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+}
+
+
+
+
+
 using JobHandle = concurrent::JobSystem::JobHandle;
 
-struct Sched {
-    struct JobInOut {
-        core::Vector<ecs::ComponentTypeIndex> writing;
-        core::Vector<ecs::ComponentTypeIndex> reading;
+struct JobInOut {
+    core::Vector<ecs::ComponentTypeIndex> writing;
+    core::Vector<ecs::ComponentTypeIndex> reading;
 
-        template<typename T>
-        void fill_one() {
-            const ecs::ComponentTypeIndex t = ecs::type_index<ecs::traits::component_raw_type_t<T>>();
-            if constexpr(ecs::traits::is_component_mutable<T>) {
-                writing << t;
-            } else {
-                reading << t;
-            }
+    template<typename T>
+    void fill_one() {
+        const ecs::ComponentTypeIndex t = ecs::type_index<ecs::traits::component_raw_type_t<T>>();
+        if constexpr(ecs::traits::is_component_mutable<T>) {
+            writing << t;
+        } else {
+            reading << t;
+        }
+    }
+
+    template<typename... Ts>
+    void fill_from_group(ecs::EntityGroup<Ts...>*) {
+        (fill_one<Ts>(), ...);
+    }
+
+    template<typename T>
+    void fill_from_group() {
+        fill_from_group(static_cast<std::remove_cvref_t<T>*>(nullptr));
+    }
+
+    template<typename... Ts>
+    static JobInOut make() {
+        JobInOut io;
+        (io.fill_one<Ts>(), ...);
+        return io;
+    }
+};
+
+template<typename T, typename... Args>
+struct JobInOutMaker : JobInOutMaker<decltype(&T::operator())> {};
+
+template<typename Ret, typename... Args>
+struct JobInOutMaker<Ret(*)(Args...)> : JobInOutMaker<Ret(Args...)> {};
+
+template<typename Ret, typename... Args>
+struct JobInOutMaker<Ret(&)(Args...)> : JobInOutMaker<Ret(Args...)> {};
+
+template<typename T, typename Ret, typename... Args>
+struct JobInOutMaker<Ret(T::*)(Args...)> : JobInOutMaker<Ret(Args...)> {};
+
+template<typename T, typename Ret, typename... Args>
+struct JobInOutMaker<Ret(T::*)(Args...) const> : JobInOutMaker<Ret(Args...)> {};
+
+template<typename Ret, typename... Args>
+struct JobInOutMaker<Ret(Args...)> {
+    static JobInOut make() {
+        JobInOut io;
+        (io.fill_from_group<Args>(), ...);
+        return io;
+    }
+};
+
+
+class EntityGroupResolver {
+    public:
+        EntityGroupResolver() = default;
+        EntityGroupResolver(ecs::EntityWorld& world) : _world(&world) {
         }
 
         template<typename... Ts>
-        static JobInOut make() {
-            JobInOut io;
-            (io.fill_one<Ts>(), ...);
-            return io;
+        operator ecs::EntityGroup<Ts...>() const {
+            return _world->create_group<Ts...>();
         }
-    };
 
+    private:
+        ecs::EntityWorld* _world = nullptr;
+};
+
+struct Sched {
     struct Handle {
         usize index;
     };
@@ -125,7 +183,7 @@ struct Sched {
         JobInOut io;
         core::Vector<Handle> dependencies;
 
-        std::function<void()> func;
+        std::function<void(ecs::EntityWorld&)> func;
         JobHandle handle;
     };
 
@@ -139,7 +197,20 @@ struct Sched {
     }
 
 
-    void run_sched(concurrent::JobSystem& job_system) {
+    template<typename F>
+    Handle shed(F&& func, core::Span<Handle> deps = {}) {
+        JobInOut io = JobInOutMaker<F>::make();
+        return shed(std::move(io), [func](ecs::EntityWorld& world) {
+            std::array<EntityGroupResolver, function_traits<F>::arg_count> args;
+            for(EntityGroupResolver& arg : args) {
+                arg = EntityGroupResolver(world);
+            }
+            std::apply(func, args);
+        }, deps);
+    }
+
+
+    void run_sched(ecs::EntityWorld& world, concurrent::JobSystem& job_system) {
         y_profile();
 
         core::FlatHashMap<ecs::ComponentTypeIndex, core::Vector<JobHandle>> writing;
@@ -170,7 +241,7 @@ struct Sched {
             std::sort(to_wait.begin(), to_wait.end());
             const auto end = std::unique(to_wait.begin(), to_wait.end());
 
-            job.handle = job_system.schedule(job.func, core::Span(to_wait.data(), end - to_wait.begin()));
+            job.handle = job_system.schedule([&] { job.func(world); }, core::Span(to_wait.data(), end - to_wait.begin()));
 
             for(const ecs::ComponentTypeIndex& index : job.io.writing) {
                 writing[index] << job.handle;
@@ -189,11 +260,6 @@ struct Sched {
         }
     }
 };
-
-
-void sleep() {
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-}
 
 
 int main(int argc, char** argv) {
@@ -215,63 +281,53 @@ int main(int argc, char** argv) {
     Sched::Handle wait;
 
     REPEAT(1) {
-        Sched::JobInOut io = Sched::JobInOut::make<ecs::Mutate<int>, ecs::Mutate<float>>();
-
-        wait = s.shed(io, [] {
+        wait = s.shed([](ecs::EntityGroup<ecs::Mutate<int>, ecs::Mutate<float>>&&) {
             y_profile_zone("write: [int, float]");
             sleep();
         });
     }
 
     REPEAT(2) {
-        Sched::JobInOut io = Sched::JobInOut::make<int>();
-
-        s.shed(io, [] {
+        s.shed([](ecs::EntityGroup<int>&&) {
             y_profile_zone("read: [int]");
             sleep();
         });
     }
 
     REPEAT(2) {
-        Sched::JobInOut io = Sched::JobInOut::make<float>();
-
-        s.shed(io, [] {
+        s.shed([](ecs::EntityGroup<float>&&) {
             y_profile_zone("read: [float]");
             sleep();
         });
     }
 
     REPEAT(1) {
-        Sched::JobInOut io = Sched::JobInOut::make<ecs::Mutate<int>>();
-
-        s.shed(io, [] {
+        s.shed([](ecs::EntityGroup<ecs::Mutate<int>>&&) {
             y_profile_zone("write: [int]");
             sleep();
         });
     }
 
     REPEAT(2) {
-        Sched::JobInOut io = Sched::JobInOut::make<ecs::Mutate<float>>();
-
-        s.shed(io, [] {
+        s.shed([](ecs::EntityGroup<ecs::Mutate<float>>&&) {
             y_profile_zone("write: [float]");
             sleep();
         });
     }
 
     REPEAT(32) {
-        Sched::JobInOut io = Sched::JobInOut::make<double>();
-
-        s.shed(io, [] {
+        s.shed([](ecs::EntityGroup<double>&&) {
             y_profile_zone("read: [double]");
             sleep();
         });
     }
 
 
+    ecs::EntityWorld world;
+
     {
         concurrent::JobSystem js(4);
-        s.run_sched(js);
+        s.run_sched(world, js);
     }
 
 
