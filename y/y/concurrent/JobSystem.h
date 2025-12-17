@@ -47,7 +47,7 @@ class JobSystem : NonMovable {
         JobFunc func;
         u32 count = 0;
 
-        std::atomic<u32> started = 0;
+        u32 started = 0;
         std::atomic<u32> finished = 0;
 
         std::atomic<u32> dependencies = 0;
@@ -65,6 +65,8 @@ class JobSystem : NonMovable {
                 bool is_finished() const;
 
                 void wait() const;
+
+                JobSystem* parent() const;
 
             private:
                 friend class JobSystem;

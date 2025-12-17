@@ -46,6 +46,10 @@ void JobSystem::JobHandle::wait() const {
     _parent->wait(*this);
 }
 
+JobSystem* JobSystem::JobHandle::parent() const {
+    return _parent;
+}
+
 JobSystem::JobSystem(usize thread_count) {
     for(usize i = 0; i != thread_count; ++i) {
         _threads.emplace_back([this, i] {
