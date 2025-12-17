@@ -27,6 +27,8 @@ SOFTWARE.
 
 #include <yave/graphics/device/Instance.h>
 #include <yave/ecs/EntityWorld.h>
+#include <yave/ecs/traits.h>
+
 #include <y/concurrent/concurrent.h>
 #include <y/concurrent/Signal.h>
 
@@ -90,6 +92,110 @@ static Instance create_instance() {
 
 
 
+using JobHandle = concurrent::JobSystem::JobHandle;
+
+struct Sched {
+    struct JobInOut {
+        core::Vector<ecs::ComponentTypeIndex> writing;
+        core::Vector<ecs::ComponentTypeIndex> reading;
+
+        template<typename T>
+        void fill_one() {
+            const ecs::ComponentTypeIndex t = ecs::type_index<ecs::traits::component_raw_type_t<T>>();
+            if constexpr(ecs::traits::is_component_mutable<T>) {
+                writing << t;
+            } else {
+                reading << t;
+            }
+        }
+
+        template<typename... Ts>
+        static JobInOut make() {
+            JobInOut io;
+            (io.fill_one<Ts>(), ...);
+            return io;
+        }
+    };
+
+    struct Handle {
+        usize index;
+    };
+
+    struct Job {
+        JobInOut io;
+        core::Vector<Handle> dependencies;
+
+        std::function<void()> func;
+        JobHandle handle;
+    };
+
+    core::Vector<Job> _jobs;
+
+
+    template<typename F>
+    Handle shed(JobInOut io, F&& func, core::Span<Handle> deps = {}) {
+        _jobs.emplace_back(std::move(io), core::Vector<Handle>(deps), y_fwd(func), JobHandle());
+        return {_jobs.size() - 1};
+    }
+
+
+    void run_sched(concurrent::JobSystem& job_system) {
+        y_profile();
+
+        core::FlatHashMap<ecs::ComponentTypeIndex, core::Vector<JobHandle>> writing;
+        core::FlatHashMap<ecs::ComponentTypeIndex, core::Vector<JobHandle>> reading;
+
+        for(Job& job : _jobs) {
+            core::Vector<JobHandle> to_wait;
+
+            for(const Handle& dep : job.dependencies) {
+                const JobHandle& h = _jobs[dep.index].handle;
+                y_debug_assert(!h.is_empty());
+                to_wait << h;
+            }
+
+            for(const ecs::ComponentTypeIndex& index : job.io.writing) {
+                const core::Vector<JobHandle>& w = writing[index];
+                to_wait.push_back(w.begin(), w.end());
+
+                const core::Vector<JobHandle>& r = reading[index];
+                to_wait.push_back(r.begin(), r.end());
+            }
+
+            for(const ecs::ComponentTypeIndex& index : job.io.reading) {
+                const core::Vector<JobHandle>& w = writing[index];
+                to_wait.push_back(w.begin(), w.end());
+            }
+
+            std::sort(to_wait.begin(), to_wait.end());
+            const auto end = std::unique(to_wait.begin(), to_wait.end());
+
+            job.handle = job_system.schedule(job.func, core::Span(to_wait.data(), end - to_wait.begin()));
+
+            for(const ecs::ComponentTypeIndex& index : job.io.writing) {
+                writing[index] << job.handle;
+            }
+
+            for(const ecs::ComponentTypeIndex& index : job.io.reading) {
+                reading[index] << job.handle;
+            }
+        }
+
+        {
+            y_profile_zone("wait");
+            for(Job& job : _jobs) {
+                job.handle.wait();
+            }
+        }
+    }
+};
+
+
+void sleep() {
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+}
+
+
 int main(int argc, char** argv) {
     concurrent::set_thread_name("Main thread");
 
@@ -99,7 +205,77 @@ int main(int argc, char** argv) {
         log_msg("Unable to setup crash handler", Log::Warning);
     }
 
+
+    ::MessageBoxA(nullptr, "ready", "ready", 0);
+
+    Sched s;
+
+#define REPEAT(x) for(usize _i = 0; _i != (x); ++_i)
+
+    Sched::Handle wait;
+
+    REPEAT(1) {
+        Sched::JobInOut io = Sched::JobInOut::make<ecs::Mutate<int>, ecs::Mutate<float>>();
+
+        wait = s.shed(io, [] {
+            y_profile_zone("write: [int, float]");
+            sleep();
+        });
+    }
+
+    REPEAT(2) {
+        Sched::JobInOut io = Sched::JobInOut::make<int>();
+
+        s.shed(io, [] {
+            y_profile_zone("read: [int]");
+            sleep();
+        });
+    }
+
+    REPEAT(2) {
+        Sched::JobInOut io = Sched::JobInOut::make<float>();
+
+        s.shed(io, [] {
+            y_profile_zone("read: [float]");
+            sleep();
+        });
+    }
+
+    REPEAT(1) {
+        Sched::JobInOut io = Sched::JobInOut::make<ecs::Mutate<int>>();
+
+        s.shed(io, [] {
+            y_profile_zone("write: [int]");
+            sleep();
+        });
+    }
+
+    REPEAT(2) {
+        Sched::JobInOut io = Sched::JobInOut::make<ecs::Mutate<float>>();
+
+        s.shed(io, [] {
+            y_profile_zone("write: [float]");
+            sleep();
+        });
+    }
+
+    REPEAT(32) {
+        Sched::JobInOut io = Sched::JobInOut::make<double>();
+
+        s.shed(io, [] {
+            y_profile_zone("read: [double]");
+            sleep();
+        });
+    }
+
+
     {
+        concurrent::JobSystem js(4);
+        s.run_sched(js);
+    }
+
+
+    /*{
         Instance instance = create_instance();
 
         init_device(instance);
@@ -116,7 +292,7 @@ int main(int argc, char** argv) {
 
     app_settings().save();
 
-    log_msg("exiting...");
+    log_msg("exiting...");*/
 
     return 0;
 }
