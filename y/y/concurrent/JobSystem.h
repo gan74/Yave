@@ -29,11 +29,9 @@ SOFTWARE.
 #include <thread>
 #include <mutex>
 #include <atomic>
-#include <future>
 #include <condition_variable>
 #include <source_location>
-#include <optional>
-#include <latch>
+#include <compare>
 
 
 namespace y {
@@ -67,6 +65,13 @@ class JobSystem : NonMovable {
                 void wait() const;
 
                 JobSystem* parent() const;
+
+                inline auto operator<=>(const JobHandle& other) const {
+                    return _data <=> other._data;
+                }
+
+                bool operator==(const JobHandle&) const = default;
+                bool operator!=(const JobHandle&) const = default;
 
             private:
                 friend class JobSystem;

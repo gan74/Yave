@@ -176,12 +176,41 @@ class RingQueue : NonCopyable, Allocator {
             ++_size;
         }
 
+        inline void push_front(const_reference elem) {
+            if(is_full()) {
+                expand();
+            }
+            _beg_index = prev_index();
+            ::new(_data + _beg_index) data_type(elem);
+            ++_size;
+        }
+
+        inline void push_front(value_type&& elem) {
+            if(is_full()) {
+                expand();
+            }
+            _beg_index = prev_index();
+            ::new(_data + _beg_index) data_type(std::move(elem));
+            ++_size;
+        }
+
         template<typename... Args>
         inline reference emplace_back(Args&&... args) {
             if(is_full()) {
                 expand();
             }
             auto& ref = *(::new(_data + next_index()) data_type(y_fwd(args)...));
+            ++_size;
+            return ref;
+        }
+
+        template<typename... Args>
+        inline reference emplace_front(Args&&... args) {
+            if(is_full()) {
+                expand();
+            }
+            _beg_index = prev_index();
+            auto& ref = *(::new(_data + _beg_index) data_type(y_fwd(args)...));
             ++_size;
             return ref;
         }
@@ -309,7 +338,13 @@ class RingQueue : NonCopyable, Allocator {
         }
 
         inline usize next_index() const {
+            y_debug_assert(_capacity);
             return wrap(_beg_index + _size);
+        }
+
+        inline usize prev_index() const {
+            y_debug_assert(_capacity);
+            return wrap(_beg_index + _capacity - 1);
         }
 
         inline usize last_index() const {

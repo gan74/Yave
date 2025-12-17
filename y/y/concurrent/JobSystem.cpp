@@ -174,11 +174,19 @@ bool JobSystem::process_one(std::unique_lock<std::mutex>& lock) {
         return false;
     }
 
+#if 0
+    const std::shared_ptr<JobData> job = _jobs.pop_front();
+    const u32 index = job->started++;
+     if(index != job->count - 1) {
+        _jobs.push_back(job);
+    }
+#else
     const std::shared_ptr<JobData> job = _jobs.first();
     const u32 index = job->started++;
-    if(index + 1 == job->count) {
+    if(index == job->count - 1) {
         _jobs.pop_front();
     }
+#endif
 
     lock.unlock();
 
@@ -196,7 +204,8 @@ bool JobSystem::process_one(std::unique_lock<std::mutex>& lock) {
                 auto& out = job->outgoing_deps[i];
                 if(out->dependencies.fetch_sub(1) == 1) {
                     scheduled += out->count;
-                    _jobs.emplace_back(std::move(out));
+                    // Put new jobs at the front of the queue to avoid long trailing dependency chains
+                    _jobs.emplace_front(std::move(out));
                     --_waiting;
                 }
             }
