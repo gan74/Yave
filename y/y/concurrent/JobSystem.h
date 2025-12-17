@@ -41,7 +41,6 @@ namespace concurrent {
 
 
 class JobSystem : NonMovable {
-
     using JobFunc = std::function<void(u32)>;
 
     struct JobData : NonMovable {
@@ -92,7 +91,7 @@ class JobSystem : NonMovable {
         }
 
         template<typename It, typename F>
-        JobHandle parallel_for(It begin, It end, F&& func, core::Span<JobHandle> deps = {}, std::source_location loc = std::source_location::current()) {
+        JobHandle parallel_for_async(It begin, It end, F&& func, core::Span<JobHandle> deps = {}, std::source_location loc = std::source_location::current()) {
             const usize size = usize(end - begin);
             const u32 target_task_count = u32(_threads.size() * 4);
             const u32 granularity = size ? u32(size / target_task_count) + 1 : 0;
@@ -102,6 +101,14 @@ class JobSystem : NonMovable {
                 const It b = It(begin + std::min(size, usize((index + 1) * granularity)));
                 func(a, b);
             }, task_count, deps, loc); // Need min 1 task to handle deps
+        }
+
+
+        template<typename It, typename F>
+        void parallel_for(It begin, It end, F&& func, core::Span<JobHandle> deps = {}, std::source_location loc = std::source_location::current()) {
+            if(begin != end || !deps.is_empty()) {
+                parallel_for_async(begin, end, y_fwd(func), deps, loc).wait();
+            }
         }
 
     private:
