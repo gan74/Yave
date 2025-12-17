@@ -52,7 +52,7 @@ class EcsScene : public Scene {
 
         const ecs::EntityWorld* world() const;
 
-        void update_from_world();
+        void update_from_world(concurrent::JobSystem* job_system = nullptr);
 
         const StaticMeshObject* mesh(ecs::EntityId id) const;
         const PointLightObject* point_light(ecs::EntityId id) const;
@@ -71,7 +71,7 @@ class EcsScene : public Scene {
         void process_component_visibility(u32 ObjectIndices::* index_ptr, S& storage);
 
         template<typename T, typename S>
-        bool process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage);
+        bool process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage, concurrent::JobSystem* job_system = nullptr);
 
         template<typename T, typename S>
         void process_components(u32 ObjectIndices::* index_ptr, S& storage);

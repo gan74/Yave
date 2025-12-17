@@ -34,17 +34,21 @@ DebugAnimateSystem::DebugAnimateSystem() : ecs::System("DebugAnimateSystem") {
 }
 
 void DebugAnimateSystem::setup(ecs::SystemScheduler& sched) {
-    sched.schedule(ecs::SystemSchedule::Update, "Update", [this](ecs::EntityGroup<ecs::Mutate<TransformableComponent>, DebugAnimateComponent>&& group) {
+    sched.schedule(ecs::SystemSchedule::Update, "Update", [this](ecs::EntityGroup<ecs::Mutate<TransformableComponent>, DebugAnimateComponent>&& group, concurrent::JobSystem& job_system) {
         const float dt = float(_dt.reset().to_secs());
         const double time = _timer.elapsed().to_secs();
-        for(auto&& [tr, dg] : group) {
-            if(dg.rotate()) {
-                tr.set_transform(tr.transform() * math::rotation(dg.axis(), dt * dg.speed()));
+
+        job_system.parallel_for(group.begin(), group.end(), [=](auto begin, auto end) {
+            y_profile_zone("Update debug animate");
+            for(auto&& [tr, dg] : core::Range(begin, end)) {
+                if(dg.rotate()) {
+                    tr.set_transform(tr.transform() * math::rotation(dg.axis(), dt * dg.speed()));
+                }
+                if(dg.translate()) {
+                    tr.set_position(tr.position() + dg.axis() * float(std::sin(time * dg.speed())) * 0.1f);
+                }
             }
-            if(dg.translate()) {
-                tr.set_position(tr.position() + dg.axis() * float(std::sin(time * dg.speed())) * 0.1f);
-            }
-        }
+        });
     });
 }
 

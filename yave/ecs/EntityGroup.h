@@ -277,6 +277,14 @@ class EntityGroup final : NonMovable {
                 return _it <=> other._it;
             }
 
+            inline Iterator operator+(usize offset) const {
+                return Iterator(_it + offset, _sets);
+            }
+
+            inline auto operator-(const Iterator& other) const {
+                return _it - other._it;
+            }
+
             bool operator==(const Iterator&) const = default;
             bool operator!=(const Iterator&) const = default;
 

@@ -200,7 +200,7 @@ void CVarConsole::on_gui() {
                         ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
                         pop_color = true;
                     } else if(modified) {
-                        ImGui::PushStyleColor(ImGuiCol_Text, to_im(math::Vec4(sRGB_to_linear(math::Vec3(0.3f, 0.3f, 1.0f)), 1.0f)));
+                        ImGui::PushStyleColor(ImGuiCol_Text, to_im(math::Vec4(sRGB_to_linear(math::Vec3(0.6f, 0.6f, 1.0f)), 1.0f)));
                         pop_color = true;
                     }
 

@@ -35,7 +35,12 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-SystemScheduler::ArgumentResolver::ArgumentResolver(SystemScheduler* parent) : _parent(parent) {
+SystemScheduler::ArgumentResolver::ArgumentResolver(SystemScheduler* parent, concurrent::JobSystem& js) : _parent(parent), _job_system(&js) {
+}
+
+SystemScheduler::ArgumentResolver::operator concurrent::JobSystem&() const {
+    y_debug_assert(_job_system);
+    return *_job_system;
 }
 
 SystemScheduler::ArgumentResolver::operator const EntityWorld&() const {
@@ -65,7 +70,7 @@ SystemManager::SystemManager(EntityWorld* world) : _world(world) {
     y_debug_assert(_world);
 }
 
-void SystemManager::run_stage_seq(SystemSchedule schedule) const {
+void SystemManager::run_stage_seq(SystemSchedule schedule, concurrent::JobSystem& job_system) const {
     y_profile();
 
     for(const auto& scheduler : _schedulers) {
@@ -73,23 +78,23 @@ void SystemManager::run_stage_seq(SystemSchedule schedule) const {
         for(usize i = 0; i != sched.tasks.size(); ++i) {
             const auto& task = sched.tasks[i];
             y_profile_dyn_zone(fmt_c_str("{}: {}", scheduler->_system->name(), task.name));
-            task.func();
+            task.func(job_system);
         }
     }
 }
 
-void SystemManager::run_schedule_seq() const {
+void SystemManager::run_schedule_seq(concurrent::JobSystem& job_system) const {
     y_profile();
 
     for(usize t = 0; t != usize(SystemSchedule::Max); ++t) {
-        run_stage_seq(SystemSchedule(t));
+        run_stage_seq(SystemSchedule(t), job_system);
     }
 }
 
 void SystemManager::run_schedule_mt(concurrent::JobSystem& job_system) const {
     y_profile();
 
-    run_stage_seq(SystemSchedule::TickSequential);
+    run_stage_seq(SystemSchedule::TickSequential, job_system);
 
     usize task_count = 0;
     usize max_tasks = 0;
@@ -125,7 +130,7 @@ void SystemManager::run_schedule_mt(concurrent::JobSystem& job_system) const {
 
                 auto job = job_system.schedule([&]() {
                     y_profile_dyn_zone(fmt_c_str("{}: {}", scheduler->_system->name(), task.name));
-                    task.func();
+                    task.func(job_system);
                     ++completed;
                 }, prev);
 

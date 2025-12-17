@@ -132,7 +132,7 @@ TickId EntityWorld::tick_id() const {
 
 void EntityWorld::tick(concurrent::JobSystem& job_system) {
     _tick_id = _tick_id.next();
-    _system_manager.run_schedule_mt(job_system);
+    _system_manager.run_schedule_seq(job_system);
 }
 
 void EntityWorld::process_deferred_changes() {

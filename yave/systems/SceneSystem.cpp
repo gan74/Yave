@@ -30,8 +30,8 @@ SceneSystem::SceneSystem() : ecs::System("SceneSystem") {
 void SceneSystem::setup(ecs::SystemScheduler& sched) {
     _scene = std::make_unique<EcsScene>(&world());
 
-    sched.schedule(ecs::SystemSchedule::PostUpdate, "Scene update", [&]() {
-        _scene->update_from_world();
+    sched.schedule(ecs::SystemSchedule::PostUpdate, "Scene update", [&](concurrent::JobSystem& job_system) {
+        _scene->update_from_world(&job_system);
     });
 }
 

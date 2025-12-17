@@ -68,7 +68,8 @@ class TransformManager : NonMovable {
         IndexAllocator<u32> _index_allocator;
 
         core::Vector<TransformData> _transforms;
-        core::Vector<u32> _dirty;
+        ProfiledMutexed<core::Vector<u32>> _dirty;
+
 };
 
 

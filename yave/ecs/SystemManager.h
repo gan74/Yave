@@ -76,9 +76,11 @@ class SystemScheduler : NonMovable {
 
             const SystemJobHandle handle = create_job_handle();
 
-            s.tasks.emplace_back(std::move(name), handle, dep, [this, func]() {
+            s.tasks.emplace_back(std::move(name), handle, dep, [this, func](concurrent::JobSystem& js) {
                 std::array<ArgumentResolver, function_traits<Fn>::arg_count> args;
-                std::fill(args.begin(), args.end(), this);
+                for(ArgumentResolver& arg : args) {
+                    arg = ArgumentResolver(this, js);
+                }
                 std::apply(func, args);
             });
 
@@ -91,8 +93,9 @@ class SystemScheduler : NonMovable {
         class ArgumentResolver {
             public:
                 ArgumentResolver() = default;
-                ArgumentResolver(SystemScheduler* parent);
+                ArgumentResolver(SystemScheduler* parent, concurrent::JobSystem& js);
 
+                operator concurrent::JobSystem&() const;
                 operator const EntityWorld&() const;
                 operator FirstTime() const;
 
@@ -101,13 +104,14 @@ class SystemScheduler : NonMovable {
 
             private:
                 SystemScheduler* _parent = nullptr;
+                concurrent::JobSystem* _job_system = nullptr;
         };
 
         struct Task {
             core::String name;
             SystemJobHandle handle;
             SystemJobHandle wait_for;
-            std::function<void()> func;
+            std::function<void(concurrent::JobSystem&)> func;
         };
 
         struct Schedule {
@@ -132,7 +136,7 @@ class SystemManager : NonMovable {
     public:
         SystemManager(EntityWorld* world);
 
-        void run_schedule_seq() const;
+        void run_schedule_seq(concurrent::JobSystem& job_system) const;
         void run_schedule_mt(concurrent::JobSystem& job_system) const;
 
         SystemJobHandle create_job_handle();
@@ -182,7 +186,7 @@ class SystemManager : NonMovable {
 
 
     private:
-        void run_stage_seq(SystemSchedule schedule) const;
+        void run_stage_seq(SystemSchedule schedule, concurrent::JobSystem& job_system) const;
 
         void setup_system(System *system);
 

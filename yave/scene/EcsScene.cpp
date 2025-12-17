@@ -30,7 +30,7 @@ SOFTWARE.
 namespace yave {
 
 EcsScene::EcsScene(const ecs::EntityWorld* w) : _world(w) {
-    update_from_world();
+    update_from_world(nullptr);
 }
 
 const ecs::EntityWorld* EcsScene::world() const {
@@ -109,17 +109,22 @@ void EcsScene::process_component_visibility(u32 ObjectIndices::* index_ptr, S& s
 }
 
 template<typename T, typename S>
-bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage) {
+bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage, concurrent::JobSystem* job_system) {
     y_profile();
 
     auto update_transform = [this](auto& obj, const TransformableComponent& tr, const auto& comp) {
-        if(!obj.has_transform()) {
-            obj.transform_index = _transform_manager.alloc_transform();
-        }
-
-
+        y_debug_assert(obj.has_transform());
         _transform_manager.set_transform(obj.transform_index, tr.transform());
         obj.global_aabb = tr.to_global(comp.aabb());
+    };
+
+    auto schedule = [&](auto&& group, auto&& func) {
+        auto id_comps = group.id_components();
+        if(job_system) {
+            job_system->parallel_for(id_comps.begin(), id_comps.end(), func);
+        } else {
+            func(id_comps.begin(), id_comps.end());
+        }
     };
 
 
@@ -129,28 +134,41 @@ bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
         y_profile_zone("Add new objects");
         for(const ecs::EntityId id : group_provider->added_ids()) {
             register_object(id, index_ptr, storage);
+
+            auto& obj = storage[_indices.try_get(id)->*index_ptr];
+            if(!obj.has_transform()) {
+                obj.transform_index = _transform_manager.alloc_transform();
+            }
         }
     }
 
     {
         y_profile_zone("Update components");
         auto group = _world->create_group<TransformableComponent, ecs::Changed<T>>();
-        for(const auto& [id, tr, comp] : group.id_components()) {
-            auto& obj = storage[_indices.try_get(id)->*index_ptr];
+        schedule(group, [&](auto begin, auto end) {
+            y_profile_zone("Update components loop");
+            for(const auto& [id, tr, comp] : core::Range(begin, end)) {
+                auto& obj = storage[_indices.try_get(id)->*index_ptr];
 
-            obj.component = comp;
-            // We need to update in case the AABB has changed
-            update_transform(obj, tr, comp);
-        }
+                obj.component = comp;
+                // We need to update in case the AABB has changed
+                y_debug_assert(obj.has_transform());
+                update_transform(obj, tr, comp);
+            }
+        });
     }
 
     {
         y_profile_zone("Update transforms");
         auto group = _world->create_group<ecs::Changed<TransformableComponent>, T>();
-        for(const auto& [id, tr, comp] : group.id_components()) {
-            auto& obj = storage[_indices.try_get(id)->*index_ptr];
-            update_transform(obj, tr, comp);
-        }
+        schedule(group, [&](auto begin, auto end) {
+            y_profile_zone("Update transforms loop");
+            for(const auto& [id, tr, comp] : core::Range(begin, end)) {
+                auto& obj = storage[_indices.try_get(id)->*index_ptr];
+                y_debug_assert(obj.has_transform());
+                update_transform(obj, tr, comp);
+            }
+        });
     }
 
     {
@@ -256,17 +274,17 @@ ecs::EntityId EcsScene::id_from_index(u32 index) const {
     return _indices.id_from_index(index);
 }
 
-void EcsScene::update_from_world() {
+void EcsScene::update_from_world(concurrent::JobSystem* job_system) {
     y_profile();
 
     y_debug_assert(_world);
 
 
     bool need_tlas_rebuild = _tlas.is_null();
-    need_tlas_rebuild |= process_transformable_components<StaticMeshComponent>(&ObjectIndices::mesh, _meshes);
+    need_tlas_rebuild |= process_transformable_components<StaticMeshComponent>(&ObjectIndices::mesh, _meshes, job_system);
 
-    process_transformable_components<PointLightComponent>(&ObjectIndices::point_light, _point_lights);
-    process_transformable_components<SpotLightComponent>(&ObjectIndices::spot_light, _spot_lights);
+    process_transformable_components<PointLightComponent>(&ObjectIndices::point_light, _point_lights, job_system);
+    process_transformable_components<SpotLightComponent>(&ObjectIndices::spot_light, _spot_lights, job_system);
 
     process_components<DirectionalLightComponent>(&ObjectIndices::directional_light, _directionals);
     process_components<SkyLightComponent>(&ObjectIndices::sky_light, _sky_lights);
