@@ -29,21 +29,25 @@ SOFTWARE.
 namespace yave {
 
 class EcsScene : public Scene {
+    enum IndexType {
+        Mesh = 0,
+        PointLight,
+        SpotLight,
+        DirectionalLight,
+        SkyLight,
+
+        Count
+    };
+
     struct ObjectIndices {
-        u32 mesh = u32(-1);
-        u32 point_light = u32(-1);
-        u32 spot_light = u32(-1);
-        u32 directional_light = u32(-1);
-        u32 sky_light = u32(-1);
+        std::array<u32, IndexType::Count> indices;
+
+        ObjectIndices() {
+            std::fill(indices.begin(), indices.end(), u32(-1));
+        }
 
         bool is_empty() const {
-            return
-                mesh == u32(-1) &&
-                point_light == u32(-1) &&
-                spot_light == u32(-1) &&
-                directional_light == u32(-1) &&
-                sky_light == u32(-1)
-            ;
+            return std::all_of(indices.begin(), indices.end(), [](u32 i) { return i == u32(-1); });
         }
     };
 
@@ -62,19 +66,19 @@ class EcsScene : public Scene {
 
     private:
         template<typename S>
-        void register_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage);
+        void register_object(ecs::EntityId id, IndexType type, S& storage);
 
         template<typename S>
-        u32 unregister_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage);
+        u32 unregister_object(ecs::EntityId id, IndexType type, S& storage);
 
         template<typename T, typename S>
-        void process_component_visibility(u32 ObjectIndices::* index_ptr, S& storage);
+        void process_component_visibility(IndexType type, S& storage);
 
         template<typename T, typename S>
-        bool process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage, concurrent::JobSystem* job_system = nullptr);
+        bool process_transformable_components(IndexType type, S& storage, concurrent::JobSystem* job_system = nullptr);
 
         template<typename T, typename S>
-        void process_components(u32 ObjectIndices::* index_ptr, S& storage);
+        void process_components(IndexType type, S& storage);
 
         void process_atmosphere();
 
