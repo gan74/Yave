@@ -64,8 +64,6 @@ class JobSystem : NonMovable {
 
                 void wait() const;
 
-                JobSystem* parent() const;
-
                 inline auto operator<=>(const JobHandle& other) const {
                     return _data <=> other._data;
                 }
@@ -82,6 +80,33 @@ class JobSystem : NonMovable {
                 JobSystem* _parent = nullptr;
         };
 
+        class JobSet : NonCopyable {
+            public:
+                template<typename F>
+                void schedule(F&& func, std::source_location loc = std::source_location::current()) {
+                    _handles.emplace_back(_parent->schedule(y_fwd(func), _dependencies, loc));
+                }
+
+                template<typename It, typename F>
+                void parallel_for_async(It begin, It end, F&& func, std::source_location loc = std::source_location::current()) {
+                    _handles.emplace_back(_parent->parallel_for_async(begin, end, y_fwd(func), _dependencies, loc));
+                }
+
+                void wait() const;
+
+                core::Span<JobHandle> jobs() const;
+
+            private:
+                friend class JobSystem;
+
+                JobSet(JobSystem* p, core::Span<JobHandle> deps);
+
+                JobSystem* _parent = nullptr;
+                core::Vector<JobHandle> _dependencies;
+                core::Vector<JobHandle> _handles;
+        };
+
+
         JobSystem(usize thread_count  = std::max(4u, std::thread::hardware_concurrency()));
         ~JobSystem();
 
@@ -89,6 +114,9 @@ class JobSystem : NonMovable {
 
         bool is_empty() const;
         void cancel_pending_jobs();
+
+        JobSet create_job_set(core::Span<JobHandle> deps = {});
+        JobSet create_job_set(const JobSet& dep);
 
         void wait(core::Span<JobHandle> jobs);
 

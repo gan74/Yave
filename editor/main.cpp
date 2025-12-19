@@ -330,6 +330,33 @@ int main(int argc, char** argv) {
         s.run_sched(world, js);
     }
 
+    {
+        concurrent::JobSystem js(4);
+
+        auto set = js.create_job_set();
+        set.parallel_for_async(0, 11, [](int start, int end) {
+            for(int i = start; i != end; ++i) {
+                y_profile_dyn_zone(fmt_c_str("{}", i));
+                log_msg(fmt("{}", i));
+                sleep();
+            }
+        });
+
+        set = js.create_job_set(set);
+        set.parallel_for_async(11, 20, [](int start, int end) {
+            for(int i = start; i != end; ++i) {
+                y_profile_dyn_zone(fmt_c_str("{}", i));
+                log_msg(fmt("{}", i));
+                sleep();
+            }
+        });
+
+        y_profile_zone("wait");
+        set.wait();
+    }
+
+    log_msg("DONE");
+
 
     /*{
         Instance instance = create_instance();

@@ -46,9 +46,20 @@ void JobSystem::JobHandle::wait() const {
     _parent->wait(*this);
 }
 
-JobSystem* JobSystem::JobHandle::parent() const {
-    return _parent;
+
+
+JobSystem::JobSet::JobSet(JobSystem* p, core::Span<JobHandle> deps) : _parent(p), _dependencies(deps) {
 }
+
+void JobSystem::JobSet::wait() const {
+    _parent->wait(_handles);
+}
+
+core::Span<JobSystem::JobHandle> JobSystem::JobSet::jobs() const {
+    return _handles;
+}
+
+
 
 JobSystem::JobSystem(usize thread_count) {
     for(usize i = 0; i != thread_count; ++i) {
@@ -90,6 +101,29 @@ void JobSystem::cancel_pending_jobs() {
     _jobs.make_empty();
     _waiting = 0;
     _total_jobs = 0;
+}
+
+JobSystem::JobSet JobSystem::create_job_set(core::Span<JobHandle> deps) {
+    return JobSet(this, deps);
+}
+
+JobSystem::JobSet JobSystem::create_job_set(const JobSet& dep) {
+    return create_job_set(dep.jobs());
+}
+
+
+void JobSystem::wait(core::Span<JobHandle> jobs) {
+    for(const JobHandle& job : jobs) {
+        y_debug_assert(job._parent == this);
+
+        while(!job.is_finished()) {
+            auto lock = std::unique_lock(_lock);
+            Y_TODO(we deadlock if we wait here, so we have to spin)
+            process_one(lock);
+        }
+    }
+
+    y_debug_assert(std::all_of(jobs.begin(), jobs.end(), [](const JobHandle& j) { return j.is_finished(); }));
 }
 
 JobSystem::JobHandle JobSystem::schedule_n(JobFunc&& func, u32 count, core::Span<JobHandle> deps, std::source_location loc) {
@@ -139,19 +173,7 @@ JobSystem::JobHandle JobSystem::schedule_n(JobFunc&& func, u32 count, core::Span
     return handle;
 }
 
-void JobSystem::wait(core::Span<JobHandle> jobs) {
-    for(const JobHandle& job : jobs) {
-        y_debug_assert(job._parent == this);
 
-        while(!job.is_finished()) {
-            auto lock = std::unique_lock(_lock);
-            Y_TODO(we deadlock if we wait here, so we have to spin)
-            process_one(lock);
-        }
-    }
-
-    y_debug_assert(std::all_of(jobs.begin(), jobs.end(), [](const JobHandle& j) { return j.is_finished(); }));
-}
 
 void JobSystem::worker() {
     for(;;) {
