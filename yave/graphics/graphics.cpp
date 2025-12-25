@@ -166,12 +166,12 @@ static void init_vk_device() {
     auto required_features_1_3 = required_device_features_1_3();
     auto required_features_1_4 = required_device_features_1_4();
 
-    auto required_features_shader_float_atomic = required_device_features_shader_float_atomic();
 
     auto required_features_accel = required_device_features_accel_struct();
     auto required_features_raytracing = required_device_features_raytracing_pipeline();
     auto required_features_ray_query = required_device_features_ray_query();
     auto required_features_ray_position_fetch = required_device_features_ray_position_fetch();
+    auto required_features_shader_float_atomic = required_device_features_shader_float_atomic();
 
     y_always_assert(has_required_features(physical_device()), "{} doesn't support required features", physical_device().device_name());
     y_always_assert(has_required_properties(physical_device()), "{} doesn't support required properties", physical_device().device_name());
@@ -197,14 +197,14 @@ static void init_vk_device() {
         required_features_1_1.pNext = &required_features_1_2;
         required_features_1_2.pNext = &required_features_1_3;
         required_features_1_3.pNext = &required_features_1_4;
-        required_features_1_4.pNext = &required_features_shader_float_atomic;
     }
 
     if(raytracing_enabled()) {
         required_features_ray_query.pNext = &required_features_accel;
         required_features_accel.pNext = &required_features_raytracing;
         required_features_raytracing.pNext =  &required_features_ray_position_fetch;
-        required_features_ray_position_fetch.pNext = features.pNext;
+        required_features_ray_position_fetch.pNext = &required_features_shader_float_atomic;
+        required_features_shader_float_atomic.pNext = features.pNext;
 
         features.pNext = &required_features_ray_query;
     }

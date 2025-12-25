@@ -41,6 +41,7 @@ core::Span<const char*> raytracing_extensions() {
         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
         VK_KHR_RAY_QUERY_EXTENSION_NAME,
         VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME,
+        VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME,
     };
 
     return extensions;
@@ -57,7 +58,6 @@ core::Span<const char*> validation_extensions() {
 core::Span<const char*> required_extensions() {
     static constexpr std::array extensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME,
     };
 
     return extensions;
@@ -293,8 +293,6 @@ VkPhysicalDeviceFeatures required_device_features() {
         required.fragmentStoresAndAtomics = true;
         required.independentBlend = true;
         required.samplerAnisotropy = true;
-        required.shaderStorageImageReadWithoutFormat = true;
-        required.shaderStorageImageWriteWithoutFormat = true;
     }
 
     return required;
@@ -304,7 +302,6 @@ VkPhysicalDeviceVulkan11Features required_device_features_1_1() {
     VkPhysicalDeviceVulkan11Features required = vk_struct();
 
     {
-        // We don't actually need anything here...
         required.shaderDrawParameters = true;
     }
 
@@ -349,7 +346,7 @@ VkPhysicalDeviceVulkan14Features required_device_features_1_4() {
 VkPhysicalDeviceShaderAtomicFloatFeaturesEXT required_device_features_shader_float_atomic() {
     VkPhysicalDeviceShaderAtomicFloatFeaturesEXT required = vk_struct();
 
-    required.shaderBufferFloat32AtomicAdd = true;
+    // required.shaderBufferFloat32AtomicAdd = true;
 
     return required;
 }
@@ -405,10 +402,6 @@ bool has_required_features(const PhysicalDevice& physical) {
     }
 
     if(!physical.supports_features(required_device_features_1_4())) {
-        return false;
-    }
-
-    if(!physical.supports_features(required_device_features_shader_float_atomic())) {
         return false;
     }
 
