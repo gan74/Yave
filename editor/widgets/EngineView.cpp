@@ -95,7 +95,7 @@ static bool keep_taa(EngineView::RenderView view) {
 
 
 EngineView::EngineView() :
-        Widget(ICON_FA_DESKTOP " Engine View"),
+        Widget(ICON_FA_DESKTOP " Engine View", ImGuiWindowFlags_MenuBar),
         _resource_pool(std::make_shared<FrameGraphResourcePool>()),
         _camera_controller(std::make_unique<HoudiniCameraController>()),
         _tr_gizmo(&_scene_view),
@@ -351,10 +351,13 @@ void EngineView::make_drop_target() {
 // ---------------------------------------------- GUI ----------------------------------------------
 
 void EngineView::on_gui() {
+    if(ImGui::BeginMenuBar()) {
+        draw_toolbar();
+        ImGui::EndMenuBar();
+    }
+
     if(ImGui::BeginChild("##view")) {
         update_scene_view();
-
-        const ImVec2 cursor = ImGui::GetCursorPos();
 
         {
             CmdBufferRecorder recorder = create_disposable_cmd_buffer();
@@ -364,27 +367,10 @@ void EngineView::on_gui() {
 
         make_drop_target();
 
-        {
-            const float spacing = ImGui::GetStyle().IndentSpacing * 0.5f;
-            ImGui::SetCursorPos(cursor + ImVec2(spacing, spacing));
-            draw_toolbar_and_gizmos();
-        }
-
-
-        if(ImGui::BeginPopup("##menu")) {
-            draw_menu();
-            ImGui::EndPopup();
-        }
-
-        if(ImGui::BeginPopup("##resolutions")) {
-            draw_resolution_menu();
-            ImGui::EndPopup();
-        }
-
+        draw_gizmos();
 
         update_picking();
         update();
-
 
         if(!is_dragging_gizmo() && !_moving_camera && imgui::should_open_context_menu()) {
             ImGui::OpenPopup("##contextmenu");
@@ -410,84 +396,71 @@ void EngineView::on_gui() {
     ImGui::EndChild();
 }
 
+void EngineView::draw_toolbar() {
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImGui::GetStyle().ItemSpacing * 2.0f);
+    y_defer(ImGui::PopStyleVar());
 
-void EngineView::draw_toolbar_and_gizmos() {
-    y_profile();
+    if(ImGui::BeginMenu(ICON_FA_ADJUST)) {
+        draw_menu();
+        ImGui::EndMenu();
+    }
+    
+    ImGui::Separator();
 
-    struct GizmoButton  {
-        const char* icon = nullptr;
-        GizmoBase* gizmo = nullptr;
-    };
+    {
+        struct GizmoButton  {
+            const char* icon = nullptr;
+            GizmoBase* gizmo = nullptr;
+        };
 
-    const std::array<GizmoButton, usize(GizmoType::Max)> gizmo_buttons = {
-        GizmoButton { ICON_FA_ARROWS_ALT, &_tr_gizmo },
-        GizmoButton { ICON_FA_SYNC_ALT, &_rot_gizmo }
-    };
-
-
-    if(!is_dragging_gizmo()) {
-        ImGui::PushStyleColor(ImGuiCol_Text, 0xFFFFFFFF);
-        ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_PopupBg));
-
-        if(ImGui::Button(ICON_FA_ADJUST)) {
-            ImGui::OpenPopup("##menu");
-        }
-
-        ImGui::SameLine();
+        const std::array<GizmoButton, usize(GizmoType::Max)> gizmo_buttons = {
+            GizmoButton { ICON_FA_ARROWS_ALT, &_tr_gizmo },
+            GizmoButton { ICON_FA_SYNC_ALT, &_rot_gizmo }
+        };
 
         for(usize i = 0; i != gizmo_buttons.size(); ++i) {
             const bool is_selected = GizmoType(i) == _gizmo;
-            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(is_selected ? ImGuiCol_CheckMark : ImGuiCol_Text));
+            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(is_selected ? ImGuiCol_CheckMark : ImGuiCol_TextDisabled));
 
             const GizmoButton& button = gizmo_buttons[i];
-            if(ImGui::Button(button.icon)) {
+            if(ImGui::MenuItem(button.icon)) {
                 _gizmo = GizmoType(i);
             }
 
             ImGui::PopStyleColor();
-            ImGui::SameLine();
         }
-
-        if(_resolution >= 0) {
-            if(ImGui::Button(standard_resolutions()[_resolution].first)) {
-                ImGui::OpenPopup("##resolutions");
-            }
-        }
-
-        if(TimeSystem* time = current_world().find_system<TimeSystem>()) {
-            ImGui::SameLine();
-
-            const bool paused = time->time_scale() <= 0.0f;
-            if(ImGui::Button(paused ? ICON_FA_PLAY : ICON_FA_PAUSE)) {
-                time->set_time_scale(paused ? 1.0f : 0.0f);
-            }
-        }
-
-        ImGui::PopStyleColor(2);
     }
 
-    if(is_focussed() && ImGui::IsKeyPressed(to_imgui_key(app_settings().ui.change_gizmo_mode))) {
-        _gizmo = GizmoType((usize(_gizmo) + 1) % usize(GizmoType::Max));
+    if(_resolution >= 0) {
+        ImGui::Separator();
+        if(ImGui::BeginMenu(standard_resolutions()[_resolution].first)) {
+            draw_resolution_menu();
+            ImGui::EndMenu();
+        }
     }
 
-    gizmo_buttons[usize(_gizmo)].gizmo->draw();
-    _orientation_gizmo.draw();
+    ImGui::Separator();
+
+    if(TimeSystem* time = current_world().find_system<TimeSystem>()) {
+        const bool paused = time->time_scale() <= 0.0f;
+        if(ImGui::MenuItem(paused ? ICON_FA_PLAY : ICON_FA_PAUSE)) {
+            time->set_time_scale(paused ? 1.0f : 0.0f);
+        }
+    }
 }
 
-
 void EngineView::draw_menu() {
-    {
-        ImGui::MenuItem("Editor entities", nullptr, &_settings.show_editor_entities);
+    ImGui::MenuItem("Editor entities", nullptr, &_settings.show_editor_entities);
 
-        ImGui::Separator();
-        {
-            const char* output_names[] = {"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "AO", "GI"};
-            for(usize i = 0; i != usize(RenderView::Max); ++i) {
-                bool selected = usize(_view) == i;
-                ImGui::MenuItem(output_names[i], nullptr, &selected);
-                if(selected) {
-                    _view = RenderView(i);
-                }
+    ImGui::Separator();
+
+    {
+        const char* output_names[] = {"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "AO", "GI"};
+        for(usize i = 0; i != usize(RenderView::Max); ++i) {
+            bool selected = usize(_view) == i;
+            ImGui::MenuItem(output_names[i], nullptr, &selected);
+            if(selected) {
+                _view = RenderView(i);
             }
         }
     }
@@ -512,6 +485,23 @@ void EngineView::draw_menu() {
         draw_resolution_menu();
         ImGui::EndMenu();
     }
+}
+
+void EngineView::draw_gizmos() {
+    if(is_focussed() && ImGui::IsKeyPressed(to_imgui_key(app_settings().ui.change_gizmo_mode))) {
+        _gizmo = GizmoType((usize(_gizmo) + 1) % usize(GizmoType::Max));
+    }
+
+    switch(_gizmo) {
+        case GizmoType::Translate: 
+            _tr_gizmo.draw();
+        break;
+        case GizmoType::Rotate: 
+            _rot_gizmo.draw();
+        break;
+    }
+
+    _orientation_gizmo.draw();
 }
 
 void EngineView::draw_resolution_menu() {

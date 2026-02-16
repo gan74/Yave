@@ -88,7 +88,8 @@ class EngineView final : public Widget {
     private:
         void draw(CmdBufferRecorder& recorder);
 
-        void draw_toolbar_and_gizmos();
+        void draw_gizmos();
+        void draw_toolbar();
         void draw_menu();
         void draw_resolution_menu();
         void draw_settings_menu();

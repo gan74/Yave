@@ -59,7 +59,6 @@ float4 texture_min_filter(Sampler2D tex, float2 uv) {
 float sharpen_alpha(float a) {
     a = smoothstep(0.0, 1.0, a);
     a = smoothstep(0.0, 1.0, a);
-    a = smoothstep(0.0, 1.0, a);
     return a;
 }
 
