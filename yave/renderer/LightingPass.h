@@ -23,21 +23,18 @@ SOFTWARE.
 #define YAVE_RENDERER_LIGHTINGPASS_H
 
 #include "GBufferPass.h"
-#include "ShadowMapPass.h"
+#include "LightClusterPass.h"
 
 namespace yave {
 
 struct LightingSettings {
-    ShadowMapSettings shadow_settings;
     bool debug_tiles = false;
 };
 
 struct LightingPass {
     FrameGraphImageId lit;
 
-    ShadowMapPass shadow_pass;
-
-    static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const LightingSettings& settings = LightingSettings());
+    static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const LightClusterPass& cluster, const LightingSettings& settings = LightingSettings());
 };
 
 

@@ -1,3 +1,4 @@
+
 #ifndef STRUCT_SLANG
 #define STRUCT_SLANG
 
@@ -12,8 +13,9 @@
 #define SLANG_CONST
 #endif
 
+static const uint max_light_per_tile = 30;
 
-enum /*class*/ TextureSlots : uint32_t {
+enum /*class*/ TextureSlots : uint {
     Albedo                      = 0,
     Normal                      = 1,
     Emissive                    = 2,
@@ -21,18 +23,18 @@ enum /*class*/ TextureSlots : uint32_t {
     SpecularColor               = 4,
 };
 
-enum class MaterialFlags : uint32_t {
+enum class MaterialFlags : uint {
     None                        = 0x00,
     AlphaTested                 = 0x01,
 };
 
-enum class TAAFeatureBits : uint32_t {
+enum class TAAFeatureBits : uint {
     ClampingBit                 = 0x01,
     DenoiseBit                  = 0x02,
     LumWeightBit                = 0x04,
 };
 
-enum class TAAMask : uint32_t {
+enum class TAAMask : uint {
     None                        = 0,
     UvOutOfBounds               = 1,
     MotionMismatch              = 2,
@@ -143,8 +145,6 @@ struct SpotLight {
 
     float3 encl_sphere_center;
     float encl_sphere_radius;
-
-    float4x4 draw_model; // TODO remove
 };
 
 struct ShadowMapInfo {
@@ -184,6 +184,18 @@ struct MeshObject {
     uint mesh_data_index;
 };
 
+struct LightTile {
+    uint16_t point_count;
+    uint16_t spot_count;
+    uint16_t indices[max_light_per_tile];
+};
+
+struct LightClusterInfo {
+    uint directional_count;
+    uint point_count;
+    uint spot_count;
+    uint padding;
+};
 
 struct UnalignedFloat3 {
     float x, y, z;

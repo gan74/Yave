@@ -1,3 +1,4 @@
+
 /*******************************
 Copyright (c) 2016-2026 Grégoire Angerand
 
@@ -44,6 +45,7 @@ class DeviceResources final : NonMovable {
             EquirecConvolutionProgram,
             CubemapConvolutionProgram,
             BRDFIntegratorProgram,
+            LightClusterProgram,
             DeferredSinglePassProgram,
             DeferredSingleDebugPassProgram,
             DeferredAmbientGIProgram,

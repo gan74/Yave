@@ -99,6 +99,7 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "ibl_convolution_EQUIREC",
     "ibl_convolution_CUBE",
     "brdf_integrator",
+    "light_cluster",
     "deferred_single_pass",
     "deferred_single_pass_DEBUG",
     "deferred_ambient_GI",

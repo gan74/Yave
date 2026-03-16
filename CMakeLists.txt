@@ -183,6 +183,7 @@ file(GLOB_RECURSE SHADER_FILES
 
 
 function(build_engine_shaders SHADER_TARGET)
+    add_slang_shader(${SHADER_TARGET} "light_cluster.slang" "")
     add_slang_shader(${SHADER_TARGET} "deferred_single_pass.slang" "")
     add_slang_shader(${SHADER_TARGET} "deferred_single_pass.slang" "DEBUG")
 

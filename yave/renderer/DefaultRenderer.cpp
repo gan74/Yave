@@ -43,7 +43,9 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     ;
 
     renderer.gbuffer        = GBufferPass::create(framegraph, renderer.camera, renderer.visibility, size);
-    renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, settings.lighting);
+
+    renderer.cluster        = LightClusterPass::create(framegraph, renderer.gbuffer, settings.shadow);
+    renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.cluster, settings.lighting);
 
     if(raytracing_enabled() && settings.ambient_pipe == AmbientPipe::GI) {
         renderer.rtgi       = RTGIPass::create(framegraph, renderer.gbuffer, renderer.lighting.lit, settings.rtgi);

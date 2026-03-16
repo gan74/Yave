@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_RENDERER_DEFAULTRENDERER_H
 
 #include "CameraBufferPass.h"
+#include "LightClusterPass.h"
 #include "LightingPass.h"
 #include "AtmospherePass.h"
 #include "ExposurePass.h"
@@ -44,6 +45,7 @@ struct RendererSettings {
     ToneMappingSettings tone_mapping;
     AOSettings ao;
     RTGISettings rtgi;
+    ShadowMapSettings shadow;
     LightingSettings lighting;
     BloomSettings bloom;
     JitterSettings jitter;
@@ -56,6 +58,7 @@ struct DefaultRenderer {
     SceneVisibilitySubPass visibility;
     CameraBufferPass camera;
     GBufferPass gbuffer;
+    LightClusterPass cluster;
     LightingPass lighting;
     AOPass ao;
     RTGIPass rtgi;

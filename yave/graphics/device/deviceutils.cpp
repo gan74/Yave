@@ -90,7 +90,7 @@ float device_score(const PhysicalDevice& device) {
     const float rt_score = supports_rt ? 1.0f : 0.0f;
 
     const usize heap_size = device.total_device_memory() / (1024 * 1024);
-    const float heap_score = float(heap_size) / float(heap_size + 8 * 1024);
+    const float heap_score = float(heap_size) / float(heap_size + 16 * 1024);
 
     const float type_score = device.is_discrete() ? 1.0f : 0.0f;
 
@@ -293,6 +293,7 @@ VkPhysicalDeviceFeatures required_device_features() {
         required.fragmentStoresAndAtomics = true;
         required.independentBlend = true;
         required.samplerAnisotropy = true;
+        required.shaderInt16 = true;
     }
 
     return required;
@@ -303,6 +304,8 @@ VkPhysicalDeviceVulkan11Features required_device_features_1_1() {
 
     {
         required.shaderDrawParameters = true;
+        required.uniformAndStorageBuffer16BitAccess = true;
+        required.storageBuffer16BitAccess = true;
     }
 
     return required;
