@@ -346,7 +346,7 @@ VkPhysicalDeviceVulkan14Features required_device_features_1_4() {
 VkPhysicalDeviceShaderAtomicFloatFeaturesEXT required_device_features_shader_float_atomic() {
     VkPhysicalDeviceShaderAtomicFloatFeaturesEXT required = vk_struct();
 
-    // required.shaderBufferFloat32AtomicAdd = true;
+    required.shaderBufferFloat32AtomicAdd = true;
 
     return required;
 }
