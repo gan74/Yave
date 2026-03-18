@@ -245,7 +245,8 @@ class GenericAssetPtr {
         }
 
         inline bool operator==(const GenericAssetPtr& other) const {
-            return (_id == other._id && _type == other._type);
+            // Checking type fails if other is created from a non loaded ptr
+            return (_id == other._id/* && _type == other._type*/);
         }
 
         inline bool operator!=(const GenericAssetPtr& other) const {
