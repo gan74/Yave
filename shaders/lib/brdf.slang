@@ -51,7 +51,11 @@ struct RTGIProbe : GISource {
             // it overpowers everything that does.
             // We set its luminance to match that of the diffuse GI to fix
             const float3 spec = ibl.specular(dir, roughness);
-            return spec * (luminance(diffuse_gi) / luminance(ibl.diffuse(dir)));
+            const float ibl_diff_lum = luminance(ibl.diffuse(dir));
+            if(ibl_diff_lum < constants.epsilon) {
+                return spec;
+            }
+            return spec * (luminance(diffuse_gi) / ibl_diff_lum);
         }
 };
 
