@@ -126,6 +126,34 @@ struct JobInOut {
         fill_from_group(static_cast<std::remove_cvref_t<T>*>(nullptr));
     }
 
+    core::String to_string(const ecs::EntityWorld& world) const {
+        core::String str;
+        for(usize i = 0; i != writing.size(); ++i) {
+            if(!i) {
+                str += "write: [";
+            } else {
+                str += ", ";
+            }
+            str += world.component_type_name(writing[i]);
+        }
+        if(!writing.is_empty()) {
+            str += reading.is_empty() ? "]" : "], ";
+        }
+        
+        if(!reading.is_empty()) {
+            for(usize i = 0; i != reading.size(); ++i) {
+                if(!i) {
+                    str += "read: [";
+                } else {
+                    str += ", ";
+                }
+                str += world.component_type_name(reading[i]);
+            }
+            str += "]";
+        }
+        return str;
+    }
+
     template<typename... Ts>
     static JobInOut make() {
         JobInOut io;
@@ -191,7 +219,7 @@ struct Sched {
 
 
     template<typename F>
-    Handle shed(JobInOut io, F&& func, core::Span<Handle> deps = {}) {
+    Handle shed_internal(JobInOut io, F&& func, core::Span<Handle> deps = {}) {
         _jobs.emplace_back(std::move(io), core::Vector<Handle>(deps), y_fwd(func), JobHandle());
         return {_jobs.size() - 1};
     }
@@ -199,8 +227,7 @@ struct Sched {
 
     template<typename F>
     Handle shed(F&& func, core::Span<Handle> deps = {}) {
-        JobInOut io = JobInOutMaker<F>::make();
-        return shed(std::move(io), [func](ecs::EntityWorld& world) {
+        return shed_internal(JobInOutMaker<F>::make(), [func](ecs::EntityWorld& world) {
             std::array<EntityGroupResolver, function_traits<F>::arg_count> args;
             for(EntityGroupResolver& arg : args) {
                 arg = EntityGroupResolver(world);
@@ -241,7 +268,10 @@ struct Sched {
             std::sort(to_wait.begin(), to_wait.end());
             const auto end = std::unique(to_wait.begin(), to_wait.end());
 
-            job.handle = job_system.schedule([&] { job.func(world); }, core::Span(to_wait.data(), end - to_wait.begin()));
+            job.handle = job_system.schedule([&, name = job.io.to_string(world)] {
+                y_profile_dyn_zone(name.data());
+                job.func(world); 
+            }, core::Span(to_wait.data(), end - to_wait.begin()));
 
             for(const ecs::ComponentTypeIndex& index : job.io.writing) {
                 writing[index] << job.handle;
@@ -282,42 +312,42 @@ int main(int argc, char** argv) {
 
     REPEAT(1) {
         wait = s.shed([](ecs::EntityGroup<ecs::Mutate<int>, ecs::Mutate<float>>&&) {
-            y_profile_zone("write: [int, float]");
             sleep();
         });
     }
 
     REPEAT(2) {
         s.shed([](ecs::EntityGroup<int>&&) {
-            y_profile_zone("read: [int]");
             sleep();
         });
     }
 
     REPEAT(2) {
         s.shed([](ecs::EntityGroup<float>&&) {
-            y_profile_zone("read: [float]");
             sleep();
         });
     }
 
     REPEAT(1) {
         s.shed([](ecs::EntityGroup<ecs::Mutate<int>>&&) {
-            y_profile_zone("write: [int]");
+            sleep();
+        });
+    }
+
+    REPEAT(4) {
+        s.shed([](ecs::EntityGroup<ecs::Mutate<float>, int>&&) {
             sleep();
         });
     }
 
     REPEAT(2) {
         s.shed([](ecs::EntityGroup<ecs::Mutate<float>>&&) {
-            y_profile_zone("write: [float]");
             sleep();
         });
     }
 
     REPEAT(32) {
         s.shed([](ecs::EntityGroup<double>&&) {
-            y_profile_zone("read: [double]");
             sleep();
         });
     }
