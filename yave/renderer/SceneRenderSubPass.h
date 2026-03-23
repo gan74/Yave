@@ -27,18 +27,24 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphResourceId.h>
 
 #include "SceneVisibilitySubPass.h"
+#include "CollectBatchesSubPass.h"
+
+#include <functional>
 
 namespace yave {
 
 struct SceneRenderSubPass {
+    using RenderFunc = std::function<void(RenderPassRecorder&, const FrameGraphPass*)>;
+
     SceneView scene_view;
 
     i32 descriptor_set_index = -1;
     FrameGraphTypedBufferId<shader::Camera> camera;
 
-    Scene::RenderFunc render_func;
+    RenderFunc render_func;
 
     SceneVisibilitySubPass visibility;
+    CollectBatchesSubPass batches;
 
     static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const SceneView& scene_view, const SceneVisibilitySubPass& visibility, PassType pass_type);
     static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const CameraBufferPass& camera, const SceneVisibilitySubPass& visibility, PassType pass_type);

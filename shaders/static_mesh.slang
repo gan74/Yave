@@ -1,9 +1,12 @@
 #include "lib/std_bindings.slang"
-#include "lib/utils.slang"
+#include "lib/lighting.slang"
 
 
 
 struct PixelStageIn {
+    // TODO: remove when not needed?
+    float3 world_position;
+
     float3 normal;
     float2 uv;
 
@@ -21,6 +24,8 @@ struct VertexStageOut {
     PixelStageIn frag;
 };
 
+
+#ifdef GBUFFER
 struct PixelStageOut {
     float2 motion;
     RawGBuffer gbuffer;
@@ -31,7 +36,30 @@ struct PixelStageOut {
         emissive = 0.0;
     }
 };
+#else
+typedef float4 PixelStageOut;
 
+[[vk::binding(5)]]
+Sampler2DShadow in_shadows;
+
+[[vk::binding(6)]]
+StructuredBuffer<DirectionalLight> directional_lights;
+
+[[vk::binding(7)]]
+StructuredBuffer<PointLight> point_lights;
+
+[[vk::binding(8)]]
+StructuredBuffer<SpotLight> spot_lights;
+
+[[vk::binding(9)]]
+StructuredBuffer<ShadowMapInfo> shadow_infos;
+
+[[vk::binding(10)]]
+ConstantBuffer<LightClusterInfo> cluster_info;
+
+[[vk::binding(11)]]
+StructuredBuffer<LightTile> light_tiles;
+#endif
 
 
 [[vk::binding(0, 1)]]
@@ -46,7 +74,8 @@ VertexStageOut vert_main() {
 
     const float3x3 model = float3x3(transformable.current);
 
-    const float4 current_position = mul(camera.curr.view_proj, mul(transformable.current, float4(vert.position, 1.0)));
+    const float4 world_position = mul(transformable.current, float4(vert.position, 1.0));
+    const float4 current_position = mul(camera.curr.view_proj, world_position);
     const float4 last_position = mul(camera.prev.view_proj, mul(transformable.last, float4(vert.position, 1.0)));
 
     const float3 in_normal = unpack_2_10_10_10(vert.packed_normal_tangent_sign.x).xyz;
@@ -56,6 +85,7 @@ VertexStageOut vert_main() {
     {
         out.sv_position = current_position;
 
+        out.frag.world_position = world_position.xyz;
         out.frag.normal = normalize(mul(model, in_normal));
         out.frag.uv = vert.uv;
         out.frag.tangent = normalize(mul(model, in_tangent_sign.xyz));
@@ -103,7 +133,6 @@ float metalic_from_specular(float3 diffuse, float3 specular) {
 PixelStageOut frag_main(PixelStageIn in) {
     const MaterialData material = materials[mesh_objects[in.instance_index].material_index];
 
-
     const Sampler2D albedo_tex = all_textures[NonUniformResourceIndex(material.texture_indices[uint(TextureSlots::Albedo)])];
     const Sampler2D normal_tex = all_textures[NonUniformResourceIndex(material.texture_indices[uint(TextureSlots::Normal)])];
     const Sampler2D emissive_tex = all_textures[NonUniformResourceIndex(material.texture_indices[uint(TextureSlots::Emissive)])];
@@ -123,6 +152,7 @@ PixelStageOut frag_main(PixelStageIn in) {
         discard;
     }
 #endif
+
 
 
 #ifdef SPECULAR
@@ -146,9 +176,33 @@ PixelStageOut frag_main(PixelStageIn in) {
     }
 
 
+#ifdef GBUFFER
     PixelStageOut out;
     out.gbuffer = encode_gbuffer(surface);
     out.motion = ((in.last_screen_pos.xy / in.last_screen_pos.z) - (in.screen_pos.xy / in.screen_pos.z) - camera.combined_jitter) * 0.5;
     out.emissive = emissive_tex.Sample(in.uv).rgb * material.emissive_factor;
+#else
+    LightTile tile;
+    {
+        tile.point_count = 0;
+        tile.spot_count = 0;
+    }
+
+    const float3 world_pos = in.world_position;
+    const float4 out = float4(compute_lighting(
+        surface,
+        world_pos,
+        normalize(camera.position - world_pos),
+        cluster_info,
+        tile,
+        directional_lights,
+        point_lights,
+        spot_lights,
+        shadow_infos,
+        in_shadows
+    ), albedo_alpha.a);
+
+#endif
+
     return out;
 }

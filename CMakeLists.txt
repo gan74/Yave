@@ -1,3 +1,4 @@
+
 cmake_minimum_required(VERSION 3.24)
 cmake_minimum_required(VERSION 3.24)
 project(yave)
@@ -220,10 +221,15 @@ function(build_engine_shaders SHADER_TARGET)
 
     add_slang_shader(${SHADER_TARGET} "id.slang" "")
 
-    add_slang_shader(${SHADER_TARGET} "opaque.slang" "")
-    add_slang_shader(${SHADER_TARGET} "opaque.slang" "ALPHA_TEST")
-    add_slang_shader(${SHADER_TARGET} "opaque.slang" "SPECULAR")
-    add_slang_shader(${SHADER_TARGET} "opaque.slang" "SPECULAR;ALPHA_TEST")
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "FORWARD;")
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "FORWARD;ALPHA_TEST")
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "FORWARD;SPECULAR")
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "FORWARD;SPECULAR;ALPHA_TEST")
+
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "GBUFFER")
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "GBUFFER;ALPHA_TEST")
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "GBUFFER;SPECULAR")
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "GBUFFER;SPECULAR;ALPHA_TEST")
 
     add_slang_shader(${SHADER_TARGET} "directdraw.slang" "")
     add_slang_shader(${SHADER_TARGET} "copy.slang" "")

@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <yave/graphics/shader_structs.h>
 
+#include <y/utils/log.h>
+
 namespace yave {
 
 MaterialData::MaterialData(MetallicRoughnessMaterialData data) : MaterialData(Type::MetallicRoughness, std::move(data.common)) {
@@ -46,10 +48,15 @@ MaterialData::MaterialData(Type type, CommonMaterialData data) : _type(type) {
     _textures[shader::TextureSlots::Normal] = std::move(data.normal);
     _textures[shader::TextureSlots::Emissive] = std::move(data.emissive);
 
+    _blend_mode = data.blend_mode;
     _base_color_factor = data.color_factor;
     _emissive_factor = data.emissive_factor;
     _alpha_tested = data.alpha_tested;
     _double_sided = data.double_sided;
+}
+
+bool MaterialData::is_empty() const {
+    return std::all_of(_textures.begin(), _textures.end(), [](const auto& tex) { return tex.is_empty(); });
 }
 
 
@@ -57,8 +64,8 @@ MaterialData::Type MaterialData::material_type() const {
     return _type;
 }
 
-bool MaterialData::is_empty() const {
-    return std::all_of(_textures.begin(), _textures.end(), [](const auto& tex) { return tex.is_empty(); });
+BlendMode MaterialData::blend_mode() const {
+    return _blend_mode;
 }
 
 core::Span<AssetPtr<Texture>> MaterialData::textures() const {
@@ -105,6 +112,10 @@ bool MaterialData::double_sided() const {
 
 bool MaterialData::has_emissive() const {
     return !_textures[shader::TextureSlots::Emissive].is_empty() || !_emissive_factor.is_zero();
+}
+
+bool MaterialData::is_transparent() const {
+    return _blend_mode != BlendMode::None;
 }
 
 }

@@ -19,5 +19,4 @@ StructuredBuffer<StaticMeshData> mesh_datas;
 StructuredBuffer<MeshObject> mesh_objects;
 
 
-
 #endif

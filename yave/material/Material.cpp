@@ -30,42 +30,56 @@ SOFTWARE.
 
 namespace yave {
 
-static DeviceResources::MaterialTemplates material_template_for_data(const MaterialData& data) {
+Material::Material(MaterialData&& data) :
+    _draw_data(material_allocator().allocate_material(data)),
+    _data(std::move(data)) {
+
+    y_debug_assert(!is_null());
+
     if(data.material_type() == MaterialData::Type::Specular) {
         if(data.alpha_tested()) {
-            return data.double_sided()
-                ? DeviceResources::TexturedSpecularAlphaDoubleSidedMaterialTemplate
-                : DeviceResources::TexturedSpecularAlphaMaterialTemplate
-            ;
+            if(data.double_sided()) {
+                _templates[usize(PassType::GBuffer)] = device_resources()[DeviceResources::GBufferTexturedSpecularAlphaDoubleSidedMaterialTemplate];
+                _templates[usize(PassType::Forward)] = device_resources()[DeviceResources::ForwardTexturedSpecularAlphaDoubleSidedMaterialTemplate];
+            } else {
+                _templates[usize(PassType::GBuffer)] = device_resources()[DeviceResources::GBufferTexturedSpecularAlphaMaterialTemplate];
+                _templates[usize(PassType::Forward)] = device_resources()[DeviceResources::ForwardTexturedSpecularAlphaMaterialTemplate];
+            }
+        } else {
+            if(data.double_sided()) {
+                y_only_once(log_msg("Double sided is not supported for given material configuration", Log::Warning));
+            }
+            _templates[usize(PassType::GBuffer)] = device_resources()[DeviceResources::GBufferTexturedSpecularMaterialTemplate];
+            _templates[usize(PassType::Forward)] = device_resources()[DeviceResources::ForwardTexturedSpecularMaterialTemplate];
         }
-        if(data.double_sided()) {
-            y_only_once(log_msg("Double sided is not supported for given material configuration", Log::Warning));
-        }
-        return DeviceResources::TexturedSpecularMaterialTemplate;
     } else {
         if(data.alpha_tested()) {
-            return data.double_sided()
-                ? DeviceResources::TexturedAlphaDoubleSidedMaterialTemplate
-                : DeviceResources::TexturedAlphaMaterialTemplate
-            ;
+            if(data.double_sided()) {
+                _templates[usize(PassType::GBuffer)] = device_resources()[DeviceResources::GBufferTexturedAlphaDoubleSidedMaterialTemplate];
+                _templates[usize(PassType::Forward)] = device_resources()[DeviceResources::ForwardTexturedAlphaDoubleSidedMaterialTemplate];
+            } else {
+                _templates[usize(PassType::GBuffer)] = device_resources()[DeviceResources::GBufferTexturedAlphaMaterialTemplate];
+                _templates[usize(PassType::Forward)] = device_resources()[DeviceResources::ForwardTexturedAlphaMaterialTemplate];
+            }
+        } else {
+            if(data.double_sided()) {
+                y_only_once(log_msg("Double sided is not supported for given material configuration", Log::Warning));
+            }
+            _templates[usize(PassType::GBuffer)] = device_resources()[DeviceResources::GBufferTexturedMaterialTemplate];
+            _templates[usize(PassType::Forward)] = device_resources()[DeviceResources::ForwardTexturedMaterialTemplate];
         }
-        if(data.double_sided()) {
-            y_only_once(log_msg("Double sided is not supported for given material configuration", Log::Warning));
-        }
-        return DeviceResources::TexturedMaterialTemplate;
     }
+
+    for(const MaterialTemplate* tmp : _templates) {
+        if(tmp && tmp->data().depth_write()) {
+            _templates[usize(PassType::Depth)] = tmp;
+            break;
+        }
+    }
+
+    _templates[usize(PassType::Id)] = device_resources()[DeviceResources::IdMaterialTemplate];
 }
 
-
-Material::Material(MaterialData&& data) : Material(device_resources()[material_template_for_data(data)], std::move(data)) {
-}
-
-Material::Material(const MaterialTemplate* tmp, MaterialData&& data) :
-        _template(tmp),
-        _draw_data(material_allocator().allocate_material(data)),
-        _data(std::move(data)) {
-    y_debug_assert(!is_null());
-}
 
 Material::~Material() {
     if(!is_null()) {
@@ -83,17 +97,25 @@ Material& Material::operator=(Material&& other) {
 }
 
 void Material::swap(Material& other) {
-    std::swap(_template, other._template);
+    std::swap(_templates, other._templates);
     std::swap(_draw_data, other._draw_data);
     std::swap(_data, other._data);
 }
 
 bool Material::is_null() const {
-    return _template == nullptr;
+    return _draw_data.is_null();
 }
 
-const MaterialTemplate* Material::material_template() const {
-    return _template;
+bool Material::is_transparent() const {
+    return _data.is_transparent();
+}
+
+bool Material::alpha_tested() const {
+    return _data.alpha_tested();
+}
+
+const MaterialTemplate* Material::material_template(PassType pass_type) const {
+    return _templates[usize(pass_type)];
 }
 
 const MaterialDrawData& Material::draw_data() const {

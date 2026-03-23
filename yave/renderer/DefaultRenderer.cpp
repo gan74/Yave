@@ -57,7 +57,9 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
 
     renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.ambient.lit);
 
-    renderer.taa            = TAAPass::create(framegraph, renderer.gbuffer, renderer.atmosphere.lit, settings.taa);
+    renderer.forward        = ForwardPass::create(framegraph, renderer.gbuffer.depth, renderer.atmosphere.lit, renderer.camera, renderer.cluster, renderer.visibility);
+
+    renderer.taa            = TAAPass::create(framegraph, renderer.gbuffer, renderer.forward.lit, settings.taa);
 
     renderer.exposure       = ExposurePass::create(framegraph, renderer.taa.anti_aliased);
     renderer.bloom          = BloomPass::create(framegraph, renderer.taa.anti_aliased, renderer.exposure.params, settings.bloom);

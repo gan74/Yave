@@ -72,13 +72,20 @@ struct DeviceMaterialData {
 
 
 static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMaterialTemplates)> material_datas = {
-    DeviceMaterialData{"opaque", "opaque", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
-    DeviceMaterialData{"opaque_ALPHA_TEST", "opaque_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
-    DeviceMaterialData{"opaque_ALPHA_TEST", "opaque_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
+    DeviceMaterialData{"static_mesh_GBUFFER",                       "static_mesh_GBUFFER",                      DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{"static_mesh_GBUFFER_ALPHA_TEST",            "static_mesh_GBUFFER_ALPHA_TEST",           DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{"static_mesh_GBUFFER_ALPHA_TEST",            "static_mesh_GBUFFER_ALPHA_TEST",           DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
+    DeviceMaterialData{"static_mesh_GBUFFER_SPECULAR",              "static_mesh_GBUFFER_SPECULAR",             DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{"static_mesh_GBUFFER_SPECULAR_ALPHA_TEST",   "static_mesh_GBUFFER_SPECULAR_ALPHA_TEST",  DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{"static_mesh_GBUFFER_SPECULAR_ALPHA_TEST",   "static_mesh_GBUFFER_SPECULAR_ALPHA_TEST",  DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
 
-    DeviceMaterialData{"opaque_SPECULAR", "opaque_SPECULAR", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
-    DeviceMaterialData{"opaque_SPECULAR_ALPHA_TEST", "opaque_SPECULAR_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
-    DeviceMaterialData{"opaque_SPECULAR_ALPHA_TEST", "opaque_SPECULAR_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
+    DeviceMaterialData{"static_mesh_FORWARD",                       "static_mesh_FORWARD",                      DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, true},
+    DeviceMaterialData{"static_mesh_FORWARD_ALPHA_TEST",            "static_mesh_FORWARD_ALPHA_TEST",           DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, true},
+    DeviceMaterialData{"static_mesh_FORWARD_ALPHA_TEST",            "static_mesh_FORWARD_ALPHA_TEST",           DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::None, true},
+    DeviceMaterialData{"static_mesh_FORWARD_SPECULAR",              "static_mesh_FORWARD_SPECULAR",             DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, true},
+    DeviceMaterialData{"static_mesh_FORWARD_SPECULAR_ALPHA_TEST",   "static_mesh_FORWARD_SPECULAR_ALPHA_TEST",  DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, true},
+    DeviceMaterialData{"static_mesh_FORWARD_SPECULAR_ALPHA_TEST",   "static_mesh_FORWARD_SPECULAR_ALPHA_TEST",  DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::None, true},
+
 
     DeviceMaterialData::screen("atmosphere"),
     DeviceMaterialData::screen("tonemap"),
@@ -273,7 +280,7 @@ DeviceResources::DeviceResources() {
     {
         y_profile_zone("Materials");
         _materials = std::make_unique<AssetPtr<Material>[]>(usize(MaxMaterials));
-        _materials[0] = make_asset<Material>(&_material_templates[usize(TexturedMaterialTemplate)]);
+        _materials[0] = make_asset<Material>(MaterialData{});
     }
 
     {

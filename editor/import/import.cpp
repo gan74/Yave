@@ -644,7 +644,8 @@ core::Result<MaterialData> ParsedScene::create_material(int index) const {
             data.emissive_factor[i] = float(material.emissiveFactor[i]) * emissive_factor;
         }
 
-        data.alpha_tested = (material.alphaMode != "OPAQUE");
+        data.alpha_tested = (material.alphaMode == "MASK");
+        data.blend_mode = (material.alphaMode == "BLEND" ? BlendMode::SrcAlpha : BlendMode::None);
         data.double_sided = material.doubleSided;
     };
 

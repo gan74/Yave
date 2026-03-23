@@ -67,6 +67,13 @@ MaterialTemplateData& MaterialTemplateData::set_cull_mode(CullMode cull) {
     return *this;
 }
 
+BlendMode MaterialTemplateData::blend_mode_0() const {
+    return _blend_mode_0;
+}
+
+bool MaterialTemplateData::depth_write() const {
+    return _depth_write;
+}
 
 }
 

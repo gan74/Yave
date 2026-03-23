@@ -33,6 +33,7 @@ SOFTWARE.
 #include "TAAPass.h"
 #include "RTGIPass.h"
 #include "AmbientPass.h"
+#include "ForwardPass.h"
 
 namespace yave {
 
@@ -64,6 +65,7 @@ struct DefaultRenderer {
     RTGIPass rtgi;
     AmbientPass ambient;
     AtmospherePass atmosphere;
+    ForwardPass forward;
     ExposurePass exposure;
     BloomPass bloom;
     ToneMappingPass tone_mapping;

@@ -1,4 +1,5 @@
 
+
 /*******************************
 Copyright (c) 2016-2026 Grégoire Angerand
 
@@ -82,13 +83,20 @@ class DeviceResources final : NonMovable {
         };
 
         enum MaterialTemplates {
-            TexturedMaterialTemplate,
-            TexturedAlphaMaterialTemplate,
-            TexturedAlphaDoubleSidedMaterialTemplate,
 
-            TexturedSpecularMaterialTemplate,
-            TexturedSpecularAlphaMaterialTemplate,
-            TexturedSpecularAlphaDoubleSidedMaterialTemplate,
+            GBufferTexturedMaterialTemplate,
+            GBufferTexturedAlphaMaterialTemplate,
+            GBufferTexturedAlphaDoubleSidedMaterialTemplate,
+            GBufferTexturedSpecularMaterialTemplate,
+            GBufferTexturedSpecularAlphaMaterialTemplate,
+            GBufferTexturedSpecularAlphaDoubleSidedMaterialTemplate,
+
+            ForwardTexturedMaterialTemplate,
+            ForwardTexturedAlphaMaterialTemplate,
+            ForwardTexturedAlphaDoubleSidedMaterialTemplate,
+            ForwardTexturedSpecularMaterialTemplate,
+            ForwardTexturedSpecularAlphaMaterialTemplate,
+            ForwardTexturedSpecularAlphaDoubleSidedMaterialTemplate,
 
             AtmosphereMaterialTemplate,
             ToneMappingMaterialTemplate,

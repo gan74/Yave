@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/assets/AssetPtr.h>
 #include <yave/graphics/images/Image.h>
+#include <yave/material/MaterialTemplateData.h>
 
 namespace yave {
 
@@ -36,6 +37,8 @@ class MaterialData {
 
             math::Vec3 color_factor = math::Vec3(1.0f);
             math::Vec3 emissive_factor;
+
+            BlendMode blend_mode = BlendMode::None;
 
             bool alpha_tested = false;
             bool double_sided = false;
@@ -67,8 +70,11 @@ class MaterialData {
         MaterialData(MetallicRoughnessMaterialData data);
         MaterialData(SpecularMaterialData data);
 
-        Type material_type() const;
         bool is_empty() const;
+
+        Type material_type() const;
+
+        BlendMode blend_mode() const;
 
         core::Span<AssetPtr<Texture>> textures() const;
 
@@ -84,9 +90,10 @@ class MaterialData {
         bool double_sided() const;
 
         bool has_emissive() const;
+        bool is_transparent() const;
 
         y_reflect(MaterialData,
-              _type, _textures,
+              _type, _textures, _blend_mode,
               _emissive_factor, _base_color_factor, _specular_color_factor,
               _roughness_factor, _metallic_factor, _specular_factor,
               _alpha_tested, _double_sided
@@ -100,6 +107,8 @@ class MaterialData {
         Type _type = Type::MetallicRoughness;
 
         std::array<AssetPtr<Texture>, max_texture_count> _textures;
+
+        BlendMode _blend_mode = BlendMode::None;
 
         math::Vec3 _emissive_factor;
         math::Vec3 _base_color_factor = math::Vec3(1.0f);

@@ -66,6 +66,8 @@ class MaterialTemplateData {
 
         MaterialTemplateData& set_cull_mode(CullMode cull);
 
+        BlendMode blend_mode_0() const;
+        bool depth_write() const;
 
     private:
         friend class MaterialCompiler;

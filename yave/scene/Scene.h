@@ -39,14 +39,6 @@ SOFTWARE.
 
 namespace yave {
 
-enum class PassType {
-    Depth,
-    GBuffer,
-    Id,
-};
-
-
-
 template<typename T>
 struct SceneObject {
     T component;
@@ -81,9 +73,6 @@ struct AtmosphereObject : SceneObject<AtmosphereComponent> {
 
 class Scene : NonMovable {
     public:
-        using RenderFunc = std::function<void(RenderPassRecorder& render_pass, const FrameGraphPass* pass)>;
-
-
         Scene();
 
         virtual ~Scene();
@@ -93,9 +82,6 @@ class Scene : NonMovable {
         const math::Transform<>& transform(const TransformableSceneObjectData& obj) const;
 
         const TLAS& tlas() const;
-
-        RenderFunc prepare_render(FrameGraphPassBuilder& builder, i32 desc_set_index, const SceneVisibility& visibility, PassType pass_type) const;
-
 
 
         core::Span<StaticMeshObject>        meshes() const          { return _meshes; }
@@ -127,7 +113,7 @@ class Scene : NonMovable {
         template<typename T>
         static void gather_visible(core::Vector<const SceneObject<T>*>& visible, core::Span<SceneObject<T>> objects, u32 visibility_mask = u32(-1)) {
             y_profile();
-            
+
             for(const auto& obj : objects) {
                 if((obj.visibility_mask & visibility_mask) == 0) {
                     continue;
@@ -139,14 +125,14 @@ class Scene : NonMovable {
         template<typename T>
         static const SceneObject<T>* first_visible(core::Span<SceneObject<T>> objects, u32 visibility_mask = u32(-1)) {
             y_profile();
-            
+
             for(const auto& obj : objects) {
                 if((obj.visibility_mask & visibility_mask) == 0) {
                     continue;
                 }
                 return &obj;
             }
-            
+
             return nullptr;
         }
 
