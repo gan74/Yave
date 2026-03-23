@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/graphics/shaders/ComputeProgram.h>
 
 #include <yave/material/MaterialTemplate.h>
+#include <yave/graphics/device/DebugUtils.h>
 
 #include <y/io2/File.h>
 
@@ -83,6 +84,12 @@ void EditorResources::load_resources() {
         return spirv;
     };
 
+    const auto set_name = [debug = debug_utils()](auto handle, const char* name) {
+        if(debug) {
+            debug->set_resource_name(handle, name);
+        }
+    };
+
     for(usize i = 0; i != compute_datas.size(); ++i) {
         _computes[i] = ComputeProgram(ComputeShader(load_spirv(compute_datas[i])));
     }
@@ -103,6 +110,7 @@ void EditorResources::load_resources() {
         }
 
         _material_templates[i] = MaterialTemplate(std::move(template_data));
+        _material_templates[i].set_name(fmt_c_str("{} | {}", data.vert, data.frag));
     }
 }
 
