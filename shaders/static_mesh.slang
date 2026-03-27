@@ -175,12 +175,13 @@ PixelStageOut frag_main(PixelStageIn in) {
         surface.metallic = metallic;
     }
 
+    const float3 emissive = emissive_tex.Sample(in.uv).rgb * material.emissive_factor;
 
 #ifdef GBUFFER
     PixelStageOut out;
     out.gbuffer = encode_gbuffer(surface);
     out.motion = ((in.last_screen_pos.xy / in.last_screen_pos.z) - (in.screen_pos.xy / in.screen_pos.z) - camera.combined_jitter) * 0.5;
-    out.emissive = emissive_tex.Sample(in.uv).rgb * material.emissive_factor;
+    out.emissive = emissive;
 #else
     LightTile tile;
     {
@@ -189,7 +190,7 @@ PixelStageOut frag_main(PixelStageIn in) {
     }
 
     const float3 world_pos = in.world_position;
-    const float4 out = float4(compute_lighting(
+    const float4 out = float4(emissive + compute_lighting(
         surface,
         world_pos,
         normalize(camera.position - world_pos),

@@ -79,12 +79,12 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData{"static_mesh_GBUFFER_SPECULAR_ALPHA_TEST",   "static_mesh_GBUFFER_SPECULAR_ALPHA_TEST",  DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
     DeviceMaterialData{"static_mesh_GBUFFER_SPECULAR_ALPHA_TEST",   "static_mesh_GBUFFER_SPECULAR_ALPHA_TEST",  DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
 
-    DeviceMaterialData{"static_mesh_FORWARD",                       "static_mesh_FORWARD",                      DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, true},
-    DeviceMaterialData{"static_mesh_FORWARD_ALPHA_TEST",            "static_mesh_FORWARD_ALPHA_TEST",           DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, true},
-    DeviceMaterialData{"static_mesh_FORWARD_ALPHA_TEST",            "static_mesh_FORWARD_ALPHA_TEST",           DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::None, true},
-    DeviceMaterialData{"static_mesh_FORWARD_SPECULAR",              "static_mesh_FORWARD_SPECULAR",             DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, true},
-    DeviceMaterialData{"static_mesh_FORWARD_SPECULAR_ALPHA_TEST",   "static_mesh_FORWARD_SPECULAR_ALPHA_TEST",  DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, true},
-    DeviceMaterialData{"static_mesh_FORWARD_SPECULAR_ALPHA_TEST",   "static_mesh_FORWARD_SPECULAR_ALPHA_TEST",  DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::None, true},
+    DeviceMaterialData{"static_mesh_FORWARD",                       "static_mesh_FORWARD",                      DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, false},
+    DeviceMaterialData{"static_mesh_FORWARD_ALPHA_TEST",            "static_mesh_FORWARD_ALPHA_TEST",           DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, false},
+    DeviceMaterialData{"static_mesh_FORWARD_ALPHA_TEST",            "static_mesh_FORWARD_ALPHA_TEST",           DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::None, false},
+    DeviceMaterialData{"static_mesh_FORWARD_SPECULAR",              "static_mesh_FORWARD_SPECULAR",             DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, false},
+    DeviceMaterialData{"static_mesh_FORWARD_SPECULAR_ALPHA_TEST",   "static_mesh_FORWARD_SPECULAR_ALPHA_TEST",  DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, false},
+    DeviceMaterialData{"static_mesh_FORWARD_SPECULAR_ALPHA_TEST",   "static_mesh_FORWARD_SPECULAR_ALPHA_TEST",  DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::None, false},
 
 
     DeviceMaterialData::screen("atmosphere"),

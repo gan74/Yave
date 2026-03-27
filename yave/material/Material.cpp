@@ -30,15 +30,15 @@ SOFTWARE.
 
 namespace yave {
 
-Material::Material(MaterialData&& data) :
-    _draw_data(material_allocator().allocate_material(data)),
-    _data(std::move(data)) {
+Material::Material(MaterialData&& mat_data) :
+    _draw_data(material_allocator().allocate_material(mat_data)),
+    _data(std::move(mat_data)) {
 
     y_debug_assert(!is_null());
 
-    if(data.material_type() == MaterialData::Type::Specular) {
-        if(data.alpha_tested()) {
-            if(data.double_sided()) {
+    if(_data.material_type() == MaterialData::Type::Specular) {
+        if(_data.alpha_tested()) {
+            if(_data.double_sided()) {
                 _templates[usize(PassType::GBuffer)] = device_resources()[DeviceResources::GBufferTexturedSpecularAlphaDoubleSidedMaterialTemplate];
                 _templates[usize(PassType::Forward)] = device_resources()[DeviceResources::ForwardTexturedSpecularAlphaDoubleSidedMaterialTemplate];
             } else {
@@ -46,15 +46,15 @@ Material::Material(MaterialData&& data) :
                 _templates[usize(PassType::Forward)] = device_resources()[DeviceResources::ForwardTexturedSpecularAlphaMaterialTemplate];
             }
         } else {
-            if(data.double_sided()) {
+            if(_data.double_sided()) {
                 y_only_once(log_msg("Double sided is not supported for given material configuration", Log::Warning));
             }
             _templates[usize(PassType::GBuffer)] = device_resources()[DeviceResources::GBufferTexturedSpecularMaterialTemplate];
             _templates[usize(PassType::Forward)] = device_resources()[DeviceResources::ForwardTexturedSpecularMaterialTemplate];
         }
     } else {
-        if(data.alpha_tested()) {
-            if(data.double_sided()) {
+        if(_data.alpha_tested()) {
+            if(_data.double_sided()) {
                 _templates[usize(PassType::GBuffer)] = device_resources()[DeviceResources::GBufferTexturedAlphaDoubleSidedMaterialTemplate];
                 _templates[usize(PassType::Forward)] = device_resources()[DeviceResources::ForwardTexturedAlphaDoubleSidedMaterialTemplate];
             } else {
@@ -62,7 +62,7 @@ Material::Material(MaterialData&& data) :
                 _templates[usize(PassType::Forward)] = device_resources()[DeviceResources::ForwardTexturedAlphaMaterialTemplate];
             }
         } else {
-            if(data.double_sided()) {
+            if(_data.double_sided()) {
                 y_only_once(log_msg("Double sided is not supported for given material configuration", Log::Warning));
             }
             _templates[usize(PassType::GBuffer)] = device_resources()[DeviceResources::GBufferTexturedMaterialTemplate];
@@ -77,7 +77,8 @@ Material::Material(MaterialData&& data) :
         }
     }
 
-    _templates[usize(PassType::Id)] = device_resources()[DeviceResources::IdMaterialTemplate];
+    // We do not need this
+    // _templates[usize(PassType::Id)] = device_resources()[DeviceResources::IdMaterialTemplate];
 }
 
 

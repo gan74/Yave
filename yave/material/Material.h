@@ -39,7 +39,7 @@ class Material final : NonCopyable {
 
     public:
         Material() = default;
-        Material(MaterialData&& data);
+        Material(MaterialData&& mat_data);
 
         Material(Material&& other);
         Material& operator=(Material&& other);
