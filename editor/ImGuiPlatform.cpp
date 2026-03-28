@@ -52,7 +52,7 @@ ImGuiPlatform* imgui_platform() {
     return static_cast<ImGuiPlatform*>(ImGui::GetIO().BackendPlatformUserData);
 }
 
-static void render_frame(ImDrawData* draw_data, RenderPassRecorder& recorder) {
+static void render_frame(ImDrawData* draw_data, RenderPassRecorder& recorder, const TextureView& font) {
     static_assert(sizeof(ImDrawIdx) == sizeof(u32), "16 bit indices not supported");
 
     y_profile();
@@ -82,9 +82,8 @@ static void render_frame(ImDrawData* draw_data, RenderPassRecorder& recorder) {
     uniform[1] = viewport_offset;
 
     const auto setup_state = [&](const TextureView* tex) {
-        y_debug_assert(tex);
         const MaterialTemplate* material = resources()[EditorResources::ImGuiMaterialTemplate];
-        const auto desc = make_descriptor_set(Descriptor(*tex, SamplerType::LinearClamp), uniform_buffer);
+        const auto desc = make_descriptor_set(Descriptor(tex ? *tex : font, SamplerType::LinearClamp), uniform_buffer);
         recorder.bind_material_template(material, DescriptorSetProxy(desc));
     };
 
@@ -112,39 +111,36 @@ static void render_frame(ImDrawData* draw_data, RenderPassRecorder& recorder) {
         std::copy(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Data + cmd_list->IdxBuffer.Size, &indices[index_offset]);
         std::copy(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Data + cmd_list->VtxBuffer.Size, &vertices[vertex_offset]);
 
-        usize drawn_index_offset = index_offset;
         for(auto i = 0; i != cmd_list->CmdBuffer.Size; ++i) {
             const ImDrawCmd& cmd = cmd_list->CmdBuffer[i];
+
+            y_always_assert(!cmd.UserCallback, "User callback not supported");
+
+            if(!cmd.ElemCount) {
+                continue;
+            }
+
+            const TextureView* tex = static_cast<const TextureView*>(cmd.GetTexID());
+            if(current_tex != tex) {
+                current_tex = tex;
+                setup_state(current_tex);
+            }
 
             const math::Vec2i offset = math::Vec2i(i32(cmd.ClipRect.x - viewport_offset.x()), i32(cmd.ClipRect.y - viewport_offset.y()));
             const math::Vec2ui extent(u32(cmd.ClipRect.z - cmd.ClipRect.x), u32(cmd.ClipRect.w - cmd.ClipRect.y));
             recorder.set_scissor(offset.max(math::Vec2(0.0f)), extent);
 
-            y_always_assert(!cmd.UserCallback, "User callback not supported");
+            y_debug_assert(!cmd.VtxOffset);
 
-            if(cmd.ElemCount) {
-                const TextureView* tex = static_cast<const TextureView*>(cmd.GetTexID());
-                if(!tex) {
-                    continue;
-                }
-
-                if(current_tex != tex) {
-                    current_tex = tex;
-                    setup_state(current_tex);
-                }
-
-                VkDrawIndexedIndirectCommand command = {};
-                {
-                    command.firstIndex = u32(drawn_index_offset);
-                    command.vertexOffset = u32(vertex_offset);
-                    command.indexCount = cmd.ElemCount;
-                    command.instanceCount = 1;
-                }
-
-                recorder.draw(command);
-
-                drawn_index_offset += cmd.ElemCount;
+            VkDrawIndexedIndirectCommand command = {};
+            {
+                command.firstIndex = u32(index_offset + cmd.IdxOffset);
+                command.vertexOffset = u32(vertex_offset);
+                command.indexCount = cmd.ElemCount;
+                command.instanceCount = 1;
             }
+
+            recorder.draw(command);
         }
 
         vertex_offset += cmd_list->VtxBuffer.Size;
@@ -472,7 +468,7 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
         };
 
         platform.Renderer_RenderWindow = [](ImGuiViewport* vp, void*) {
-            // ImGuiPlatform* self = imgui_platform();
+            ImGuiPlatform* self = imgui_platform();
             PlatformWindow* window = get_platform_window(vp);
 
             if(!window->window.update()) {
@@ -486,7 +482,7 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
                 {
                     Framebuffer framebuffer(token.image_view);
                     RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
-                    render_frame(vp->DrawData, pass);
+                    render_frame(vp->DrawData, pass, self->font_texture());
                 }
 
                 window->swapchain.present(token, std::move(recorder), command_queue());
@@ -591,7 +587,7 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                 y_profile_zone("main window");
                 Framebuffer framebuffer(token.image_view);
                 RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
-                render_frame(ImGui::GetDrawData(), pass);
+                render_frame(ImGui::GetDrawData(), pass, font_texture());
             }
 
 
