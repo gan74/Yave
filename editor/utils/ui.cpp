@@ -163,7 +163,7 @@ std::pair<math::Vec2, math::Vec2> compute_glyph_uv_size(const char* c) {
 
     unsigned u = 0;
     ImTextCharFromUtf8(&u, c, c + std::strlen(c));
-    if(const ImFontGlyph* glyph = ImGui::GetFont()->FindGlyph(ImWchar(u))) {
+    if(const ImFontGlyph* glyph = ImGui::GetFontBaked()->FindGlyph(ImWchar(u))) {
         uv = math::Vec2{glyph->U0, glyph->V0};
         size = math::Vec2{glyph->U1, glyph->V1} - uv;
     }
@@ -610,7 +610,7 @@ static bool icon_button(const UiIcon& icon, UiTexture tex_icon, const char* str_
     } else {
         const auto [uv, uv_size] = imgui::compute_glyph_uv_size(icon.icon.data());
         const ImVec4 color = ImGui::ColorConvertU32ToFloat4(icon.color);
-        ImGui::Image({}, padded_size, to_im(uv), to_im(uv + uv_size), color, {});
+        ImGui::ImageWithBg({}, padded_size, to_im(uv), to_im(uv + uv_size), {}, color);
     }
 
 
@@ -660,37 +660,6 @@ bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_si
 
     ImGui::PopID();
     return ret;
-}
-
-// https://github.com/ocornut/imgui/issues/5370#issuecomment-1145917633
-void indeterminate_progress_bar(const math::Vec2& size_arg, float speed) {
-    using namespace ImGui;
-
-    ImGuiContext& g = *GImGui;
-    ImGuiWindow* window = GetCurrentWindow();
-    if(window->SkipItems) {
-        return;
-    }
-
-    ImGuiStyle& style = g.Style;
-    const ImVec2 size = CalcItemSize(to_im(size_arg), CalcItemWidth(), g.FontSize + style.FramePadding.y * 2.0f);
-    const ImVec2 pos = window->DC.CursorPos;
-    ImRect bb(pos.x, pos.y, pos.x + size.x, pos.y + size.y);
-    ItemSize(size);
-
-    if(!ItemAdd(bb, 0)) {
-        return;
-    }
-
-    speed *= g.FontSize * 0.05f;
-    const float phase = ImFmod((float)g.Time * speed, 1.0f);
-    const float width_normalized = 0.2f;
-    float t0 = phase * (1.0f + width_normalized) - width_normalized;
-    float t1 = t0 + width_normalized;
-
-    RenderFrame(bb.Min, bb.Max, GetColorU32(ImGuiCol_FrameBg), true, style.FrameRounding);
-    bb.Expand(ImVec2(-style.FrameBorderSize, -style.FrameBorderSize));
-    RenderRectFilledRangeH(window->DrawList, bb, GetColorU32(ImGuiCol_PlotHistogram), t0, t1, style.FrameRounding);
 }
 
 char spinner() {

@@ -33,8 +33,10 @@ SOFTWARE.
 #include <y/core/Vector.h>
 
 #include <functional>
+#include <deque>
 
 struct ImGuiViewport;
+struct ImDrawData;
 
 namespace editor {
 
@@ -53,7 +55,7 @@ class ImGuiPlatform : NonMovable {
         std::unique_ptr<ImGuiEventHandler> event_handler;
     };
 
-    struct ImGuiImage : NonMovable {
+    struct ImGuiImage {
         DstTexture texture;
         TextureView view;
 
@@ -72,7 +74,7 @@ class ImGuiPlatform : NonMovable {
         ImGuiPlatform(bool multi_viewport = true);
         ~ImGuiPlatform();
 
-        const Texture& font_texture() const;
+        TextureView font_texture() const;
 
         Window* main_window();
 
@@ -82,10 +84,11 @@ class ImGuiPlatform : NonMovable {
 
         template<typename... Args>
         UiTexture to_ui(Args&&... args) {
-            return &_images.emplace_back(std::make_unique<ImGuiImage>(y_fwd(args)...))->view;
+            return &_temp_images.emplace_back(y_fwd(args)...).view;
         }
 
     private:
+        void update_textures(ImDrawData* draw_data);
         void close_window(PlatformWindow* window);
 
         static Window* get_window(ImGuiViewport* vp);
@@ -99,10 +102,7 @@ class ImGuiPlatform : NonMovable {
 
         bool _demo_window = is_debug_defined;
 
-        Texture _font;
-        TextureView _font_view;
-
-        core::Vector<std::unique_ptr<ImGuiImage>> _images;
+        std::deque<ImGuiImage> _temp_images;
 };
 
 }
