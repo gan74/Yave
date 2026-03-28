@@ -37,8 +37,6 @@ SOFTWARE.
 
 #include <yave/graphics/shader_structs.h>
 
-#include <yave/utils/DebugValues.h>
-
 namespace yave {
 
 RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId /*in_lit*/, const RTGISettings& settings) {
@@ -65,7 +63,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     const auto [hash, hash_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size * 4);
     const auto [sum, sum_reset] = framegraph.create_scratch_buffer<math::Vec4, BufferUsage::StorageBit>(persistent_sum_id, hash_size);
 
-    const bool reset = editor::debug_values().command("Reset RTGI");
+    const bool reset = false; // editor::debug_values().command("Reset RTGI");
 
     const struct Params {
         u32 hash_size;
