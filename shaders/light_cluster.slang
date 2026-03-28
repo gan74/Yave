@@ -1,5 +1,7 @@
 #include "lib/utils.slang"
 
+// #define DEPTH_CULL
+
 // -------------------------------- I/O --------------------------------
 
 [[vk::binding(0)]]
@@ -86,10 +88,13 @@ bool is_inside(PointLight light) {
     const float3 to_light = light.position - camera.position;
     const float cos_alpha = max(0.0, dot(to_light, tile_dir));
 
+
+#ifdef DEPTH_CULL
     if(cos_alpha + light.range < asfloat(tile_dist_bounds.x) ||
        cos_alpha - light.range > asfloat(tile_dist_bounds.y)) {
         return false;
     }
+#endif
 
     const float3 closest = camera.position + tile_dir * cos_alpha;
     const float tile_radius = cos_alpha * tile_sin_alpha;
@@ -100,10 +105,12 @@ bool is_inside(PointLight light) {
 bool is_inside(SpotLight light) {
     const float cos_alpha = max(0.0, dot(light.encl_sphere_center - camera.position, tile_dir));
 
+#ifdef DEPTH_CULL
     if(cos_alpha + light.encl_sphere_radius < asfloat(tile_dist_bounds.x) ||
        cos_alpha - light.encl_sphere_radius > asfloat(tile_dist_bounds.y)) {
         return false;
     }
+#endif
 
     // https://iquilezles.org/articles/intersectors/
     // return iRoundedCone(camera.position, tile_dir, light.position, light.position + light.forward * light.range, tile_radius, light.sin_angle * light.range + tile_radius);
@@ -185,7 +192,7 @@ void cull_spots() {
 // -------------------------------- MAIN --------------------------------
 
 [shader("compute")]
-[numthreads(16, 16)]
+[numthreads(light_cluster_tile_size, light_cluster_tile_size)]
 void comp_main() {
     const uint2 coord = semantics.global_id.xy;
     const float2 image_size = float2(image_size(in_depth).xy);

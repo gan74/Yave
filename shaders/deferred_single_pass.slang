@@ -86,7 +86,7 @@ float4 cascade_debug_color(float3 world_pos) {
 // -------------------------------- MAIN --------------------------------
 
 [shader("compute")]
-[numthreads(16, 16)]
+[numthreads(light_cluster_tile_size, light_cluster_tile_size)]
 void comp_main() {
     const uint2 coord = semantics.global_id.xy;
     const float2 image_size = float2(image_size(out_color).xy);

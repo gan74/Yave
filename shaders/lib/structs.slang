@@ -14,6 +14,7 @@
 #endif
 
 static const uint max_light_per_tile = 30;
+static const uint light_cluster_tile_size = 16;
 
 enum /*class*/ TextureSlots : uint {
     Albedo                      = 0,
@@ -194,7 +195,7 @@ struct LightClusterInfo {
     uint directional_count;
     uint point_count;
     uint spot_count;
-    uint padding;
+    uint grid_size_x;
 };
 
 struct UnalignedFloat3 {

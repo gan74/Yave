@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/shaders/ComputeProgram.h>
 
 #include <yave/scene/Scene.h>
 
@@ -60,6 +61,7 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[settings.debug_tiles ? DeviceResources::DeferredSingleDebugPassProgram : DeviceResources::DeferredSinglePassProgram];
+        y_debug_assert(program.local_size() == math::Vec3ui(shader::light_cluster_tile_size, shader::light_cluster_tile_size, 1));
         recorder.dispatch_threads(program, size, self->descriptor_set());
     });
 

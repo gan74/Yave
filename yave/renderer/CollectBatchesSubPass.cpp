@@ -111,7 +111,7 @@ CollectBatchesSubPass CollectBatchesSubPass::create(const SceneVisibilitySubPass
         case PassType::Depth:
             collect_batches(visibility.visible->meshes, pass.batches->static_mesh_batches, pass_type, [=](const Material&) { return true; });
         break;
-        
+
         case PassType::GBuffer:
             collect_batches(visibility.visible->meshes, pass.batches->static_mesh_batches, pass_type, [=](const Material& mat) { return !mat.is_transparent(); });
         break;

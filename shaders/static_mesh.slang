@@ -195,11 +195,9 @@ PixelStageOut frag_main(PixelStageIn in) {
     out.motion = ((in.last_screen_pos.xy / in.last_screen_pos.z) - (in.screen_pos.xy / in.screen_pos.z) - camera.combined_jitter) * 0.5;
     out.emissive = emissive;
 #else
-    LightTile tile;
-    {
-        tile.point_count = 0;
-        tile.spot_count = 0;
-    }
+    const uint2 tile_xy = uint2(semantics.frag_coord.xy) / light_cluster_tile_size;
+    const uint tile_index = cluster_info.grid_size_x * tile_xy.y + tile_xy.x;
+    const LightTile tile = light_tiles[tile_index];
 
     const float3 world_pos = in.world_position;
     const float3 view_dir = normalize(camera.position - world_pos);

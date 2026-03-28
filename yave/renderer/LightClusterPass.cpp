@@ -146,12 +146,8 @@ LightClusterPass LightClusterPass::create(FrameGraph& framegraph, const GBufferP
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Light cluster pass");
 
-    const auto& program = device_resources()[DeviceResources::LightClusterProgram];
-    const u32 tile_size = program.local_size().x();
-    y_debug_assert(program.local_size() == math::Vec3ui(tile_size, tile_size, 1));
-
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
-    const math::Vec2ui grid_size = math::Vec2ui(align_up_to(size.x(), tile_size), align_up_to(size.y(), tile_size)) / tile_size;
+    const math::Vec2ui grid_size = math::Vec2ui(align_up_to(size.x(), shader::light_cluster_tile_size), align_up_to(size.y(), shader::light_cluster_tile_size)) / shader::light_cluster_tile_size;
 
     const u32 directional_count = u32(visibility.visible->directional_lights.size());
     const u32 point_count = u32(visibility.visible->point_lights.size());
@@ -174,7 +170,7 @@ LightClusterPass LightClusterPass::create(FrameGraph& framegraph, const GBufferP
 
     builder.add_storage_output(tile_buffer);
 
-    builder.map_buffer(info_buffer, shader::LightClusterInfo{directional_count, point_count, spot_count, u32(0)});
+    builder.map_buffer(info_buffer, shader::LightClusterInfo{directional_count, point_count, spot_count, grid_size.x()});
     builder.map_buffer(directional_buffer);
     builder.map_buffer(point_buffer);
     builder.map_buffer(spot_buffer);
@@ -189,6 +185,7 @@ LightClusterPass LightClusterPass::create(FrameGraph& framegraph, const GBufferP
         fill_spot_light_buffer(spots.data(), visibility, shadow_pass);
 
         const auto& program = device_resources()[DeviceResources::LightClusterProgram];
+        y_debug_assert(program.local_size() == math::Vec3ui(shader::light_cluster_tile_size, shader::light_cluster_tile_size, 1));
         recorder.dispatch_threads(program, size, self->descriptor_set());
     });
 
