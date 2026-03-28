@@ -70,6 +70,7 @@ ForwardPass ForwardPass::create(FrameGraph& framegraph, FrameGraphImageId in_dep
     builder.add_color_output(lit);
 
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
+        y_debug_assert(pass.scene_pass.batches.pass_type == PassType::Forward);
         pass.scene_pass.render(render_pass, self);
     });
 

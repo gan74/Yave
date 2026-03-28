@@ -67,23 +67,14 @@ endfunction(optimize_shader)
 function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
     get_filename_component(SHADER_NAME ${SHADER_FILE} NAME_WE)
     foreach(DEF ${SHADER_DEFINES})
-        set(COMPILE_ARGS "${COMPILE_ARGS} -D${DEF}=1")
+        set(COMPILE_ARGS ${COMPILE_ARGS} -D${DEF}=1)
         set(NAME_SUFFIX "${NAME_SUFFIX}_${DEF}")
     endforeach()
     string(STRIP "${COMPILE_ARGS}" COMPILE_ARGS)
     set(SHADER_BIN "${SHADER_NAME}${NAME_SUFFIX}.spv")
-    add_custom_command(
-        TARGET ${SHADER_TARGET}
-        COMMAND ${Vulkan_SLANGC_EXECUTABLE}
-            ${COMPILE_ARGS}
-            -target spirv
-            -matrix-layout-column-major
-            -fvk-use-entrypoint-name
-            -preserve-params
-            -O0
-            -o ${SHADER_BIN}
-            "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}"
-    )
+    set(SHADER_CMD ${Vulkan_SLANGC_EXECUTABLE} ${COMPILE_ARGS} -target spirv -matrix-layout-column-major -fvk-use-entrypoint-name -preserve-params -O0 -o ${SHADER_BIN} \"${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}\")
+    add_custom_command(TARGET ${SHADER_TARGET} COMMAND ${SHADER_CMD})
+    # message("${SHADER_CMD}")
     optimize_shader(${SHADER_TARGET}_optim ${SHADER_BIN})
 endfunction(add_slang_shader)
 
@@ -221,7 +212,7 @@ function(build_engine_shaders SHADER_TARGET)
 
     add_slang_shader(${SHADER_TARGET} "id.slang" "")
 
-    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "FORWARD;")
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "FORWARD")
     add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "FORWARD;ALPHA_TEST")
     add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "FORWARD;SPECULAR")
     add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "FORWARD;SPECULAR;ALPHA_TEST")

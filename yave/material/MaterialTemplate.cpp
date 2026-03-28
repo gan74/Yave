@@ -76,5 +76,13 @@ void MaterialTemplate::set_name(const char* name) {
 #endif
 }
 
+const char* MaterialTemplate::name() const {
+#ifdef Y_DEBUG
+    return _name.data();
+#else
+    return "Unnamed material template";
+#endif
+}
+
 }
 

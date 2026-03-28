@@ -2,6 +2,10 @@
 #include "lib/lighting.slang"
 
 
+#if (defined(GBUFFER) == defined(FORWARD))
+#error Missing define
+#endif
+
 
 struct PixelStageIn {
     // TODO: remove when not needed?

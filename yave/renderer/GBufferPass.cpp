@@ -59,6 +59,7 @@ GBufferPass GBufferPass::create(FrameGraph& framegraph, const CameraBufferPass& 
     builder.add_color_output(emissive);
 
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
+        y_debug_assert(pass.scene_pass.batches.pass_type == PassType::GBuffer);
         pass.scene_pass.render(render_pass, self);
     });
 

@@ -46,6 +46,8 @@ class MaterialTemplate final {
         const MaterialTemplateData& data() const;
 
         void set_name(const char* name);
+        const char* name() const;
+
 
     private:
         //void swap(Material& other);
