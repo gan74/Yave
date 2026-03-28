@@ -23,8 +23,14 @@ SOFTWARE.
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
-
+#include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+
+#include <yave/scene/Scene.h>
+#include <yave/meshes/StaticMesh.h>
+#include <yave/graphics/images/IBLProbe.h>
+
+#include <yave/components/SkyLightComponent.h>
 
 namespace yave {
 
@@ -33,6 +39,15 @@ ForwardPass ForwardPass::create(FrameGraph& framegraph, FrameGraphImageId in_dep
 
     const auto depth = builder.declare_copy(in_depth);
     const auto lit = builder.declare_copy(in_lit);
+
+    auto [ibl_probe, intensity, sky] = visibility.visible->ibl_probe();
+    struct Params {
+            u32 display_sky;
+            float ibl_intensity;
+    } params {
+        sky ? 1u : 0u,
+        intensity
+    };
 
     ForwardPass pass;
     pass.lit = lit;
@@ -46,6 +61,12 @@ ForwardPass ForwardPass::create(FrameGraph& framegraph, FrameGraphImageId in_dep
         builder.add_storage_input(cluster.shadow_pass.shadow_infos, PipelineStage::None, pass.scene_pass.descriptor_set_index);
         builder.add_uniform_input(cluster.cluster_info, PipelineStage::None, pass.scene_pass.descriptor_set_index);
         builder.add_storage_input(cluster.tiles, PipelineStage::None, pass.scene_pass.descriptor_set_index);
+    }
+
+    {
+        builder.add_external_input(*ibl_probe);
+        builder.add_external_input(Descriptor(device_resources().brdf_lut(), SamplerType::LinearClamp));
+        builder.add_inline_input(params);
     }
 
     builder.add_depth_output(depth);

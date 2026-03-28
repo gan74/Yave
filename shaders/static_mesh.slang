@@ -59,6 +59,18 @@ ConstantBuffer<LightClusterInfo> cluster_info;
 
 [[vk::binding(11)]]
 StructuredBuffer<LightTile> light_tiles;
+
+[[vk::binding(12)]]
+SamplerCube in_envmap;
+
+[[vk::binding(13)]]
+Sampler2D<float2> brdf_lut;
+
+[[vk::binding(14)]]
+cbuffer Params {
+    uint display_sky;
+    float ibl_intensity;
+};
 #endif
 
 
@@ -190,7 +202,10 @@ PixelStageOut frag_main(PixelStageIn in) {
     }
 
     const float3 world_pos = in.world_position;
-    const float4 out = float4(emissive + compute_lighting(
+    const float3 view_dir = normalize(camera.position - world_pos);
+
+    const float3 indirect = eval_ibl(IBLProbe(in_envmap), brdf_lut, view_dir, surface) * ibl_intensity;
+    const float3 direct = compute_lighting(
         surface,
         world_pos,
         normalize(camera.position - world_pos),
@@ -201,7 +216,9 @@ PixelStageOut frag_main(PixelStageIn in) {
         spot_lights,
         shadow_infos,
         in_shadows
-    ), albedo_alpha.a);
+    );
+
+    const float4 out = float4(emissive + indirect + direct, albedo_alpha.a);
 
 #endif
 
