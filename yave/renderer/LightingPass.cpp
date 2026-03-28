@@ -47,12 +47,10 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
     builder.add_uniform_input(gbuffer.depth);
     builder.add_uniform_input(gbuffer.color);
+
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(cluster.shadow_pass.shadow_map, SamplerType::Shadow);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_storage_input(cluster.directionals);
-    builder.add_storage_input(cluster.points);
-    builder.add_storage_input(cluster.spots);
     builder.add_storage_input(cluster.shadow_pass.shadow_infos);
     builder.add_uniform_input(cluster.cluster_info);
     builder.add_storage_input(cluster.tiles);

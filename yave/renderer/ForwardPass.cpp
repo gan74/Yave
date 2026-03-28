@@ -55,9 +55,6 @@ ForwardPass ForwardPass::create(FrameGraph& framegraph, FrameGraphImageId in_dep
 
     {
         builder.add_uniform_input(cluster.shadow_pass.shadow_map, SamplerType::Shadow, PipelineStage::None, pass.scene_pass.descriptor_set_index);
-        builder.add_storage_input(cluster.directionals, PipelineStage::None, pass.scene_pass.descriptor_set_index);
-        builder.add_storage_input(cluster.points, PipelineStage::None, pass.scene_pass.descriptor_set_index);
-        builder.add_storage_input(cluster.spots, PipelineStage::None, pass.scene_pass.descriptor_set_index);
         builder.add_storage_input(cluster.shadow_pass.shadow_infos, PipelineStage::None, pass.scene_pass.descriptor_set_index);
         builder.add_uniform_input(cluster.cluster_info, PipelineStage::None, pass.scene_pass.descriptor_set_index);
         builder.add_storage_input(cluster.tiles, PipelineStage::None, pass.scene_pass.descriptor_set_index);

@@ -25,62 +25,16 @@ Sampler2DShadow in_shadows;
 ConstantBuffer<Camera> camera;
 
 [[vk::binding(5)]]
-StructuredBuffer<DirectionalLight> directional_lights;
-
-[[vk::binding(6)]]
-StructuredBuffer<PointLight> point_lights;
-
-[[vk::binding(7)]]
-StructuredBuffer<SpotLight> spot_lights;
-
-[[vk::binding(8)]]
 StructuredBuffer<ShadowMapInfo> shadow_infos;
 
-[[vk::binding(9)]]
+[[vk::binding(6)]]
 ConstantBuffer<LightClusterInfo> cluster_info;
 
-[[vk::binding(10)]]
+[[vk::binding(7)]]
 StructuredBuffer<LightTile> light_tiles;
 
-[[vk::binding(11)]]
+[[vk::binding(8)]]
 RWTexture2D out_color;
-
-
-
-// -------------------------------- HELPERS --------------------------------
-
-
-
-float3 cascade_debug_color(uint shadow_map_index, uint4 indices) {
-    if(shadow_map_index == indices[0]) {
-        return float3(0.0, 0.0, 1.0);
-    }
-    if(shadow_map_index == indices[1]) {
-        return float3(0.0, 1.0, 0.0);
-    }
-    if(shadow_map_index == indices[2]) {
-        return float3(1.0, 1.0, 0.0);
-    }
-    return float3(1.0, 0.0, 0.0);
-}
-
-float4 cascade_debug_color(float3 world_pos) {
-    if(cluster_info.directional_count > 0) {
-        const uint4 indices = directional_lights[0].shadow_map_indices;
-        const uint shadow_map_index = shadow_cascade_index(shadow_infos, indices, world_pos);
-
-        if(shadow_map_index < 0xFFFFFFFF) {
-            const ShadowMapInfo sm_info = shadow_infos[shadow_map_index];
-            const float3 proj = project(world_pos, sm_info.view_proj);
-            const float2 texel = floor(atlas_uv(sm_info, proj.xy) * sm_info.size);
-            const float3 color = lerp(uv_debug_color(texel), cascade_debug_color(shadow_map_index, indices), 0.25);
-            return float4(color, 1.0);
-        }
-    }
-    return float4(0.0);
-}
-
-
 
 
 // -------------------------------- MAIN --------------------------------
@@ -97,7 +51,6 @@ void comp_main() {
         return;
     }
 
-
     const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
     const SurfaceInfo surface = decode_gbuffer(RawGBuffer(
         in_rt0[coord],
@@ -110,9 +63,6 @@ void comp_main() {
         normalize(camera.position - world_pos),
         cluster_info,
         light_tiles[semantics.work_group_index],
-        directional_lights,
-        point_lights,
-        spot_lights,
         shadow_infos,
         in_shadows
     );

@@ -170,19 +170,38 @@ LightClusterPass LightClusterPass::create(FrameGraph& framegraph, const GBufferP
 
     builder.add_storage_output(tile_buffer);
 
-    builder.map_buffer(info_buffer, shader::LightClusterInfo{directional_count, point_count, spot_count, grid_size.x()});
+    builder.map_buffer(info_buffer);
     builder.map_buffer(directional_buffer);
     builder.map_buffer(point_buffer);
     builder.map_buffer(spot_buffer);
 
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        auto directionals = self->resources().map_buffer(directional_buffer);
-        auto points = self->resources().map_buffer(point_buffer);
-        auto spots = self->resources().map_buffer(spot_buffer);
+    builder.add_input_usage(directional_buffer, BufferUsage::StorageBit);
+    // builder.add_input_usage(point_buffer, BufferUsage::StorageBit);
+    // builder.add_input_usage(spot_buffer, BufferUsage::StorageBit);
 
-        fill_directional_light_buffer(directionals.data(), visibility, shadow_pass);
-        fill_point_light_buffer(points.data(), visibility);
-        fill_spot_light_buffer(spots.data(), visibility, shadow_pass);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        {
+            auto directionals = self->resources().map_buffer(directional_buffer);
+            auto points = self->resources().map_buffer(point_buffer);
+            auto spots = self->resources().map_buffer(spot_buffer);
+
+            fill_directional_light_buffer(directionals.data(), visibility, shadow_pass);
+            fill_point_light_buffer(points.data(), visibility);
+            fill_spot_light_buffer(spots.data(), visibility, shadow_pass);
+        }
+
+        {
+            auto infos = self->resources().map_buffer(info_buffer);
+            infos[0] = shader::LightClusterInfo{
+                directional_count,
+                point_count,
+                spot_count,
+                grid_size.x(),
+                self->resources().buffer<BufferUsage::StorageBit>(directional_buffer).vk_device_address(),
+                self->resources().buffer<BufferUsage::StorageBit>(point_buffer).vk_device_address(),
+                self->resources().buffer<BufferUsage::StorageBit>(spot_buffer).vk_device_address()
+            };
+        }
 
         const auto& program = device_resources()[DeviceResources::LightClusterProgram];
         y_debug_assert(program.local_size() == math::Vec3ui(shader::light_cluster_tile_size, shader::light_cluster_tile_size, 1));
@@ -195,9 +214,6 @@ LightClusterPass LightClusterPass::create(FrameGraph& framegraph, const GBufferP
     {
         pass.shadow_pass = shadow_pass;
         pass.grid_size = grid_size;
-        pass.directionals = directional_buffer;
-        pass.points = point_buffer;
-        pass.spots = spot_buffer;
         pass.cluster_info = info_buffer;
         pass.tiles = tile_buffer;
     }

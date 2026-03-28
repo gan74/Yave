@@ -19,14 +19,43 @@ uint shadow_cascade_index(StructuredBuffer<ShadowMapInfo> shadow_infos, uint4 in
     return 0xFFFFFFFF;
 }
 
+float3 cascade_debug_color(uint shadow_map_index, uint4 indices) {
+    if(shadow_map_index == indices[0]) {
+        return float3(0.0, 0.0, 1.0);
+    }
+    if(shadow_map_index == indices[1]) {
+        return float3(0.0, 1.0, 0.0);
+    }
+    if(shadow_map_index == indices[2]) {
+        return float3(1.0, 1.0, 0.0);
+    }
+    return float3(1.0, 0.0, 0.0);
+}
+
+float4 cascade_debug_color(float3 world_pos, uint index, LightClusterInfo cluster_info, StructuredBuffer<ShadowMapInfo> shadow_infos) {
+    if(cluster_info.directional_count > index) {
+        const uint4 indices = cluster_info.directional_lights[index].shadow_map_indices;
+        const uint shadow_map_index = shadow_cascade_index(shadow_infos, indices, world_pos);
+
+        if(shadow_map_index < 0xFFFFFFFF) {
+            const ShadowMapInfo sm_info = shadow_infos[shadow_map_index];
+            const float3 proj = project(world_pos, sm_info.view_proj);
+            const float2 texel = floor(atlas_uv(sm_info, proj.xy) * sm_info.size);
+            const float3 color = lerp(uv_debug_color(texel), cascade_debug_color(shadow_map_index, indices), 0.25);
+            return float4(color, 1.0);
+        }
+    }
+    return float4(0.0);
+}
+
+
+
+
 float3 compute_lighting(SurfaceInfo surface,
                         float3 world_pos,
                         float3 view_dir,
                         LightClusterInfo cluster_info,
                         LightTile tile,
-                        StructuredBuffer<DirectionalLight> directional_lights,
-                        StructuredBuffer<PointLight> point_lights,
-                        StructuredBuffer<SpotLight> spot_lights,
                         StructuredBuffer<ShadowMapInfo> shadow_infos,
                         Sampler2DShadow in_shadows) {
 
@@ -34,7 +63,7 @@ float3 compute_lighting(SurfaceInfo surface,
 
     // -------------------------------- DIRECTIONALS --------------------------------
     for(uint i = 0; i != cluster_info.directional_count; ++i) {
-        const DirectionalLight light = directional_lights[i];
+        const DirectionalLight light = cluster_info.directional_lights[i];
         const float3 light_dir = light.direction; // assume normalized
 
         float att = 1.0;
@@ -56,7 +85,7 @@ float3 compute_lighting(SurfaceInfo surface,
     const uint point_end = min(max_light_per_tile, tile_point_count);
     for(uint i = point_begin; i < point_end; ++i) {
         const uint index = tile.indices[i];
-        const PointLight light = point_lights[index];
+        const PointLight light = cluster_info.point_lights[index];
         const AreaLightInfo area = karis_area_light(surface, light, world_pos, view_dir);
         const float att = attenuation(area.orig_light_dist * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
 
@@ -72,7 +101,7 @@ float3 compute_lighting(SurfaceInfo surface,
     const uint spot_end = min(max_light_per_tile, spot_begin + tile_spot_count);
     for(uint i = spot_begin; i < spot_end; ++i) {
         const uint index = tile.indices[i];
-        const SpotLight light = spot_lights[index];
+        const SpotLight light = cluster_info.spot_lights[index];
         const AreaLightInfo area = karis_area_light(surface, light, world_pos, view_dir);
         float att = attenuation(area.orig_light_dist * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
 

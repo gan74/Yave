@@ -32,10 +32,6 @@ struct LightClusterPass {
 
     math::Vec2ui grid_size;
 
-    FrameGraphTypedBufferId<shader::DirectionalLight> directionals;
-    FrameGraphTypedBufferId<shader::PointLight> points;
-    FrameGraphTypedBufferId<shader::SpotLight> spots;
-
     FrameGraphTypedBufferId<shader::LightClusterInfo> cluster_info;
     FrameGraphTypedBufferId<shader::LightTile> tiles;
 

@@ -196,6 +196,10 @@ struct LightClusterInfo {
     uint point_count;
     uint spot_count;
     uint grid_size_x;
+
+    SLANG_PTR(DirectionalLight) directional_lights;
+    SLANG_PTR(PointLight) point_lights;
+    SLANG_PTR(SpotLight) spot_lights;
 };
 
 struct UnalignedFloat3 {

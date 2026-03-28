@@ -43,30 +43,21 @@ typedef float4 PixelStageOut;
 Sampler2DShadow in_shadows;
 
 [[vk::binding(6)]]
-StructuredBuffer<DirectionalLight> directional_lights;
-
-[[vk::binding(7)]]
-StructuredBuffer<PointLight> point_lights;
-
-[[vk::binding(8)]]
-StructuredBuffer<SpotLight> spot_lights;
-
-[[vk::binding(9)]]
 StructuredBuffer<ShadowMapInfo> shadow_infos;
 
-[[vk::binding(10)]]
+[[vk::binding(7)]]
 ConstantBuffer<LightClusterInfo> cluster_info;
 
-[[vk::binding(11)]]
+[[vk::binding(8)]]
 StructuredBuffer<LightTile> light_tiles;
 
-[[vk::binding(12)]]
+[[vk::binding(9)]]
 SamplerCube in_envmap;
 
-[[vk::binding(13)]]
+[[vk::binding(10)]]
 Sampler2D<float2> brdf_lut;
 
-[[vk::binding(14)]]
+[[vk::binding(11)]]
 cbuffer Params {
     uint display_sky;
     float ibl_intensity;
@@ -209,9 +200,6 @@ PixelStageOut frag_main(PixelStageIn in) {
         normalize(camera.position - world_pos),
         cluster_info,
         tile,
-        directional_lights,
-        point_lights,
-        spot_lights,
         shadow_infos,
         in_shadows
     );
