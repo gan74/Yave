@@ -79,6 +79,10 @@ float3 compute_lighting(SurfaceInfo surface,
         }
     }
 
+    /*if(tile.point_count + tile.spot_count > max_light_per_tile) {
+        return float3(1, 0, 1);
+    }*/
+
     // -------------------------------- POINTS --------------------------------
     const uint point_begin = 0;
     const uint tile_point_count = tile.point_count;

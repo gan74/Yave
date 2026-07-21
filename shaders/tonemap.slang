@@ -29,11 +29,10 @@ cbuffer Settings_Inline {
 float3 tone_map(float3 hdr, float exposure, uint mode) {
     const float white = 10000.0;
 
-    // Is it better to just tonemap the luminance or R, G and B separately?
     hdr = expose_RGB(hdr, exposure);
 
     if(mode == 0) {
-        hdr = ACES(hdr) / ACES(white);
+        hdr = ACES(hdr);
     } else if(mode == 1) {
         hdr = uncharted2(hdr) / uncharted2(white);
     } else if(mode == 2) {

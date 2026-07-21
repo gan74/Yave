@@ -67,7 +67,7 @@ property uint global_index {
         return
             global_id.x +
             global_id.y * dispatch_size.x +
-            global_id.z * dispatch_size.x * dispatch_size.z
+            global_id.z * dispatch_size.x * dispatch_size.y
         ;
     }
 }

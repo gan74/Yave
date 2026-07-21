@@ -140,7 +140,7 @@ float3 specular_convolution<T: Envmap>(T envmap, float3 n, float roughness) {
             total += n_l;
         }
     }
-    return acc / total;
+    return total > constants.epsilon ? (acc / total) : float3(0.0);
 }
 
 float3 importance_sample_ggx(float2 xi, float3 n, float roughness) {
@@ -224,10 +224,10 @@ SpecularContrib eval_ggx_specular(SurfaceInfo info, float3 v, float3 n, float3 l
     }
 
     const float n_l = max(dot(n, l), constants.epsilon);
-    const float n_v = max(abs(dot(v, v)), constants.epsilon);
+    const float n_v = max(abs(dot(n, v)), constants.epsilon);
     const float n_h = dot(n, h);
 
-    const float g = g_ggx(n_l, n_l, info.alpha2());
+    const float g = g_ggx(n_l, n_v, info.alpha2());
     const float d = d_ggx(n_h, info.alpha2());
 
     return SpecularContrib(f, d * g / (4.0 * n_l * n_v));

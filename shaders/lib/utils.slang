@@ -241,16 +241,6 @@ float uncharted2(float x) {
     return ((x * (a * x + c * b) + d * e) / (x * (a * x + b) + d * f)) - e / f;
 }
 
-// https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
-float ACES(float x) {
-    const float a = 2.51;
-    const float b = 0.03;
-    const float c = 2.43;
-    const float d = 0.59;
-    const float e = 0.14;
-    return ((x * (a * x + b)) / (x * (c * x + d) + e));
-}
-
 float reinhard(float hdr) {
     return hdr / (hdr + 1.0);
 }
@@ -259,8 +249,29 @@ float3 uncharted2(float3 x) {
     return float3(uncharted2(x.x), uncharted2(x.y), uncharted2(x.z));
 }
 
+float3 ACES_RRT_ODT_fit(float3 v) {
+    const float3 a = v * (v + 0.0245786) - 0.000090537;
+    const float3 b = v * (0.983729 * v + 0.4329510) + 0.238081;
+    return a / b;
+}
+
+// https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
 float3 ACES(float3 x) {
-    return float3(ACES(x.x), ACES(x.y), ACES(x.z));
+    // sRGB => XYZ => D65_2_D60 => AP1 => RRT_SAT
+    const float3x3 aces_input = float3x3(
+        0.59719, 0.35458, 0.04823,
+        0.07600, 0.90834, 0.01566,
+        0.02840, 0.13383, 0.83777
+    );
+
+    // ODT_SAT => XYZ => D60_2_D65 => sRGB
+    const float3x3 aces_output = float3x3(
+         1.60475, -0.53108, -0.07367,
+        -0.10208,  1.10813, -0.00605,
+        -0.00327, -0.07276,  1.07602
+    );
+
+    return saturate(mul(aces_output, ACES_RRT_ODT_fit(mul(aces_input, x))));
 }
 
 float3 reinhard(float3 x) {
@@ -335,7 +346,7 @@ float3 octahedron_decode(float2 f) {
 
 float3 unpack_normal_map(float2 normal) {
     normal = normal * 2.0 - 1.0;
-    return float3(normal, 1.0 - sqrt(dot(normal, normal)));
+    return float3(normal, sqrt(saturate(1.0 - dot(normal, normal))));
 }
 
 float4 unpack_2_10_10_10(uint packed) {

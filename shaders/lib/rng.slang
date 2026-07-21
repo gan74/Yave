@@ -19,7 +19,10 @@ interface Rng {
 
     [mutating]
     float3 next_unit() {
-        return normalize(float3(next_snorm(), next_snorm(), next_snorm()));
+        const float theta = next_unorm() * constants.pi * 2.0;
+        const float z = next_snorm();
+        const float n = sqrt(1.0 - z * z);
+        return float3(n * cos(theta), n * sin(theta), z);
     }
 };
 

@@ -218,12 +218,6 @@ static void init_vk_device() {
         create_info.pQueueCreateInfos = &queue_create_info;
     }
 
-    if(instance_params().validation_layers) {
-        const auto ext = validation_extensions();
-        create_info.enabledLayerCount = u32(ext.size());
-        create_info.ppEnabledLayerNames = ext.data();
-    }
-
     {
         y_profile_zone("vkCreateDevice");
         vk_check(vkCreateDevice(physical_device().vk_physical_device(), &create_info, vk_allocation_callbacks(), &device::vk_device));
