@@ -596,7 +596,7 @@ class ReadableArchive final {
             inner i;
 
             Success status = Success::Full;
-            y_try_status(deserialize_one(NamedObject<inner>{i, object.name, object.name_hash.hash}));
+            y_try_status(deserialize_one(NamedObject<inner>{i, object.name, object.name_hash}));
 
             object.object.set(std::move(i));
             return core::Ok(status);

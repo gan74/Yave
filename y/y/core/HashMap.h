@@ -507,7 +507,7 @@ class FlatHashMap : Hasher, Equal {
 
             usize probes = 0;
             usize best_index = invalid_index;
-            do
+            do {
                 const usize index = (h + detail::probing_offset<probing_strategy>(probes)) & hash_mask;
                 const State& state = _states[index];
                 if(!is_state_full(state)) {

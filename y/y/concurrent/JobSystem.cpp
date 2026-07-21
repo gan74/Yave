@@ -81,12 +81,13 @@ bool JobSystem::is_empty() const {
     return !_total_jobs;
 }
 
-void JobSystem::cancel_pending_jobs() {
+/*void JobSystem::cancel_pending_jobs() {
+    // This is incorrect as it doesn't account for dependencies
     const std::unique_lock lock(_lock);
     _jobs.make_empty();
     _waiting = 0;
     _total_jobs = 0;
-}
+}*/
 
 JobSystem::JobHandle JobSystem::schedule_n(JobFunc&& func, u32 count, core::Span<JobHandle> deps, std::source_location loc) {
     y_debug_assert(count > 0);

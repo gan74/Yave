@@ -119,7 +119,7 @@ void explore_one(T&& t, F&& func) {
         auto elems = t._y_reflect_static();
         explore_named_tuple<0>(t, elems, func);
     } else if constexpr(is_tuple<T>) {
-        explore_tuple<0>(t);
+        explore_tuple<0>(t, func);
     } else if constexpr(is_std_ptr<T> || std::is_pointer_v<T>) {
         if(t != nullptr) {
             explore_one(*t, func);

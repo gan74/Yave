@@ -134,7 +134,7 @@ class Matrix {
 
         template<typename U>
         inline constexpr auto operator+(const Matrix<N, M, U>& m) const {
-            const Matrix<N, M, decltype(std::declval<T>() * std::declval<U>())> mat;
+            Matrix<N, M, decltype(std::declval<T>() * std::declval<U>())> mat;
             for(usize i = 0; i != N; ++i) {
                 mat._vecs[i] = _vecs[i] + m._vecs[i];
             }

@@ -135,7 +135,7 @@ class Vec
 
         inline constexpr void normalize() {
             if(!is_zero()) {
-                operator*=(1.0f / length());
+                operator*=(T(1) / length());
             }
         }
 

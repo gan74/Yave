@@ -50,9 +50,10 @@ void SpinLock::lock() {
 }
 
 bool SpinLock::try_lock() {
-    const Type res = _spin.exchange(Locked, std::memory_order_acquire);
-    y_debug_assert(res != Destroyed);
-    return res == Unlocked;
+    Type expected = Unlocked;
+    const bool locked = _spin.compare_exchange_weak(expected, Locked, std::memory_order_acquire, std::memory_order_relaxed);
+    y_debug_assert(expected != Destroyed);
+    return locked;
 }
 
 void SpinLock::unlock() {

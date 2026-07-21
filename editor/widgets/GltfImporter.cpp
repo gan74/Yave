@@ -241,7 +241,7 @@ void GltfImporter::on_gui() {
             }
 
             if(ImGui::Button("Cancel")) {
-                _job_system.cancel_pending_jobs();
+                // _job_system.cancel_pending_jobs();
                 close();
             }
         break;
@@ -282,7 +282,7 @@ void GltfImporter::on_gui() {
                 _state = State::Done;
             } else {
                 if(ImGui::Button("Cancel")) {
-                    _job_system.cancel_pending_jobs();
+                    // _job_system.cancel_pending_jobs();
                     close();
                 }
             }

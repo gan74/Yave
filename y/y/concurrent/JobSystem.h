@@ -81,7 +81,7 @@ class JobSystem : NonMovable {
         usize concurrency() const;
 
         bool is_empty() const;
-        void cancel_pending_jobs();
+        // void cancel_pending_jobs();
 
         void wait(core::Span<JobHandle> jobs);
 

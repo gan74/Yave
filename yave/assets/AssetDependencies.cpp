@@ -62,7 +62,7 @@ AssetLoadingState AssetDependencies::state() const {
 
 AssetLoadingErrorType AssetDependencies::error() const {
     for(const auto& d : _deps) {
-        if(!d.is_failed()) {
+        if(d.is_failed()) {
             return d.error();
         }
     }
