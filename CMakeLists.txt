@@ -73,7 +73,11 @@ function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
     string(STRIP "${COMPILE_ARGS}" COMPILE_ARGS)
     set(SHADER_BIN "${SHADER_NAME}${NAME_SUFFIX}.spv")
     set(SHADER_CMD ${Vulkan_SLANGC_EXECUTABLE} ${COMPILE_ARGS} -target spirv -matrix-layout-column-major -fvk-use-entrypoint-name -preserve-params -O0 -o ${SHADER_BIN} \"${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}\")
-    add_custom_command(TARGET ${SHADER_TARGET} COMMAND ${SHADER_CMD})
+    add_custom_command(
+        TARGET ${SHADER_TARGET} 
+        POST_BUILD
+        COMMAND ${SHADER_CMD}
+    )
     # message("${SHADER_CMD}")
     optimize_shader(${SHADER_TARGET}_optim ${SHADER_BIN})
 endfunction(add_slang_shader)
@@ -271,9 +275,9 @@ if(YAVE_BUILD_YAVE)
     endif()
 
     if(YAVE_TRACY_PROFILING)
-        set(TRACY_ENABLE ON CACHE "" INTERNAL FORCE)
-        set(TRACY_ON_DEMAND ON CACHE "" INTERNAL FORCE)
-        set(TRACY_ONLY_LOCALHOST ON CACHE "" INTERNAL FORCE)
+        set(TRACY_ENABLE ON CACHE BOOL "" FORCE)
+        set(TRACY_ON_DEMAND ON CACHE BOOL "" FORCE)
+        set(TRACY_ONLY_LOCALHOST ON CACHE BOOL "" FORCE)
         add_subdirectory(external/tracy)
         target_link_libraries(yave PUBLIC TracyClient)
     endif()
