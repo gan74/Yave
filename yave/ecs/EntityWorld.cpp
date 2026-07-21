@@ -334,8 +334,10 @@ EntityId EntityWorld::parent(EntityId id) const {
 void EntityWorld::set_parent(EntityId id, EntityId parent_id) {
     y_profile();
 
-    _entities.set_parent(id, parent_id);
-    _parent_changed.insert(id);
+    if(id != parent_id) {
+        _entities.set_parent(id, parent_id);
+        _parent_changed.insert(id);
+    }
 }
 
 bool EntityWorld::has_parent(EntityId id) const {

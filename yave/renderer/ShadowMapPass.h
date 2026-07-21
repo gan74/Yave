@@ -34,8 +34,7 @@ enum class ShadowMapSpillPolicy {
 };
 
 struct ShadowMapSettings {
-    u32 shadow_map_size = 2048;
-    usize shadow_atlas_size = 4;
+    u32 shadow_map_size = 4096;
     ShadowMapSpillPolicy spill_policy = ShadowMapSpillPolicy::DownSample;
 };
 

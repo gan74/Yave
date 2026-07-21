@@ -206,11 +206,11 @@ void Outliner::on_gui() {
 
 
     if(ImGui::BeginChild("##entitiesarea")) {
-        if(ImGui::BeginTable("##entities", int(1 + _tag_buttons.size()), ImGuiTableFlags_RowBg)) {
+        if(ImGui::BeginTable("##entities", 2, ImGuiTableFlags_RowBg)) {
             y_profile_zone("fill entity table");
 
             ImGui::TableSetupColumn("##name", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableSetupColumn("##tagbuttons",ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("##tagbuttons", ImGuiTableColumnFlags_WidthFixed);
 
             if(!matcher.is_empty()) {
                 for(const auto& [id, comp] : world.component_set<EditorComponent>()) {

@@ -87,6 +87,9 @@ EntityId EntityPool::create() {
 EntityId EntityPool::create_with_id(EntityId id) {
     const u32 index = id.index();
     if(_entities.size() < index + 1) {
+        for(u32 i = u32(_entities.size()); i < index; ++i) {
+            _free << i;
+        }
         _entities.set_min_size(index + 1);
     } else {
         if(_entities[index].is_valid()) {
@@ -157,6 +160,7 @@ EntityId EntityPool::parent(EntityId id) const {
 
 void EntityPool::set_parent(EntityId id, EntityId parent_id) {
     y_debug_assert(exists(id));
+    y_debug_assert(id != parent_id);
 
     Entity& child = _entities[id.index()];
     if(child.parent == parent_id) {

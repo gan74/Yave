@@ -172,9 +172,7 @@ class EntityWorld : NonMovable {
 
         template<typename S, typename... Args>
         S* add_system(Args&&... args) {
-            S* system = _system_manager.add_system<S>(y_fwd(args)...);
-            register_component_types(system);
-            return system;
+            return _system_manager.add_system<S>(y_fwd(args)...);
         }
 
         template<typename S>

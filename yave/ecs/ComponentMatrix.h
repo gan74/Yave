@@ -75,11 +75,6 @@ class ComponentMatrix {
 
 
         template<typename T>
-        void has_component(EntityId id) const {
-            has_component(id, type_index<T>());
-        }
-
-        template<typename T>
         void add_component(EntityId id) {
             // y_debug_assert(has_all_required_components<T>(id));
             add_component(id, type_index<T>());

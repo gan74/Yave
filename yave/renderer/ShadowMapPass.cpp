@@ -233,7 +233,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneVisibilit
         log_msg("Shadow map size is not a power of two", Log::Warning);
     }
 
-    const math::Vec2ui shadow_map_size = math::Vec2ui(1, settings.shadow_atlas_size) * first_level_size;
+    const math::Vec2ui shadow_map_size(first_level_size);
     const math::Vec2 uv_mul = 1.0f / math::Vec2(shadow_map_size);
 
     const auto shadow_map = builder.declare_image(shadow_format, shadow_map_size);
@@ -241,9 +241,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneVisibilit
     const SceneView& scene_view = visibility.scene_view;
     const ShadowCastingLights lights = collect_shadow_casting_lights(visibility);
 
-    const float downsample_factor = settings.spill_policy == ShadowMapSpillPolicy::DownSample
-        ? total_occupancy(lights) / settings.shadow_atlas_size
-        : 1.0f;
+    const float downsample_factor = settings.spill_policy == ShadowMapSpillPolicy::DownSample ? total_occupancy(lights)  : 1.0f;
     const u32 lod_offset = log2ui(u32(std::ceil(downsample_factor)));
 
     ShadowMapPass pass;

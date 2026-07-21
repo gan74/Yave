@@ -335,7 +335,7 @@ class EntityGroup final : NonMovable {
             return _provider;
         }
 
-        void swap(EntityGroup& other) {
+        /*void swap(EntityGroup& other) {
             _ids.swap(other.ids());
             std::swap(_sets, other._sets);
             std::swap(_mutate, other._mutate);
@@ -343,7 +343,7 @@ class EntityGroup final : NonMovable {
             std::swap(_write_locks, other._write_locks);
             std::swap(_read_locks, other._read_locks);
             std::swap(_provider, other._provider);
-        }
+        }*/
 
     private:
         friend class EntityWorld;
