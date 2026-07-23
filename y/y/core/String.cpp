@@ -271,15 +271,6 @@ const char* String::data() const {
     return is_long() ? _l.data : _s.data;
 }
 
-String::iterator String::find(const char* str) {
-    return const_cast<iterator>(const_this()->find(str));
-}
-
-String::const_iterator String::find(const char* str) const {
-    const const_iterator found = std::strstr(data(), str);
-    return found ? found : end();
-}
-
 String::iterator String::find(std::string_view str) {
     return const_cast<iterator>(const_this()->find(str));
 }

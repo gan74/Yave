@@ -151,9 +151,6 @@ class String {
         char* data();
         const char* data() const;
 
-        iterator find(const char* str);
-        const_iterator find(const char* str) const;
-
         iterator find(std::string_view str);
         const_iterator find(std::string_view str) const;
 
