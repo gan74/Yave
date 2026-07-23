@@ -34,6 +34,7 @@ SOFTWARE.
 #include <unordered_map>
 #include <random>
 #include <ctime>
+#include <memory>
 
 namespace {
 using namespace y;
@@ -142,8 +143,6 @@ static Map fuzz(usize count, u32 seed) {
     return map;
 }
 
-
-Y_TODO(Test with complex objects)
 
 y_test_func("HashMap basics") {
     static constexpr int max_key = 100000;
@@ -262,6 +261,392 @@ y_test_func("HashMap simple") {
     y_test_assert(map.contains(4));
 }
 
+y_test_func("HashMap erase") {
+    DefaultImpl<int, int> map;
+    for(int i = 0; i != 100; ++i) {
+        map.emplace(i, i * 3);
+    }
+
+    map.erase(50);
+    y_test_assert(!map.contains(50));
+    y_test_assert(map.size() == 99);
+    y_test_assert(map.find(50) == map.end());
+
+    for(int i = 0; i != 100; ++i) {
+        if(i == 50) {
+            continue;
+        }
+        y_test_assert(map.find(i)->second == i * 3);
+    }
+
+    map.erase(0);
+    map.erase(99);
+    y_test_assert(map.size() == 97);
+    y_test_assert(!map.contains(0));
+    y_test_assert(!map.contains(99));
+}
+
+y_test_func("HashMap operator index") {
+    DefaultImpl<int, int> map;
+    map[1] = 10;
+    map[2] = 20;
+    y_test_assert(map.size() == 2);
+    y_test_assert(map[1] == 10);
+    y_test_assert(map[2] == 20);
+
+    map[1] = 11;
+    y_test_assert(map[1] == 11);
+    y_test_assert(map.size() == 2);
+
+    y_test_assert(map[3] == 0);
+    y_test_assert(map.size() == 3);
+}
+
+y_test_func("HashMap clear") {
+    DefaultImpl<int, int> map;
+    for(int i = 0; i != 50; ++i) {
+        map.emplace(i, i);
+    }
+
+    map.make_empty();
+    y_test_assert(map.is_empty());
+    y_test_assert(map.size() == 0);
+    y_test_assert(map.bucket_count() != 0);
+
+    map.emplace(1, 2);
+    y_test_assert(map.contains(1));
+
+    map.clear();
+    y_test_assert(map.is_empty());
+    y_test_assert(map.bucket_count() == 0);
+}
+
+y_test_func("HashMap move") {
+    DefaultImpl<int, int> a;
+    for(int i = 0; i != 20; ++i) {
+        a.emplace(i, i + 1);
+    }
+
+    DefaultImpl<int, int> b = std::move(a);
+    y_test_assert(b.size() == 20);
+    y_test_assert(b.find(7)->second == 8);
+
+    DefaultImpl<int, int> c;
+    c.emplace(0, 0);
+    c = std::move(b);
+    y_test_assert(c.size() == 20);
+    y_test_assert(c.contains(19));
+}
+
+struct StatefulHash {
+    usize salt = next_salt();
+
+    static usize next_salt() {
+        static usize s = 1;
+        return s++;
+    }
+
+    template<typename T>
+    usize operator()(const T& t) const {
+        return Hash<T>{}(t) ^ (salt * 0x9e3779b97f4a7c15ull);
+    }
+};
+
+y_test_func("HashMap swap stateful hasher") {
+    FlatHashMap<int, int, StatefulHash> a;
+    FlatHashMap<int, int, StatefulHash> b;
+
+    for(int i = 0; i != 40; ++i) {
+        a.emplace(i, i);
+        b.emplace(i + 100, i + 100);
+    }
+
+    a.swap(b);
+
+    // Lookups fail if Hasher bases were not swapped with the table.
+    y_test_assert(a.size() == 40);
+    y_test_assert(b.size() == 40);
+    y_test_assert(a.contains(100));
+    y_test_assert(b.contains(0));
+    y_test_assert(!a.contains(0));
+    y_test_assert(!b.contains(100));
+
+    for(int i = 0; i != 40; ++i) {
+        y_test_assert(a.find(i + 100)->second == i + 100);
+        y_test_assert(b.find(i)->second == i);
+    }
+}
+
+y_test_func("HashMap keys values") {
+    DefaultImpl<int, int> map;
+    map.emplace(1, 10);
+    map.emplace(2, 20);
+    map.emplace(3, 30);
+
+    int key_sum = 0;
+    int value_sum = 0;
+    for(const int k : map.keys()) {
+        key_sum += k;
+    }
+    for(const int v : map.values()) {
+        value_sum += v;
+    }
+    y_test_assert(key_sum == 6);
+    y_test_assert(value_sum == 60);
+}
+
+y_test_func("HashMap tombstone reinsert") {
+    DefaultImpl<int, int> map;
+    map.set_min_capacity(64);
+
+    for(int i = 0; i != 80; ++i) {
+        map.emplace(i, i);
+    }
+    y_test_assert(map.size() == 80);
+
+    for(int i = 0; i != 80; i += 2) {
+        map.erase(i);
+    }
+    y_test_assert(map.size() == 40);
+
+    for(int i = 0; i != 80; ++i) {
+        if(i % 2 == 0) {
+            y_test_assert(!map.contains(i));
+        } else {
+            y_test_assert(map.find(i)->second == i);
+        }
+    }
+
+    for(int i = 0; i != 80; i += 2) {
+        y_test_assert(map.insert({i, i * 10}).second);
+    }
+    y_test_assert(map.size() == 80);
+
+    for(int i = 0; i != 80; ++i) {
+        const int expected = (i % 2 == 0) ? i * 10 : i;
+        y_test_assert(map.find(i)->second == expected);
+    }
+}
+
+y_test_func("HashMap erase all reinsert") {
+    DefaultImpl<int, int, AbysmalHash> map;
+    for(int i = 0; i != 100; ++i) {
+        map.emplace(i, i);
+    }
+    for(int i = 0; i != 100; ++i) {
+        map.erase(i);
+    }
+    y_test_assert(map.is_empty());
+
+    for(int i = 0; i != 100; ++i) {
+        y_test_assert(map.insert({i, -i}).second);
+        y_test_assert(map.find(i)->second == -i);
+    }
+    y_test_assert(map.size() == 100);
+}
+
+y_test_func("HashMap unique ptr values") {
+    DefaultImpl<int, std::unique_ptr<int>> map;
+    for(int i = 0; i != 50; ++i) {
+        y_test_assert(map.emplace(i, std::make_unique<int>(i * 2)).second);
+    }
+    y_test_assert(map.size() == 50);
+
+    for(int i = 0; i != 50; ++i) {
+        y_test_assert(*map.find(i)->second == i * 2);
+    }
+
+    map.erase(10);
+    y_test_assert(!map.contains(10));
+    y_test_assert(map.size() == 49);
+
+    DefaultImpl<int, std::unique_ptr<int>> moved = std::move(map);
+    y_test_assert(moved.size() == 49);
+    y_test_assert(*moved.find(20)->second == 40);
+}
+
+y_test_func("HashMap string vector values") {
+    DefaultImpl<String, Vector<int>> map;
+    for(int g = 0; g != 20; ++g) {
+        String key;
+        fmt_into(key, "group-{}", g);
+        Vector<int> values;
+        for(int i = 0; i != 5; ++i) {
+            values.push_back(g * 5 + i);
+        }
+        y_test_assert(map.insert({key, std::move(values)}).second);
+    }
+
+    y_test_assert(map.size() == 20);
+    y_test_assert(map.find("group-3")->second.size() == 5);
+    y_test_assert(map.find("group-3")->second[2] == 17);
+
+    map.erase("group-3");
+    y_test_assert(!map.contains("group-3"));
+
+    auto& slot = map["group-3"];
+    y_test_assert(slot.is_empty());
+    slot.push_back(42);
+    y_test_assert(map.find("group-3")->second[0] == 42);
+}
+
+y_test_func("HashMap iterate erase collect") {
+    DefaultImpl<int, int> map;
+    for(int i = 0; i != 200; ++i) {
+        map.emplace(i, i);
+    }
+
+    Vector<int> to_erase;
+    for(const auto& [k, v] : map) {
+        if((k + v) % 3 == 0) {
+            to_erase.push_back(k);
+        }
+    }
+    for(int k : to_erase) {
+        map.erase(k);
+    }
+
+    y_test_assert(map.size() == 200 - to_erase.size());
+    for(int k : to_erase) {
+        y_test_assert(!map.contains(k));
+    }
+    for(const auto& [k, v] : map) {
+        y_test_assert(k == v);
+        y_test_assert((k + v) % 3 != 0);
+    }
+}
+
+y_test_func("HashMap reserve growth") {
+    DefaultImpl<int, int> map;
+    map.set_min_capacity(1000);
+    const usize buckets = map.bucket_count();
+    y_test_assert(buckets >= 1000);
+
+    for(int i = 0; i != 800; ++i) {
+        map.emplace(i, i);
+    }
+    y_test_assert(map.bucket_count() == buckets);
+    y_test_assert(map.size() == 800);
+
+    for(int i = 0; i != 800; ++i) {
+        y_test_assert(map.find(i)->second == i);
+    }
+}
+
+y_test_func("HashMap insert range") {
+    Vector<std::pair<int, int>> pairs;
+    for(int i = 0; i != 100; ++i) {
+        pairs.push_back({i, i + 1000});
+    }
+
+    DefaultImpl<int, int> map;
+    map.insert(pairs.begin(), pairs.end());
+    y_test_assert(map.size() == 100);
+
+    pairs.clear();
+    for(int i = 50; i != 150; ++i) {
+        pairs.push_back({i, -i});
+    }
+    map.insert(pairs.begin(), pairs.end());
+    y_test_assert(map.size() == 150);
+    y_test_assert(map.find(50)->second == 1050);
+    y_test_assert(map.find(149)->second == -149);
+}
+
+y_test_func("HashMap collision stress") {
+    FlatHashMap<int, int, BadHash<8>> map;
+    for(int i = 0; i != 300; ++i) {
+        y_test_assert(map.insert({i, i * i}).second);
+    }
+    y_test_assert(map.size() == 300);
+
+    for(int i = 0; i != 300; i += 3) {
+        map.erase(i);
+    }
+    for(int i = 0; i != 300; ++i) {
+        if(i % 3 == 0) {
+            y_test_assert(!map.contains(i));
+        } else {
+            y_test_assert(map.find(i)->second == i * i);
+        }
+    }
+
+    for(int i = 0; i != 300; i += 3) {
+        map[i] = -i;
+    }
+    for(int i = 0; i != 300; ++i) {
+        const int expected = (i % 3 == 0) ? -i : i * i;
+        y_test_assert(map.find(i)->second == expected);
+    }
+}
+
+y_test_func("HashMap mirrored unordered") {
+    const u32 seed = 0xC0FFEEu;
+    math::FastRandom rng(seed);
+    std::uniform_int_distribution<i32> dist;
+
+    FlatHashMap<i32, i32> flat;
+    std::unordered_map<i32, i32> ref;
+
+    for(usize step = 0; step != 5000; ++step) {
+        const i32 k = dist(rng);
+        const i32 v = dist(rng);
+        switch(rng() % 5) {
+            case 0:
+            case 1: {
+                const auto [it, inserted] = flat.insert({k, v});
+                const auto [rit, rinserted] = ref.insert({k, v});
+                y_test_assert(inserted == rinserted);
+                unused(it, rit);
+            } break;
+
+            case 2: {
+                flat[k] = v;
+                ref[k] = v;
+            } break;
+
+            case 3: {
+                flat.erase(k);
+                ref.erase(k);
+            } break;
+
+            default: {
+                y_test_assert(flat.contains(k) == (ref.find(k) != ref.end()));
+                if(flat.contains(k)) {
+                    y_test_assert(flat.find(k)->second == ref.find(k)->second);
+                }
+            } break;
+        }
+        y_test_assert(flat.size() == ref.size());
+    }
+
+    y_test_assert(to_vector(flat) == to_vector(ref));
+}
+
+y_test_func("HashMap raii erase mix") {
+    usize counter = 0;
+    {
+        DefaultImpl<int, RaiiCounter> map;
+        for(int i = 0; i != 100; ++i) {
+            map.insert({i, RaiiCounter(&counter)});
+        }
+        y_test_assert(counter == 0);
+
+        for(int i = 0; i != 100; i += 2) {
+            map.erase(i);
+        }
+        y_test_assert(counter == 50);
+
+        map.make_empty();
+        y_test_assert(counter == 100);
+
+        for(int i = 0; i != 20; ++i) {
+            map.insert({i, RaiiCounter(&counter)});
+        }
+        y_test_assert(counter == 100);
+    }
+    y_test_assert(counter == 120);
+}
 
 }
 

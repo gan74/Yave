@@ -20,14 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 #include <y/core/Vector.h>
+#include <y/core/String.h>
 #include <y/test/test.h>
-
+#include <y/utils/format.h>
 #include <y/utils/traits.h>
 
 #include <vector>
 #include <memory>
-
-//#include <y/core/String.h>
 
 namespace {
 using namespace y;
@@ -56,14 +55,19 @@ struct RaiiCounter : NonCopyable {
     RaiiCounter(usize* ptr) : counter(ptr) {
     }
 
-    RaiiCounter(RaiiCounter&& raii) : counter(nullptr) {
-        std::swap(raii.counter, counter);
+    RaiiCounter(RaiiCounter&& other) : counter(nullptr) {
+        std::swap(other.counter, counter);
     }
 
     ~RaiiCounter() {
         if(counter) {
             ++(*counter);
         }
+    }
+
+    RaiiCounter& operator=(RaiiCounter&& other) {
+        std::swap(other.counter, counter);
+        return *this;
     }
 
     usize* counter;
@@ -416,6 +420,270 @@ y_test_func("SmallVector copy-swap") {
 
     y_test_assert(copies == 0);
     y_test_assert(moves == 8); // swap = 2 moves
+}
+
+y_test_func("SmallVector sbo heap swap") {
+    const std::shared_ptr<int> a(new int(1));
+    const std::shared_ptr<int> b(new int(2));
+    const std::shared_ptr<int> c(new int(3));
+
+    SmallVector<std::shared_ptr<int>, 4> sbo;
+    sbo.push_back(a);
+    sbo.push_back(b);
+    y_test_assert(sbo.capacity() == 4);
+
+    SmallVector<std::shared_ptr<int>, 4> heap;
+    heap.push_back(c);
+    heap.set_min_capacity(16);
+    y_test_assert(heap.capacity() > 4);
+    y_test_assert(a.use_count() == 2);
+    y_test_assert(b.use_count() == 2);
+    y_test_assert(c.use_count() == 2);
+
+    std::swap(sbo, heap);
+
+    y_test_assert(sbo.size() == 1);
+    y_test_assert(heap.size() == 2);
+    y_test_assert(*sbo[0] == 3);
+    y_test_assert(*heap[0] == 1);
+    y_test_assert(*heap[1] == 2);
+    y_test_assert(a.use_count() == 2);
+    y_test_assert(b.use_count() == 2);
+    y_test_assert(c.use_count() == 2);
+
+    sbo.clear();
+    heap.clear();
+    y_test_assert(a.use_count() == 1);
+    y_test_assert(b.use_count() == 1);
+    y_test_assert(c.use_count() == 1);
+}
+
+y_test_func("SmallVector sbo heap swap dtors") {
+    usize counter = 0;
+    {
+        SmallVector<RaiiCounter, 4> sbo;
+        sbo.push_back(RaiiCounter(&counter));
+        sbo.push_back(RaiiCounter(&counter));
+
+        SmallVector<RaiiCounter, 4> heap;
+        heap.push_back(RaiiCounter(&counter));
+        heap.set_min_capacity(16);
+
+        y_test_assert(counter == 0);
+        std::swap(sbo, heap);
+        y_test_assert(counter == 0);
+        y_test_assert(sbo.size() == 1);
+        y_test_assert(heap.size() == 2);
+    }
+    y_test_assert(counter == 3);
+}
+
+y_test_func("Vector erase") {
+    Vector<int> vec;
+    for(int i = 0; i != 10; ++i) {
+        vec.push_back(i);
+    }
+
+    vec.erase(vec.begin());
+    y_test_assert(vec == Vector({1, 2, 3, 4, 5, 6, 7, 8, 9}));
+
+    vec.erase(vec.begin() + 3);
+    y_test_assert(vec == Vector({1, 2, 3, 5, 6, 7, 8, 9}));
+
+    vec.erase(vec.end() - 1);
+    y_test_assert(vec == Vector({1, 2, 3, 5, 6, 7, 8}));
+}
+
+y_test_func("Vector make empty squeeze") {
+    Vector<int> vec;
+    for(int i = 0; i != 32; ++i) {
+        vec.push_back(i);
+    }
+    const usize cap = vec.capacity();
+    y_test_assert(cap >= 32);
+
+    vec.make_empty();
+    y_test_assert(vec.is_empty());
+    y_test_assert(vec.capacity() == cap);
+
+    vec.push_back(1);
+    vec.push_back(2);
+    vec.squeeze();
+    y_test_assert(vec.size() == 2);
+    y_test_assert(vec.capacity() == 2);
+    y_test_assert(vec == Vector({1, 2}));
+}
+
+y_test_func("Vector from range") {
+    const int src[] = {4, 5, 6};
+    const auto vec = Vector<int>::from_range(src);
+    y_test_assert(vec == Vector({4, 5, 6}));
+}
+
+y_test_func("Vector assign span") {
+    Vector<int> vec = {1, 2, 3};
+    const int src[] = {9, 8, 7, 6};
+    vec = Span<int>(src);
+    y_test_assert(vec == Vector({9, 8, 7, 6}));
+}
+
+y_test_func("Vector insert expand") {
+    SmallVector<int, 4> vec = {0, 1, 3, 4};
+    vec.insert(vec.begin() + 2, 2);
+    y_test_assert(vec == Vector({0, 1, 2, 3, 4}));
+    y_test_assert(vec.capacity() > 4);
+
+    vec.insert(vec.begin(), -1);
+    y_test_assert(vec.first() == -1);
+    vec.insert(vec.end(), 5);
+    y_test_assert(vec.last() == 5);
+    y_test_assert(vec == Vector({-1, 0, 1, 2, 3, 4, 5}));
+}
+
+y_test_func("Vector insert non trivial") {
+    usize counter = 0;
+    {
+        Vector<RaiiCounter> vec;
+        for(usize i = 0; i != 8; ++i) {
+            vec.push_back(RaiiCounter(&counter));
+        }
+        y_test_assert(counter == 0);
+        vec.insert(vec.begin() + 3, RaiiCounter(&counter));
+        y_test_assert(vec.size() == 9);
+        y_test_assert(counter == 0);
+        vec.erase(vec.begin() + 1);
+        y_test_assert(vec.size() == 8);
+        y_test_assert(counter == 1);
+    }
+    y_test_assert(counter == 9);
+}
+
+y_test_func("Vector unique ptr") {
+    Vector<std::unique_ptr<int>> vec;
+    for(int i = 0; i != 32; ++i) {
+        vec.emplace_back(std::make_unique<int>(i));
+    }
+    y_test_assert(vec.size() == 32);
+    for(int i = 0; i != 32; ++i) {
+        y_test_assert(*vec[i] == i);
+    }
+
+    vec.erase(vec.begin());
+    y_test_assert(vec.size() == 31);
+    y_test_assert(*vec.first() == 1);
+
+    vec.insert(vec.begin(), std::make_unique<int>(0));
+    y_test_assert(*vec.first() == 0);
+
+    Vector<std::unique_ptr<int>> moved = std::move(vec);
+    y_test_assert(moved.size() == 32);
+    y_test_assert(*moved[15] == 15);
+}
+
+y_test_func("Vector nested") {
+    Vector<Vector<int>> grid;
+    for(int y = 0; y != 5; ++y) {
+        Vector<int> row;
+        for(int x = 0; x != 5; ++x) {
+            row.push_back(y * 10 + x);
+        }
+        grid.push_back(std::move(row));
+    }
+    y_test_assert(grid.size() == 5);
+    y_test_assert(grid[2][3] == 23);
+
+    grid.erase(grid.begin() + 1);
+    y_test_assert(grid.size() == 4);
+    y_test_assert(grid[1][0] == 20);
+}
+
+y_test_func("Vector push pop churn") {
+    Vector<int> vec;
+    for(int round = 0; round != 50; ++round) {
+        for(int i = 0; i != 20; ++i) {
+            vec.push_back(round * 20 + i);
+        }
+        for(int i = 0; i != 10; ++i) {
+            y_test_assert(vec.pop() == round * 20 + 19 - i);
+        }
+    }
+    y_test_assert(vec.size() == 500);
+    y_test_assert(vec.first() == 0);
+    y_test_assert(vec.last() == 50 * 20 - 11);
+}
+
+y_test_func("Vector shrink to set min size") {
+    Vector<int> vec;
+    for(int i = 0; i != 40; ++i) {
+        vec.push_back(i);
+    }
+    vec.shrink_to(10);
+    y_test_assert(vec.size() == 10);
+    for(int i = 0; i != 10; ++i) {
+        y_test_assert(vec[i] == i);
+    }
+
+    vec.set_min_size(15, 99);
+    y_test_assert(vec.size() == 15);
+    y_test_assert(vec[10] == 99);
+    y_test_assert(vec[14] == 99);
+    y_test_assert(vec[9] == 9);
+}
+
+y_test_func("SmallVector heap to sbo swap") {
+    usize counter = 0;
+    {
+        SmallVector<RaiiCounter, 4> heap;
+        for(usize i = 0; i != 8; ++i) {
+            heap.push_back(RaiiCounter(&counter));
+        }
+        y_test_assert(heap.capacity() > 4);
+
+        SmallVector<RaiiCounter, 4> sbo;
+        sbo.push_back(RaiiCounter(&counter));
+
+        std::swap(heap, sbo);
+        y_test_assert(counter == 0);
+        y_test_assert(heap.size() == 1);
+        y_test_assert(sbo.size() == 8);
+
+        std::swap(heap, sbo);
+        y_test_assert(counter == 0);
+        y_test_assert(heap.size() == 8);
+        y_test_assert(sbo.size() == 1);
+    }
+    y_test_assert(counter == 9);
+}
+
+y_test_func("Vector erase all middle") {
+    Vector<int> vec;
+    for(int i = 0; i != 20; ++i) {
+        vec.push_back(i);
+    }
+    while(vec.size() > 1) {
+        vec.erase(vec.begin() + (vec.size() / 2));
+    }
+    y_test_assert(vec.size() == 1);
+    y_test_assert(vec.first() == 0 || vec.first() < 20);
+}
+
+y_test_func("Vector of strings") {
+    Vector<String> vec;
+    for(int i = 0; i != 30; ++i) {
+        String s;
+        fmt_into(s, "item-{}", i);
+        vec.push_back(std::move(s));
+    }
+    y_test_assert(vec.size() == 30);
+    y_test_assert(vec[0] == "item-0");
+    y_test_assert(vec[29] == "item-29");
+
+    vec.insert(vec.begin() + 15, String("mid"));
+    y_test_assert(vec[15] == "mid");
+    y_test_assert(vec[16] == "item-15");
+
+    vec.erase_unordered(vec.begin());
+    y_test_assert(vec.size() == 30);
 }
 
 }

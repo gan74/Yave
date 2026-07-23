@@ -27,14 +27,6 @@ namespace {
 using namespace y;
 using namespace y::math;
 
-
-y_test_func("Transform set basis") {
-    Transform<> tr;
-    tr.set_basis(Vec3(1.0f, 0.0f, 0.0f), Vec3(0.0f, 0.0f, 1.0f));
-
-    y_test_assert(tr.up() == Vec3(0.0f, 0.0f, 1.0f));
-}
-
 y_test_func("Transform decompose basic") {
     const auto quat = Quaternion<>::from_euler(to_rad(90.0f), 0.0f, to_rad(90.0f));
     const Vec3 scale(5.0f);

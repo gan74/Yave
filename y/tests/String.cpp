@@ -126,22 +126,230 @@ y_test_func("String find") {
 
     y_test_assert(found != s.end());
     y_test_assert(end == s.end());
-}
 
-y_test_func("String find") {
-    const auto s = String(get_long_c_str());
-
-    const auto found = s.find("strings");
-    const auto end = s.find("flubudu");
-
-    y_test_assert(found != s.end());
-    y_test_assert(end == s.end());
+    y_test_assert(s.find(std::string_view("strings")) != s.end());
+    y_test_assert(s.find(std::string_view("flubudu")) == s.end());
 }
 
 y_test_func("String replace") {
     y_test_assert(core::String::replaced("abdaddaaaabdadad", "a", "x") == "xbdxddxxxxbdxdxd");
     y_test_assert(core::String::replaced("xyuyyyxyxyxyx", "a", "k") == "xyuyyyxyxyxyx");
     y_test_assert(core::String::replaced("", "a", "b") == "");
+}
+
+y_test_func("String self append") {
+    {
+        String s = "abc";
+        s += s;
+        y_test_assert(s == "abcabc");
+    }
+    {
+        String s = "xy";
+        s += std::string_view(s.data() + 1, 1);
+        y_test_assert(s == "xyy");
+    }
+    {
+        String s = get_long_c_str();
+        const usize original_size = s.size();
+        s += s;
+        y_test_assert(s.size() == original_size * 2);
+        y_test_assert(s.sub_str(0, original_size) == get_long_c_str());
+        y_test_assert(s.sub_str(original_size) == get_long_c_str());
+    }
+    {
+        String s = get_long_c_str();
+        const usize original_size = s.size();
+        s += std::string_view(s.data() + 10, 20);
+        y_test_assert(s.size() == original_size + 20);
+        y_test_assert(s.sub_str(original_size) == std::string_view(get_long_c_str() + 10, 20));
+    }
+    {
+        String s = "short";
+        while(s.size() <= String::max_short_size) {
+            s += s.sub_str(0, 1);
+        }
+        y_test_assert(s.is_long());
+        y_test_assert(s.starts_with("short"));
+    }
+}
+
+y_test_func("String move") {
+    {
+        String a = "hello";
+        String b = std::move(a);
+        y_test_assert(b == "hello");
+    }
+    {
+        String a = get_long_c_str();
+        String b = std::move(a);
+        y_test_assert(b == get_long_c_str());
+        y_test_assert(b.is_long());
+    }
+    {
+        String a = "short";
+        String b = get_long_c_str();
+        a = std::move(b);
+        y_test_assert(a == get_long_c_str());
+        y_test_assert(a.is_long());
+    }
+}
+
+y_test_func("String shrink grow") {
+    String s = get_long_c_str();
+
+    s.shrink(10);
+    y_test_assert(s.size() == 10);
+    y_test_assert(s == std::string_view(get_long_c_str(), 10));
+
+    s.grow(20, 'x');
+    y_test_assert(s.size() == 20);
+    y_test_assert(s.sub_str(10) == "xxxxxxxxxx");
+
+    s.resize(5, 'z');
+    y_test_assert(s == "this ");
+}
+
+y_test_func("String starts ends with") {
+    const String s = "hello world";
+    y_test_assert(s.starts_with("hello"));
+    y_test_assert(s.starts_with(""));
+    y_test_assert(!s.starts_with("world"));
+    y_test_assert(s.ends_with("world"));
+    y_test_assert(s.ends_with(""));
+    y_test_assert(!s.ends_with("hello"));
+}
+
+y_test_func("String make empty") {
+    {
+        String s = "abc";
+        s.make_empty();
+        y_test_assert(s.is_empty());
+        y_test_assert(!s.is_long());
+        y_test_assert(s.capacity() == String::max_short_size);
+    }
+    {
+        String s = get_long_c_str();
+        const usize cap = s.capacity();
+        s.make_empty();
+        y_test_assert(s.is_empty());
+        y_test_assert(s.is_long());
+        y_test_assert(s.capacity() == cap);
+    }
+    {
+        String s = get_long_c_str();
+        s.clear();
+        y_test_assert(s.is_empty());
+        y_test_assert(!s.is_long());
+    }
+}
+
+y_test_func("String short long transitions") {
+    String s;
+    for(usize i = 0; i != String::max_short_size; ++i) {
+        s.push_back(char('a' + (i % 26)));
+        y_test_assert(!s.is_long());
+        y_test_assert(s.size() == i + 1);
+    }
+    s.push_back('Z');
+    y_test_assert(s.is_long());
+    y_test_assert(s.size() == String::max_short_size + 1);
+    y_test_assert(s[s.size() - 1] == 'Z');
+
+    s = "x";
+    y_test_assert(!s.is_long());
+    y_test_assert(s == "x");
+
+    s = get_long_c_str();
+    y_test_assert(s.is_long());
+    const String copy = s;
+    s = "ok";
+    y_test_assert(!s.is_long());
+    y_test_assert(s == "ok");
+    y_test_assert(copy == get_long_c_str());
+}
+
+y_test_func("String doubling stress") {
+    String s = "ab";
+    for(usize i = 0; i != 12; ++i) {
+        const usize before = s.size();
+        s += s;
+        y_test_assert(s.size() == before * 2);
+        y_test_assert(s.sub_str(0, before) == s.sub_str(before));
+    }
+    y_test_assert(s.size() == (2_uu << 12));
+    y_test_assert(s.starts_with("ab"));
+    y_test_assert(s.ends_with("ab"));
+}
+
+y_test_func("String replace chained") {
+    String s = "foo_bar_foo_baz_foo";
+    s = s.replaced("foo", "qux");
+    y_test_assert(s == "qux_bar_qux_baz_qux");
+    s = s.replaced("qux", "X");
+    y_test_assert(s == "X_bar_X_baz_X");
+    s = s.replaced("_", "");
+    y_test_assert(s == "XbarXbazX");
+    y_test_assert(String::replaced("aaa", "aa", "b") == "ba");
+}
+
+y_test_func("String compare and trim") {
+    y_test_assert(String("abc") < String("abd"));
+    y_test_assert(String("abc") < std::string_view("abd"));
+    y_test_assert(!(String("abc") < String("abc")));
+    y_test_assert(String("abc") == std::string_view("abc"));
+    y_test_assert(String("abc") != std::string_view("abcd"));
+
+    y_test_assert(trim("  hello  ") == "hello");
+    y_test_assert(trim_left("\t\nxy") == "xy");
+    y_test_assert(trim_right("xy  ") == "xy");
+    y_test_assert(trim("   ") == "");
+    y_test_assert(trim("") == "");
+}
+
+/*y_test_func("String copy assign capacity reuse") {
+    String s = get_long_c_str();
+    const usize cap = s.capacity();
+    s = "tiny";
+    y_test_assert(s == "tiny");
+    y_test_assert(s.is_long());
+    y_test_assert(s.capacity() == cap);
+
+    String long_a = get_long_c_str();
+    String long_b = String(get_long_c_str()) + "EXTRA";
+    long_a.set_min_capacity(long_b.size() + 64);
+    const usize reserved = long_a.capacity();
+    long_a = long_b;
+    y_test_assert(long_a == long_b);
+    y_test_assert(long_a.capacity() == reserved);
+}*/
+
+y_test_func("String from iterators") {
+    const char chars[] = {'h', 'e', 'l', 'l', 'o'};
+    const String s(chars, chars + 5);
+    y_test_assert(s == "hello");
+
+    Vector<char> vec;
+    for(char c : std::string_view(get_long_c_str())) {
+        vec.push_back(c);
+    }
+    const String from_vec(vec.begin(), vec.end());
+    y_test_assert(from_vec == get_long_c_str());
+}
+
+y_test_func("String append mix") {
+    String s = "a";
+    s += String("b");
+    s += "c";
+    s += std::string("d");
+    s += std::string_view("e");
+    s.push_back('f');
+    y_test_assert(s == "abcdef");
+
+    const String long_s = get_long_c_str();
+    s += long_s;
+    y_test_assert(s.starts_with("abcdef"));
+    y_test_assert(s.ends_with(long_s.view()));
+    y_test_assert(s.size() == 6 + long_s.size());
 }
 
 }
