@@ -125,7 +125,8 @@ struct Transform : Matrix4<T> {
         return Vec<3, T>{x.length(), y.length(), z.length()};
     }
 
-    inline constexpr void set_basis(const Vec<3, T>& forward, const Vec<3, T>& right, const Vec<3, T>& up) {
+    // Need to be fliped for Y up
+    /*inline constexpr void set_basis(const Vec<3, T>& forward, const Vec<3, T>& right, const Vec<3, T>& up) {
         this->column(0).template to<3>() = right;
         this->column(1).template to<3>() = forward;
         this->column(2).template to<3>() = up;
@@ -133,7 +134,7 @@ struct Transform : Matrix4<T> {
 
     inline constexpr void set_basis(const Vec<3, T>& forward, const Vec<3, T>& up) {
         set_basis(forward, forward.cross(up), up);
-    }
+    }*/
 
     inline constexpr std::tuple<Vec<3, T>,  Quaternion<T>, Vec<3, T>> decompose() const {
         const auto& x = this->column(0).template to<3>();
@@ -145,8 +146,8 @@ struct Transform : Matrix4<T> {
 };
 
 
-static_assert(sizeof(Transform<>) == sizeof(Matrix4<>), "Transfrom<T> should have the same size as Matrix4<T>");
-static_assert(std::is_trivially_copyable_v<Transform<>>, "Transfrom<T> should be trivially copyable");
+static_assert(sizeof(Transform<>) == sizeof(Matrix4<>), "Transform<T> should have the same size as Matrix4<T>");
+static_assert(std::is_trivially_copyable_v<Transform<>>, "Transform<T> should be trivially copyable");
 
 }
 }

@@ -198,6 +198,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
         }
 
         inline void push_back(const_reference elem) {
+            y_debug_assert(!contains_it(&elem));
             if(is_full()) {
                 expand();
             }
@@ -206,6 +207,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
         }
 
         inline reference push_back(value_type&& elem) {
+            y_debug_assert(!contains_it(&elem));
             if(is_full()) {
                 expand();
             }
@@ -224,6 +226,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
 
         template<typename It>
         inline void push_back(It beg_it, It end_it) {
+            y_debug_assert(!contains_it(beg_it));
             set_min_capacity(size() + std::distance(beg_it, end_it));
             std::copy(beg_it, end_it, std::back_inserter(*this));
         }

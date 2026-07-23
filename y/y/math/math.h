@@ -208,7 +208,7 @@ static std::array<T, N> compute_gaussian_weights(T sigma) {
     for(usize i = 0; i != weights.size(); ++i) {
         const T w = std::exp(-T(i * i) / denom);
         weights[i] = w;
-        total += i == 0 ? T(2.0) * w : w;
+        total += i ? T(2.0) * w : w;
     }
     for(T& w : weights) {
         w /= total;

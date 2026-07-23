@@ -86,7 +86,7 @@ class PagedSet : Allocator, NonCopyable {
 
                 inline pointer operator->() const {
                     const usize index = *_it;
-                    return _pages[index / page_size][index % page_size];
+                    return &_pages[index / page_size][index % page_size];
                 }
 
                 operator Iterator<true>() const {

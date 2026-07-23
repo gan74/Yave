@@ -512,11 +512,11 @@ class FlatHashMap : Hasher, Equal {
                 const usize index = (h + detail::probing_offset<probing_strategy>(probes)) & hash_mask;
                 const State& state = _states[index];
                 if(!is_state_full(state)) {
-                    if(state == detail::empty_state) {
-                        return {index, false};
-                    }
                     if(best_index == invalid_index) {
                         best_index = index;
+                    }
+                    if(state == detail::empty_state) {
+                        return {index, false};
                     }
                 } else if(state == make_state(h) && equal(_entries[index].key(), key)) {
                     return {index, true};
@@ -728,10 +728,6 @@ class FlatHashMap : Hasher, Equal {
 
         inline usize size() const {
             return _size;
-        }
-
-        static inline constexpr usize max_size() {
-            return decltype(_states)::max_size();
         }
 
         inline double load_factor() const {
