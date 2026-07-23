@@ -342,14 +342,17 @@ const PhysicalDevice& physical_device() {
 }
 
 CmdBufferRecorder create_disposable_cmd_buffer() {
+    y_profile();
     return device::queue->cmd_pool_for_thread().create_cmd_buffer();
 }
 
 ComputeCmdBufferRecorder create_disposable_compute_cmd_buffer() {
+    y_profile();
     return device::queue->cmd_pool_for_thread().create_compute_cmd_buffer();
 }
 
 TransferCmdBufferRecorder create_disposable_transfer_cmd_buffer() {
+    y_profile();
     return device::queue->cmd_pool_for_thread().create_transfer_cmd_buffer();
 }
 

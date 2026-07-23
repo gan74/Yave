@@ -403,6 +403,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
         template<typename R>
         static inline Vector from_range(const R& range) {
             Vector v;
+            // v.set_min_capacity(std::size(range));
             for(const auto& e : range) {
                 v.emplace_back(e);
             }
@@ -453,10 +454,12 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
                     y_debug_assert(big->size() <= big->capacity());
                 } else if(is_sbo_active()) {
                     y_debug_assert(!other.is_sbo_active());
+                    const usize self_size = size();
                     data_type* data = std::exchange(other._data, other.sbo_buffer());
-                    data_type* data_end = std::exchange(other._data_end, other._data + size());
+                    data_type* data_end = std::exchange(other._data_end, other._data + self_size);
                     data_type* alloc_end = std::exchange(other._alloc_end, other._data + SBOCapacity::value);
-                    move_range(other._data, _data, size());
+                    move_range(other._data, _data, self_size);
+                    clear(_data, _data_end);
                     _data = data;
                     _data_end = data_end;
                     _alloc_end = alloc_end;

@@ -304,6 +304,7 @@ class FlatHashMap : Hasher, Equal {
 
                 template<bool C, typename T>
                 inline bool operator==(const IteratorBase<C, T>& other) const {
+                    y_debug_assert(_parent == other._parent);
                     return _index == other._index;
                 }
 
@@ -626,6 +627,8 @@ class FlatHashMap : Hasher, Equal {
 
         inline void swap(FlatHashMap& other) {
             if(&other != this) {
+                std::swap<Hasher>(*this, other);
+                std::swap<Equal>(*this, other);
                 std::swap(_states, other._states);
                 std::swap(_entries, other._entries);
                 std::swap(_buckets, other._buckets);
