@@ -19,24 +19,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_AMBIENTPASS_H
-#define YAVE_RENDERER_AMBIENTPASS_H
+#ifndef YAVE_RENDERER_DDGIAPPLYPASS_H
+#define YAVE_RENDERER_DDGIAPPLYPASS_H
 
-#include "GBufferPass.h"
-#include "AOPass.h"
-#include "RTGIPass.h"
-#include "DDGIApplyPass.h"
+#include "DDGIPass.h"
 
 namespace yave {
 
-struct AmbientPass {
-    FrameGraphImageId lit;
+struct DDGIApplyPass {
+    FrameGraphImageId gi;
 
-    static AmbientPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const RTGIPass& gi);
-    static AmbientPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const AOPass& ao);
-    static AmbientPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const DDGIApplyPass& ddgi);
+    bool is_valid() const {
+        return gi.is_valid();
+    }
+
+    static DDGIApplyPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const DDGIPass& ddgi);
 };
 
 }
 
-#endif // YAVE_RENDERER_AMBIENTPASS_H
+#endif // YAVE_RENDERER_DDGIAPPLYPASS_H

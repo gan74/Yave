@@ -63,7 +63,7 @@ class EngineView final : public Widget {
 
             AO,
 
-            GI,
+            DDGI,
 
             Max,
         };

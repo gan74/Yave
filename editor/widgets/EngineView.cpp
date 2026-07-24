@@ -201,16 +201,28 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         const auto output_image = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, output_size);
 
         const auto gbuffer = renderer.renderer.gbuffer;
+        const struct ViewParams {
+            u32 target_index;
+            float probe_spacing;
+        } params {
+            u32(_view),
+            renderer.renderer.ddgi.is_valid()
+                ? renderer.renderer.ddgi.probe_spacing
+                : _settings.renderer_settings.ddgi.probe_spacing,
+        };
+
         builder.add_input_usage(output_image, ImageUsage::TransferSrcBit);
         builder.add_color_output(output_image);
-        builder.add_inline_input(_view);
+        builder.add_inline_input(params);
         builder.add_uniform_input(renderer.final);
         builder.add_uniform_input(gbuffer.depth);
         builder.add_uniform_input(gbuffer.motion);
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
         builder.add_uniform_input_with_default(renderer.renderer.ao.ao, Descriptor(white));
-        builder.add_uniform_input_with_default(renderer.renderer.rtgi.gi, Descriptor(black));
+        builder.add_uniform_input_with_default(renderer.renderer.ddgi.irradiance, Descriptor(black, SamplerType::LinearClamp));
+        builder.add_uniform_input_with_default(renderer.renderer.ddgi.distance, Descriptor(black, SamplerType::LinearClamp));
+        builder.add_uniform_input(gbuffer.scene_pass.camera);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             {
                 auto render_pass = recorder.bind_framebuffer(self->framebuffer());
@@ -455,7 +467,11 @@ void EngineView::draw_menu() {
     ImGui::Separator();
 
     {
-        const char* output_names[] = {"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "AO", "GI"};
+        const char* output_names[] = {
+            "Lit", "Albedo", "Normals", "Metallic", "Roughness",
+            "Depth", "Motion", "AO",
+            "DDGI",
+        };
         for(usize i = 0; i != usize(RenderView::Max); ++i) {
             bool selected = usize(_view) == i;
             ImGui::MenuItem(output_names[i], nullptr, &selected);
@@ -552,22 +568,15 @@ void EngineView::draw_settings_menu() {
         ImGui::EndMenu();
     }
 
-    if(ImGui::BeginMenu("RTGI")) {
-        RTGISettings& settings = _settings.renderer_settings.rtgi;
+    if(ImGui::BeginMenu("DDGI")) {
+        DDGISettings& settings = _settings.renderer_settings.ddgi;
 
-        ImGui::SliderFloat("Min ray count", &settings.min_ray_count, 0.0f, 16.0f);
-        ImGui::SliderFloat("Max ray count", &settings.max_ray_count, 1.0f, 16.0f);
-
-        ImGui::Separator();
-
-        ImGui::SliderFloat("Cell size", &settings.base_cell_size, 0.01f, 0.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
-        ImGui::SliderFloat("LoD distance", &settings.lod_dist, 1.0f, 100.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-
-        ImGui::Separator();
-
-        ImGui::SliderFloat("LoD jitter", &settings.lod_jitter, 0.0f, 1.0f);
-        ImGui::SliderFloat("Position jitter", &settings.pos_jitter, 0.0f, 4.0f);
-        ImGui::SliderFloat("Normal jitter", &settings.norm_jitter, 0.0f, 2.0f);
+        ImGui::MenuItem("Show probes", nullptr, &_settings.show_ddgi_probes);
+        ImGui::SliderFloat("Probe radius", &_settings.ddgi_probe_radius, 0.01f, 0.5f, "%.2f");
+        ImGui::SliderFloat("Probe spacing", &settings.probe_spacing, 0.25f, 8.0f, "%.2f");
+        int samples = int(settings.convolve_sample_count);
+        ImGui::SliderInt("Convolve samples", &samples, 16, 256);
+        settings.convolve_sample_count = u32(samples);
 
         ImGui::EndMenu();
     }
@@ -678,9 +687,9 @@ void EngineView::draw_settings_menu() {
 
     ImGui::MenuItem("Enable TAA", nullptr, &_settings.renderer_settings.taa.enable);
 
-    bool rtgi = _settings.renderer_settings.ambient_pipe == AmbientPipe::GI;
-    ImGui::MenuItem("Enable RTGI", nullptr, &rtgi);
-    _settings.renderer_settings.ambient_pipe = rtgi ? AmbientPipe::GI : AmbientPipe::IBLOcclusion;
+    bool ddgi = _settings.renderer_settings.ambient_pipe == AmbientPipe::GI;
+    ImGui::MenuItem("Enable DDGI", nullptr, &ddgi);
+    _settings.renderer_settings.ambient_pipe = ddgi ? AmbientPipe::GI : AmbientPipe::IBLOcclusion;
 }
 
 }

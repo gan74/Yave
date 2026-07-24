@@ -19,24 +19,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_AMBIENTPASS_H
-#define YAVE_RENDERER_AMBIENTPASS_H
+#ifndef EDITOR_RENDERER_DDGIPROBEDEBUGPASS_H
+#define EDITOR_RENDERER_DDGIPROBEDEBUGPASS_H
 
-#include "GBufferPass.h"
-#include "AOPass.h"
-#include "RTGIPass.h"
-#include "DDGIApplyPass.h"
+#include <yave/renderer/DDGIPass.h>
+#include <yave/graphics/shader_structs.h>
+#include <yave/framegraph/FrameGraphResourceId.h>
 
-namespace yave {
+namespace editor {
 
-struct AmbientPass {
-    FrameGraphImageId lit;
+struct DDGIProbeDebugPass {
+    FrameGraphImageId color;
+    FrameGraphImageId depth;
 
-    static AmbientPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const RTGIPass& gi);
-    static AmbientPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const AOPass& ao);
-    static AmbientPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const DDGIApplyPass& ddgi);
+    static DDGIProbeDebugPass create(FrameGraph& framegraph,
+                                     FrameGraphTypedBufferId<shader::Camera> camera,
+                                     FrameGraphImageId in_color,
+                                     FrameGraphImageId in_depth,
+                                     const yave::DDGIPass& ddgi,
+                                     float probe_radius = 0.1f);
 };
 
 }
 
-#endif // YAVE_RENDERER_AMBIENTPASS_H
+#endif // EDITOR_RENDERER_DDGIPROBEDEBUGPASS_H

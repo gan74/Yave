@@ -89,4 +89,3 @@ void comp_main() {
 
     out_color[coord] += float4(irradiance, 1.0);
 }
-

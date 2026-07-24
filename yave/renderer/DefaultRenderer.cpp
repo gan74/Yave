@@ -45,14 +45,16 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     renderer.gbuffer        = GBufferPass::create(framegraph, renderer.camera, renderer.visibility, size);
 
     renderer.cluster        = LightClusterPass::create(framegraph, renderer.gbuffer, settings.shadow);
-    renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.cluster, settings.lighting);
+
+    renderer.lighting = LightingPass::create(framegraph, renderer.gbuffer, renderer.cluster, settings.lighting);
 
     if(raytracing_enabled() && settings.ambient_pipe == AmbientPipe::GI) {
-        renderer.rtgi       = RTGIPass::create(framegraph, renderer.gbuffer, renderer.lighting.lit, settings.rtgi);
-        renderer.ambient    = AmbientPass::create(framegraph, renderer.gbuffer, renderer.lighting.lit, renderer.rtgi);
+        renderer.ddgi       = DDGIPass::create(framegraph, renderer.gbuffer, settings.ddgi);
+        renderer.ddgi_apply = DDGIApplyPass::create(framegraph, renderer.gbuffer, renderer.ddgi);
+        renderer.ambient    = AmbientPass::create(framegraph, renderer.gbuffer, renderer.lighting.lit, renderer.ddgi_apply);
     } else {
-        renderer.ao         = AOPass::create(framegraph, renderer.gbuffer, settings.ao);
-        renderer.ambient    = AmbientPass::create(framegraph, renderer.gbuffer, renderer.lighting.lit, renderer.ao);
+        renderer.ao      = AOPass::create(framegraph, renderer.gbuffer, settings.ao);
+        renderer.ambient = AmbientPass::create(framegraph, renderer.gbuffer, renderer.lighting.lit, renderer.ao);
     }
 
     renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.ambient.lit);
@@ -72,4 +74,3 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
 }
 
 }
-

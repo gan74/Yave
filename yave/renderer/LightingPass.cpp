@@ -47,7 +47,6 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
     builder.add_uniform_input(gbuffer.depth);
     builder.add_uniform_input(gbuffer.color);
-
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(cluster.shadow_pass.shadow_map, SamplerType::Shadow);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
@@ -58,7 +57,10 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
     builder.add_storage_output(lit);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources()[settings.debug_tiles ? DeviceResources::DeferredSingleDebugPassProgram : DeviceResources::DeferredSinglePassProgram];
+        const DeviceResources::ComputePrograms program_id = settings.debug_tiles
+            ? DeviceResources::DeferredSingleDebugPassProgram
+            : DeviceResources::DeferredSinglePassProgram;
+        const auto& program = device_resources()[program_id];
         y_debug_assert(program.local_size() == math::Vec3ui(shader::light_cluster_tile_size, shader::light_cluster_tile_size, 1));
         recorder.dispatch_threads(program, size, self->descriptor_set());
     });
@@ -69,4 +71,3 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 }
 
 }
-

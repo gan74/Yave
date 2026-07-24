@@ -34,6 +34,8 @@ struct EditorRendererSettings {
     bool show_editor_entities = true;
     bool show_selection = true;
     bool show_debug_drawer = true;
+    bool show_ddgi_probes = false;
+    float ddgi_probe_radius = 0.1f;
     float billboard_size = 64.0f;
 };
 

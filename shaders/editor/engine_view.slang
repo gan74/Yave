@@ -1,8 +1,10 @@
 #include "../lib/utils.slang"
+#include "../lib/ddgi.slang"
 
 [[vk::binding(0)]]
 cbuffer Target_Inline {
     uint target_index;
+    float probe_spacing;
 };
 
 
@@ -25,7 +27,13 @@ Sampler2D<uint> in_rt1;
 Sampler2D<float> in_ao;
 
 [[vk::binding(7)]]
-Sampler2D in_gi;
+Sampler2D<float3> in_ddgi_irradiance;
+
+[[vk::binding(8)]]
+Sampler2D<float2> in_ddgi_distance;
+
+[[vk::binding(9)]]
+ConstantBuffer<Camera> camera;
 
 
 [shader("fragment")]
@@ -57,9 +65,22 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
     } else if(target_index == 7) {
         color = float3(in_ao.Sample(in_uv));
     } else if(target_index == 8) {
-        color = is_depth_far(depth) ? float3(0.0) : (in_gi.Sample(in_uv).rgb * constants.pi);
+        if(is_depth_far(depth)) {
+            color = float3(0.0);
+        } else {
+            const float2 size = float2(image_size(in_depth));
+            const float2 uv = (float2(coord) + 0.5) / size;
+            const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
+            color = linear_to_sRGB(sample_irradiance(
+                world_pos,
+                surface.normal,
+                camera.position,
+                probe_spacing,
+                in_ddgi_irradiance,
+                in_ddgi_distance
+            ));
+        }
     }
 
     return float4(color, 1.0);
 }
-

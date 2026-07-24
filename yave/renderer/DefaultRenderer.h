@@ -32,6 +32,8 @@ SOFTWARE.
 #include "BloomPass.h"
 #include "TAAPass.h"
 #include "RTGIPass.h"
+#include "DDGIPass.h"
+#include "DDGIApplyPass.h"
 #include "AmbientPass.h"
 #include "ForwardPass.h"
 
@@ -46,6 +48,7 @@ struct RendererSettings {
     ToneMappingSettings tone_mapping;
     AOSettings ao;
     RTGISettings rtgi;
+    DDGISettings ddgi;
     ShadowMapSettings shadow;
     LightingSettings lighting;
     BloomSettings bloom;
@@ -63,6 +66,8 @@ struct DefaultRenderer {
     LightingPass lighting;
     AOPass ao;
     RTGIPass rtgi;
+    DDGIPass ddgi;
+    DDGIApplyPass ddgi_apply;
     AmbientPass ambient;
     AtmospherePass atmosphere;
     ForwardPass forward;
@@ -84,4 +89,3 @@ struct DefaultRenderer {
 }
 
 #endif // YAVE_RENDERER_DEFAULTRENDERER_H
-

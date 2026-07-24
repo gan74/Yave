@@ -79,6 +79,10 @@ class DeviceResources final : NonMovable {
             RTGIApplyProgram,
             RTGITrimProgram,
 
+            DDGIUpdateProgram,
+            DDGIConvolveProgram,
+            DDGIApplyProgram,
+
             MaxComputePrograms
         };
 

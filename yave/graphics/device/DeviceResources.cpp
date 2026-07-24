@@ -134,6 +134,9 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "rtgi_UPDATE",
     "rtgi_APPLY",
     "rtgi_TRIM",
+    "ddgi",
+    "ddgi_convolve",
+    "ddgi_apply",
 };
 
 

@@ -19,24 +19,31 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_AMBIENTPASS_H
-#define YAVE_RENDERER_AMBIENTPASS_H
+#ifndef YAVE_RENDERER_DDGIPASS_H
+#define YAVE_RENDERER_DDGIPASS_H
 
 #include "GBufferPass.h"
-#include "AOPass.h"
-#include "RTGIPass.h"
-#include "DDGIApplyPass.h"
 
 namespace yave {
 
-struct AmbientPass {
-    FrameGraphImageId lit;
+struct DDGISettings {
+    float probe_spacing = 1.0f;
+    u32 convolve_sample_count = 64;
+};
 
-    static AmbientPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const RTGIPass& gi);
-    static AmbientPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const AOPass& ao);
-    static AmbientPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const DDGIApplyPass& ddgi);
+struct DDGIPass {
+    FrameGraphImageId radiance;
+    FrameGraphImageId irradiance;
+    FrameGraphImageId distance;
+    float probe_spacing = 1.0f;
+
+    bool is_valid() const {
+        return irradiance.is_valid() && distance.is_valid();
+    }
+
+    static DDGIPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const DDGISettings& settings = {});
 };
 
 }
 
-#endif // YAVE_RENDERER_AMBIENTPASS_H
+#endif // YAVE_RENDERER_DDGIPASS_H

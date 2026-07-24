@@ -34,11 +34,13 @@ struct LightingSettings {
 struct LightingPass {
     FrameGraphImageId lit;
 
-    static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const LightClusterPass& cluster, const LightingSettings& settings = LightingSettings());
+    static LightingPass create(FrameGraph& framegraph,
+                               const GBufferPass& gbuffer,
+                               const LightClusterPass& cluster,
+                               const LightingSettings& settings = LightingSettings());
 };
 
 
 }
 
 #endif // YAVE_RENDERER_LIGHTINGPASS_H
-

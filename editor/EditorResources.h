@@ -42,6 +42,7 @@ class EditorResources final : NonMovable {
 
             EngineViewMaterialTemplate,
             SelectionMaterialTemplate,
+            DDGIProbeDebugMaterialTemplate,
 
             MaxMaterialTemplates
         };

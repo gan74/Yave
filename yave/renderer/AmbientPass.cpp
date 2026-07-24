@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "AOPass.h"
 #include "RTGIPass.h"
+#include "DDGIApplyPass.h"
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -41,11 +42,16 @@ SOFTWARE.
 
 namespace yave {
 
+enum class AmbientMode {
+    GI,
+    AO,
+};
+
 static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
                                              const GBufferPass& gbuffer,
                                              FrameGraphImageId in_lit,
                                              FrameGraphImageId ao_or_gi,
-                                             bool is_gi) {
+                                             AmbientMode mode) {
 
     const math::Vec2ui size = framegraph.image_size(in_lit);
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
@@ -70,7 +76,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.add_uniform_input(gbuffer.depth);
     builder.add_uniform_input(gbuffer.color);
     builder.add_uniform_input(gbuffer.normal);
-    builder.add_uniform_input_with_default(ao_or_gi, Descriptor(is_gi ? black : white));
+    builder.add_uniform_input_with_default(ao_or_gi, Descriptor(mode == AmbientMode::GI ? black : white));
     builder.add_external_input(*ibl_probe);
     builder.add_external_input(Descriptor(device_resources().brdf_lut(), SamplerType::LinearClamp));
     builder.add_uniform_input(gbuffer.scene_pass.camera);
@@ -78,20 +84,25 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.add_inline_input(params);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources()[is_gi ? DeviceResources::DeferredAmbientGIProgram : DeviceResources::DeferredAmbientAOProgram];
-        recorder.dispatch_threads(program, size, self->descriptor_set());
+        const DeviceResources::ComputePrograms program_id = mode == AmbientMode::GI
+            ? DeviceResources::DeferredAmbientGIProgram
+            : DeviceResources::DeferredAmbientAOProgram;
+        recorder.dispatch_threads(device_resources()[program_id], size, self->descriptor_set());
     });
 
     return lit;
 }
 
 AmbientPass AmbientPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const RTGIPass& gi) {
-    return {ambient_pass(framegraph, gbuffer, lit, gi.gi, true)};
+    return {ambient_pass(framegraph, gbuffer, lit, gi.gi, AmbientMode::GI)};
 }
 
 AmbientPass AmbientPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const AOPass& ao) {
-    return {ambient_pass(framegraph, gbuffer, lit, ao.ao, false)};
+    return {ambient_pass(framegraph, gbuffer, lit, ao.ao, AmbientMode::AO)};
+}
+
+AmbientPass AmbientPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const DDGIApplyPass& ddgi) {
+    return {ambient_pass(framegraph, gbuffer, lit, ddgi.gi, AmbientMode::GI)};
 }
 
 }
-

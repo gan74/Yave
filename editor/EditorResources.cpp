@@ -55,6 +55,7 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData{"imgui_billboard",   "imgui_billboard",  "imgui_billboard",  true,   false,  false,  PrimitiveType::Points},
     DeviceMaterialData{"engine_view",       "screen",           {},                 false,  false,  false,  PrimitiveType::Triangles},
     DeviceMaterialData{"selection",         "screen",           {},                 false,  false,  true,   PrimitiveType::Triangles},
+    DeviceMaterialData{"ddgi_probe_debug",  "ddgi_probe_debug", {},                 true,   true,   false,  PrimitiveType::Triangles},
 };
 
 static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputePrograms)> compute_datas = {
