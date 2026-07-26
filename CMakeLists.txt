@@ -1,6 +1,5 @@
 
 cmake_minimum_required(VERSION 3.24)
-cmake_minimum_required(VERSION 3.24)
 project(yave)
 
 function(build_luajit LUAJIT_TARGET)
@@ -125,14 +124,6 @@ endif()
 
 
 add_subdirectory(y)
-
-
-# setup includes
-include_directories(${y_SOURCE_DIR})
-include_directories(${yave_SOURCE_DIR})
-include_directories(${Vulkan_INCLUDE_DIRS})
-include_directories(external/sol/include)
-include_directories(external/LuaJIT/src)
 
 
 # Yave's core file
@@ -273,7 +264,7 @@ if(YAVE_UNITY_BUILD)
 endif()
 
 if(YAVE_BUILD_YAVE)
-    add_library(yave STATIC ${YAVE_FILES} ${SPIRV_REFLECT_FILES} ${SHADER_FILES} ${SHADER_LIBS})
+    add_library(yave STATIC ${YAVE_FILES} ${SPIRV_REFLECT_FILES} ${SHADER_FILES})
 
     if(UNIX)
         target_link_libraries(yave PRIVATE xcb)
@@ -288,6 +279,11 @@ if(YAVE_BUILD_YAVE)
     endif()
 
     target_link_libraries(yave PUBLIC y luajit Jolt)
+    target_include_directories(yave PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/sol/include
+        ${Vulkan_INCLUDE_DIRS}
+    )
 
     add_custom_target(shaders)
     add_custom_target(shaders_optim)

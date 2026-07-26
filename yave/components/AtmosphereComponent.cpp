@@ -57,7 +57,7 @@ void AtmosphereComponent::inspect(ecs::ComponentInspector* inspector) {
     inspector->inspect("Atmosphere height", _atmosphere_height, ecs::ComponentInspector::FloatRole::DistanceKilometers);
     inspector->inspect("Sea level altitude", _zero_altitude, ecs::ComponentInspector::FloatRole::DistanceKilometers);
     inspector->inspect("Density falloff", _density_falloff, 0.0f);
-    inspector->inspect("Scattering strengh", _scattering_strength, 0.0f);
+    inspector->inspect("Scattering strength", _scattering_strength, 0.0f);
 #else
     inspector->inspect("Density", _density_falloff, 0.0f);
 #endif

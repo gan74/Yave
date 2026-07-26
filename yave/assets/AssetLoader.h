@@ -99,7 +99,7 @@ class AssetLoader : NonMovable {
         Y_TODO(make configurable)
         static constexpr bool fail_on_partial_deser = false;
 
-        AssetLoader(const std::shared_ptr<AssetStore>& store, AssetLoadingFlags flags = AssetLoadingFlags::None, usize concurency = 1);
+        AssetLoader(const std::shared_ptr<AssetStore>& store, AssetLoadingFlags flags = AssetLoadingFlags::None, usize concurrency = 1);
         ~AssetLoader();
 
         AssetStore& store();

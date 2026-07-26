@@ -112,7 +112,7 @@ consteval bool is_pod_iterable() {
 
 }
 
-// Warning: some types like Range and Span are can be POD (Span is handled separatly tho)
+// Warning: some types like Range and Span are can be POD (Span is handled separately tho)
 template<typename T>
 concept is_pod = detail::is_pod_base<T> && detail::is_pod_iterable<std::remove_cvref_t<T>>();
 

@@ -39,7 +39,7 @@ FileSystemModel::Result<core::String> FileSystemModel::parent_path(std::string_v
     return absolute(join(path, ".."));
 }
 
-core::String FileSystemModel::extention(std::string_view path) const {
+core::String FileSystemModel::extension(std::string_view path) const {
     for(usize i = path.size(); i != 0; --i) {
         if(path[i - 1] == '.') {
             return core::String(&path[i - 1], path.size() - i + 1);

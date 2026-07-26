@@ -129,7 +129,7 @@ class EntityGroupProvider final : NonMovable {
                 y_debug_assert(!_ids.contains(id));
                 _ids.insert(id);
                 _added.insert(id);
-                Y_TODO(if we add an entity immediatly after removing anothe we might have conflicts)
+                Y_TODO(if we add an entity immediately after removing another we might have conflicts)
                 _removed.erase(id);
             }
         }

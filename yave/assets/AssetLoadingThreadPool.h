@@ -60,7 +60,7 @@ class AssetLoadingThreadPool : NonMovable {
         };
 
 
-        AssetLoadingThreadPool(AssetLoader* parent, usize concurency = 1);
+        AssetLoadingThreadPool(AssetLoader* parent, usize concurrency = 1);
         ~AssetLoadingThreadPool();
 
         void wait_until_loaded(const GenericAssetPtr& ptr);

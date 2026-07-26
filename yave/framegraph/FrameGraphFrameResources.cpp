@@ -216,7 +216,7 @@ void FrameGraphFrameResources::create_alias(FrameGraphImageId dst, FrameGraphIma
     src.check_valid();
 
     TransientImage* orig = _images[src.id()];
-    y_always_assert(orig, "Source image doesn't exists");
+    y_always_assert(orig, "Source image doesn't exist");
 
     _images.set_min_size(dst.id() + 1);
 

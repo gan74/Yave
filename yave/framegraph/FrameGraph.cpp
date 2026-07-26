@@ -114,7 +114,7 @@ template<typename H>
 static void copy_image(CmdBufferRecorder& recorder, FrameGraphImageId src, FrameGraphMutableImageId dst,
                        H& to_barrier, const FrameGraphFrameResources& frame_res) {
 
-    Y_TODO(We might end up barriering twice here)
+    Y_TODO(We might end up inserting barriers twice here)
     if(frame_res.are_aliased(src, dst)) {
         if(const auto it = to_barrier.find(src); it != to_barrier.end()) {
             to_barrier[dst] = it->second;
@@ -195,7 +195,7 @@ void FrameGraph::end_region(usize index) {
 void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimestampPool* ts_pool) {
     y_profile();
     Y_TODO(Pass culling)
-    Y_TODO(Ensure that pass are always recorded in order)
+    Y_TODO(Ensure that passes are always recorded in order)
 
     // -------------------- region stuff --------------------
     const math::Vec4 region_color = math::Vec4(0.7f, 0.7f, 0.7f, 1.0f);
@@ -288,7 +288,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimestampPool* ts_pool) 
                 }
 
                 while(image_copy_index < _image_copies.size() && _image_copies[image_copy_index].pass_index == pass->_index) {
-                    // copie_image will not do anything if the two are aliased
+                    // copy_image will not do anything if the two are aliased
                     copy_image(recorder, _image_copies[image_copy_index].src, _image_copies[image_copy_index].dst, images_to_barrier, *_resources);
                     ++image_copy_index;
                 }
@@ -331,7 +331,7 @@ void FrameGraph::render(CmdBufferRecorder& recorder, CmdTimestampPool* ts_pool) 
         prepare.submit_async();
     }
 
-    Y_TODO(Put ressource barriers at the end of the graph to prevent clash with whatever comes after)
+    Y_TODO(Put resource barriers at the end of the graph to prevent clash with whatever comes after)
 }
 
 void FrameGraph::alloc_resources() {

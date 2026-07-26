@@ -261,7 +261,7 @@ void EntityPool::audit() {
         }
     }
 
-    // Check childrens
+    // Check children
     for(const auto& en : _entities) {
         if(en.is_valid() && en.parent.is_valid()) {
             bool found = false;

@@ -136,7 +136,7 @@ static void load_world_deferred() {
         log_msg(fmt("Unable to load world: {} (for {})", serde3::error_msg(r.error()), member_name), Log::Error);
         return;
     } else if(r.unwrap() == serde3::Success::Partial) {
-        log_msg("World was only partialy loaded", Log::Warning);
+        log_msg("World was only partially loaded", Log::Warning);
     }
 
     application::world = std::move(world);

@@ -311,7 +311,7 @@ void CmdBufferRecorderBase::end_renderpass() {
 }
 
 void CmdBufferRecorderBase::check_no_renderpass() const {
-    y_always_assert(!_render_pass, "Command can not be used or destoryed while it has a RenderPassRecorder");
+    y_always_assert(!_render_pass, "Command can not be used or destroyed while it has a RenderPassRecorder");
 }
 
 void CmdBufferRecorderBase::barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images) {
@@ -425,8 +425,8 @@ void CmdBufferRecorderBase::copy(const ImageBase& src,  const ImageBase& dst) {
     }
 
     {
-        y_always_assert(src.image_size() == dst.image_size(), "Image size do not match");
-        y_always_assert(src.format() == dst.format(), "Image format do not match");
+        y_always_assert(src.image_size() == dst.image_size(), "Image sizes do not match");
+        y_always_assert(src.format() == dst.format(), "Image formats do not match");
 
         VkImageCopy copy = {};
         {
@@ -479,7 +479,7 @@ void CmdBufferRecorderBase::clear(const ImageBase& dst) {
 void CmdBufferRecorderBase::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuffer dst) {
     Y_VK_CMD
 
-    y_always_assert(src.byte_size() == dst.byte_size(), "Buffer size do not match");
+    y_always_assert(src.byte_size() == dst.byte_size(), "Buffer sizes do not match");
 
     if(!src.byte_size()) {
         return;

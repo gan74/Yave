@@ -68,7 +68,7 @@ class FileSystemModel : NonCopyable {
         virtual Result<bool> is_directory(std::string_view path) const;
         virtual Result<bool> is_file(std::string_view path) const;
 
-        virtual core::String extention(std::string_view path) const;
+        virtual core::String extension(std::string_view path) const;
 
         virtual core::String join(std::string_view path, std::string_view name) const = 0;
         virtual Result<core::String> absolute(std::string_view path) const = 0;

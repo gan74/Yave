@@ -36,7 +36,7 @@ enum class ShaderType : u32 {
     None = 0,
     Fragment = VK_SHADER_STAGE_FRAGMENT_BIT,
     Vertex = VK_SHADER_STAGE_VERTEX_BIT,
-    Geomery = VK_SHADER_STAGE_GEOMETRY_BIT,
+    Geometry = VK_SHADER_STAGE_GEOMETRY_BIT,
     Compute = VK_SHADER_STAGE_COMPUTE_BIT,
     RayGen = VK_SHADER_STAGE_RAYGEN_BIT_KHR,
     Miss = VK_SHADER_STAGE_MISS_BIT_KHR,

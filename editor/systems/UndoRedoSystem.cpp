@@ -276,7 +276,7 @@ void UndoRedoSystem::take_snapshot() {
 
     serde3::ReadableArchive rarc(buffer);
     _snapshot = std::make_unique<ecs::EntityWorld>();
-    _snapshot->load_state(rarc).expected("Unable to serialize world");
+    _snapshot->load_state(rarc).expected("Unable to deserialize world");
 }
 
 void UndoRedoSystem::push_state(UndoState state) {

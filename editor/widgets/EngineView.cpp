@@ -463,8 +463,7 @@ void EngineView::draw_menu() {
     {
         const char* output_names[] = {
             "Lit", "Albedo", "Normals", "Metallic", "Roughness",
-            "Depth", "Motion", "AO",
-            "DDGI",
+            "Depth", "Motion", "AO", "GI",
         };
         for(usize i = 0; i != usize(RenderView::Max); ++i) {
             bool selected = usize(_view) == i;
