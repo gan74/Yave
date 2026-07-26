@@ -212,7 +212,7 @@ ImageData compute_mipmaps(const ImageData& image) {
     {
         y_profile_zone("unpack");
         if(is_sRGB) {
-            Y_TODO(Alpha should not be gammaed)
+            Y_TODO(Alpha should not be gamma-corrected)
             unpack_with_gamma(image.data(), input.size(), input.data());
         } else {
             unpack(image.data(), input.size(), input.data());

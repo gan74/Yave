@@ -67,7 +67,7 @@ SOFTWARE.
 namespace yave {
 template<typename T = std::mutex>
 struct ProfiledLock : tracy::Lockable<T>, y::NonMovable {
-    ProfiledLock() : tracy::Lockable<T>([]() -> const tracy::SourceLocationData* { static constexpr tracy::SourceLocationData srcloc{nullptr, "Unamed lock", __FILE__, __LINE__, 0}; return &srcloc; }()) {
+    ProfiledLock() : tracy::Lockable<T>([]() -> const tracy::SourceLocationData* { static constexpr tracy::SourceLocationData srcloc{nullptr, "Unnamed lock", __FILE__, __LINE__, 0}; return &srcloc; }()) {
         static_assert(!std::is_same_v<T, std::shared_mutex>);
         static_assert(!std::is_same_v<T, std::shared_timed_mutex>);
     }
@@ -79,7 +79,7 @@ struct ProfiledLock : tracy::Lockable<T>, y::NonMovable {
 
 template<typename T = std::shared_mutex>
 struct ProfiledSharedLock : tracy::SharedLockable<T>, y::NonMovable {
-    ProfiledSharedLock() : tracy::SharedLockable<T>(([]() -> const tracy::SourceLocationData* { static constexpr tracy::SourceLocationData srcloc{nullptr, "Unamed shared lock", __FILE__, __LINE__, 0}; return &srcloc; }())) {
+    ProfiledSharedLock() : tracy::SharedLockable<T>(([]() -> const tracy::SourceLocationData* { static constexpr tracy::SourceLocationData srcloc{nullptr, "Unnamed shared lock", __FILE__, __LINE__, 0}; return &srcloc; }())) {
     }
 
     using tracy::SharedLockable<T>::lock;

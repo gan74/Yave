@@ -376,7 +376,7 @@ ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) 
 }
 
 void EntityWorld::check_exists(EntityId id) const {
-    y_always_assert(exists(id), "Entity doesn't exists");
+    y_always_assert(exists(id), "Entity doesn't exist");
 }
 
 void EntityWorld::inspect_components(EntityId id, ComponentInspector* inspector, ComponentTypeIndex type_id) {

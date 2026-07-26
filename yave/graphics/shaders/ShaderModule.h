@@ -40,7 +40,7 @@ class ShaderModule : public ShaderModuleBase {
 
 using FragmentShader = ShaderModule<ShaderType::Fragment>;
 using VertexShader = ShaderModule<ShaderType::Vertex>;
-using GeometryShader = ShaderModule<ShaderType::Geomery>;
+using GeometryShader = ShaderModule<ShaderType::Geometry>;
 using ComputeShader = ShaderModule<ShaderType::Compute>;
 
 using RayGenShader = ShaderModule<ShaderType::RayGen>;

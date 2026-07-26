@@ -83,7 +83,7 @@ static VkAccessFlags vk_dst_access_flags(PipelineStage dst) {
             break;
     }
 
-    y_fatal("Unsuported pipeline stage");
+    y_fatal("Unsupported pipeline stage");
 }
 
 static VkAccessFlags vk_src_access_flags(PipelineStage src) {
@@ -108,7 +108,7 @@ static VkAccessFlags vk_src_access_flags(PipelineStage src) {
             break;
     }
 
-    y_fatal("Unsuported pipeline stage");
+    y_fatal("Unsupported pipeline stage");
 }
 
 static VkPipelineStageFlags vk_barrier_stage(VkAccessFlags access) {
@@ -188,7 +188,7 @@ static VkImageMemoryBarrier create_barrier(VkImage image, ImageFormat format, us
 static VkBufferMemoryBarrier create_barrier(VkBuffer buffer, usize size, usize offset, PipelineStage src, PipelineStage dst) {
     VkBufferMemoryBarrier barrier = vk_struct();
     {
-        Y_TODO(uniform buffers needs to use VK_ACCESS_UNIFORM_READ_BIT)
+        Y_TODO(uniform buffers need to use VK_ACCESS_UNIFORM_READ_BIT)
         barrier.srcAccessMask = vk_src_access_flags(src);
         barrier.dstAccessMask = vk_dst_access_flags(dst);
         barrier.buffer = buffer;

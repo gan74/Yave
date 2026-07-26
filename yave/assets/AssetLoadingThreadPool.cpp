@@ -49,9 +49,9 @@ AssetLoadingContext& AssetLoadingThreadPool::LoadingJob::loading_context() {
     return _ctx;
 }
 
-AssetLoadingThreadPool::AssetLoadingThreadPool(AssetLoader* parent, usize concurency) : _parent(parent) {
-    _threads = core::Vector<std::thread>::with_capacity(concurency);
-    for(usize i = 0; i != concurency; ++i) {
+AssetLoadingThreadPool::AssetLoadingThreadPool(AssetLoader* parent, usize concurrency) : _parent(parent) {
+    _threads = core::Vector<std::thread>::with_capacity(concurrency);
+    for(usize i = 0; i != concurrency; ++i) {
         _threads.emplace_back([this] {
             concurrent::set_thread_name("Asset loading thread");
             worker();

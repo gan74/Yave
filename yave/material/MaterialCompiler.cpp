@@ -101,7 +101,7 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
     y_profile();
 
     core::DebugTimer _("MaterialCompiler::compile", core::Duration::milliseconds(2));
-    Y_TODO(move program creation programs can be reused)
+    Y_TODO(move program creation so programs can be reused)
 
     const auto& mat_data = material->data();
 

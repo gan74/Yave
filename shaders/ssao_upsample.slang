@@ -158,7 +158,7 @@ void vertical_blur(uint top_index) {
 
 // We essentially want 5 weights:  4 for each low-res pixel and 1 to blend in when none of the 4 really
 // match.  The filter strength is 1 / DeltaZTolerance.  So a tolerance of 0.01 would yield a strength of 100.
-// Note that a perfect match of low to high depths would yield a weight of 10^6, completely superceding any
+// Note that a perfect match of low to high depths would yield a weight of 10^6, completely superseding any
 // noise filtering.  The noise filter is intended to soften the effects of shimmering when the high-res depth
 // buffer has a lot of small holes in it causing the low-res depth buffer to inaccurately represent it.
 float bilateral_upsample(float hi_depth, float hi_ao, float4 lo_depth, float4 lo_ao) {

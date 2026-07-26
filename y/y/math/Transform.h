@@ -125,7 +125,7 @@ struct Transform : Matrix4<T> {
         return Vec<3, T>{x.length(), y.length(), z.length()};
     }
 
-    // Need to be fliped for Y up
+    // Need to be flipped for Y up
     /*inline constexpr void set_basis(const Vec<3, T>& forward, const Vec<3, T>& right, const Vec<3, T>& up) {
         this->column(0).template to<3>() = right;
         this->column(1).template to<3>() = forward;

@@ -100,7 +100,7 @@ class Image : public ImageBase {
         Image(ImageFormat format, const size_type& image_size, u32 mips, MemoryAllocFlags alloc_flags = MemoryAllocFlags::None) :
                 ImageBase(format, Usage, to_3d_size(image_size), Type, Type == ImageType::Cube ? 6 : 1, mips, alloc_flags) {
 
-            static_assert(is_attachment_usage(Usage) || is_storage_usage(Usage) || is_copy_dst_usage(Usage), "Texture images must be initilized");
+            static_assert(is_attachment_usage(Usage) || is_storage_usage(Usage) || is_copy_dst_usage(Usage), "Texture images must be initialized");
             static_assert(Type == ImageType::TwoD || is_storage_usage(Usage), "Only 2D images can be created empty");
         }
 
@@ -108,7 +108,7 @@ class Image : public ImageBase {
         }
 
         Image(const ImageData& data) : ImageBase(Usage, Type, data) {
-            static_assert(is_texture_usage(Usage), "Only texture images can be initilized");
+            static_assert(is_texture_usage(Usage), "Only texture images can be initialized");
         }
 
         template<ImageUsage U> requires(is_compatible(U))

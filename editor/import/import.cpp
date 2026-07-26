@@ -85,7 +85,7 @@ namespace import {
 
 core::String clean_asset_name(const core::String& name) {
     if(name.is_empty()) {
-        return "unamed";
+        return "unnamed";
     }
 
     usize begin = 0;
@@ -110,7 +110,7 @@ core::String clean_asset_name(const core::String& name) {
         }
     }
 
-    return n.is_empty() ? core::String("unamed") : n;
+    return n.is_empty() ? core::String("unnamed") : n;
 }
 
 core::Result<ImageData> import_image(const core::String& filename, ImageImportFlags flags) {

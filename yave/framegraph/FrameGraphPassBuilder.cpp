@@ -156,7 +156,7 @@ void FrameGraphPassBuilderBase::add_storage_output(FrameGraphMutableBufferId res
 }
 
 
-// --------------------------------- Storage intput ---------------------------------
+// --------------------------------- Storage input ---------------------------------
 
 void FrameGraphPassBuilderBase::add_storage_input(FrameGraphBufferId res, PipelineStage stage, i32 ds_index) {
     add_to_pass(res, BufferUsage::StorageBit, false, or_default(stage));

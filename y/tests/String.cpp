@@ -34,7 +34,7 @@ using namespace y;
 using namespace y::core;
 
 const char* get_long_c_str() {
-    return "this is supposed to be a long string. it's used to force the creation of heap allocated strings during testing. To be long enouht it has to be at least String::MaxShortSize+1 bytes long (which usually eq 3 machine words: so 12 bytes on 32bits systems and 24 on 64bits)";
+    return "this is supposed to be a long string. it's used to force the creation of heap allocated strings during testing. To be long enough it has to be at least String::MaxShortSize+1 bytes long (which usually eq 3 machine words: so 12 bytes on 32bits systems and 24 on 64bits)";
 }
 
 y_test_func("String short creation") {

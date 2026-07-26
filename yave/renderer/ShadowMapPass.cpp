@@ -93,7 +93,7 @@ static ShadowSubPass create_sub_pass(FrameGraphPassBuilder& builder,
     y_profile();
 
     if(!size) {
-        log_msg("Unable to allocate shadow altas: too many shadow casters", Log::Warning);
+        log_msg("Unable to allocate shadow atlas: too many shadow casters", Log::Warning);
     }
 
     const float size_f = float(size);

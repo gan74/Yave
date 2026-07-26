@@ -41,9 +41,9 @@ AssetLoader* AssetLoader::LoaderBase::parent() const {
 }
 
 
-AssetLoader::AssetLoader(const std::shared_ptr<AssetStore>& store, AssetLoadingFlags flags, usize concurency) :
+AssetLoader::AssetLoader(const std::shared_ptr<AssetStore>& store, AssetLoadingFlags flags, usize concurrency) :
         _store(store),
-        _thread_pool(this, concurency),
+        _thread_pool(this, concurrency),
         _loading_flags(flags) {
 }
 
