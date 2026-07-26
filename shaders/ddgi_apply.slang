@@ -23,7 +23,10 @@ Sampler2D<float2> in_ddgi_distance;
 
 [[vk::binding(6)]]
 cbuffer Params {
-    float probe_spacing;
+    float base_probe_spacing;
+    float spacing_scale;
+    uint cascade_count;
+    uint padding;
 };
 
 
@@ -50,7 +53,9 @@ void main() {
         world_pos,
         normal,
         camera.position,
-        probe_spacing,
+        base_probe_spacing,
+        spacing_scale,
+        cascade_count,
         in_ddgi_irradiance,
         in_ddgi_distance
     );

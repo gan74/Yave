@@ -25,13 +25,14 @@ StructuredBuffer<DirectionalLight> lights;
 
 [[vk::binding(6)]]
 cbuffer Params {
-    float probe_spacing;
+    float base_probe_spacing;
+    float spacing_scale;
+    uint cascade_count;
     uint light_count;
     uint frame_id;
     uint reset;
     uint probe_update_stride;
     float blend_alpha;
-    float padding_0;
 };
 
 
@@ -82,21 +83,26 @@ float3 shade_hit(HitInfo hit, float3 trace_dir) {
 }
 
 [shader("compute")]
-[numthreads(8, 8, 1)]
+[numthreads(1, 1, 64)]
 void main() {
-    const uint probe_index = semantics.global_id.z;
-    if(probe_index >= ddgi.probe_count) {
+    const uint global_probe_index = semantics.global_id.z;
+    if(global_probe_index >= ddgi.total_probe_count(cascade_count)) {
         return;
     }
 
-    if(reset == 0 && !ddgi.should_update_probe(probe_index, frame_id, probe_update_stride)) {
+    if(reset == 0 && !ddgi.should_update_probe(global_probe_index, frame_id, probe_update_stride)) {
         return;
     }
+
+    uint cascade;
+    uint local_probe_index;
+    ddgi.decode_global_probe_index(global_probe_index, cascade, local_probe_index);
 
     const uint2 probe_local = semantics.global_id.xy;
-    const uint2 coord = ddgi.radiance_atlas_coord(probe_index) + probe_local;
+    const uint2 coord = ddgi.radiance_atlas_coord(global_probe_index) + probe_local;
 
-    const int3 grid_coord = ddgi.compute_grid_coord(probe_index);
+    const float probe_spacing = ddgi.cascade_probe_spacing(cascade, base_probe_spacing, spacing_scale);
+    const int3 grid_coord = ddgi.compute_grid_coord(local_probe_index);
     const float3 origin = ddgi.probe_world_position(grid_coord, probe_spacing);
 
     const uint seed = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));

@@ -38,16 +38,18 @@ SOFTWARE.
 #include <yave/meshes/StaticMesh.h>
 #include <yave/assets/AssetPtr.h>
 
+#include <yave/utils/DebugValues.h>
+
 #include <yave/graphics/shader_structs.h>
 
 namespace yave {
 
 // Must match shaders/lib/ddgi.slang
-static constexpr u32 ddgi_grid_size = 32;
+static constexpr u32 ddgi_grid_size = 16;
 static constexpr u32 ddgi_radiance_probe_size = 32;
 static constexpr u32 ddgi_irradiance_probe_size = ddgi_radiance_probe_size / 2;
 static constexpr u32 ddgi_probes_per_atlas_row = 256;
-static constexpr u32 ddgi_probe_count = ddgi_grid_size * ddgi_grid_size * ddgi_grid_size;
+static constexpr u32 ddgi_probes_per_cascade = ddgi_grid_size * ddgi_grid_size * ddgi_grid_size;
 
 static constexpr ImageUsage ddgi_atlas_usage = ImageUsage::TextureBit | ImageUsage::StorageBit;
 
@@ -55,8 +57,17 @@ static const FrameGraphPersistentResourceId persistent_radiance_id = FrameGraphP
 static const FrameGraphPersistentResourceId persistent_distance_id = FrameGraphPersistentResourceId::create();
 static const FrameGraphPersistentResourceId persistent_irradiance_id = FrameGraphPersistentResourceId::create();
 
-static math::Vec2ui ddgi_atlas_size(u32 probe_size) {
-    const u32 rows = (ddgi_probe_count + ddgi_probes_per_atlas_row - 1) / ddgi_probes_per_atlas_row;
+static u32 ddgi_cascade_count(const DDGISettings& settings) {
+    return std::max(1u, settings.cascade_count);
+}
+
+static u32 ddgi_total_probe_count(u32 cascade_count) {
+    return ddgi_probes_per_cascade * cascade_count;
+}
+
+static math::Vec2ui ddgi_atlas_size(u32 probe_size, u32 cascade_count) {
+    const u32 probe_count = ddgi_total_probe_count(cascade_count);
+    const u32 rows = (probe_count + ddgi_probes_per_atlas_row - 1) / ddgi_probes_per_atlas_row;
     return math::Vec2ui(ddgi_probes_per_atlas_row * probe_size, rows * probe_size);
 }
 
@@ -67,25 +78,28 @@ static void trace_radiance(FrameGraph& framegraph, const GBufferPass& gbuffer, c
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
     const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
 
-    const math::Vec3ui dispatch_size(ddgi_radiance_probe_size, ddgi_radiance_probe_size, ddgi_probe_count);
+    const u32 cascade_count = ddgi_cascade_count(settings);
+    const math::Vec3ui dispatch_size(ddgi_radiance_probe_size, ddgi_radiance_probe_size, ddgi_total_probe_count(cascade_count));
     const u32 probe_update_stride = std::max(1u, settings.probe_update_stride);
 
     const struct Params {
-        float probe_spacing;
+        float base_probe_spacing;
+        float spacing_scale;
+        u32 cascade_count;
         u32 light_count;
         u32 frame_id;
         u32 reset;
         u32 probe_update_stride;
         float blend_alpha;
-        float padding;
     } params {
         settings.probe_spacing,
+        settings.cascade_spacing_scale,
+        cascade_count,
         u32(visibility.directional_lights.size()),
         u32(framegraph.frame_id()),
         u32(reset ? 1 : 0),
         probe_update_stride,
         1.0f / float(probe_update_stride),
-        0.0f,
     };
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("DDGI trace pass");
@@ -121,24 +135,26 @@ static void trace_radiance(FrameGraph& framegraph, const GBufferPass& gbuffer, c
         };
 
         const auto& program = device_resources()[DeviceResources::DDGITraceProgram];
-        y_debug_assert(program.local_size().x() == program.local_size().y() && ddgi_irradiance_probe_size % program.local_size().x() == 0);
         recorder.dispatch_threads(program, dispatch_size, desc_sets);
     });
 }
 
 static void convolve_irradiance(FrameGraph& framegraph, const DDGISettings& settings, const TextureView& radiance, const StorageView& irradiance, bool reset) {
-    const math::Vec3ui dispatch_size(ddgi_irradiance_probe_size, ddgi_irradiance_probe_size, ddgi_probe_count);
+    const u32 cascade_count = ddgi_cascade_count(settings);
+    const math::Vec3ui dispatch_size(ddgi_irradiance_probe_size, ddgi_irradiance_probe_size, ddgi_total_probe_count(cascade_count));
     const u32 probe_update_stride = std::max(1u, settings.probe_update_stride);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("DDGI convolve pass");
 
     const struct Params {
         u32 sample_count;
+        u32 cascade_count;
         u32 frame_id;
         u32 reset;
         u32 probe_update_stride;
     } params {
         std::max(1u, settings.convolve_sample_count),
+        cascade_count,
         u32(framegraph.frame_id()),
         u32(reset ? 1 : 0),
         probe_update_stride,
@@ -150,17 +166,28 @@ static void convolve_irradiance(FrameGraph& framegraph, const DDGISettings& sett
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const auto& program = device_resources()[DeviceResources::DDGIConvolveProgram];
-        y_debug_assert(program.local_size().x() == program.local_size().y() && ddgi_radiance_probe_size % program.local_size().x() == 0);
         recorder.dispatch_threads(program, dispatch_size, self->descriptor_set());
     });
 }
 
-static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbuffer, const TextureView& irradiance, const TextureView& distance, float probe_spacing) {
+static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbuffer, const TextureView& irradiance, const TextureView& distance, const DDGISettings& settings) {
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("DDGI apply pass");
 
     const auto gi = builder.declare_image(VK_FORMAT_B10G11R11_UFLOAT_PACK32, size);
+
+    const struct Params {
+        float base_probe_spacing;
+        float spacing_scale;
+        u32 cascade_count;
+        u32 padding;
+    } params {
+        settings.probe_spacing,
+        settings.cascade_spacing_scale,
+        ddgi_cascade_count(settings),
+        0u,
+    };
 
     builder.add_storage_output(gi);
     builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
@@ -168,7 +195,7 @@ static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbu
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_external_input(Descriptor(irradiance, SamplerType::LinearClamp));
     builder.add_external_input(Descriptor(distance, SamplerType::LinearClamp));
-    builder.add_inline_input(probe_spacing);
+    builder.add_inline_input(params);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         recorder.dispatch_threads(device_resources()[DeviceResources::DDGIApplyProgram], size, self->descriptor_set());
@@ -184,14 +211,15 @@ DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
 
     const auto region = framegraph.region("DDGI");
 
-    const math::Vec2ui radiance_atlas_size = ddgi_atlas_size(ddgi_radiance_probe_size);
-    const math::Vec2ui irradiance_atlas_size = ddgi_atlas_size(ddgi_irradiance_probe_size);
+    const u32 cascade_count = ddgi_cascade_count(settings);
+    const math::Vec2ui radiance_atlas_size = ddgi_atlas_size(ddgi_radiance_probe_size, cascade_count);
+    const math::Vec2ui irradiance_atlas_size = ddgi_atlas_size(ddgi_irradiance_probe_size, cascade_count);
 
     const auto [radiance, radiance_reset] = framegraph.create_scratch_image(persistent_radiance_id, VK_FORMAT_B10G11R11_UFLOAT_PACK32, radiance_atlas_size, ddgi_atlas_usage);
     const auto [distance, distance_reset] = framegraph.create_scratch_image(persistent_distance_id, VK_FORMAT_R16G16_SFLOAT, radiance_atlas_size, ddgi_atlas_usage);
     const auto [irradiance, irradiance_reset] = framegraph.create_scratch_image(persistent_irradiance_id, VK_FORMAT_B10G11R11_UFLOAT_PACK32, irradiance_atlas_size, ddgi_atlas_usage);
 
-    const bool reset = radiance_reset || distance_reset || irradiance_reset;
+    const bool reset = radiance_reset || distance_reset || irradiance_reset || editor::debug_values().command("Reset DDGI");
     const TransientImageView<ddgi_atlas_usage> radiance_view(radiance);
     const TransientImageView<ddgi_atlas_usage> distance_view(distance);
     const TransientImageView<ddgi_atlas_usage> irradiance_view(irradiance);
@@ -203,8 +231,10 @@ DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
     pass.radiance = radiance_view;
     pass.distance = distance_view;
     pass.irradiance = irradiance_view;
-    pass.gi = apply_gi(framegraph, gbuffer, irradiance_view, distance_view, settings.probe_spacing);
+    pass.gi = apply_gi(framegraph, gbuffer, irradiance_view, distance_view, settings);
     pass.probe_spacing = settings.probe_spacing;
+    pass.cascade_spacing_scale = settings.cascade_spacing_scale;
+    pass.cascade_count = cascade_count;
     return pass;
 }
 
@@ -224,15 +254,21 @@ DDGIProbeDebugPass DDGIProbeDebugPass::create(FrameGraph& framegraph, FrameGraph
     const AssetPtr<StaticMesh> sphere = device_resources()[DeviceResources::SimpleSphereMesh];
 
     const struct Params {
-        float probe_spacing;
+        float base_probe_spacing;
+        float spacing_scale;
+        u32 cascade_count;
+        u32 display_irradiance;
         float probe_radius;
         u32 mesh_data_index;
-        u32 display_irradiance;
+        u32 padding;
     } params {
         ddgi.probe_spacing,
+        ddgi.cascade_spacing_scale,
+        ddgi.cascade_count,
+        display_irradiance ? 1u : 0u,
         sphere_size * ddgi.probe_spacing,
         sphere->mesh_data_index(),
-        display_irradiance ? 1u : 0u,
+        0u,
     };
 
     builder.add_color_output(color);
@@ -246,7 +282,7 @@ DDGIProbeDebugPass DDGIProbeDebugPass::create(FrameGraph& framegraph, FrameGraph
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const MaterialTemplate* material = device_resources()[DeviceResources::DDGIProbeDebugMaterialTemplate];
         render_pass.bind_material_template(material, self->descriptor_set());
-        render_pass.draw(sphere->draw_data(), ddgi_probe_count);
+        render_pass.draw(sphere->draw_data(), ddgi_total_probe_count(ddgi.cascade_count));
     });
 
     return {color, depth};

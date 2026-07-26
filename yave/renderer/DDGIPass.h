@@ -31,7 +31,9 @@ namespace yave {
 
 struct DDGISettings {
     float probe_spacing = 1.0f;
-    u32 convolve_sample_count = 64;
+    float cascade_spacing_scale = 2.0f;
+    u32 cascade_count = 3;
+    u32 convolve_sample_count = 32;
     u32 probe_update_stride = 16;
 };
 
@@ -53,6 +55,8 @@ struct DDGIPass {
     FrameGraphImageId gi;
 
     float probe_spacing = 1.0f;
+    float cascade_spacing_scale = 2.0f;
+    u32 cascade_count = 3;
 
     static DDGIPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const DDGISettings& settings = {});
 

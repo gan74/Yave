@@ -5,7 +5,7 @@
 struct VertexStageOut {
     float4 sv_position : SV_Position;
     float3 normal;
-    uint probe_index;
+    uint global_probe_index;
 };
 
 
@@ -20,17 +20,26 @@ Sampler2D<float3> in_probe_tex;
 
 [[vk::binding(3)]]
 cbuffer Params {
-    float probe_spacing;
+    float base_probe_spacing;
+    float spacing_scale;
+    uint cascade_count;
+    uint display_irradiance;
     float probe_radius;
     uint mesh_data_index;
-    uint display_irradiance;
+    uint padding;
 };
 
 
 [shader("vertex")]
 VertexStageOut vert_main() {
-    const uint probe_index = uint(semantics.instance_index);
-    const int3 grid_coord = ddgi.compute_grid_coord(probe_index);
+    const uint global_probe_index = uint(semantics.instance_index);
+
+    uint cascade;
+    uint local_probe_index;
+    ddgi.decode_global_probe_index(global_probe_index, cascade, local_probe_index);
+
+    const float probe_spacing = ddgi.cascade_probe_spacing(cascade, base_probe_spacing, spacing_scale);
+    const int3 grid_coord = ddgi.compute_grid_coord(local_probe_index);
     const float3 center = ddgi.probe_world_position(grid_coord, probe_spacing);
 
     const StdVertexData vert = read_vertex(uint(semantics.vertex_index), mesh_datas[mesh_data_index]);
@@ -40,17 +49,20 @@ VertexStageOut vert_main() {
     VertexStageOut out;
     out.sv_position = mul(camera.curr.view_proj, float4(world_pos, 1.0));
     out.normal = normalize(local_pos);
-    out.probe_index = probe_index;
+    out.global_probe_index = global_probe_index;
     return out;
 }
 
 [shader("fragment")]
 float4 frag_main(VertexStageOut in) {
     const uint probe_size = display_irradiance != 0 ? ddgi.irradiance_probe_size : ddgi.radiance_probe_size;
-    const uint2 atlas_size = display_irradiance != 0 ? ddgi.irradiance_atlas_size : ddgi.radiance_atlas_size;
+    const uint2 atlas_size = display_irradiance != 0
+        ? ddgi.irradiance_atlas_size(cascade_count)
+        : ddgi.radiance_atlas_size(cascade_count)
+    ;
     const uint2 probe_corner = display_irradiance != 0
-        ? ddgi.irradiance_atlas_coord(in.probe_index)
-        : ddgi.radiance_atlas_coord(in.probe_index)
+        ? ddgi.irradiance_atlas_coord(in.global_probe_index)
+        : ddgi.radiance_atlas_coord(in.global_probe_index)
     ;
 
     const float2 sample_coord = octahedron_encode(in.normal) * float(probe_size - 1);
