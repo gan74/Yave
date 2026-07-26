@@ -33,7 +33,6 @@ SOFTWARE.
 #include "TAAPass.h"
 #include "RTGIPass.h"
 #include "DDGIPass.h"
-#include "DDGIApplyPass.h"
 #include "AmbientPass.h"
 #include "ForwardPass.h"
 
@@ -67,7 +66,6 @@ struct DefaultRenderer {
     AOPass ao;
     RTGIPass rtgi;
     DDGIPass ddgi;
-    DDGIApplyPass ddgi_apply;
     AmbientPass ambient;
     AtmospherePass atmosphere;
     ForwardPass forward;

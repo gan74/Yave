@@ -74,7 +74,7 @@ function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
     set(SHADER_BIN "${SHADER_NAME}${NAME_SUFFIX}.spv")
     set(SHADER_CMD ${Vulkan_SLANGC_EXECUTABLE} ${COMPILE_ARGS} -target spirv -matrix-layout-column-major -fvk-use-entrypoint-name -preserve-params -O0 -o ${SHADER_BIN} \"${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}\")
     add_custom_command(
-        TARGET ${SHADER_TARGET} 
+        TARGET ${SHADER_TARGET}
         POST_BUILD
         COMMAND ${SHADER_CMD}
     )
@@ -250,9 +250,10 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "rtgi.slang" "APPLY")
     add_slang_shader(${SHADER_TARGET} "rtgi.slang" "TRIM")
 
-    add_slang_shader(${SHADER_TARGET} "ddgi.slang" "")
+    add_slang_shader(${SHADER_TARGET} "ddgi_trace.slang" "")
     add_slang_shader(${SHADER_TARGET} "ddgi_convolve.slang" "")
     add_slang_shader(${SHADER_TARGET} "ddgi_apply.slang" "")
+    add_slang_shader(${SHADER_TARGET} "ddgi_probe_debug.slang" "")
 endfunction(build_engine_shaders)
 
 function(build_editor_shaders SHADER_TARGET)
@@ -261,7 +262,6 @@ function(build_editor_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "editor/selection.slang" "")
     add_slang_shader(${SHADER_TARGET} "editor/engine_view.slang" "")
     add_slang_shader(${SHADER_TARGET} "editor/imgui_billboard.slang" "")
-    add_slang_shader(${SHADER_TARGET} "editor/ddgi_probe_debug.slang" "")
 endfunction(build_editor_shaders)
 
 

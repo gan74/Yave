@@ -25,7 +25,7 @@ SOFTWARE.
 #include "GBufferPass.h"
 #include "AOPass.h"
 #include "RTGIPass.h"
-#include "DDGIApplyPass.h"
+#include "DDGIPass.h"
 
 namespace yave {
 
@@ -33,8 +33,9 @@ struct AmbientPass {
     FrameGraphImageId lit;
 
     static AmbientPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const RTGIPass& gi);
+    static AmbientPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const DDGIPass& ddgi);
+
     static AmbientPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const AOPass& ao);
-    static AmbientPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const DDGIApplyPass& ddgi);
 };
 
 }

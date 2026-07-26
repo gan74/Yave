@@ -79,7 +79,7 @@ class DeviceResources final : NonMovable {
             RTGIApplyProgram,
             RTGITrimProgram,
 
-            DDGIUpdateProgram,
+            DDGITraceProgram,
             DDGIConvolveProgram,
             DDGIApplyProgram,
 
@@ -122,6 +122,7 @@ class DeviceResources final : NonMovable {
             DenoiseMaterialTemplate,
 
             IdMaterialTemplate,
+            DDGIProbeDebugMaterialTemplate,
 
             MaxMaterialTemplates
         };

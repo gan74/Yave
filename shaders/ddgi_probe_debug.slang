@@ -1,5 +1,5 @@
-#include "../lib/utils.slang"
-#include "../lib/ddgi.slang"
+#include "lib/utils.slang"
+#include "lib/ddgi.slang"
 
 
 struct VertexStageOut {
@@ -16,14 +16,14 @@ ConstantBuffer<Camera> camera;
 StructuredBuffer<StaticMeshData> mesh_datas;
 
 [[vk::binding(2)]]
-Sampler2D<float3> in_irradiance;
+Sampler2D<float3> in_probe_tex;
 
 [[vk::binding(3)]]
 cbuffer Params {
     float probe_spacing;
     float probe_radius;
     uint mesh_data_index;
-    uint _pad;
+    uint display_irradiance;
 };
 
 
@@ -46,10 +46,16 @@ VertexStageOut vert_main() {
 
 [shader("fragment")]
 float4 frag_main(VertexStageOut in) {
-    const uint2 probe_corner = ddgi.irradiance_atlas_coord(in.probe_index);
-    const float2 sample_coord = octahedron_encode(in.normal) * float(ddgi.irradiance_probe_size - 1);
-    const float2 uv = (float2(probe_corner) + sample_coord + 0.5) / float2(ddgi.irradiance_atlas_size);
-    const float3 irradiance = in_irradiance.SampleLevel(uv, 0.0);
+    const uint probe_size = display_irradiance != 0 ? ddgi.irradiance_probe_size : ddgi.radiance_probe_size;
+    const uint2 atlas_size = display_irradiance != 0 ? ddgi.irradiance_atlas_size : ddgi.radiance_atlas_size;
+    const uint2 probe_corner = display_irradiance != 0
+        ? ddgi.irradiance_atlas_coord(in.probe_index)
+        : ddgi.radiance_atlas_coord(in.probe_index)
+    ;
 
-    return float4(linear_to_sRGB(irradiance), 1.0);
+    const float2 sample_coord = octahedron_encode(in.normal) * float(probe_size - 1);
+    const float2 uv = (float2(probe_corner) + sample_coord + 0.5) / float2(atlas_size);
+    const float3 radiance = in_probe_tex.SampleLevel(uv, 0.0);
+
+    return float4(linear_to_sRGB(radiance), 1.0);
 }

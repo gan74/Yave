@@ -100,6 +100,7 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData{"directdraw", "directdraw", DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, true},
     DeviceMaterialData::screen("denoise"),
     DeviceMaterialData{"id", "id", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{"ddgi_probe_debug", "ddgi_probe_debug", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
 };
 
 static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputePrograms)> compute_datas = {
@@ -134,7 +135,7 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "rtgi_UPDATE",
     "rtgi_APPLY",
     "rtgi_TRIM",
-    "ddgi",
+    "ddgi_trace",
     "ddgi_convolve",
     "ddgi_apply",
 };

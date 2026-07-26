@@ -178,7 +178,6 @@ struct DenoiseSettings;
 struct DeviceProperties;
 struct DirectVertex;
 struct DDGIPass;
-struct DDGIApplyPass;
 struct DDGISettings;
 struct DownsamplePass;
 struct EmptyResource;

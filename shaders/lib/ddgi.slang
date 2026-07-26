@@ -81,17 +81,17 @@ struct IrradianceFieldSampleParams {
         sampling_normal_bias = 0.2;
         sampling_view_dir_bias = 0.2;
         distance_bias = 0.0;
-        variance_bias = 1.0e-4;
+        variance_bias = 0.0001;
         chebyshev_bias = 0.0;
     }
 };
 
 
-float3 encode_irr(float3 irr) {
+float3 encode_irradiance(float3 irr) {
     return sqrt(max(irr, 0.0));
 }
 
-float3 decode_irr(float3 irr) {
+float3 decode_irradiance(float3 irr) {
     return sqr(irr);
 }
 
@@ -173,15 +173,15 @@ float3 sample_irradiance(
             weight *= trilinear.x * trilinear.y * trilinear.z;
         }
 
-        const uint2 irr_corner = ddgi.irradiance_atlas_coord(probe_index);
-        const float2 sample_uv = (float2(irr_corner) + irr_sample_coord + 0.5) * inv_irradiance_atlas_size;
-        const float3 irr = irradiance_tex.SampleLevel(sample_uv, 0.0);
+        const uint2 irradiance_corner = ddgi.irradiance_atlas_coord(probe_index);
+        const float2 sample_uv = (float2(irradiance_corner) + irr_sample_coord + 0.5) * inv_irradiance_atlas_size;
+        const float3 irradiance = irradiance_tex.SampleLevel(sample_uv, 0.0);
 
         total += weight;
-        acc += encode_irr(irr) * weight;
+        acc += encode_irradiance(irradiance) * weight;
     }
 
-    return total > constants.epsilon ? decode_irr(acc / total) : float3(0.0);
+    return total > constants.epsilon ? decode_irradiance(acc / total) : float3(0.0);
 }
 
 

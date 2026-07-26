@@ -38,7 +38,7 @@ void main() {
 
     const float depth = in_depth[coord];
     if(is_depth_far(depth)) {
-        out_gi[coord] = float4(0.0, 0.0, 0.0, 1.0);
+        out_gi[coord] = float4(0.0);
         return;
     }
 

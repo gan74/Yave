@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "EditorRenderer.h"
 #include "EditorPass.h"
-#include "DDGIProbeDebugPass.h"
 
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
@@ -130,14 +129,13 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
         renderer.final = ed.color;
     }
 
-    if(settings.show_ddgi_probes) {
+    if(settings.ddgi_debug_mode != DDGIProbeDebugMode::None) {
         const DDGIProbeDebugPass probes = DDGIProbeDebugPass::create(
             framegraph,
-            renderer.renderer.camera.camera,
             renderer.final,
-            renderer.depth,
+            renderer.renderer.gbuffer,
             renderer.renderer.ddgi,
-            settings.ddgi_probe_radius
+            {settings.ddgi_debug_mode}
         );
         renderer.final = probes.color;
         renderer.depth = probes.depth;

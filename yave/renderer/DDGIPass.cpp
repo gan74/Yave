@@ -34,6 +34,10 @@ SOFTWARE.
 #include <yave/components/SkyLightComponent.h>
 
 #include <yave/graphics/shader_structs.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/device/MeshAllocator.h>
+#include <yave/meshes/StaticMesh.h>
+#include <yave/assets/AssetPtr.h>
 
 namespace yave {
 
@@ -106,7 +110,7 @@ static FrameGraphImageId trace_radiance(FrameGraph& framegraph, const GBufferPas
             texture_library().descriptor_set()
         };
 
-        recorder.dispatch_threads(device_resources()[DeviceResources::DDGIUpdateProgram], atlas_size, desc_sets);
+        recorder.dispatch_threads(device_resources()[DeviceResources::DDGITraceProgram], atlas_size, desc_sets);
     });
 
     distance = dist;
@@ -137,10 +141,40 @@ static FrameGraphImageId convolve_irradiance(FrameGraph& framegraph, FrameGraphI
     return irradiance;
 }
 
+static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId irradiance, FrameGraphImageId distance, float probe_spacing) {
+    const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
+
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("DDGI apply pass");
+
+    const auto gi = builder.declare_image(VK_FORMAT_B10G11R11_UFLOAT_PACK32, size);
+
+    const struct Params {
+        float probe_spacing;
+    } params {
+        probe_spacing,
+    };
+
+    builder.add_storage_output(gi);
+    builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
+    builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
+    builder.add_uniform_input(irradiance, SamplerType::LinearClamp);
+    builder.add_uniform_input(distance, SamplerType::LinearClamp);
+    builder.add_inline_input(params);
+
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        recorder.dispatch_threads(device_resources()[DeviceResources::DDGIApplyProgram], size, self->descriptor_set());
+    });
+
+    return gi;
+}
+
 DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const DDGISettings& settings) {
     if(!raytracing_enabled()) {
         return {};
     }
+
+    const auto regio = framegraph.region("DDGI");
 
     FrameGraphImageId distance;
     const FrameGraphImageId radiance = trace_radiance(framegraph, gbuffer, settings, distance);
@@ -150,8 +184,54 @@ DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
     pass.radiance = radiance;
     pass.irradiance = irradiance;
     pass.distance = distance;
+    pass.gi = apply_gi(framegraph, gbuffer, irradiance, distance, settings.probe_spacing);
     pass.probe_spacing = settings.probe_spacing;
     return pass;
+}
+
+DDGIProbeDebugPass DDGIProbeDebugPass::create(FrameGraph& framegraph, FrameGraphImageId in_lit, const GBufferPass& gbuffer, const DDGIPass& ddgi, const DDGIProbeDebugSettings& settings) {
+    if(settings.debug_mode == DDGIProbeDebugMode::None || !ddgi.irradiance.is_valid() || !ddgi.distance.is_valid()) {
+        return {in_lit, gbuffer.depth};
+    }
+
+    const bool display_irradiance = settings.debug_mode == DDGIProbeDebugMode::Irradiance;
+    const FrameGraphImageId probe_tex = display_irradiance ? ddgi.irradiance : ddgi.radiance;
+
+    FrameGraphPassBuilder builder = framegraph.add_pass("DDGI probe debug pass");
+
+    const auto color = builder.declare_copy(in_lit);
+    const auto depth = builder.declare_copy(gbuffer.depth);
+
+    const float sphere_size = 0.1f;
+    const AssetPtr<StaticMesh> sphere = device_resources()[DeviceResources::SimpleSphereMesh];
+
+    const struct Params {
+        float probe_spacing;
+        float probe_radius;
+        u32 mesh_data_index;
+        u32 display_irradiance;
+    } params {
+        ddgi.probe_spacing,
+        sphere_size * ddgi.probe_spacing,
+        sphere->mesh_data_index(),
+        display_irradiance ? 1u : 0u,
+    };
+
+    builder.add_color_output(color);
+    builder.add_depth_output(depth);
+
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
+    builder.add_external_input(Descriptor(mesh_allocator().mesh_data_buffer()));
+    builder.add_uniform_input(probe_tex, SamplerType::LinearClamp);
+    builder.add_inline_input(params);
+
+    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
+        const MaterialTemplate* material = device_resources()[DeviceResources::DDGIProbeDebugMaterialTemplate];
+        render_pass.bind_material_template(material, self->descriptor_set());
+        render_pass.draw(sphere->draw_data(), ddgi_probe_count);
+    });
+
+    return {color, depth};
 }
 
 }

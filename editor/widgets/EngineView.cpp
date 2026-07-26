@@ -203,12 +203,8 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         const auto gbuffer = renderer.renderer.gbuffer;
         const struct ViewParams {
             u32 target_index;
-            float probe_spacing;
         } params {
             u32(_view),
-            renderer.renderer.ddgi.is_valid()
-                ? renderer.renderer.ddgi.probe_spacing
-                : _settings.renderer_settings.ddgi.probe_spacing,
         };
 
         builder.add_input_usage(output_image, ImageUsage::TransferSrcBit);
@@ -220,9 +216,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
         builder.add_uniform_input_with_default(renderer.renderer.ao.ao, Descriptor(white));
-        builder.add_uniform_input_with_default(renderer.renderer.ddgi.irradiance, Descriptor(black, SamplerType::LinearClamp));
-        builder.add_uniform_input_with_default(renderer.renderer.ddgi.distance, Descriptor(black, SamplerType::LinearClamp));
-        builder.add_uniform_input(gbuffer.scene_pass.camera);
+        builder.add_uniform_input_with_default(renderer.renderer.ddgi.gi, Descriptor(black, SamplerType::LinearClamp));
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             {
                 auto render_pass = recorder.bind_framebuffer(self->framebuffer());
@@ -416,7 +410,7 @@ void EngineView::draw_toolbar() {
         draw_menu();
         ImGui::EndMenu();
     }
-    
+
     ImGui::Separator();
 
     {
@@ -509,10 +503,10 @@ void EngineView::draw_gizmos() {
     }
 
     switch(_gizmo) {
-        case GizmoType::Translate: 
+        case GizmoType::Translate:
             _tr_gizmo.draw();
         break;
-        case GizmoType::Rotate: 
+        case GizmoType::Rotate:
             _rot_gizmo.draw();
         break;
     }
@@ -569,14 +563,27 @@ void EngineView::draw_settings_menu() {
     }
 
     if(ImGui::BeginMenu("DDGI")) {
-        DDGISettings& settings = _settings.renderer_settings.ddgi;
+        {
+            DDGISettings& settings = _settings.renderer_settings.ddgi;
 
-        ImGui::MenuItem("Show probes", nullptr, &_settings.show_ddgi_probes);
-        ImGui::SliderFloat("Probe radius", &_settings.ddgi_probe_radius, 0.01f, 0.5f, "%.2f");
-        ImGui::SliderFloat("Probe spacing", &settings.probe_spacing, 0.25f, 8.0f, "%.2f");
-        int samples = int(settings.convolve_sample_count);
-        ImGui::SliderInt("Convolve samples", &samples, 16, 256);
-        settings.convolve_sample_count = u32(samples);
+            ImGui::SliderFloat("Probe spacing", &settings.probe_spacing, 0.25f, 8.0f, "%.2f");
+            int samples = int(settings.convolve_sample_count);
+            ImGui::SliderInt("Convolve samples", &samples, 16, 256);
+            settings.convolve_sample_count = u32(samples);
+        }
+
+        {
+            const char* debug_modes[] = {"None", "Radiance", "Irradiance"};
+            if(ImGui::BeginCombo("Debug", debug_modes[usize(_settings.ddgi_debug_mode)])) {
+                for(usize i = 0; i != sizeof(debug_modes) / sizeof(debug_modes[0]); ++i) {
+                    const bool selected = usize(_settings.ddgi_debug_mode) == i;
+                    if(ImGui::Selectable(debug_modes[i], selected)) {
+                        _settings.ddgi_debug_mode = DDGIProbeDebugMode(i);
+                    }
+                }
+                ImGui::EndCombo();
+            }
+        }
 
         ImGui::EndMenu();
     }

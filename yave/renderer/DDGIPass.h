@@ -24,6 +24,9 @@ SOFTWARE.
 
 #include "GBufferPass.h"
 
+#include <yave/graphics/shader_structs.h>
+#include <yave/framegraph/FrameGraphResourceId.h>
+
 namespace yave {
 
 struct DDGISettings {
@@ -31,17 +34,37 @@ struct DDGISettings {
     u32 convolve_sample_count = 64;
 };
 
+enum class DDGIProbeDebugMode {
+    None            = 0,
+    Radiance,
+    Irradiance,
+};
+
+struct DDGIProbeDebugSettings {
+    DDGIProbeDebugMode debug_mode = DDGIProbeDebugMode::None;
+};
+
 struct DDGIPass {
     FrameGraphImageId radiance;
     FrameGraphImageId irradiance;
     FrameGraphImageId distance;
+    FrameGraphImageId gi;
+
     float probe_spacing = 1.0f;
 
     bool is_valid() const {
-        return irradiance.is_valid() && distance.is_valid();
+        return gi.is_valid();
     }
 
     static DDGIPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const DDGISettings& settings = {});
+
+};
+
+struct DDGIProbeDebugPass {
+    FrameGraphImageId color;
+    FrameGraphImageId depth;
+
+    static DDGIProbeDebugPass create(FrameGraph& framegraph, FrameGraphImageId in_lit, const GBufferPass& gbuffer, const DDGIPass& ddgi, const DDGIProbeDebugSettings& settings = {});
 };
 
 }
