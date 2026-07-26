@@ -26,18 +26,19 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 
-#include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/shaders/ComputeProgram.h>
 
+#include <yave/graphics/device/DeviceResources.h>
+#include <yave/graphics/device/MeshAllocator.h>
 #include <yave/graphics/device/MaterialAllocator.h>
 #include <yave/graphics/images/TextureLibrary.h>
-#include <yave/components/SkyLightComponent.h>
 
-#include <yave/graphics/shader_structs.h>
-#include <yave/graphics/commands/CmdBufferRecorder.h>
-#include <yave/graphics/device/MeshAllocator.h>
+#include <yave/components/SkyLightComponent.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/assets/AssetPtr.h>
+
+#include <yave/graphics/shader_structs.h>
 
 namespace yave {
 
@@ -66,7 +67,7 @@ static void trace_radiance(FrameGraph& framegraph, const GBufferPass& gbuffer, c
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
     const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
 
-    const math::Vec2ui atlas_size = ddgi_atlas_size(ddgi_radiance_probe_size);
+    const math::Vec3ui dispatch_size(ddgi_radiance_probe_size, ddgi_radiance_probe_size, ddgi_probe_count);
     const u32 probe_update_stride = std::max(1u, settings.probe_update_stride);
 
     const struct Params {
@@ -119,12 +120,14 @@ static void trace_radiance(FrameGraph& framegraph, const GBufferPass& gbuffer, c
             texture_library().descriptor_set()
         };
 
-        recorder.dispatch_threads(device_resources()[DeviceResources::DDGITraceProgram], atlas_size, desc_sets);
+        const auto& program = device_resources()[DeviceResources::DDGITraceProgram];
+        y_debug_assert(program.local_size().x() == program.local_size().y() && ddgi_irradiance_probe_size % program.local_size().x() == 0);
+        recorder.dispatch_threads(program, dispatch_size, desc_sets);
     });
 }
 
 static void convolve_irradiance(FrameGraph& framegraph, const DDGISettings& settings, const TextureView& radiance, const StorageView& irradiance, bool reset) {
-    const math::Vec2ui atlas_size = ddgi_atlas_size(ddgi_irradiance_probe_size);
+    const math::Vec3ui dispatch_size(ddgi_irradiance_probe_size, ddgi_irradiance_probe_size, ddgi_probe_count);
     const u32 probe_update_stride = std::max(1u, settings.probe_update_stride);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("DDGI convolve pass");
@@ -146,7 +149,9 @@ static void convolve_irradiance(FrameGraph& framegraph, const DDGISettings& sett
     builder.add_inline_input(params);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        recorder.dispatch_threads(device_resources()[DeviceResources::DDGIConvolveProgram], atlas_size, self->descriptor_set());
+        const auto& program = device_resources()[DeviceResources::DDGIConvolveProgram];
+        y_debug_assert(program.local_size().x() == program.local_size().y() && ddgi_radiance_probe_size % program.local_size().x() == 0);
+        recorder.dispatch_threads(program, dispatch_size, self->descriptor_set());
     });
 }
 
@@ -157,19 +162,13 @@ static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbu
 
     const auto gi = builder.declare_image(VK_FORMAT_B10G11R11_UFLOAT_PACK32, size);
 
-    const struct Params {
-        float probe_spacing;
-    } params {
-        probe_spacing,
-    };
-
     builder.add_storage_output(gi);
     builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_external_input(Descriptor(irradiance, SamplerType::LinearClamp));
     builder.add_external_input(Descriptor(distance, SamplerType::LinearClamp));
-    builder.add_inline_input(params);
+    builder.add_inline_input(probe_spacing);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         recorder.dispatch_threads(device_resources()[DeviceResources::DDGIApplyProgram], size, self->descriptor_set());
@@ -183,7 +182,7 @@ DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
         return {};
     }
 
-    const auto regio = framegraph.region("DDGI");
+    const auto region = framegraph.region("DDGI");
 
     const math::Vec2ui radiance_atlas_size = ddgi_atlas_size(ddgi_radiance_probe_size);
     const math::Vec2ui irradiance_atlas_size = ddgi_atlas_size(ddgi_irradiance_probe_size);
@@ -193,9 +192,9 @@ DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
     const auto [irradiance, irradiance_reset] = framegraph.create_scratch_image(persistent_irradiance_id, VK_FORMAT_B10G11R11_UFLOAT_PACK32, irradiance_atlas_size, ddgi_atlas_usage);
 
     const bool reset = radiance_reset || distance_reset || irradiance_reset;
-    const TransientImageView<ImageUsage::TextureBit | ImageUsage::StorageBit> radiance_view(radiance);
-    const TransientImageView<ImageUsage::TextureBit | ImageUsage::StorageBit> distance_view(distance);
-    const TransientImageView<ImageUsage::TextureBit | ImageUsage::StorageBit> irradiance_view(irradiance);
+    const TransientImageView<ddgi_atlas_usage> radiance_view(radiance);
+    const TransientImageView<ddgi_atlas_usage> distance_view(distance);
+    const TransientImageView<ddgi_atlas_usage> irradiance_view(irradiance);
 
     trace_radiance(framegraph, gbuffer, settings, radiance_view, distance_view, reset);
     convolve_irradiance(framegraph, settings, radiance_view, irradiance_view, reset);

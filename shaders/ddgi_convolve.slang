@@ -41,16 +41,9 @@ float3 sample_probe_radiance(uint probe_index, float3 dir) {
 
 
 [shader("compute")]
-[numthreads(8, 8)]
+[numthreads(8, 8, 1)]
 void main() {
-    const uint2 coord = semantics.global_id.xy;
-    if(any(coord >= ddgi.irradiance_atlas_size)) {
-        return;
-    }
-
-    const uint2 probe_local = coord % ddgi.irradiance_probe_size;
-    const uint2 probe_grid = coord / ddgi.irradiance_probe_size;
-    const uint probe_index = probe_grid.y * ddgi.probes_per_atlas_row + probe_grid.x;
+    const uint probe_index = semantics.global_id.z;
     if(probe_index >= ddgi.probe_count) {
         return;
     }
@@ -58,6 +51,9 @@ void main() {
     if(reset == 0 && !ddgi.should_update_probe(probe_index, frame_id, probe_update_stride)) {
         return;
     }
+
+    const uint2 probe_local = semantics.global_id.xy;
+    const uint2 coord = ddgi.irradiance_atlas_coord(probe_index) + probe_local;
 
     const float2 octa_uv = (float2(probe_local) + 0.5) / float(ddgi.irradiance_probe_size);
     const float3 normal = octahedron_decode(octa_uv);

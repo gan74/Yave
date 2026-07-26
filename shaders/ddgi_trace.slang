@@ -82,16 +82,9 @@ float3 shade_hit(HitInfo hit, float3 trace_dir) {
 }
 
 [shader("compute")]
-[numthreads(8, 8)]
+[numthreads(8, 8, 1)]
 void main() {
-    const uint2 coord = semantics.global_id.xy;
-    if(any(coord >= ddgi.radiance_atlas_size)) {
-        return;
-    }
-
-    const uint2 probe_local = coord % ddgi.radiance_probe_size;
-    const uint2 probe_grid = coord / ddgi.radiance_probe_size;
-    const uint probe_index = probe_grid.y * ddgi.probes_per_atlas_row + probe_grid.x;
+    const uint probe_index = semantics.global_id.z;
     if(probe_index >= ddgi.probe_count) {
         return;
     }
@@ -99,6 +92,9 @@ void main() {
     if(reset == 0 && !ddgi.should_update_probe(probe_index, frame_id, probe_update_stride)) {
         return;
     }
+
+    const uint2 probe_local = semantics.global_id.xy;
+    const uint2 coord = ddgi.radiance_atlas_coord(probe_index) + probe_local;
 
     const int3 grid_coord = ddgi.compute_grid_coord(probe_index);
     const float3 origin = ddgi.probe_world_position(grid_coord, probe_spacing);
