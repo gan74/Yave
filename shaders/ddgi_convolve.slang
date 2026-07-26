@@ -12,6 +12,9 @@ Sampler2D<float3> in_radiance;
 [[vk::binding(2)]]
 cbuffer Params {
     uint sample_count;
+    uint frame_id;
+    uint reset;
+    uint probe_update_stride;
 };
 
 
@@ -49,6 +52,10 @@ void main() {
     const uint2 probe_grid = coord / ddgi.irradiance_probe_size;
     const uint probe_index = probe_grid.y * ddgi.probes_per_atlas_row + probe_grid.x;
     if(probe_index >= ddgi.probe_count) {
+        return;
+    }
+
+    if(reset == 0 && !ddgi.should_update_probe(probe_index, frame_id, probe_update_stride)) {
         return;
     }
 

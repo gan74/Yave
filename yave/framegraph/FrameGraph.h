@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_FRAMEGRAPH_FRAMEGRAPH_H
 
 #include "FrameGraphPassBuilder.h"
+#include "TransientImage.h"
 
 #include <y/core/Vector.h>
 #include <y/core/String.h>
@@ -157,6 +158,8 @@ class FrameGraph : NonMovable {
                 reset
             };
         }
+
+        std::pair<const TransientImage&, bool> create_scratch_image(FrameGraphPersistentResourceId id, ImageFormat format, const math::Vec2ui& size, ImageUsage usage, u32 mips = 1);
 
     private:
         friend class FrameGraphPassBuilderBase;

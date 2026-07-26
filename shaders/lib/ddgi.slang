@@ -68,6 +68,10 @@ bool in_range(float3 world_pos, float probe_spacing) {
     return all(abs(world_pos) <= extent + probe_spacing);
 }
 
+bool should_update_probe(uint probe_index, uint frame_id, uint probe_update_stride) {
+    return (probe_index % probe_update_stride) == (frame_id % probe_update_stride);
+}
+
 }
 
 struct IrradianceFieldSampleParams {

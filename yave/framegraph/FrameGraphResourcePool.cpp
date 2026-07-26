@@ -108,6 +108,20 @@ std::pair<const TransientBuffer&, bool> FrameGraphResourcePool::create_scratch_b
     });
 }
 
+std::pair<const TransientImage&, bool> FrameGraphResourcePool::create_scratch_image(ImageFormat format, const math::Vec2ui& size, u32 mips, ImageUsage usage, FrameGraphPersistentResourceId persistent_id) {
+    return _persistent_images.locked([&](auto&& images) {
+        const usize index = persistent_id.id();
+        images.set_min_size(index + 1);
+
+        TransientImage& image = images[index];
+        const bool reset = image.is_null() || image.format() != format || image.size() != size || image.mipmaps() != mips || image.usage() != usage;
+        if(reset) {
+            image = TransientImage(format, usage, size, mips);
+        }
+        return std::pair<const TransientImage&, bool>{image, reset};
+    });
+}
+
 
 
 bool FrameGraphResourcePool::create_image_from_pool(TransientImage& res, ImageFormat format, const math::Vec2ui& size, u32 mips, ImageUsage usage) {

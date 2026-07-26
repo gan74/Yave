@@ -43,6 +43,7 @@ class FrameGraphResourcePool : NonMovable {
         TransientBuffer create_buffer(u64 byte_size, BufferUsage usage, MemoryType memory, bool exact = true);
 
         std::pair<const TransientBuffer&, bool> create_scratch_buffer(u64 byte_size, BufferUsage usage, FrameGraphPersistentResourceId persistent_id);
+        std::pair<const TransientImage&, bool> create_scratch_image(ImageFormat format, const math::Vec2ui& size, u32 mips, ImageUsage usage, FrameGraphPersistentResourceId persistent_id);
 
         void release(TransientImage image, core::Span<FrameGraphPersistentResourceId> persistent_ids = {});
         void release(TransientVolume volume, core::Span<FrameGraphPersistentResourceId> persistent_ids = {});

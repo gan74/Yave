@@ -500,6 +500,10 @@ std::pair<const TransientBuffer&, bool> FrameGraph::create_scratch_buffer(u64 by
     return _resources->_pool->create_scratch_buffer(byte_size, usage, persistent_id);
 }
 
+std::pair<const TransientImage&, bool> FrameGraph::create_scratch_image(FrameGraphPersistentResourceId id, ImageFormat format, const math::Vec2ui& size, ImageUsage usage, u32 mips) {
+    return _resources->_pool->create_scratch_image(format, size, mips, usage, id);
+}
+
 FrameGraphPass* FrameGraph::create_pass(std::string_view name) {
     auto pass = std::make_unique<FrameGraphPass>(name, this, ++_pass_index);
     FrameGraphPass* ptr = pass.get();

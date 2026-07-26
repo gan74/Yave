@@ -32,6 +32,7 @@ namespace yave {
 struct DDGISettings {
     float probe_spacing = 1.0f;
     u32 convolve_sample_count = 64;
+    u32 probe_update_stride = 16;
 };
 
 enum class DDGIProbeDebugMode {
@@ -45,16 +46,13 @@ struct DDGIProbeDebugSettings {
 };
 
 struct DDGIPass {
-    FrameGraphImageId radiance;
-    FrameGraphImageId irradiance;
-    FrameGraphImageId distance;
+    TextureView radiance;
+    TextureView distance;
+    TextureView irradiance;
+
     FrameGraphImageId gi;
 
     float probe_spacing = 1.0f;
-
-    bool is_valid() const {
-        return gi.is_valid();
-    }
 
     static DDGIPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const DDGISettings& settings = {});
 

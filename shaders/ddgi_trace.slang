@@ -28,7 +28,10 @@ cbuffer Params {
     float probe_spacing;
     uint light_count;
     uint frame_id;
-    float _pad;
+    uint reset;
+    uint probe_update_stride;
+    float blend_alpha;
+    float padding_0;
 };
 
 
@@ -78,7 +81,6 @@ float3 shade_hit(HitInfo hit, float3 trace_dir) {
     return radiance;
 }
 
-
 [shader("compute")]
 [numthreads(8, 8)]
 void main() {
@@ -91,6 +93,10 @@ void main() {
     const uint2 probe_grid = coord / ddgi.radiance_probe_size;
     const uint probe_index = probe_grid.y * ddgi.probes_per_atlas_row + probe_grid.x;
     if(probe_index >= ddgi.probe_count) {
+        return;
+    }
+
+    if(reset == 0 && !ddgi.should_update_probe(probe_index, frame_id, probe_update_stride)) {
         return;
     }
 
@@ -107,6 +113,14 @@ void main() {
     const float tmax = 10000.0;
     const HitInfo hit = trace_inline(tlas, origin, trace_dir, tmin, tmax);
 
-    out_radiance[coord] = float4(shade_hit(hit, trace_dir), 1.0);
-    out_distance[coord] = float2(hit.ray_t, sqr(hit.ray_t));
+    const float3 new_radiance = shade_hit(hit, trace_dir);
+    const float2 new_distance = float2(hit.ray_t, sqr(hit.ray_t));
+
+    if(reset != 0) {
+        out_radiance[coord] = float4(new_radiance, 1.0);
+        out_distance[coord] = new_distance;
+    } else {
+        out_radiance[coord] = float4(lerp(out_radiance[coord].rgb, new_radiance, blend_alpha), 1.0);
+        out_distance[coord] = lerp(out_distance[coord], new_distance, blend_alpha);
+    }
 }

@@ -569,6 +569,9 @@ void EngineView::draw_settings_menu() {
             int samples = int(settings.convolve_sample_count);
             ImGui::SliderInt("Convolve samples", &samples, 16, 256);
             settings.convolve_sample_count = u32(samples);
+            int update_stride = int(settings.probe_update_stride);
+            ImGui::SliderInt("Probe update stride", &update_stride, 1, 64);
+            settings.probe_update_stride = u32(update_stride);
         }
 
         {
