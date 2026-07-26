@@ -1,6 +1,7 @@
 #include "lib/semantics.slang"
 #include "lib/utils.slang"
 #include "lib/rt.slang"
+#include "lib/rng.slang"
 #include "lib/ddgi.slang"
 
 
@@ -96,7 +97,10 @@ void main() {
     const int3 grid_coord = ddgi.compute_grid_coord(probe_index);
     const float3 origin = ddgi.probe_world_position(grid_coord, probe_spacing);
 
-    const float2 octa_uv = (float2(probe_local) + 0.5) / float(ddgi.radiance_probe_size);
+    const uint seed = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
+    HashRng rng = HashRng(seed);
+
+    const float2 octa_uv = (float2(probe_local) + float2(rng.next_unorm(), rng.next_unorm())) / float(ddgi.radiance_probe_size);
     const float3 trace_dir = octahedron_decode(octa_uv);
 
     const float tmin = 0.01;
