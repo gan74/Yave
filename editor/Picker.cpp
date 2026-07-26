@@ -74,7 +74,7 @@ PickingResult Picker::pick_sync(const SceneView& scene_view, const math::Vec2& u
 
         builder.add_uniform_input(entity_pass.depth);
         builder.add_uniform_input(entity_pass.id);
-        builder.add_descriptor_binding(Descriptor(buffer));
+        builder.add_external_input(Descriptor(buffer));
         builder.add_inline_input(math::Vec2ui(uv * math::Vec2(size)));
 
         builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {

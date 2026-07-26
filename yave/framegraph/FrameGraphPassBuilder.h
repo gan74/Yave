@@ -109,7 +109,6 @@ class FrameGraphPassBuilderBase {
             map_buffer_internal(res, {reinterpret_cast<const u32*>(&data), sizeof(T) / sizeof(u32)});
         }
 
-        void add_descriptor_binding(Descriptor desc, i32 ds_index = -1);
         i32 next_descriptor_set_index() const;
 
     protected:
@@ -123,6 +122,7 @@ class FrameGraphPassBuilderBase {
         void add_to_pass(FrameGraphVolumeId res, ImageUsage usage, bool is_written, PipelineStage stage);
         void add_to_pass(FrameGraphBufferId res, BufferUsage usage, bool is_written, PipelineStage stage);
 
+        void add_descriptor_binding(Descriptor desc, i32 ds_index = -1);
         void add_descriptor_binding(FrameGraphDescriptorBinding binding, i32 ds_index);
 
         void map_buffer_internal(FrameGraphMutableBufferId res, FrameGraphInlineBlock block = {});

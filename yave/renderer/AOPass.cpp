@@ -234,8 +234,8 @@ static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass&
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_inline_input(params);
-    builder.add_descriptor_binding(Descriptor(tlas));
-    builder.add_descriptor_binding(Descriptor(hash));
+    builder.add_external_input(Descriptor(tlas));
+    builder.add_external_input(Descriptor(hash));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         const BufferBarrier barrier(hash, PipelineStage::ComputeBit, PipelineStage::ComputeBit);
 

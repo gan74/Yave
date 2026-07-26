@@ -102,10 +102,10 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     builder.add_storage_output(gi);
 
-    builder.add_descriptor_binding(Descriptor(hash));
-    builder.add_descriptor_binding(Descriptor(sum));
+    builder.add_external_input(Descriptor(hash));
+    builder.add_external_input(Descriptor(sum));
 
-    builder.add_descriptor_binding(Descriptor(tlas));
+    builder.add_external_input(Descriptor(tlas));
 
     builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);

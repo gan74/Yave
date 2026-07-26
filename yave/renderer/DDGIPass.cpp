@@ -93,10 +93,10 @@ static void trace_radiance(FrameGraph& framegraph, const GBufferPass& gbuffer, c
     const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
     builder.map_buffer(directional_buffer);
 
-    builder.add_descriptor_binding(Descriptor(radiance));
-    builder.add_descriptor_binding(Descriptor(distance));
+    builder.add_external_input(Descriptor(radiance));
+    builder.add_external_input(Descriptor(distance));
 
-    builder.add_descriptor_binding(Descriptor(tlas));
+    builder.add_external_input(Descriptor(tlas));
 
     builder.add_external_input(ibl_probe ? *ibl_probe : *device_resources().empty_probe());
     builder.add_external_input(Descriptor(material_allocator().material_buffer()));
@@ -144,7 +144,7 @@ static void convolve_irradiance(FrameGraph& framegraph, const DDGISettings& sett
         probe_update_stride,
     };
 
-    builder.add_descriptor_binding(Descriptor(irradiance));
+    builder.add_external_input(Descriptor(irradiance));
     builder.add_external_input(Descriptor(radiance, SamplerType::LinearClamp));
     builder.add_inline_input(params);
 

@@ -43,7 +43,7 @@ TypedReadBackBuffer<shader::PickingData> picking_pass(FrameGraph& framegraph, Fr
 
     builder.add_uniform_input(depth);
     builder.add_uniform_input(id);
-    builder.add_descriptor_binding(Descriptor(buffer));
+    builder.add_external_input(Descriptor(buffer));
     builder.add_inline_input(coord);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {

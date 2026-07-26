@@ -254,10 +254,6 @@ void FrameGraphPassBuilderBase::clear_before_pass(FrameGraphMutableImageId res) 
     parent()->register_image_clear(res, _pass);
 }
 
-void FrameGraphPassBuilderBase::add_descriptor_binding(Descriptor desc, i32 ds_index) {
-    add_descriptor_binding(FrameGraphDescriptorBinding(desc), ds_index);
-}
-
 i32 FrameGraphPassBuilderBase::next_descriptor_set_index() const {
     const auto& bindings = _pass->_bindings;
     return i32(bindings.size());
@@ -294,6 +290,10 @@ void FrameGraphPassBuilderBase::add_to_pass(FrameGraphBufferId res, BufferUsage 
     info.written_to |= is_written;
     set_stage(_pass, info, stage);
     parent()->register_usage(res, usage, is_written, _pass);
+}
+
+void FrameGraphPassBuilderBase::add_descriptor_binding(Descriptor desc, i32 ds_index) {
+    add_descriptor_binding(FrameGraphDescriptorBinding(desc), ds_index);
 }
 
 void FrameGraphPassBuilderBase::add_descriptor_binding(FrameGraphDescriptorBinding binding, i32 ds_index) {
