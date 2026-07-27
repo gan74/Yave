@@ -104,6 +104,14 @@ bool in_range(float3 world_pos, float probe_spacing) {
     return all(abs(world_pos) <= extent + probe_spacing);
 }
 
+// Returns 1 inside the cascade volume, fading to 0 near the boundary.
+float cascade_blend_factor(float3 world_pos, float probe_spacing) {
+    const float extent = (grid_size - 1) * 0.5 * probe_spacing;
+    const float outer_extent = extent + probe_spacing;
+    const float dist_to_edge = outer_extent - component_max(abs(world_pos));
+    return saturate(dist_to_edge / (probe_spacing * 2.0));
+}
+
 bool should_update_probe(uint probe_index, uint frame_id, uint probe_update_stride) {
     return (probe_index % probe_update_stride) == (frame_id % probe_update_stride);
 }
@@ -149,7 +157,7 @@ float3 sample_irradiance(
     const uint cascade = ddgi.select_cascade(world_pos, cascade_count, base_probe_spacing, spacing_scale);
     const float probe_spacing = ddgi.cascade_probe_spacing(cascade, base_probe_spacing, spacing_scale);
 
-    return sample_irradiance_cascade(
+    const float4 fine = sample_irradiance_cascade(
         world_pos,
         normal,
         cam_pos,
@@ -160,9 +168,36 @@ float3 sample_irradiance(
         distance_tex,
         params
     );
+
+    if(cascade + 1 >= cascade_count) {
+        return fine.rgb;
+    }
+
+    const float blend = max(
+        saturate(1.0 - fine.w * 4.0),
+        1.0 - ddgi.cascade_blend_factor(world_pos, probe_spacing)
+    );
+
+    if(blend <= constants.epsilon) {
+        return fine.rgb;
+    }
+
+    const float3 coarse = sample_irradiance_cascade(
+        world_pos,
+        normal,
+        cam_pos,
+        probe_spacing * spacing_scale,
+        cascade + 1,
+        cascade_count,
+        irradiance_tex,
+        distance_tex,
+        params
+    ).rgb;
+
+    return lerp(fine.rgb, coarse, blend);
 }
 
-float3 sample_irradiance_cascade(
+float4 sample_irradiance_cascade(
     float3 world_pos,
     float3 normal,
     float3 cam_pos,
@@ -174,7 +209,7 @@ float3 sample_irradiance_cascade(
     IrradianceFieldSampleParams params = IrradianceFieldSampleParams()) {
 
     if(!ddgi.in_range(world_pos, probe_spacing)) {
-        return float3(0.0);
+        return float4(0.0);
     }
 
     const float2 inv_radiance_atlas_size = 1.0 / float2(ddgi.radiance_atlas_size(cascade_count));
@@ -235,7 +270,6 @@ float3 sample_irradiance_cascade(
         const float crush_threshold = 0.2;
         if(weight < crush_threshold) {
             weight *= weight * weight * (1.0 / sqr(crush_threshold));
-            weight = max(constants.epsilon, weight);
         }
 
         {
@@ -243,15 +277,20 @@ float3 sample_irradiance_cascade(
             weight *= trilinear.x * trilinear.y * trilinear.z;
         }
 
-        const uint2 irradiance_corner = ddgi.irradiance_atlas_coord(probe_index);
-        const float2 sample_uv = (float2(irradiance_corner) + irr_sample_coord + 0.5) * inv_irradiance_atlas_size;
-        const float3 irradiance = irradiance_tex.SampleLevel(sample_uv, 0.0);
+        if(weight > constants.epsilon) {
+            const uint2 irradiance_corner = ddgi.irradiance_atlas_coord(probe_index);
+            const float2 sample_uv = (float2(irradiance_corner) + irr_sample_coord + 0.5) * inv_irradiance_atlas_size;
+            const float3 irradiance = irradiance_tex.SampleLevel(sample_uv, 0.0);
 
-        total += weight;
-        acc += encode_irradiance(irradiance) * weight;
+            total += weight;
+            acc += encode_irradiance(irradiance) * weight;
+        }
     }
 
-    return total > constants.epsilon ? decode_irradiance(acc / total) : float3(0.0);
+    return total > constants.epsilon
+        ? float4(decode_irradiance(acc / total), total)
+        : float4(0.0)
+    ;
 }
 
 
