@@ -24,6 +24,8 @@ SOFTWARE.
 #include "FrameGraphPass.h"
 #include "FrameGraph.h"
 
+#include <yave/graphics/commands/CmdBufferRecorder.h>
+
 #include <y/utils/format.h>
 
 namespace yave {
@@ -317,6 +319,29 @@ void FrameGraphPassBuilderBase::map_buffer_internal(FrameGraphMutableBufferId re
 FrameGraph* FrameGraphPassBuilderBase::parent() const {
     return _pass->_parent;
 }
+
+
+
+
+
+void make_simple_full_screen_pass(FrameGraphPassBuilder& builder, DeviceResources::MaterialTemplates mat) {
+    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
+        const auto* material = device_resources()[mat];
+        render_pass.bind_material_template(material, self->descriptor_set());
+        render_pass.draw_array(3);
+    });
+}
+
+void make_simple_compute_pass(FrameGraphComputePassBuilder& builder, DeviceResources::ComputePrograms program, const math::Vec3ui& thread_count) {
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        recorder.dispatch_threads(device_resources()[program], thread_count, self->descriptor_set());
+    });
+}
+
+void make_simple_compute_pass(FrameGraphComputePassBuilder& builder, DeviceResources::ComputePrograms program, const math::Vec2ui& thread_count) {
+    make_simple_compute_pass(builder, program, math::Vec3ui(thread_count, 1));
+}
+
 
 }
 

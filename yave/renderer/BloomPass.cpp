@@ -66,11 +66,8 @@ BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, Fra
         builder.add_uniform_input(mips.last(), SamplerType::LinearClamp);
         builder.add_uniform_input(exposure);
         builder.add_inline_input(u32(i - 1));
-        builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-            const auto* material = device_resources()[DeviceResources::BloomDownscaleMaterialTemplate];
-            render_pass.bind_material_template(material, self->descriptor_set());
-            render_pass.draw_array(3);
-        });
+
+        make_simple_full_screen_pass(builder, DeviceResources::BloomDownscaleMaterialTemplate);
 
         mips.emplace_back(downscaled);
     }
@@ -86,11 +83,8 @@ BloomPass BloomPass::create(FrameGraph& framegraph, FrameGraphImageId input, Fra
         builder.add_color_output(upscaled);
         builder.add_uniform_input(mips[i], SamplerType::LinearClamp);
         builder.add_inline_input(params);
-        builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-            const auto* material = device_resources()[DeviceResources::BloomUpscaleMaterialTemplate];
-            render_pass.bind_material_template(material, self->descriptor_set());
-            render_pass.draw_array(3);
-        });
+        
+        make_simple_full_screen_pass(builder, DeviceResources::BloomUpscaleMaterialTemplate);
 
         mips[i - 1] = upscaled;
     }

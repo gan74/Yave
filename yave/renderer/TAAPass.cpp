@@ -90,10 +90,8 @@ TAAPass TAAPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fram
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_inline_input(params);
     builder.add_storage_output(aa);
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources()[DeviceResources::TAAResolveProgram];
-        recorder.dispatch_threads(program, size, self->descriptor_set());
-    });
+    
+    make_simple_compute_pass(builder, DeviceResources::TAAResolveProgram, size);
 
     TAAPass pass;
     pass.anti_aliased = aa;

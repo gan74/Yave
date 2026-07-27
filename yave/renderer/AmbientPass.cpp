@@ -78,10 +78,7 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     builder.add_storage_output(lit);
     builder.add_inline_input(params);
 
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources()[is_gi ? DeviceResources::DeferredAmbientGIProgram : DeviceResources::DeferredAmbientAOProgram];
-        recorder.dispatch_threads(program, size, self->descriptor_set());
-    });
+    make_simple_compute_pass(builder, is_gi ? DeviceResources::DeferredAmbientGIProgram : DeviceResources::DeferredAmbientAOProgram, size);
 
     return lit;
 }

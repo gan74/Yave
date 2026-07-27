@@ -42,11 +42,8 @@ static BlurPass create_blur(FrameGraph& framegraph, FrameGraphImageId in_image, 
         builder.add_color_output(blurred);
         builder.add_uniform_input(in);
         builder.add_inline_input(weights);
-        builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-            const auto* material = device_resources()[mat];
-            render_pass.bind_material_template(material, self->descriptor_set());
-            render_pass.draw_array(3);
-        });
+        
+        make_simple_full_screen_pass(builder, mat);
 
         return blurred;
     };

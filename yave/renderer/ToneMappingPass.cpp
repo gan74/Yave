@@ -61,11 +61,8 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
     builder.add_uniform_input(in_lit);
     builder.add_uniform_input(params);
     builder.add_inline_input(shader_settings);
-    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        const auto* material = device_resources()[DeviceResources::ToneMappingMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_set());
-        render_pass.draw_array(3);
-    });
+
+    make_simple_full_screen_pass(builder, DeviceResources::ToneMappingMaterialTemplate);
 
 
     if(settings.debug_exposure) {
@@ -74,6 +71,7 @@ ToneMappingPass ToneMappingPass::create(FrameGraph& framegraph, FrameGraphImageI
         debug_builder.add_storage_output(tone_mapped);
         debug_builder.add_uniform_input(exposure.histogram);
         debug_builder.add_uniform_input(params);
+
         debug_builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const auto& program = device_resources()[DeviceResources::ExposureDebugProgram];
             recorder.dispatch(program, math::Vec3ui(1), self->descriptor_set());

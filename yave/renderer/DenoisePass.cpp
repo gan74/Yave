@@ -41,11 +41,8 @@ DenoisePass DenoisePass::create(FrameGraph& framegraph, FrameGraphImageId in_ima
     builder.add_color_output(denoised);
     builder.add_uniform_input(in_image);
     builder.add_inline_input(settings);
-    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        const auto* material = device_resources()[DeviceResources::DenoiseMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_set());
-        render_pass.draw_array(3);
-    });
+    
+    make_simple_full_screen_pass(builder, DeviceResources::DenoiseMaterialTemplate);
 
     DenoisePass pass;
     pass.denoised = denoised;

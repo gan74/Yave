@@ -164,10 +164,7 @@ static void convolve_irradiance(FrameGraph& framegraph, const DDGISettings& sett
     builder.add_external_input(Descriptor(radiance, SamplerType::LinearClamp));
     builder.add_inline_input(params);
 
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources()[DeviceResources::DDGIConvolveProgram];
-        recorder.dispatch_threads(program, dispatch_size, self->descriptor_set());
-    });
+    make_simple_compute_pass(builder, DeviceResources::DDGIConvolveProgram, dispatch_size);
 }
 
 static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbuffer, const TextureView& irradiance, const TextureView& distance, const DDGISettings& settings) {
@@ -197,9 +194,7 @@ static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbu
     builder.add_external_input(Descriptor(distance, SamplerType::LinearClamp));
     builder.add_inline_input(params);
 
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        recorder.dispatch_threads(device_resources()[DeviceResources::DDGIApplyProgram], size, self->descriptor_set());
-    });
+    make_simple_compute_pass(builder, DeviceResources::DDGIApplyProgram, size);
 
     return gi;
 }

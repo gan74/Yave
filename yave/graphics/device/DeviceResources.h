@@ -127,11 +127,6 @@ class DeviceResources final : NonMovable {
             MaxMaterialTemplates
         };
 
-        enum RaytracingPrograms {
-            MaxRaytracingPrograms
-        };
-
-
         enum Materials {
             EmptyMaterial,
 
@@ -176,7 +171,6 @@ class DeviceResources final : NonMovable {
 
         const ComputeProgram& operator[](ComputePrograms i) const;
         const MaterialTemplate* operator[](MaterialTemplates i) const;
-        const RaytracingProgram& operator[](RaytracingPrograms i) const;
 
         const AssetPtr<Texture>& operator[](Textures i) const;
         const AssetPtr<Material>& operator[](Materials i) const;
@@ -185,7 +179,6 @@ class DeviceResources final : NonMovable {
     private:
         std::unique_ptr<ComputeProgram[]> _computes;
         std::unique_ptr<MaterialTemplate[]> _material_templates;
-        std::unique_ptr<RaytracingProgram[]> _raytracing_programs;
 
         std::unique_ptr<AssetPtr<Texture>[]> _textures;
         std::unique_ptr<AssetPtr<Material>[]> _materials;

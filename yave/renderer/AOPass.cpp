@@ -125,10 +125,8 @@ static FrameGraphImageId compute_linear_depth(FrameGraph& framegraph, const GBuf
     builder.add_uniform_input(gbuffer.depth);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_storage_output(linear_depth);
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources()[DeviceResources::LinearizeDepthProgram];
-        recorder.dispatch_threads(program, size, self->descriptor_set());
-    });
+
+    make_simple_compute_pass(builder, DeviceResources::LinearizeDepthProgram, size);
 
     return linear_depth;
 }
@@ -164,10 +162,8 @@ static FrameGraphMutableImageId upsample_mini_ao(FrameGraph& framegraph,
     builder.add_uniform_input(hi_depth);
     builder.add_storage_output(upsampled);
     builder.add_inline_input(UpsampleParams{step_size, noise_filter_weight, blur_tolerance, upsample_tolerance});
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources()[merge ? DeviceResources::SSAOUpsampleMergeProgram : DeviceResources::SSAOUpsampleProgram];
-        recorder.dispatch_threads(program, lo_size + math::Vec2ui(2), self->descriptor_set());
-    });
+
+    make_simple_compute_pass(builder, merge ? DeviceResources::SSAOUpsampleMergeProgram : DeviceResources::SSAOUpsampleProgram, lo_size + math::Vec2ui(2));
 
     return upsampled;
 }
@@ -182,10 +178,8 @@ static FrameGraphImageId compute_mini_ao(FrameGraph& framegraph, FrameGraphImage
     builder.add_uniform_input(linear_depth);
     builder.add_storage_output(ao);
     builder.add_inline_input(compute_ao_params(tan_half_fov, size.x()));
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const auto& program = device_resources()[DeviceResources::SSAOProgram];
-        recorder.dispatch_threads(program, size, self->descriptor_set());
-    });
+
+    make_simple_compute_pass(builder, DeviceResources::SSAOProgram, size);
 
     return ao;
 }
@@ -269,9 +263,8 @@ static FrameGraphImageId filter_ao(FrameGraph& framegraph, const GBufferPass& gb
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_storage_output(filtered);
     builder.add_inline_input(Params{weights, vertical ? math::Vec2i(0, 1) : math::Vec2i(1, 0)});
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        recorder.dispatch_threads(device_resources()[DeviceResources::FilterAOProgram], size, self->descriptor_set());
-    });
+
+    make_simple_compute_pass(builder, DeviceResources::FilterAOProgram, size);
 
     return filtered;
 }

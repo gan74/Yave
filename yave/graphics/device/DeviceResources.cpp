@@ -47,7 +47,6 @@ SOFTWARE.
 namespace yave {
 
 using ComputePrograms = DeviceResources::ComputePrograms;
-using RaytracingPrograms = DeviceResources::RaytracingPrograms;
 using MaterialTemplates = DeviceResources::MaterialTemplates;
 using Textures = DeviceResources::Textures;
 
@@ -140,10 +139,6 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "ddgi_apply",
 };
 
-
-static constexpr std::array<std::string_view, usize(RaytracingPrograms::MaxRaytracingPrograms)> raytracing_datas = {
-};
-
 // ABGR
 static constexpr std::array<math::Vec4ui, usize(Textures::MaxTextures)> texture_colors = {
     math::Vec4ui{0x00000000, 0x00000000, 0x00000000, 0x00000000},
@@ -212,10 +207,6 @@ DeviceResources::DeviceResources() {
     _material_templates = std::make_unique<MaterialTemplate[]>(material_datas.size());
     _textures = std::make_unique<AssetPtr<Texture>[]>(texture_colors.size());
 
-    if(raytracing_enabled()) {
-        _raytracing_programs = std::make_unique<RaytracingProgram[]>(raytracing_datas.size());
-    }
-
     const auto set_name = [debug = debug_utils()](auto handle, const char* name) {
         if(debug) {
             debug->set_resource_name(handle, name);
@@ -250,16 +241,6 @@ DeviceResources::DeviceResources() {
                 _computes[i] = ComputeProgram(ComputeShader(load_spirv(compute_datas[i])));
                 set_name(_computes[i].vk_pipeline(), fmt_c_str("{}", compute_datas[i]));
             }
-        }
-    }
-
-    if(_raytracing_programs) {
-        for(usize i = 0; i != raytracing_datas.size(); ++i) {
-            const auto& spirv = load_spirv(raytracing_datas[i]);
-            _raytracing_programs[i] = RaytracingProgram(
-                RayGenShader(spirv), MissShader(spirv), ClosestHitShader(spirv)
-            );
-            set_name(_raytracing_programs[i].vk_pipeline(), fmt_c_str("{}", raytracing_datas[i]));
         }
     }
 
@@ -349,12 +330,6 @@ const ComputeProgram& DeviceResources::operator[](ComputePrograms i) const {
 const MaterialTemplate* DeviceResources::operator[](MaterialTemplates i) const {
     y_debug_assert(usize(i) < usize(MaxMaterialTemplates));
     return &_material_templates[usize(i)];
-}
-
-const RaytracingProgram& DeviceResources::operator[](RaytracingPrograms i) const {
-    y_debug_assert(_raytracing_programs);
-    y_debug_assert(usize(i) < usize(MaxRaytracingPrograms));
-    return _raytracing_programs[usize(i)];
 }
 
 const AssetPtr<Texture>& DeviceResources::operator[](Textures i) const {

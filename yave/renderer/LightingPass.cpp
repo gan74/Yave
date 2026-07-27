@@ -56,14 +56,14 @@ LightingPass LightingPass::create(FrameGraph& framegraph, const GBufferPass& gbu
 
     builder.add_storage_output(lit);
 
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        const DeviceResources::ComputePrograms program_id = settings.debug_tiles
-            ? DeviceResources::DeferredSingleDebugPassProgram
-            : DeviceResources::DeferredSinglePassProgram;
-        const auto& program = device_resources()[program_id];
-        y_debug_assert(program.local_size() == math::Vec3ui(shader::light_cluster_tile_size, shader::light_cluster_tile_size, 1));
-        recorder.dispatch_threads(program, size, self->descriptor_set());
-    });
+    const auto program_id = settings.debug_tiles
+        ? DeviceResources::DeferredSingleDebugPassProgram
+        : DeviceResources::DeferredSinglePassProgram
+    ;
+
+    y_debug_assert(device_resources()[program_id].local_size() == math::Vec3ui(shader::light_cluster_tile_size, shader::light_cluster_tile_size, 1));
+    
+    make_simple_compute_pass(builder, program_id, size);
 
     LightingPass pass;
     pass.lit = lit;

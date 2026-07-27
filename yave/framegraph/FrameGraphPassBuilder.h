@@ -31,6 +31,8 @@ SOFTWARE.
 #include <yave/graphics/images/SamplerType.h>
 #include <yave/graphics/buffers/BufferUsage.h>
 
+#include <yave/graphics/device/DeviceResources.h>
+
 namespace yave {
 
 class FrameGraphPassBuilderBase {
@@ -163,6 +165,11 @@ class FrameGraphComputePassBuilder : public FrameGraphPassBuilderBase {
         FrameGraphComputePassBuilder(FrameGraphPass* pass) : FrameGraphPassBuilderBase(pass, PipelineStage::ComputeBit) {
         }
 };
+
+
+void make_simple_full_screen_pass(FrameGraphPassBuilder& builder, DeviceResources::MaterialTemplates mat);
+void make_simple_compute_pass(FrameGraphComputePassBuilder& builder, DeviceResources::ComputePrograms prog, const math::Vec3ui& thread_count);
+void make_simple_compute_pass(FrameGraphComputePassBuilder& builder, DeviceResources::ComputePrograms prog, const math::Vec2ui& thread_count);
 
 }
 

@@ -60,9 +60,8 @@ static FrameGraphImageId bilateral(FrameGraph& framegraph, const GBufferPass& gb
     builder.add_storage_output(filtered);
     builder.add_inline_input(weights);
     builder.add_inline_input(params);
-    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        recorder.dispatch_threads(device_resources()[horizontal ? DeviceResources::BilateralHorizontalProgram : DeviceResources::BilateralVerticalProgram], size, self->descriptor_set());
-    });
+    
+    make_simple_compute_pass(builder, horizontal ? DeviceResources::BilateralHorizontalProgram : DeviceResources::BilateralVerticalProgram, size);
 
     return filtered;
 }
