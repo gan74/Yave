@@ -97,30 +97,14 @@ inline constexpr usize probing_offset(usize i) {
 }
 
 using State = u8;
-using State4 = u32;
-
-static constexpr inline State4 to_state_4(State state) {
-    const State4 s = state;
-    return (s << 24) | (s << 16) | (s << 8) | s;
-}
 
 static constexpr State empty_state              = 0x00;
 static constexpr State tombstone_state          = 0x01;
-    
-static constexpr State4 tombstone_state_4       = to_state_4(tombstone_state);
 
 static constexpr auto state_table = [] {
     std::array<State, 256> table;
     for(usize i = 0; i != table.size(); ++i) {
         table[i] = State((i % 253) + (tombstone_state + 1));
-    }
-    return table;
-}();
-
-static constexpr auto state_table_4 = [] {
-    std::array<State4, 256> table;
-    for(usize i = 0; i != table.size(); ++i) {
-        table[i] = to_state_4(state_table[i]);
     }
     return table;
 }();
@@ -151,14 +135,9 @@ class FlatHashMap : Hasher, Equal {
 #endif
 
         using State = detail::State;
-        using State4 = detail::State4;
 
         static y_force_inline State make_state(usize hash) {
             return detail::state_table[hash % detail::state_table.size()];
-        }
-
-        static y_force_inline State4 make_state_4(usize hash) {
-            return detail::state_table_4[hash % detail::state_table_4.size()];
         }
 
         static y_force_inline bool is_state_full(State state) {
@@ -380,8 +359,8 @@ class FlatHashMap : Hasher, Equal {
         y_force_inline std::pair<usize, bool> find_bucket_for_insert(const K& key, usize h) {
             const usize groups = group_count();
             const usize group_mask = groups - 1;
-            
-            const __m128i pattern = _mm_set1_epi32(make_state_4(h));
+
+            const __m128i pattern = _mm_set1_epi8(make_state(h));
             const __m128i* gr = reinterpret_cast<const __m128i*>(_states.get());
 
             usize probes = 0;
@@ -407,7 +386,7 @@ class FlatHashMap : Hasher, Equal {
                 }
 
                 if(best_index == invalid_index) {
-                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_set1_epi32(detail::tombstone_state_4)));
+                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_set1_epi8(detail::tombstone_state)));
                     if(matches != 0) {
                         best_index = group_start_index + countr_zero(matches);
                     }
@@ -434,14 +413,14 @@ class FlatHashMap : Hasher, Equal {
                 const __m128i packed_states = _mm_loadu_si128(gr + group_index);
 
                 {
-                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_set1_epi32(detail::tombstone_state_4)));
+                    const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_set1_epi8(detail::tombstone_state)));
                     if(matches != 0) {
                         _max_probe_len = probes;
                         const usize index = group_start_index + countr_zero(matches);
                         return {index, false};
                     }
                 }
-                
+
                 {
                     const int matches = _mm_movemask_epi8(_mm_cmpeq_epi8(packed_states, _mm_setzero_si128()));
                     if(matches != 0) {
@@ -468,7 +447,7 @@ class FlatHashMap : Hasher, Equal {
 
             y_debug_assert(groups);
 
-            const __m128i pattern = _mm_set1_epi32(make_state_4(h));
+            const __m128i pattern = _mm_set1_epi8(make_state(h));
             const __m128i* gr = reinterpret_cast<const __m128i*>(_states.get());
 
             usize probe = 0;
@@ -581,7 +560,7 @@ class FlatHashMap : Hasher, Equal {
                     if(is_state_full(old_states[i])) {
                         const usize h = retrieve_hash(old_entries[i].key(), old_states[i]);
                         const auto [new_index, exists] = find_bucket_for_insert(old_entries[i].key(), h);
-                        
+
                         y_debug_assert(!exists);
                         y_debug_assert(!is_state_full(_states[new_index]));
 
@@ -715,7 +694,7 @@ class FlatHashMap : Hasher, Equal {
         y_force_inline usize bucket_count() const {
             return _buckets;
         }
-        
+
 #ifdef Y_HASHMAP_SIMD
         y_force_inline usize group_count() const {
             return _buckets / simd_width;
@@ -800,7 +779,7 @@ class FlatHashMap : Hasher, Equal {
             }
 
             y_debug_assert(!should_expand());
-            
+
             const usize h = hash(p.first);
             const auto [index, exists] = find_bucket_for_insert(p.first, h);
 
@@ -830,7 +809,7 @@ class FlatHashMap : Hasher, Equal {
             }
 
             y_debug_assert(!should_expand());
-            
+
             const usize h = hash(key);
             const auto [index, exists] = find_bucket_for_insert(key, h);
 
@@ -856,23 +835,23 @@ class DenseHashMap : Hasher, Equal {
 
         static constexpr double max_load_factor = detail::default_hash_map_max_load_factor;
         static constexpr usize min_capacity = 16;
-        
-        
+
+
         using iterator          = value_type*;
         using const_iterator    = const value_type*;
 
     private:
         using pair_type = std::pair<key_type, mapped_type>;
-        
+
         static constexpr detail::ProbingStrategy probing_strategy = detail::ProbingStrategy::Linear;
-        
+
         static constexpr u32 invalid_index = u32(-1);
 
         template<typename K>
         y_force_inline bool equal(const key_type& a, const K& b) const {
             return Equal::operator()(a, b);
         }
-        
+
         template<typename K>
         y_force_inline usize hash(const K& key) const {
             return Hasher::operator()(key);
@@ -889,7 +868,7 @@ class DenseHashMap : Hasher, Equal {
         y_force_inline usize bucket_index_index(usize index) const {
             return index * 2 + 1;
         }
-        
+
     public:
         inline DenseHashMap() {
         }
@@ -928,39 +907,39 @@ class DenseHashMap : Hasher, Equal {
             _bucket_count = 0;
             _max_probe_len = 0;
         }
-        
+
         inline usize size() const {
             return _key_values.size();
         }
-        
+
         inline bool is_empty() const {
             return _key_values.is_empty();
         }
-        
+
         inline usize bucket_count() const {
             return _bucket_count;
         }
-        
+
         inline usize max_probe_sequence_len() const {
             return _max_probe_len;
         }
-        
+
         inline iterator begin() {
             return _key_values.begin();
         }
-        
+
         inline iterator end() {
             return _key_values.end();
         }
-        
+
         inline const_iterator begin() const {
             return _key_values.begin();
         }
-        
+
         inline const_iterator end() const {
             return _key_values.end();
         }
-        
+
         inline void set_min_capacity(usize cap) {
             const usize capacity = next_pow_of_2(usize(cap / (max_load_factor * 0.8)));
             if(_bucket_count < capacity) {
@@ -971,7 +950,7 @@ class DenseHashMap : Hasher, Equal {
         inline void reserve(usize cap) {
             set_min_capacity(cap);
         }
-    
+
         template<typename K>
         inline iterator find(const K& key) {
             const u32 index = find_index(key);
@@ -983,53 +962,53 @@ class DenseHashMap : Hasher, Equal {
             const u32 index = find_index(key);
             return index == invalid_index ? end() : (_key_values.begin() + index);
         }
-        
+
         template<typename K>
         inline bool contains(const K& key) const {
             return find_index(key) != invalid_index;
         }
-        
+
         inline std::pair<iterator, bool> insert(value_type p) {
             if(should_expand()) {
                 expand();
             }
-            
+
             const u32 index = find_index_for_insert(p.first, u32(_key_values.size()));
             if(index != invalid_index) {
                 return {_key_values.begin() + index, true};
             }
-            
+
             _key_values.emplace_back(std::move(p));
             return {_key_values.end() - 1, false};
         }
-        
+
         template<typename K>
         inline mapped_type& operator[](const K& key) {
             if(should_expand()) {
                 expand();
             }
-            
+
             const u32 index = find_index_for_insert(key, u32(_key_values.size()));
             if(index != invalid_index) {
                 return _key_values[index].second;
             }
-            
+
             return _key_values.emplace_back(value_type(key, mapped_type{})).second;
         }
-        
+
     private:
         template<typename K>
         inline u32 find_index_for_insert(const K& key, u32 insert_index) {
             const usize h = hash(key);
             const u32 reduced_hash = reduce_hash(h);
-            
+
             y_debug_assert(is_pow_of_2(_bucket_count));
             const usize mask = _bucket_count - 1;
-            
+
             usize probes = 0;
             do {
                 const usize index = (h + detail::probing_offset<probing_strategy>(probes)) & mask;
-                
+
                 u32& bucket_index = _metadata[bucket_index_index(index)];
                 u32& bucket_hash = _metadata[bucket_hash_index(index)];
                 if(bucket_index == invalid_index) {
@@ -1037,14 +1016,14 @@ class DenseHashMap : Hasher, Equal {
                     bucket_hash = reduced_hash;
                     return invalid_index;
                 }
-                
+
                 if(bucket_hash == reduced_hash) {
                     if(equal(_key_values[bucket_index].first, key)) {
                         return bucket_index;
                     }
                 }
             } while(++probes <= _max_probe_len);
-            
+
             for(; probes != _bucket_count; ++probes) {
                 const usize index = (h + detail::probing_offset<probing_strategy>(probes)) & mask;
                 u32& bucket_index = _metadata[bucket_index_index(index)];
@@ -1055,26 +1034,26 @@ class DenseHashMap : Hasher, Equal {
                     return invalid_index;
                 }
             }
-            
+
             y_unreachable();
         }
-        
+
         template<typename K>
         inline u32 find_index(const K& key) const {
             const usize h = hash(key);
             const u32 reduced_hash = reduce_hash(h);
-            
+
             y_debug_assert(is_pow_of_2(_bucket_count));
             const usize mask = _bucket_count - 1;
-            
+
             for(usize i = 0; i <= _max_probe_len; ++i) {
                 const usize index = (h + detail::probing_offset<probing_strategy>(i)) & mask;
-                
+
                 const u32 bucket_index = _metadata[bucket_index_index(index)];
                 if(bucket_index == invalid_index) {
                     return invalid_index;
                 }
-                
+
                 const u32 bucket_hash = _metadata[bucket_hash_index(index)];
                 if(bucket_hash == reduced_hash) {
                     if(equal(_key_values[bucket_index].first, key)) {
@@ -1082,18 +1061,18 @@ class DenseHashMap : Hasher, Equal {
                     }
                 }
             }
-            
+
             return invalid_index;
         }
-        
+
         inline bool should_expand() const {
             return _bucket_count * max_load_factor <= size();
         }
-        
+
         inline void expand() {
             expand(2 * _bucket_count);
         }
-        
+
         void expand(usize cap) {
             y_debug_assert(is_pow_of_2(cap));
 
@@ -1114,8 +1093,8 @@ class DenseHashMap : Hasher, Equal {
                 y_debug_assert(index == invalid_index);
             }
         }
-        
-        
+
+
         core::Vector<value_type> _key_values;
         std::unique_ptr<u32[]> _metadata;
         usize _bucket_count = 0;
