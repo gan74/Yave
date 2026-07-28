@@ -24,15 +24,13 @@ StructuredBuffer<MaterialData> materials;
 StructuredBuffer<DirectionalLight> lights;
 
 [[vk::binding(6)]]
+Sampler2D<uint> probe_grid;
+
+[[vk::binding(7)]]
 cbuffer Params {
-    float base_probe_spacing;
-    float spacing_scale;
-    uint cascade_count;
+    float probe_spacing;
     uint light_count;
     uint frame_id;
-    uint reset;
-    uint probe_update_stride;
-    float blend_alpha;
 };
 
 
@@ -85,44 +83,44 @@ float3 shade_hit(HitInfo hit, float3 trace_dir) {
 [shader("compute")]
 [numthreads(1, 1, 64)]
 void main() {
-    const uint global_probe_index = semantics.global_id.z;
-    if(global_probe_index >= ddgi.total_probe_count(cascade_count)) {
+    const uint grid_probe_index = semantics.global_id.z;
+    if(grid_probe_index >= ddgi.grid_cell_count) {
         return;
     }
 
-    if(reset == 0 && !ddgi.should_update_probe(global_probe_index, frame_id, probe_update_stride)) {
+    const int3 grid_coord = ddgi.compute_grid_coord(grid_probe_index);
+    const uint atlas_probe_index = ddgi.load_probe_index(probe_grid, grid_coord);
+
+    if(atlas_probe_index == ddgi.invalid_probe_index) {
         return;
     }
-
-    uint cascade;
-    uint local_probe_index;
-    ddgi.decode_global_probe_index(global_probe_index, cascade, local_probe_index);
 
     const uint2 probe_local = semantics.global_id.xy;
-    const uint2 coord = ddgi.radiance_atlas_coord(global_probe_index) + probe_local;
+    const uint2 coord = ddgi.radiance_atlas_coord(atlas_probe_index) + probe_local;
 
-    const float probe_spacing = ddgi.cascade_probe_spacing(cascade, base_probe_spacing, spacing_scale);
-    const int3 grid_coord = ddgi.compute_grid_coord(local_probe_index);
     const float3 origin = ddgi.probe_world_position(grid_coord, probe_spacing);
 
     const uint seed = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
     HashRng rng = HashRng(seed);
 
-    const float2 octa_uv = (float2(probe_local) + float2(rng.next_unorm(), rng.next_unorm())) / float(ddgi.radiance_probe_size);
-    const float3 trace_dir = octahedron_decode(octa_uv);
+    float3 radiance = 0.0;
+    float2 distances = 0.0;
 
-    const float tmin = 0.01;
-    const float tmax = 10000.0;
-    const HitInfo hit = trace_inline(tlas, origin, trace_dir, tmin, tmax);
+    const uint sample_count = 1;
+    for(uint i = 0; i != sample_count; ++i) {
+        const float2 octa_uv = (float2(probe_local) + float2(rng.next_unorm(), rng.next_unorm())) / float(ddgi.radiance_probe_size);
+        const float3 trace_dir = octahedron_decode(octa_uv);
 
-    const float3 new_radiance = shade_hit(hit, trace_dir);
-    const float2 new_distance = float2(hit.ray_t, sqr(hit.ray_t));
+        const float tmin = 0.01;
+        const float tmax = 10000.0;
+        const HitInfo hit = trace_inline(tlas, origin, trace_dir, tmin, tmax);
 
-    if(reset != 0) {
-        out_radiance[coord] = float4(new_radiance, 1.0);
-        out_distance[coord] = new_distance;
-    } else {
-        out_radiance[coord] = float4(lerp(out_radiance[coord].rgb, new_radiance, blend_alpha), 1.0);
-        out_distance[coord] = lerp(out_distance[coord], new_distance, blend_alpha);
+        radiance += shade_hit(hit, trace_dir);
+        distances += float2(hit.ray_t, sqr(hit.ray_t));
     }
+
+    out_radiance[coord] = float4(radiance / sample_count, 1.0);
+    out_distance[coord] = distances / sample_count;
+
+    // out_radiance[coord] = float4(identifying_color(grid_probe_index), 1.0);
 }

@@ -137,6 +137,8 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "ddgi_trace",
     "ddgi_convolve",
     "ddgi_apply",
+    "ddgi_select",
+    "ddgi_select_CLEAR",
 };
 
 // ABGR

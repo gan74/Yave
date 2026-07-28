@@ -566,16 +566,12 @@ void EngineView::draw_settings_menu() {
             DDGISettings& settings = _settings.renderer_settings.ddgi;
 
             ImGui::SliderFloat("Probe spacing", &settings.probe_spacing, 0.25f, 8.0f, "%.2f");
-            int cascades = int(settings.cascade_count);
-            ImGui::SliderInt("Cascade count", &cascades, 1, 8);
-            settings.cascade_count = u32(cascades);
-            ImGui::SliderFloat("Cascade spacing scale", &settings.cascade_spacing_scale, 1.5f, 4.0f, "%.2f");
             int samples = int(settings.convolve_sample_count);
             ImGui::SliderInt("Convolve samples", &samples, 16, 256);
             settings.convolve_sample_count = u32(samples);
-            int update_stride = int(settings.probe_update_stride);
-            ImGui::SliderInt("Probe update stride", &update_stride, 1, 64);
-            settings.probe_update_stride = u32(update_stride);
+            int max_probes = int(settings.max_probe_count);
+            ImGui::SliderInt("Max probes", &max_probes, 256, 65536);
+            settings.max_probe_count = u32(max_probes);
         }
 
         {

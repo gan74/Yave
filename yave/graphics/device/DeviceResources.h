@@ -82,6 +82,8 @@ class DeviceResources final : NonMovable {
             DDGITraceProgram,
             DDGIConvolveProgram,
             DDGIApplyProgram,
+            DDGISelectProgram,
+            DDGISelectClearProgram,
 
             MaxComputePrograms
         };

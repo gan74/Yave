@@ -10,13 +10,14 @@ RWTexture2D out_irradiance;
 Sampler2D<float3> in_radiance;
 
 [[vk::binding(2)]]
+Sampler2D<uint> probe_grid;
+
+[[vk::binding(3)]]
 cbuffer Params {
     uint sample_count;
-    uint cascade_count;
-    uint frame_id;
-    uint reset;
-    uint probe_update_stride;
+    uint atlas_probe_count;
 };
+
 
 
 float3 cosine_sample_hemisphere(float3 normal, float2 xi) {
@@ -33,10 +34,10 @@ float3 cosine_sample_hemisphere(float3 normal, float2 xi) {
     return normalize(tangent * local.x + bitangent * local.y + normal * local.z);
 }
 
-float3 sample_probe_radiance(uint global_probe_index, float3 dir) {
-    const uint2 probe_corner = ddgi.radiance_atlas_coord(global_probe_index);
+float3 sample_probe_radiance(uint atlas_probe_index, float3 dir) {
+    const uint2 probe_corner = ddgi.radiance_atlas_coord(atlas_probe_index);
     const float2 sample_coord = octahedron_encode(dir) * float(ddgi.radiance_probe_size - 1);
-    const float2 uv = (float2(probe_corner) + sample_coord + 0.5) / float2(ddgi.radiance_atlas_size(cascade_count));
+    const float2 uv = (float2(probe_corner) + sample_coord + 0.5) / float2(ddgi.radiance_atlas_size(atlas_probe_count));
     return in_radiance.SampleLevel(uv, 0.0);
 }
 
@@ -44,17 +45,19 @@ float3 sample_probe_radiance(uint global_probe_index, float3 dir) {
 [shader("compute")]
 [numthreads(1, 1, 64)]
 void main() {
-    const uint global_probe_index = semantics.global_id.z;
-    if(global_probe_index >= ddgi.total_probe_count(cascade_count)) {
+    const uint grid_probe_index = semantics.global_id.z;
+    if(grid_probe_index >= ddgi.grid_cell_count) {
         return;
     }
 
-    if(reset == 0 && !ddgi.should_update_probe(global_probe_index, frame_id, probe_update_stride)) {
+    const int3 grid_coord = ddgi.compute_grid_coord(grid_probe_index);
+    const uint atlas_probe_index = ddgi.load_probe_index(probe_grid, grid_coord);
+    if(atlas_probe_index == ddgi.invalid_probe_index) {
         return;
     }
 
     const uint2 probe_local = semantics.global_id.xy;
-    const uint2 coord = ddgi.irradiance_atlas_coord(global_probe_index) + probe_local;
+    const uint2 coord = ddgi.irradiance_atlas_coord(atlas_probe_index) + probe_local;
 
     const float2 octa_uv = (float2(probe_local) + 0.5) / float(ddgi.irradiance_probe_size);
     const float3 normal = octahedron_decode(octa_uv);
@@ -65,7 +68,7 @@ void main() {
     for(uint i = 0; i != sample_count; ++i) {
         const float2 xi = hammersley(i, sample_count);
         const float3 dir = cosine_sample_hemisphere(normal, xi);
-        acc += sample_probe_radiance(global_probe_index, dir);
+        acc += sample_probe_radiance(atlas_probe_index, dir);
     }
 
     out_irradiance[coord] = float4(acc / float(sample_count), 1.0);

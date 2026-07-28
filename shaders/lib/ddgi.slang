@@ -6,62 +6,47 @@
 
 namespace ddgi {
 
-static const uint grid_size = 16;
+static const uint grid_size = 32;
 static const uint radiance_probe_size = 32;
 static const uint irradiance_probe_size = radiance_probe_size / 2;
 static const uint probes_per_atlas_row = 256;
 
-static const uint probes_per_cascade = grid_size * grid_size * grid_size;
-
-// Per-cascade grid indexing.
-static const uint probe_count = probes_per_cascade;
+static const uint grid_cell_count = grid_size * grid_size * grid_size;
+static const uint invalid_probe_index = 0xFFFFFFFF;
 
 
-uint total_probe_count(uint cascade_count) {
-    return probes_per_cascade * cascade_count;
+uint2 probe_grid_size() {
+    return uint2(grid_size * grid_size, grid_size);
 }
 
-uint2 radiance_atlas_size(uint cascade_count) {
-    const uint count = total_probe_count(cascade_count);
+uint grid_local_index(int3 grid_coord) {
+    return uint(grid_coord.x) * (grid_size * grid_size) + uint(grid_coord.y) * grid_size + uint(grid_coord.z);
+}
+
+uint2 probe_grid_texel(int3 grid_coord) {
+    return probe_grid_texel(grid_local_index(grid_coord));
+}
+
+uint2 probe_grid_texel(uint local_probe_index) {
+    return uint2(local_probe_index % (grid_size * grid_size), local_probe_index / (grid_size * grid_size));
+}
+
+uint load_probe_index(Sampler2D<uint> probe_grid, int3 grid_coord) {
+    return probe_grid[probe_grid_texel(grid_coord)];
+}
+
+uint2 radiance_atlas_size(uint atlas_probe_count) {
     return uint2(
         probes_per_atlas_row * radiance_probe_size,
-        ((count + probes_per_atlas_row - 1) / probes_per_atlas_row) * radiance_probe_size
+        ((atlas_probe_count + probes_per_atlas_row - 1) / probes_per_atlas_row) * radiance_probe_size
     );
 }
 
-uint2 irradiance_atlas_size(uint cascade_count) {
-    const uint count = total_probe_count(cascade_count);
+uint2 irradiance_atlas_size(uint atlas_probe_count) {
     return uint2(
         probes_per_atlas_row * irradiance_probe_size,
-        ((count + probes_per_atlas_row - 1) / probes_per_atlas_row) * irradiance_probe_size
+        ((atlas_probe_count + probes_per_atlas_row - 1) / probes_per_atlas_row) * irradiance_probe_size
     );
-}
-
-float cascade_probe_spacing(uint cascade, float base_spacing, float spacing_scale) {
-    return base_spacing * pow(spacing_scale, float(cascade));
-}
-
-uint select_cascade(float3 world_pos, uint cascade_count, float base_spacing, float spacing_scale) {
-    for(uint c = 0; c < cascade_count; ++c) {
-        if(in_range(world_pos, cascade_probe_spacing(c, base_spacing, spacing_scale))) {
-            return c;
-        }
-    }
-    return cascade_count - 1;
-}
-
-uint global_probe_index(uint cascade, uint local_probe_index) {
-    return cascade * probes_per_cascade + local_probe_index;
-}
-
-void decode_global_probe_index(uint global_probe_index, out uint cascade, out uint local_probe_index) {
-    cascade = global_probe_index / probes_per_cascade;
-    local_probe_index = global_probe_index % probes_per_cascade;
-}
-
-
-uint compute_probe_index(int3 grid_coord) {
-    return uint(grid_coord.x) * (grid_size * grid_size) + uint(grid_coord.y) * grid_size + uint(grid_coord.z);
 }
 
 int3 compute_grid_coord(uint probe_index) {
@@ -91,29 +76,17 @@ float3 probe_world_position(int3 grid_coord, float probe_spacing) {
     return (float3(grid_coord) - (grid_size - 1) * 0.5) * probe_spacing;
 }
 
-uint2 radiance_atlas_coord(uint global_probe_index) {
-    return uint2(global_probe_index % probes_per_atlas_row, global_probe_index / probes_per_atlas_row) * radiance_probe_size;
+uint2 radiance_atlas_coord(uint atlas_probe_index) {
+    return uint2(atlas_probe_index % probes_per_atlas_row, atlas_probe_index / probes_per_atlas_row) * radiance_probe_size;
 }
 
-uint2 irradiance_atlas_coord(uint global_probe_index) {
-    return uint2(global_probe_index % probes_per_atlas_row, global_probe_index / probes_per_atlas_row) * irradiance_probe_size;
+uint2 irradiance_atlas_coord(uint atlas_probe_index) {
+    return uint2(atlas_probe_index % probes_per_atlas_row, atlas_probe_index / probes_per_atlas_row) * irradiance_probe_size;
 }
 
 bool in_range(float3 world_pos, float probe_spacing) {
     const float3 extent = (grid_size - 1) * 0.5 * probe_spacing;
     return all(abs(world_pos) <= extent + probe_spacing);
-}
-
-// Returns 1 inside the cascade volume, fading to 0 near the boundary.
-float cascade_blend_factor(float3 world_pos, float probe_spacing) {
-    const float extent = (grid_size - 1) * 0.5 * probe_spacing;
-    const float outer_extent = extent + probe_spacing;
-    const float dist_to_edge = outer_extent - component_max(abs(world_pos));
-    return saturate(dist_to_edge / (probe_spacing * 2.0));
-}
-
-bool should_update_probe(uint probe_index, uint frame_id, uint probe_update_stride) {
-    return (probe_index % probe_update_stride) == (frame_id % probe_update_stride);
 }
 
 }
@@ -147,73 +120,19 @@ float3 sample_irradiance(
     float3 world_pos,
     float3 normal,
     float3 cam_pos,
-    float base_probe_spacing,
-    float spacing_scale,
-    uint cascade_count,
-    Sampler2D<float3> irradiance_tex,
-    Sampler2D<float2> distance_tex,
-    IrradianceFieldSampleParams params = IrradianceFieldSampleParams()) {
-
-    const uint cascade = ddgi.select_cascade(world_pos, cascade_count, base_probe_spacing, spacing_scale);
-    const float probe_spacing = ddgi.cascade_probe_spacing(cascade, base_probe_spacing, spacing_scale);
-
-    const float4 fine = sample_irradiance_cascade(
-        world_pos,
-        normal,
-        cam_pos,
-        probe_spacing,
-        cascade,
-        cascade_count,
-        irradiance_tex,
-        distance_tex,
-        params
-    );
-
-    if(cascade + 1 >= cascade_count) {
-        return fine.rgb;
-    }
-
-    const float blend = max(
-        saturate(1.0 - fine.w * 4.0),
-        1.0 - ddgi.cascade_blend_factor(world_pos, probe_spacing)
-    );
-
-    if(blend <= constants.epsilon) {
-        return fine.rgb;
-    }
-
-    const float3 coarse = sample_irradiance_cascade(
-        world_pos,
-        normal,
-        cam_pos,
-        probe_spacing * spacing_scale,
-        cascade + 1,
-        cascade_count,
-        irradiance_tex,
-        distance_tex,
-        params
-    ).rgb;
-
-    return lerp(fine.rgb, coarse, blend);
-}
-
-float4 sample_irradiance_cascade(
-    float3 world_pos,
-    float3 normal,
-    float3 cam_pos,
     float probe_spacing,
-    uint cascade,
-    uint cascade_count,
+    uint atlas_probe_count,
+    Sampler2D<uint> probe_grid,
     Sampler2D<float3> irradiance_tex,
     Sampler2D<float2> distance_tex,
     IrradianceFieldSampleParams params = IrradianceFieldSampleParams()) {
 
     if(!ddgi.in_range(world_pos, probe_spacing)) {
-        return float4(0.0);
+        return float3(0.0);
     }
 
-    const float2 inv_radiance_atlas_size = 1.0 / float2(ddgi.radiance_atlas_size(cascade_count));
-    const float2 inv_irradiance_atlas_size = 1.0 / float2(ddgi.irradiance_atlas_size(cascade_count));
+    const float2 inv_radiance_atlas_size = 1.0 / float2(ddgi.radiance_atlas_size(atlas_probe_count));
+    const float2 inv_irradiance_atlas_size = 1.0 / float2(ddgi.irradiance_atlas_size(atlas_probe_count));
     const float2 irr_sample_coord = octahedron_encode(normal) * float(ddgi.irradiance_probe_size - 1);
 
     const float3 view_dir = normalize(cam_pos - world_pos);
@@ -236,13 +155,15 @@ float4 sample_irradiance_cascade(
         const float3 probe_pos = ddgi.probe_world_position(probe_id, probe_spacing);
         const float3 probe_vec = probe_pos - biased_world_pos;
         const float probe_dist = length(probe_vec);
-        const uint local_probe_index = ddgi.compute_probe_index(probe_id);
-        const uint probe_index = ddgi.global_probe_index(cascade, local_probe_index);
+        const uint atlas_probe_index = ddgi.load_probe_index(probe_grid, probe_id);
+        if(atlas_probe_index == ddgi.invalid_probe_index) {
+            continue;
+        }
 
         float weight = 1.0;
 
         {
-            const uint2 dist_corner = ddgi.radiance_atlas_coord(probe_index);
+            const uint2 dist_corner = ddgi.radiance_atlas_coord(atlas_probe_index);
             const float2 dist_sample_coord = octahedron_encode(probe_vec) * float(ddgi.radiance_probe_size - 1);
             const float2 dist_sample_uv = (float2(dist_corner) + dist_sample_coord + 0.5) * inv_radiance_atlas_size;
 
@@ -278,7 +199,7 @@ float4 sample_irradiance_cascade(
         }
 
         if(weight > constants.epsilon) {
-            const uint2 irradiance_corner = ddgi.irradiance_atlas_coord(probe_index);
+            const uint2 irradiance_corner = ddgi.irradiance_atlas_coord(atlas_probe_index);
             const float2 sample_uv = (float2(irradiance_corner) + irr_sample_coord + 0.5) * inv_irradiance_atlas_size;
             const float3 irradiance = irradiance_tex.SampleLevel(sample_uv, 0.0);
 
@@ -287,10 +208,7 @@ float4 sample_irradiance_cascade(
         }
     }
 
-    return total > constants.epsilon
-        ? float4(decode_irradiance(acc / total), total)
-        : float4(0.0)
-    ;
+    return total > constants.epsilon ? decode_irradiance(acc / total) : float3(0.0);
 }
 
 

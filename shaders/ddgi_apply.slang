@@ -22,13 +22,25 @@ Sampler2D<float3> in_ddgi_irradiance;
 Sampler2D<float2> in_ddgi_distance;
 
 [[vk::binding(6)]]
+Sampler2D<uint> probe_grid;
+
+[[vk::binding(7)]]
 cbuffer Params {
-    float base_probe_spacing;
-    float spacing_scale;
-    uint cascade_count;
-    uint padding;
+    float probe_spacing;
+    uint atlas_probe_count;
+    uint padding_0;
+    uint padding_1;
 };
 
+
+
+uint compute_probe_index(int3 coord) {
+    return uint(
+        coord.x * ddgi.grid_size * ddgi.grid_size +
+        coord.y * ddgi.grid_size +
+        coord.z
+    );
+}
 
 [shader("compute")]
 [numthreads(8, 8)]
@@ -53,12 +65,17 @@ void main() {
         world_pos,
         normal,
         camera.position,
-        base_probe_spacing,
-        spacing_scale,
-        cascade_count,
+        probe_spacing,
+        atlas_probe_count,
+        probe_grid,
         in_ddgi_irradiance,
         in_ddgi_distance
     );
 
     out_gi[coord] = float4(gi, 1.0);
+
+    /*const int3 grid_coord = ddgi.compute_grid_coord(world_pos, probe_spacing);
+    const uint grid_probe_index = compute_probe_index(grid_coord);
+    out_gi[coord] = float4(identifying_color(grid_probe_index) * 0.1, 1.0);*/
+    
 }

@@ -244,6 +244,8 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "ddgi_trace.slang" "")
     add_slang_shader(${SHADER_TARGET} "ddgi_convolve.slang" "")
     add_slang_shader(${SHADER_TARGET} "ddgi_apply.slang" "")
+    add_slang_shader(${SHADER_TARGET} "ddgi_select.slang" "")
+    add_slang_shader(${SHADER_TARGET} "ddgi_select.slang" "CLEAR")
     add_slang_shader(${SHADER_TARGET} "ddgi_probe_debug.slang" "")
 endfunction(build_engine_shaders)
 
