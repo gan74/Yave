@@ -116,6 +116,33 @@ float3 decode_irradiance(float3 irr) {
     return sqr(irr);
 }
 
+
+
+struct DDGISamplePos {
+    float3 biased_world_pos;
+    int3 lo;
+    int3 hi;
+
+    static DDGISamplePos make_pos(float3 world_pos, float3 normal, float3 view_dir, float probe_spacing, IrradianceFieldSampleParams params = IrradianceFieldSampleParams()) {
+        const float3 bias = normal * params.sampling_normal_bias + view_dir * params.sampling_view_dir_bias;
+
+        DDGISamplePos pos;
+        pos.biased_world_pos = world_pos + bias * probe_spacing;
+        pos.lo = ddgi.compute_grid_coord_low(pos.biased_world_pos, probe_spacing);
+        pos.hi = ddgi.compute_grid_coord_high(pos.biased_world_pos, probe_spacing);
+        return pos;
+    }
+
+    int3 corner(uint k) {
+        return int3(
+            ((k & 0x01) != 0) ? hi.x : lo.x,
+            ((k & 0x02) != 0) ? hi.y : lo.y,
+            ((k & 0x04) != 0) ? hi.z : lo.z
+        );
+    }
+};
+
+
 float3 sample_irradiance(
     float3 world_pos,
     float3 normal,
@@ -135,26 +162,17 @@ float3 sample_irradiance(
     const float2 inv_irradiance_atlas_size = 1.0 / float2(ddgi.irradiance_atlas_size(atlas_probe_count));
     const float2 irr_sample_coord = octahedron_encode(normal) * float(ddgi.irradiance_probe_size - 1);
 
-    const float3 view_dir = normalize(cam_pos - world_pos);
-    const float3 bias = normal * params.sampling_normal_bias + view_dir * params.sampling_view_dir_bias;
-    const float3 biased_world_pos = world_pos + bias * probe_spacing;
+    const DDGISamplePos sample_pos = DDGISamplePos.make_pos(world_pos, normal, normalize(cam_pos - world_pos), probe_spacing, params);
 
     float total = 0.0;
     float3 acc = 0.0;
-
-    const int3 lo = ddgi.compute_grid_coord_low(biased_world_pos, probe_spacing);
-    const int3 hi = ddgi.compute_grid_coord_high(biased_world_pos, probe_spacing);
-
     for(uint k = 0; k != 8; ++k) {
-        const int3 probe_id = int3(
-            ((k & 0x01) != 0) ? hi.x : lo.x,
-            ((k & 0x02) != 0) ? hi.y : lo.y,
-            ((k & 0x04) != 0) ? hi.z : lo.z
-        );
+        const int3 probe_id = sample_pos.corner(k);
 
         const float3 probe_pos = ddgi.probe_world_position(probe_id, probe_spacing);
-        const float3 probe_vec = probe_pos - biased_world_pos;
+        const float3 probe_vec = probe_pos - sample_pos.biased_world_pos;
         const float probe_dist = length(probe_vec);
+
         const uint atlas_probe_index = ddgi.load_probe_index(probe_grid, probe_id);
         if(atlas_probe_index == ddgi.invalid_probe_index) {
             continue;

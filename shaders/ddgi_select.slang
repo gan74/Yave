@@ -84,25 +84,37 @@ void main() {
 
     const float2 uv = (float2(coord) + 0.5) / float2(size);
     const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
+    const float3 normal = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1[coord])).normal;
+
     if(!ddgi.in_range(world_pos, probe_spacing)) {
         return;
     }
 
-    const int3 grid_coord = ddgi.compute_grid_coord(world_pos, probe_spacing);
-    const uint probe_index = compute_probe_index(grid_coord);
+    const DDGISamplePos sample_pos = DDGISamplePos.make_pos(world_pos, normal, normalize(camera.position - world_pos), probe_spacing);
 
-    const uint leader = find_first(WaveMatch(probe_index));
-    if(WaveGetLaneIndex() == leader) {
-        const uint locked_index = ddgi.invalid_probe_index - 1;
-        const uint2 probe_grid_texel = ddgi.probe_grid_texel(grid_coord);
+    for(uint i = 0; i != 8; ++i) {
+        const int3 grid_coord = sample_pos.corner(i);
 
-        uint prev;
-        InterlockedCompareExchange(probe_grid[probe_grid_texel], ddgi.invalid_probe_index, locked_index, prev);
+        /*const float3 probe_pos = ddgi.probe_world_position(grid_coord, probe_spacing);
+        if(dot(probe_pos - sample_pos.biased_world_pos, normal) < 1.0) {
+            continue;
+        }*/
 
-        if(prev == ddgi.invalid_probe_index) {
-            uint index;
-            InterlockedAdd(probe_counter[0], 1, index);
-            probe_grid[probe_grid_texel] = index < max_probe_count ? index : ddgi.invalid_probe_index;
+        const uint probe_index = compute_probe_index(grid_coord);
+
+        const uint leader = find_first(WaveMatch(probe_index));
+        if(WaveGetLaneIndex() == leader) {
+            const uint locked_index = ddgi.invalid_probe_index - 1;
+            const uint2 probe_grid_texel = ddgi.probe_grid_texel(grid_coord);
+
+            uint prev;
+            InterlockedCompareExchange(probe_grid[probe_grid_texel], ddgi.invalid_probe_index, locked_index, prev);
+
+            if(prev == ddgi.invalid_probe_index) {
+                uint index;
+                InterlockedAdd(probe_counter[0], 1, index);
+                probe_grid[probe_grid_texel] = index < max_probe_count ? index : ddgi.invalid_probe_index;
+            }
         }
     }
 }
