@@ -102,11 +102,13 @@ static void init_vma() {
         SET_VK_FUNC(vkCmdCopyBuffer);
         SET_VK_FUNC(vkGetDeviceBufferMemoryRequirements);
         SET_VK_FUNC(vkGetDeviceImageMemoryRequirements);
+
         SET_VK_FUNC_KHR(vkGetBufferMemoryRequirements2);
         SET_VK_FUNC_KHR(vkGetImageMemoryRequirements2);
         SET_VK_FUNC_KHR(vkBindBufferMemory2);
         SET_VK_FUNC_KHR(vkBindImageMemory2);
         SET_VK_FUNC_KHR(vkGetPhysicalDeviceMemoryProperties2);
+        SET_VK_FUNC_KHR(vkGetPhysicalDeviceProperties2);
 
 #undef SET_VK_FUNC_KHR
 #undef SET_VK_FUNC
