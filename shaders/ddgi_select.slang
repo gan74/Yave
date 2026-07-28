@@ -45,6 +45,29 @@ void main() {
 
 #else
 
+uint compute_probe_index(int3 coord) {
+    return uint(
+        coord.x * ddgi.grid_size * ddgi.grid_size +
+        coord.y * ddgi.grid_size +
+        coord.z
+    );
+}
+
+uint find_first(uint4 mask) {
+    if(mask.x != 0) {
+        return firstbitlow(mask.x);
+    }
+    if(mask.y != 0) {
+        return 32 + firstbitlow(mask.y);
+    }
+    if(mask.z != 0) {
+        return 64 + firstbitlow(mask.z);
+    }
+    return 96 + firstbitlow(mask.w);
+}
+
+
+
 [shader("compute")]
 [numthreads(8, 8)]
 void main() {
@@ -66,16 +89,21 @@ void main() {
     }
 
     const int3 grid_coord = ddgi.compute_grid_coord(world_pos, probe_spacing);
-    const uint2 probe_grid_texel = ddgi.probe_grid_texel(grid_coord);
+    const uint probe_index = compute_probe_index(grid_coord);
 
-    const uint locked_index = ddgi.invalid_probe_index - 1;
+    const uint leader = find_first(WaveMatch(probe_index));
+    if(WaveGetLaneIndex() == leader) {
+        const uint locked_index = ddgi.invalid_probe_index - 1;
+        const uint2 probe_grid_texel = ddgi.probe_grid_texel(grid_coord);
 
-    uint prev;
-    InterlockedCompareExchange(probe_grid[probe_grid_texel], ddgi.invalid_probe_index, locked_index, prev);
-    if(prev == ddgi.invalid_probe_index) {
-        uint index;
-        InterlockedAdd(probe_counter[0], 1, index);
-        probe_grid[probe_grid_texel] = index < max_probe_count ? index : ddgi.invalid_probe_index;
+        uint prev;
+        InterlockedCompareExchange(probe_grid[probe_grid_texel], ddgi.invalid_probe_index, locked_index, prev);
+
+        if(prev == ddgi.invalid_probe_index) {
+            uint index;
+            InterlockedAdd(probe_counter[0], 1, index);
+            probe_grid[probe_grid_texel] = index < max_probe_count ? index : ddgi.invalid_probe_index;
+        }
     }
 }
 
