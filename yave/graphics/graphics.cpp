@@ -80,8 +80,10 @@ static void init_vma() {
 
     VmaVulkanFunctions vulkan_functions = {};
     {
-#define SET_VK_FUNC(func) vulkan_functions.func = func
-#define SET_VK_FUNC_KHR(func) vulkan_functions.func ## KHR = func
+#define SET_VK_FUNC(func)                   vulkan_functions.func = func
+#define SET_VK_FUNC_KHR(func)               vulkan_functions.func ## KHR = func
+        // for cases where func may or may not exists depending on vma version
+#define SET_VK_FUNC_KHR_CHECKED(func)       [](auto& vma_funcs) { if constexpr(requires { vma_funcs.func ## KHR; }) { vma_funcs.func ##KHR = func; } }(vulkan_functions)
 
         SET_VK_FUNC(vkGetPhysicalDeviceProperties);
         SET_VK_FUNC(vkGetPhysicalDeviceMemoryProperties);
@@ -108,7 +110,7 @@ static void init_vma() {
         SET_VK_FUNC_KHR(vkBindBufferMemory2);
         SET_VK_FUNC_KHR(vkBindImageMemory2);
         SET_VK_FUNC_KHR(vkGetPhysicalDeviceMemoryProperties2);
-        SET_VK_FUNC_KHR(vkGetPhysicalDeviceProperties2);
+        SET_VK_FUNC_KHR_CHECKED(vkGetPhysicalDeviceProperties2);
 
 #undef SET_VK_FUNC_KHR
 #undef SET_VK_FUNC
