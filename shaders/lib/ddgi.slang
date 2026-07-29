@@ -94,12 +94,57 @@ bool is_probe_border(uint2 probe_local, uint probe_texel_size) {
         || probe_local.y >= probe_texel_size - probe_border;
 }
 
+uint probe_border_texel_count(uint probe_texel_size) {
+    return 4u * probe_texel_size - 4u;
+}
+
+uint2 probe_border_local(uint border_index, uint probe_texel_size) {
+    const uint edge_length = probe_texel_size;
+    const uint interior_length = probe_texel_size - 2u * probe_border;
+
+    if(border_index < edge_length) {
+        return uint2(border_index, 0u);
+    }
+    border_index -= edge_length;
+    if(border_index < edge_length) {
+        return uint2(border_index, probe_texel_size - 1u);
+    }
+    border_index -= edge_length;
+    if(border_index < interior_length) {
+        return uint2(0u, border_index + probe_border);
+    }
+    border_index -= interior_length;
+    return uint2(probe_texel_size - 1u, border_index + probe_border);
+}
+
 uint2 probe_border_source_local(uint2 probe_local, uint probe_texel_size) {
-    return clamp(
-        probe_local,
-        probe_border,
-        probe_texel_size - probe_border - 1
-    );
+    const uint interior_min = probe_border;
+    const uint interior_max = probe_texel_size - probe_border - 1;
+    const uint last = probe_texel_size - 1;
+
+    const bool on_left = probe_local.x < probe_border;
+    const bool on_right = probe_local.x >= probe_texel_size - probe_border;
+    const bool on_top = probe_local.y < probe_border;
+    const bool on_bottom = probe_local.y >= probe_texel_size - probe_border;
+
+    if(on_top && on_left) {
+        return uint2(interior_max, interior_max);
+    }
+    if(on_top && on_right) {
+        return uint2(interior_min, interior_max);
+    }
+    if(on_bottom && on_left) {
+        return uint2(interior_max, interior_min);
+    }
+    if(on_bottom && on_right) {
+        return uint2(interior_min, interior_min);
+    }
+
+    if(on_top || on_bottom) {
+        return uint2(last - probe_local.x, on_top ? interior_min : interior_max);
+    }
+
+    return uint2(on_left ? interior_min : interior_max, last - probe_local.y);
 }
 
 bool in_range(float3 world_pos, float probe_spacing) {
@@ -178,7 +223,7 @@ float3 sample_irradiance(
 
     const float2 inv_radiance_atlas_size = 1.0 / float2(ddgi.radiance_atlas_size(atlas_probe_count));
     const float2 inv_irradiance_atlas_size = 1.0 / float2(ddgi.irradiance_atlas_size(atlas_probe_count));
-    const float2 irr_sample_coord = octahedron_encode(normal) * float(ddgi.irradiance_probe_data_size - 1);
+    const float2 irr_sample_coord = octahedron_encode(normal) * float(ddgi.irradiance_probe_data_size);
 
     const DDGISamplePos sample_pos = DDGISamplePos.make_pos(world_pos, normal, normalize(cam_pos - world_pos), probe_spacing, params);
 
@@ -240,7 +285,7 @@ float3 sample_irradiance(
 
         if(weight > constants.epsilon) {
             const uint2 irradiance_corner = ddgi.irradiance_atlas_coord(probe_index) + ddgi.probe_border;
-            const float2 sample_uv = (float2(irradiance_corner) + irr_sample_coord + 0.5) * inv_irradiance_atlas_size;
+            const float2 sample_uv = (float2(irradiance_corner) + irr_sample_coord) * inv_irradiance_atlas_size;
             const float3 irradiance = irradiance_tex.SampleLevel(sample_uv, 0.0);
 
             total += weight;

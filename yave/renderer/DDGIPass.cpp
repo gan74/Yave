@@ -49,6 +49,8 @@ static constexpr u32 ddgi_irradiance_probe_size = ddgi_radiance_probe_size / 2;
 static constexpr u32 ddgi_probe_border = 1;
 static constexpr u32 ddgi_radiance_probe_data_size = ddgi_radiance_probe_size - 2 * ddgi_probe_border;
 static constexpr u32 ddgi_irradiance_probe_data_size = ddgi_irradiance_probe_size - 2 * ddgi_probe_border;
+static constexpr u32 ddgi_radiance_probe_border_texel_count = 4 * ddgi_radiance_probe_size - 4;
+static constexpr u32 ddgi_irradiance_probe_border_texel_count = 4 * ddgi_irradiance_probe_size - 4;
 static constexpr u32 ddgi_probes_per_atlas_row = 256;
 static constexpr u32 ddgi_grid_cell_count = ddgi_grid_size * ddgi_grid_size * ddgi_grid_size;
 
@@ -110,7 +112,7 @@ static void trace_radiance(FrameGraph& framegraph, const GBufferPass& gbuffer, c
     const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
 
     const math::Vec3ui dispatch_size(ddgi_radiance_probe_data_size, ddgi_radiance_probe_data_size, ddgi_grid_cell_count);
-    const math::Vec3ui border_dispatch_size(ddgi_radiance_probe_size, ddgi_radiance_probe_size, ddgi_grid_cell_count);
+    const math::Vec3ui border_dispatch_size(ddgi_radiance_probe_border_texel_count, 1, ddgi_grid_cell_count);
 
     const struct Params {
         float probe_spacing;
@@ -166,7 +168,7 @@ static void trace_radiance(FrameGraph& framegraph, const GBufferPass& gbuffer, c
 
 static void convolve_irradiance(FrameGraph& framegraph, const DDGISettings& settings, const TextureView& probe_grid, const TextureView& radiance, const StorageView& irradiance) {
     const math::Vec3ui dispatch_size(ddgi_irradiance_probe_data_size, ddgi_irradiance_probe_data_size, ddgi_grid_cell_count);
-    const math::Vec3ui border_dispatch_size(ddgi_irradiance_probe_size, ddgi_irradiance_probe_size, ddgi_grid_cell_count);
+    const math::Vec3ui border_dispatch_size(ddgi_irradiance_probe_border_texel_count, 1, ddgi_grid_cell_count);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("DDGI convolve pass");
 
@@ -196,7 +198,7 @@ static void convolve_irradiance(FrameGraph& framegraph, const DDGISettings& sett
 
 static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbuffer, const TextureView& probe_grid, const TextureView& irradiance, const TextureView& distance, const DDGISettings& settings) {
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
-    
+
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("DDGI apply pass");
 
     const auto gi = builder.declare_image(VK_FORMAT_B10G11R11_UFLOAT_PACK32, size);
@@ -218,8 +220,8 @@ static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbu
     builder.add_uniform_input(gbuffer.scene_pass.camera);
 
     Y_TODO(probe filtering)
-    builder.add_external_input(Descriptor(irradiance, SamplerType::PointClamp));
-    builder.add_external_input(Descriptor(distance, SamplerType::PointClamp));
+    builder.add_external_input(Descriptor(irradiance, SamplerType::LinearClamp));
+    builder.add_external_input(Descriptor(distance, SamplerType::LinearClamp));
     builder.add_external_input(Descriptor(probe_grid, SamplerType::PointClamp));
     builder.add_inline_input(params);
 
@@ -307,9 +309,9 @@ DDGIProbeDebugPass DDGIProbeDebugPass::create(FrameGraph& framegraph, FrameGraph
     builder.add_external_input(Descriptor(mesh_allocator().mesh_data_buffer()));
 
     Y_TODO(probe filtering)
-    builder.add_external_input(Descriptor(ddgi.radiance, SamplerType::PointClamp));
-    builder.add_external_input(Descriptor(ddgi.irradiance, SamplerType::PointClamp));
-    builder.add_external_input(Descriptor(ddgi.distance, SamplerType::PointClamp));
+    builder.add_external_input(Descriptor(ddgi.radiance, SamplerType::LinearClamp));
+    builder.add_external_input(Descriptor(ddgi.irradiance, SamplerType::LinearClamp));
+    builder.add_external_input(Descriptor(ddgi.distance, SamplerType::LinearClamp));
     builder.add_external_input(Descriptor(ddgi.probe_grid, SamplerType::PointClamp));
 
     builder.add_inline_input(params);

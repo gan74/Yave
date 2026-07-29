@@ -85,8 +85,8 @@ float3 fetch_probe(uint probe_index, float2 probe_uvs) {
     }
 
 
-    const float2 sample_coord = probe_uvs * float(probe_data_size - 1);
-    const float2 uv = (float2(probe_corner) + sample_coord + 0.5) / float2(atlas_size);
+    const float2 sample_coord = probe_uvs * probe_data_size;
+    const float2 uv = (float2(probe_corner) + sample_coord) / float2(atlas_size);
     switch(display_mode) {
         case 1: return in_radiance.SampleLevel(uv, 0.0);
         case 2: return in_irradiance.SampleLevel(uv, 0.0);

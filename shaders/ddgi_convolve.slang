@@ -57,19 +57,19 @@ void main() {
     }
 
 #ifdef BORDER
-
-    const uint2 probe_local = semantics.global_id.xy;
-    if(!ddgi.is_probe_border(probe_local, ddgi.irradiance_probe_size)) {
+    const uint border_index = semantics.global_id.x;
+    if(border_index >= ddgi.probe_border_texel_count(ddgi.irradiance_probe_size)) {
         return;
     }
+
+    const uint2 probe_local = ddgi.probe_border_local(border_index, ddgi.irradiance_probe_size);
 
     const uint2 probe_corner = ddgi.irradiance_atlas_coord(atlas_probe_index);
     const uint2 source_local = ddgi.probe_border_source_local(probe_local, ddgi.irradiance_probe_size);
     const uint2 source_coord = probe_corner + source_local;
     const uint2 dest_coord = probe_corner + probe_local;
 
-    //out_irradiance[dest_coord] = out_irradiance[source_coord];
-    out_irradiance[dest_coord] = float3(1, 0, 1);
+    out_irradiance[dest_coord] = out_irradiance[source_coord];
 #else
 
     const uint2 probe_local = semantics.global_id.xy;

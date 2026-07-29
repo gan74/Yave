@@ -97,19 +97,20 @@ void main() {
     }
 
 #ifdef BORDER
-
-    const uint2 probe_local = semantics.global_id.xy;
-    if(!ddgi.is_probe_border(probe_local, ddgi.radiance_probe_size)) {
+    const uint border_index = semantics.global_id.x;
+    if(border_index >= ddgi.probe_border_texel_count(ddgi.radiance_probe_size)) {
         return;
     }
+
+    const uint2 probe_local = ddgi.probe_border_local(border_index, ddgi.radiance_probe_size);
 
     const uint2 probe_corner = ddgi.radiance_atlas_coord(atlas_probe_index);
     const uint2 source_local = ddgi.probe_border_source_local(probe_local, ddgi.radiance_probe_size);
     const uint2 source_coord = probe_corner + source_local;
     const uint2 dest_coord = probe_corner + probe_local;
 
-    out_radiance[dest_coord] = float3(1, 0, 1);
-    out_distance[dest_coord] = float2(0, 0);
+    out_radiance[dest_coord] = out_radiance[source_coord];
+    out_distance[dest_coord] = out_distance[source_coord];
 #else
 
     const uint2 probe_local = semantics.global_id.xy;
@@ -148,8 +149,8 @@ void main() {
     } else {
         const float blend_factor = 0.9;
         out_radiance[coord] = lerp(
-            radiance / sample_count, 
-            out_radiance[coord].rgb, 
+            radiance / sample_count,
+            out_radiance[coord].rgb,
             blend_factor
         );
         // out_distance[coord] = lerp(distances / sample_count, out_distance[coord], blend_factor);
