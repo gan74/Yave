@@ -5,7 +5,7 @@
 struct VertexStageOut {
     float4 sv_position : SV_Position;
     float3 normal;
-    uint atlas_probe_index;
+    uint probe_index;
 };
 
 
@@ -16,16 +16,22 @@ ConstantBuffer<Camera> camera;
 StructuredBuffer<StaticMeshData> mesh_datas;
 
 [[vk::binding(2)]]
-Sampler2D<float3> in_probe_tex;
+Sampler2D<float3>in_radiance;
 
 [[vk::binding(3)]]
-Sampler2D<uint> probe_grid;
+Sampler2D<float3> in_irradiance;
 
 [[vk::binding(4)]]
+Sampler2D<float2> in_distance;
+
+[[vk::binding(5)]]
+Sampler2D<uint> probe_grid;
+
+[[vk::binding(6)]]
 cbuffer Params {
     float probe_spacing;
     uint atlas_probe_count;
-    uint display_irradiance;
+    uint display_mode;
     float probe_radius;
 
     uint mesh_data_index;
@@ -39,7 +45,7 @@ cbuffer Params {
 VertexStageOut vert_main() {
     const uint grid_probe_index = uint(semantics.instance_index);
     const int3 grid_coord = ddgi.compute_grid_coord(grid_probe_index);
-    const uint atlas_probe_index = ddgi.load_probe_index(probe_grid, grid_coord);
+    const uint probe_index = ddgi.load_probe_index(probe_grid, grid_coord);
 
     const StdVertexData vert = read_vertex(uint(semantics.vertex_index), mesh_datas[mesh_data_index]);
     const float3 local_pos = vert.position;
@@ -50,35 +56,51 @@ VertexStageOut vert_main() {
     VertexStageOut out;
     out.sv_position = mul(camera.curr.view_proj, float4(world_pos, 1.0));
     out.normal = normalize(local_pos);
-    out.atlas_probe_index = atlas_probe_index;
+    out.probe_index = probe_index;
 
-    if(atlas_probe_index == ddgi.invalid_probe_index) {
+    if(probe_index == ddgi.invalid_probe_index) {
         out.sv_position.x = asfloat(constants.max_uint);
     }
 
     return out;
 }
 
+
+float3 fetch_probe(uint probe_index, float2 probe_uvs) {
+    uint probe_size = 0;
+    uint2 atlas_size = uint2(0);
+    uint2 probe_corner = uint2(0);
+    switch(display_mode) {
+        case 1:
+        case 3: {
+            probe_size = ddgi.radiance_probe_size;
+            atlas_size = ddgi.radiance_atlas_size(atlas_probe_count);
+            probe_corner = ddgi.radiance_atlas_coord(probe_index);
+        } break;
+        case 2: {
+            probe_size = ddgi.irradiance_probe_size;
+            atlas_size = ddgi.irradiance_atlas_size(atlas_probe_count);
+            probe_corner = ddgi.irradiance_atlas_coord(probe_index);
+        } break;
+    }
+
+
+    const float2 sample_coord = probe_uvs * float(probe_size - 1);
+    const float2 uv = (float2(probe_corner) + sample_coord + 0.5) / float2(atlas_size);
+    switch(display_mode) {
+        case 1: return in_radiance.SampleLevel(uv, 0.0);
+        case 2: return in_irradiance.SampleLevel(uv, 0.0);
+        case 3: return in_distance.SampleLevel(uv, 0.0).xxx;
+    }
+    return float3(0.0);
+}
+
 [shader("fragment")]
 float4 frag_main(VertexStageOut in) {
-    if(in.atlas_probe_index == ddgi.invalid_probe_index) {
+    if(in.probe_index == ddgi.invalid_probe_index) {
         discard;
     }
 
-    const uint probe_size = display_irradiance != 0 ? ddgi.irradiance_probe_size : ddgi.radiance_probe_size;
-
-    const uint2 atlas_size = display_irradiance != 0
-        ? ddgi.irradiance_atlas_size(atlas_probe_count)
-        : ddgi.radiance_atlas_size(atlas_probe_count)
-    ;
-    const uint2 probe_corner = display_irradiance != 0
-        ? ddgi.irradiance_atlas_coord(in.atlas_probe_index)
-        : ddgi.radiance_atlas_coord(in.atlas_probe_index)
-    ;
-
-    const float2 sample_coord = octahedron_encode(in.normal) * float(probe_size - 1);
-    const float2 uv = (float2(probe_corner) + sample_coord + 0.5) / float2(atlas_size);
-
-    const float3 color = in_probe_tex.SampleLevel(uv, 0.0);
-    return float4(color, 1.0);
+    const float2 probe_uv = octahedron_encode(in.normal);
+    return float4(fetch_probe(in.probe_index, probe_uv), 0.0);
 }

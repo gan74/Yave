@@ -99,9 +99,9 @@ struct IrradianceFieldSampleParams {
     float chebyshev_bias;
 
     __init() {
-        sampling_normal_bias = 0.2;
-        sampling_view_dir_bias = 0.2;
-        distance_bias = 0.0;
+        sampling_normal_bias = 0.02;
+        sampling_view_dir_bias = 0.02;
+        distance_bias = 0.01;
         variance_bias = 0.0001;
         chebyshev_bias = 0.0;
     }
@@ -171,45 +171,49 @@ float3 sample_irradiance(
 
         const float3 probe_pos = ddgi.probe_world_position(probe_id, probe_spacing);
         const float3 probe_vec = probe_pos - sample_pos.biased_world_pos;
-        const float probe_dist = length(probe_vec);
 
-        const uint atlas_probe_index = ddgi.load_probe_index(probe_grid, probe_id);
-        if(atlas_probe_index == ddgi.invalid_probe_index) {
+        const uint probe_index = ddgi.load_probe_index(probe_grid, probe_id);
+        if(probe_index == ddgi.invalid_probe_index) {
             continue;
         }
 
         float weight = 1.0;
 
         {
-            const uint2 dist_corner = ddgi.radiance_atlas_coord(atlas_probe_index);
-            const float2 dist_sample_coord = octahedron_encode(probe_vec) * float(ddgi.radiance_probe_size - 1);
+            const uint2 dist_corner = ddgi.radiance_atlas_coord(probe_index);
+            const float2 dist_sample_coord = octahedron_encode(-probe_vec) * float(ddgi.radiance_probe_size - 1);
             const float2 dist_sample_uv = (float2(dist_corner) + dist_sample_coord + 0.5) * inv_radiance_atlas_size;
 
             const float2 dist_moments = distance_tex.SampleLevel(dist_sample_uv, 0.0);
-            if(all(dist_moments == 0.0)) {
+            if(all(dist_moments <= 0.0)) {
                 continue;
             }
 
             const float mean = dist_moments.x + params.distance_bias;
             const float variance = abs(sqr(mean) - dist_moments.y) + params.variance_bias;
 
-            const float chebyshev = variance / (variance + sqr(max(0.0, probe_dist - mean)));
+            const float norm_dist = length(probe_vec) / (probe_spacing * constants.sqrt_3);
+            if(norm_dist > mean) {
+                continue;
+            }
+
+            /*const float chebyshev = variance / (variance + sqr(max(0.0, norm_dist - mean)));
             const float chebyshev_weight = max(0.0, sqr(chebyshev) - params.chebyshev_bias) / max(1.0 - params.chebyshev_bias, constants.epsilon);
-            weight *= (probe_dist <= mean) ? 1.0 : chebyshev_weight;
+            weight *= (norm_dist <= mean) ? 1.0 : chebyshev_weight;*/
         }
 
-        {
+        /*{
             const float3 true_probe_vec = probe_pos - world_pos;
             const float true_dist = length(true_probe_vec);
             if(true_dist > constants.epsilon) {
                 weight *= max(0.0, dot(true_probe_vec / true_dist, normal));
             }
-        }
+        }*/
 
-        const float crush_threshold = 0.2;
+        /*const float crush_threshold = 0.1;
         if(weight < crush_threshold) {
             weight *= weight * weight * (1.0 / sqr(crush_threshold));
-        }
+        }*/
 
         {
             const float3 trilinear = saturate(1.0 - abs(probe_vec) / probe_spacing);
@@ -217,7 +221,7 @@ float3 sample_irradiance(
         }
 
         if(weight > constants.epsilon) {
-            const uint2 irradiance_corner = ddgi.irradiance_atlas_coord(atlas_probe_index);
+            const uint2 irradiance_corner = ddgi.irradiance_atlas_coord(probe_index);
             const float2 sample_uv = (float2(irradiance_corner) + irr_sample_coord + 0.5) * inv_irradiance_atlas_size;
             const float3 irradiance = irradiance_tex.SampleLevel(sample_uv, 0.0);
 

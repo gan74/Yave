@@ -31,6 +31,7 @@ cbuffer Params {
     float probe_spacing;
     uint light_count;
     uint frame_id;
+    uint reset;
 };
 
 
@@ -115,12 +116,29 @@ void main() {
         const float tmax = 10000.0;
         const HitInfo hit = trace_inline(tlas, origin, trace_dir, tmin, tmax);
 
+        if(!hit.front_face) {
+            continue;
+        }
+
+        const float dist = saturate(hit.ray_t / (probe_spacing * constants.sqrt_3));
+
         radiance += shade_hit(hit, trace_dir);
-        distances += float2(hit.ray_t, sqr(hit.ray_t));
+        distances += float2(dist, sqr(dist));
     }
 
-    out_radiance[coord] = float4(radiance / sample_count, 1.0);
-    out_distance[coord] = distances / sample_count;
+    if(reset != 0) {
+        out_radiance[coord] = float4(radiance / sample_count, 1.0);
+        out_distance[coord] = distances / sample_count;
+    } else {
+        const float blend_factor = 0.9;
+        out_radiance[coord] = float4(lerp(
+            radiance / sample_count, 
+            out_radiance[coord].rgb, 
+            blend_factor
+        ), 1.0);
+        // out_distance[coord] = lerp(distances / sample_count, out_distance[coord], blend_factor);
+        out_distance[coord] = max(distances / sample_count, out_distance[coord]);
+    }
 
     // out_radiance[coord] = float4(identifying_color(grid_probe_index), 1.0);
 }

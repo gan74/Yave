@@ -39,6 +39,7 @@ enum class DDGIProbeDebugMode {
     None            = 0,
     Radiance,
     Irradiance,
+    Distance,
 };
 
 struct DDGIProbeDebugSettings {

@@ -575,7 +575,7 @@ void EngineView::draw_settings_menu() {
         }
 
         {
-            const char* debug_modes[] = {"None", "Radiance", "Irradiance"};
+            const char* debug_modes[] = {"None", "Radiance", "Irradiance", "Distance"};
             if(ImGui::BeginCombo("Debug", debug_modes[usize(_settings.ddgi_debug_mode)])) {
                 for(usize i = 0; i != sizeof(debug_modes) / sizeof(debug_modes[0]); ++i) {
                     const bool selected = usize(_settings.ddgi_debug_mode) == i;
