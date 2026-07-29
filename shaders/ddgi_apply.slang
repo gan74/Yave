@@ -4,7 +4,7 @@
 
 
 [[vk::binding(0)]]
-RWTexture2D out_gi;
+RWTexture2D<float3> out_gi;
 
 [[vk::binding(1)]]
 Sampler2D<float> in_depth;
@@ -53,7 +53,7 @@ void main() {
 
     const float depth = in_depth[coord];
     if(is_depth_far(depth)) {
-        out_gi[coord] = float4(0.0);
+        out_gi[coord] = float3(0.0);
         return;
     }
 
@@ -72,10 +72,10 @@ void main() {
         in_ddgi_distance
     );
 
-    out_gi[coord] = float4(gi, 1.0);
+    out_gi[coord] = gi;
 
     /*const int3 grid_coord = ddgi.compute_grid_coord(world_pos, probe_spacing);
     const uint grid_probe_index = compute_probe_index(grid_coord);
-    out_gi[coord] = float4(identifying_color(grid_probe_index) * 0.1, 1.0);*/
+    out_gi[coord] = identifying_color(grid_probe_index) * 0.1;*/
     
 }

@@ -6,7 +6,7 @@
 
 
 [[vk::binding(0)]]
-RWTexture2D out_radiance;
+RWTexture2D<float3> out_radiance;
 
 [[vk::binding(1)]]
 RWTexture2D<float2> out_distance;
@@ -96,8 +96,24 @@ void main() {
         return;
     }
 
+#ifdef BORDER
+
     const uint2 probe_local = semantics.global_id.xy;
-    const uint2 coord = ddgi.radiance_atlas_coord(atlas_probe_index) + probe_local;
+    if(!ddgi.is_probe_border(probe_local, ddgi.radiance_probe_size)) {
+        return;
+    }
+
+    const uint2 probe_corner = ddgi.radiance_atlas_coord(atlas_probe_index);
+    const uint2 source_local = ddgi.probe_border_source_local(probe_local, ddgi.radiance_probe_size);
+    const uint2 source_coord = probe_corner + source_local;
+    const uint2 dest_coord = probe_corner + probe_local;
+
+    out_radiance[dest_coord] = float3(1, 0, 1);
+    out_distance[dest_coord] = float2(0, 0);
+#else
+
+    const uint2 probe_local = semantics.global_id.xy;
+    const uint2 coord = ddgi.radiance_atlas_coord(atlas_probe_index) + ddgi.probe_border + probe_local;
 
     const float3 origin = ddgi.probe_world_position(grid_coord, probe_spacing);
 
@@ -109,7 +125,7 @@ void main() {
 
     const uint sample_count = 1;
     for(uint i = 0; i != sample_count; ++i) {
-        const float2 octa_uv = (float2(probe_local) + float2(rng.next_unorm(), rng.next_unorm())) / float(ddgi.radiance_probe_size);
+        const float2 octa_uv = (float2(probe_local) + float2(rng.next_unorm(), rng.next_unorm())) / float(ddgi.radiance_probe_data_size);
         const float3 trace_dir = octahedron_decode(octa_uv);
 
         const float tmin = 0.01;
@@ -127,18 +143,20 @@ void main() {
     }
 
     if(reset != 0) {
-        out_radiance[coord] = float4(radiance / sample_count, 1.0);
+        out_radiance[coord] = radiance / sample_count;
         out_distance[coord] = distances / sample_count;
     } else {
         const float blend_factor = 0.9;
-        out_radiance[coord] = float4(lerp(
+        out_radiance[coord] = lerp(
             radiance / sample_count, 
             out_radiance[coord].rgb, 
             blend_factor
-        ), 1.0);
+        );
         // out_distance[coord] = lerp(distances / sample_count, out_distance[coord], blend_factor);
         out_distance[coord] = max(distances / sample_count, out_distance[coord]);
     }
 
-    // out_radiance[coord] = float4(identifying_color(grid_probe_index), 1.0);
+    // out_radiance[coord] = identifying_color(grid_probe_index);
+
+#endif
 }

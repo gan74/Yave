@@ -67,25 +67,25 @@ VertexStageOut vert_main() {
 
 
 float3 fetch_probe(uint probe_index, float2 probe_uvs) {
-    uint probe_size = 0;
+    uint probe_data_size = 0;
     uint2 atlas_size = uint2(0);
     uint2 probe_corner = uint2(0);
     switch(display_mode) {
         case 1:
         case 3: {
-            probe_size = ddgi.radiance_probe_size;
+            probe_data_size = ddgi.radiance_probe_data_size;
             atlas_size = ddgi.radiance_atlas_size(atlas_probe_count);
-            probe_corner = ddgi.radiance_atlas_coord(probe_index);
+            probe_corner = ddgi.radiance_atlas_coord(probe_index) + ddgi.probe_border;
         } break;
         case 2: {
-            probe_size = ddgi.irradiance_probe_size;
+            probe_data_size = ddgi.irradiance_probe_data_size;
             atlas_size = ddgi.irradiance_atlas_size(atlas_probe_count);
-            probe_corner = ddgi.irradiance_atlas_coord(probe_index);
+            probe_corner = ddgi.irradiance_atlas_coord(probe_index) + ddgi.probe_border;
         } break;
     }
 
 
-    const float2 sample_coord = probe_uvs * float(probe_size - 1);
+    const float2 sample_coord = probe_uvs * float(probe_data_size - 1);
     const float2 uv = (float2(probe_corner) + sample_coord + 0.5) / float2(atlas_size);
     switch(display_mode) {
         case 1: return in_radiance.SampleLevel(uv, 0.0);

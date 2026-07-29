@@ -9,6 +9,9 @@ namespace ddgi {
 static const uint grid_size = 32;
 static const uint radiance_probe_size = 32;
 static const uint irradiance_probe_size = radiance_probe_size / 2;
+static const uint probe_border = 1;
+static const uint radiance_probe_data_size = radiance_probe_size - 2 * probe_border;
+static const uint irradiance_probe_data_size = irradiance_probe_size - 2 * probe_border;
 static const uint probes_per_atlas_row = 256;
 
 static const uint grid_cell_count = grid_size * grid_size * grid_size;
@@ -82,6 +85,21 @@ uint2 radiance_atlas_coord(uint atlas_probe_index) {
 
 uint2 irradiance_atlas_coord(uint atlas_probe_index) {
     return uint2(atlas_probe_index % probes_per_atlas_row, atlas_probe_index / probes_per_atlas_row) * irradiance_probe_size;
+}
+
+bool is_probe_border(uint2 probe_local, uint probe_texel_size) {
+    return probe_local.x < probe_border
+        || probe_local.y < probe_border
+        || probe_local.x >= probe_texel_size - probe_border
+        || probe_local.y >= probe_texel_size - probe_border;
+}
+
+uint2 probe_border_source_local(uint2 probe_local, uint probe_texel_size) {
+    return clamp(
+        probe_local,
+        probe_border,
+        probe_texel_size - probe_border - 1
+    );
 }
 
 bool in_range(float3 world_pos, float probe_spacing) {
@@ -160,7 +178,7 @@ float3 sample_irradiance(
 
     const float2 inv_radiance_atlas_size = 1.0 / float2(ddgi.radiance_atlas_size(atlas_probe_count));
     const float2 inv_irradiance_atlas_size = 1.0 / float2(ddgi.irradiance_atlas_size(atlas_probe_count));
-    const float2 irr_sample_coord = octahedron_encode(normal) * float(ddgi.irradiance_probe_size - 1);
+    const float2 irr_sample_coord = octahedron_encode(normal) * float(ddgi.irradiance_probe_data_size - 1);
 
     const DDGISamplePos sample_pos = DDGISamplePos.make_pos(world_pos, normal, normalize(cam_pos - world_pos), probe_spacing, params);
 
@@ -180,8 +198,8 @@ float3 sample_irradiance(
         float weight = 1.0;
 
         {
-            const uint2 dist_corner = ddgi.radiance_atlas_coord(probe_index);
-            const float2 dist_sample_coord = octahedron_encode(-probe_vec) * float(ddgi.radiance_probe_size - 1);
+            const uint2 dist_corner = ddgi.radiance_atlas_coord(probe_index) + ddgi.probe_border;
+            const float2 dist_sample_coord = octahedron_encode(-probe_vec) * float(ddgi.radiance_probe_data_size - 1);
             const float2 dist_sample_uv = (float2(dist_corner) + dist_sample_coord + 0.5) * inv_radiance_atlas_size;
 
             const float2 dist_moments = distance_tex.SampleLevel(dist_sample_uv, 0.0);
@@ -221,7 +239,7 @@ float3 sample_irradiance(
         }
 
         if(weight > constants.epsilon) {
-            const uint2 irradiance_corner = ddgi.irradiance_atlas_coord(probe_index);
+            const uint2 irradiance_corner = ddgi.irradiance_atlas_coord(probe_index) + ddgi.probe_border;
             const float2 sample_uv = (float2(irradiance_corner) + irr_sample_coord + 0.5) * inv_irradiance_atlas_size;
             const float3 irradiance = irradiance_tex.SampleLevel(sample_uv, 0.0);
 

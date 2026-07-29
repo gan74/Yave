@@ -46,6 +46,9 @@ namespace yave {
 static constexpr u32 ddgi_grid_size = 32;
 static constexpr u32 ddgi_radiance_probe_size = 32;
 static constexpr u32 ddgi_irradiance_probe_size = ddgi_radiance_probe_size / 2;
+static constexpr u32 ddgi_probe_border = 1;
+static constexpr u32 ddgi_radiance_probe_data_size = ddgi_radiance_probe_size - 2 * ddgi_probe_border;
+static constexpr u32 ddgi_irradiance_probe_data_size = ddgi_irradiance_probe_size - 2 * ddgi_probe_border;
 static constexpr u32 ddgi_probes_per_atlas_row = 256;
 static constexpr u32 ddgi_grid_cell_count = ddgi_grid_size * ddgi_grid_size * ddgi_grid_size;
 
@@ -106,7 +109,8 @@ static void trace_radiance(FrameGraph& framegraph, const GBufferPass& gbuffer, c
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
     const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
 
-    const math::Vec3ui dispatch_size(ddgi_radiance_probe_size, ddgi_radiance_probe_size, ddgi_grid_cell_count);
+    const math::Vec3ui dispatch_size(ddgi_radiance_probe_data_size, ddgi_radiance_probe_data_size, ddgi_grid_cell_count);
+    const math::Vec3ui border_dispatch_size(ddgi_radiance_probe_size, ddgi_radiance_probe_size, ddgi_grid_cell_count);
 
     const struct Params {
         float probe_spacing;
@@ -154,12 +158,15 @@ static void trace_radiance(FrameGraph& framegraph, const GBufferPass& gbuffer, c
         };
 
         const auto& program = device_resources()[DeviceResources::DDGITraceProgram];
+        const auto& border_program = device_resources()[DeviceResources::DDGITraceBorderProgram];
         recorder.dispatch_threads(program, dispatch_size, desc_sets);
+        recorder.dispatch_threads(border_program, border_dispatch_size, desc_sets);
     });
 }
 
 static void convolve_irradiance(FrameGraph& framegraph, const DDGISettings& settings, const TextureView& probe_grid, const TextureView& radiance, const StorageView& irradiance) {
-    const math::Vec3ui dispatch_size(ddgi_irradiance_probe_size, ddgi_irradiance_probe_size, ddgi_grid_cell_count);
+    const math::Vec3ui dispatch_size(ddgi_irradiance_probe_data_size, ddgi_irradiance_probe_data_size, ddgi_grid_cell_count);
+    const math::Vec3ui border_dispatch_size(ddgi_irradiance_probe_size, ddgi_irradiance_probe_size, ddgi_grid_cell_count);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("DDGI convolve pass");
 
@@ -179,7 +186,12 @@ static void convolve_irradiance(FrameGraph& framegraph, const DDGISettings& sett
     builder.add_external_input(Descriptor(probe_grid, SamplerType::PointClamp));
     builder.add_inline_input(params);
 
-    make_simple_compute_pass(builder, DeviceResources::DDGIConvolveProgram, dispatch_size);
+    builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        const auto& program = device_resources()[DeviceResources::DDGIConvolveProgram];
+        const auto& border_program = device_resources()[DeviceResources::DDGIConvolveBorderProgram];
+        recorder.dispatch_threads(program, dispatch_size, self->descriptor_set());
+        recorder.dispatch_threads(border_program, border_dispatch_size, self->descriptor_set());
+    });
 }
 
 static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbuffer, const TextureView& probe_grid, const TextureView& irradiance, const TextureView& distance, const DDGISettings& settings) {

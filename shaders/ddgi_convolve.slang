@@ -4,7 +4,7 @@
 
 
 [[vk::binding(0)]]
-RWTexture2D out_irradiance;
+RWTexture2D<float3> out_irradiance;
 
 [[vk::binding(1)]]
 Sampler2D<float3> in_radiance;
@@ -35,8 +35,8 @@ float3 cosine_sample_hemisphere(float3 normal, float2 xi) {
 }
 
 float3 sample_probe_radiance(uint atlas_probe_index, float3 dir) {
-    const uint2 probe_corner = ddgi.radiance_atlas_coord(atlas_probe_index);
-    const float2 sample_coord = octahedron_encode(dir) * float(ddgi.radiance_probe_size - 1);
+    const uint2 probe_corner = ddgi.radiance_atlas_coord(atlas_probe_index) + ddgi.probe_border;
+    const float2 sample_coord = octahedron_encode(dir) * float(ddgi.radiance_probe_data_size - 1);
     const float2 uv = (float2(probe_corner) + sample_coord + 0.5) / float2(ddgi.radiance_atlas_size(atlas_probe_count));
     return in_radiance.SampleLevel(uv, 0.0);
 }
@@ -56,10 +56,26 @@ void main() {
         return;
     }
 
-    const uint2 probe_local = semantics.global_id.xy;
-    const uint2 coord = ddgi.irradiance_atlas_coord(atlas_probe_index) + probe_local;
+#ifdef BORDER
 
-    const float2 octa_uv = (float2(probe_local) + 0.5) / float(ddgi.irradiance_probe_size);
+    const uint2 probe_local = semantics.global_id.xy;
+    if(!ddgi.is_probe_border(probe_local, ddgi.irradiance_probe_size)) {
+        return;
+    }
+
+    const uint2 probe_corner = ddgi.irradiance_atlas_coord(atlas_probe_index);
+    const uint2 source_local = ddgi.probe_border_source_local(probe_local, ddgi.irradiance_probe_size);
+    const uint2 source_coord = probe_corner + source_local;
+    const uint2 dest_coord = probe_corner + probe_local;
+
+    //out_irradiance[dest_coord] = out_irradiance[source_coord];
+    out_irradiance[dest_coord] = float3(1, 0, 1);
+#else
+
+    const uint2 probe_local = semantics.global_id.xy;
+    const uint2 coord = ddgi.irradiance_atlas_coord(atlas_probe_index) + ddgi.probe_border + probe_local;
+
+    const float2 octa_uv = (float2(probe_local) + 0.5) / float(ddgi.irradiance_probe_data_size);
     const float3 normal = octahedron_decode(octa_uv);
 
     // Cosine-weighted hemisphere samples of probe radiance.
@@ -71,5 +87,6 @@ void main() {
         acc += sample_probe_radiance(atlas_probe_index, dir);
     }
 
-    out_irradiance[coord] = float4(acc / float(sample_count), 1.0);
+    out_irradiance[coord] = acc / float(sample_count);
+#endif
 }

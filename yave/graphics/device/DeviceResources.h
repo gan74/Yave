@@ -80,7 +80,9 @@ class DeviceResources final : NonMovable {
             RTGITrimProgram,
 
             DDGITraceProgram,
+            DDGITraceBorderProgram,
             DDGIConvolveProgram,
+            DDGIConvolveBorderProgram,
             DDGIApplyProgram,
             DDGISelectProgram,
             DDGISelectClearProgram,
