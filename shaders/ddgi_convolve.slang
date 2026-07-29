@@ -43,9 +43,9 @@ float3 sample_probe_radiance(uint atlas_probe_index, float3 dir) {
 
 
 [shader("compute")]
-[numthreads(1, 1, 64)]
+[numthreads(64, 1, 1)]
 void main() {
-    const uint grid_probe_index = semantics.global_id.z;
+    const uint grid_probe_index = semantics.global_id.x;
     if(grid_probe_index >= ddgi.grid_cell_count) {
         return;
     }
@@ -57,7 +57,7 @@ void main() {
     }
 
 #ifdef BORDER
-    const uint border_index = semantics.global_id.x;
+    const uint border_index = semantics.global_id.y;
     if(border_index >= ddgi.probe_border_texel_count(ddgi.irradiance_probe_size)) {
         return;
     }
@@ -72,7 +72,7 @@ void main() {
     out_irradiance[dest_coord] = out_irradiance[source_coord];
 #else
 
-    const uint2 probe_local = semantics.global_id.xy;
+    const uint2 probe_local = semantics.global_id.yz;
     const uint2 coord = ddgi.irradiance_atlas_coord(atlas_probe_index) + ddgi.probe_border + probe_local;
 
     const float2 octa_uv = (float2(probe_local) + 0.5) / float(ddgi.irradiance_probe_data_size);

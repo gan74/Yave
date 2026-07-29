@@ -111,8 +111,8 @@ static void trace_radiance(FrameGraph& framegraph, const GBufferPass& gbuffer, c
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
     const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
 
-    const math::Vec3ui dispatch_size(ddgi_radiance_probe_data_size, ddgi_radiance_probe_data_size, ddgi_grid_cell_count);
-    const math::Vec3ui border_dispatch_size(ddgi_radiance_probe_border_texel_count, 1, ddgi_grid_cell_count);
+    const math::Vec3ui dispatch_size(ddgi_grid_cell_count, ddgi_radiance_probe_data_size, ddgi_radiance_probe_data_size);
+    const math::Vec3ui border_dispatch_size(ddgi_grid_cell_count, ddgi_radiance_probe_border_texel_count, 1);
 
     const struct Params {
         float probe_spacing;
@@ -167,8 +167,8 @@ static void trace_radiance(FrameGraph& framegraph, const GBufferPass& gbuffer, c
 }
 
 static void convolve_irradiance(FrameGraph& framegraph, const DDGISettings& settings, const TextureView& probe_grid, const TextureView& radiance, const StorageView& irradiance) {
-    const math::Vec3ui dispatch_size(ddgi_irradiance_probe_data_size, ddgi_irradiance_probe_data_size, ddgi_grid_cell_count);
-    const math::Vec3ui border_dispatch_size(ddgi_irradiance_probe_border_texel_count, 1, ddgi_grid_cell_count);
+    const math::Vec3ui dispatch_size(ddgi_grid_cell_count, ddgi_irradiance_probe_data_size, ddgi_irradiance_probe_data_size);
+    const math::Vec3ui border_dispatch_size(ddgi_grid_cell_count, ddgi_irradiance_probe_border_texel_count, 1);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("DDGI convolve pass");
 
