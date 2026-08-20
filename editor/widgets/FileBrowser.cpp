@@ -26,7 +26,6 @@ SOFTWARE.
 
 #include <yave/utils/FileSystemModel.h>
 
-#include <y/utils/sort.h>
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
