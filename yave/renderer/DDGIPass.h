@@ -30,8 +30,8 @@ SOFTWARE.
 namespace yave {
 
 struct DDGISettings {
-    float probe_spacing = 1.0f;
-    u32 max_probe_count = 4096;
+    float probe_spacing = 0.25f;
+    u32 max_probe_count = 32 * 1024;
     u32 convolve_sample_count = 32;
 };
 

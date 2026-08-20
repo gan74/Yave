@@ -1,5 +1,6 @@
 #include "lib/semantics.slang"
 #include "lib/utils.slang"
+#include "lib/structs.slang"
 #include "lib/ddgi.slang"
 
 
@@ -10,18 +11,23 @@ RWTexture2D<uint> probe_grid;
 RWStructuredBuffer<uint> probe_counter;
 
 [[vk::binding(2)]]
-Sampler2D<float> in_depth;
+RWStructuredBuffer<DDGIProbeData> probe_datas;
 
 [[vk::binding(3)]]
-Sampler2D<uint> in_rt1;
+Sampler2D<float> in_depth;
 
 [[vk::binding(4)]]
-ConstantBuffer<Camera> camera;
+Sampler2D<uint> in_rt1;
 
 [[vk::binding(5)]]
+ConstantBuffer<Camera> camera;
+
+[[vk::binding(6)]]
 cbuffer Params {
     float probe_spacing;
     uint max_probe_count;
+    uint frame_id;
+    uint padding;
 };
 
 
@@ -33,6 +39,10 @@ cbuffer Params {
 void main() {
     if(semantics.global_index == 0) {
         probe_counter[0] = 0;
+    }
+
+    if(semantics.global_index < max_probe_count) {
+        probe_datas[semantics.global_index].last_visible = 0;
     }
 
     const uint2 coord = semantics.global_id.xy;
@@ -113,7 +123,16 @@ void main() {
             if(prev == ddgi.invalid_probe_index) {
                 uint index;
                 InterlockedAdd(probe_counter[0], 1, index);
-                probe_grid[probe_grid_texel] = index < max_probe_count ? index : ddgi.invalid_probe_index;
+
+                if(index < max_probe_count) {
+                    probe_grid[probe_grid_texel] = index;
+                    probe_datas[index].last_visible = frame_id;
+                } else {
+                    probe_grid[probe_grid_texel] = ddgi.invalid_probe_index;
+                }
+                
+            } else if(prev != locked_index) {
+                probe_datas[prev].last_visible = frame_id;
             }
         }
     }
