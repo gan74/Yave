@@ -219,6 +219,9 @@ struct StaticMeshData {
 
 struct DDGIProbeData {
     uint last_visible;
+    uint probe_index;
+    uint allocated_frame;
+    uint padding_0;
 };
 
 #endif

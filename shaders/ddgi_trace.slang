@@ -3,6 +3,7 @@
 #include "lib/rt.slang"
 #include "lib/rng.slang"
 #include "lib/ddgi.slang"
+#include "lib/structs.slang"
 
 
 [[vk::binding(0)]]
@@ -27,11 +28,14 @@ StructuredBuffer<DirectionalLight> lights;
 Sampler2D<uint> probe_grid;
 
 [[vk::binding(7)]]
+StructuredBuffer<DDGIProbeData> probe_datas;
+
+[[vk::binding(8)]]
 cbuffer Params {
     float probe_spacing;
     uint light_count;
     uint frame_id;
-    uint reset;
+    uint padding_0;
 };
 
 
@@ -143,7 +147,7 @@ void main() {
         distances += float2(dist, sqr(dist));
     }
 
-    if(reset != 0) {
+    if(probe_datas[atlas_probe_index].allocated_frame == frame_id) {
         out_radiance[coord] = radiance / sample_count;
         out_distance[coord] = distances / sample_count;
     } else {

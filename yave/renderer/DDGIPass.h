@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "GBufferPass.h"
 
+#include <yave/graphics/buffers/Buffer.h>
 #include <yave/graphics/shader_structs.h>
 #include <yave/framegraph/FrameGraphResourceId.h>
 
@@ -51,6 +52,8 @@ struct DDGIPass {
     TextureView distance;
     TextureView irradiance;
     TextureView probe_grid;
+    SubBuffer<BufferUsage::StorageBit> active_probes;
+    SubBuffer<BufferUsage::StorageBit> probe_datas;
 
     FrameGraphImageId gi;
 

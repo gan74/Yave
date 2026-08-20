@@ -86,6 +86,8 @@ class DeviceResources final : NonMovable {
             DDGIApplyProgram,
             DDGISelectProgram,
             DDGISelectClearProgram,
+            DDGISelectTrimClearProgram,
+            DDGISelectTrimProgram,
 
             MaxComputePrograms
         };
@@ -127,6 +129,7 @@ class DeviceResources final : NonMovable {
 
             IdMaterialTemplate,
             DDGIProbeDebugMaterialTemplate,
+            DDGIProbeCountDebugMaterialTemplate,
 
             MaxMaterialTemplates
         };

@@ -8,7 +8,7 @@
 RWTexture2D<uint> probe_grid;
 
 [[vk::binding(1)]]
-RWStructuredBuffer<uint> probe_counter;
+RWStructuredBuffer<uint> active_probes;
 
 [[vk::binding(2)]]
 RWStructuredBuffer<DDGIProbeData> probe_datas;
@@ -27,8 +27,26 @@ cbuffer Params {
     float probe_spacing;
     uint max_probe_count;
     uint frame_id;
-    uint padding;
+    uint max_visible_age;
 };
+
+
+
+void add_active(uint atlas_index) {
+    uint index;
+    InterlockedAdd(active_probes[0], 1, index);
+    if(index < max_probe_count) {
+        active_probes[2 + index] = atlas_index;
+    }
+}
+
+void add_inactive(uint atlas_index) {
+    uint index;
+    InterlockedAdd(active_probes[1], 1, index);
+    if(index < max_probe_count) {
+        active_probes[max_probe_count + 1 - index] = atlas_index;
+    }
+}
 
 
 
@@ -38,11 +56,13 @@ cbuffer Params {
 [numthreads(8, 8)]
 void main() {
     if(semantics.global_index == 0) {
-        probe_counter[0] = 0;
+        active_probes[0] = 0;
+        active_probes[1] = 0;
     }
 
     if(semantics.global_index < max_probe_count) {
         probe_datas[semantics.global_index].last_visible = 0;
+        probe_datas[semantics.global_index].probe_index = ddgi.invalid_probe_index;
     }
 
     const uint2 coord = semantics.global_id.xy;
@@ -51,6 +71,37 @@ void main() {
         return;
     }
     probe_grid[coord] = ddgi.invalid_probe_index;
+}
+
+#elif defined(TRIM_CLEAR)
+
+[shader("compute")]
+[numthreads(1)]
+void main() {
+    active_probes[0] = 0;
+    active_probes[1] = 0;
+}
+
+#elif defined(TRIM)
+
+[shader("compute")]
+[numthreads(64)]
+void main() {
+    const uint atlas_index = semantics.global_index;
+    if(atlas_index >= max_probe_count) {
+        return;
+    }
+
+    const uint grid_probe_index = probe_datas[atlas_index].probe_index;
+    if(grid_probe_index == ddgi.invalid_probe_index) {
+        add_inactive(atlas_index);
+    } else if(frame_id - probe_datas[atlas_index].last_visible > max_visible_age) {
+        probe_grid[ddgi.probe_grid_texel(grid_probe_index)] = ddgi.invalid_probe_index;
+        probe_datas[atlas_index].probe_index = ddgi.invalid_probe_index;
+        add_inactive(atlas_index);
+    } else {
+        add_active(atlas_index);
+    }
 }
 
 #else
@@ -121,12 +172,21 @@ void main() {
             InterlockedCompareExchange(probe_grid[probe_grid_texel], ddgi.invalid_probe_index, locked_index, prev);
 
             if(prev == ddgi.invalid_probe_index) {
-                uint index;
-                InterlockedAdd(probe_counter[0], 1, index);
+                uint inactive_index;
+                InterlockedAdd(active_probes[1], -1, inactive_index);
 
-                if(index < max_probe_count) {
+                if(inactive_index < max_probe_count) {
+                    const uint index = active_probes[2 + inactive_index];
+
+                    uint active_index;
+                    InterlockedAdd(active_probes[0], 1, active_index);
+                    active_probes[2 + active_index] = index;
+
                     probe_grid[probe_grid_texel] = index;
+
                     probe_datas[index].last_visible = frame_id;
+                    probe_datas[index].probe_index = probe_index;
+                    probe_datas[index].allocated_frame = frame_id;
                 } else {
                     probe_grid[probe_grid_texel] = ddgi.invalid_probe_index;
                 }

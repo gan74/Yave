@@ -1,6 +1,58 @@
 #include "lib/utils.slang"
+#include "lib/structs.slang"
 #include "lib/ddgi.slang"
 
+
+#ifdef COUNT
+
+#define DEBUG
+#include "lib/debug.slang"
+
+
+static const int2 text_offset = int2(8, 8);
+static const float2 font_size = float2(8.0, 15.0);
+
+
+
+[[vk::binding(0)]]
+StructuredBuffer<uint> active_probes;
+
+[[vk::binding(1)]]
+cbuffer Params {
+    uint max_probe_count;
+    uint padding_0;
+    uint padding_1;
+    uint padding_2;
+};
+
+
+[shader("fragment")]
+float4 frag_main() {
+    const int2 coord = int2(semantics.frag_coord.xy);
+    const uint count = active_probes[0];
+    const float digits = max(1.0, count == 0 ? 1.0 : floor(log2(float(count)) / log2(10.0)) + 1.0);
+
+    float glyph = 0.0;
+
+    const uint prefix[15] = {
+        CHAR_A, CHAR_C, CHAR_T, CHAR_I, CHAR_V, CHAR_E, CHAR_SPACE,
+        CHAR_P, CHAR_R, CHAR_O, CHAR_B, CHAR_E, CHAR_S, CHAR_COLON, CHAR_SPACE
+    };
+    for(uint i = 0; i != 15; ++i) {
+        glyph += debug.print_char(float2(coord), float2(text_offset) + float2(i * font_size.x, 0.0), font_size, prefix[i]);
+    }
+
+    const float2 count_offset = float2(text_offset) + float2(15.0 * font_size.x, 0.0);
+    glyph += debug.print_value(float2(coord), count_offset, font_size, float(count), digits, 0.0);
+
+    if(glyph <= 0.0) {
+        discard;
+    }
+
+    return float4(1.0);
+}
+
+#else
 
 struct VertexStageOut {
     float4 sv_position : SV_Position;
@@ -28,6 +80,9 @@ Sampler2D<float2> in_distance;
 Sampler2D<uint> probe_grid;
 
 [[vk::binding(6)]]
+StructuredBuffer<DDGIProbeData> probe_datas;
+
+[[vk::binding(7)]]
 cbuffer Params {
     float probe_spacing;
     uint atlas_probe_count;
@@ -35,10 +90,20 @@ cbuffer Params {
     float probe_radius;
 
     uint mesh_data_index;
+    uint frame_id;
+    uint max_visible_age;
     uint padding_0;
-    uint padding_1;
-    uint padding_2;
 };
+
+
+float probe_scale(uint probe_index) {
+    if(probe_index == ddgi.invalid_probe_index) {
+        return 0.0;
+    }
+
+    const uint age = frame_id - probe_datas[probe_index].last_visible;
+    return saturate(1.0 - float(age) / float(max_visible_age));
+}
 
 
 [shader("vertex")]
@@ -50,8 +115,11 @@ VertexStageOut vert_main() {
     const StdVertexData vert = read_vertex(uint(semantics.vertex_index), mesh_datas[mesh_data_index]);
     const float3 local_pos = vert.position;
 
+    const float linear_scale = probe_scale(probe_index);
+    const float scale = 1.0 - pow(1.0 - linear_scale, 5.0);
+
     const float3 center = ddgi.probe_world_position(grid_coord, probe_spacing);
-    const float3 world_pos = center + local_pos * probe_radius;
+    const float3 world_pos = center + local_pos * probe_radius * scale;
 
     VertexStageOut out;
     out.sv_position = mul(camera.curr.view_proj, float4(world_pos, 1.0));
@@ -104,3 +172,5 @@ float4 frag_main(VertexStageOut in) {
     const float2 probe_uv = octahedron_encode(in.normal);
     return float4(fetch_probe(in.probe_index, probe_uv), 0.0);
 }
+
+#endif
