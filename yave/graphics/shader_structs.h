@@ -39,6 +39,10 @@ using uint2 = math::Vec2ui;
 using uint3 = math::Vec3ui;
 using uint4 = math::Vec4ui;
 
+using int2 = math::Vec2i;
+using int3 = math::Vec3i;
+using int4 = math::Vec4i;
+
 using float4x4 = math::Matrix4<>;
 
 #include <shaders/lib/structs.slang>

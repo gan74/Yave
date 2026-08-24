@@ -100,6 +100,7 @@ static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMate
     DeviceMaterialData::screen("denoise"),
     DeviceMaterialData{"id", "id", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
     DeviceMaterialData{"ddgi_probe_debug", "ddgi_probe_debug", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData::screen("ddgi_probe_debug_COUNT"),
 };
 
 static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputePrograms)> compute_datas = {
@@ -141,6 +142,8 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "ddgi_apply",
     "ddgi_select",
     "ddgi_select_CLEAR",
+    "ddgi_select_TRIM_CLEAR",
+    "ddgi_select_TRIM",
 };
 
 // ABGR

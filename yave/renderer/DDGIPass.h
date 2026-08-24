@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "GBufferPass.h"
 
+#include <yave/graphics/buffers/Buffer.h>
 #include <yave/graphics/shader_structs.h>
 #include <yave/framegraph/FrameGraphResourceId.h>
 
@@ -31,8 +32,9 @@ namespace yave {
 
 struct DDGISettings {
     float probe_spacing = 1.0f;
-    u32 max_probe_count = 4096;
+    u32 max_probe_count = 32 * 1024;
     u32 convolve_sample_count = 32;
+    u32 hash_size = 23;
 };
 
 enum class DDGIProbeDebugMode {
@@ -50,12 +52,15 @@ struct DDGIPass {
     TextureView radiance;
     TextureView distance;
     TextureView irradiance;
-    TextureView probe_grid;
+    SubBuffer<BufferUsage::StorageBit> hash_table;
+    SubBuffer<BufferUsage::StorageBit> active_probes;
+    SubBuffer<BufferUsage::StorageBit> probe_datas;
 
     FrameGraphImageId gi;
 
     float probe_spacing = 1.0f;
     u32 max_probe_count = 4096;
+    u32 hash_size = 0;
 
     static DDGIPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const DDGISettings& settings = {});
 

@@ -43,7 +43,6 @@ SOFTWARE.
 namespace yave {
 
 // Must match shaders/lib/ddgi.slang
-static constexpr u32 ddgi_grid_size = 32;
 static constexpr u32 ddgi_radiance_probe_size = 32;
 static constexpr u32 ddgi_irradiance_probe_size = ddgi_radiance_probe_size / 2;
 static constexpr u32 ddgi_probe_border = 1;
@@ -52,19 +51,24 @@ static constexpr u32 ddgi_irradiance_probe_data_size = ddgi_irradiance_probe_siz
 static constexpr u32 ddgi_radiance_probe_border_texel_count = 4 * ddgi_radiance_probe_size - 4;
 static constexpr u32 ddgi_irradiance_probe_border_texel_count = 4 * ddgi_irradiance_probe_size - 4;
 static constexpr u32 ddgi_probes_per_atlas_row = 256;
-static constexpr u32 ddgi_grid_cell_count = ddgi_grid_size * ddgi_grid_size * ddgi_grid_size;
+static constexpr u32 ddgi_max_visible_age = 120;
+static constexpr u32 ddgi_hash_table_regions = 2;
 
 static constexpr ImageUsage ddgi_atlas_usage = ImageUsage::TextureBit | ImageUsage::StorageBit;
-static constexpr ImageUsage ddgi_probe_grid_usage = ImageUsage::TextureBit | ImageUsage::StorageBit;
 
 static const FrameGraphPersistentResourceId persistent_radiance_id = FrameGraphPersistentResourceId::create();
 static const FrameGraphPersistentResourceId persistent_distance_id = FrameGraphPersistentResourceId::create();
 static const FrameGraphPersistentResourceId persistent_irradiance_id = FrameGraphPersistentResourceId::create();
-static const FrameGraphPersistentResourceId persistent_probe_grid_id = FrameGraphPersistentResourceId::create();
-static const FrameGraphPersistentResourceId persistent_probe_counter_id = FrameGraphPersistentResourceId::create();
+static const FrameGraphPersistentResourceId persistent_hash_table_id = FrameGraphPersistentResourceId::create();
+static const FrameGraphPersistentResourceId persistent_active_probes_id = FrameGraphPersistentResourceId::create();
+static const FrameGraphPersistentResourceId persistent_probe_data_id = FrameGraphPersistentResourceId::create();
 
 static u32 ddgi_max_probe_count(const DDGISettings& settings) {
     return std::max(1u, settings.max_probe_count);
+}
+
+static u32 ddgi_hash_size(const DDGISettings& settings) {
+    return u32(1) << std::min(settings.hash_size, 30u);
 }
 
 static math::Vec2ui ddgi_atlas_size(u32 probe_size, u32 max_probe_count) {
@@ -72,58 +76,80 @@ static math::Vec2ui ddgi_atlas_size(u32 probe_size, u32 max_probe_count) {
     return math::Vec2ui(ddgi_probes_per_atlas_row * probe_size, rows * probe_size);
 }
 
-static math::Vec2ui ddgi_probe_grid_size() {
-    return math::Vec2ui(ddgi_grid_size * ddgi_grid_size, ddgi_grid_size);
-}
-
-static void select_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, const DDGISettings& settings, const StorageView& probe_grid, const SubBuffer<BufferUsage::StorageBit>& probe_counter, bool reset) {
+static void select_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, const DDGISettings& settings, const SubBuffer<BufferUsage::StorageBit>& hash_table, const SubBuffer<BufferUsage::StorageBit>& active_probes, const SubBuffer<BufferUsage::StorageBit>& probe_datas, bool reset) {
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
+    const u32 hash_size = ddgi_hash_size(settings);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("DDGI select pass");
 
     const struct Params {
         float probe_spacing;
         u32 max_probe_count;
+        u32 frame_id;
+        u32 max_visible_age;
+
+        u32 hash_size;
+        u32 reset_hash;
+        u32 padding_0;
+        u32 padding_1;
     } params {
         settings.probe_spacing,
         ddgi_max_probe_count(settings),
+        u32(framegraph.frame_id()),
+        ddgi_max_visible_age,
+
+        hash_size,
+        0u, 0u, 0u
     };
 
-    builder.add_external_input(Descriptor(probe_grid));
-    builder.add_external_input(Descriptor(probe_counter));
+    builder.add_external_input(Descriptor(hash_table));
+    builder.add_external_input(Descriptor(active_probes));
+    builder.add_external_input(Descriptor(probe_datas));
     builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
     builder.add_inline_input(params);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+        const u32 max_probe_count = ddgi_max_probe_count(settings);
         if(reset) {
-            recorder.dispatch_threads(device_resources()[DeviceResources::DDGISelectClearProgram], ddgi_probe_grid_size(), self->descriptor_set());
+            recorder.dispatch_threads(device_resources()[DeviceResources::DDGISelectClearProgram], math::Vec2ui(hash_size, 1), self->descriptor_set());
+        } else {
+            const BufferBarrier active_probes_barrier(active_probes, PipelineStage::ComputeBit, PipelineStage::ComputeBit);
+            recorder.dispatch_threads(device_resources()[DeviceResources::DDGISelectTrimClearProgram], math::Vec2ui(1, 1), self->descriptor_set());
+            recorder.barriers(active_probes_barrier);
+            recorder.dispatch_threads(device_resources()[DeviceResources::DDGISelectTrimProgram], math::Vec2ui(max_probe_count, 1), self->descriptor_set());
+            recorder.barriers(active_probes_barrier);
         }
         recorder.dispatch_threads(device_resources()[DeviceResources::DDGISelectProgram], size, self->descriptor_set());
     });
 }
 
-static void trace_radiance(FrameGraph& framegraph, const GBufferPass& gbuffer, const DDGISettings& settings, const TextureView& probe_grid, const StorageView& radiance, const StorageView& distance, bool reset) {
+static void trace_radiance(FrameGraph& framegraph, const GBufferPass& gbuffer, const DDGISettings& settings, const SubBuffer<BufferUsage::StorageBit>& probe_datas, const StorageView& radiance, const StorageView& distance) {
     const SceneView& scene_view = gbuffer.scene_pass.scene_view;
     const TLAS& tlas = scene_view.scene()->tlas();
 
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
     const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
 
-    const math::Vec3ui dispatch_size(ddgi_grid_cell_count, ddgi_radiance_probe_data_size, ddgi_radiance_probe_data_size);
-    const math::Vec3ui border_dispatch_size(ddgi_grid_cell_count, ddgi_radiance_probe_border_texel_count, 1);
+    const u32 max_probe_count = ddgi_max_probe_count(settings);
+    const math::Vec3ui dispatch_size(max_probe_count, ddgi_radiance_probe_data_size, ddgi_radiance_probe_data_size);
+    const math::Vec3ui border_dispatch_size(max_probe_count, ddgi_radiance_probe_border_texel_count, 1);
 
     const struct Params {
         float probe_spacing;
         u32 light_count;
         u32 frame_id;
-        u32 reset;
+        u32 max_probe_count;
+        u32 padding_0;
+        u32 padding_1;
+        u32 padding_2;
     } params {
         settings.probe_spacing,
         u32(visibility.directional_lights.size()),
         u32(framegraph.frame_id()),
-        (reset ? 1u : 0u),
+        max_probe_count,
+        0u, 0u, 0u
     };
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("DDGI trace pass");
@@ -139,7 +165,7 @@ static void trace_radiance(FrameGraph& framegraph, const GBufferPass& gbuffer, c
     builder.add_external_input(ibl_probe ? *ibl_probe : *device_resources().empty_probe());
     builder.add_external_input(Descriptor(material_allocator().material_buffer()));
     builder.add_storage_input(directional_buffer);
-    builder.add_external_input(Descriptor(probe_grid, SamplerType::PointClamp));
+    builder.add_external_input(Descriptor(probe_datas));
     builder.add_inline_input(params);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -166,26 +192,27 @@ static void trace_radiance(FrameGraph& framegraph, const GBufferPass& gbuffer, c
     });
 }
 
-static void convolve_irradiance(FrameGraph& framegraph, const DDGISettings& settings, const TextureView& probe_grid, const TextureView& radiance, const StorageView& irradiance) {
-    const math::Vec3ui dispatch_size(ddgi_grid_cell_count, ddgi_irradiance_probe_data_size, ddgi_irradiance_probe_data_size);
-    const math::Vec3ui border_dispatch_size(ddgi_grid_cell_count, ddgi_irradiance_probe_border_texel_count, 1);
+static void convolve_irradiance(FrameGraph& framegraph, const DDGISettings& settings, const SubBuffer<BufferUsage::StorageBit>& probe_datas, const TextureView& radiance, const StorageView& irradiance) {
+    const u32 max_probe_count = ddgi_max_probe_count(settings);
+    const math::Vec3ui dispatch_size(max_probe_count, ddgi_irradiance_probe_data_size, ddgi_irradiance_probe_data_size);
+    const math::Vec3ui border_dispatch_size(max_probe_count, ddgi_irradiance_probe_border_texel_count, 1);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("DDGI convolve pass");
 
     const struct Params {
         u32 sample_count;
-        u32 atlas_probe_count;
+        u32 max_probe_count;
         u32 padding_0;
         u32 padding_1;
     } params {
         std::max(1u, settings.convolve_sample_count),
-        ddgi_max_probe_count(settings),
+        max_probe_count,
         0u, 0u
     };
 
     builder.add_external_input(Descriptor(irradiance));
     builder.add_external_input(Descriptor(radiance, SamplerType::LinearClamp));
-    builder.add_external_input(Descriptor(probe_grid, SamplerType::PointClamp));
+    builder.add_external_input(Descriptor(probe_datas));
     builder.add_inline_input(params);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -196,8 +223,9 @@ static void convolve_irradiance(FrameGraph& framegraph, const DDGISettings& sett
     });
 }
 
-static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbuffer, const TextureView& probe_grid, const TextureView& irradiance, const TextureView& distance, const DDGISettings& settings) {
+static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbuffer, const SubBuffer<BufferUsage::StorageBit>& hash_table, const TextureView& irradiance, const TextureView& distance, const DDGISettings& settings) {
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
+    const u32 hash_size = ddgi_hash_size(settings);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("DDGI apply pass");
 
@@ -205,13 +233,14 @@ static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbu
 
     const struct Params {
         float probe_spacing;
-        u32 atlas_probe_count;
+        u32 hash_size;
+        u32 max_probe_count;
         u32 padding_0;
-        u32 padding_1;
     } params {
         settings.probe_spacing,
+        hash_size,
         ddgi_max_probe_count(settings),
-        0u, 0u
+        0u
     };
 
     builder.add_storage_output(gi);
@@ -222,7 +251,7 @@ static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbu
     Y_TODO(probe filtering)
     builder.add_external_input(Descriptor(irradiance, SamplerType::LinearClamp));
     builder.add_external_input(Descriptor(distance, SamplerType::LinearClamp));
-    builder.add_external_input(Descriptor(probe_grid, SamplerType::PointClamp));
+    builder.add_external_input(Descriptor(hash_table));
     builder.add_inline_input(params);
 
     make_simple_compute_pass(builder, DeviceResources::DDGIApplyProgram, size);
@@ -238,35 +267,38 @@ DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
     const auto region = framegraph.region("DDGI");
 
     const u32 max_probe_count = ddgi_max_probe_count(settings);
+    const u32 hash_size = ddgi_hash_size(settings);
     const math::Vec2ui radiance_atlas_size = ddgi_atlas_size(ddgi_radiance_probe_size, max_probe_count);
     const math::Vec2ui irradiance_atlas_size = ddgi_atlas_size(ddgi_irradiance_probe_size, max_probe_count);
-    const math::Vec2ui probe_grid_size = ddgi_probe_grid_size();
 
     const auto& [radiance,      radiance_reset]         = framegraph.create_scratch_image(persistent_radiance_id, VK_FORMAT_B10G11R11_UFLOAT_PACK32, radiance_atlas_size, ddgi_atlas_usage);
     const auto& [distance,      distance_reset]         = framegraph.create_scratch_image(persistent_distance_id, VK_FORMAT_R16G16_UNORM, radiance_atlas_size, ddgi_atlas_usage);
     const auto& [irradiance,    irradiance_reset]       = framegraph.create_scratch_image(persistent_irradiance_id, VK_FORMAT_B10G11R11_UFLOAT_PACK32, irradiance_atlas_size, ddgi_atlas_usage);
-    const auto& [probe_grid ,   probe_grid_reset]       = framegraph.create_scratch_image(persistent_probe_grid_id, VK_FORMAT_R32_UINT, probe_grid_size, ddgi_probe_grid_usage);
-    const auto& [probe_counter, probe_counter_reset]    = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_probe_counter_id, 1);
+    const auto& [hash_table,    hash_table_reset]       = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_table_id, hash_size * ddgi_hash_table_regions);
+    const auto& [active_probes, active_probes_reset]    = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_active_probes_id, max_probe_count + 2);
+    const auto& [probe_datas,   probe_datas_reset]       = framegraph.create_scratch_buffer<shader::DDGIProbeData, BufferUsage::StorageBit>(persistent_probe_data_id, max_probe_count);
 
-    const bool reset = radiance_reset || distance_reset || irradiance_reset || probe_grid_reset || probe_counter_reset;
+    const bool reset = radiance_reset || distance_reset || irradiance_reset || hash_table_reset || active_probes_reset || probe_datas_reset;
 
     const TransientImageView<ddgi_atlas_usage> radiance_view(radiance);
     const TransientImageView<ddgi_atlas_usage> distance_view(distance);
     const TransientImageView<ddgi_atlas_usage> irradiance_view(irradiance);
-    const TransientImageView<ddgi_probe_grid_usage> probe_grid_view(probe_grid);
 
-    select_probes(framegraph, gbuffer, settings, probe_grid_view, probe_counter, reset);
-    trace_radiance(framegraph, gbuffer, settings, probe_grid_view, radiance_view, distance_view, reset);
-    convolve_irradiance(framegraph, settings, probe_grid_view, radiance_view, irradiance_view);
+    select_probes(framegraph, gbuffer, settings, hash_table, active_probes, probe_datas, reset);
+    trace_radiance(framegraph, gbuffer, settings, probe_datas, radiance_view, distance_view);
+    convolve_irradiance(framegraph, settings, probe_datas, radiance_view, irradiance_view);
 
     DDGIPass pass;
     pass.radiance = radiance_view;
     pass.distance = distance_view;
     pass.irradiance = irradiance_view;
-    pass.probe_grid = probe_grid_view;
-    pass.gi = apply_gi(framegraph, gbuffer, probe_grid_view, irradiance_view, distance_view, settings);
+    pass.hash_table = hash_table;
+    pass.active_probes = active_probes;
+    pass.probe_datas = probe_datas;
+    pass.gi = apply_gi(framegraph, gbuffer, hash_table, irradiance_view, distance_view, settings);
     pass.probe_spacing = settings.probe_spacing;
     pass.max_probe_count = max_probe_count;
+    pass.hash_size = hash_size;
     return pass;
 }
 
@@ -275,52 +307,83 @@ DDGIProbeDebugPass DDGIProbeDebugPass::create(FrameGraph& framegraph, FrameGraph
         return {in_lit, gbuffer.depth};
     }
 
-    FrameGraphPassBuilder builder = framegraph.add_pass("DDGI probe debug pass");
+    FrameGraphMutableImageId color;
+    FrameGraphMutableImageId depth;
 
-    const auto color = builder.declare_copy(in_lit);
-    const auto depth = builder.declare_copy(gbuffer.depth);
+    {
+        FrameGraphPassBuilder builder = framegraph.add_pass("DDGI probe debug pass");
 
-    const float sphere_size = 0.1f;
-    const AssetPtr<StaticMesh> sphere = device_resources()[DeviceResources::SimpleSphereMesh];
+        color = builder.declare_copy(in_lit);
+        depth = builder.declare_copy(gbuffer.depth);
 
-    const struct Params {
-        float probe_spacing;
-        u32 atlas_probe_count;
-        u32 display_mode;
-        float probe_radius;
+        const float sphere_size = 0.1f;
+        const AssetPtr<StaticMesh> sphere = device_resources()[DeviceResources::SimpleSphereMesh];
 
-        u32 mesh_data_index;
-        u32 padding_0;
-        u32 padding_1;
-        u32 padding_2;
-    } params {
-        ddgi.probe_spacing,
-        ddgi.max_probe_count,
-        u32(settings.debug_mode),
-        sphere_size * ddgi.probe_spacing,
+        const struct Params {
+            float probe_spacing;
+            u32 atlas_probe_count;
+            u32 display_mode;
+            float probe_radius;
 
-        sphere->mesh_data_index(),
-        0u, 0u, 0u
-    };
+            u32 mesh_data_index;
+            u32 frame_id;
+            u32 max_visible_age;
+            u32 padding_0;
+        } params {
+            ddgi.probe_spacing,
+            ddgi.max_probe_count,
+            u32(settings.debug_mode),
+            sphere_size * ddgi.probe_spacing,
 
-    builder.add_color_output(color);
-    builder.add_depth_output(depth);
-    builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_external_input(Descriptor(mesh_allocator().mesh_data_buffer()));
+            sphere->mesh_data_index(),
+            u32(framegraph.frame_id()),
+            ddgi_max_visible_age,
+            0u
+        };
 
-    Y_TODO(probe filtering)
-    builder.add_external_input(Descriptor(ddgi.radiance, SamplerType::LinearClamp));
-    builder.add_external_input(Descriptor(ddgi.irradiance, SamplerType::LinearClamp));
-    builder.add_external_input(Descriptor(ddgi.distance, SamplerType::LinearClamp));
-    builder.add_external_input(Descriptor(ddgi.probe_grid, SamplerType::PointClamp));
+        builder.add_color_output(color);
+        builder.add_depth_output(depth);
+        builder.add_uniform_input(gbuffer.scene_pass.camera);
+        builder.add_external_input(Descriptor(mesh_allocator().mesh_data_buffer()));
 
-    builder.add_inline_input(params);
+        Y_TODO(probe filtering)
+        builder.add_external_input(Descriptor(ddgi.radiance, SamplerType::LinearClamp));
+        builder.add_external_input(Descriptor(ddgi.irradiance, SamplerType::LinearClamp));
+        builder.add_external_input(Descriptor(ddgi.distance, SamplerType::LinearClamp));
+        builder.add_external_input(Descriptor(ddgi.probe_datas));
+        builder.add_external_input(Descriptor(ddgi.active_probes));
+        builder.add_inline_input(params);
 
-    builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
-        const MaterialTemplate* material = device_resources()[DeviceResources::DDGIProbeDebugMaterialTemplate];
-        render_pass.bind_material_template(material, self->descriptor_set());
-        render_pass.draw(sphere->draw_data(), ddgi_grid_cell_count);
-    });
+        builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
+            const MaterialTemplate* material = device_resources()[DeviceResources::DDGIProbeDebugMaterialTemplate];
+            render_pass.bind_material_template(material, self->descriptor_set());
+            render_pass.draw(sphere->draw_data(), ddgi.max_probe_count);
+        });
+    }
+
+    {
+        FrameGraphPassBuilder builder = framegraph.add_pass("DDGI probe count debug pass");
+
+        const auto out_color = builder.declare_copy(color);
+
+        const struct CountParams {
+            u32 max_probe_count;
+            u32 padding_0;
+            u32 padding_1;
+            u32 padding_2;
+        } count_params {
+            ddgi.max_probe_count,
+            0u, 0u, 0u
+        };
+
+        builder.add_color_output(out_color);
+        builder.add_external_input(Descriptor(ddgi.active_probes));
+        builder.add_inline_input(count_params);
+
+        make_simple_full_screen_pass(builder, DeviceResources::DDGIProbeCountDebugMaterialTemplate);
+
+        color = out_color;
+    }
 
     return {color, depth};
 }

@@ -217,4 +217,14 @@ struct StaticMeshData {
     SLANG_PTR(uint) padding_1;
 };
 
+struct DDGIProbeData {
+    int3 probe_coord;
+    uint last_visible;
+
+    uint allocated_frame;
+    uint hash_bucket;
+    uint padding_0;
+    uint padding_1;
+};
+
 #endif

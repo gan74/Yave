@@ -47,6 +47,16 @@ struct HashKey {
         }
         return k;
     }
+
+    static HashKey make_key(int3 pos) {
+        HashKey k;
+        {
+            k.append(pos.z);
+            k.append(pos.y);
+            k.append(pos.x);
+        }
+        return k;
+    }
 };
 
 
@@ -75,7 +85,7 @@ uint find_update_bucket_index(RWStructuredBuffer<uint> hash_table, HashKey key, 
     return constants.max_uint;
 }
 
-uint find_bucket_index(RWStructuredBuffer<uint> hash_table, HashKey key, uint hash_size) {
+uint find_bucket_index<BufferType : IArray<uint>>(BufferType hash_table, HashKey key, uint hash_size) {
     const uint check = max(1, key.sec);
     const uint hash_mask = hash_size - 1;
 

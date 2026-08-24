@@ -2,11 +2,11 @@
 #define DDGI_SLANG
 
 #include "utils.slang"
+#include "spatial_hash.slang"
 
 
 namespace ddgi {
 
-static const uint grid_size = 32;
 static const uint radiance_probe_size = 32;
 static const uint irradiance_probe_size = radiance_probe_size / 2;
 static const uint probe_border = 1;
@@ -14,29 +14,17 @@ static const uint radiance_probe_data_size = radiance_probe_size - 2 * probe_bor
 static const uint irradiance_probe_data_size = irradiance_probe_size - 2 * probe_border;
 static const uint probes_per_atlas_row = 256;
 
-static const uint grid_cell_count = grid_size * grid_size * grid_size;
-static const uint invalid_probe_index = 0xFFFFFFFF;
-
-
-uint2 probe_grid_size() {
-    return uint2(grid_size * grid_size, grid_size);
+uint payload_index(uint h, uint hash_size) {
+    return hash_size + h;
 }
 
-uint grid_local_index(int3 grid_coord) {
-    return uint(grid_coord.x) * (grid_size * grid_size) + uint(grid_coord.y) * grid_size + uint(grid_coord.z);
+uint hash_table_size(uint hash_size) {
+    return hash_size * 2;
 }
 
-uint2 probe_grid_texel(int3 grid_coord) {
-    return probe_grid_texel(grid_local_index(grid_coord));
-}
 
-uint2 probe_grid_texel(uint local_probe_index) {
-    return uint2(local_probe_index % (grid_size * grid_size), local_probe_index / (grid_size * grid_size));
-}
 
-uint load_probe_index(Sampler2D<uint> probe_grid, int3 grid_coord) {
-    return probe_grid[probe_grid_texel(grid_coord)];
-}
+
 
 uint2 radiance_atlas_size(uint atlas_probe_count) {
     return uint2(
@@ -50,33 +38,6 @@ uint2 irradiance_atlas_size(uint atlas_probe_count) {
         probes_per_atlas_row * irradiance_probe_size,
         ((atlas_probe_count + probes_per_atlas_row - 1) / probes_per_atlas_row) * irradiance_probe_size
     );
-}
-
-int3 compute_grid_coord(uint probe_index) {
-    return int3(
-        int((probe_index / (grid_size * grid_size)) % grid_size),
-        int((probe_index / grid_size) % grid_size),
-        int(probe_index % grid_size)
-    );
-}
-
-int3 compute_grid_coord(float3 world_pos, float probe_spacing) {
-    const float3 grid = world_pos / probe_spacing + (grid_size - 1) * 0.5;
-    return clamp(int3(round(grid)), int3(0), int3(grid_size - 1));
-}
-
-int3 compute_grid_coord_low(float3 world_pos, float probe_spacing) {
-    const float3 grid = world_pos / probe_spacing + (grid_size - 1) * 0.5;
-    return clamp(int3(floor(grid)), int3(0), int3(grid_size - 1));
-}
-
-int3 compute_grid_coord_high(float3 world_pos, float probe_spacing) {
-    const float3 grid = world_pos / probe_spacing + (grid_size - 1) * 0.5;
-    return clamp(int3(ceil(grid)), int3(0), int3(grid_size - 1));
-}
-
-float3 probe_world_position(int3 grid_coord, float probe_spacing) {
-    return (float3(grid_coord) - (grid_size - 1) * 0.5) * probe_spacing;
 }
 
 uint2 radiance_atlas_coord(uint atlas_probe_index) {
@@ -147,11 +108,6 @@ uint2 probe_border_source_local(uint2 probe_local, uint probe_texel_size) {
     return uint2(on_left ? interior_min : interior_max, last - probe_local.y);
 }
 
-bool in_range(float3 world_pos, float probe_spacing) {
-    const float3 extent = (grid_size - 1) * 0.5 * probe_spacing;
-    return all(abs(world_pos) <= extent + probe_spacing);
-}
-
 }
 
 struct IrradianceFieldSampleParams {
@@ -191,8 +147,9 @@ struct DDGISamplePos {
 
         DDGISamplePos pos;
         pos.biased_world_pos = world_pos + bias * probe_spacing;
-        pos.lo = ddgi.compute_grid_coord_low(pos.biased_world_pos, probe_spacing);
-        pos.hi = ddgi.compute_grid_coord_high(pos.biased_world_pos, probe_spacing);
+        const float3 grid_pos = pos.biased_world_pos / probe_spacing;
+        pos.lo = int3(floor(grid_pos));
+        pos.hi = int3(ceil(grid_pos));
         return pos;
     }
 
@@ -211,18 +168,15 @@ float3 sample_irradiance(
     float3 normal,
     float3 cam_pos,
     float probe_spacing,
-    uint atlas_probe_count,
-    Sampler2D<uint> probe_grid,
+    uint hash_size,
+    uint max_probe_count,
+    StructuredBuffer<uint> hash_table,
     Sampler2D<float3> irradiance_tex,
     Sampler2D<float2> distance_tex,
     IrradianceFieldSampleParams params = IrradianceFieldSampleParams()) {
 
-    if(!ddgi.in_range(world_pos, probe_spacing)) {
-        return float3(0.0);
-    }
-
-    const float2 inv_radiance_atlas_size = 1.0 / float2(ddgi.radiance_atlas_size(atlas_probe_count));
-    const float2 inv_irradiance_atlas_size = 1.0 / float2(ddgi.irradiance_atlas_size(atlas_probe_count));
+    const float2 inv_radiance_atlas_size = 1.0 / float2(ddgi.radiance_atlas_size(max_probe_count));
+    const float2 inv_irradiance_atlas_size = 1.0 / float2(ddgi.irradiance_atlas_size(max_probe_count));
     const float2 irr_sample_coord = octahedron_encode(normal) * float(ddgi.irradiance_probe_data_size);
 
     const DDGISamplePos sample_pos = DDGISamplePos.make_pos(world_pos, normal, normalize(cam_pos - world_pos), probe_spacing, params);
@@ -230,15 +184,21 @@ float3 sample_irradiance(
     float total = 0.0;
     float3 acc = 0.0;
     for(uint k = 0; k != 8; ++k) {
-        const int3 probe_id = sample_pos.corner(k);
+        const int3 probe_coord = sample_pos.corner(k);
 
-        const float3 probe_pos = ddgi.probe_world_position(probe_id, probe_spacing);
-        const float3 probe_vec = probe_pos - sample_pos.biased_world_pos;
-
-        const uint probe_index = ddgi.load_probe_index(probe_grid, probe_id);
-        if(probe_index == ddgi.invalid_probe_index) {
+        const uint hash_bucket = find_bucket_index(hash_table, HashKey.make_key(probe_coord), hash_size);
+        if(hash_bucket == constants.max_uint) {
             continue;
         }
+
+        const uint probe_index = hash_table[ddgi.payload_index(hash_bucket, hash_size)];
+        if(probe_index >= max_probe_count) {
+            continue;
+        }
+
+        const float3 probe_pos = probe_coord * probe_spacing;
+        const float3 probe_vec = probe_pos - sample_pos.biased_world_pos;
+
 
         float weight = 1.0;
 
@@ -256,7 +216,7 @@ float3 sample_irradiance(
             const float variance = abs(sqr(mean) - dist_moments.y) + params.variance_bias;
 
             const float norm_dist = length(probe_vec) / (probe_spacing * constants.sqrt_3);
-            
+
             const float chebyshev = variance / (variance + sqr(max(0.0, norm_dist - mean)));
             const float chebyshev_weight = max(0.0, sqr(chebyshev) - params.chebyshev_bias) / max(1.0 - params.chebyshev_bias, constants.epsilon);
             weight *= (norm_dist <= mean) ? 1.0 : chebyshev_weight;

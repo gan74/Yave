@@ -3,6 +3,13 @@
 #include "lib/rt.slang"
 #include "lib/rng.slang"
 #include "lib/ddgi.slang"
+#include "lib/structs.slang"
+
+#ifdef BORDER
+static const float3 irradiance_debug_color = float3(1.0, 0.0, 1.0);
+#else
+static const float3 irradiance_debug_color = float3(0.0, 1.0, 0.0);
+#endif
 
 
 [[vk::binding(0)]]
@@ -24,14 +31,17 @@ StructuredBuffer<MaterialData> materials;
 StructuredBuffer<DirectionalLight> lights;
 
 [[vk::binding(6)]]
-Sampler2D<uint> probe_grid;
+StructuredBuffer<DDGIProbeData> probe_datas;
 
 [[vk::binding(7)]]
 cbuffer Params {
     float probe_spacing;
     uint light_count;
     uint frame_id;
-    uint reset;
+    uint max_probe_count;
+    uint padding_0;
+    uint padding_1;
+    uint padding_2;
 };
 
 
@@ -82,17 +92,15 @@ float3 shade_hit(HitInfo hit, float3 trace_dir) {
 }
 
 [shader("compute")]
-[numthreads(64, 1, 1)]
+[numthreads(64)]
 void main() {
-    const uint grid_probe_index = semantics.global_id.x;
-    if(grid_probe_index >= ddgi.grid_cell_count) {
+    const uint probe_index = semantics.global_id.x;
+    if(probe_index >= max_probe_count) {
         return;
     }
 
-    const int3 grid_coord = ddgi.compute_grid_coord(grid_probe_index);
-    const uint atlas_probe_index = ddgi.load_probe_index(probe_grid, grid_coord);
-
-    if(atlas_probe_index == ddgi.invalid_probe_index) {
+    const DDGIProbeData probe_data = probe_datas[probe_index];
+    if(probe_data.hash_bucket == constants.max_uint) {
         return;
     }
 
@@ -104,7 +112,7 @@ void main() {
 
     const uint2 probe_local = ddgi.probe_border_local(border_index, ddgi.radiance_probe_size);
 
-    const uint2 probe_corner = ddgi.radiance_atlas_coord(atlas_probe_index);
+    const uint2 probe_corner = ddgi.radiance_atlas_coord(probe_index);
     const uint2 source_local = ddgi.probe_border_source_local(probe_local, ddgi.radiance_probe_size);
     const uint2 source_coord = probe_corner + source_local;
     const uint2 dest_coord = probe_corner + probe_local;
@@ -114,9 +122,8 @@ void main() {
 #else
 
     const uint2 probe_local = semantics.global_id.yz;
-    const uint2 coord = ddgi.radiance_atlas_coord(atlas_probe_index) + ddgi.probe_border + probe_local;
-
-    const float3 origin = ddgi.probe_world_position(grid_coord, probe_spacing);
+    const uint2 coord = ddgi.radiance_atlas_coord(probe_index) + ddgi.probe_border + probe_local;
+    const float3 origin = probe_data.probe_coord * probe_spacing;
 
     const uint seed = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
     HashRng rng = HashRng(seed);
@@ -143,21 +150,17 @@ void main() {
         distances += float2(dist, sqr(dist));
     }
 
-    if(reset != 0) {
+    if(probe_data.allocated_frame == frame_id) {
         out_radiance[coord] = radiance / sample_count;
         out_distance[coord] = distances / sample_count;
     } else {
         const float blend_factor = 0.9;
-        out_radiance[coord] = lerp(
-            radiance / sample_count,
-            out_radiance[coord].rgb,
-            blend_factor
-        );
+        out_radiance[coord] = lerp(radiance / sample_count, out_radiance[coord].rgb, blend_factor);
         // out_distance[coord] = lerp(distances / sample_count, out_distance[coord], blend_factor);
         out_distance[coord] = max(distances / sample_count, out_distance[coord]);
     }
 
-    // out_radiance[coord] = identifying_color(grid_probe_index);
+    // out_radiance[coord] = identifying_color(probe_index);
 
 #endif
 }
