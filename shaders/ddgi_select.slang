@@ -27,14 +27,14 @@ ConstantBuffer<Camera> camera;
 [[vk::binding(6)]]
 cbuffer Params {
     float probe_spacing;
+    float lod_distance;
     uint max_probe_count;
     uint frame_id;
-    uint max_visible_age;
 
+    uint max_visible_age;
     uint hash_size;
     uint padding_0;
     uint padding_1;
-    uint padding_2;
 };
 
 
@@ -163,17 +163,21 @@ void main() {
     const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
     const float3 normal = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1[coord])).normal;
 
-    const DDGISamplePos sample_pos = DDGISamplePos.make_pos(world_pos, normal, normalize(camera.position - world_pos), probe_spacing);
+    const float view_dist = length(world_pos - camera.position);
+    const uint lod = HashKey.lod_level(view_dist, lod_distance);
+    const float lod_probe_spacing = ddgi.probe_spacing_for_lod(probe_spacing, lod);
+
+    const DDGISamplePos sample_pos = DDGISamplePos.make_pos(world_pos, normal, normalize(camera.position - world_pos), lod_probe_spacing);
 
     for(uint i = 0; i != 8; ++i) {
         const int3 probe_coord = sample_pos.corner(i);
 
-        if(any(abs(probe_coord) > 32)) {
+        /*if(any(abs(probe_coord) > 32)) {
             continue;
-        }
+        }*/
 
         bool inserted = false;
-        const uint hash_bucket = find_update_bucket_index(hash_table, HashKey.make_key(probe_coord), hash_size, inserted);
+        const uint hash_bucket = find_update_bucket_index(hash_table, HashKey.make_key(probe_coord, lod), hash_size, inserted);
 
         if(hash_bucket == constants.max_uint) {
             continue;
@@ -197,6 +201,7 @@ void main() {
         hash_table[payload_index] = index;
         probe_datas[index].hash_bucket = hash_bucket;
         probe_datas[index].probe_coord = probe_coord;
+        probe_datas[index].lod = lod;
         probe_datas[index].last_visible = frame_id;
         probe_datas[index].allocated_frame = frame_id;
     }

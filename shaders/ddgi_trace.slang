@@ -123,7 +123,8 @@ void main() {
 
     const uint2 probe_local = semantics.global_id.yz;
     const uint2 coord = ddgi.radiance_atlas_coord(probe_index) + ddgi.probe_border + probe_local;
-    const float3 origin = probe_data.probe_coord * probe_spacing;
+    const float lod_probe_spacing = ddgi.probe_spacing_for_lod(probe_spacing, probe_data.lod);
+    const float3 origin = probe_data.probe_coord * lod_probe_spacing;
 
     const uint seed = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
     HashRng rng = HashRng(seed);
@@ -144,7 +145,7 @@ void main() {
             continue;
         }
 
-        const float dist = saturate(hit.ray_t / (probe_spacing * constants.sqrt_3));
+        const float dist = saturate(hit.ray_t / (lod_probe_spacing * constants.sqrt_3));
 
         radiance += shade_hit(hit, trace_dir);
         distances += float2(dist, sqr(dist));

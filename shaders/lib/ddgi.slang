@@ -3,6 +3,7 @@
 
 #include "utils.slang"
 #include "spatial_hash.slang"
+#include "structs.slang"
 
 
 namespace ddgi {
@@ -57,6 +58,10 @@ bool is_probe_border(uint2 probe_local, uint probe_texel_size) {
 
 uint probe_border_texel_count(uint probe_texel_size) {
     return 4u * probe_texel_size - 4u;
+}
+
+float probe_spacing_for_lod(float probe_spacing, uint lod) {
+    return probe_spacing * (1 << lod);
 }
 
 uint2 probe_border_local(uint border_index, uint probe_texel_size) {
@@ -168,25 +173,31 @@ float3 sample_irradiance(
     float3 normal,
     float3 cam_pos,
     float probe_spacing,
+    float lod_distance,
     uint hash_size,
     uint max_probe_count,
     StructuredBuffer<uint> hash_table,
+    StructuredBuffer<DDGIProbeData> probe_datas,
     Sampler2D<float3> irradiance_tex,
     Sampler2D<float2> distance_tex,
     IrradianceFieldSampleParams params = IrradianceFieldSampleParams()) {
+
+    const float view_dist = length(world_pos - cam_pos);
+    const uint lod = HashKey.lod_level(view_dist, lod_distance);
+    const float lod_probe_spacing = ddgi.probe_spacing_for_lod(probe_spacing, lod);
 
     const float2 inv_radiance_atlas_size = 1.0 / float2(ddgi.radiance_atlas_size(max_probe_count));
     const float2 inv_irradiance_atlas_size = 1.0 / float2(ddgi.irradiance_atlas_size(max_probe_count));
     const float2 irr_sample_coord = octahedron_encode(normal) * float(ddgi.irradiance_probe_data_size);
 
-    const DDGISamplePos sample_pos = DDGISamplePos.make_pos(world_pos, normal, normalize(cam_pos - world_pos), probe_spacing, params);
+    const DDGISamplePos sample_pos = DDGISamplePos.make_pos(world_pos, normal, normalize(cam_pos - world_pos), lod_probe_spacing, params);
 
     float total = 0.0;
     float3 acc = 0.0;
     for(uint k = 0; k != 8; ++k) {
         const int3 probe_coord = sample_pos.corner(k);
 
-        const uint hash_bucket = find_bucket_index(hash_table, HashKey.make_key(probe_coord), hash_size);
+        const uint hash_bucket = find_bucket_index(hash_table, HashKey.make_key(probe_coord, lod), hash_size);
         if(hash_bucket == constants.max_uint) {
             continue;
         }
@@ -196,7 +207,15 @@ float3 sample_irradiance(
             continue;
         }
 
-        const float3 probe_pos = probe_coord * probe_spacing;
+        const DDGIProbeData probe_data = probe_datas[probe_index];
+        if(probe_data.hash_bucket != hash_bucket
+            || probe_data.lod != lod
+            || any(probe_data.probe_coord != probe_coord)) {
+            continue;
+        }
+
+        const float probe_lod_spacing = ddgi.probe_spacing_for_lod(probe_spacing, probe_data.lod);
+        const float3 probe_pos = probe_data.probe_coord * probe_lod_spacing;
         const float3 probe_vec = probe_pos - sample_pos.biased_world_pos;
 
 
@@ -215,7 +234,7 @@ float3 sample_irradiance(
             const float mean = dist_moments.x + params.distance_bias;
             const float variance = abs(sqr(mean) - dist_moments.y) + params.variance_bias;
 
-            const float norm_dist = length(probe_vec) / (probe_spacing * constants.sqrt_3);
+            const float norm_dist = length(probe_vec) / (probe_lod_spacing * constants.sqrt_3);
 
             const float chebyshev = variance / (variance + sqr(max(0.0, norm_dist - mean)));
             const float chebyshev_weight = max(0.0, sqr(chebyshev) - params.chebyshev_bias) / max(1.0 - params.chebyshev_bias, constants.epsilon);
@@ -236,7 +255,7 @@ float3 sample_irradiance(
         }
 
         {
-            const float3 trilinear = saturate(1.0 - abs(probe_vec) / probe_spacing);
+            const float3 trilinear = saturate(1.0 - abs(probe_vec) / probe_lod_spacing);
             weight *= trilinear.x * trilinear.y * trilinear.z;
         }
 

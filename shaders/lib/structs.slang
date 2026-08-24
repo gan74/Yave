@@ -223,8 +223,8 @@ struct DDGIProbeData {
 
     uint allocated_frame;
     uint hash_bucket;
+    uint lod;
     uint padding_0;
-    uint padding_1;
 };
 
 #endif

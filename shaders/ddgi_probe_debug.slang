@@ -96,8 +96,6 @@ cbuffer Params {
 
 
 float probe_scale(uint probe_index) {
-    return 1.0;
-
     const uint age = frame_id - probe_datas[probe_index].last_visible;
     return saturate(1.0 - float(age) / float(max_visible_age));
 }
@@ -113,7 +111,7 @@ VertexStageOut vert_main() {
     const float linear_scale = probe_scale(probe_index);
     const float scale = 1.0 - pow(1.0 - linear_scale, 5.0);
 
-    const float3 center = probe_datas[probe_index].probe_coord * probe_spacing;
+    const float3 center = probe_datas[probe_index].probe_coord * ddgi.probe_spacing_for_lod(probe_spacing, probe_datas[probe_index].lod);
     const float3 world_pos = center + local_pos * probe_radius * scale;
 
     VertexStageOut out;
@@ -130,6 +128,10 @@ VertexStageOut vert_main() {
 
 
 float3 fetch_probe(uint probe_index, float2 probe_uvs) {
+    if(display_mode == 4) {
+        return identifying_color(probe_datas[probe_index].lod);
+    }
+
     uint probe_data_size = 0;
     uint2 atlas_size = uint2(0);
     uint2 probe_corner = uint2(0);

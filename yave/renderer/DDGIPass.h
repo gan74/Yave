@@ -31,7 +31,8 @@ SOFTWARE.
 namespace yave {
 
 struct DDGISettings {
-    float probe_spacing = 1.0f;
+    float probe_spacing = 0.5f;
+    float lod_distance = 10.0f;
     u32 max_probe_count = 32 * 1024;
     u32 convolve_sample_count = 32;
     u32 hash_size = 23;
@@ -42,6 +43,7 @@ enum class DDGIProbeDebugMode {
     Radiance,
     Irradiance,
     Distance,
+    LoD,
 };
 
 struct DDGIProbeDebugSettings {

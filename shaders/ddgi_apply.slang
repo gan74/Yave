@@ -1,5 +1,6 @@
 #include "lib/semantics.slang"
 #include "lib/utils.slang"
+#include "lib/structs.slang"
 #include "lib/ddgi.slang"
 
 
@@ -25,11 +26,14 @@ Sampler2D<float2> in_ddgi_distance;
 StructuredBuffer<uint> hash_table;
 
 [[vk::binding(7)]]
+StructuredBuffer<DDGIProbeData> probe_datas;
+
+[[vk::binding(8)]]
 cbuffer Params {
     float probe_spacing;
+    float lod_distance;
     uint hash_size;
     uint max_probe_count;
-    uint padding_0;
 };
 
 
@@ -58,9 +62,11 @@ void main() {
         normal,
         camera.position,
         probe_spacing,
+        lod_distance,
         hash_size,
         max_probe_count,
         hash_table,
+        probe_datas,
         in_ddgi_irradiance,
         in_ddgi_distance
     );

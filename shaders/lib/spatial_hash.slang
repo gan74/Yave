@@ -48,9 +48,10 @@ struct HashKey {
         return k;
     }
 
-    static HashKey make_key(int3 pos) {
+    static HashKey make_key(int3 pos, uint lod = 0) {
         HashKey k;
         {
+            k.append(lod);
             k.append(pos.z);
             k.append(pos.y);
             k.append(pos.x);

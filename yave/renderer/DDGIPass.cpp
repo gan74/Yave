@@ -84,6 +84,7 @@ static void select_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, co
 
     const struct Params {
         float probe_spacing;
+        float lod_distance;
         u32 max_probe_count;
         u32 frame_id;
         u32 max_visible_age;
@@ -94,6 +95,7 @@ static void select_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, co
         u32 padding_1;
     } params {
         settings.probe_spacing,
+        settings.lod_distance,
         ddgi_max_probe_count(settings),
         u32(framegraph.frame_id()),
         ddgi_max_visible_age,
@@ -114,13 +116,13 @@ static void select_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, co
         const u32 max_probe_count = ddgi_max_probe_count(settings);
         if(reset) {
             recorder.dispatch_threads(device_resources()[DeviceResources::DDGISelectClearProgram], math::Vec2ui(hash_size, 1), self->descriptor_set());
-        } else {
+        } /*else {
             const BufferBarrier active_probes_barrier(active_probes, PipelineStage::ComputeBit, PipelineStage::ComputeBit);
             recorder.dispatch_threads(device_resources()[DeviceResources::DDGISelectTrimClearProgram], math::Vec2ui(1, 1), self->descriptor_set());
             recorder.barriers(active_probes_barrier);
             recorder.dispatch_threads(device_resources()[DeviceResources::DDGISelectTrimProgram], math::Vec2ui(max_probe_count, 1), self->descriptor_set());
             recorder.barriers(active_probes_barrier);
-        }
+        }*/
         recorder.dispatch_threads(device_resources()[DeviceResources::DDGISelectProgram], size, self->descriptor_set());
     });
 }
@@ -223,7 +225,7 @@ static void convolve_irradiance(FrameGraph& framegraph, const DDGISettings& sett
     });
 }
 
-static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbuffer, const SubBuffer<BufferUsage::StorageBit>& hash_table, const TextureView& irradiance, const TextureView& distance, const DDGISettings& settings) {
+static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbuffer, const SubBuffer<BufferUsage::StorageBit>& hash_table, const SubBuffer<BufferUsage::StorageBit>& probe_datas, const TextureView& irradiance, const TextureView& distance, const DDGISettings& settings) {
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
     const u32 hash_size = ddgi_hash_size(settings);
 
@@ -233,14 +235,14 @@ static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbu
 
     const struct Params {
         float probe_spacing;
+        float lod_distance;
         u32 hash_size;
         u32 max_probe_count;
-        u32 padding_0;
     } params {
         settings.probe_spacing,
+        settings.lod_distance,
         hash_size,
-        ddgi_max_probe_count(settings),
-        0u
+        ddgi_max_probe_count(settings)
     };
 
     builder.add_storage_output(gi);
@@ -252,6 +254,7 @@ static FrameGraphImageId apply_gi(FrameGraph& framegraph, const GBufferPass& gbu
     builder.add_external_input(Descriptor(irradiance, SamplerType::LinearClamp));
     builder.add_external_input(Descriptor(distance, SamplerType::LinearClamp));
     builder.add_external_input(Descriptor(hash_table));
+    builder.add_external_input(Descriptor(probe_datas));
     builder.add_inline_input(params);
 
     make_simple_compute_pass(builder, DeviceResources::DDGIApplyProgram, size);
@@ -295,7 +298,7 @@ DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
     pass.hash_table = hash_table;
     pass.active_probes = active_probes;
     pass.probe_datas = probe_datas;
-    pass.gi = apply_gi(framegraph, gbuffer, hash_table, irradiance_view, distance_view, settings);
+    pass.gi = apply_gi(framegraph, gbuffer, hash_table, probe_datas, irradiance_view, distance_view, settings);
     pass.probe_spacing = settings.probe_spacing;
     pass.max_probe_count = max_probe_count;
     pass.hash_size = hash_size;

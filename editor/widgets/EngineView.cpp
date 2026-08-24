@@ -566,6 +566,7 @@ void EngineView::draw_settings_menu() {
             DDGISettings& settings = _settings.renderer_settings.ddgi;
 
             ImGui::SliderFloat("Probe spacing", &settings.probe_spacing, 0.25f, 8.0f, "%.2f");
+            ImGui::SliderFloat("LoD distance", &settings.lod_distance, 1.0f, 100.0f);
             int samples = int(settings.convolve_sample_count);
             ImGui::SliderInt("Convolve samples", &samples, 16, 256);
             settings.convolve_sample_count = u32(samples);
@@ -575,7 +576,7 @@ void EngineView::draw_settings_menu() {
         }
 
         {
-            const char* debug_modes[] = {"None", "Radiance", "Irradiance", "Distance"};
+            const char* debug_modes[] = {"None", "Radiance", "Irradiance", "Distance", "LoD"};
             if(ImGui::BeginCombo("Debug", debug_modes[usize(_settings.ddgi_debug_mode)])) {
                 for(usize i = 0; i != sizeof(debug_modes) / sizeof(debug_modes[0]); ++i) {
                     const bool selected = usize(_settings.ddgi_debug_mode) == i;
