@@ -55,7 +55,7 @@ struct DDGIPass {
     TextureView distance;
     TextureView irradiance;
     SubBuffer<BufferUsage::StorageBit> hash_table;
-    SubBuffer<BufferUsage::StorageBit> active_probes;
+    SubBuffer<BufferUsage::StorageBit> inactive_probes;
     SubBuffer<BufferUsage::StorageBit> probe_datas;
 
     FrameGraphImageId gi;

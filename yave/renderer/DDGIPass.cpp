@@ -60,7 +60,7 @@ static const FrameGraphPersistentResourceId persistent_radiance_id = FrameGraphP
 static const FrameGraphPersistentResourceId persistent_distance_id = FrameGraphPersistentResourceId::create();
 static const FrameGraphPersistentResourceId persistent_irradiance_id = FrameGraphPersistentResourceId::create();
 static const FrameGraphPersistentResourceId persistent_hash_table_id = FrameGraphPersistentResourceId::create();
-static const FrameGraphPersistentResourceId persistent_active_probes_id = FrameGraphPersistentResourceId::create();
+static const FrameGraphPersistentResourceId persistent_inactive_probes_id = FrameGraphPersistentResourceId::create();
 static const FrameGraphPersistentResourceId persistent_probe_data_id = FrameGraphPersistentResourceId::create();
 
 static u32 ddgi_max_probe_count(const DDGISettings& settings) {
@@ -76,7 +76,7 @@ static math::Vec2ui ddgi_atlas_size(u32 probe_size, u32 max_probe_count) {
     return math::Vec2ui(ddgi_probes_per_atlas_row * probe_size, rows * probe_size);
 }
 
-static void select_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, const DDGISettings& settings, const SubBuffer<BufferUsage::StorageBit>& hash_table, const SubBuffer<BufferUsage::StorageBit>& active_probes, const SubBuffer<BufferUsage::StorageBit>& probe_datas, bool reset) {
+static void select_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, const DDGISettings& settings, const SubBuffer<BufferUsage::StorageBit>& hash_table, const SubBuffer<BufferUsage::StorageBit>& inactive_probes, const SubBuffer<BufferUsage::StorageBit>& probe_datas, bool reset) {
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
     const u32 hash_size = ddgi_hash_size(settings);
 
@@ -105,7 +105,7 @@ static void select_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, co
     };
 
     builder.add_external_input(Descriptor(hash_table));
-    builder.add_external_input(Descriptor(active_probes));
+    builder.add_external_input(Descriptor(inactive_probes));
     builder.add_external_input(Descriptor(probe_datas));
     builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
@@ -116,13 +116,13 @@ static void select_probes(FrameGraph& framegraph, const GBufferPass& gbuffer, co
         const u32 max_probe_count = ddgi_max_probe_count(settings);
         if(reset) {
             recorder.dispatch_threads(device_resources()[DeviceResources::DDGISelectClearProgram], math::Vec2ui(hash_size, 1), self->descriptor_set());
-        } /*else {
-            const BufferBarrier active_probes_barrier(active_probes, PipelineStage::ComputeBit, PipelineStage::ComputeBit);
+        } else {
+            const BufferBarrier inactive_probes_barrier(inactive_probes, PipelineStage::ComputeBit, PipelineStage::ComputeBit);
             recorder.dispatch_threads(device_resources()[DeviceResources::DDGISelectTrimClearProgram], math::Vec2ui(1, 1), self->descriptor_set());
-            recorder.barriers(active_probes_barrier);
+            recorder.barriers(inactive_probes_barrier);
             recorder.dispatch_threads(device_resources()[DeviceResources::DDGISelectTrimProgram], math::Vec2ui(max_probe_count, 1), self->descriptor_set());
-            recorder.barriers(active_probes_barrier);
-        }*/
+            recorder.barriers(inactive_probes_barrier);
+        }
         recorder.dispatch_threads(device_resources()[DeviceResources::DDGISelectProgram], size, self->descriptor_set());
     });
 }
@@ -278,16 +278,16 @@ DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
     const auto& [distance,      distance_reset]         = framegraph.create_scratch_image(persistent_distance_id, VK_FORMAT_R16G16_UNORM, radiance_atlas_size, ddgi_atlas_usage);
     const auto& [irradiance,    irradiance_reset]       = framegraph.create_scratch_image(persistent_irradiance_id, VK_FORMAT_B10G11R11_UFLOAT_PACK32, irradiance_atlas_size, ddgi_atlas_usage);
     const auto& [hash_table,    hash_table_reset]       = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_table_id, hash_size * ddgi_hash_table_regions);
-    const auto& [active_probes, active_probes_reset]    = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_active_probes_id, max_probe_count + 2);
-    const auto& [probe_datas,   probe_datas_reset]       = framegraph.create_scratch_buffer<shader::DDGIProbeData, BufferUsage::StorageBit>(persistent_probe_data_id, max_probe_count);
+    const auto& [inactive_probes, inactive_probes_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_inactive_probes_id, max_probe_count + 1);
+    const auto& [probe_datas,   probe_datas_reset]      = framegraph.create_scratch_buffer<shader::DDGIProbeData, BufferUsage::StorageBit>(persistent_probe_data_id, max_probe_count);
 
-    const bool reset = radiance_reset || distance_reset || irradiance_reset || hash_table_reset || active_probes_reset || probe_datas_reset;
+    const bool reset = radiance_reset || distance_reset || irradiance_reset || hash_table_reset || inactive_probes_reset || probe_datas_reset;
 
     const TransientImageView<ddgi_atlas_usage> radiance_view(radiance);
     const TransientImageView<ddgi_atlas_usage> distance_view(distance);
     const TransientImageView<ddgi_atlas_usage> irradiance_view(irradiance);
 
-    select_probes(framegraph, gbuffer, settings, hash_table, active_probes, probe_datas, reset);
+    select_probes(framegraph, gbuffer, settings, hash_table, inactive_probes, probe_datas, reset);
     trace_radiance(framegraph, gbuffer, settings, probe_datas, radiance_view, distance_view);
     convolve_irradiance(framegraph, settings, probe_datas, radiance_view, irradiance_view);
 
@@ -296,7 +296,7 @@ DDGIPass DDGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, co
     pass.distance = distance_view;
     pass.irradiance = irradiance_view;
     pass.hash_table = hash_table;
-    pass.active_probes = active_probes;
+    pass.inactive_probes = inactive_probes;
     pass.probe_datas = probe_datas;
     pass.gi = apply_gi(framegraph, gbuffer, hash_table, probe_datas, irradiance_view, distance_view, settings);
     pass.probe_spacing = settings.probe_spacing;
@@ -354,7 +354,7 @@ DDGIProbeDebugPass DDGIProbeDebugPass::create(FrameGraph& framegraph, FrameGraph
         builder.add_external_input(Descriptor(ddgi.irradiance, SamplerType::LinearClamp));
         builder.add_external_input(Descriptor(ddgi.distance, SamplerType::LinearClamp));
         builder.add_external_input(Descriptor(ddgi.probe_datas));
-        builder.add_external_input(Descriptor(ddgi.active_probes));
+        builder.add_external_input(Descriptor(ddgi.inactive_probes));
         builder.add_inline_input(params);
 
         builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
@@ -380,7 +380,7 @@ DDGIProbeDebugPass DDGIProbeDebugPass::create(FrameGraph& framegraph, FrameGraph
         };
 
         builder.add_color_output(out_color);
-        builder.add_external_input(Descriptor(ddgi.active_probes));
+        builder.add_external_input(Descriptor(ddgi.inactive_probes));
         builder.add_inline_input(count_params);
 
         make_simple_full_screen_pass(builder, DeviceResources::DDGIProbeCountDebugMaterialTemplate);

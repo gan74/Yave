@@ -10,7 +10,7 @@
 RWStructuredBuffer<uint> hash_table;
 
 [[vk::binding(1)]]
-RWStructuredBuffer<uint> active_probes;
+RWStructuredBuffer<uint> inactive_probes;
 
 [[vk::binding(2)]]
 RWStructuredBuffer<DDGIProbeData> probe_datas;
@@ -39,21 +39,25 @@ cbuffer Params {
 
 
 
-void add_active(uint probe_index) {
+void add_inactive(uint probe_index) {
     uint index;
-    InterlockedAdd(active_probes[0], 1, index);
+    InterlockedAdd(inactive_probes[0], 1, index);
     if(index < max_probe_count) {
-        active_probes[2 + index] = probe_index;
+        inactive_probes[1 + index] = probe_index;
     }
 }
 
-void add_inactive(uint probe_index) {
-    uint index;
-    InterlockedAdd(active_probes[1], 1, index);
-    if(index < max_probe_count) {
-        active_probes[max_probe_count + 1 - index] = probe_index;
+uint allocate_probe_index() {
+    uint inactive;
+    InterlockedAdd(inactive_probes[0], -1, inactive);
+
+    if(inactive >= max_probe_count) {
+        return constants.max_uint;
     }
+
+    return inactive_probes[inactive];
 }
+
 
 void clear_hash_bucket(uint bucket) {
     hash_table[bucket] = 0;
@@ -68,8 +72,7 @@ void clear_hash_bucket(uint bucket) {
 [numthreads(64)]
 void main() {
     if(semantics.global_index == 0) {
-        active_probes[0] = 0;
-        active_probes[1] = 0;
+        inactive_probes[0] = max_probe_count;
     }
 
     if(semantics.global_index < hash_size) {
@@ -77,6 +80,7 @@ void main() {
     }
 
     if(semantics.global_index < max_probe_count) {
+        inactive_probes[1 + semantics.global_index] = semantics.global_index;
         probe_datas[semantics.global_index].hash_bucket = constants.max_uint;
     }
 }
@@ -86,8 +90,7 @@ void main() {
 [shader("compute")]
 [numthreads(1)]
 void main() {
-    active_probes[0] = 0;
-    active_probes[1] = 0;
+    inactive_probes[0] = 0;
 }
 
 #elif defined(TRIM)
@@ -107,8 +110,6 @@ void main() {
         clear_hash_bucket(hash_bucket);
         probe_datas[probe_index].hash_bucket = constants.max_uint;
         add_inactive(probe_index);
-    } else {
-        add_active(probe_index);
     }
 }
 
@@ -125,23 +126,6 @@ uint find_first(uint4 mask) {
         return 64 + firstbitlow(mask.z);
     }
     return 96 + firstbitlow(mask.w);
-}
-
-uint allocate_probe_index() {
-    uint inactive_index;
-    InterlockedAdd(active_probes[1], -1, inactive_index);
-
-    if(inactive_index >= max_probe_count) {
-        return constants.max_uint;
-    }
-
-    const uint index = active_probes[2 + inactive_index];
-
-    uint active_index;
-    InterlockedAdd(active_probes[0], 1, active_index);
-    active_probes[2 + active_index] = index;
-
-    return index;
 }
 
 
@@ -171,10 +155,6 @@ void main() {
 
     for(uint i = 0; i != 8; ++i) {
         const int3 probe_coord = sample_pos.corner(i);
-
-        /*if(any(abs(probe_coord) > 32)) {
-            continue;
-        }*/
 
         bool inserted = false;
         const uint hash_bucket = find_update_bucket_index(hash_table, HashKey.make_key(probe_coord, lod), hash_size, inserted);

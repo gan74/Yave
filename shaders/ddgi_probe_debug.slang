@@ -14,7 +14,7 @@ static const float2 font_size = float2(8.0, 15.0);
 
 
 [[vk::binding(0)]]
-StructuredBuffer<uint> active_probes;
+StructuredBuffer<uint> inactive_probes;
 
 [[vk::binding(1)]]
 cbuffer Params {
@@ -28,7 +28,7 @@ cbuffer Params {
 [shader("fragment")]
 float4 frag_main() {
     const int2 coord = int2(semantics.frag_coord.xy);
-    const uint count = active_probes[0];
+    const uint count = max_probe_count - inactive_probes[0];
     const float digits = max(1.0, count == 0 ? 1.0 : floor(log2(float(count)) / log2(10.0)) + 1.0);
 
     float glyph = 0.0;
@@ -79,7 +79,7 @@ Sampler2D<float2> in_distance;
 StructuredBuffer<DDGIProbeData> probe_datas;
 
 [[vk::binding(6)]]
-StructuredBuffer<uint> active_probes;
+StructuredBuffer<uint> inactive_probes;
 
 [[vk::binding(7)]]
 cbuffer Params {
