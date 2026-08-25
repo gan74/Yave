@@ -59,42 +59,30 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     const auto gi = builder.declare_image(VK_FORMAT_B10G11R11_UFLOAT_PACK32, size);
 
     static const FrameGraphPersistentResourceId persistent_hash_id = FrameGraphPersistentResourceId::create();
-    static const FrameGraphPersistentResourceId persistent_sum_id = FrameGraphPersistentResourceId::create();
-    const auto [hash, hash_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size * 4);
-    const auto [sum, sum_reset] = framegraph.create_scratch_buffer<math::Vec4, BufferUsage::StorageBit>(persistent_sum_id, hash_size);
-
-    const bool reset = false; // editor::debug_values().command("Reset RTGI");
+    static const FrameGraphPersistentResourceId persistent_sh_id = FrameGraphPersistentResourceId::create();
+    const auto [hash, hash_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size * 2);
+    const auto [sh, sh_reset] = framegraph.create_scratch_buffer<float, BufferUsage::StorageBit>(persistent_sh_id, hash_size * 28);
 
     const struct Params {
         u32 hash_size;
         u32 frame_id;
         u32 reset_hash;
-        float lod_jitter_strength;
-
         float lod_dist;
-        float base_cell_size;
-        float pos_jitter_strength;
-        float norm_jitter_strength;
 
-        float max_samples;
-        float min_ray_count;
-        float max_ray_count;
+        float base_cell_size;
+        float target_weight;
         u32 light_count;
+        u32 padding_0;
     } params {
         hash_size,
         u32(framegraph.frame_id()),
-        u32(hash_reset || sum_reset || reset ? 1 : 0),
-        settings.lod_jitter,
-
+        u32(hash_reset || sh_reset ? 1 : 0),
         settings.lod_dist,
-        settings.base_cell_size,
-        settings.pos_jitter,
-        settings.norm_jitter,
 
+        settings.base_cell_size,
         4096.0f,
-        settings.min_ray_count,
-        settings.max_ray_count,
         u32(visibility.directional_lights.size()),
+        0u
     };
 
     const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
@@ -103,7 +91,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     builder.add_storage_output(gi);
 
     builder.add_descriptor_binding(Descriptor(hash));
-    builder.add_descriptor_binding(Descriptor(sum));
+    builder.add_descriptor_binding(Descriptor(sh));
 
     builder.add_descriptor_binding(Descriptor(tlas));
 
@@ -136,12 +124,10 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
         const std::array<BufferBarrier, 2> barriers = {
             BufferBarrier(hash, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
-            BufferBarrier(sum, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
+            BufferBarrier(sh, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
         };
 
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGITrimProgram], math::Vec2ui(hash_size, 1), desc_sets);
-        recorder.barriers(barriers);
-        recorder.dispatch_threads(device_resources()[DeviceResources::RTGICountProgram], size, desc_sets);
         recorder.barriers(barriers);
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGIUpdateProgram], size, desc_sets);
         recorder.barriers(barriers);

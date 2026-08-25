@@ -404,7 +404,7 @@ void EngineView::draw_toolbar() {
         draw_menu();
         ImGui::EndMenu();
     }
-    
+
     ImGui::Separator();
 
     {
@@ -493,10 +493,10 @@ void EngineView::draw_gizmos() {
     }
 
     switch(_gizmo) {
-        case GizmoType::Translate: 
+        case GizmoType::Translate:
             _tr_gizmo.draw();
         break;
-        case GizmoType::Rotate: 
+        case GizmoType::Rotate:
             _rot_gizmo.draw();
         break;
     }
@@ -555,19 +555,11 @@ void EngineView::draw_settings_menu() {
     if(ImGui::BeginMenu("RTGI")) {
         RTGISettings& settings = _settings.renderer_settings.rtgi;
 
-        ImGui::SliderFloat("Min ray count", &settings.min_ray_count, 0.0f, 16.0f);
-        ImGui::SliderFloat("Max ray count", &settings.max_ray_count, 1.0f, 16.0f);
-
         ImGui::Separator();
 
         ImGui::SliderFloat("Cell size", &settings.base_cell_size, 0.01f, 0.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
         ImGui::SliderFloat("LoD distance", &settings.lod_dist, 1.0f, 100.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
 
-        ImGui::Separator();
-
-        ImGui::SliderFloat("LoD jitter", &settings.lod_jitter, 0.0f, 1.0f);
-        ImGui::SliderFloat("Position jitter", &settings.pos_jitter, 0.0f, 4.0f);
-        ImGui::SliderFloat("Normal jitter", &settings.norm_jitter, 0.0f, 2.0f);
 
         ImGui::EndMenu();
     }

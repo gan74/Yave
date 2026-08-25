@@ -47,6 +47,20 @@ struct HashKey {
         }
         return k;
     }
+
+    static HashKey make_key_pos_only(float3 world_pos, float base_cell_size, uint lod) {
+        const float cell_size = base_cell_size * exp2(float(lod));
+        const int3 p_i = int3(floor(world_pos / cell_size));
+
+        HashKey k;
+        {
+            k.append(p_i.z);
+            k.append(p_i.y);
+            k.append(p_i.x);
+            k.append(lod);
+        }
+        return k;
+    }
 };
 
 
