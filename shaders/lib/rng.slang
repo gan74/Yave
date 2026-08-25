@@ -21,7 +21,7 @@ interface Rng {
     float3 next_unit() {
         const float theta = next_unorm() * constants.pi * 2.0;
         const float z = next_snorm();
-        const float n = sqrt(1.0 - z * z);
+        const float n = sqrt(max(0.0, 1.0 - z * z));
         return float3(n * cos(theta), n * sin(theta), z);
     }
 };
