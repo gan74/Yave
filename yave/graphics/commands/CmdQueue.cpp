@@ -272,7 +272,7 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
             const u32 signal_count = signal_semaphores[1] ? 2 : 1;
             const u32 wait_count = u32(wait_semaphores.size());
 
-            const core::ScratchPad<VkPipelineStageFlags> wait_stages(wait_count, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+            const core::ScratchPad<VkPipelineStageFlags> wait_stages(wait_count, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
             VkTimelineSemaphoreSubmitInfo timeline_info = vk_struct();
             {
