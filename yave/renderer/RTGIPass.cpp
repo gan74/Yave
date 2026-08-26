@@ -60,9 +60,11 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     const auto gi = builder.declare_image(VK_FORMAT_B10G11R11_UFLOAT_PACK32, size);
 
     static const FrameGraphPersistentResourceId persistent_hash_id = FrameGraphPersistentResourceId::create();
-    static const FrameGraphPersistentResourceId persistent_sh_id = FrameGraphPersistentResourceId::create();
-    const auto [hash, hash_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size * 2);
-    const auto [sh, sh_reset] = framegraph.create_scratch_buffer<float, BufferUsage::StorageBit>(persistent_sh_id, hash_size * 28);
+    static const FrameGraphPersistentResourceId persistent_cells_id = FrameGraphPersistentResourceId::create();
+    static const FrameGraphPersistentResourceId persistent_cell_alloc_count_id = FrameGraphPersistentResourceId::create();
+    const auto [hash, hash_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size * 3);
+    const auto [cells, cells_reset] = framegraph.create_scratch_buffer<shader::RTGICell, BufferUsage::StorageBit>(persistent_cells_id, hash_size);
+    const auto [cell_alloc_count, cell_alloc_count_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_cell_alloc_count_id, 1);
 
     const struct Params {
         u32 hash_size;
@@ -77,7 +79,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     } params {
         hash_size,
         u32(framegraph.frame_id()),
-        u32(hash_reset || sh_reset ? 1 : 0),
+        u32(hash_reset || cells_reset || cell_alloc_count_reset ? 1 : 0),
         settings.lod_dist,
 
         settings.base_cell_size,
@@ -85,7 +87,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         u32(visibility.directional_lights.size()),
         max_cell_updates
     };
-    
+
     static const FrameGraphPersistentResourceId persistent_cell_updates_id = FrameGraphPersistentResourceId::create();
     static const FrameGraphPersistentResourceId persistent_cell_update_count_id = FrameGraphPersistentResourceId::create();
     const auto [cell_updates, cell_updates_reset] = framegraph.create_scratch_buffer<shader::RTGICellUpdate, BufferUsage::StorageBit>(persistent_cell_updates_id, max_cell_updates);
@@ -96,7 +98,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     builder.add_storage_output(gi);
     builder.add_descriptor_binding(Descriptor(hash));
-    builder.add_descriptor_binding(Descriptor(sh));
+    builder.add_descriptor_binding(Descriptor(cells));
     builder.add_descriptor_binding(Descriptor(tlas));
     builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
@@ -106,6 +108,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     builder.add_storage_input(directional_buffer);
     builder.add_descriptor_binding(Descriptor(cell_updates));
     builder.add_descriptor_binding(Descriptor(cell_update_count));
+    builder.add_descriptor_binding(Descriptor(cell_alloc_count));
     builder.add_inline_input(params);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -127,11 +130,12 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
             texture_library().descriptor_set()
         };
 
-        const std::array<BufferBarrier, 4> barriers = {
+        const std::array<BufferBarrier, 5> barriers = {
             BufferBarrier(hash, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
-            BufferBarrier(sh, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
+            BufferBarrier(cells, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
             BufferBarrier(cell_updates, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
             BufferBarrier(cell_update_count, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
+            BufferBarrier(cell_alloc_count, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
         };
 
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGITrimProgram], math::Vec2ui(hash_size, 1), desc_sets);

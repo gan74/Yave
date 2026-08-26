@@ -3,6 +3,7 @@
 #include "lib/rt.slang"
 #include "lib/spatial_hash.slang"
 #include "lib/sh.slang"
+#include "lib/debug.slang"
 
 #ifdef __cplusplus
 #define TRIM
@@ -11,7 +12,7 @@
 #define APPLY
 #endif
 
-static const uint sh_stride = 28; // 9 * 3 (RGB SH coefficients) + 1 (weight)
+#define DEBUG
 
 [[vk::binding(0)]]
 RWTexture2D out_image;
@@ -20,7 +21,7 @@ RWTexture2D out_image;
 RWStructuredBuffer<uint> hash_table;
 
 [[vk::binding(2)]]
-RWStructuredBuffer<float> sh_table;
+RWStructuredBuffer<RTGICell> cells;
 
 [[vk::binding(3)]]
 RaytracingAccelerationStructure tlas;
@@ -50,6 +51,9 @@ RWStructuredBuffer<RTGICellUpdate> cell_updates;
 RWStructuredBuffer<uint> cell_update_count;
 
 [[vk::binding(12)]]
+RWStructuredBuffer<uint> cell_alloc_count;
+
+[[vk::binding(13)]]
 cbuffer Params {
     uint hash_size;
     uint frame_id;
@@ -76,78 +80,49 @@ uint timestamp_index(uint h) {
     return hash_size + h;
 }
 
-uint sh_offset(uint h) {
-    return h * sh_stride;
+uint sh_index_offset(uint h) {
+    return hash_size * 2 + h;
 }
 
-uint weight_offset(uint h) {
-    return h * sh_stride + 27;
-}
-
-float read_sh(uint h, out SH<float3> sh) {
-    const float weight = sh_table[weight_offset(h)];
-    if(weight < 1.0) {
+float read_cell(uint cell_idx, out SH<float3> sh) {
+    const RTGICell cell = cells[cell_idx];
+    if(cell.weight < 1.0) {
         sh = SH<float3>();
         return 0.0;
     }
 
-    const uint base = sh_offset(h);
+    const SH<float> r = SH<float>.unpack(cell.packed_r);
+    const SH<float> g = SH<float>.unpack(cell.packed_g);
+    const SH<float> b = SH<float>.unpack(cell.packed_b);
     sh = SH<float3>(
-        float3(sh_table[base +  0], sh_table[base +  1], sh_table[base +  2]),
-        float3(sh_table[base +  3], sh_table[base +  4], sh_table[base +  5]),
-        float3(sh_table[base +  6], sh_table[base +  7], sh_table[base +  8]),
-        float3(sh_table[base +  9], sh_table[base + 10], sh_table[base + 11]),
-        float3(sh_table[base + 12], sh_table[base + 13], sh_table[base + 14]),
-        float3(sh_table[base + 15], sh_table[base + 16], sh_table[base + 17]),
-        float3(sh_table[base + 18], sh_table[base + 19], sh_table[base + 20]),
-        float3(sh_table[base + 21], sh_table[base + 22], sh_table[base + 23]),
-        float3(sh_table[base + 24], sh_table[base + 25], sh_table[base + 26])
+        float3(r.Y00,  g.Y00,  b.Y00),
+        float3(r.Y11,  g.Y11,  b.Y11),
+        float3(r.Y10,  g.Y10,  b.Y10),
+        float3(r.Y1_1, g.Y1_1, b.Y1_1),
+        float3(r.Y21,  g.Y21,  b.Y21),
+        float3(r.Y2_1, g.Y2_1, b.Y2_1),
+        float3(r.Y2_2, g.Y2_2, b.Y2_2),
+        float3(r.Y20,  g.Y20,  b.Y20),
+        float3(r.Y22,  g.Y22,  b.Y22)
     );
 
-    return weight;
+    return cell.weight;
 }
 
-void atomic_add_sh(uint h, SH<float3> sh) {
-    const uint base = sh_offset(h);
-    float prev;
+void write_cell(uint cell_idx, SH<float3> sh, float weight) {
+    const SH<float> r = SH<float>(sh.Y00.r, sh.Y11.r, sh.Y10.r, sh.Y1_1.r, sh.Y21.r, sh.Y2_1.r, sh.Y2_2.r, sh.Y20.r, sh.Y22.r);
+    const SH<float> g = SH<float>(sh.Y00.g, sh.Y11.g, sh.Y10.g, sh.Y1_1.g, sh.Y21.g, sh.Y2_1.g, sh.Y2_2.g, sh.Y20.g, sh.Y22.g);
+    const SH<float> b = SH<float>(sh.Y00.b, sh.Y11.b, sh.Y10.b, sh.Y1_1.b, sh.Y21.b, sh.Y2_1.b, sh.Y2_2.b, sh.Y20.b, sh.Y22.b);
 
-    InterlockedAdd(sh_table[base +  0], sh.Y00.r, prev);
-    InterlockedAdd(sh_table[base +  1], sh.Y00.g, prev);
-    InterlockedAdd(sh_table[base +  2], sh.Y00.b, prev);
-
-    InterlockedAdd(sh_table[base +  3], sh.Y11.r, prev);
-    InterlockedAdd(sh_table[base +  4], sh.Y11.g, prev);
-    InterlockedAdd(sh_table[base +  5], sh.Y11.b, prev);
-
-    InterlockedAdd(sh_table[base +  6], sh.Y10.r, prev);
-    InterlockedAdd(sh_table[base +  7], sh.Y10.g, prev);
-    InterlockedAdd(sh_table[base +  8], sh.Y10.b, prev);
-
-    InterlockedAdd(sh_table[base +  9], sh.Y1_1.r, prev);
-    InterlockedAdd(sh_table[base + 10], sh.Y1_1.g, prev);
-    InterlockedAdd(sh_table[base + 11], sh.Y1_1.b, prev);
-
-    InterlockedAdd(sh_table[base + 12], sh.Y21.r, prev);
-    InterlockedAdd(sh_table[base + 13], sh.Y21.g, prev);
-    InterlockedAdd(sh_table[base + 14], sh.Y21.b, prev);
-
-    InterlockedAdd(sh_table[base + 15], sh.Y2_1.r, prev);
-    InterlockedAdd(sh_table[base + 16], sh.Y2_1.g, prev);
-    InterlockedAdd(sh_table[base + 17], sh.Y2_1.b, prev);
-
-    InterlockedAdd(sh_table[base + 18], sh.Y2_2.r, prev);
-    InterlockedAdd(sh_table[base + 19], sh.Y2_2.g, prev);
-    InterlockedAdd(sh_table[base + 20], sh.Y2_2.b, prev);
-
-    InterlockedAdd(sh_table[base + 21], sh.Y20.r, prev);
-    InterlockedAdd(sh_table[base + 22], sh.Y20.g, prev);
-    InterlockedAdd(sh_table[base + 23], sh.Y20.b, prev);
-
-    InterlockedAdd(sh_table[base + 24], sh.Y22.r, prev);
-    InterlockedAdd(sh_table[base + 25], sh.Y22.g, prev);
-    InterlockedAdd(sh_table[base + 26], sh.Y22.b, prev);
-
-    InterlockedAdd(sh_table[base + 27], 1.0, prev);
+    RTGICell cell;
+    cell.packed_r = r.pack();
+    cell.packed_g = g.pack();
+    cell.packed_b = b.pack();
+    cell.weight = weight;
+    cell.padding_0 = 0.0;
+    cell.padding_1 = 0.0;
+    cell.padding_2 = 0.0;
+    cells[cell_idx] = cell;
 }
 
 
@@ -165,20 +140,24 @@ void main() {
 
     if(h == 0) {
         cell_update_count[0] = 0;
+        if(reset_hash > 0) {
+            cell_alloc_count[0] = 0;
+        }
     }
 
-    if(reset_hash > 0 || hash_table[timestamp_index(h)] == (frame_id - 4)) {
+    if(reset_hash > 0) {
         hash_table[h] = 0;
-        for(uint i = 0; i != sh_stride; ++i) {
-            sh_table[h * sh_stride + i] = 0.0;
+        hash_table[sh_index_offset(h)] = constants.max_uint;
+    } else if(hash_table[timestamp_index(h)] == (frame_id - 4)) {
+        hash_table[h] = 0;
+        const uint cell_idx = hash_table[sh_index_offset(h)];
+        if(cell_idx != constants.max_uint) {
+            cells[cell_idx] = RTGICell();
         }
     } else {
-        const float weight = sh_table[weight_offset(h)];
-        if(weight > 2.0 * target_weight) {
-            const float scale = target_weight / weight;
-            for(uint i = 0; i != sh_stride; ++i) {
-                sh_table[h * sh_stride + i] *= scale;
-            }
+        const uint cell_idx = hash_table[sh_index_offset(h)];
+        if(cell_idx != constants.max_uint && cells[cell_idx].weight > 2.0 * target_weight) {
+            cells[cell_idx].weight = target_weight;
         }
     }
 }
@@ -220,6 +199,15 @@ void main() {
         return;
     }
 
+    if(inserted) {
+        if(hash_table[sh_index_offset(index)] == constants.max_uint) {
+            uint cell_idx;
+            InterlockedAdd(cell_alloc_count[0], 1, cell_idx);
+            cells[cell_idx] = RTGICell();
+            hash_table[sh_index_offset(index)] = cell_idx;
+        }
+    }
+
     uint prev_timestamp;
     InterlockedExchange(hash_table[timestamp_index(index)], frame_id, prev_timestamp);
     if(prev_timestamp != frame_id) {
@@ -239,12 +227,17 @@ void main() {
         return;
     }
 
+    const uint base_cell_idx = hash_table[sh_index_offset(base_index)];
+    if(base_cell_idx == constants.max_uint) {
+        return;
+    }
+
     float4 gi = float4(0.0, 0.0, 0.0, 1.0);
 
     SH<float3> sh;
-    const float weight = read_sh(base_index, sh);
+    const float weight = read_cell(base_cell_idx, sh);
     if(weight >= 1.0) {
-        gi = float4(max(0.0, sh.eval_hemisphere_cosine_weighted(normal)), weight);
+        gi = float4(max(0.0, sh.eval_hemisphere_cosine_weighted(normal)) * weight, weight);
 
         const uint extra_sample_count = 4;
         for(uint k = 0; k != 2; ++k) {
@@ -252,9 +245,12 @@ void main() {
                 const HashKey key = HashKey.make_key(world_pos, base_cell_size, uint(lod) + k, rng.next_unit());
                 const uint index = find_bucket_index(hash_table, key, hash_size);
                 if(index != constants.max_uint) {
-                    const float w = read_sh(index, sh);
-                    if(w >= 1.0) {
-                        gi += float4(max(0.0, sh.eval_hemisphere_cosine_weighted(normal)), w);
+                    const uint cell_idx = hash_table[sh_index_offset(index)];
+                    if(cell_idx != constants.max_uint) {
+                        const float w = read_cell(cell_idx, sh);
+                        if(w >= 1.0) {
+                            gi += float4(max(0.0, sh.eval_hemisphere_cosine_weighted(normal)) * w, w);
+                        }
                     }
                 }
             }
@@ -262,6 +258,21 @@ void main() {
     }
 
     out_image[coord] = float4(gi.rgb / gi.a, 1.0);
+
+#ifdef DEBUG
+    {
+        DebugPrinter dbg = DebugPrinter(coord);
+        dbg.puts(CHAR_U, CHAR_P, CHAR_D, CHAR_COLON, CHAR_SPACE);
+        dbg.putf(float(min(cell_update_count[0], max_cell_updates)), 6.0, 0.0);
+        dbg.next_line();
+        dbg.puts(CHAR_C, CHAR_E, CHAR_L, CHAR_COLON, CHAR_SPACE);
+        dbg.putf(float(cell_alloc_count[0]), 6.0, 0.0);
+        if(dbg.value > 0.0) {
+            out_image[coord] = float4(1.0);
+        }
+    }
+#endif
+
 #endif
 }
 #endif
@@ -288,6 +299,10 @@ void main() {
     }
 
     const RTGICellUpdate cell = cell_updates[index];
+    const uint cell_idx = hash_table[sh_index_offset(cell.index)];
+    if(cell_idx == constants.max_uint) {
+        return;
+    }
 
     SH<float3> sum;
     for(uint k = 0; k != sample_count; ++k) {
@@ -317,6 +332,12 @@ void main() {
         sum = sum + (SH<float>.basis(trace_dir) * radiance);
     }
 
-    atomic_add_sh(cell.index, sum * (1.0 / sample_count));
+    const SH<float3> contribution = sum * (1.0 / sample_count);
+
+    SH<float3> avg;
+    const float w = read_cell(cell_idx, avg);
+    const float new_w = w + 1.0;
+    const SH<float3> new_avg = avg + (contribution - avg) * (1.0 / new_w);
+    write_cell(cell_idx, new_avg, new_w);
 }
 #endif
