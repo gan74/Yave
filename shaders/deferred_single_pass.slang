@@ -66,12 +66,13 @@ void comp_main() {
         shadow_infos,
         in_shadows
     );
+
 #ifdef DEBUG
     {
         const LightTile light_tile = light_tiles[semantics.work_group_index];
         const float total_lights = float(light_tile.spot_count + light_tile.point_count);
         float3 heat = heat_spectrum(total_lights / 16.0f);
-        heat = lerp(heat, float3(1.0) - heat, debug.print_value(semantics.local_id.xy * 2.0, float2(0.0), float2(8.0, 15.0), total_lights, 2.0, 0.0));
+        heat = lerp(heat, float3(1.0) - heat, DebugPrinter.print_value(semantics.local_id.xy * 2.0, float2(0.0), float2(8.0, 15.0), total_lights, 2.0, 0.0));
         irradiance = lerp(heat, irradiance, 0.8);
     }
 #endif
