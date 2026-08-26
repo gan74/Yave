@@ -170,6 +170,7 @@ void CmdQueue::submit_async_start(CmdBufferData* data) {
         data->_semaphore = create_cmd_buffer_semaphore();
     }
 
+    Y_TODO(not async start)
     submit_internal(data, {}, {}, {}, false);
 }
 
