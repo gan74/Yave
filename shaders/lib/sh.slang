@@ -80,57 +80,65 @@ struct SH<T : IFloat> {
 };
 
 extension SH<float> {
-    static const uint sh_l0_bits = 16; // 16
-    static const uint sh_l1_bits = 8;  // 8
-    static const uint sh_l2_bits = 4;  // 4
+    float3 strongest_dir() {
+        float3 dir = float3(Y11, Y1_1, Y10);
+        if(dot(dir, dir) < constants.epsilon) {
+            dir = float3(0.0, 0.0, 1.0);
+        } else {
+            dir = normalize(dir);
+        }
 
-    uint2 pack() {
-        static_assert(sh_l0_bits + 2 * sh_l1_bits <= 32, "Invalid packing bit count");
-        static_assert(sh_l1_bits + 5 * sh_l2_bits <= 32, "Invalid packing bit count");
+        for(uint i = 0; i != 4; ++i) {
+            const float3 grad = float3(
+                0.488603 * Y11 + 1.092548 * (Y21 * dir.z + Y2_2 * dir.y + Y22 * dir.x),
+                0.488603 * Y1_1 + 1.092548 * (Y2_1 * dir.z + Y2_2 * dir.x - Y22 * dir.y),
+                0.488603 * Y10 + 1.092548 * (Y21 * dir.x + Y2_1 * dir.y) + 1.892352 * Y20 * dir.z
+            );
+            if(dot(grad, grad) < constants.epsilon) {
+                break;
+            }
+            dir = normalize(grad);
+        }
 
-        const float s = 2.0;
-        const uint q00 = uint(saturate(Y00 / s * 0.5 + 0.5) * float((1u << sh_l0_bits) - 1) + 0.5);
-        const uint q11 = uint(saturate(Y11 / s * 0.5 + 0.5) * float((1u << sh_l1_bits) - 1) + 0.5);
-        const uint q10 = uint(saturate(Y10 / s * 0.5 + 0.5) * float((1u << sh_l1_bits) - 1) + 0.5);
-
-        const uint q1_1 = uint(saturate(Y1_1 / s * 0.5 + 0.5) * float((1u << sh_l1_bits) - 1) + 0.5);
-
-        const uint q21 = uint(saturate(Y21 / s * 0.5 + 0.5) * float((1u << sh_l2_bits) - 1) + 0.5);
-        const uint q2_1 = uint(saturate(Y2_1 / s * 0.5 + 0.5) * float((1u << sh_l2_bits) - 1) + 0.5);
-        const uint q2_2 = uint(saturate(Y2_2 / s * 0.5 + 0.5) * float((1u << sh_l2_bits) - 1) + 0.5);
-        const uint q20 = uint(saturate(Y20 / s * 0.5 + 0.5) * float((1u << sh_l2_bits) - 1) + 0.5);
-        const uint q22 = uint(saturate(Y22 / s * 0.5 + 0.5) * float((1u << sh_l2_bits) - 1) + 0.5);
-
-        const uint Q0 = 
-            (q00 << (2 * sh_l1_bits)) | 
-            (q11 << sh_l1_bits) | 
-            q10
-        ;
-
-        const uint Q1 = 
-            (q1_1 << (2 * sh_l1_bits + 2 * sh_l2_bits)) | 
-            (q21 << (2 * sh_l1_bits + sh_l2_bits)) | 
-            (q2_1 << (2 * sh_l1_bits)) | 
-            (q2_2 << (sh_l1_bits + sh_l2_bits)) | 
-            (q20 << sh_l1_bits) | 
-            (q22 << sh_l2_bits)
-        ;
-
-        return uint2(Q0, Q1);
+        return eval(-dir) > eval(dir) ? -dir : dir;
     }
 
-    static SH<float> unpack(uint2 p) {
-        const float s = 2.0;
+    static uint sh_to_unorm(float v, float scale, uint bits) {
+        const float max_val = float((1u << bits) - 1);
+        return uint(saturate(v / scale * 0.5 + 0.5) * max_val + 0.5);
+    }
+
+    static float sh_from_unorm(uint q, float scale, uint bits) {
+        const float max_val = float((1u << bits) - 1);
+        return (float(q) / max_val * 2.0 - 1.0) * scale;
+    }
+
+    uint4 pack() {
+        const float scale = max(
+            max(max(abs(Y00), abs(Y11)), max(abs(Y10), abs(Y1_1))),
+            max(max(abs(Y21), abs(Y2_1)), max(abs(Y2_2), max(abs(Y20), abs(Y22))))
+        );
+
+        return uint4(
+            (sh_to_unorm(Y00,  scale, 11) << 21) | (sh_to_unorm(Y11,  scale, 11) << 10) | sh_to_unorm(Y10,  scale, 10),
+            (sh_to_unorm(Y1_1, scale, 11) << 21) | (sh_to_unorm(Y21,  scale, 11) << 10) | sh_to_unorm(Y2_1, scale, 10),
+            (sh_to_unorm(Y2_2, scale, 11) << 21) | (sh_to_unorm(Y20,  scale, 11) << 10) | sh_to_unorm(Y22,  scale, 10),
+            asuint(scale)
+        );
+    }
+
+    static SH<float> unpack(uint4 p) {
+        const float scale = asfloat(p.w);
         return SH<float>(
-            (float(p.x >> (2 * sh_l1_bits)) / float((1u << sh_l0_bits) - 1) * 2.0 - 1.0) * s,
-            (float((p.x >> sh_l1_bits) & ((1u << sh_l1_bits) - 1)) / float((1u << sh_l1_bits) - 1) * 2.0 - 1.0) * s,
-            (float(p.x & ((1u << sh_l1_bits) - 1)) / float((1u << sh_l1_bits) - 1) * 2.0 - 1.0) * s,
-            (float(p.y >> (2 * sh_l1_bits + 2 * sh_l2_bits)) / float((1u << sh_l1_bits) - 1) * 2.0 - 1.0) * s,
-            (float((p.y >> (2 * sh_l1_bits + sh_l2_bits)) & ((1u << sh_l2_bits) - 1)) / float((1u << sh_l2_bits) - 1) * 2.0 - 1.0) * s,
-            (float((p.y >> (2 * sh_l1_bits)) & ((1u << sh_l2_bits) - 1)) / float((1u << sh_l2_bits) - 1) * 2.0 - 1.0) * s,
-            (float((p.y >> (sh_l1_bits + sh_l2_bits)) & ((1u << sh_l2_bits) - 1)) / float((1u << sh_l2_bits) - 1) * 2.0 - 1.0) * s,
-            (float((p.y >> sh_l1_bits) & ((1u << sh_l2_bits) - 1)) / float((1u << sh_l2_bits) - 1) * 2.0 - 1.0) * s,
-            (float((p.y >> sh_l2_bits) & ((1u << sh_l2_bits) - 1)) / float((1u << sh_l2_bits) - 1) * 2.0 - 1.0) * s
+            sh_from_unorm(p.x >> 21,            scale, 11),
+            sh_from_unorm((p.x >> 10) & 0x7FF,  scale, 11),
+            sh_from_unorm(p.x & 0x3FF,          scale, 10),
+            sh_from_unorm(p.y >> 21,            scale, 11),
+            sh_from_unorm((p.y >> 10) & 0x7FF,  scale, 11),
+            sh_from_unorm(p.y & 0x3FF,          scale, 10),
+            sh_from_unorm(p.z >> 21,            scale, 11),
+            sh_from_unorm((p.z >> 10) & 0x7FF,  scale, 11),
+            sh_from_unorm(p.z & 0x3FF,          scale, 10)
         );
     }
 }
