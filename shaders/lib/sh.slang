@@ -4,30 +4,30 @@
 #include "utils.slang"
 
 // 2nd order spherical harmonics (9 coefficients).
-struct SH {
-    float Y00;
-    float Y11;
-    float Y10;
-    float Y1_1;
-    float Y21;
-    float Y2_1;
-    float Y2_2;
-    float Y20;
-    float Y22;
+struct SH<T : IFloat> {
+    T Y00;
+    T Y11;
+    T Y10;
+    T Y1_1;
+    T Y21;
+    T Y2_1;
+    T Y2_2;
+    T Y20;
+    T Y22;
 
     __init() {
-        Y00 = 0.0;
-        Y11 = 0.0;
-        Y10 = 0.0;
-        Y1_1 = 0.0;
-        Y21 = 0.0;
-        Y2_1 = 0.0;
-        Y2_2 = 0.0;
-        Y20 = 0.0;
-        Y22 = 0.0;
+        Y00 = T(0.0);
+        Y11 = T(0.0);
+        Y10 = T(0.0);
+        Y1_1 = T(0.0);
+        Y21 = T(0.0);
+        Y2_1 = T(0.0);
+        Y2_2 = T(0.0);
+        Y20 = T(0.0);
+        Y22 = T(0.0);
     }
 
-    __init(float y00, float y11, float y10, float y1_1, float y21, float y2_1, float y2_2, float y20, float y22) {
+    __init(T y00, T y11, T y10, T y1_1, T y21, T y2_1, T y2_2, T y20, T y22) {
         Y00 = y00;
         Y11 = y11;
         Y10 = y10;
@@ -39,8 +39,8 @@ struct SH {
         Y22 = y22;
     }
 
-    static SH basis(float3 dir) {
-        return SH(
+    static SH<float> basis(float3 dir) {
+        return SH<float>(
             0.282095,
             0.488603 * dir.x,
             0.488603 * dir.z,
@@ -53,31 +53,33 @@ struct SH {
         );
     }
 
-    float eval(float3 dir) {
-        const SH b = basis(normalize(dir));
-        return Y00  * b.Y00
-             + Y1_1 * b.Y1_1
-             + Y10  * b.Y10
-             + Y11  * b.Y11
-             + Y2_2 * b.Y2_2
-             + Y2_1 * b.Y2_1
-             + Y20  * b.Y20
-             + Y21  * b.Y21
-             + Y22  * b.Y22
+    T eval(float3 dir) {
+        const SH<float> b = basis(normalize(dir));
+        return Y00  * T(b.Y00)
+             + Y1_1 * T(b.Y1_1)
+             + Y10  * T(b.Y10)
+             + Y11  * T(b.Y11)
+             + Y2_2 * T(b.Y2_2)
+             + Y2_1 * T(b.Y2_1)
+             + Y20  * T(b.Y20)
+             + Y21  * T(b.Y21)
+             + Y22  * T(b.Y22)
          ;
     }
 
-    float eval_hemisphere_cosine_weighted(float3 dir) {
-        const SH b = basis(dir);
+    T eval_hemisphere_cosine_weighted(float3 dir) {
+        const SH<float> b = basis(dir);
         const float a0 = constants.pi;
         const float a1 = 2.0 / 3.0 * constants.pi;
         const float a2 = constants.pi / 4.0;
         return 
-            (b.Y00 * Y00) * a0+ (b.Y1_1 * Y1_1 + b.Y10 * Y10 + b.Y11 * Y11) * a1 +
-            (b.Y2_2 * Y2_2 + b.Y2_1 * Y2_1 + b.Y20 * Y20 + b.Y21 * Y21 + b.Y22 * Y22) * a2
+            (T(b.Y00) * Y00) * T(a0) + (T(b.Y1_1) * Y1_1 + T(b.Y10) * Y10 + T(b.Y11) * Y11) * T(a1) +
+            (T(b.Y2_2) * Y2_2 + T(b.Y2_1) * Y2_1 + T(b.Y20) * Y20 + T(b.Y21) * Y21 + T(b.Y22) * Y22) * T(a2)
         ;
     }
+};
 
+extension SH<float> {
     static const uint sh_l0_bits = 16; // 16
     static const uint sh_l1_bits = 8;  // 8
     static const uint sh_l2_bits = 4;  // 4
@@ -117,9 +119,9 @@ struct SH {
         return uint2(Q0, Q1);
     }
 
-    static SH unpack(uint2 p) {
+    static SH<float> unpack(uint2 p) {
         const float s = 2.0;
-        return SH(
+        return SH<float>(
             (float(p.x >> (2 * sh_l1_bits)) / float((1u << sh_l0_bits) - 1) * 2.0 - 1.0) * s,
             (float((p.x >> sh_l1_bits) & ((1u << sh_l1_bits) - 1)) / float((1u << sh_l1_bits) - 1) * 2.0 - 1.0) * s,
             (float(p.x & ((1u << sh_l1_bits) - 1)) / float((1u << sh_l1_bits) - 1) * 2.0 - 1.0) * s,
@@ -131,18 +133,18 @@ struct SH {
             (float((p.y >> sh_l2_bits) & ((1u << sh_l2_bits) - 1)) / float((1u << sh_l2_bits) - 1) * 2.0 - 1.0) * s
         );
     }
-};
+}
 
 
-bool isnan(SH sh) {
+bool isnan<T>(SH<T> sh) where T : IFloat, __BuiltinFloatingPointType {
     return 
         isnan(sh.Y00) || isnan(sh.Y11) || isnan(sh.Y10) || isnan(sh.Y1_1) ||
         isnan(sh.Y21) || isnan(sh.Y2_1) || isnan(sh.Y2_2) || isnan(sh.Y20) || isnan(sh.Y22)
    ;
 }
 
-SH operator+(SH a, SH b) {
-    return SH(
+SH<T> operator+<T : IFloat>(SH<T> a, SH<T> b) {
+    return SH<T>(
         a.Y00 + b.Y00,
         a.Y11 + b.Y11,
         a.Y10 + b.Y10,
@@ -155,8 +157,8 @@ SH operator+(SH a, SH b) {
     );
 }
 
-SH operator-(SH a, SH b) {
-    return SH(
+SH<T> operator-<T : IFloat>(SH<T> a, SH<T> b) {
+    return SH<T>(
         a.Y00 - b.Y00,
         a.Y11 - b.Y11,
         a.Y10 - b.Y10,
@@ -169,21 +171,21 @@ SH operator-(SH a, SH b) {
     );
 }
 
-SH operator*(SH a, float s) {
-    return SH(
-        a.Y00 * s,
-        a.Y11 * s,
-        a.Y10 * s,
-        a.Y1_1 * s,
-        a.Y21 * s,
-        a.Y2_1 * s,
-        a.Y2_2 * s,
-        a.Y20 * s,
-        a.Y22 * s
+SH<T> operator*<T : IFloat>(SH<T> a, float s) {
+    return SH<T>(
+        a.Y00 * T(s),
+        a.Y11 * T(s),
+        a.Y10 * T(s),
+        a.Y1_1 * T(s),
+        a.Y21 * T(s),
+        a.Y2_1 * T(s),
+        a.Y2_2 * T(s),
+        a.Y20 * T(s),
+        a.Y22 * T(s)
     );
 }
 
-SH operator/(SH a, float s) {
+SH<T> operator/<T : IFloat>(SH<T> a, float s) {
     return a * (1.0 / s);
 }
 
