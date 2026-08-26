@@ -75,11 +75,11 @@ uint weight_offset(uint h) {
     return h * sh_stride + 27;
 }
 
-bool read_sh(uint h, out SH<float3> sh) {
+float read_sh(uint h, out SH<float3> sh) {
     const float weight = sh_table[weight_offset(h)];
     if(weight < 1.0) {
         sh = SH<float3>();
-        return false;
+        return 0.0;
     }
 
     const uint base = sh_offset(h);
@@ -93,9 +93,9 @@ bool read_sh(uint h, out SH<float3> sh) {
         float3(sh_table[base + 18], sh_table[base + 19], sh_table[base + 20]),
         float3(sh_table[base + 21], sh_table[base + 22], sh_table[base + 23]),
         float3(sh_table[base + 24], sh_table[base + 25], sh_table[base + 26])
-    ) / weight;
+    );
 
-    return true;
+    return weight;
 }
 
 void atomic_add_sh(uint h, SH<float3> sh) {
@@ -188,26 +188,28 @@ void main() {
         return;
     }
 
+    const uint seed = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
+    HashRng rng = HashRng(seed);
+
     const float2 uv = (coord + 0.5) / float2(size);
     const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
     const float3 normal = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1[coord])).normal;
     const float view_dist = length(world_pos - camera.position);
-    const uint lod = HashKey.lod_level(view_dist, lod_dist);
-    const HashKey key = HashKey.make_key_pos_only(world_pos, base_cell_size, lod);
+    const float lod = HashKey.float_lod_level(view_dist, lod_dist);
 
 #ifdef UPDATE
+    const uint lod_offset = 0; // rng.next_unorm() < frac(lod) ? 1 : 0;
+    const HashKey key = HashKey.make_key(world_pos, base_cell_size, uint(lod) + lod_offset);
+
     bool inserted;
     const uint index = find_update_bucket_index(hash_table, key, hash_size, inserted);
     if(index == constants.max_uint) {
         return;
     }
-	
+
     hash_table[timestamp_index(index)] = frame_id;
 
-    const uint seed = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
-    HashRng rng = HashRng(seed);
 
-    // const float3 trace_dir = cosine_sample_hemisphere(normal, rng);
     const float3 trace_dir = rng.next_unit();
     const HitInfo hit = trace_inline(tlas, world_pos, trace_dir, 0.001, 10000.0);
 
@@ -232,25 +234,45 @@ void main() {
         radiance = in_envmap.SampleLevel(trace_dir, 0.0).rgb;
     }
 
-    const SH<float3> sh = SH<float>.basis(trace_dir) * radiance;
-    atomic_add_sh(index, sh);
-
-#endif
-
-#ifdef APPLY
-    const uint index = find_bucket_index(hash_table, key, hash_size);
-    if(index == constants.max_uint) {
+    if(all(radiance <= 0.0)) {
         return;
     }
 
-    float3 gi = float3(0.0);
+    const SH<float3> sh = SH<float>.basis(trace_dir) * radiance;
+    atomic_add_sh(index, sh);
+#endif
 
-    SH<float3> sh;
-    if(read_sh(index, sh)) {
-        gi = max(0.0, sh.eval_hemisphere_cosine_weighted(normal));
+#ifdef APPLY
+    const HashKey base_key = HashKey.make_key(world_pos, base_cell_size, uint(lod));
+    const uint base_index = find_bucket_index(hash_table, base_key, hash_size);
+    if(base_index == constants.max_uint) {
+        return;
     }
 
-    out_image[coord] = float4(gi, 1.0);
+    float4 gi = float4(0.0, 0.0, 0.0, 1.0);
+
+    SH<float3> sh;
+    const float weight = read_sh(base_index, sh);
+    if(weight >= 1.0) {
+        gi = float4(max(0.0, sh.eval_hemisphere_cosine_weighted(normal)), weight);
+
+        const uint extra_sample_count = 4;
+        for(uint k = 0; k != 2; ++k) {
+            for(uint i = 0; i != extra_sample_count; ++i) {
+                const HashKey key = HashKey.make_key(world_pos, base_cell_size, uint(lod) + k, rng.next_unit());
+                const uint index = find_bucket_index(hash_table, key, hash_size);
+                if(index != constants.max_uint) {
+                    const float w = read_sh(index, sh);
+                    if(w >= 1.0) {
+                        gi += float4(max(0.0, sh.eval_hemisphere_cosine_weighted(normal)), w);
+                    }
+                }
+            }
+        }
+    }
+
+    out_image[coord] = float4(gi.rgb / gi.a, 1.0);
+
 #endif
 }
 #endif
