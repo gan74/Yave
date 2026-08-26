@@ -272,7 +272,7 @@ void main() {
 [numthreads(64)]
 void main() {
     const uint index = semantics.global_index;
-    const uint update_count = cell_update_count[0];
+    const uint update_count = min(cell_update_count[0], max_cell_updates);
     if(index >= update_count) {
         return;
     }

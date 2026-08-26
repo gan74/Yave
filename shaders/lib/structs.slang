@@ -218,8 +218,8 @@ struct StaticMeshData {
 };
 
 struct RTGICellUpdate {
-    uint index;
     float3 world_pos;
+    uint index;
 };
 
 struct RTGICell {
