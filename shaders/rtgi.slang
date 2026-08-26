@@ -75,59 +75,68 @@ uint weight_offset(uint h) {
     return h * sh_stride + 27;
 }
 
-void read_sh(uint h, out SH r, out SH g, out SH b, out float weight) {
+bool read_sh(uint h, out SH<float3> sh) {
+    const float weight = sh_table[weight_offset(h)];
+    if(weight < 1.0) {
+        sh = SH<float3>();
+        return false;
+    }
+
     const uint base = sh_offset(h);
-    r = SH(
-        sh_table[base + 0], sh_table[base + 1], sh_table[base + 2],
-        sh_table[base + 3], sh_table[base + 4], sh_table[base + 5],
-        sh_table[base + 6], sh_table[base + 7], sh_table[base + 8]
-    );
-    g = SH(
-        sh_table[base + 9], sh_table[base + 10], sh_table[base + 11],
-        sh_table[base + 12], sh_table[base + 13], sh_table[base + 14],
-        sh_table[base + 15], sh_table[base + 16], sh_table[base + 17]
-    );
-    b = SH(
-        sh_table[base + 18], sh_table[base + 19], sh_table[base + 20],
-        sh_table[base + 21], sh_table[base + 22], sh_table[base + 23],
-        sh_table[base + 24], sh_table[base + 25], sh_table[base + 26]
-    );
-    weight = sh_table[base + 27];
+    sh = SH<float3>(
+        float3(sh_table[base +  0], sh_table[base +  1], sh_table[base +  2]),
+        float3(sh_table[base +  3], sh_table[base +  4], sh_table[base +  5]),
+        float3(sh_table[base +  6], sh_table[base +  7], sh_table[base +  8]),
+        float3(sh_table[base +  9], sh_table[base + 10], sh_table[base + 11]),
+        float3(sh_table[base + 12], sh_table[base + 13], sh_table[base + 14]),
+        float3(sh_table[base + 15], sh_table[base + 16], sh_table[base + 17]),
+        float3(sh_table[base + 18], sh_table[base + 19], sh_table[base + 20]),
+        float3(sh_table[base + 21], sh_table[base + 22], sh_table[base + 23]),
+        float3(sh_table[base + 24], sh_table[base + 25], sh_table[base + 26])
+    ) / weight;
+
+    return true;
 }
 
-void atomic_add_sh(uint h, SH r, SH g, SH b) {
+void atomic_add_sh(uint h, SH<float3> sh) {
     const uint base = sh_offset(h);
     float prev;
 
-    InterlockedAdd(sh_table[base +  0], r.Y00, prev);
-    InterlockedAdd(sh_table[base +  1], r.Y11, prev);
-    InterlockedAdd(sh_table[base +  2], r.Y10, prev);
-    InterlockedAdd(sh_table[base +  3], r.Y1_1, prev);
-    InterlockedAdd(sh_table[base +  4], r.Y21, prev);
-    InterlockedAdd(sh_table[base +  5], r.Y2_1, prev);
-    InterlockedAdd(sh_table[base +  6], r.Y2_2, prev);
-    InterlockedAdd(sh_table[base +  7], r.Y20, prev);
-    InterlockedAdd(sh_table[base +  8], r.Y22, prev);
+    InterlockedAdd(sh_table[base +  0], sh.Y00.r, prev);
+    InterlockedAdd(sh_table[base +  1], sh.Y00.g, prev);
+    InterlockedAdd(sh_table[base +  2], sh.Y00.b, prev);
 
-    InterlockedAdd(sh_table[base +  9], g.Y00, prev);
-    InterlockedAdd(sh_table[base + 10], g.Y11, prev);
-    InterlockedAdd(sh_table[base + 11], g.Y10, prev);
-    InterlockedAdd(sh_table[base + 12], g.Y1_1, prev);
-    InterlockedAdd(sh_table[base + 13], g.Y21, prev);
-    InterlockedAdd(sh_table[base + 14], g.Y2_1, prev);
-    InterlockedAdd(sh_table[base + 15], g.Y2_2, prev);
-    InterlockedAdd(sh_table[base + 16], g.Y20, prev);
-    InterlockedAdd(sh_table[base + 17], g.Y22, prev);
+    InterlockedAdd(sh_table[base +  3], sh.Y11.r, prev);
+    InterlockedAdd(sh_table[base +  4], sh.Y11.g, prev);
+    InterlockedAdd(sh_table[base +  5], sh.Y11.b, prev);
 
-    InterlockedAdd(sh_table[base + 18], b.Y00, prev);
-    InterlockedAdd(sh_table[base + 19], b.Y11, prev);
-    InterlockedAdd(sh_table[base + 20], b.Y10, prev);
-    InterlockedAdd(sh_table[base + 21], b.Y1_1, prev);
-    InterlockedAdd(sh_table[base + 22], b.Y21, prev);
-    InterlockedAdd(sh_table[base + 23], b.Y2_1, prev);
-    InterlockedAdd(sh_table[base + 24], b.Y2_2, prev);
-    InterlockedAdd(sh_table[base + 25], b.Y20, prev);
-    InterlockedAdd(sh_table[base + 26], b.Y22, prev);
+    InterlockedAdd(sh_table[base +  6], sh.Y10.r, prev);
+    InterlockedAdd(sh_table[base +  7], sh.Y10.g, prev);
+    InterlockedAdd(sh_table[base +  8], sh.Y10.b, prev);
+
+    InterlockedAdd(sh_table[base +  9], sh.Y1_1.r, prev);
+    InterlockedAdd(sh_table[base + 10], sh.Y1_1.g, prev);
+    InterlockedAdd(sh_table[base + 11], sh.Y1_1.b, prev);
+
+    InterlockedAdd(sh_table[base + 12], sh.Y21.r, prev);
+    InterlockedAdd(sh_table[base + 13], sh.Y21.g, prev);
+    InterlockedAdd(sh_table[base + 14], sh.Y21.b, prev);
+
+    InterlockedAdd(sh_table[base + 15], sh.Y2_1.r, prev);
+    InterlockedAdd(sh_table[base + 16], sh.Y2_1.g, prev);
+    InterlockedAdd(sh_table[base + 17], sh.Y2_1.b, prev);
+
+    InterlockedAdd(sh_table[base + 18], sh.Y2_2.r, prev);
+    InterlockedAdd(sh_table[base + 19], sh.Y2_2.g, prev);
+    InterlockedAdd(sh_table[base + 20], sh.Y2_2.b, prev);
+
+    InterlockedAdd(sh_table[base + 21], sh.Y20.r, prev);
+    InterlockedAdd(sh_table[base + 22], sh.Y20.g, prev);
+    InterlockedAdd(sh_table[base + 23], sh.Y20.b, prev);
+
+    InterlockedAdd(sh_table[base + 24], sh.Y22.r, prev);
+    InterlockedAdd(sh_table[base + 25], sh.Y22.g, prev);
+    InterlockedAdd(sh_table[base + 26], sh.Y22.b, prev);
 
     InterlockedAdd(sh_table[base + 27], 1.0, prev);
 }
@@ -223,16 +232,8 @@ void main() {
         radiance = in_envmap.SampleLevel(trace_dir, 0.0).rgb;
     }
 
-    const SH basis = SH.basis(trace_dir);
-    const SH r_sh = basis * radiance.r;
-    const SH g_sh = basis * radiance.g;
-    const SH b_sh = basis * radiance.b;
-
-    /*if(isnan(r_sh) || isnan(g_sh) || isnan(b_sh)) {
-        // oof
-    } else*/ {
-        atomic_add_sh(index, r_sh, g_sh, b_sh);
-    }
+    const SH<float3> sh = SH<float>.basis(trace_dir) * radiance;
+    atomic_add_sh(index, sh);
 
 #endif
 
@@ -242,24 +243,12 @@ void main() {
         return;
     }
 
-    SH r_sh, g_sh, b_sh;
-    float weight;
-    read_sh(index, r_sh, g_sh, b_sh, weight);
+    float3 gi = float3(0.0);
 
-    if(weight < 1.0) {
-        return;
+    SH<float3> sh;
+    if(read_sh(index, sh)) {
+        gi = max(0.0, sh.eval_hemisphere_cosine_weighted(normal));
     }
-
-    const float inv_weight = 1.0 / weight;
-    r_sh = r_sh * inv_weight;
-    g_sh = g_sh * inv_weight;
-    b_sh = b_sh * inv_weight;
-
-    const float3 gi = float3(
-        max(0.0, r_sh.eval_hemisphere_cosine_weighted(normal)),
-        max(0.0, g_sh.eval_hemisphere_cosine_weighted(normal)),
-        max(0.0, b_sh.eval_hemisphere_cosine_weighted(normal))
-    );
 
     out_image[coord] = float4(gi, 1.0);
 #endif

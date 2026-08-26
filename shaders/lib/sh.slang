@@ -189,4 +189,11 @@ SH<T> operator/<T : IFloat>(SH<T> a, float s) {
     return a * (1.0 / s);
 }
 
+SH<float3> operator*(SH<float> a, float3 c) {
+    return SH<float3>(
+        a.Y00 * c, a.Y11 * c, a.Y10 * c, a.Y1_1 * c,
+        a.Y21 * c, a.Y2_1 * c, a.Y2_2 * c, a.Y20 * c, a.Y22 * c
+    );
+}
+
 #endif // SH_SLANG
