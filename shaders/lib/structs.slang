@@ -222,4 +222,15 @@ struct RTGICellUpdate {
     float3 world_pos;
 };
 
+struct RTGICell {
+    uint4 packed_r;
+    uint4 packed_g;
+    uint4 packed_b;
+
+    float weight;
+    float padding_0;
+    float padding_1;
+    float padding_2;
+};
+
 #endif
