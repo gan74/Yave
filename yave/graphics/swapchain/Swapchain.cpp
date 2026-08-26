@@ -282,12 +282,6 @@ bool Swapchain::build_swapchain() {
         _images << std::move(swapchain_image);
     }
 
-    CmdBufferRecorder recorder = create_disposable_cmd_buffer();
-    for(auto& i : _images) {
-        recorder.barriers({ImageBarrier::transition_barrier(i, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)});
-    }
-    recorder.submit().wait();
-
     return true;
 }
 
