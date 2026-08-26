@@ -217,4 +217,9 @@ struct StaticMeshData {
     SLANG_PTR(uint) padding_1;
 };
 
+struct RTGICellUpdate {
+    uint index;
+    float3 world_pos;
+};
+
 #endif

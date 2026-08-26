@@ -44,6 +44,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         return {};
     }
 
+    const u32 max_cell_updates = 1 << 16;
     const u32 hash_size = u32(1) << std::min(settings.hash_size, 30u);
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
@@ -72,7 +73,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         float base_cell_size;
         float target_weight;
         u32 light_count;
-        u32 padding_0;
+        u32 max_cell_updates;
     } params {
         hash_size,
         u32(framegraph.frame_id()),
@@ -82,39 +83,43 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         settings.base_cell_size,
         4096.0f,
         u32(visibility.directional_lights.size()),
-        0u
+        max_cell_updates
     };
+    
+    static const FrameGraphPersistentResourceId persistent_cell_updates_id = FrameGraphPersistentResourceId::create();
+    static const FrameGraphPersistentResourceId persistent_cell_update_count_id = FrameGraphPersistentResourceId::create();
+    const auto [cell_updates, cell_updates_reset] = framegraph.create_scratch_buffer<shader::RTGICellUpdate, BufferUsage::StorageBit>(persistent_cell_updates_id, max_cell_updates);
+    const auto [cell_update_count, cell_update_count_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_cell_update_count_id, 1);
 
     const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
     builder.map_buffer(directional_buffer);
 
     builder.add_storage_output(gi);
-
     builder.add_descriptor_binding(Descriptor(hash));
     builder.add_descriptor_binding(Descriptor(sh));
-
     builder.add_descriptor_binding(Descriptor(tlas));
-
     builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-
     builder.add_external_input(ibl_probe ? *ibl_probe : *device_resources().empty_probe());
     builder.add_external_input(Descriptor(material_allocator().material_buffer()));
     builder.add_storage_input(directional_buffer);
-
+    builder.add_descriptor_binding(Descriptor(cell_updates));
+    builder.add_descriptor_binding(Descriptor(cell_update_count));
     builder.add_inline_input(params);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        auto mapping = self->resources().map_buffer(directional_buffer);
-        for(usize i = 0; i != visibility.directional_lights.size(); ++i) {
-            const DirectionalLightComponent& light = visibility.directional_lights[i]->component;
-            mapping[i] = {
-                -light.direction().normalized(),
-                std::cos(light.disk_size()),
-                light.color() * light.intensity(),
-                u32(light.cast_shadow() ? 1 : 0), {}
-            };
+        {
+            auto mapping = self->resources().map_buffer(directional_buffer);
+            for(usize i = 0; i != visibility.directional_lights.size(); ++i) {
+                const DirectionalLightComponent& light = visibility.directional_lights[i]->component;
+                mapping[i] = {
+                    -light.direction().normalized(),
+                    std::cos(light.disk_size()),
+                    light.color() * light.intensity(),
+                    u32(light.cast_shadow() ? 1 : 0), {}
+                };
+            }
         }
 
         const std::array<DescriptorSetProxy, 2> desc_sets = {
@@ -122,14 +127,18 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
             texture_library().descriptor_set()
         };
 
-        const std::array<BufferBarrier, 2> barriers = {
+        const std::array<BufferBarrier, 4> barriers = {
             BufferBarrier(hash, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
             BufferBarrier(sh, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
+            BufferBarrier(cell_updates, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
+            BufferBarrier(cell_update_count, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
         };
 
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGITrimProgram], math::Vec2ui(hash_size, 1), desc_sets);
         recorder.barriers(barriers);
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGIUpdateProgram], size, desc_sets);
+        recorder.barriers(barriers);
+        recorder.dispatch_threads(device_resources()[DeviceResources::RTGITraceProgram], math::Vec2ui(hash_size, 1), desc_sets);
         recorder.barriers(barriers);
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGIApplyProgram], size, desc_sets);
     });

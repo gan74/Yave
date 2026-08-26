@@ -7,6 +7,7 @@
 #ifdef __cplusplus
 #define TRIM
 #define UPDATE
+#define TRACE
 #define APPLY
 #endif
 
@@ -43,6 +44,12 @@ StructuredBuffer<MaterialData> materials;
 StructuredBuffer<DirectionalLight> lights;
 
 [[vk::binding(10)]]
+RWStructuredBuffer<RTGICellUpdate> cell_updates;
+
+[[vk::binding(11)]]
+RWStructuredBuffer<uint> cell_update_count;
+
+[[vk::binding(12)]]
 cbuffer Params {
     uint hash_size;
     uint frame_id;
@@ -52,8 +59,10 @@ cbuffer Params {
     float base_cell_size;
     float target_weight;
     uint light_count;
-    uint padding_0;
+    uint max_cell_updates;
 };
+
+
 
 [[vk::binding(0, 1)]]
 Sampler2D all_textures[];
@@ -154,6 +163,10 @@ void atomic_add_sh(uint h, SH<float3> sh) {
 void main() {
     const uint h = semantics.global_index;
 
+    if(h == 0) {
+        cell_update_count[0] = 0;
+    }
+
     if(reset_hash > 0 || hash_table[timestamp_index(h)] == (frame_id - 4)) {
         hash_table[h] = 0;
         for(uint i = 0; i != sh_stride; ++i) {
@@ -207,39 +220,16 @@ void main() {
         return;
     }
 
-    hash_table[timestamp_index(index)] = frame_id;
-
-
-    const float3 trace_dir = rng.next_unit();
-    const HitInfo hit = trace_inline(tlas, world_pos, trace_dir, 0.001, 10000.0);
-
-    float3 radiance = float3(0.0);
-    if(hit.hit) {
-        const float3 hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
-        const MaterialData material = materials[hit.instance_id];
-        const uint albedo_id = material.texture_indices[uint(TextureSlots::Albedo)];
-        const float3 albedo = all_textures[NonUniformResourceIndex(albedo_id)].SampleLevel(float2(0.5), 100.0).rgb * material.base_color_factor;
-
-        radiance = albedo * in_envmap.SampleLevel(hit_normal, 999.0).rgb;
-        for(uint k = 0; k != light_count; ++k) {
-            const DirectionalLight light = lights[k];
-            const float n_l = dot(light.direction, hit_normal);
-            if(n_l > 0.0) {
-                if(!trace_inline(tlas, hit.position, light.direction, 0.001, 10000.0).hit) {
-                    radiance += albedo * light.color * n_l;
-                }
-            }
+    uint prev_timestamp;
+    InterlockedExchange(hash_table[timestamp_index(index)], frame_id, prev_timestamp);
+    if(prev_timestamp != frame_id) {
+        uint update_index;
+        InterlockedAdd(cell_update_count[0], 1, update_index);
+        if(update_index < max_cell_updates) {
+            cell_updates[update_index].index = index;
+            cell_updates[update_index].world_pos = world_pos;
         }
-    } else {
-        radiance = in_envmap.SampleLevel(trace_dir, 0.0).rgb;
     }
-
-    if(all(radiance <= 0.0)) {
-        return;
-    }
-
-    const SH<float3> sh = SH<float>.basis(trace_dir) * radiance;
-    atomic_add_sh(index, sh);
 #endif
 
 #ifdef APPLY
@@ -272,7 +262,61 @@ void main() {
     }
 
     out_image[coord] = float4(gi.rgb / gi.a, 1.0);
-
 #endif
+}
+#endif
+
+
+#ifdef TRACE
+[shader("compute")]
+[numthreads(64)]
+void main() {
+    const uint index = semantics.global_index;
+    const uint update_count = cell_update_count[0];
+    if(index >= update_count) {
+        return;
+    }
+
+    const uint seed = hash.xorshift(index + hash.xorshift(frame_id));
+    HashRng rng = HashRng(seed);
+
+    const float total_rays = 1024.0 * 1024.0;
+    const float rays_per_update = min(128.0, total_rays / update_count);
+    const uint sample_count = uint(rays_per_update) + (rng.next_unorm() < frac(rays_per_update) ? 1 : 0);
+    if(sample_count == 0) {
+        return;
+    }
+
+    const RTGICellUpdate cell = cell_updates[index];
+
+    SH<float3> sum;
+    for(uint k = 0; k != sample_count; ++k) {
+        float3 radiance = float3(0.0);
+        const float3 trace_dir = rng.next_unit();
+        const HitInfo hit = trace_inline(tlas, cell.world_pos, trace_dir, 0.001, 10000.0);
+        if(hit.hit) {
+            const float3 hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
+            const MaterialData material = materials[hit.instance_id];
+            const uint albedo_id = material.texture_indices[uint(TextureSlots::Albedo)];
+            const float3 albedo = all_textures[NonUniformResourceIndex(albedo_id)].SampleLevel(float2(0.5), 100.0).rgb * material.base_color_factor;
+
+            radiance = albedo * in_envmap.SampleLevel(hit_normal, 999.0).rgb;
+            for(uint k = 0; k != light_count; ++k) {
+                const DirectionalLight light = lights[k];
+                const float n_l = dot(light.direction, hit_normal);
+                if(n_l > 0.0) {
+                    if(!trace_inline(tlas, hit.position, light.direction, 0.001, 10000.0).hit) {
+                        radiance += albedo * light.color * n_l;
+                    }
+                }
+            }
+        } else {
+            radiance = in_envmap.SampleLevel(trace_dir, 0.0).rgb;
+        }
+
+        sum = sum + (SH<float>.basis(trace_dir) * radiance);
+    }
+
+    atomic_add_sh(cell.index, sum * (1.0 / sample_count));
 }
 #endif
