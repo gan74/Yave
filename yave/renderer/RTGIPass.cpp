@@ -61,10 +61,8 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     static const FrameGraphPersistentResourceId persistent_hash_id = FrameGraphPersistentResourceId::create();
     static const FrameGraphPersistentResourceId persistent_cells_id = FrameGraphPersistentResourceId::create();
-    static const FrameGraphPersistentResourceId persistent_cell_alloc_count_id = FrameGraphPersistentResourceId::create();
     const auto [hash, hash_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size * 3);
     const auto [cells, cells_reset] = framegraph.create_scratch_buffer<shader::RTGICell, BufferUsage::StorageBit>(persistent_cells_id, hash_size);
-    const auto [cell_alloc_count, cell_alloc_count_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_cell_alloc_count_id, 1);
 
     const struct Params {
         u32 hash_size;
@@ -79,7 +77,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     } params {
         hash_size,
         u32(framegraph.frame_id()),
-        u32(hash_reset || cells_reset || cell_alloc_count_reset ? 1 : 0),
+        u32(hash_reset || cells_reset ? 1 : 0),
         settings.lod_dist,
 
         settings.base_cell_size,
@@ -108,7 +106,6 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     builder.add_storage_input(directional_buffer);
     builder.add_descriptor_binding(Descriptor(cell_updates));
     builder.add_descriptor_binding(Descriptor(cell_update_count));
-    builder.add_descriptor_binding(Descriptor(cell_alloc_count));
     builder.add_inline_input(params);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -130,12 +127,11 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
             texture_library().descriptor_set()
         };
 
-        const std::array<BufferBarrier, 5> barriers = {
+        const std::array<BufferBarrier, 4> barriers = {
             BufferBarrier(hash, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
             BufferBarrier(cells, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
             BufferBarrier(cell_updates, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
             BufferBarrier(cell_update_count, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
-            BufferBarrier(cell_alloc_count, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
         };
 
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGITrimProgram], math::Vec2ui(hash_size, 1), desc_sets);

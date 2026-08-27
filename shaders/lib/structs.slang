@@ -228,7 +228,7 @@ struct RTGICell {
     uint4 packed_b;
 
     float weight;
-    float padding_0;
+    uint allocated;
     float padding_1;
     float padding_2;
 };

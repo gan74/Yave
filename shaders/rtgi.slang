@@ -51,9 +51,6 @@ RWStructuredBuffer<RTGICellUpdate> cell_updates;
 RWStructuredBuffer<uint> cell_update_count;
 
 [[vk::binding(12)]]
-RWStructuredBuffer<uint> cell_alloc_count;
-
-[[vk::binding(13)]]
 cbuffer Params {
     uint hash_size;
     uint frame_id;
@@ -119,9 +116,7 @@ void write_cell(uint cell_idx, SH<float3> sh, float weight) {
     cell.packed_g = g.pack();
     cell.packed_b = b.pack();
     cell.weight = weight;
-    cell.padding_0 = 0.0;
-    cell.padding_1 = 0.0;
-    cell.padding_2 = 0.0;
+    cell.allocated = 1;
     cells[cell_idx] = cell;
 }
 
@@ -140,9 +135,6 @@ void main() {
 
     if(h == 0) {
         cell_update_count[0] = 0;
-        if(reset_hash > 0) {
-            cell_alloc_count[0] = 0;
-        }
     }
 
     if(reset_hash > 0) {
@@ -201,10 +193,22 @@ void main() {
 
     if(inserted) {
         if(hash_table[sh_index_offset(index)] == constants.max_uint) {
-            uint cell_idx;
-            InterlockedAdd(cell_alloc_count[0], 1, cell_idx);
-            cells[cell_idx] = RTGICell();
-            hash_table[sh_index_offset(index)] = cell_idx;
+            bool found = false;
+            for(uint k = 0; k != 16; ++k) {
+                const uint test_index = (rng.next() & (hash_size - 1));
+
+                uint prev;
+                InterlockedExchange(cells[test_index].allocated, 1, prev);
+                if(prev == 0) {
+                    hash_table[sh_index_offset(index)] = test_index;
+                    found = true;
+                    break;
+                }
+            }
+
+            if(!found) {
+                return;
+            }
         }
     }
 
@@ -264,9 +268,6 @@ void main() {
         DebugPrinter dbg = DebugPrinter(coord);
         dbg.puts(CHAR_U, CHAR_P, CHAR_D, CHAR_COLON, CHAR_SPACE);
         dbg.putf(float(min(cell_update_count[0], max_cell_updates)), 6.0, 0.0);
-        dbg.next_line();
-        dbg.puts(CHAR_C, CHAR_E, CHAR_L, CHAR_COLON, CHAR_SPACE);
-        dbg.putf(float(cell_alloc_count[0]), 6.0, 0.0);
         if(dbg.value > 0.0) {
             out_image[coord] = float4(1.0);
         }
