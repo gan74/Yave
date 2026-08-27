@@ -94,17 +94,21 @@ uint sh_index_offset(uint h) {
     return hash_size * 2 + h;
 }
 
-float read_cell(uint cell_idx, out SH<float3> sh) {
-    const RTGICell cell = cells[cell_idx];
-    if(cell.weight < 1.0) {
-        sh = SH<float3>();
-        return 0.0;
-    }
+void pack_sh(uint cell_index, SH<float3> sh) {
+    const SH<float> r = SH<float>(sh.Y00.r, sh.Y11.r, sh.Y10.r, sh.Y1_1.r, sh.Y21.r, sh.Y2_1.r, sh.Y2_2.r, sh.Y20.r, sh.Y22.r);
+    const SH<float> g = SH<float>(sh.Y00.g, sh.Y11.g, sh.Y10.g, sh.Y1_1.g, sh.Y21.g, sh.Y2_1.g, sh.Y2_2.g, sh.Y20.g, sh.Y22.g);
+    const SH<float> b = SH<float>(sh.Y00.b, sh.Y11.b, sh.Y10.b, sh.Y1_1.b, sh.Y21.b, sh.Y2_1.b, sh.Y2_2.b, sh.Y20.b, sh.Y22.b);
+    cells[cell_index].packed_r = r.pack();
+    cells[cell_index].packed_g = g.pack();
+    cells[cell_index].packed_b = b.pack();
 
-    const SH<float> r = SH<float>.unpack(cell.packed_r);
-    const SH<float> g = SH<float>.unpack(cell.packed_g);
-    const SH<float> b = SH<float>.unpack(cell.packed_b);
-    sh = SH<float3>(
+}
+
+SH<float3> unpack_sh(uint cell_index) {
+    const SH<float> r = SH<float>.unpack(cells[cell_index].packed_r);
+    const SH<float> g = SH<float>.unpack(cells[cell_index].packed_g);
+    const SH<float> b = SH<float>.unpack(cells[cell_index].packed_b);
+    return SH<float3>(
         float3(r.Y00,  g.Y00,  b.Y00),
         float3(r.Y11,  g.Y11,  b.Y11),
         float3(r.Y10,  g.Y10,  b.Y10),
@@ -115,21 +119,7 @@ float read_cell(uint cell_idx, out SH<float3> sh) {
         float3(r.Y20,  g.Y20,  b.Y20),
         float3(r.Y22,  g.Y22,  b.Y22)
     );
-
-    return cell.weight;
 }
-
-void write_cell(uint cell_idx, SH<float3> sh, float weight) {
-    const SH<float> r = SH<float>(sh.Y00.r, sh.Y11.r, sh.Y10.r, sh.Y1_1.r, sh.Y21.r, sh.Y2_1.r, sh.Y2_2.r, sh.Y20.r, sh.Y22.r);
-    const SH<float> g = SH<float>(sh.Y00.g, sh.Y11.g, sh.Y10.g, sh.Y1_1.g, sh.Y21.g, sh.Y2_1.g, sh.Y2_2.g, sh.Y20.g, sh.Y22.g);
-    const SH<float> b = SH<float>(sh.Y00.b, sh.Y11.b, sh.Y10.b, sh.Y1_1.b, sh.Y21.b, sh.Y2_1.b, sh.Y2_2.b, sh.Y20.b, sh.Y22.b);
-
-    cells[cell_idx].packed_r = r.pack();
-    cells[cell_idx].packed_g = g.pack();
-    cells[cell_idx].packed_b = b.pack();
-    cells[cell_idx].weight = weight;
-}
-
 
 
 
@@ -159,15 +149,15 @@ void main() {
         }
     } else if(hash_table[timestamp_index(h)] == (frame_id - 4)) {
         hash_table[h] = 0;
-        const uint cell_idx = hash_table[sh_index_offset(h)];
-        if(cell_idx != constants.max_uint) {
+        const uint cell_index = hash_table[sh_index_offset(h)];
+        if(cell_index != constants.max_uint) {
             hash_table[sh_index_offset(h)] = constants.max_uint;
-            cells[cell_idx] = RTGICell();
+            cells[cell_index] = RTGICell();
         }
     } else {
-        const uint cell_idx = hash_table[sh_index_offset(h)];
-        if(cell_idx != constants.max_uint && cells[cell_idx].weight > 2.0 * target_weight) {
-            cells[cell_idx].weight = target_weight; // TODO this is probably incorrect
+        const uint cell_index = hash_table[sh_index_offset(h)];
+        if(cell_index != constants.max_uint && cells[cell_index].weight > 2.0 * target_weight) {
+            cells[cell_index].weight = target_weight; // TODO this is probably incorrect
         }
     }
 }
@@ -265,17 +255,16 @@ void main() {
         return;
     }
 
-    const uint base_cell_idx = hash_table[sh_index_offset(base_index)];
-    if(base_cell_idx == constants.max_uint) {
+    const uint base_cell_index = hash_table[sh_index_offset(base_index)];
+    if(base_cell_index == constants.max_uint) {
         return;
     }
 
     float4 gi = float4(0.0, 0.0, 0.0, 1.0);
 
-    SH<float3> sh;
-    const float weight = read_cell(base_cell_idx, sh);
-    if(weight >= 1.0) {
-        gi = float4(max(0.0, sh.eval_hemisphere_cosine_weighted(normal)) * weight, weight);
+    const float base_weight = cells[base_cell_index].weight;
+    if(base_weight >= 1.0) {
+        gi = float4(max(0.0, unpack_sh(base_cell_index).eval_hemisphere_cosine_weighted(normal)) * base_weight, base_weight);
 
         const uint extra_sample_count = 4;
         for(uint k = 0; k != 2; ++k) {
@@ -283,11 +272,11 @@ void main() {
                 const HashKey key = HashKey.make_key(world_pos, base_cell_size, uint(lod) + k, rng.next_unit());
                 const uint index = find_bucket_index(hash_table, key, hash_size);
                 if(index != constants.max_uint) {
-                    const uint cell_idx = hash_table[sh_index_offset(index)];
-                    if(cell_idx != constants.max_uint) {
-                        const float w = read_cell(cell_idx, sh);
+                    const uint cell_index = hash_table[sh_index_offset(index)];
+                    if(cell_index != constants.max_uint) {
+                        const float w = cells[cell_index].weight;
                         if(w >= 1.0) {
-                            gi += float4(max(0.0, sh.eval_hemisphere_cosine_weighted(normal)) * w, w);
+                            gi += float4(max(0.0, unpack_sh(cell_index).eval_hemisphere_cosine_weighted(normal)) * w, w);
                         }
                     }
                 }
@@ -322,8 +311,8 @@ void main() {
     }
 
     const RTGICellUpdate cell = cell_updates[index];
-    const uint cell_idx = hash_table[sh_index_offset(cell.index)];
-    if(cell_idx == constants.max_uint) {
+    const uint cell_index = hash_table[sh_index_offset(cell.index)];
+    if(cell_index == constants.max_uint) {
         return;
     }
 
@@ -355,13 +344,24 @@ void main() {
         sum = sum + (SH<float>.basis(trace_dir) * radiance);
     }
 
-    const SH<float3> contribution = sum * (1.0 / sample_count);
 
-    SH<float3> avg;
-    const float w = read_cell(cell_idx, avg);
-    const float new_w = w + 1.0;
-    const SH<float3> new_avg = avg + (contribution - avg) * (1.0 / new_w);
-    write_cell(cell_idx, new_avg, new_w);
+#if 1
+    const float prev_w = cells[cell_index].weight;
+    const SH<float3> prev_sh = unpack_sh(cell_index) * prev_w;
+
+    const float new_w = (prev_w + sample_count);
+    const SH<float3> new_sh = (prev_sh + sum) / new_w;
+#else
+    const float prev_w = cells[cell_index].weight;
+    const SH<float3> prev_sh = unpack_sh(cell_index);
+
+    const float new_w = prev_w + 1.0;
+    const SH<float3> contribution = sum * (1.0 / sample_count);
+    const SH<float3> new_sh = prev_sh + (contribution - prev_sh) * (1.0 / new_w);
+#endif
+
+    pack_sh(cell_index, new_sh);
+    cells[cell_index].weight = new_w;
 }
 #endif
     
