@@ -14,41 +14,50 @@
 
 #define DEBUG
 
+struct RTGICount {
+    uint updates;
+    uint failled_allocs;
+    uint padding_0;
+    uint padding_1;
+};
+
+
+
 [[vk::binding(0)]]
 RWTexture2D out_image;
 
 [[vk::binding(1)]]
-RWStructuredBuffer<uint> hash_table;
-
-[[vk::binding(2)]]
-RWStructuredBuffer<RTGICell> cells;
-
-[[vk::binding(3)]]
 RaytracingAccelerationStructure tlas;
 
-[[vk::binding(4)]]
+[[vk::binding(2)]]
 Sampler2D<float> in_depth;
 
-[[vk::binding(5)]]
+[[vk::binding(3)]]
 Sampler2D<uint> in_rt1;
 
-[[vk::binding(6)]]
+[[vk::binding(4)]]
 ConstantBuffer<Camera> camera;
 
-[[vk::binding(7)]]
+[[vk::binding(5)]]
 SamplerCube in_envmap;
 
-[[vk::binding(8)]]
+[[vk::binding(6)]]
 StructuredBuffer<MaterialData> materials;
 
-[[vk::binding(9)]]
+[[vk::binding(7)]]
 StructuredBuffer<DirectionalLight> lights;
+
+[[vk::binding(8)]]
+RWStructuredBuffer<uint> hash_table;
+
+[[vk::binding(9)]]
+RWStructuredBuffer<RTGICell> cells;
 
 [[vk::binding(10)]]
 RWStructuredBuffer<RTGICellUpdate> cell_updates;
 
 [[vk::binding(11)]]
-RWStructuredBuffer<uint> cell_update_count;
+RWStructuredBuffer<RTGICount> counts;
 
 [[vk::binding(12)]]
 cbuffer Params {
@@ -61,13 +70,17 @@ cbuffer Params {
     float target_weight;
     uint light_count;
     uint max_cell_updates;
+
+    uint max_cell_count;
+    uint padding_0;
+    uint padding_1;
+    uint padding_2;
 };
 
 
 
 [[vk::binding(0, 1)]]
 Sampler2D all_textures[];
-
 
 
 
@@ -111,13 +124,10 @@ void write_cell(uint cell_idx, SH<float3> sh, float weight) {
     const SH<float> g = SH<float>(sh.Y00.g, sh.Y11.g, sh.Y10.g, sh.Y1_1.g, sh.Y21.g, sh.Y2_1.g, sh.Y2_2.g, sh.Y20.g, sh.Y22.g);
     const SH<float> b = SH<float>(sh.Y00.b, sh.Y11.b, sh.Y10.b, sh.Y1_1.b, sh.Y21.b, sh.Y2_1.b, sh.Y2_2.b, sh.Y20.b, sh.Y22.b);
 
-    RTGICell cell;
-    cell.packed_r = r.pack();
-    cell.packed_g = g.pack();
-    cell.packed_b = b.pack();
-    cell.weight = weight;
-    cell.allocated = 1;
-    cells[cell_idx] = cell;
+    cells[cell_idx].packed_r = r.pack();
+    cells[cell_idx].packed_g = g.pack();
+    cells[cell_idx].packed_b = b.pack();
+    cells[cell_idx].weight = weight;
 }
 
 
@@ -134,22 +144,30 @@ void main() {
     const uint h = semantics.global_index;
 
     if(h == 0) {
-        cell_update_count[0] = 0;
+        counts[0].updates = 0;
+        if(reset_hash != 0) {
+            counts[0].failled_allocs = 0;
+        }
     }
 
-    if(reset_hash > 0) {
+    if(reset_hash != 0) {
         hash_table[h] = 0;
         hash_table[sh_index_offset(h)] = constants.max_uint;
+
+        if(h < max_cell_count) {
+            cells[h] = RTGICell();
+        }
     } else if(hash_table[timestamp_index(h)] == (frame_id - 4)) {
         hash_table[h] = 0;
         const uint cell_idx = hash_table[sh_index_offset(h)];
         if(cell_idx != constants.max_uint) {
+            hash_table[sh_index_offset(h)] = constants.max_uint;
             cells[cell_idx] = RTGICell();
         }
     } else {
         const uint cell_idx = hash_table[sh_index_offset(h)];
         if(cell_idx != constants.max_uint && cells[cell_idx].weight > 2.0 * target_weight) {
-            cells[cell_idx].weight = target_weight;
+            cells[cell_idx].weight = target_weight; // TODO this is probably incorrect
         }
     }
 }
@@ -192,23 +210,23 @@ void main() {
     }
 
     if(inserted) {
-        if(hash_table[sh_index_offset(index)] == constants.max_uint) {
-            bool found = false;
-            for(uint k = 0; k != 16; ++k) {
-                const uint test_index = (rng.next() & (hash_size - 1));
+        bool found = false;
+        for(uint k = 0; k != 8; ++k) {
+            const uint test_index = (rng.next() & (max_cell_count - 1));
 
-                uint prev;
-                InterlockedExchange(cells[test_index].allocated, 1, prev);
-                if(prev == 0) {
-                    hash_table[sh_index_offset(index)] = test_index;
-                    found = true;
-                    break;
-                }
+            uint prev;
+            InterlockedCompareExchange(cells[test_index].hash_index, constants.max_uint, index, prev);
+            if(prev == constants.max_uint) {
+                hash_table[sh_index_offset(index)] = test_index;
+                found = true;
+                break;
             }
+        }
 
-            if(!found) {
-                return;
-            }
+        if(!found) {
+            uint prev;
+            InterlockedAdd(counts[0].failled_allocs, 1, prev);
+            return;
         }
     }
 
@@ -216,7 +234,7 @@ void main() {
     InterlockedExchange(hash_table[timestamp_index(index)], frame_id, prev_timestamp);
     if(prev_timestamp != frame_id) {
         uint update_index;
-        InterlockedAdd(cell_update_count[0], 1, update_index);
+        InterlockedAdd(counts[0].updates, 1, update_index);
         if(update_index < max_cell_updates) {
             cell_updates[update_index].index = index;
             cell_updates[update_index].world_pos = world_pos;
@@ -225,6 +243,22 @@ void main() {
 #endif
 
 #ifdef APPLY
+
+#ifdef DEBUG
+    {
+        DebugPrinter dbg = DebugPrinter(coord);
+        dbg.puts(CHAR_U, CHAR_P, CHAR_D, CHAR_COLON, CHAR_SPACE, CHAR_SPACE);
+        dbg.putf(min(counts[0].updates, max_cell_updates), 6.0, 0.0);
+        dbg.next_line();
+        dbg.puts(CHAR_A, CHAR_F, CHAR_L, CHAR_D, CHAR_COLON, CHAR_SPACE);
+        dbg.putf(counts[0].failled_allocs, 6.0, 0.0);
+        if(dbg.value > 0.0) {
+            out_image[coord] = float4(1.0);
+            return;
+        }
+    }
+#endif
+
     const HashKey base_key = HashKey.make_key(world_pos, base_cell_size, uint(lod));
     const uint base_index = find_bucket_index(hash_table, base_key, hash_size);
     if(base_index == constants.max_uint) {
@@ -262,18 +296,6 @@ void main() {
     }
 
     out_image[coord] = float4(gi.rgb / gi.a, 1.0);
-
-#ifdef DEBUG
-    {
-        DebugPrinter dbg = DebugPrinter(coord);
-        dbg.puts(CHAR_U, CHAR_P, CHAR_D, CHAR_COLON, CHAR_SPACE);
-        dbg.putf(float(min(cell_update_count[0], max_cell_updates)), 6.0, 0.0);
-        if(dbg.value > 0.0) {
-            out_image[coord] = float4(1.0);
-        }
-    }
-#endif
-
 #endif
 }
 #endif
@@ -284,7 +306,7 @@ void main() {
 [numthreads(64)]
 void main() {
     const uint index = semantics.global_index;
-    const uint update_count = min(cell_update_count[0], max_cell_updates);
+    const uint update_count = min(counts[0].updates, max_cell_updates);
     if(index >= update_count) {
         return;
     }
@@ -342,3 +364,4 @@ void main() {
     write_cell(cell_idx, new_avg, new_w);
 }
 #endif
+    

@@ -228,9 +228,16 @@ struct RTGICell {
     uint4 packed_b;
 
     float weight;
-    uint allocated;
+    uint hash_index;
+    float padding_0;
     float padding_1;
-    float padding_2;
+
+    SLANG_CTOR(RTGICell)() {
+        packed_r = packed_g = packed_b = uint4(0);
+        weight = 0.0;
+        hash_index = uint(-1); // needed for C++ compliance
+        padding_0 = padding_1 = 0;
+    }
 };
 
 #endif

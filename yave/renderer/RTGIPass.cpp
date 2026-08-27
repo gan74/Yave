@@ -45,6 +45,8 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     }
 
     const u32 max_cell_updates = 1 << 16;
+    const u32 max_cell_count = max_cell_updates * 4;
+
     const u32 hash_size = u32(1) << std::min(settings.hash_size, 30u);
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
@@ -61,8 +63,13 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     static const FrameGraphPersistentResourceId persistent_hash_id = FrameGraphPersistentResourceId::create();
     static const FrameGraphPersistentResourceId persistent_cells_id = FrameGraphPersistentResourceId::create();
+    static const FrameGraphPersistentResourceId persistent_cell_updates_id = FrameGraphPersistentResourceId::create();
+    static const FrameGraphPersistentResourceId persistent_count_id = FrameGraphPersistentResourceId::create();
+
     const auto [hash, hash_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size * 3);
-    const auto [cells, cells_reset] = framegraph.create_scratch_buffer<shader::RTGICell, BufferUsage::StorageBit>(persistent_cells_id, hash_size);
+    const auto [cells, cells_reset] = framegraph.create_scratch_buffer<shader::RTGICell, BufferUsage::StorageBit>(persistent_cells_id, max_cell_count);
+    const auto [cell_updates, cell_updates_reset] = framegraph.create_scratch_buffer<shader::RTGICellUpdate, BufferUsage::StorageBit>(persistent_cell_updates_id, max_cell_updates);
+    const auto [counts, counts_reset] = framegraph.create_scratch_buffer<math::Vec4ui, BufferUsage::StorageBit>(persistent_count_id, 1);
 
     const struct Params {
         u32 hash_size;
@@ -74,6 +81,11 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         float target_weight;
         u32 light_count;
         u32 max_cell_updates;
+
+        u32 max_cell_count;
+        u32 padding_0;
+        u32 padding_1;
+        u32 padding_2;
     } params {
         hash_size,
         u32(framegraph.frame_id()),
@@ -83,20 +95,16 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         settings.base_cell_size,
         4096.0f,
         u32(visibility.directional_lights.size()),
-        max_cell_updates
-    };
+        max_cell_updates,
 
-    static const FrameGraphPersistentResourceId persistent_cell_updates_id = FrameGraphPersistentResourceId::create();
-    static const FrameGraphPersistentResourceId persistent_cell_update_count_id = FrameGraphPersistentResourceId::create();
-    const auto [cell_updates, cell_updates_reset] = framegraph.create_scratch_buffer<shader::RTGICellUpdate, BufferUsage::StorageBit>(persistent_cell_updates_id, max_cell_updates);
-    const auto [cell_update_count, cell_update_count_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_cell_update_count_id, 1);
+        max_cell_count,
+        0u, 0u, 0u
+    };
 
     const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
     builder.map_buffer(directional_buffer);
 
     builder.add_storage_output(gi);
-    builder.add_descriptor_binding(Descriptor(hash));
-    builder.add_descriptor_binding(Descriptor(cells));
     builder.add_descriptor_binding(Descriptor(tlas));
     builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
@@ -104,8 +112,10 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     builder.add_external_input(ibl_probe ? *ibl_probe : *device_resources().empty_probe());
     builder.add_external_input(Descriptor(material_allocator().material_buffer()));
     builder.add_storage_input(directional_buffer);
+    builder.add_descriptor_binding(Descriptor(hash));
+    builder.add_descriptor_binding(Descriptor(cells));
     builder.add_descriptor_binding(Descriptor(cell_updates));
-    builder.add_descriptor_binding(Descriptor(cell_update_count));
+    builder.add_descriptor_binding(Descriptor(counts));
     builder.add_inline_input(params);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -131,7 +141,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
             BufferBarrier(hash, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
             BufferBarrier(cells, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
             BufferBarrier(cell_updates, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
-            BufferBarrier(cell_update_count, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
+            BufferBarrier(counts, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
         };
 
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGITrimProgram], math::Vec2ui(hash_size, 1), desc_sets);
