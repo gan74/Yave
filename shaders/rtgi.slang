@@ -121,7 +121,64 @@ SH<float3> unpack_sh(uint cell_index) {
     );
 }
 
+float3 shade_hit(HitInfo hit) {
+    const float3 hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
+    const MaterialData material = materials[hit.instance_id];
+    const uint albedo_id = material.texture_indices[uint(TextureSlots::Albedo)];
+    const float3 albedo = all_textures[NonUniformResourceIndex(albedo_id)].SampleLevel(float2(0.5), 100.0).rgb * material.base_color_factor;
 
+    float3 radiance = albedo * in_envmap.SampleLevel(hit_normal, 999.0).rgb;
+    for(uint k = 0; k != light_count; ++k) {
+        const DirectionalLight light = lights[k];
+        const float n_l = dot(light.direction, hit_normal);
+        if(n_l > 0.0) {
+            if(!trace_inline(tlas, hit.position, light.direction, 0.001, 10000.0).hit) {
+                radiance += albedo * light.color * n_l;
+            }
+        }
+    }
+
+    return radiance;
+}
+
+float4 eval_cell(uint cell_index, float3 normal) {
+    if(cell_index != constants.max_uint) {
+        const float w = cells[cell_index].weight;
+        if(w >= 1.0) {
+            return float4(max(0.0, unpack_sh(cell_index).eval_hemisphere_cosine_weighted(normal)) * w, w);
+        }
+    }
+    return float4(0.0);
+}
+
+bool try_alloc_cell(float3 world_pos, uint lod, uint hash_index, inout HashRng rng) {
+    for(uint k = 0; k != 8; ++k) {
+        const uint test_index = (rng.next() & (max_cell_count - 1));
+
+        uint prev;
+        InterlockedCompareExchange(cells[test_index].hash_index, constants.max_uint, hash_index, prev);
+
+        if(prev == constants.max_uint) {
+            hash_table[sh_index_offset(hash_index)] = test_index;
+
+            const HashKey lod_key = HashKey.make_key(world_pos, base_cell_size, lod + 1);
+            const uint lod_index = find_bucket_index(hash_table, lod_key, hash_size);
+            if(lod_index != constants.max_uint) {
+                const uint lod_cell_index = hash_table[sh_index_offset(lod_index)];
+                if(lod_cell_index != constants.max_uint) {
+                    cells[test_index].packed_r = cells[lod_cell_index].packed_r;
+                    cells[test_index].packed_g = cells[lod_cell_index].packed_g;
+                    cells[test_index].packed_b = cells[lod_cell_index].packed_b;
+                    cells[test_index].weight = cells[lod_cell_index].weight * 0.5;
+                }
+            }
+
+            return true;
+        }
+    }
+
+    return false;
+}
 
 
 
@@ -153,11 +210,6 @@ void main() {
         if(cell_index != constants.max_uint) {
             hash_table[sh_index_offset(h)] = constants.max_uint;
             cells[cell_index] = RTGICell();
-        }
-    } else {
-        const uint cell_index = hash_table[sh_index_offset(h)];
-        if(cell_index != constants.max_uint && cells[cell_index].weight > 2.0 * target_weight) {
-            cells[cell_index].weight = target_weight; // TODO this is probably incorrect
         }
     }
 }
@@ -200,20 +252,7 @@ void main() {
     }
 
     if(inserted) {
-        bool found = false;
-        for(uint k = 0; k != 8; ++k) {
-            const uint test_index = (rng.next() & (max_cell_count - 1));
-
-            uint prev;
-            InterlockedCompareExchange(cells[test_index].hash_index, constants.max_uint, index, prev);
-            if(prev == constants.max_uint) {
-                hash_table[sh_index_offset(index)] = test_index;
-                found = true;
-                break;
-            }
-        }
-
-        if(!found) {
+        if(!try_alloc_cell(world_pos, uint(lod), index, rng)) {
             uint prev;
             InterlockedAdd(counts[0].failled_allocs, 1, prev);
             return;
@@ -255,36 +294,25 @@ void main() {
         return;
     }
 
-    const uint base_cell_index = hash_table[sh_index_offset(base_index)];
-    if(base_cell_index == constants.max_uint) {
-        return;
-    }
-
-    float4 gi = float4(0.0, 0.0, 0.0, 1.0);
-
-    const float base_weight = cells[base_cell_index].weight;
-    if(base_weight >= 1.0) {
-        gi = float4(max(0.0, unpack_sh(base_cell_index).eval_hemisphere_cosine_weighted(normal)) * base_weight, base_weight);
-
-        const uint extra_sample_count = 4;
-        for(uint k = 0; k != 2; ++k) {
-            for(uint i = 0; i != extra_sample_count; ++i) {
-                const HashKey key = HashKey.make_key(world_pos, base_cell_size, uint(lod) + k, rng.next_unit());
-                const uint index = find_bucket_index(hash_table, key, hash_size);
-                if(index != constants.max_uint) {
-                    const uint cell_index = hash_table[sh_index_offset(index)];
-                    if(cell_index != constants.max_uint) {
-                        const float w = cells[cell_index].weight;
-                        if(w >= 1.0) {
-                            gi += float4(max(0.0, unpack_sh(cell_index).eval_hemisphere_cosine_weighted(normal)) * w, w);
-                        }
-                    }
-                }
+    float4 gi = eval_cell(hash_table[sh_index_offset(base_index)], normal);
+    const uint extra_sample_count = 4;
+    for(uint k = 0; k != 2; ++k) {
+        for(uint i = 0; i != extra_sample_count; ++i) {
+            const HashKey key = HashKey.make_key(world_pos, base_cell_size, uint(lod) + k, rng.next_unit());
+            const uint index = find_bucket_index(hash_table, key, hash_size);
+            if(index != constants.max_uint) {
+                gi += eval_cell(hash_table[sh_index_offset(index)], normal);
             }
         }
-    }
+}
 
-    out_image[coord] = float4(gi.rgb / gi.a, 1.0);
+    out_image[coord] = gi.a < 1.0 ? float4(0.0) : float4(gi.rgb / gi.a, 1.0);
+
+    /*const uint cell_index = hash_table[sh_index_offset(base_index)];
+    if(cell_index != constants.max_uint) {
+        RTGICell cc = cells[cell_index];
+        out_image[coord] = float4(heat_spectrum(saturate(cc.weight / target_weight)), 1.0);
+    }*/
 #endif
 }
 #endif
@@ -318,29 +346,9 @@ void main() {
 
     SH<float3> sum;
     for(uint k = 0; k != sample_count; ++k) {
-        float3 radiance = float3(0.0);
         const float3 trace_dir = rng.next_unit();
         const HitInfo hit = trace_inline(tlas, cell.world_pos, trace_dir, 0.001, 10000.0);
-        if(hit.hit) {
-            const float3 hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
-            const MaterialData material = materials[hit.instance_id];
-            const uint albedo_id = material.texture_indices[uint(TextureSlots::Albedo)];
-            const float3 albedo = all_textures[NonUniformResourceIndex(albedo_id)].SampleLevel(float2(0.5), 100.0).rgb * material.base_color_factor;
-
-            radiance = albedo * in_envmap.SampleLevel(hit_normal, 999.0).rgb;
-            for(uint k = 0; k != light_count; ++k) {
-                const DirectionalLight light = lights[k];
-                const float n_l = dot(light.direction, hit_normal);
-                if(n_l > 0.0) {
-                    if(!trace_inline(tlas, hit.position, light.direction, 0.001, 10000.0).hit) {
-                        radiance += albedo * light.color * n_l;
-                    }
-                }
-            }
-        } else {
-            radiance = in_envmap.SampleLevel(trace_dir, 0.0).rgb;
-        }
-
+        const float3 radiance = hit.hit ? shade_hit(hit) : in_envmap.SampleLevel(trace_dir, 0.0).rgb;
         sum = sum + (SH<float>.basis(trace_dir) * radiance);
     }
 
@@ -364,4 +372,3 @@ void main() {
     cells[cell_index].weight = new_w;
 }
 #endif
-    
