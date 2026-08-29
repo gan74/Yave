@@ -130,8 +130,8 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "rtao_UPDATE",
     "rtao_APPLY",
     "rtao_TRIM",
-    "rtgi_COUNT",
     "rtgi_UPDATE",
+    "rtgi_TRACE",
     "rtgi_APPLY",
     "rtgi_TRIM",
 };

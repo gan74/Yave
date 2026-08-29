@@ -72,12 +72,42 @@ struct SH<T : IFloat> {
         const float a0 = constants.pi;
         const float a1 = 2.0 / 3.0 * constants.pi;
         const float a2 = constants.pi / 4.0;
-        return 
+        return
             (T(b.Y00) * Y00) * T(a0) + (T(b.Y1_1) * Y1_1 + T(b.Y10) * Y10 + T(b.Y11) * Y11) * T(a1) +
             (T(b.Y2_2) * Y2_2 + T(b.Y2_1) * Y2_1 + T(b.Y20) * Y20 + T(b.Y21) * Y21 + T(b.Y22) * Y22) * T(a2)
         ;
     }
 };
+
+
+extension<int N, T : __BuiltinFloatingPointType> SH<vector<T, N>> {
+    __subscript(int index) -> SH<T> {
+        get {
+            return SH<T>(
+                Y00[index],
+                Y11[index],
+                Y10[index],
+                Y1_1[index],
+                Y21[index],
+                Y2_1[index],
+                Y2_2[index],
+                Y20[index],
+                Y22[index]
+            );
+        }
+        set {
+            Y00[index] = newValue.Y00;
+            Y11[index] = newValue.Y11;
+            Y10[index] = newValue.Y10;
+            Y1_1[index] = newValue.Y1_1;
+            Y21[index] = newValue.Y21;
+            Y2_1[index] = newValue.Y2_1;
+            Y2_2[index] = newValue.Y2_2;
+            Y20[index] = newValue.Y20;
+            Y22[index] = newValue.Y22;
+        }
+    }
+}
 
 extension SH<float> {
     float3 strongest_dir() {
@@ -103,12 +133,12 @@ extension SH<float> {
         return eval(-dir) > eval(dir) ? -dir : dir;
     }
 
-    static uint sh_to_unorm(float v, float scale, uint bits) {
+    private static uint sh_to_unorm(float v, float scale, uint bits) {
         const float max_val = float((1u << bits) - 1);
         return uint(saturate(v / scale * 0.5 + 0.5) * max_val + 0.5);
     }
 
-    static float sh_from_unorm(uint q, float scale, uint bits) {
+    private static float sh_from_unorm(uint q, float scale, uint bits) {
         const float max_val = float((1u << bits) - 1);
         return (float(q) / max_val * 2.0 - 1.0) * scale;
     }
@@ -145,7 +175,7 @@ extension SH<float> {
 
 
 bool isnan<T>(SH<T> sh) where T : IFloat, __BuiltinFloatingPointType {
-    return 
+    return
         isnan(sh.Y00) || isnan(sh.Y11) || isnan(sh.Y10) || isnan(sh.Y1_1) ||
         isnan(sh.Y21) || isnan(sh.Y2_1) || isnan(sh.Y2_2) || isnan(sh.Y20) || isnan(sh.Y22)
    ;
@@ -179,22 +209,19 @@ SH<T> operator-<T : IFloat>(SH<T> a, SH<T> b) {
     );
 }
 
-SH<T> operator*<T : IFloat>(SH<T> a, float s) {
+SH<T> operator*<T : IFloat>(SH<T> a, T s) {
     return SH<T>(
-        a.Y00 * T(s),
-        a.Y11 * T(s),
-        a.Y10 * T(s),
-        a.Y1_1 * T(s),
-        a.Y21 * T(s),
-        a.Y2_1 * T(s),
-        a.Y2_2 * T(s),
-        a.Y20 * T(s),
-        a.Y22 * T(s)
+        a.Y00 * s,
+        a.Y11 * s,
+        a.Y10 * s,
+        a.Y1_1 * s,
+        a.Y21 * s,
+        a.Y2_1 * s,
+        a.Y2_2 * s,
+        a.Y20 * s,
+        a.Y22 * s
     );
 }
 
-SH<T> operator/<T : IFloat>(SH<T> a, float s) {
-    return a * (1.0 / s);
-}
 
 #endif // SH_SLANG
