@@ -28,7 +28,7 @@ RWTexture2D out_image;
 RWStructuredBuffer<uint> hash_table;
 
 [[vk::binding(2)]]
-RWStructuredBuffer<float> sum_table;
+RWStructuredBuffer<float4> sum_table;
 
 [[vk::binding(3)]]
 RaytracingAccelerationStructure tlas;
@@ -105,28 +105,22 @@ uint samples_index(uint h) {
 
 #ifdef TRIM
 [shader("compute")]
-[numthreads(64)]
+[numthreads(256)]
 void main() {
     const uint h = semantics.global_index;
 
     hash_table[count_index(h)] = 0;
-    hash_table[samples_index(h)] = uint(sum_table[h * 4 + 3]);
+    hash_table[samples_index(h)] = uint(sum_table[h].w);
 
     if(reset_hash > 0 || hash_table[timestamp_index(h)] == (frame_id - 4)) {
         hash_table[h] = 0;
-        for(uint i = 0; i != 4; ++i) {
-            sum_table[h * 4 + i] = 0.0;
-        }
+        sum_table[h] = float4(0.0);
     } else {
-        const float weight = sum_table[h * 4 + 3];
-
+        const float weight = sum_table[h].w;
         if(weight > 2.0 * target_samples) {
             const float norm_factor = target_samples / weight;
-
-            sum_table[h * 4 + 3] = target_samples;
-            for(uint i = 0; i != 3; ++i) {
-                sum_table[h * 4 + i] *= norm_factor;
-            }
+            sum_table[h].w = target_samples;
+            sum_table[h].rgb *= norm_factor;
         }
     }
 }
@@ -136,11 +130,7 @@ void main() {
 #if defined(COUNT) || defined(UPDATE) || defined(APPLY)
 
 float4 read_value(uint index) {
-    float4 acc;
-    for(uint i = 0; i != 4; ++i) {
-        acc[i] = sum_table[index * 4 + i];
-    }
-    return acc;
+    return sum_table[index];
 }
 
 void write_value(uint index, float4 acc) {
@@ -148,7 +138,7 @@ void write_value(uint index, float4 acc) {
     for(uint i = 0; i != 4; ++i) {
         if(acc[i] > 0.0) {
             float prev;
-            InterlockedAdd(sum_table[index * 4 + i], acc[i], prev);
+            InterlockedAdd(sum_table[index][i], acc[i], prev);
         }
     }
 }
