@@ -302,7 +302,7 @@ void main() {
                 const DirectionalLight light = lights[k];
                 const float n_l = dot(light.direction, hit_normal);
                 if(n_l > 0.0) {
-                    if(!trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
+                    if(light.cast_shadow == 0 || !trace_inline(tlas, hit.position, light.direction, tmin, tmax).hit) {
                         acc += (material.albedo * light.color * n_l * n_t);
                     }
                 }
