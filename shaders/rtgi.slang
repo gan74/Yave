@@ -134,7 +134,7 @@ float3 shade_hit(HitInfo hit) {
         const DirectionalLight light = lights[k];
         const float n_l = dot(light.direction, hit_normal);
         if(n_l > 0.0) {
-            if(!trace_inline(tlas, hit.position, light.direction, 0.001, 10000.0).hit) {
+            if(light.cast_shadow == 0 || !trace_inline(tlas, hit.position, light.direction, 0.001, 10000.0).hit) {
                 radiance += albedo * light.color * n_l;
             }
         }
@@ -188,7 +188,7 @@ bool try_alloc_cell(float3 world_pos, uint lod, uint hash_index, inout HashRng r
 
 #ifdef TRIM
 [shader("compute")]
-[numthreads(64)]
+[numthreads(256)]
 void main() {
     const uint h = semantics.global_index;
 
@@ -297,7 +297,7 @@ void main() {
     }
 
     float4 gi = eval_cell(hash_table[sh_index_offset(base_index)], normal);
-    const uint extra_sample_count = 4;
+    const uint extra_sample_count = 32;
     for(uint k = 0; k != 2; ++k) {
         for(uint i = 0; i != extra_sample_count; ++i) {
             const HashKey key = HashKey.make_key(world_pos, base_cell_size, uint(lod) + k, rng.next_unit());

@@ -46,6 +46,9 @@ class DirectionalLightComponent final {
         bool& cast_shadow();
         bool cast_shadow() const;
 
+        bool& cast_gi();
+        bool cast_gi() const;
+
         u32& shadow_lod();
         u32 shadow_lod() const;
 
@@ -59,7 +62,7 @@ class DirectionalLightComponent final {
 
         void inspect(ecs::ComponentInspector* inspector);
 
-        y_reflect(DirectionalLightComponent, _color, _direction, _intensity, _disk_size, _cast_shadow, _shadow_lod, _first_cascade_distance, _last_cascade_distance)
+        y_reflect(DirectionalLightComponent, _color, _direction, _intensity, _disk_size, _cast_shadow, _cast_gi, _shadow_lod, _first_cascade_distance, _last_cascade_distance)
 
     private:
         math::Vec3 _color = math::Vec3{1.0f};
@@ -69,6 +72,7 @@ class DirectionalLightComponent final {
         float _disk_size = math::to_rad(33.0f / 60.0f); // The sun is 33 arcminutes
 
         bool _cast_shadow = false;
+        bool _cast_gi = true;
         u32 _shadow_lod = 0;
         float _first_cascade_distance = 8.0f;
         float _last_cascade_distance = 1024.0f;

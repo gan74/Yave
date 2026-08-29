@@ -55,6 +55,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
     const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
+    const u32 gi_light_count = u32(std::count_if(visibility.directional_lights.begin(), visibility.directional_lights.end(), [](const auto& l) { return l->component.cast_gi(); }));
 
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("RTGI pass");
@@ -94,14 +95,14 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
         settings.base_cell_size,
         4096.0f,
-        u32(visibility.directional_lights.size()),
+        gi_light_count,
         max_cell_updates,
 
         max_cell_count,
         0u, 0u, 0u
     };
 
-    const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
+    const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(gi_light_count);
     builder.map_buffer(directional_buffer);
 
     builder.add_storage_output(gi);
@@ -120,16 +121,21 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
         {
+            u32 index = 0;
             auto mapping = self->resources().map_buffer(directional_buffer);
             for(usize i = 0; i != visibility.directional_lights.size(); ++i) {
                 const DirectionalLightComponent& light = visibility.directional_lights[i]->component;
-                mapping[i] = {
+                if(!light.cast_gi()) {
+                    continue;
+                }
+                mapping[index++] = {
                     -light.direction().normalized(),
                     std::cos(light.disk_size()),
                     light.color() * light.intensity(),
                     u32(light.cast_shadow() ? 1 : 0), {}
                 };
             }
+            y_debug_assert(index == gi_light_count);
         }
 
         const std::array<DescriptorSetProxy, 2> desc_sets = {
