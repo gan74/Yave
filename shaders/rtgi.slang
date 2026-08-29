@@ -20,6 +20,7 @@
 
 static const uint extra_lods = 1;
 static const uint apply_sample_count = 8;
+static const float emissive_scale = 1.0;
 
 
 [[vk::binding(0)]]
@@ -98,7 +99,7 @@ RTGIMaterial eval_material(uint instance_id) {
     const uint emissive_id = material.texture_indices[uint(TextureSlots::Emissive)];
     return RTGIMaterial(
         all_textures[NonUniformResourceIndex(albedo_id)].SampleLevel(float2(0.5), 100.0).rgb * material.base_color_factor,
-        all_textures[NonUniformResourceIndex(emissive_id)].SampleLevel(float2(0.5), 100.0).rgb * material.emissive_factor,
+        all_textures[NonUniformResourceIndex(emissive_id)].SampleLevel(float2(0.5), 100.0).rgb * material.emissive_factor * emissive_scale,
     );
 }
 
@@ -297,8 +298,32 @@ void main() {
 #ifdef RTGI_SH
     write_value(update.index, sh_r, sh_g, sh_b, float(ray_count));
 #else
-    sum_table[update.index].radiance += acc * constants.inv_pi;
-    sum_table[update.index].weight += float(ray_count);
+    {
+        float prev;
+        InterlockedAdd(sum_table[update.index].radiance.r, acc.r * constants.inv_pi, prev);
+        InterlockedAdd(sum_table[update.index].radiance.g, acc.g * constants.inv_pi, prev);
+        InterlockedAdd(sum_table[update.index].radiance.b, acc.b * constants.inv_pi, prev);
+        InterlockedAdd(sum_table[update.index].weight, float(ray_count), prev);
+
+
+        for(uint k = 0; k <= extra_lods; ++k) {
+            for(uint i = 0; i != apply_sample_count; ++i) {
+                const float3 pos_jitter = jitter_position(update.normal, rng) * pos_jitter_strength;
+                const float3 norm_jitter = rng.next_unit() * norm_jitter_strength;
+                const HashKey key = HashKey.make_key(update.position, update.normal, base_cell_size, update.lod + k, pos_jitter, norm_jitter);
+                const uint index = find_bucket_index(hash_table, key, hash_size);
+                if(index == constants.max_uint || index == update.index) {
+                    continue;
+                }
+
+                InterlockedAdd(sum_table[index].radiance.r, acc.r * constants.inv_pi, prev);
+                InterlockedAdd(sum_table[index].radiance.g, acc.g * constants.inv_pi, prev);
+                InterlockedAdd(sum_table[index].radiance.b, acc.b * constants.inv_pi, prev);
+                InterlockedAdd(sum_table[index].weight, float(ray_count), prev);
+
+            }
+        }
+    }
 #endif
 }
 #endif
