@@ -225,7 +225,7 @@ struct StaticMeshData {
     SLANG_PTR(uint) padding_1;
 };
 
-#define RTGI_SH
+// #define RTGI_SH
 struct RTGICell {
 #ifdef RTGI_SH
     uint4 packed_r;

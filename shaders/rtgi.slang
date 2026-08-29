@@ -18,8 +18,8 @@
 
 #define EMISSIVE
 
-static const bool lerp_between_lods = false;
-static const uint extra_sample_count = 8;
+static const uint extra_lods = 1;
+static const uint apply_sample_count = 8;
 
 
 [[vk::binding(0)]]
@@ -115,13 +115,6 @@ void write_value(uint index, SH<float> sh_r, SH<float> sh_g, SH<float> sh_b, flo
     cell.weight += w;
     sum_table[index] = cell;
 }
-#else
-void write_value(uint index, float3 radiance, float w) {
-    RTGICell cell = sum_table[index];
-    cell.radiance += radiance;
-    cell.weight += w;
-    sum_table[index] = cell;
-}
 #endif
 
 float3 jitter_position<T: Rng>(float3 normal, inout T rng) {
@@ -189,8 +182,7 @@ void main() {
 }
 #endif
 
-#if defined(UPDATE) || defined(APPLY)
-
+#if defined(UPDATE)
 [shader("compute")]
 [numthreads(8, 8)]
 void main() {
@@ -216,126 +208,20 @@ void main() {
     const float view_dist = length(world_pos - camera.position);
 
     const float float_lod_level = HashKey.float_lod_level(view_dist, lod_dist) + rng.next_unorm() * lod_jitter_strength;
-    const float lod_blend = frac(float_lod_level);
     const uint lod_level = uint(float_lod_level);
 
-    const float3 base_pos_jitter = jitter_position(normal, rng) * pos_jitter_strength;
+    for(uint k = 0; k <= extra_lods; ++k) {
 #ifdef RTGI_SH
-    const HashKey base_key = HashKey.make_key(world_pos, base_cell_size, lod_level, base_pos_jitter);
-    const HashKey base_key_lo = HashKey.make_key(world_pos, base_cell_size, lod_level + 1, base_pos_jitter * 0.5);
+        const HashKey key = HashKey.make_key(world_pos, base_cell_size, lod_level + k);
 #else
-    const float3 base_norm_jitter = rng.next_unit() * norm_jitter_strength;
-    const HashKey base_key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level, base_pos_jitter, base_norm_jitter);
-    const HashKey base_key_lo = HashKey.make_key(world_pos, normal, base_cell_size, lod_level + 1, base_pos_jitter * 0.5, base_norm_jitter);
+        const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level + k);
 #endif
-
-#ifdef UPDATE
-    bool inserted;
-    const uint base_index = find_update_bucket_index(hash_table, base_key, hash_size, inserted);
-    if(base_index == constants.max_uint) {
-        return;
-    }
-
-    push_update(base_index, world_pos, normal, lod_level);
-
-    if(lerp_between_lods) {
-        const uint index = find_update_bucket_index(hash_table, base_key_lo, hash_size, inserted);
+        bool inserted;
+        const uint index = find_update_bucket_index(hash_table, key, hash_size, inserted);
         if(index != constants.max_uint) {
-            push_update(index, world_pos, normal, lod_level + 1);
+            push_update(index, world_pos, normal, lod_level + k);
         }
     }
-#endif
-
-#ifdef APPLY
-    {
-        DebugPrinter dbg = DebugPrinter(coord);
-        dbg.puts(CHAR_U, CHAR_P, CHAR_D, CHAR_COLON, CHAR_SPACE, CHAR_SPACE);
-        dbg.putf(min(update_count[0], max_updates), 6.0, 0.0);
-        if(dbg.value > 0.0) {
-            out_image[coord] = float4(1.0);
-            return;
-        }
-    }
-
-    const uint base_index = find_bucket_index(hash_table, base_key, hash_size);
-    if(base_index == constants.max_uint) {
-        return;
-    }
-
-    const RTGICell base_cell = sum_table[base_index];
-#ifdef RTGI_SH
-    SH<float> acc_r = SH<float>.unpack(base_cell.packed_r);
-    SH<float> acc_g = SH<float>.unpack(base_cell.packed_g);
-    SH<float> acc_b = SH<float>.unpack(base_cell.packed_b);
-#else
-    float3 acc = sum_table[base_index].radiance;
-#endif
-    float acc_w = base_cell.weight;
-
-    if(lerp_between_lods) {
-        const uint index = find_bucket_index(hash_table, base_key_lo, hash_size);
-        if(index != constants.max_uint) {
-            const RTGICell lo = sum_table[index];
-#ifdef RTGI_SH
-            acc_r = acc_r + (SH<float>.unpack(lo.packed_r) - acc_r) * lod_blend;
-            acc_g = acc_g + (SH<float>.unpack(lo.packed_g) - acc_g) * lod_blend;
-            acc_b = acc_b + (SH<float>.unpack(lo.packed_b) - acc_b) * lod_blend;
-#else
-            acc = lerp(acc, lo.radiance, lod_blend);
-#endif
-            acc_w = lerp(acc_w, lo.weight, lod_blend);
-        }
-    }
-
-    for(uint k = 0; k != extra_sample_count; ++k) {
-        const float3 pos_jitter = jitter_position(normal, rng) * pos_jitter_strength;
-#ifdef RTGI_SH
-        const HashKey key = HashKey.make_key(world_pos, base_cell_size, lod_level, pos_jitter);
-#else
-        const float3 norm_jitter = rng.next_unit() * norm_jitter_strength;
-        const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level, pos_jitter, norm_jitter);
-#endif
-        if(key != base_key) {
-            const uint index = find_bucket_index(hash_table, key, hash_size);
-            if(index != constants.max_uint) {
-                const RTGICell cell = sum_table[index];
-#ifdef RTGI_SH
-                acc_r = acc_r + SH<float>.unpack(cell.packed_r);
-                acc_g = acc_g + SH<float>.unpack(cell.packed_g);
-                acc_b = acc_b + SH<float>.unpack(cell.packed_b);
-#else
-                acc += cell.radiance;
-#endif
-                acc_w += cell.weight;
-            }
-        }
-    }
-
-    const float w = max(1.0, acc_w);
-#ifdef RTGI_SH
-    out_image[coord] = float4(max(float3(0.0), float3(
-        acc_r.eval_hemisphere_cosine_weighted(normal),
-        acc_g.eval_hemisphere_cosine_weighted(normal),
-        acc_b.eval_hemisphere_cosine_weighted(normal)
-    ) / w), 1.0);
-#else
-    out_image[coord] = float4(max(0.0, acc / w), w);
-#endif
-
-#ifdef DEBUG_CELLS
-    {
-        out_image[coord] = float4(identifying_color(base_index) * 0.33, 1.0);
-    }
-#endif
-
-#ifdef DEBUG_LOD
-    {
-        out_image[coord] = float4(frac(float_lod_level).xxx, 1.0);
-        // out_image[coord] = float4(lerp(identifying_color(lod_level), identifying_color(lod_level + 1), frac(float_lod_level)) * 0.33, 1.0);
-    }
-#endif
-
-#endif
 }
 #endif
 
@@ -411,7 +297,125 @@ void main() {
 #ifdef RTGI_SH
     write_value(update.index, sh_r, sh_g, sh_b, float(ray_count));
 #else
-    write_value(update.index, acc * constants.inv_pi, float(ray_count));
+    sum_table[update.index].radiance += acc * constants.inv_pi;
+    sum_table[update.index].weight += float(ray_count);
+#endif
+}
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(APPLY)
+[shader("compute")]
+[numthreads(8, 8)]
+void main() {
+    const uint2 coord = semantics.global_id.xy;
+    const uint2 size = image_size(in_depth);
+
+    if(any(coord >= size)) {
+        return;
+    }
+
+    const float depth = in_depth[coord];
+
+    if(is_depth_far(depth)) {
+        return;
+    }
+
+    const uint seed = hash.xorshift(semantics.global_index + hash.xorshift(frame_id));
+    HashRng rng = HashRng(seed);
+
+    const float2 uv = (coord + 0.5) / float2(size);
+    const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
+    const float3 normal = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1[coord])).normal;
+    const float view_dist = length(world_pos - camera.position);
+
+    const float float_lod_level = HashKey.float_lod_level(view_dist, lod_dist) + rng.next_unorm() * lod_jitter_strength;
+    const uint lod_level = uint(float_lod_level);
+
+    {
+        DebugPrinter dbg = DebugPrinter(coord);
+        dbg.puts(CHAR_U, CHAR_P, CHAR_D, CHAR_COLON, CHAR_SPACE, CHAR_SPACE);
+        dbg.putf(min(update_count[0], max_updates), 6.0, 0.0);
+        if(dbg.value > 0.0) {
+            out_image[coord] = float4(1.0);
+            return;
+        }
+    }
+
+#ifdef RTGI_SH
+    SH<float> acc_r;
+    SH<float> acc_g;
+    SH<float> acc_b;
+#else
+    float3 acc = float3(0.0);
+#endif
+
+    float total_weight = 0.0;
+    for(uint k = 0; k <= extra_lods; ++k) {
+        for(uint i = 0; i != apply_sample_count; ++i) {
+            const float3 pos_jitter = jitter_position(normal, rng) * pos_jitter_strength;
+#ifdef RTGI_SH
+            const HashKey key = HashKey.make_key(world_pos, base_cell_size, lod_level + k, pos_jitter);
+#else
+            const float3 norm_jitter = rng.next_unit() * norm_jitter_strength;
+            const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level + k, pos_jitter, norm_jitter);
+#endif
+            const uint index = find_bucket_index(hash_table, key, hash_size);
+            if(index == constants.max_uint) {
+                continue;
+            }
+            const RTGICell cell = sum_table[index];
+            if(cell.weight < 1.0) {
+                continue;
+            }
+
+            total_weight += cell.weight;
+
+#ifdef RTGI_SH
+            acc_r = acc_r + SH<float>.unpack(cell.packed_r);
+            acc_g = acc_g + SH<float>.unpack(cell.packed_g);
+            acc_b = acc_b + SH<float>.unpack(cell.packed_b);
+#else
+            acc += cell.radiance;
+#endif
+        }
+    }
+
+    total_weight = max(1.0, total_weight);
+
+#ifdef RTGI_SH
+    out_image[coord] = float4(max(float3(0.0), float3(
+        acc_r.eval_hemisphere_cosine_weighted(normal),
+        acc_g.eval_hemisphere_cosine_weighted(normal),
+        acc_b.eval_hemisphere_cosine_weighted(normal)
+    ) / total_weight), 1.0);
+#else
+    out_image[coord] = float4(max(0.0, acc / total_weight), 1.0);
+#endif
+
+#ifdef DEBUG_CELLS
+    {
+        out_image[coord] = float4(identifying_color(base_index) * 0.33, 1.0);
+    }
+#endif
+
+#ifdef DEBUG_LOD
+    {
+        out_image[coord] = float4(frac(float_lod_level).xxx, 1.0);
+        // out_image[coord] = float4(lerp(identifying_color(lod_level), identifying_color(lod_level + 1), frac(float_lod_level)) * 0.33, 1.0);
+    }
 #endif
 }
 #endif
