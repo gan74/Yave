@@ -125,9 +125,11 @@ float3 shade_hit(HitInfo hit) {
     const float3 hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
     const MaterialData material = materials[hit.instance_id];
     const uint albedo_id = material.texture_indices[uint(TextureSlots::Albedo)];
+    const uint emissive_id = material.texture_indices[uint(TextureSlots::Emissive)];
     const float3 albedo = all_textures[NonUniformResourceIndex(albedo_id)].SampleLevel(float2(0.5), 100.0).rgb * material.base_color_factor;
+    const float3 emissive = all_textures[NonUniformResourceIndex(emissive_id)].SampleLevel(float2(0.5), 100.0).rgb * material.emissive_factor;
 
-    float3 radiance = albedo * in_envmap.SampleLevel(hit_normal, 999.0).rgb;
+    float3 radiance = albedo * in_envmap.SampleLevel(hit_normal, 999.0).rgb + emissive;
     for(uint k = 0; k != light_count; ++k) {
         const DirectionalLight light = lights[k];
         const float n_l = dot(light.direction, hit_normal);
