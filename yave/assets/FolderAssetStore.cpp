@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -709,7 +709,7 @@ FolderAssetStore::Result<> FolderAssetStore::save_tree() const {
         const core::String file_name = tree_file_name();
         const core::String tmp_file = file_name + "_";
 
-        Y_TODO(Openning file is slow, maybe we should cache it)
+        Y_TODO(Opening file is slow, maybe we should cache it)
         if(auto file = io2::File::create(tmp_file); file.is_error() || file.unwrap().write_array(tree_data.data(), tree_data.size()).is_error()) {
             return core::Err(ErrorType::FilesytemError);
         }

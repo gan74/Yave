@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -72,7 +72,6 @@ class RenderPassRecorder final : NonMovable {
         void draw_indexed(usize index_count);
         void draw_array(usize vertex_count, usize instance_count = 1, usize first_vertex = 0);
 
-        void bind_mesh_buffers(const MeshDrawBuffers& mesh_buffers);
         void bind_index_buffer(IndexSubBuffer indices);
         void bind_attrib_buffers(core::Span<AttribSubBuffer> attribs);
 
@@ -94,10 +93,6 @@ class RenderPassRecorder final : NonMovable {
 
         CmdBufferRecorder& _cmd_buffer;
         Viewport _viewport;
-
-        struct {
-            const MeshDrawBuffers* mesh_buffers = nullptr;
-        } _cache;
 };
 
 

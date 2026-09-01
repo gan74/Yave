@@ -18,10 +18,10 @@ float4 smart_denoise(Sampler2D tex, float2 uv, float sigma, float k_sigma, float
     const float rad_sq = radius * radius;
 
     float inv_2_sigma_sq = 0.5 / (sigma * sigma);
-    float inv_2pi_sigma_sq = inv_pi * inv_2_sigma_sq;
+    float inv_2pi_sigma_sq = constants.inv_pi * inv_2_sigma_sq;
 
     float inv_2_threshold_sq = 0.5 / (threshold * threshold);
-    float inv_2pi_threshold_sq = inv_sqrt_2pi / threshold;
+    float inv_2pi_threshold_sq = constants.inv_sqrt_2pi / threshold;
 
     const float4 center = tex.Sample(uv);
 

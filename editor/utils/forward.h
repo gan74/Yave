@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@ class CVarConsole;
 class CameraController;
 class DebugAnimateComponent;
 class DebugAnimateSystem;
+class DebugValueEditor;
 class DeletionDialog;
 class EditorComponent;
 class EditorResources;
@@ -66,6 +67,7 @@ class UndoRedoSystem;
 class Widget;
 struct CVar;
 struct CameraSettings;
+struct ComponentData;
 struct DebugSettings;
 struct EditorAction;
 struct EditorPass;
@@ -77,7 +79,7 @@ struct Entry;
 struct ImGuiImage;
 struct PerfSettings;
 struct Picker;
-struct PickingData;
+struct PickingRequest;
 struct PickingResult;
 struct PlatformWindow;
 struct Property;

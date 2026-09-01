@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -54,7 +54,7 @@ static VkHandle<VkShaderModule> create_shader_module(const SpirVData& spirv) {
 static ShaderType shader_exec_model(SpvExecutionModel exec_model) {
     switch(exec_model) {
         case SpvExecutionModelVertex:               return ShaderType::Vertex;
-        case SpvExecutionModelGeometry:             return ShaderType::Geomery;
+        case SpvExecutionModelGeometry:             return ShaderType::Geometry;
         case SpvExecutionModelFragment:             return ShaderType::Fragment;
         case SpvExecutionModelGLCompute:            return ShaderType::Compute;
         case SpvExecutionModelRayGenerationKHR:     return ShaderType::RayGen;
@@ -135,7 +135,7 @@ ShaderModuleBase::ShaderModuleBase(const SpirVData& spirv, ShaderType type) : _m
                 y_debug_assert(refl_binding.count <= 1);
 
                 if(!refl_binding.count) {
-                    _variable_size_bindings << set->set;
+                    _variable_size_sets << set->set;
                 }
 
                 VkDescriptorSetLayoutBinding& binding = set_bindings.emplace_back();

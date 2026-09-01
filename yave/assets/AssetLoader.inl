@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -90,7 +90,7 @@ AssetLoader::Loader<T>::Loader(AssetLoader* parent) : LoaderBase(parent) {
 }
 
 template<typename T>
-AssetLoader::Loader<T>::~Loader<T>() {
+AssetLoader::Loader<T>::~Loader() {
     y_profile();
      _loaded.locked([&](auto&& loaded) {
         for(auto&& [id, ptr] : loaded) {

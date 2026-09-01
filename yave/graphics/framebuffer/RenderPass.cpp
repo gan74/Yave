@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -76,25 +76,20 @@ static std::array<VkSubpassDependency, 2> create_dependencies(bool depth, bool c
     return {top, bot};
 }
 
-static VkAttachmentLoadOp attachment_load_op(const RenderPass::AttachmentData& image) {
-    return image.load_op == RenderPass::LoadOp::Clear
-        ? VK_ATTACHMENT_LOAD_OP_CLEAR
-        : VK_ATTACHMENT_LOAD_OP_LOAD;
-}
-
 static VkAttachmentDescription create_attachment(RenderPass::AttachmentData image) {
     VkAttachmentDescription description = {};
     {
+        const bool clear_image = (image.load_op == RenderPass::LoadOp::Clear);
         const auto layout = vk_final_image_layout(image.usage);
 
         description.format = image.format.vk_format();
         description.samples = VK_SAMPLE_COUNT_1_BIT;
-        description.loadOp = attachment_load_op(image);
+        description.loadOp = clear_image ? VK_ATTACHMENT_LOAD_OP_CLEAR :VK_ATTACHMENT_LOAD_OP_LOAD;
         description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         description.finalLayout = layout;
-        description.initialLayout = layout;
+        description.initialLayout = clear_image ? VK_IMAGE_LAYOUT_UNDEFINED : layout;
     }
     return description;
 }

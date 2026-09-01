@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ enum class ShaderType : u32 {
     None = 0,
     Fragment = VK_SHADER_STAGE_FRAGMENT_BIT,
     Vertex = VK_SHADER_STAGE_VERTEX_BIT,
-    Geomery = VK_SHADER_STAGE_GEOMETRY_BIT,
+    Geometry = VK_SHADER_STAGE_GEOMETRY_BIT,
     Compute = VK_SHADER_STAGE_COMPUTE_BIT,
     RayGen = VK_SHADER_STAGE_RAYGEN_BIT_KHR,
     Miss = VK_SHADER_STAGE_MISS_BIT_KHR,
@@ -92,8 +92,8 @@ class ShaderModuleBase : NonMovable {
             return _bindings;
         }
 
-        core::Span<u32> variable_size_bindings() const {
-            return _variable_size_bindings;
+        core::Span<u32> variable_size_sets() const {
+            return _variable_size_sets;
         }
 
     private:
@@ -101,7 +101,7 @@ class ShaderModuleBase : NonMovable {
         core::String _entry_point = "main";
         ShaderType _type = ShaderType::None;
         core::Vector<core::Vector<VkDescriptorSetLayoutBinding>> _bindings;
-        core::Vector<u32> _variable_size_bindings;
+        core::Vector<u32> _variable_size_sets;
         core::Vector<Attribute> _attribs;
         core::Vector<u32> _stage_output;
         math::Vec3ui _local_size;

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -139,7 +139,7 @@ void RenderPassRecorder::bind_material_template(const MaterialTemplate* material
 void RenderPassRecorder::draw(const MeshDrawData& draw_data, u32 instance_count, u32 instance_index) {
     Y_VK_CMD
 
-    bind_mesh_buffers(draw_data.mesh_buffers());
+    bind_index_buffer(draw_data.triangle_buffer());
     draw(draw_data.draw_command().vk_indirect_data(instance_index, instance_count));
 }
 
@@ -195,25 +195,14 @@ void RenderPassRecorder::draw_array(usize vertex_count, usize instance_count, us
     draw(command);
 }
 
-void RenderPassRecorder::bind_mesh_buffers(const MeshDrawBuffers& mesh_buffers) {
-    if(_cache.mesh_buffers != &mesh_buffers) {
-        bind_index_buffer(mesh_buffers.triangle_buffer());
-        bind_attrib_buffers(mesh_buffers.attrib_buffers());
-        _cache.mesh_buffers = &mesh_buffers;
-    }
-}
-
 void RenderPassRecorder::bind_index_buffer(IndexSubBuffer indices) {
     Y_VK_CMD
 
-    _cache.mesh_buffers = nullptr;
     vkCmdBindIndexBuffer(vk_cmd_buffer(), indices.vk_buffer(), indices.byte_offset(), VK_INDEX_TYPE_UINT32);
 }
 
 void RenderPassRecorder::bind_attrib_buffers(core::Span<AttribSubBuffer> attribs) {
     Y_VK_CMD
-
-    _cache.mesh_buffers = nullptr;
 
     const u32 attrib_count = u32(attribs.size());
 
@@ -322,7 +311,7 @@ void CmdBufferRecorderBase::end_renderpass() {
 }
 
 void CmdBufferRecorderBase::check_no_renderpass() const {
-    y_always_assert(!_render_pass, "Command can not be used or destoryed while it has a RenderPassRecorder");
+    y_always_assert(!_render_pass, "Command can not be used or destroyed while it has a RenderPassRecorder");
 }
 
 void CmdBufferRecorderBase::barriers(core::Span<BufferBarrier> buffers, core::Span<ImageBarrier> images) {
@@ -436,8 +425,8 @@ void CmdBufferRecorderBase::copy(const ImageBase& src,  const ImageBase& dst) {
     }
 
     {
-        y_always_assert(src.image_size() == dst.image_size(), "Image size do not match");
-        y_always_assert(src.format() == dst.format(), "Image format do not match");
+        y_always_assert(src.image_size() == dst.image_size(), "Image sizes do not match");
+        y_always_assert(src.format() == dst.format(), "Image formats do not match");
 
         VkImageCopy copy = {};
         {
@@ -490,7 +479,11 @@ void CmdBufferRecorderBase::clear(const ImageBase& dst) {
 void CmdBufferRecorderBase::unbarriered_copy(SrcCopySubBuffer src, DstCopySubBuffer dst) {
     Y_VK_CMD
 
-    y_always_assert(src.byte_size() == dst.byte_size(), "Buffer size do not match");
+    y_always_assert(src.byte_size() == dst.byte_size(), "Buffer sizes do not match");
+
+    if(!src.byte_size()) {
+        return;
+    }
 
     VkBufferCopy copy = {};
     {
@@ -507,7 +500,7 @@ void CmdBufferRecorderBase::bind_descriptor_set(VkPipelineBindPoint bind_point, 
 
     y_debug_assert(!ds.descriptors().data() != !ds.vk_descriptor_set());
 
-    const core::Span descriptors = ds.descriptors();
+    const core::Span<Descriptor> descriptors = ds.descriptors();
     const usize descriptor_count = descriptors.size();
     if(descriptor_count) {
         core::ScratchPad<VkWriteDescriptorSet> writes(descriptor_count);
@@ -559,6 +552,10 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
             u32(i),
             descriptor_sets[i]
         );
+    }
+
+    for(usize i = 0; i != 3; ++i) {
+        y_debug_assert(size[i] <= device_properties().max_compute_dispatch_size[i]);
     }
 
     vkCmdDispatch(vk_cmd_buffer(), size.x(), size.y(), size.z());

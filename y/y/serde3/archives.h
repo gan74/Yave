@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -596,7 +596,7 @@ class ReadableArchive final {
             inner i;
 
             Success status = Success::Full;
-            y_try_status(deserialize_one(NamedObject<inner>{i, object.name, object.name_hash.hash}));
+            y_try_status(deserialize_one(NamedObject<inner>{i, object.name, object.name_hash}));
 
             object.object.set(std::move(i));
             return core::Ok(status);

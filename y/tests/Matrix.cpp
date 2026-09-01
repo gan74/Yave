@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -69,7 +69,7 @@ y_test_func("Matrix inverse") {
 }
 
 
-y_test_func("Matrix asymetrical") {
+y_test_func("Matrix asymmetrical") {
     const Matrix<2, 3, float> mat(1, 2, 3, 4, 5, 6);
 
     y_test_assert(mat.row(0) == Vec3(1.0f, 2.0f, 3.0f) && mat.row(1) == Vec3(4, 5, 6));
@@ -78,7 +78,7 @@ y_test_func("Matrix asymetrical") {
     y_test_assert(mat.transposed() * Vec2(7.0f, 8.0f) == Vec3(39, 54, 69));
 }
 
-y_test_func("Matrix asymetrical multiply") {
+y_test_func("Matrix asymmetrical multiply") {
     const Matrix<2, 3> a(1, 2, 3,
                    4, 5, 6);
 

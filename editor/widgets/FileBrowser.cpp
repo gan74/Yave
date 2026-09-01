@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,6 @@ SOFTWARE.
 
 #include <yave/utils/FileSystemModel.h>
 
-#include <y/utils/sort.h>
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
@@ -79,7 +78,7 @@ bool FileBrowser::has_valid_extension(std::string_view filename) const {
     if(_extensions.is_empty()) {
         return false;
     }
-    const auto ext = filesystem()->extention(filename);
+    const auto ext = filesystem()->extension(filename);
     return std::binary_search(_extensions.begin(), _extensions.end(), ext);
 }
 

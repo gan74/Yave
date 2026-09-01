@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-class System : NonCopyable {
+class System : public NonCopyable {
     public:
         System(core::String name);
         virtual ~System() = default;

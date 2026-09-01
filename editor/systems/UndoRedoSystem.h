@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,12 @@ SOFTWARE.
 #include <yave/assets/AssetId.h>
 #include <yave/assets/AssetPtr.h>
 
+#include <y/io2/Buffer.h>
+
 #include <y/core/Chrono.h>
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>
+
 #include <variant>
 
 namespace editor {
@@ -57,12 +60,17 @@ class UndoRedoSystem : public ecs::System {
         PropertyValue value;
     };
 
+    struct ComponentData : NonCopyable {
+        ecs::ComponentTypeIndex type_id;
+        io2::Buffer buffer;
+    };
+
     struct UndoState {
         core::Vector<std::pair<ComponentKey, core::SmallVector<Property, 8>>> redo_properties;
         core::Vector<std::pair<ComponentKey, core::SmallVector<Property, 8>>> undo_properties;
 
-        core::Vector<std::pair<ecs::EntityId, std::unique_ptr<ecs::ComponentBoxBase>>> removed_components;
-        core::Vector<std::pair<ecs::EntityId, std::unique_ptr<ecs::ComponentBoxBase>>> added_components;
+        core::Vector<std::pair<ecs::EntityId, ComponentData>> removed_components;
+        core::Vector<std::pair<ecs::EntityId, ComponentData>> added_components;
 
         core::Vector<std::pair<ecs::EntityId, ecs::EntityId>> removed_entities;
         core::Vector<ecs::EntityId> added_entities;

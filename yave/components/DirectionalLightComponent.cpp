@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -67,6 +67,14 @@ bool DirectionalLightComponent::cast_shadow() const {
     return _cast_shadow;
 }
 
+bool& DirectionalLightComponent::cast_gi() {
+    return _cast_gi;
+}
+
+bool DirectionalLightComponent::cast_gi() const {
+    return _cast_gi;
+}
+
 u32& DirectionalLightComponent::shadow_lod() {
     return _shadow_lod;
 }
@@ -101,6 +109,8 @@ void DirectionalLightComponent::inspect(ecs::ComponentInspector* inspector) {
     inspector->inspect("Disk size", _disk_size, ecs::ComponentInspector::FloatRole::Angle);
 
     inspector->inspect("Direction", _direction, ecs::ComponentInspector::Vec3Role::Direction);
+
+    inspector->inspect("Cast GI", _cast_gi);
 
     inspector->inspect("Cast shadow", _cast_shadow);
     inspector->inspect("Shadow LoD", _shadow_lod, 8);

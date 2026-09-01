@@ -2,7 +2,7 @@
 Yet another C++20 Vulkan engine.
 
 ## Disclaimer
-This is a pet/learning project, it's not meant to be a serious engine and should not be used for anything beside playing with Vulkan.
+This is a pet/learning project, it's not meant to be a serious engine and should not be used for anything besides playing with Vulkan.
 
 Currently only supports Windows
  * With GCC 14+ through MSYS2
@@ -18,7 +18,7 @@ Older UI: [1](https://i.imgur.com/ulnz4Rs.jpeg) [2](https://i.imgur.com/L8Awj4C.
  * y: Core library with a bunch of utility functions and classes
  * yave: The engine itself
     It links only to y and spirv_reflect
- * editor: A scene editor build on top of yave
+ * editor: A scene editor built on top of yave
  * shaders: All the shaders for both the engine and the editor
  * external: Third party libraries
 

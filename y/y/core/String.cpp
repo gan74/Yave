@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -236,6 +236,10 @@ void String::resize(usize new_size, char c) {
 
 
 String String::replaced(std::string_view str, std::string_view from, std::string_view to) {
+    if(from.empty()) {
+        return str;
+    }
+
     String repl;
     repl.set_min_capacity(str.size() + to.size() * 2);
 
@@ -267,15 +271,6 @@ const char* String::data() const {
     return is_long() ? _l.data : _s.data;
 }
 
-String::iterator String::find(const char* str) {
-    return const_cast<iterator>(const_this()->find(str));
-}
-
-String::const_iterator String::find(const char* str) const {
-    const const_iterator found = std::strstr(data(), str);
-    return found ? found : end();
-}
-
 String::iterator String::find(std::string_view str) {
     return const_cast<iterator>(const_this()->find(str));
 }
@@ -298,12 +293,11 @@ std::string_view String::sub_str(usize beg, usize len) const {
 }
 
 bool String::starts_with(std::string_view str) const {
-    return str.size() <= size() && std::string_view(begin(), str.size()) == str;
+    return view().starts_with(str);
 }
 
 bool String::ends_with(std::string_view str) const {
-    const usize s = size();
-    return str.size() <= s && std::string_view(begin() + s - str.size(), str.size()) == str;
+    return view().ends_with(str);
 }
 
 String::operator const char*() const {
@@ -330,7 +324,7 @@ String::operator std::string_view() const {
 String& String::operator=(const String& str) {
     if(&str != this) {
         const usize other_size = str.size();
-        if(capacity() > str.size()) {
+        if(capacity() >= str.size()) {
             std::copy(str.begin(), str.end() + 1, data());
             if(is_long()) {
                 _l.length = other_size;
@@ -371,7 +365,7 @@ String& String::operator+=(std::string_view str) {
 }
 
 String& String::append(const char* other_data, usize other_size) {
-    usize self_size = size();
+    const usize self_size = size();
     const usize total_size = self_size + other_size;
 
     if(capacity() >= total_size) {
@@ -384,10 +378,18 @@ String& String::append(const char* other_data, usize other_size) {
             self_data[_s.length = total_size] = 0;
         }
     } else {
+        const char* old_data = data();
         set_min_capacity(total_size);
-        char* self_data = data();
-        std::memcpy(self_data + self_size, other_data, other_size);
-        self_data[total_size] = 0;
+        char* new_data = data();
+
+        // other_data is inside the string
+        if(other_data >= old_data && other_data < old_data + self_size) {
+            other_data = new_data + usize(other_data - old_data);
+        }
+
+        std::memcpy(new_data + self_size, other_data, other_size);
+        new_data[total_size] = 0;
+        y_debug_assert(is_long());
         _l.length = total_size;
     }
     return *this;

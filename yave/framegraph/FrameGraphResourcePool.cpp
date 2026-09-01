@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -93,6 +93,22 @@ TransientBuffer FrameGraphResourcePool::create_buffer(u64 byte_size, BufferUsage
     buffer.set_exposed_byte_size(byte_size);
     return buffer;
 }
+
+std::pair<const TransientBuffer&, bool> FrameGraphResourcePool::create_scratch_buffer(u64 byte_size, BufferUsage usage, FrameGraphPersistentResourceId persistent_id) {
+    return _persistent_buffers.locked([&](auto&& buffers) {
+        const usize index = persistent_id.id();
+        buffers.set_min_size(index + 1);
+
+        TransientBuffer& buffer = buffers[index];
+        const bool reset = buffer.is_null() || buffer.byte_size() != byte_size || buffer.usage() != usage;
+        if(reset) {
+            buffer = TransientBuffer(byte_size, usage);
+        }
+        return std::pair<const TransientBuffer&, bool>{buffer, reset};
+    });
+}
+
+
 
 bool FrameGraphResourcePool::create_image_from_pool(TransientImage& res, ImageFormat format, const math::Vec2ui& size, u32 mips, ImageUsage usage) {
     return _images.locked([&](auto&& images) {

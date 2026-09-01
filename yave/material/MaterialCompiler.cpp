@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -101,7 +101,7 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
     y_profile();
 
     core::DebugTimer _("MaterialCompiler::compile", core::Duration::milliseconds(2));
-    Y_TODO(move program creation programs can be reused)
+    Y_TODO(move program creation so programs can be reused)
 
     const auto& mat_data = material->data();
 

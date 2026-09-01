@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,6 @@ SOFTWARE.
 #include <yave/graphics/shaders/ComputeProgram.h>
 #include <yave/graphics/device/DeviceResources.h>
 
-#include <y/math/random.h>
 
 namespace yave {
 
@@ -197,52 +196,58 @@ static FrameGraphImageId compute_mini_ao(FrameGraph& framegraph, FrameGraphImage
 
 
 
-static auto generate_sample_dirs(u64 seed) {
-    y_profile();
-
-    std::array<math::Vec4, 256> dirs;
-    const float golden = (1.0f + std::sqrt(5.0f)) * 0.5f;
-    for(usize i = 0; i != dirs.size(); ++i) {
-        const float wrapped_index = float((i + usize(seed)) % dirs.size());
-
-        const float theta = 2.0f * math::pi<float> * wrapped_index * golden;
-        const float phi = std::acos(1.0f - 2.0f * wrapped_index / float(dirs.size()));
-        dirs[i] = math::Vec4(math::Vec2(std::cos(theta), std::sin(theta)) * std::sin(phi), std::cos(phi), 0.0f);
-    }
-
-    std::shuffle(dirs.begin(), dirs.end(), math::FastRandom(seed));
-
-    return dirs;
-}
-
-static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass& gbuffer, u32 ray_count, float max_dist) {
-    const auto sample_dirs = generate_sample_dirs(framegraph.frame_id());
-
+static FrameGraphImageId compute_rtao(FrameGraph& framegraph, const GBufferPass& gbuffer, const AOSettings::RTAOSettings& settings) {
+    const u32 hash_size = u32(1) << std::min(settings.hash_size, 30u);
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
+    const TLAS& tlas = gbuffer.scene_pass.scene_view.scene()->tlas();
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("RTAO pass");
 
+    static const FrameGraphPersistentResourceId persistent_hash_id = FrameGraphPersistentResourceId::create();
+    const auto [hash, reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size * 3);
+
     const auto ao = builder.declare_image(VK_FORMAT_R8_UNORM, size);
-    const auto sample_dir_buffer = builder.declare_typed_buffer<std::remove_cvref_t<decltype(sample_dirs)>>();
 
-    builder.map_buffer(sample_dir_buffer, sample_dirs);
+    const struct Params {
+        u32 sample_count;
+        float max_dist;
+        float lod_dist;
+        float base_cell_size;
 
-    const TLAS& tlas = gbuffer.scene_pass.scene_view.scene()->tlas();
+        u32 hash_size;
+        u32 sample_clamp;
+        u32 frame_id;
+        u32 reset_hash;
+    } params {
+        settings.ray_count,
+        settings.max_dist,
+        settings.lod_dist,
+        settings.base_cell_size,
+        hash_size,
+        1u << 10,
+        u32(framegraph.frame_id()),
+        reset,
+    };
 
     builder.add_storage_output(ao);
     builder.add_uniform_input(gbuffer.depth);
     builder.add_uniform_input(gbuffer.normal);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_uniform_input(sample_dir_buffer);
-    builder.add_inline_input(std::pair<u32, float>{ray_count, max_dist});
+    builder.add_inline_input(params);
     builder.add_descriptor_binding(Descriptor(tlas));
+    builder.add_descriptor_binding(Descriptor(hash));
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        recorder.dispatch_threads(device_resources()[DeviceResources::RTAOProgram], size, self->descriptor_set());
+        const BufferBarrier barrier(hash, PipelineStage::ComputeBit, PipelineStage::ComputeBit);
+
+        recorder.dispatch_threads(device_resources()[DeviceResources::RTAOTrimProgram], math::Vec2ui(hash_size, 1), self->descriptor_set());
+        recorder.barriers(barrier);
+        recorder.dispatch_threads(device_resources()[DeviceResources::RTAOUpdateProgram], size, self->descriptor_set());
+        recorder.barriers(barrier);
+        recorder.dispatch_threads(device_resources()[DeviceResources::RTAOApplyProgram], size, self->descriptor_set());
     });
 
     return ao;
 }
-
 
 static FrameGraphImageId filter_ao(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in_ao, bool vertical, float sigma) {
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
@@ -273,7 +278,6 @@ static FrameGraphImageId filter_ao(FrameGraph& framegraph, const GBufferPass& gb
 
 
 
-
 AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const AOSettings& settings) {
     const auto region = framegraph.region("AO");
 
@@ -298,13 +302,7 @@ AOPass AOPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, const 
 
         case AOSettings::AOMethod::RTAO: {
             if(raytracing_enabled()) {
-                ao = compute_rtao(framegraph, gbuffer, settings.rtao.ray_count, settings.rtao.max_dist);
-
-                if(settings.rtao.temporal) {
-                    static const FrameGraphPersistentResourceId persistent_color_id = FrameGraphPersistentResourceId::create();
-                    static const FrameGraphPersistentResourceId persistent_motion_id = FrameGraphPersistentResourceId::create();
-                    ao = TAAPass::create(framegraph, gbuffer, ao, persistent_color_id, persistent_motion_id).anti_aliased;
-                }
+                ao = compute_rtao(framegraph, gbuffer, settings.rtao);
 
                 if(settings.rtao.filter_sigma > 0.0f) {
                     ao = filter_ao(framegraph, gbuffer, ao, false, settings.rtao.filter_sigma);

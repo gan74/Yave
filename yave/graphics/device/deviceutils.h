@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@ namespace yave {
 
 core::Span<const char*> raytracing_extensions();
 core::Span<const char*> validation_extensions();
+core::Span<const char*> required_extensions();
 
 float device_score(const PhysicalDevice& device);
 
@@ -40,8 +41,6 @@ bool try_enable_extension(core::Vector<const char*>& exts, const char* name, con
 VkSamplerAddressMode vk_address_mode(SamplerType type);
 VkFilter vk_filter(SamplerType type);
 VkSamplerMipmapMode vk_mip_filter(SamplerType type);
-
-VkDeviceAddress vk_buffer_device_address(const SubBufferBase& buffer);
 
 VkHandle<VkSampler> create_sampler(SamplerType type);
 
@@ -63,9 +62,11 @@ VkPhysicalDeviceVulkan11Features required_device_features_1_1();
 VkPhysicalDeviceVulkan12Features required_device_features_1_2();
 VkPhysicalDeviceVulkan13Features required_device_features_1_3();
 VkPhysicalDeviceVulkan14Features required_device_features_1_4();
+VkPhysicalDeviceShaderAtomicFloatFeaturesEXT required_device_features_shader_float_atomic();
 VkPhysicalDeviceAccelerationStructureFeaturesKHR required_device_features_accel_struct();
 VkPhysicalDeviceRayTracingPipelineFeaturesKHR required_device_features_raytracing_pipeline();
 VkPhysicalDeviceRayQueryFeaturesKHR required_device_features_ray_query();
+VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR required_device_features_ray_position_fetch();
 
 
 

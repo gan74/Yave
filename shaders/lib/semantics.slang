@@ -9,9 +9,9 @@ typealias Sampler2DShadow = Sampler2D<float>;
 namespace semantics {
 
 in float4 frag_coord : SV_Position;
-in int instance_index : SV_InstanceID;
+in int instance_index : SV_VulkanInstanceID;
 in bool is_front_face : SV_IsFrontFace;
-in int vertex_index : SV_VertexID;
+in int vertex_index : SV_VulkanVertexID;
 
 in uint3 global_id : SV_DispatchThreadID;
 in uint3 work_group_id : SV_GroupID;
@@ -29,35 +29,75 @@ property uint3 work_group_count {
     get { return spirv_asm { result: $$uint3 = OpLoad builtin(NumWorkgroups: uint3); }; }
 }
 
+property uint work_group_index {
+    [__unsafeForceInlineEarly]
+    get {
+        return
+            work_group_id.x +
+            work_group_id.y * work_group_count.x +
+            work_group_id.z * work_group_count.x * work_group_count.y
+        ;
+    }
 }
 
-
-
-
-
-[ForceInline]
-uint InterlockedAddRet(inout uint mem, uint data) {
-    uint prev;
-    InterlockedAdd(mem, data, prev);
-    return prev;
+property uint work_group_thread_count {
+    [__unsafeForceInlineEarly]
+    get {
+        return work_group_size.x * work_group_size.y * work_group_size.z;
+    }
 }
+
+property uint3 dispatch_size {
+    [__unsafeForceInlineEarly]
+    get {
+        return work_group_size * work_group_count;
+    }
+}
+
+property uint3 dispatch_thread_count {
+    [__unsafeForceInlineEarly]
+    get {
+        return dispatch_size.x * dispatch_size.y * dispatch_size.z;
+    }
+}
+
+property uint global_index {
+    [__unsafeForceInlineEarly]
+    get {
+        return
+            global_id.x +
+            global_id.y * dispatch_size.x +
+            global_id.z * dispatch_size.x * dispatch_size.y
+        ;
+    }
+}
+
+property uint2 pixel_coord {
+    [require(compute)]
+    get { return global_id.xy; }
+    [require(fragment)]
+    get { return uint2(frag_coord.xy); }
+}
+
+}
+
 
 
 
 [ForceInline]
 uint image_mips<T: ITexelElement>(Sampler2D<T> smp) {
-    uint mip;
+    uint mips;
     uint2 size;
-    smp.GetDimensions(0, size.x, size.y, mip);
-    return 0;
+    smp.GetDimensions(0, size.x, size.y, mips);
+    return mips;
 }
 
 [ForceInline]
 uint image_mips<T: ITexelElement>(SamplerCube<T> smp) {
-    uint mip;
+    uint mips;
     uint2 size;
-    smp.GetDimensions(0, size.x, size.y, mip);
-    return 0;
+    smp.GetDimensions(0, size.x, size.y, mips);
+    return mips;
 }
 
 [ForceInline]

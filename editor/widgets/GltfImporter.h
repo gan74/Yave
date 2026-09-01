@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -59,6 +59,7 @@ class GltfImporter final : public Widget {
         struct {
             core::String import_path;
             bool import_child_prefabs_as_assets = false;
+            bool create_colliders = false;
         } _settings;
 
 

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +47,7 @@ SOFTWARE.
 #include <yave/utils/color.h>
 #include <yave/utils/DirectDraw.h>
 
+#include <editor/renderer/EditorPass.h>
 #include <editor/utils/ui.h>
 
 namespace editor {
@@ -94,7 +95,7 @@ static bool keep_taa(EngineView::RenderView view) {
 
 
 EngineView::EngineView() :
-        Widget(ICON_FA_DESKTOP " Engine View"),
+        Widget(ICON_FA_DESKTOP " Engine View", ImGuiWindowFlags_MenuBar),
         _resource_pool(std::make_shared<FrameGraphResourcePool>()),
         _camera_controller(std::make_unique<HoudiniCameraController>()),
         _tr_gizmo(&_scene_view),
@@ -193,6 +194,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     const EditorRenderer renderer = EditorRenderer::create(framegraph, _scene_view, output_size, settings);
     {
         const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
+        const Texture& black = *device_resources()[DeviceResources::BlackTexture];
 
         FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("ImGui texture pass");
 
@@ -208,6 +210,7 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         builder.add_uniform_input(gbuffer.color);
         builder.add_uniform_input(gbuffer.normal);
         builder.add_uniform_input_with_default(renderer.renderer.ao.ao, Descriptor(white));
+        builder.add_uniform_input_with_default(renderer.renderer.rtgi.gi, Descriptor(black));
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             {
                 auto render_pass = recorder.bind_framebuffer(self->framebuffer());
@@ -223,9 +226,12 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 
     if(is_mouse_inside()) {
         const math::Vec2 mouse_pos = to_y(ImGui::GetIO().MousePos) - to_y(ImGui::GetWindowPos());
+
         const IdBufferPass id_buffer = IdBufferPass::create(framegraph, renderer.renderer);
+        const EditorPass editor_pass = EditorPass::create(framegraph, id_buffer.scene_pass.scene_view, id_buffer.scene_pass.visibility, id_buffer.depth, FrameGraphImageId(), id_buffer.id);
+
         _picking_requests.emplace_back(
-            picking_pass(framegraph, id_buffer, math::Vec2ui(mouse_pos)),
+            picking_pass(framegraph, editor_pass.id, editor_pass.depth, math::Vec2ui(mouse_pos)),
             _scene_view.camera(),
             mouse_pos / math::Vec2(content_size()),
             recorder.create_fence()
@@ -345,10 +351,13 @@ void EngineView::make_drop_target() {
 // ---------------------------------------------- GUI ----------------------------------------------
 
 void EngineView::on_gui() {
+    if(ImGui::BeginMenuBar()) {
+        draw_toolbar();
+        ImGui::EndMenuBar();
+    }
+
     if(ImGui::BeginChild("##view")) {
         update_scene_view();
-
-        const ImVec2 cursor = ImGui::GetCursorPos();
 
         {
             CmdBufferRecorder recorder = create_disposable_cmd_buffer();
@@ -358,27 +367,10 @@ void EngineView::on_gui() {
 
         make_drop_target();
 
-        {
-            const float spacing = ImGui::GetStyle().IndentSpacing * 0.5f;
-            ImGui::SetCursorPos(cursor + ImVec2(spacing, spacing));
-            draw_toolbar_and_gizmos();
-        }
-
-
-        if(ImGui::BeginPopup("##menu")) {
-            draw_menu();
-            ImGui::EndPopup();
-        }
-
-        if(ImGui::BeginPopup("##resolutions")) {
-            draw_resolution_menu();
-            ImGui::EndPopup();
-        }
-
+        draw_gizmos();
 
         update_picking();
         update();
-
 
         if(!is_dragging_gizmo() && !_moving_camera && imgui::should_open_context_menu()) {
             ImGui::OpenPopup("##contextmenu");
@@ -404,84 +396,71 @@ void EngineView::on_gui() {
     ImGui::EndChild();
 }
 
+void EngineView::draw_toolbar() {
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImGui::GetStyle().ItemSpacing * 2.0f);
+    y_defer(ImGui::PopStyleVar());
 
-void EngineView::draw_toolbar_and_gizmos() {
-    y_profile();
+    if(ImGui::BeginMenu(ICON_FA_ADJUST)) {
+        draw_menu();
+        ImGui::EndMenu();
+    }
+    
+    ImGui::Separator();
 
-    struct GizmoButton  {
-        const char* icon = nullptr;
-        GizmoBase* gizmo = nullptr;
-    };
+    {
+        struct GizmoButton  {
+            const char* icon = nullptr;
+            GizmoBase* gizmo = nullptr;
+        };
 
-    const std::array<GizmoButton, usize(GizmoType::Max)> gizmo_buttons = {
-        GizmoButton { ICON_FA_ARROWS_ALT, &_tr_gizmo },
-        GizmoButton { ICON_FA_SYNC_ALT, &_rot_gizmo }
-    };
-
-
-    if(!is_dragging_gizmo()) {
-        ImGui::PushStyleColor(ImGuiCol_Text, 0xFFFFFFFF);
-        ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_PopupBg));
-
-        if(ImGui::Button(ICON_FA_ADJUST)) {
-            ImGui::OpenPopup("##menu");
-        }
-
-        ImGui::SameLine();
+        const std::array<GizmoButton, usize(GizmoType::Max)> gizmo_buttons = {
+            GizmoButton { ICON_FA_ARROWS_ALT, &_tr_gizmo },
+            GizmoButton { ICON_FA_SYNC_ALT, &_rot_gizmo }
+        };
 
         for(usize i = 0; i != gizmo_buttons.size(); ++i) {
             const bool is_selected = GizmoType(i) == _gizmo;
-            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(is_selected ? ImGuiCol_CheckMark : ImGuiCol_Text));
+            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(is_selected ? ImGuiCol_CheckMark : ImGuiCol_TextDisabled));
 
             const GizmoButton& button = gizmo_buttons[i];
-            if(ImGui::Button(button.icon)) {
+            if(ImGui::MenuItem(button.icon)) {
                 _gizmo = GizmoType(i);
             }
 
             ImGui::PopStyleColor();
-            ImGui::SameLine();
         }
-
-        if(_resolution >= 0) {
-            if(ImGui::Button(standard_resolutions()[_resolution].first)) {
-                ImGui::OpenPopup("##resolutions");
-            }
-        }
-
-        if(TimeSystem* time = current_world().find_system<TimeSystem>()) {
-            ImGui::SameLine();
-
-            const bool paused = time->time_scale() <= 0.0f;
-            if(ImGui::Button(paused ? ICON_FA_PLAY : ICON_FA_PAUSE)) {
-                time->set_time_scale(paused ? 1.0f : 0.0f);
-            }
-        }
-
-        ImGui::PopStyleColor(2);
     }
 
-    if(is_focussed() && ImGui::IsKeyPressed(to_imgui_key(app_settings().ui.change_gizmo_mode))) {
-        _gizmo = GizmoType((usize(_gizmo) + 1) % usize(GizmoType::Max));
+    if(_resolution >= 0) {
+        ImGui::Separator();
+        if(ImGui::BeginMenu(standard_resolutions()[_resolution].first)) {
+            draw_resolution_menu();
+            ImGui::EndMenu();
+        }
     }
 
-    gizmo_buttons[usize(_gizmo)].gizmo->draw();
-    _orientation_gizmo.draw();
+    ImGui::Separator();
+
+    if(TimeSystem* time = current_world().find_system<TimeSystem>()) {
+        const bool paused = time->time_scale() <= 0.0f;
+        if(ImGui::MenuItem(paused ? ICON_FA_PLAY : ICON_FA_PAUSE)) {
+            time->set_time_scale(paused ? 1.0f : 0.0f);
+        }
+    }
 }
 
-
 void EngineView::draw_menu() {
-    {
-        ImGui::MenuItem("Editor entities", nullptr, &_settings.show_editor_entities);
+    ImGui::MenuItem("Editor entities", nullptr, &_settings.show_editor_entities);
 
-        ImGui::Separator();
-        {
-            const char* output_names[] = {"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "AO"};
-            for(usize i = 0; i != usize(RenderView::Max); ++i) {
-                bool selected = usize(_view) == i;
-                ImGui::MenuItem(output_names[i], nullptr, &selected);
-                if(selected) {
-                    _view = RenderView(i);
-                }
+    ImGui::Separator();
+
+    {
+        const char* output_names[] = {"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "AO", "GI"};
+        for(usize i = 0; i != usize(RenderView::Max); ++i) {
+            bool selected = usize(_view) == i;
+            ImGui::MenuItem(output_names[i], nullptr, &selected);
+            if(selected) {
+                _view = RenderView(i);
             }
         }
     }
@@ -506,6 +485,23 @@ void EngineView::draw_menu() {
         draw_resolution_menu();
         ImGui::EndMenu();
     }
+}
+
+void EngineView::draw_gizmos() {
+    if(is_focussed() && ImGui::IsKeyPressed(to_imgui_key(app_settings().ui.change_gizmo_mode))) {
+        _gizmo = GizmoType((usize(_gizmo) + 1) % usize(GizmoType::Max));
+    }
+
+    switch(_gizmo) {
+        case GizmoType::Translate: 
+            _tr_gizmo.draw();
+        break;
+        case GizmoType::Rotate: 
+            _rot_gizmo.draw();
+        break;
+    }
+
+    _orientation_gizmo.draw();
 }
 
 void EngineView::draw_resolution_menu() {
@@ -556,6 +552,26 @@ void EngineView::draw_settings_menu() {
         ImGui::EndMenu();
     }
 
+    if(ImGui::BeginMenu("RTGI")) {
+        RTGISettings& settings = _settings.renderer_settings.rtgi;
+
+        ImGui::SliderFloat("Min ray count", &settings.min_ray_count, 0.0f, 16.0f);
+        ImGui::SliderFloat("Max ray count", &settings.max_ray_count, 1.0f, 16.0f);
+
+        ImGui::Separator();
+
+        ImGui::SliderFloat("Cell size", &settings.base_cell_size, 0.01f, 0.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
+        ImGui::SliderFloat("LoD distance", &settings.lod_dist, 1.0f, 100.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+
+        ImGui::Separator();
+
+        ImGui::SliderFloat("LoD jitter", &settings.lod_jitter, 0.0f, 1.0f);
+        ImGui::SliderFloat("Position jitter", &settings.pos_jitter, 0.0f, 4.0f);
+        ImGui::SliderFloat("Normal jitter", &settings.norm_jitter, 0.0f, 2.0f);
+
+        ImGui::EndMenu();
+    }
+
     if(ImGui::BeginMenu("AO")) {
         AOSettings& settings = _settings.renderer_settings.ao;
 
@@ -581,14 +597,17 @@ void EngineView::draw_settings_menu() {
         }
 
         if(ImGui::BeginMenu("RTAO")) {
-            int ray = int(settings.rtao.ray_count);
-            ImGui::SliderInt("Ray count", &ray, 1, 16);
+            int rays = int(settings.rtao.ray_count);
+
+            ImGui::SliderInt("Ray count", &rays, 1, 16);
             ImGui::SliderFloat("Max ray length", &settings.rtao.max_dist, 0.25f, 8.0f);
             ImGui::Separator();
-            ImGui::Checkbox("Temporal stabilisation", &settings.rtao.temporal);
+            ImGui::SliderFloat("Cell size", &settings.rtao.base_cell_size, 0.01f, 0.5f);
+            ImGui::SliderFloat("LoD distance", &settings.rtao.lod_dist, 1.0f, 100.0f);
             ImGui::Separator();
             ImGui::SliderFloat("Filter sigma", &settings.rtao.filter_sigma, 0.0f, 8.0f);
-            settings.rtao.ray_count = ray;
+
+            settings.rtao.ray_count = u32(rays);
             ImGui::EndMenu();
         }
 
@@ -614,7 +633,6 @@ void EngineView::draw_settings_menu() {
     if(ImGui::BeginMenu("Lighting")) {
         LightingSettings& settings = _settings.renderer_settings.lighting;
 
-        ImGui::Checkbox("Use compute", &settings.use_compute_for_locals);
         ImGui::Checkbox("Debug tiles", &settings.debug_tiles);
 
         ImGui::EndMenu();
@@ -622,6 +640,7 @@ void EngineView::draw_settings_menu() {
 
     if(ImGui::BeginMenu("TAA")) {
         JitterSettings& jitter = _settings.renderer_settings.jitter;
+
         TAASettings& taa = _settings.renderer_settings.taa;
 
         ImGui::Checkbox("Enable TAA", &taa.enable);
@@ -658,6 +677,10 @@ void EngineView::draw_settings_menu() {
     ImGui::Separator();
 
     ImGui::MenuItem("Enable TAA", nullptr, &_settings.renderer_settings.taa.enable);
+
+    bool rtgi = _settings.renderer_settings.ambient_pipe == AmbientPipe::GI;
+    ImGui::MenuItem("Enable RTGI", nullptr, &rtgi);
+    _settings.renderer_settings.ambient_pipe = rtgi ? AmbientPipe::GI : AmbientPipe::IBLOcclusion;
 }
 
 }

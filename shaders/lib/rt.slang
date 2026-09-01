@@ -1,7 +1,36 @@
 #ifndef RT_SLANG
 #define RT_SLANG
 
-float trace_first_hit(RaytracingAccelerationStructure accel, float3 origin, float3 dir, float min_dist, float max_dist) {
+#include "utils.slang"
+#include "rng.slang"
+
+struct HitInfo {
+    bool hit;
+    bool front_face;
+    float ray_t;
+    float3 position;
+    uint instance_id;
+    uint primitive_id;
+    float2 barycentrics;
+    float3 ms_vertices[3];
+    float3 ms_normal;
+    float3x4 model_to_world;
+
+
+    __init() {
+        hit = false;
+        front_face = true;
+        ray_t = -1.0;
+        position = float3(0.0);
+        instance_id = primitive_id = 0;
+        barycentrics = float2(0.0);
+        ms_vertices = {float3(0.0), float3(0.0), float3(0.0)};
+        ms_normal = float3(0.0);
+        model_to_world = float3x4(0.0);
+    }
+};
+
+HitInfo trace_inline_flags<uint flags>(RaytracingAccelerationStructure accel, float3 origin, float3 dir, float min_dist, float max_dist) {
     RayDesc ray;
     {
         ray.Origin = origin;
@@ -10,16 +39,49 @@ float trace_first_hit(RaytracingAccelerationStructure accel, float3 origin, floa
         ray.TMax = max_dist;
     }
 
-    RayQuery<RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH> query;
-    query.TraceRayInline(accel, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xff, ray);
+    RayQuery<flags> query;
+    query.TraceRayInline(accel, flags, 0xFF, ray);
 
-    query.Proceed();
+    /*while*/ (query.Proceed());
 
+    HitInfo info;
     if(query.CommittedStatus() == COMMITTED_TRIANGLE_HIT) {
-        return query.CommittedRayT();
+        info.hit = true;
+        info.front_face = query.CommittedRayFrontFace();
+        info.ray_t = query.CommittedRayT();
+        info.instance_id = query.CommittedInstanceID();
+        info.primitive_id = query.CommittedPrimitiveIndex();
+        info.barycentrics = query.CommittedTriangleBarycentrics();
+        info.ms_vertices = query.CommittedGetIntersectionTriangleVertexPositions();
+        info.model_to_world = query.CommittedObjectToWorld3x4();
+
+        info.ms_normal = normalize(cross((info.ms_vertices[0] - info.ms_vertices[1]), (info.ms_vertices[0] - info.ms_vertices[2])));
+    } else {
+        info.ray_t = max_dist;
     }
 
-    return max_dist;
+    info.position = origin + dir * info.ray_t;
+
+    return info;
 }
+
+HitInfo trace_inline(RaytracingAccelerationStructure accel, float3 origin, float3 dir, float min_dist, float max_dist) {
+    return trace_inline_flags<RAY_FLAG_FORCE_OPAQUE>(accel, origin, dir, min_dist, max_dist);
+}
+
+
+
+
+
+float3 sample_hemisphere<T: Rng>(float3 normal, inout T rng) {
+    const float3 s = rng.next_unit();
+    return dot(normal, s) < 0.0 ? -s : s;
+}
+
+// https://pema.dev/obsidian/math/light-transport/cosine-weighted-sampling.html
+float3 cosine_sample_hemisphere<T: Rng>(float3 normal, inout T rng) {
+    return normalize(normal + rng.next_unit());
+}
+
 
 #endif // RT_SLANG

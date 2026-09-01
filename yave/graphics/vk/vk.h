@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -101,6 +101,8 @@ VK_STRUCT_TYPE(VkDebugUtilsLabelEXT,                                VK_STRUCTURE
 VK_STRUCT_TYPE(VkDebugUtilsObjectNameInfoEXT,                       VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT)
 VK_STRUCT_TYPE(VkValidationFeaturesEXT,                             VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT)
 
+VK_STRUCT_TYPE(VkPhysicalDeviceShaderAtomicFloatFeaturesEXT,        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT)
+
 VK_STRUCT_TYPE(VkCheckpointDataNV,                                  VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV)
 
 
@@ -120,6 +122,7 @@ VK_STRUCT_TYPE(VkAccelerationStructureDeviceAddressInfoKHR,         VK_STRUCTURE
 VK_STRUCT_TYPE(VkWriteDescriptorSetAccelerationStructureKHR,        VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR)
 VK_STRUCT_TYPE(VkRayTracingShaderGroupCreateInfoKHR,                VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR)
 VK_STRUCT_TYPE(VkRayTracingPipelineCreateInfoKHR,                   VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR)
+VK_STRUCT_TYPE(VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR,  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR)
 
 
 // Core

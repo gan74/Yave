@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -129,7 +129,7 @@ class EntityGroupProvider final : NonMovable {
                 y_debug_assert(!_ids.contains(id));
                 _ids.insert(id);
                 _added.insert(id);
-                Y_TODO(if we add an entity immediatly after removing anothe we might have conflicts)
+                Y_TODO(if we add an entity immediately after removing another we might have conflicts)
                 _removed.erase(id);
             }
         }
@@ -335,7 +335,7 @@ class EntityGroup final : NonMovable {
             return _provider;
         }
 
-        void swap(EntityGroup& other) {
+        /*void swap(EntityGroup& other) {
             _ids.swap(other.ids());
             std::swap(_sets, other._sets);
             std::swap(_mutate, other._mutate);
@@ -343,7 +343,7 @@ class EntityGroup final : NonMovable {
             std::swap(_write_locks, other._write_locks);
             std::swap(_read_locks, other._read_locks);
             std::swap(_provider, other._provider);
-        }
+        }*/
 
     private:
         friend class EntityWorld;

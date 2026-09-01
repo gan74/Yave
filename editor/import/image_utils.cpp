@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -212,7 +212,7 @@ ImageData compute_mipmaps(const ImageData& image) {
     {
         y_profile_zone("unpack");
         if(is_sRGB) {
-            Y_TODO(Alpha should not be gammaed)
+            Y_TODO(Alpha should not be gamma-corrected)
             unpack_with_gamma(image.data(), input.size(), input.data());
         } else {
             unpack(image.data(), input.size(), input.data());

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining as_alb copy
 of this software and associated documentation files (the "Software"), to deal
@@ -85,7 +85,7 @@ namespace import {
 
 core::String clean_asset_name(const core::String& name) {
     if(name.is_empty()) {
-        return "unamed";
+        return "unnamed";
     }
 
     usize begin = 0;
@@ -110,7 +110,7 @@ core::String clean_asset_name(const core::String& name) {
         }
     }
 
-    return n.is_empty() ? core::String("unamed") : n;
+    return n.is_empty() ? core::String("unnamed") : n;
 }
 
 core::Result<ImageData> import_image(const core::String& filename, ImageImportFlags flags) {
@@ -578,9 +578,10 @@ core::Result<MaterialData> ParsedScene::create_material(int index) const {
         return core::Err();
     }
 
-
     const tinygltf::Material& material = gltf->materials[index];
     const tinygltf::PbrMetallicRoughness& pbr = material.pbrMetallicRoughness;
+
+    const std::string emissive_strength_ext_name = "KHR_materials_emissive_strength";
 
     bool use_specular = false;
     int specular_texture_index = -1;
@@ -633,12 +634,18 @@ core::Result<MaterialData> ParsedScene::create_material(int index) const {
         data.normal = find_texture(material.normalTexture.index);
         data.emissive = find_texture(material.emissiveTexture.index);
 
-        for(usize i = 0; i != 3; ++i) {
-            data.color_factor[i] = float(material.pbrMetallicRoughness.baseColorFactor[i]);
-            data.emissive_factor[i] = float(material.emissiveFactor[i]);
+        float emissive_factor = 1.0f;
+        if(const auto it = material.extensions.find(emissive_strength_ext_name); it != material.extensions.end()) {
+            emissive_factor = float(it->second.Get("emissiveStrength").GetNumberAsDouble());
         }
 
-        data.alpha_tested = (material.alphaMode != "OPAQUE");
+        for(usize i = 0; i != 3; ++i) {
+            data.color_factor[i] = float(material.pbrMetallicRoughness.baseColorFactor[i]);
+            data.emissive_factor[i] = float(material.emissiveFactor[i]) * emissive_factor;
+        }
+
+        data.alpha_tested = (material.alphaMode == "MASK");
+        data.blend_mode = (material.alphaMode == "BLEND" ? BlendMode::SrcAlpha : BlendMode::None);
         data.double_sided = material.doubleSided;
     };
 

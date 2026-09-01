@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +23,11 @@ SOFTWARE.
 #define Y_MATH_MATH_H
 
 #include <y/utils.h>
-#include <limits>
+
 #include "Matrix.h"
+
+#include <limits>
+#include <array>
 
 namespace y {
 namespace math {
@@ -205,7 +208,7 @@ static std::array<T, N> compute_gaussian_weights(T sigma) {
     for(usize i = 0; i != weights.size(); ++i) {
         const T w = std::exp(-T(i * i) / denom);
         weights[i] = w;
-        total += i == 0 ? T(2.0) * w : w;
+        total += i ? T(2.0) * w : w;
     }
     for(T& w : weights) {
         w /= total;

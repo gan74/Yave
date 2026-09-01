@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -254,16 +254,9 @@ class MeshAllocatorDebug : public Widget {
 
     protected:
         void on_gui() override {
-            auto [vert, tris] = mesh_allocator().allocated();
 
             {
-                ImGui::TextUnformatted("Vertex buffer:");
-                ImGui::SameLine();
-                ImGui::ProgressBar(float(vert) / MeshAllocator::default_vertex_count, ImVec2(-1.0f, 0.0f),
-                    fmt_c_str("{}k / {}k", vert / 1000, MeshAllocator::default_vertex_count / 1000)
-                );
-            }
-            {
+                auto tris = mesh_allocator().allocated();
                 ImGui::TextUnformatted("Triangle buffer:");
                 ImGui::SameLine();
                 ImGui::ProgressBar(float(tris) / MeshAllocator::default_triangle_count, ImVec2(-1.0f, 0.0f),
@@ -312,44 +305,6 @@ class UiDebug : public Widget {
         }
 };
 
-
-class DebugValueEditor : public Widget {
-    editor_widget(DebugValueEditor, "View", "Debug")
-
-    public:
-        DebugValueEditor() : Widget("Debug values") {
-        }
-
-
-    protected:
-        void on_gui() override {
-            DebugValues& values = debug_values();
-
-            for(usize i = 0; i != 4; ++i) {
-                if(i) {
-                    ImGui::SameLine();
-                }
-                ImGui::Checkbox(fmt_c_str("Bool (f) #{}", i), &values.bool_f[i]);
-            }
-
-            for(usize i = 0; i != 4; ++i) {
-                if(i) {
-                    ImGui::SameLine();
-                }
-                ImGui::Checkbox(fmt_c_str("Bool (t) #{}", i), &values.bool_t[i]);
-            }
-
-            for(usize i = 0; i != 4; ++i) {
-                ImGui::InputFloat(fmt_c_str("Float (0.0) #{}", i), &values.float_0[i]);
-            }
-
-            for(usize i = 0; i != 4; ++i) {
-                ImGui::InputFloat(fmt_c_str("Float (1.0) #{}", i), &values.float_1[i]);
-            }
-        }
-};
-
-
 class RaytracingDebug : public Widget {
     editor_widget(RaytracingDebug, "View", "Debug")
 
@@ -380,7 +335,7 @@ class UndoRedoDebug : public Widget {
 
         void on_gui() override {
             UndoRedoSystem* system = current_world().find_system<UndoRedoSystem>();
-            const core::Span states = system->undo_states();
+            const auto states = system->undo_states();
 
             ImGui::Text("%u items in stack (current: %u)", u32(states.size()), u32(system->stack_top()));
 
@@ -396,13 +351,13 @@ class UndoRedoDebug : public Widget {
                     if(ImGui::TreeNodeEx(fmt_c_str("State #{}", i), ImGuiTreeNodeFlags_SpanAvailWidth | (current ? ImGuiTreeNodeFlags_Selected : 0)))  {
                         ImGui::Indent();
 
-                        for(const auto& [id, comp] : states[i].removed_components) {
-                            const auto type_name = current_world().component_type_name(comp->runtime_info().type_id);
+                        for(const auto& [id, data] : states[i].removed_components) {
+                            const auto type_name = current_world().component_type_name(data.type_id);
                             ImGui::TextUnformatted(fmt_c_str("({:08x}:{:08x}).{} deleted", id.index(), id.version(), type_name));
                         }
 
-                        for(const auto& [id, comp] : states[i].added_components) {
-                            const auto type_name = current_world().component_type_name(comp->runtime_info().type_id);
+                        for(const auto& [id, data] : states[i].added_components) {
+                            const auto type_name = current_world().component_type_name(data.type_id);
                             ImGui::TextUnformatted(fmt_c_str("({:08x}:{:08x}).{} added", id.index(), id.version(), type_name));
                         }
 

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -172,9 +172,7 @@ class EntityWorld : NonMovable {
 
         template<typename S, typename... Args>
         S* add_system(Args&&... args) {
-            S* system = _system_manager.add_system<S>(y_fwd(args)...);
-            register_component_types(system);
-            return system;
+            return _system_manager.add_system<S>(y_fwd(args)...);
         }
 
         template<typename S>
@@ -197,7 +195,7 @@ class EntityWorld : NonMovable {
             y_profile();
             return _groups.locked([&](auto&& groups) -> const EntityGroupProvider* {
                 for(const auto& group : groups) {
-                    if(group->matches<Ts...>(tags, filters)) {
+                    if(group->template matches<Ts...>(tags, filters)) {
                         return group.get();
                     }
                 }

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -73,11 +73,6 @@ class ComponentMatrix {
 
         const SparseIdSet* tag_set(const core::String& tag) const;
 
-
-        template<typename T>
-        void has_component(EntityId id) const {
-            has_component(id, type_index<T>());
-        }
 
         template<typename T>
         void add_component(EntityId id) {

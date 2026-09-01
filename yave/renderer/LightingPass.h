@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,22 +23,18 @@ SOFTWARE.
 #define YAVE_RENDERER_LIGHTINGPASS_H
 
 #include "GBufferPass.h"
-#include "ShadowMapPass.h"
+#include "LightClusterPass.h"
 
 namespace yave {
 
 struct LightingSettings {
-    ShadowMapSettings shadow_settings;
-    bool use_compute_for_locals = true;
     bool debug_tiles = false;
 };
 
 struct LightingPass {
     FrameGraphImageId lit;
 
-    ShadowMapPass shadow_pass;
-
-    static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId ao = FrameGraphImageId(), const LightingSettings& settings = LightingSettings());
+    static LightingPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, const LightClusterPass& cluster, const LightingSettings& settings = LightingSettings());
 };
 
 

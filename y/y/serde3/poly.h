@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -90,7 +90,7 @@ struct PolyType {
             poly_type_id<Derived>(),
             first,
             []() -> std::unique_ptr<Base> {
-                // checking for size to trigger error on imcomplete types
+                // checking for size to trigger error on incomplete types
                 static_assert(sizeof(Derived) > 0);
                 if constexpr(std::is_default_constructible_v<Derived>) {
                     return std::make_unique<Derived>();

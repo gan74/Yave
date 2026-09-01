@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,8 @@ core::Span<const char*> raytracing_extensions() {
         VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
         VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
         VK_KHR_RAY_QUERY_EXTENSION_NAME,
+        VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME,
+        VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME,
     };
 
     return extensions;
@@ -53,25 +55,46 @@ core::Span<const char*> validation_extensions() {
     return extensions;
 }
 
+core::Span<const char*> required_extensions() {
+    static constexpr std::array extensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    };
+
+    return extensions;
+}
+
 float device_score(const PhysicalDevice& device) {
     if(device.vulkan_version() < required_vulkan_version()) {
-        return 0.0f;
+        return -1.0f;
     }
 
     if(!has_required_features(device)) {
-        return 0.0f;
+        return -1.0f;
     }
 
     if(!has_required_properties(device)) {
-        return 0.0f;
+        return -1.0f;
     }
 
+    for(const char* ext : required_extensions()) {
+        if(!device.is_extension_supported(ext)) {
+            return -1.0f;
+        }
+    }
+
+    bool supports_rt = true;
+    for(const char* ext : raytracing_extensions()) {
+        supports_rt &= device.is_extension_supported(ext);
+    }
+
+    const float rt_score = supports_rt ? 1.0f : 0.0f;
+
     const usize heap_size = device.total_device_memory() / (1024 * 1024);
-    const float heap_score = float(heap_size) / float(heap_size + 8 * 1024);
+    const float heap_score = float(heap_size) / float(heap_size + 16 * 1024);
 
     const float type_score = device.is_discrete() ? 1.0f : 0.0f;
 
-    return heap_score + type_score;
+    return heap_score + type_score + rt_score;
 }
 
 
@@ -133,13 +156,6 @@ VkSamplerMipmapMode vk_mip_filter(SamplerType type) {
         default:
             y_fatal("Unknown sampler type");
     }
-}
-
-VkDeviceAddress vk_buffer_device_address(const SubBufferBase& buffer) {
-    VkBufferDeviceAddressInfo info = vk_struct();
-    info.buffer = buffer.vk_buffer();
-
-    return vkGetBufferDeviceAddress(vk_device(), &info) + buffer.byte_offset();
 }
 
 VkHandle<VkSampler> create_sampler(SamplerType type) {
@@ -236,7 +252,7 @@ void print_properties(const DeviceProperties& properties) {
 PhysicalDevice find_best_device(const Instance& instance) {
     const auto devices = instance.physical_devices();
 
-    float best_score = -std::numeric_limits<float>::max();
+    float best_score = -1.0f;
     usize device_index = usize(-1);
 
     for(usize i = 0; i != devices.size(); ++i) {
@@ -245,7 +261,7 @@ PhysicalDevice find_best_device(const Instance& instance) {
         const u32 version = devices[i].vulkan_version();
         log_msg(fmt("{} with VK {}.{}.{}, score: {}", devices[i].vk_properties().deviceName, VK_VERSION_MAJOR(version), VK_VERSION_MINOR(version), VK_VERSION_PATCH(version), dev_score), Log::Debug);
 
-        if(dev_score > 0.0f && dev_score > best_score) {
+        if(dev_score >= 0.0f && dev_score > best_score) {
             best_score = dev_score;
             device_index = i;
         }
@@ -277,6 +293,7 @@ VkPhysicalDeviceFeatures required_device_features() {
         required.fragmentStoresAndAtomics = true;
         required.independentBlend = true;
         required.samplerAnisotropy = true;
+        required.shaderInt16 = true;
     }
 
     return required;
@@ -286,7 +303,9 @@ VkPhysicalDeviceVulkan11Features required_device_features_1_1() {
     VkPhysicalDeviceVulkan11Features required = vk_struct();
 
     {
-        // We don't actually need anything here...
+        required.shaderDrawParameters = true;
+        required.uniformAndStorageBuffer16BitAccess = true;
+        required.storageBuffer16BitAccess = true;
     }
 
     return required;
@@ -304,6 +323,8 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2() {
     required.descriptorBindingUpdateUnusedWhilePending = true;
     required.descriptorBindingSampledImageUpdateAfterBind = true;
     required.shaderSampledImageArrayNonUniformIndexing = true;
+    // required.descriptorBindingStorageBufferUpdateAfterBind = true;
+    // required.shaderStorageBufferArrayNonUniformIndexing = true;
 
     return required;
 }
@@ -311,7 +332,7 @@ VkPhysicalDeviceVulkan12Features required_device_features_1_2() {
 VkPhysicalDeviceVulkan13Features required_device_features_1_3() {
     VkPhysicalDeviceVulkan13Features required = vk_struct();
 
-    required.maintenance4 = true; 
+    required.maintenance4 = true;
 
     return required;
 }
@@ -321,6 +342,14 @@ VkPhysicalDeviceVulkan14Features required_device_features_1_4() {
 
     required.pushDescriptor = true;
     required.maintenance5 = true;
+
+    return required;
+}
+
+VkPhysicalDeviceShaderAtomicFloatFeaturesEXT required_device_features_shader_float_atomic() {
+    VkPhysicalDeviceShaderAtomicFloatFeaturesEXT required = vk_struct();
+
+    required.shaderBufferFloat32AtomicAdd = true;
 
     return required;
 }
@@ -341,7 +370,6 @@ VkPhysicalDeviceRayTracingPipelineFeaturesKHR required_device_features_raytracin
     return required;
 }
 
-
 VkPhysicalDeviceRayQueryFeaturesKHR required_device_features_ray_query() {
     VkPhysicalDeviceRayQueryFeaturesKHR required = vk_struct();
 
@@ -350,6 +378,14 @@ VkPhysicalDeviceRayQueryFeaturesKHR required_device_features_ray_query() {
     return required;
 }
 
+VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR required_device_features_ray_position_fetch() {
+    VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR required = vk_struct();
+
+    required.rayTracingPositionFetch = true;
+
+    return required;
+
+}
 
 bool has_required_features(const PhysicalDevice& physical) {
     if(!physical.supports_features(required_device_features())) {

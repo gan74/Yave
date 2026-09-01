@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,20 @@ SOFTWARE.
 
 namespace yave {
 
+enum class PassType {
+    Depth,
+    GBuffer,
+    Id,
+    Forward,
+
+    Max,
+};
+
 class Material final : NonCopyable {
 
     public:
         Material() = default;
-        Material(MaterialData&& data);
-        Material(const MaterialTemplate* tmp, MaterialData&& data = MaterialData());
+        Material(MaterialData&& mat_data);
 
         Material(Material&& other);
         Material& operator=(Material&& other);
@@ -41,12 +49,15 @@ class Material final : NonCopyable {
         void swap(Material& other);
 
         bool is_null() const;
+        bool is_transparent() const;
+        bool depth_write() const;
+        bool alpha_tested() const;
 
-        const MaterialTemplate* material_template() const;
+        const MaterialTemplate* material_template(PassType pass_type) const;
         const MaterialDrawData& draw_data() const;
 
     private:
-        const MaterialTemplate* _template = nullptr;
+        std::array<const MaterialTemplate*, usize(PassType::Max)> _templates = {};
 
         MaterialDrawData _draw_data;
         MaterialData _data;

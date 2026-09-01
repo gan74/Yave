@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -87,6 +87,10 @@ MaterialDrawData MaterialAllocator::allocate_material(const MaterialData& materi
         y_debug_assert(textures.size() <= sizeof(data.texture_indices) / sizeof(data.texture_indices[0]));
         for(usize i = 0; i != textures.size(); ++i) {
             data.texture_indices[i] = texture_library().add_texture(textures[i]);
+        }
+
+        if(material.alpha_tested()) {
+            data.flags = shader::MaterialFlags(u32(data.flags) | u32(shader::MaterialFlags::AlphaTested));
         }
     }
 

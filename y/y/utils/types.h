@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -77,7 +77,6 @@ inline constexpr usize operator"" _uu(unsigned long long int t) {
     return usize(t);
 }
 
-
 template<typename T>
 class Uninitialized : NonMovable {
     public:
@@ -137,59 +136,6 @@ class Uninitialized : NonMovable {
             return _is_init = !_is_init;
         }
 #endif
-};
-
-
-
-
-template<typename... Args>
-struct type_pack {
-    static constexpr usize size = sizeof...(Args);
-};
-
-namespace detail {
-template<typename T, typename U, typename... Args>
-constexpr usize type_index_in_pack() {
-    if constexpr(std::is_same_v<T, U>) {
-        return 0;
-    } else {
-        static_assert(sizeof...(Args) > 0, "Type is not present in pack");
-        return type_index_in_pack<T, Args...>() + 1;
-    }
-}
-
-template<usize I, typename T, typename... Args>
-constexpr auto type_ptr_at_index() {
-    if constexpr(!I) {
-        T* p = nullptr;
-        return p;
-    } else {
-        return type_ptr_at_index<I - 1, Args...>();
-    }
-}
-}
-
-
-
-template<typename... Args, typename... More>
-constexpr auto concatenate_packs(type_pack<Args...>, type_pack<More...>) {
-    return type_pack<Args..., More...>{};
-}
-
-template<typename T, typename... Args>
-consteval usize type_index_in_pack(type_pack<Args...> pack) {
-    static_assert(pack.size > 0, "type_pack is empty");
-    return detail::type_index_in_pack<T, Args...>();
-}
-
-template<usize I, typename... Args>
-struct type_at_index {
-    using type = std::remove_reference_t<decltype(*detail::type_ptr_at_index<0, Args...>())>;
-};
-
-template<usize I, typename... Args>
-struct type_at_index<I, type_pack<Args...>> {
-    using type = typename type_at_index<I, Args...>::type;
 };
 
 }

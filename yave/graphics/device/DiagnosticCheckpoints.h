@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@ class DiagnosticCheckpoints : NonMovable {
         DiagnosticCheckpoints();
         ~DiagnosticCheckpoints();
 
-        void register_queue(VkQueue queue);
+        void register_queue(const CmdQueue& queue);
 
         void dump_checkpoints() const;
 
@@ -50,7 +50,7 @@ class DiagnosticCheckpoints : NonMovable {
         mutable core::FixedArray<std::pair<usize, core::String>> _checkpoints;
         mutable std::atomic<usize> _count = 0;
 
-        core::Vector<VkQueue> _queues;
+        core::Vector<const CmdQueue*> _queues;
 };
 
 }

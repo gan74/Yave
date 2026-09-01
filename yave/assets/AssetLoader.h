@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -99,7 +99,7 @@ class AssetLoader : NonMovable {
         Y_TODO(make configurable)
         static constexpr bool fail_on_partial_deser = false;
 
-        AssetLoader(const std::shared_ptr<AssetStore>& store, AssetLoadingFlags flags = AssetLoadingFlags::None, usize concurency = 1);
+        AssetLoader(const std::shared_ptr<AssetStore>& store, AssetLoadingFlags flags = AssetLoadingFlags::None, usize concurrency = 1);
         ~AssetLoader();
 
         AssetStore& store();

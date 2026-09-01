@@ -1,5 +1,7 @@
+
+
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -44,8 +46,11 @@ class DeviceResources final : NonMovable {
             EquirecConvolutionProgram,
             CubemapConvolutionProgram,
             BRDFIntegratorProgram,
-            DeferredLocalsProgram,
-            DeferredLocalsDebugProgram,
+            LightClusterProgram,
+            DeferredSinglePassProgram,
+            DeferredSingleDebugPassProgram,
+            DeferredAmbientGIProgram,
+            DeferredAmbientAOProgram,
             LinearizeDepthProgram,
             SSAOProgram,
             SSAOUpsampleProgram,
@@ -59,28 +64,40 @@ class DeviceResources final : NonMovable {
             TAAResolveProgram,
             UpdateTransformsProgram,
             FilterAOProgram,
+            BilateralVerticalProgram,
+            BilateralHorizontalProgram,
             PickingProgram,
 
             MaxNonRTComputePrograms,
-            RTAOProgram = MaxNonRTComputePrograms,
 
-            RTProgram,
+            RTAOUpdateProgram = MaxNonRTComputePrograms,
+            RTAOApplyProgram,
+            RTAOTrimProgram,
+
+            RTGICountProgram,
+            RTGIUpdateProgram,
+            RTGIApplyProgram,
+            RTGITrimProgram,
 
             MaxComputePrograms
         };
 
         enum MaterialTemplates {
-            TexturedMaterialTemplate,
-            TexturedAlphaMaterialTemplate,
-            TexturedAlphaDoubleSidedMaterialTemplate,
 
-            TexturedSpecularMaterialTemplate,
-            TexturedSpecularAlphaMaterialTemplate,
-            TexturedSpecularAlphaDoubleSidedMaterialTemplate,
+            GBufferTexturedMaterialTemplate,
+            GBufferTexturedAlphaMaterialTemplate,
+            GBufferTexturedAlphaDoubleSidedMaterialTemplate,
+            GBufferTexturedSpecularMaterialTemplate,
+            GBufferTexturedSpecularAlphaMaterialTemplate,
+            GBufferTexturedSpecularAlphaDoubleSidedMaterialTemplate,
 
-            DeferredPointLightMaterialTemplate,
-            DeferredSpotLightMaterialTemplate,
-            DeferredAmbientMaterialTemplate,
+            ForwardTexturedMaterialTemplate,
+            ForwardTexturedAlphaMaterialTemplate,
+            ForwardTexturedAlphaDoubleSidedMaterialTemplate,
+            ForwardTexturedSpecularMaterialTemplate,
+            ForwardTexturedSpecularAlphaMaterialTemplate,
+            ForwardTexturedSpecularAlphaDoubleSidedMaterialTemplate,
+
             AtmosphereMaterialTemplate,
             ToneMappingMaterialTemplate,
 

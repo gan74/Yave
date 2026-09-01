@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -59,6 +59,7 @@ GBufferPass GBufferPass::create(FrameGraph& framegraph, const CameraBufferPass& 
     builder.add_color_output(emissive);
 
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
+        y_debug_assert(pass.scene_pass.batches.pass_type == PassType::GBuffer);
         pass.scene_pass.render(render_pass, self);
     });
 

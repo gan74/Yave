@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -282,12 +282,6 @@ bool Swapchain::build_swapchain() {
         _images << std::move(swapchain_image);
     }
 
-    CmdBufferRecorder recorder = create_disposable_cmd_buffer();
-    for(auto& i : _images) {
-        recorder.barriers({ImageBarrier::transition_barrier(i, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)});
-    }
-    recorder.submit().wait();
-
     return true;
 }
 
@@ -339,14 +333,14 @@ core::Result<FrameToken> Swapchain::next_frame() {
     y_debug_assert(_sync_objects.size());
 
     const usize current_frame_index = _frame_id % image_count();
-    // we need to do the lookup every time, in case _sync_objects gets rebuild
-    auto current_sync = [=]() -> FrameSyncObjects& { return _sync_objects[current_frame_index]; };
+    // we need to do the lookup every time, in case _sync_objects gets rebuilt
+    auto current_sync = [=, this]() -> FrameSyncObjects& { return _sync_objects[current_frame_index]; };
 
     vk_check(vkWaitForFences(vk_device(), 1, &current_sync().fence.get(), true, u64(-1)));
 
     u32 image_index = u32(-1);
     {
-        y_profile_zone("aquire");
+        y_profile_zone("acquire");
         while(vk_swapchain_out_of_date(vkAcquireNextImageKHR(vk_device(), _swapchain, u64(-1), current_sync().image_available, {}, &image_index))) {
             if(!reset()) {
                 return core::Err();

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -61,6 +61,8 @@ class PhysicalDevice {
         bool supports_features(const VkPhysicalDeviceVulkan13Features& features) const;
         bool supports_features(const VkPhysicalDeviceVulkan14Features& features) const;
 
+        bool supports_features(const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT& features) const;
+
         core::Vector<VkExtensionProperties> supported_extensions() const;
         bool is_extension_supported(std::string_view name) const;
 
@@ -81,6 +83,8 @@ class PhysicalDevice {
         VkPhysicalDeviceVulkan12Properties _properties_1_2 = vk_struct();
         VkPhysicalDeviceVulkan13Properties _properties_1_3 = vk_struct();
         VkPhysicalDeviceVulkan14Properties _properties_1_4 = vk_struct();
+
+        VkPhysicalDeviceShaderAtomicFloatFeaturesEXT _supported_features_shader_float_atomic = vk_struct();
 
         VkPhysicalDeviceRayTracingPipelinePropertiesKHR _raytracing_properties = vk_struct();
         VkPhysicalDeviceAccelerationStructurePropertiesKHR _accel_struct_properties = vk_struct();

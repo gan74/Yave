@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -134,8 +134,8 @@ class Matrix {
 
         template<typename U>
         inline constexpr auto operator+(const Matrix<N, M, U>& m) const {
-            const Matrix<N, M, decltype(std::declval<T>() * std::declval<U>())> mat;
-            for(usize i = 0; i != N; ++i) {
+            Matrix<N, M, decltype(std::declval<T>() * std::declval<U>())> mat;
+            for(usize i = 0; i != vec_count; ++i) {
                 mat._vecs[i] = _vecs[i] + m._vecs[i];
             }
             return mat;

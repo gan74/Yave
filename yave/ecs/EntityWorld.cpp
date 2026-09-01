@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -136,6 +136,8 @@ void EntityWorld::tick(concurrent::JobSystem& job_system) {
 }
 
 void EntityWorld::process_deferred_changes() {
+    y_profile();
+
     _groups.locked([&](auto&& groups) {
         y_profile_zone("Clear removed groups");
         for(auto& group : groups) {
@@ -144,7 +146,7 @@ void EntityWorld::process_deferred_changes() {
     });
 
     for(auto& container : _ordered_containers) {
-        container->process_deferred_changes();
+        container->process_deferred_changes(_to_delete.ids());
     }
 
     for(const EntityId id : _to_delete) {
@@ -332,8 +334,10 @@ EntityId EntityWorld::parent(EntityId id) const {
 void EntityWorld::set_parent(EntityId id, EntityId parent_id) {
     y_profile();
 
-    _entities.set_parent(id, parent_id);
-    _parent_changed.insert(id);
+    if(id != parent_id) {
+        _entities.set_parent(id, parent_id);
+        _parent_changed.insert(id);
+    }
 }
 
 bool EntityWorld::has_parent(EntityId id) const {
@@ -372,7 +376,7 @@ ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) 
 }
 
 void EntityWorld::check_exists(EntityId id) const {
-    y_always_assert(exists(id), "Entity doesn't exists");
+    y_always_assert(exists(id), "Entity doesn't exist");
 }
 
 void EntityWorld::inspect_components(EntityId id, ComponentInspector* inspector, ComponentTypeIndex type_id) {
@@ -410,7 +414,7 @@ void EntityWorld::register_containers() {
 
 
         {
-            const core::Span required_types = container->runtime_info().required;
+            const core::Span<ecs::ComponentTypeIndex> required_types = container->runtime_info().required;
 
             container->_required = core::FixedArray<ComponentContainerBase*>(required_types.size());
             for(usize i = 0; i != required_types.size(); ++i) {
@@ -450,7 +454,7 @@ serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
 
     _groups.locked([](auto&& groups) { groups.clear(); });
     _matrix.clear();
-    
+
     decltype(_containers) containers;
 
     y_try(arc.deserialize(_entities));

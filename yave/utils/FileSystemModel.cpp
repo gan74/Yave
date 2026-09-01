@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,7 @@ FileSystemModel::Result<core::String> FileSystemModel::parent_path(std::string_v
     return absolute(join(path, ".."));
 }
 
-core::String FileSystemModel::extention(std::string_view path) const {
+core::String FileSystemModel::extension(std::string_view path) const {
     for(usize i = path.size(); i != 0; --i) {
         if(path[i - 1] == '.') {
             return core::String(&path[i - 1], path.size() - i + 1);

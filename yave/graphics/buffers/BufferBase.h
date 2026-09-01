@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,7 @@ class SubBufferBase {
         u64 byte_offset() const;
 
         VkBuffer vk_buffer() const;
+        VkDeviceAddress vk_device_address() const;
 
         DeviceMemoryView device_memory() const;
 
@@ -59,6 +60,8 @@ class SubBufferBase {
         u64 _size = 0;
         u64 _offset = 0;
         VkBuffer _buffer = {};
+        VkDeviceAddress _address = {};
+
         DeviceMemoryView _memory;
 };
 
@@ -70,11 +73,12 @@ class BufferBase : NonCopyable {
         u64 byte_size() const;
         const DeviceMemory& device_memory() const;
 
-        VkDescriptorBufferInfo vk_descriptor_info() const;
-
         bool is_null() const;
 
         VkBuffer vk_buffer() const;
+        VkDeviceAddress vk_device_address() const;
+
+        VkDescriptorBufferInfo vk_descriptor_info() const;
 
     protected:
         BufferBase() = default;
@@ -88,6 +92,8 @@ class BufferBase : NonCopyable {
         BufferUsage _usage = BufferUsage::None;
 
         VkHandle<VkBuffer> _buffer;
+        VkDeviceAddress _address = {};
+
         DeviceMemory _memory;
 };
 

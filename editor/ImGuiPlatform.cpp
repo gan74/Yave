@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include <editor/utils/ui.h>
 #include <editor/EditorResources.h>
+#include <yave/graphics/device/DeviceResources.h>
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/framebuffer/Framebuffer.h>
@@ -50,9 +51,6 @@ ImGuiPlatform* imgui_platform() {
     y_debug_assert(ImGui::GetIO().BackendPlatformUserData);
     return static_cast<ImGuiPlatform*>(ImGui::GetIO().BackendPlatformUserData);
 }
-
-
-// ---------------------------------------------- SETUP HELPERS ----------------------------------------------
 
 static void render_frame(ImDrawData* draw_data, RenderPassRecorder& recorder, const TextureView& font) {
     static_assert(sizeof(ImDrawIdx) == sizeof(u32), "16 bit indices not supported");
@@ -83,22 +81,17 @@ static void render_frame(ImDrawData* draw_data, RenderPassRecorder& recorder, co
     uniform[0] = viewport_size;
     uniform[1] = viewport_offset;
 
-    const auto create_descriptor_set = [&](const TextureView* tex) {
-        return make_descriptor_set(Descriptor(*tex, SamplerType::LinearClamp), uniform_buffer);
-    };
-
-    const auto default_set = create_descriptor_set(&font);
-
     const auto setup_state = [&](const TextureView* tex) {
         const MaterialTemplate* material = resources()[EditorResources::ImGuiMaterialTemplate];
-        recorder.bind_material_template(material, DescriptorSetProxy(tex ? create_descriptor_set(tex) : default_set));
+        const auto desc = make_descriptor_set(Descriptor(tex ? *tex : font, SamplerType::LinearClamp), uniform_buffer);
+        recorder.bind_material_template(material, DescriptorSetProxy(desc));
     };
 
     usize index_offset = 0;
     usize vertex_offset = 0;
     const TextureView* current_tex = nullptr;
 
-    setup_state(nullptr);
+    // setup_state(nullptr);
 
     recorder.bind_index_buffer(index_buffer);
     recorder.bind_attrib_buffers({vertex_buffer});
@@ -118,34 +111,36 @@ static void render_frame(ImDrawData* draw_data, RenderPassRecorder& recorder, co
         std::copy(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Data + cmd_list->IdxBuffer.Size, &indices[index_offset]);
         std::copy(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Data + cmd_list->VtxBuffer.Size, &vertices[vertex_offset]);
 
-        usize drawn_index_offset = index_offset;
         for(auto i = 0; i != cmd_list->CmdBuffer.Size; ++i) {
             const ImDrawCmd& cmd = cmd_list->CmdBuffer[i];
+
+            y_always_assert(!cmd.UserCallback, "User callback not supported");
+
+            if(!cmd.ElemCount) {
+                continue;
+            }
+
+            const TextureView* tex = static_cast<const TextureView*>(cmd.GetTexID());
+            if(current_tex != tex) {
+                current_tex = tex;
+                setup_state(current_tex);
+            }
 
             const math::Vec2i offset = math::Vec2i(i32(cmd.ClipRect.x - viewport_offset.x()), i32(cmd.ClipRect.y - viewport_offset.y()));
             const math::Vec2ui extent(u32(cmd.ClipRect.z - cmd.ClipRect.x), u32(cmd.ClipRect.w - cmd.ClipRect.y));
             recorder.set_scissor(offset.max(math::Vec2(0.0f)), extent);
 
-            y_always_assert(!cmd.UserCallback, "User callback not supported");
+            y_debug_assert(!cmd.VtxOffset);
 
-            if(cmd.ElemCount) {
-                const TextureView* tex = static_cast<const TextureView*>(cmd.TextureId);
-                if(current_tex != tex) {
-                    current_tex = tex;
-                    setup_state(current_tex);
-                }
-
-                VkDrawIndexedIndirectCommand command = {};
-                {
-                    command.firstIndex = u32(drawn_index_offset);
-                    command.vertexOffset = u32(vertex_offset);
-                    command.indexCount = cmd.ElemCount;
-                    command.instanceCount = 1;
-                }
-                recorder.draw(command);
-
-                drawn_index_offset += cmd.ElemCount;
+            VkDrawIndexedIndirectCommand command = {};
+            {
+                command.firstIndex = u32(index_offset + cmd.IdxOffset);
+                command.vertexOffset = u32(vertex_offset);
+                command.indexCount = cmd.ElemCount;
+                command.instanceCount = 1;
             }
+
+            recorder.draw(command);
         }
 
         vertex_offset += cmd_list->VtxBuffer.Size;
@@ -153,13 +148,12 @@ static void render_frame(ImDrawData* draw_data, RenderPassRecorder& recorder, co
     }
 }
 
-static ImageData load_font() {
+
+static void setup_font() {
     y_profile();
 
     ImFontAtlas* fonts = ImGui::GetIO().Fonts;
     fonts->AddFontFromMemoryCompressedTTF(jetbrains_mono_compressed_data, jetbrains_mono_compressed_size, 15.0f);
-
-
 
     const ImWchar icon_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
 
@@ -171,14 +165,6 @@ static ImageData load_font() {
     }
 
     fonts->AddFontFromMemoryCompressedTTF(font_awesome_compressed_data, font_awesome_compressed_size, 13.0f, &config, icon_ranges);
-
-
-    u8* font_data = nullptr;
-    int width = 0;
-    int height = 0;
-    fonts->GetTexDataAsRGBA32(&font_data, &width, &height);
-    log_msg(fmt("ImGui font texture is {}x{}", width, height));
-    return ImageData(math::Vec2ui(width, height), font_data, ImageFormat(VK_FORMAT_R8G8B8A8_UNORM));
 }
 
 
@@ -215,6 +201,7 @@ static void setup_style() {
 
     colors[ImGuiCol_Text]                   = gr(255);
     colors[ImGuiCol_TextDisabled]           = gr(255, 0.3f);
+    colors[ImGuiCol_InputTextCursor]        = gr(255, 0.75f);
 
     colors[ImGuiCol_ScrollbarGrabHovered]   = gr(143);
     colors[ImGuiCol_ResizeGripHovered]      = gr(143);
@@ -453,6 +440,7 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
 
         io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports | ImGuiBackendFlags_RendererHasViewports;
         io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
+        io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
     }
 
     {
@@ -464,11 +452,7 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
     }
 
     setup_style();
-
-    {
-        _font = Texture(load_font());
-        _font_view = _font;
-    }
+    setup_font();
 
     if(multi_viewport) {
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
@@ -478,12 +462,12 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
         Y_TODO(do every frame)
         discover_monitors(platform);
 
-        platform.Platform_CreateWindow          = [](ImGuiViewport* vp) {
+        platform.Platform_CreateWindow = [](ImGuiViewport* vp) {
             ImGuiPlatform* self = imgui_platform();
             vp->PlatformHandle = self->_windows.emplace_back(std::make_unique<PlatformWindow>(self, Window::NoDecoration)).get();
         };
 
-        platform.Renderer_RenderWindow          = [](ImGuiViewport* vp, void*) {
+        platform.Renderer_RenderWindow = [](ImGuiViewport* vp, void*) {
             ImGuiPlatform* self = imgui_platform();
             PlatformWindow* window = get_platform_window(vp);
 
@@ -498,7 +482,7 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
                 {
                     Framebuffer framebuffer(token.image_view);
                     RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
-                    render_frame(vp->DrawData, pass, self->_font_view);
+                    render_frame(vp->DrawData, pass, self->font_texture());
                 }
 
                 window->swapchain.present(token, std::move(recorder), command_queue());
@@ -524,16 +508,29 @@ ImGuiPlatform::ImGuiPlatform(bool multi_viewport) {
 }
 
 ImGuiPlatform::~ImGuiPlatform() {
-    auto& io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
+    ImGuiPlatformIO& platform = ImGui::GetPlatformIO();
+
+    _temp_images.clear();
+    for(ImTextureData* tex_data : platform.Textures) {
+        if(tex_data->BackendUserData) {
+            delete reinterpret_cast<ImGuiImage*>(std::exchange(tex_data->BackendUserData, nullptr));
+            tex_data->SetTexID(ImTextureID_Invalid);
+            tex_data->SetStatus(ImTextureStatus_Destroyed);
+        }
+    }
 
     y_debug_assert(io.BackendPlatformUserData == this);
+
+    ImGui::DestroyPlatformWindows();
+
+    io.BackendPlatformName = nullptr;
     io.BackendPlatformUserData = nullptr;
+    io.BackendFlags &= ~(ImGuiBackendFlags_HasMouseCursors | ImGuiBackendFlags_HasSetMousePos | ImGuiBackendFlags_HasGamepad | ImGuiBackendFlags_PlatformHasViewports | ImGuiBackendFlags_HasMouseHoveredViewport);
+    platform.ClearPlatformHandlers();
+    platform.ClearRendererHandlers();
 
     ImGui::DestroyContext();
-}
-
-const Texture& ImGuiPlatform::font_texture() const {
-    return _font;
 }
 
 Window* ImGuiPlatform::main_window() {
@@ -582,13 +579,15 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                 ImGui::Render();
             }
 
+            update_textures(ImGui::GetDrawData());
+
             CmdBufferRecorder recorder = create_disposable_cmd_buffer();
 
             {
                 y_profile_zone("main window");
                 Framebuffer framebuffer(token.image_view);
                 RenderPassRecorder pass = recorder.bind_framebuffer(framebuffer);
-                render_frame(ImGui::GetDrawData(), pass, _font_view);
+                render_frame(ImGui::GetDrawData(), pass, font_texture());
             }
 
 
@@ -600,7 +599,7 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                 ImGui::RenderPlatformWindowsDefault();
             }
 
-            _images.make_empty();
+            _temp_images.clear();
         }
     }
 }
@@ -635,6 +634,54 @@ ImGuiPlatform::PlatformWindow* ImGuiPlatform::get_platform_window(ImGuiViewport*
     y_debug_assert(vp->PlatformHandle);
     return static_cast<PlatformWindow*>(vp->PlatformHandle);
 }
+
+TextureView ImGuiPlatform::font_texture() const {
+    ImFontAtlas* fonts = ImGui::GetIO().Fonts;
+    if(const void* backend_ptr = fonts->TexData->BackendUserData) {
+        return reinterpret_cast<const ImGuiImage*>(backend_ptr)->view;
+    }
+    return *device_resources()[DeviceResources::BlackTexture];
+}
+
+void ImGuiPlatform::update_textures(ImDrawData* draw_data) {
+    if(!draw_data || !draw_data->Textures) {
+        return;
+    }
+
+    for(ImTextureData* tex_data : *draw_data->Textures) {
+        switch(tex_data->Status) {
+            case ImTextureStatus_OK:
+            case ImTextureStatus_Destroyed:
+            break;
+
+            case ImTextureStatus_WantUpdates:
+            case ImTextureStatus_WantCreate: {
+                ImGuiImage*& image = reinterpret_cast<ImGuiImage*&>(tex_data->BackendUserData);
+                if(!image) {
+                    image = new ImGuiImage();
+                }
+
+                y_always_assert(tex_data->Format == ImTextureFormat_RGBA32, "Unsupported texture format");
+                DstTexture texture(ImageData(math::Vec2ui(tex_data->Width, tex_data->Height), tex_data->GetPixels(), VK_FORMAT_R8G8B8A8_UNORM));
+                *image = ImGuiImage(std::move(texture));
+
+                tex_data->SetTexID(&image->view);
+                tex_data->SetStatus(ImTextureStatus_OK);
+
+                y_debug_assert(tex_data->BackendUserData);
+            } break;
+
+            case ImTextureStatus_WantDestroy:
+                if(tex_data->UnusedFrames > 0) {
+                    y_debug_assert(tex_data->BackendUserData);
+                    delete reinterpret_cast<ImGuiImage*>(std::exchange(tex_data->BackendUserData, nullptr));
+                    tex_data->SetStatus(ImTextureStatus_Destroyed);
+                }
+            break;
+        }
+    }
+}
+
 
 }
 

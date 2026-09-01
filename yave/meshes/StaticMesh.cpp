@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -51,6 +51,7 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
 }
 
 StaticMesh::~StaticMesh() {
+    _draw_data.is_null();
     destroy_graphic_resource(std::move(_draw_data));
 }
 
@@ -64,6 +65,10 @@ const MeshDrawData& StaticMesh::draw_data() const {
 
 const MeshDrawCommand& StaticMesh::draw_command() const {
     return _draw_data.draw_command();
+}
+
+u32 StaticMesh::mesh_data_index() const {
+    return _draw_data.mesh_data_index();
 }
 
 core::Span<MeshDrawCommand> StaticMesh::sub_meshes() const {

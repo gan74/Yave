@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,8 @@ struct SceneVisibility {
     core::Vector<const SpotLightObject*> spot_lights;
     core::Vector<const DirectionalLightObject*> directional_lights;
     const SkyLightObject* sky_light = nullptr;
+
+    std::tuple<const IBLProbe*, float, bool> ibl_probe() const;
 };
 
 

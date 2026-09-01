@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,8 @@ SOFTWARE.
 #include <yave/assets/AssetLoader.h>
 #include <yave/utils/DirectDraw.h>
 #include <yave/scene/SceneView.h>
+#include <yave/scene/EcsScene.h>
+#include <yave/utils/DebugValues.h>
 #include <yave/systems/SceneSystem.h>
 #include <yave/systems/JoltPhysicsSystem.h>
 
@@ -134,7 +136,7 @@ static void load_world_deferred() {
         log_msg(fmt("Unable to load world: {} (for {})", serde3::error_msg(r.error()), member_name), Log::Error);
         return;
     } else if(r.unwrap() == serde3::Success::Partial) {
-        log_msg("World was only partialy loaded", Log::Warning);
+        log_msg("World was only partially loaded", Log::Warning);
     }
 
     application::world = std::move(world);
@@ -163,7 +165,9 @@ void post_tick() {
     }
 
     if(JoltPhysicsSystem* jolt = application::world->find_system<JoltPhysicsSystem>()) {
-        jolt->set_debug_draw(application::settings.debug.display_colliders);
+        jolt->set_debug_drawer(&debug_drawer());
+        jolt->set_debug_draw_static(application::settings.debug.display_static_colliders);
+        jolt->set_debug_draw_movable(application::settings.debug.display_movable_colliders);
     }
 }
 

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -156,7 +156,7 @@ bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
     {
         y_profile_zone("Delete stale objects");
         for(const ecs::EntityId id : group_provider->removed_ids()) {
-            if(const u32 transform_index = unregister_object(id, index_ptr, storage); transform_index == u32(-1)) {
+            if(const u32 transform_index = unregister_object(id, index_ptr, storage); transform_index != u32(-1)) {
                 _transform_manager.free_transform(transform_index);
             }
         }

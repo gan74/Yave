@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -119,7 +119,7 @@ void explore_one(T&& t, F&& func) {
         auto elems = t._y_reflect_static();
         explore_named_tuple<0>(t, elems, func);
     } else if constexpr(is_tuple<T>) {
-        explore_tuple<0>(t);
+        explore_tuple<0>(t, func);
     } else if constexpr(is_std_ptr<T> || std::is_pointer_v<T>) {
         if(t != nullptr) {
             explore_one(*t, func);
@@ -174,7 +174,7 @@ y_reflect_base(Type)                                                            
 template<typename = void> static inline consteval auto _y_reflect_static() { return std::tuple<>{}; }
 
 #define y_reflect_static(Type, ...)                                                                         \
-y_reflect_base(Type);                                                                                       \
+y_reflect_base(Type)                                                                                        \
 template<typename = void> static inline consteval auto _y_reflect_static() {                                \
     using _y_refl_self_type = Type;                                                                         \
     return std::tuple{Y_REC_MACRO(Y_MACRO_MAP(y_reflect_create_member, __VA_ARGS__))};                      \

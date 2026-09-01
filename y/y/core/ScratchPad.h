@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -174,7 +174,7 @@ class ScratchPad : public ScratchPadBase<Elem> {
         template<typename... Args>
         inline ScratchPad(usize size, Args&&... args) : ScratchPadBase<Elem>(detail::alloc_typed_scratchpad<data_type>(size), size) {
             for(usize i = 0; i != this->_size; ++i) {
-                new(this->_data + i) data_type(y_fwd(args)...);
+                new(this->_data + i) data_type(args...);
             }
         }
 

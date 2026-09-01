@@ -39,7 +39,7 @@ RWTexture2D out_color;
 
 
 
-
+// TODO make groupshared & optimize
 static float3 local_neighbourhood[9];
 
 
@@ -60,17 +60,17 @@ static const int2 offsets[9] = int2[9](
 
 
 
-void load_loca_data() {
+void load_local_data() {
     for(uint i = 0; i != 9; ++i) {
         local_neighbourhood[i] = in_color[semantics.global_id.xy + offsets[i]].rgb;
     }
 }
 
-int2 find_nearest_pixel() {
+int2 find_nearest_pixel(float2 inv_size) {
     float depth = 0.0;
     int2 offset = int2(0);
     for(uint i = 0; i != 9; ++i) {
-        const float curr_depth = in_depth[semantics.global_id.xy + offsets[i]];
+        const float curr_depth = in_depth.SampleLevel((semantics.global_id.xy + offsets[i]) * inv_size, 0.0);
         if(curr_depth > depth) {
             depth = curr_depth;
             offset = offsets[i];
@@ -109,9 +109,9 @@ float clip_bbox(float3 box_min, float3 box_max, float3 prev, float3 curr) {
     float3 dir = curr - prev;
 
     // Make sure dir isn't zero
-    dir.x = abs(dir.x) < epsilon ? copy_sign(epsilon, dir.x) : dir.x;
-    dir.y = abs(dir.y) < epsilon ? copy_sign(epsilon, dir.y) : dir.y;
-    dir.z = abs(dir.z) < epsilon ? copy_sign(epsilon, dir.z) : dir.z;
+    dir.x = abs(dir.x) < constants.epsilon ? copy_sign(constants.epsilon, dir.x) : dir.x;
+    dir.y = abs(dir.y) < constants.epsilon ? copy_sign(constants.epsilon, dir.y) : dir.y;
+    dir.z = abs(dir.z) < constants.epsilon ? copy_sign(constants.epsilon, dir.z) : dir.z;
 
     const float3 inv_dir = 1.0 / dir;
 
@@ -130,9 +130,10 @@ float3 sample_prev(float2 uv) {
 [shader("compute")]
 [numthreads(8, 8)]
 void comp_main() {
-    load_loca_data();
+    const float2 inv_size = 1.0 / image_size(in_color);
+    load_local_data();
 
-    const int2 offset = find_nearest_pixel();
+    const int2 offset = find_nearest_pixel(inv_size);
 
     const float3 tl = local_neighbourhood[0];
     const float3 tc = local_neighbourhood[1];
@@ -162,8 +163,8 @@ void comp_main() {
 
     const uint2 coord = semantics.global_id.xy;
     const int2 velocity_coord = coord + offset;
-    const float2 velocity = in_motion[velocity_coord];
-    const float2 last_velocity = in_prev_motion[coord];
+    const float2 velocity = in_motion.SampleLevel(velocity_coord * inv_size, 0.0);
+    const float2 last_velocity = in_prev_motion.SampleLevel(coord * inv_size, 0.0);
 
     const float velocity_blend = saturate(600.0 * max(length(velocity), length(last_velocity)));
 
@@ -200,15 +201,22 @@ void comp_main() {
     const float max_velocity_blend = 0.2;
     const float blend_factor = (any(saturate(uv) != uv)) ? 1.0 : lerp(min_velocity_blend, max_velocity_blend, velocity_blend);
 
-    const float prev_weight = (1.0 - blend_factor) / (1.0 + luminance(prev_color));
-    const float curr_weight =  blend_factor / (1.0 + luminance(curr_color));
+    float prev_weight = (1.0 - blend_factor);
+    float curr_weight =  blend_factor;
+
+    if((flags & TAAFeatureBits::LumWeightBit) != 0) {
+        prev_weight /= (1.0 + luminance(prev_color));
+        curr_weight /= (1.0 + luminance(curr_color));
+    }
 
     const float3 resolved = abs(((prev_color * prev_weight) + (curr_color * curr_weight)) / (prev_weight + curr_weight));
 
     if (any(isnan(resolved))) {
-        out_color[coord] = float4(1.0, 0.0, 0.0, 1.0);
+        out_color[coord] = float4(1.0, 0.0, 1.0, 1.0);
     } else {
         out_color[coord] = float4(resolved, 1.0);
     }
+
+    //out_color[coord] = float4(lerp(in_color[coord].rgb, in_prev_color[coord].rgb, 0.9), 1.0);
 }
 

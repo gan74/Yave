@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -68,7 +68,7 @@ class FileSystemModel : NonCopyable {
         virtual Result<bool> is_directory(std::string_view path) const;
         virtual Result<bool> is_file(std::string_view path) const;
 
-        virtual core::String extention(std::string_view path) const;
+        virtual core::String extension(std::string_view path) const;
 
         virtual core::String join(std::string_view path, std::string_view name) const = 0;
         virtual Result<core::String> absolute(std::string_view path) const = 0;

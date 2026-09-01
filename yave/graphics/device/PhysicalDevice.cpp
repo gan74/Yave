@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -53,6 +53,7 @@ PhysicalDevice::PhysicalDevice(VkPhysicalDevice device) : _device(device) {
         _supported_features_1_1.pNext = &_supported_features_1_2;
         _supported_features_1_2.pNext = &_supported_features_1_3;
         _supported_features_1_3.pNext = &_supported_features_1_4;
+        _supported_features_1_4.pNext = &_supported_features_shader_float_atomic;
 
         vkGetPhysicalDeviceFeatures2(_device, &_supported_features);
     }
@@ -97,6 +98,10 @@ DeviceProperties PhysicalDevice::device_properties() const {
     properties.max_storage_buffer_desc_array_size = _properties_1_2.maxDescriptorSetUpdateAfterBindStorageBuffers;
     properties.max_sampled_image_desc_array_size = _properties_1_2.maxDescriptorSetUpdateAfterBindSampledImages;
     properties.max_storage_image_desc_array_size = _properties_1_2.maxDescriptorSetUpdateAfterBindStorageImages;
+
+    for(usize i = 0; i != 3; ++i) {
+        properties.max_compute_dispatch_size[i] = limits.maxComputeWorkGroupCount[i];
+    }
 
 
     properties.timestamp_period = limits.timestampPeriod;
@@ -187,6 +192,10 @@ bool PhysicalDevice::supports_features(const VkPhysicalDeviceVulkan13Features& f
 
 bool PhysicalDevice::supports_features(const VkPhysicalDeviceVulkan14Features& features) const {
     return supports_all_features(features, _supported_features_1_4);
+}
+
+bool PhysicalDevice::supports_features(const VkPhysicalDeviceShaderAtomicFloatFeaturesEXT& features) const {
+    return supports_all_features(features, _supported_features_shader_float_atomic);
 }
 
 core::Vector<VkExtensionProperties> PhysicalDevice::supported_extensions() const {

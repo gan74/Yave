@@ -12,5 +12,6 @@ void comp_main() {
     camera[0].prev = prev_camera.curr;
     camera[0].prev_jitter = prev_camera.jitter;
     camera[0].combined_jitter = (camera[0].jitter - camera[0].prev_jitter);
+    camera[0].prev_position = prev_camera.position;
 }
 

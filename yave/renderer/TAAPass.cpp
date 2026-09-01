@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,10 +36,13 @@ namespace yave {
 static u32 taa_flags(const TAASettings& settings) {
     u32 flags = 0;
     if(settings.use_clamping) {
-        flags |= shader::TAAFeatureBits::ClampingBit;
+        flags |= u32(shader::TAAFeatureBits::ClampingBit);
     }
     if(settings.use_denoise) {
-        flags |= shader::TAAFeatureBits::DenoiseBit;
+        flags |= u32(shader::TAAFeatureBits::DenoiseBit);
+    }
+    if(settings.luminance_weighting) {
+        flags |= u32(shader::TAAFeatureBits::LumWeightBit);
     }
     return flags;
 }

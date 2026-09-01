@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -83,7 +83,7 @@ LifetimeManager::~LifetimeManager() {
 
     _to_destroy.locked([&](auto&& to_destroy) {
         for(auto& res : to_destroy) {
-            y_always_assert(res.first == _next_to_collect, "Resourse is still waiting on unsignaled fence");
+            y_always_assert(res.first == _next_to_collect, "Resource is still waiting on unsignaled fence");
             destroy_resource(res.second);
         }
     });

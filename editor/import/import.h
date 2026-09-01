@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -49,7 +49,7 @@ core::String clean_asset_name(const core::String& name);
 // ----------------------------- SCENE -----------------------------
 struct ParsedScene : NonCopyable {
     struct Asset {
-        core::String name = "Unamed asset";
+        core::String name = "Unnamed asset";
         AssetId asset_id;
         bool is_error = false;
 
@@ -83,7 +83,7 @@ struct ParsedScene : NonCopyable {
     };
 
     struct Light {
-        core::String name = "Unamed light";
+        core::String name = "Unnamed light";
 
         float range = 1.0f;
         float intensity = 1.0f;

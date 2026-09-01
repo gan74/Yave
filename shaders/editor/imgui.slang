@@ -51,13 +51,12 @@ float4 texture_min_filter(Sampler2D tex, float2 uv) {
     return (
        tex.Sample(uv + inv_size * float2( 1.0,  1.0)) +
        tex.Sample(uv + inv_size * float2( 1.0, -1.0)) +
-       tex.Sample(uv + inv_size * float2( 1.0, -1.0)) +
+       tex.Sample(uv + inv_size * float2(-1.0,  1.0)) +
        tex.Sample(uv + inv_size * float2(-1.0, -1.0))
     ) * 0.25;
 }
 
 float sharpen_alpha(float a) {
-    a = smoothstep(0.0, 1.0, a);
     a = smoothstep(0.0, 1.0, a);
     a = smoothstep(0.0, 1.0, a);
     return a;

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_RENDERER_DEFAULTRENDERER_H
 
 #include "CameraBufferPass.h"
+#include "LightClusterPass.h"
 #include "LightingPass.h"
 #include "AtmospherePass.h"
 #include "ExposurePass.h"
@@ -30,31 +31,45 @@ SOFTWARE.
 #include "AOPass.h"
 #include "BloomPass.h"
 #include "TAAPass.h"
-#include "RaytracingPass.h"
+#include "RTGIPass.h"
+#include "AmbientPass.h"
+#include "ForwardPass.h"
 
 namespace yave {
 
+enum class AmbientPipe {
+    GI,
+    IBLOcclusion,
+};
+
 struct RendererSettings {
     ToneMappingSettings tone_mapping;
-    LightingSettings lighting;
     AOSettings ao;
+    RTGISettings rtgi;
+    ShadowMapSettings shadow;
+    LightingSettings lighting;
     BloomSettings bloom;
     JitterSettings jitter;
     TAASettings taa;
+
+    AmbientPipe ambient_pipe = AmbientPipe::GI;
 };
 
 struct DefaultRenderer {
     SceneVisibilitySubPass visibility;
     CameraBufferPass camera;
     GBufferPass gbuffer;
-    AOPass ao;
+    LightClusterPass cluster;
     LightingPass lighting;
+    AOPass ao;
+    RTGIPass rtgi;
+    AmbientPass ambient;
     AtmospherePass atmosphere;
+    ForwardPass forward;
     ExposurePass exposure;
     BloomPass bloom;
     ToneMappingPass tone_mapping;
     TAAPass taa;
-    RaytracingPass rt;
 
 
     FrameGraphImageId final;

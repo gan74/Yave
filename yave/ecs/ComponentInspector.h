@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -115,7 +115,7 @@ class ComponentInspector : NonCopyable {
 template<typename Derived>
 class TemplateComponentInspector : public ComponentInspector {
     public:
-        bool ComponentInspector::inspect_component_type(ComponentRuntimeInfo, bool) override {
+        bool inspect_component_type(ComponentRuntimeInfo, bool) override {
             return true;
         }
 

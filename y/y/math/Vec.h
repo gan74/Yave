@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -135,7 +135,7 @@ class Vec
 
         inline constexpr void normalize() {
             if(!is_zero()) {
-                operator*=(1.0f / length());
+                operator*=(T(1) / length());
             }
         }
 

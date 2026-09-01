@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +43,9 @@ class Reader : NonCopyable {
         Reader() = default;
         virtual ~Reader() = default;
 
+        Reader(Reader&&) = default;
+        Reader& operator=(Reader&&) = default;
+
         virtual bool at_end() const = 0;
         virtual usize remaining() const = 0;
 
@@ -80,6 +83,9 @@ class Writer : NonCopyable {
     public:
         Writer() = default;
         virtual ~Writer() = default;
+
+        Writer(Writer&&) = default;
+        Writer& operator=(Writer&&) = default;
 
         virtual void seek(usize byte) = 0;
         virtual usize tell() const = 0;

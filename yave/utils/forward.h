@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -54,6 +54,7 @@ class ComputeCapableCmdBufferRecorder;
 class ComputeCmdBufferRecorder;
 class ComputeProgram;
 class DebugUtils;
+class DebugValues;
 class Descriptor;
 class DescriptorArray;
 class DescriptorLayoutAllocator;
@@ -92,12 +93,14 @@ class ImageData;
 class ImageFormat;
 class InlineDescriptor;
 class Instance;
+class JoltPhysicsSystem;
 class KeyCombination;
 class LifetimeManager;
 class LoaderBase;
 class LoadingJob;
 class LocalFileSystemModel;
 class LocalLightBase;
+class ManagedDescriptorArray;
 class Material;
 class MaterialAllocator;
 class MaterialCompiler;
@@ -107,7 +110,6 @@ class MaterialTemplate;
 class MaterialTemplateData;
 class MeshAllocator;
 class MeshData;
-class MeshDrawBuffers;
 class MeshDrawData;
 class MeshVertexStreams;
 class PhysicalDevice;
@@ -116,6 +118,7 @@ class RaytracingProgram;
 class RenderPass;
 class RenderPassRecorder;
 class ResourceFence;
+class RigidBodyComponent;
 class Sampler;
 class Scene;
 class SceneSystem;
@@ -136,6 +139,7 @@ class Swapchain;
 class SwapchainImage;
 class TLAS;
 class TextureLibrary;
+class TimeSystem;
 class Timeline;
 class TimelineFence;
 class TransferCmdBufferRecorder;
@@ -146,7 +150,7 @@ class TransientMipViewContainer;
 class Window;
 struct AOPass;
 struct AOSettings;
-struct Allocator;
+struct AmbientPass;
 struct AssetData;
 struct AssetDesc;
 struct AssetId;
@@ -156,6 +160,8 @@ struct AtmospherePass;
 struct AtmosphereSettings;
 struct Attachment;
 struct Attribute;
+struct BilateralPass;
+struct BilateralSettings;
 struct BloomPass;
 struct BloomSettings;
 struct BlurPass;
@@ -203,12 +209,15 @@ struct Level;
 struct LightingPass;
 struct LightingSettings;
 struct LoadableComponentTypeInfo;
+struct MeshDrawBuffers;
 struct MeshDrawCommand;
+struct MeshTriangleData;
 struct Mip;
 struct Monitor;
 struct ObjectIndices;
 struct PackedVertex;
-struct RaytracingPass;
+struct RTGIPass;
+struct RTGISettings;
 struct Region;
 struct RendererSettings;
 struct ResourceCreateInfo;
@@ -232,11 +241,6 @@ struct Zone;
 }
 
 
-namespace editor {
-struct DebugValues;
-}
-
-
 namespace yave::detail {
 class AssetPtrDataBase;
 struct VkStructInitializer;
@@ -257,6 +261,7 @@ class EntityWorld;
 class SparseIdSet;
 class SparseIdSetBase;
 class System;
+class SystemJobHandle;
 class SystemManager;
 class SystemScheduler;
 class TickId;

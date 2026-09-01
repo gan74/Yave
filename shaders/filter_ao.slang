@@ -63,7 +63,7 @@ void main() {
     const float2 image_size = float2(image_size(in_depth).xy);
 
     const float depth = in_depth[coord].x;
-    const float3 normal = decode_gbuffer({float4(0.0), in_rt1[coord]}).normal;
+    const float3 normal = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1[coord])).normal;
 
     const float3 world_pos = unproject((coord + 0.5) / image_size, depth, camera.curr.inv_view_proj);
     const float3 view_dir = normalize(camera.position - world_pos);
@@ -76,7 +76,7 @@ void main() {
         const int2 sample_coord = coord + make_offset(i);
 
         const float sample_depth = in_depth[sample_coord];
-        const float3 sample_normal = decode_gbuffer({float4(0.0), in_rt1[sample_coord]}).normal;
+        const float3 sample_normal = decode_gbuffer(RawGBuffer(float4(0.0), in_rt1[sample_coord])).normal;
 
         const float w = gaussian_weight(i);
 

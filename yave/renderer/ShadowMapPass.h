@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,8 +34,7 @@ enum class ShadowMapSpillPolicy {
 };
 
 struct ShadowMapSettings {
-    u32 shadow_map_size = 2048;
-    usize shadow_atlas_size = 4;
+    u32 shadow_map_size = 4096;
     ShadowMapSpillPolicy spill_policy = ShadowMapSpillPolicy::DownSample;
 };
 

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -71,9 +71,10 @@ struct DebugSettings {
     bool display_selected_bbox = false;
     bool display_hidden_entities = false;
     bool display_debug_drawer = true;
-    bool display_colliders = false;
+    bool display_static_colliders = false;
+    bool display_movable_colliders = false;
 
-    y_reflect(DebugSettings, entity_count, entity_spacing, display_selected_bbox, display_hidden_entities, display_debug_drawer, display_colliders)
+    y_reflect(DebugSettings, entity_count, entity_spacing, display_selected_bbox, display_hidden_entities, display_debug_drawer, display_static_colliders, display_movable_colliders)
 };
 
 
@@ -81,7 +82,7 @@ class Settings {
     public:
         Settings() = default;
 
-        static [[nodiscard]] Settings load();
+        [[nodiscard]] static Settings load();
         void save() const;
 
         EditorSettings editor;

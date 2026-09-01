@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,14 +35,18 @@ class JoltPhysicsSystem : public ecs::System {
         JoltPhysicsSystem();
         ~JoltPhysicsSystem();
 
-        void set_debug_draw(bool enable);
+        void set_debug_drawer(DirectDraw* drawer);
+        void set_debug_draw_static(bool enable);
+        void set_debug_draw_movable(bool enable);
 
         void setup(ecs::SystemScheduler& sched) override;
 
     private:
         std::unique_ptr<JoltData> _jolt;
 
-        bool _debug_draw = false;
+        DirectDraw* _drawer = nullptr;
+        bool _debug_draw_static = false;
+        bool _debug_draw_movable = false;
 };
 
 }

@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -152,6 +152,16 @@ static bool begin_property_table() {
 
 
 class InspectorPanelInspector : public ecs::ComponentInspector {
+
+    [[nodiscard]] auto begin_property_row(core::String name) {
+        imgui::table_begin_next_row(1);
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().FramePadding.x * 2.0f);
+        return ScopeGuard([n = std::move(name)] {
+            ImGui::TableSetColumnIndex(0);
+            ImGui::TextUnformatted(n.data(), n.data() + n.size());
+        });
+    }
+
     public:
         InspectorPanelInspector(ecs::EntityId id, EditorComponent* editor, EditorWorld* world) :
                 _id(id),
@@ -536,16 +546,6 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
         void end_collection() override {
             ImGui::Unindent();
         }
-
-        [[nodiscard]] auto begin_property_row(core::String name) {
-            imgui::table_begin_next_row(1);
-            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().FramePadding.x * 2.0f);
-            return ScopeGuard([n = std::move(name)] {
-                ImGui::TableSetColumnIndex(0);
-                ImGui::TextUnformatted(n.data(), n.data() + n.size());
-            });
-        }
-
 
         ecs::EntityId _id;
         EditorComponent* _editor = nullptr;

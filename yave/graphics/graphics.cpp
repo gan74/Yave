@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -80,8 +80,10 @@ static void init_vma() {
 
     VmaVulkanFunctions vulkan_functions = {};
     {
-#define SET_VK_FUNC(func) vulkan_functions.func = func
-#define SET_VK_FUNC_KHR(func) vulkan_functions.func ## KHR = func
+#define SET_VK_FUNC(func)                   vulkan_functions.func = func
+#define SET_VK_FUNC_KHR(func)               vulkan_functions.func ## KHR = func
+        // for cases where func may or may not exists depending on vma version
+#define SET_VK_FUNC_KHR_CHECKED(func)       [](auto& vma_funcs) { if constexpr(requires { vma_funcs.func ## KHR; }) { vma_funcs.func ##KHR = func; } }(vulkan_functions)
 
         SET_VK_FUNC(vkGetPhysicalDeviceProperties);
         SET_VK_FUNC(vkGetPhysicalDeviceMemoryProperties);
@@ -102,11 +104,13 @@ static void init_vma() {
         SET_VK_FUNC(vkCmdCopyBuffer);
         SET_VK_FUNC(vkGetDeviceBufferMemoryRequirements);
         SET_VK_FUNC(vkGetDeviceImageMemoryRequirements);
+
         SET_VK_FUNC_KHR(vkGetBufferMemoryRequirements2);
         SET_VK_FUNC_KHR(vkGetImageMemoryRequirements2);
         SET_VK_FUNC_KHR(vkBindBufferMemory2);
         SET_VK_FUNC_KHR(vkBindImageMemory2);
         SET_VK_FUNC_KHR(vkGetPhysicalDeviceMemoryProperties2);
+        SET_VK_FUNC_KHR_CHECKED(vkGetPhysicalDeviceProperties2);
 
 #undef SET_VK_FUNC_KHR
 #undef SET_VK_FUNC
@@ -146,7 +150,9 @@ static void init_vk_device() {
     const usize queue_count = 1;
 
     device::enabled_extensions.make_empty();
-    device::enabled_extensions << VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+    for(const char* ext : required_extensions()) {
+        y_always_assert(try_enable_extension(device::enabled_extensions, ext, physical_device()), "Device doesn't support required extension ({})", ext);
+    }
 
     if(raytracing_enabled()) {
         for(const char* ext_name : raytracing_extensions()) {
@@ -164,9 +170,12 @@ static void init_vk_device() {
     auto required_features_1_3 = required_device_features_1_3();
     auto required_features_1_4 = required_device_features_1_4();
 
+
     auto required_features_accel = required_device_features_accel_struct();
     auto required_features_raytracing = required_device_features_raytracing_pipeline();
     auto required_features_ray_query = required_device_features_ray_query();
+    auto required_features_ray_position_fetch = required_device_features_ray_position_fetch();
+    auto required_features_shader_float_atomic = required_device_features_shader_float_atomic();
 
     y_always_assert(has_required_features(physical_device()), "{} doesn't support required features", physical_device().device_name());
     y_always_assert(has_required_properties(physical_device()), "{} doesn't support required properties", physical_device().device_name());
@@ -197,7 +206,9 @@ static void init_vk_device() {
     if(raytracing_enabled()) {
         required_features_ray_query.pNext = &required_features_accel;
         required_features_accel.pNext = &required_features_raytracing;
-        required_features_raytracing.pNext = features.pNext;
+        required_features_raytracing.pNext =  &required_features_ray_position_fetch;
+        required_features_ray_position_fetch.pNext = &required_features_shader_float_atomic;
+        required_features_shader_float_atomic.pNext = features.pNext;
 
         features.pNext = &required_features_ray_query;
     }
@@ -209,12 +220,6 @@ static void init_vk_device() {
         create_info.ppEnabledExtensionNames = device::enabled_extensions.data();
         create_info.queueCreateInfoCount = 1;
         create_info.pQueueCreateInfos = &queue_create_info;
-    }
-
-    if(instance_params().validation_layers) {
-        const auto ext = validation_extensions();
-        create_info.enabledLayerCount = u32(ext.size());
-        create_info.ppEnabledLayerNames = ext.data();
     }
 
     {
@@ -230,15 +235,13 @@ static void init_vk_device() {
         log_msg("Raytracing disabled", Log::Warning);
     }
 
-    core::SmallVector<VkQueue> queues;
-    device::queue.init(main_queue_index, queues.emplace_back(create_queue(device::vk_device, main_queue_index, 0)));
+    const VkQueue queue = create_queue(device::vk_device, main_queue_index, 0);
+    device::queue.init(main_queue_index, queue);
 
     if(diagnostic_checkpoints) {
         log_msg("Vulkan diagnostic checkpoints enabled");
         device::diagnostic_checkpoints = std::make_unique<DiagnosticCheckpoints>();
-        for(const VkQueue q : queues) {
-            device::diagnostic_checkpoints->register_queue(q);
-        }
+        device::diagnostic_checkpoints->register_queue(*device::queue);
     }
 }
 
@@ -343,14 +346,17 @@ const PhysicalDevice& physical_device() {
 }
 
 CmdBufferRecorder create_disposable_cmd_buffer() {
+    y_profile();
     return device::queue->cmd_pool_for_thread().create_cmd_buffer();
 }
 
 ComputeCmdBufferRecorder create_disposable_compute_cmd_buffer() {
+    y_profile();
     return device::queue->cmd_pool_for_thread().create_compute_cmd_buffer();
 }
 
 TransferCmdBufferRecorder create_disposable_transfer_cmd_buffer() {
+    y_profile();
     return device::queue->cmd_pool_for_thread().create_transfer_cmd_buffer();
 }
 

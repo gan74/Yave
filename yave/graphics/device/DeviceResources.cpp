@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -72,17 +72,21 @@ struct DeviceMaterialData {
 
 
 static constexpr std::array<DeviceMaterialData, usize(MaterialTemplates::MaxMaterialTemplates)> material_datas = {
-    DeviceMaterialData{"opaque", "opaque", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
-    DeviceMaterialData{"opaque_ALPHA_TEST", "opaque_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
-    DeviceMaterialData{"opaque_ALPHA_TEST", "opaque_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
+    DeviceMaterialData{"static_mesh_GBUFFER",                       "static_mesh_GBUFFER",                      DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{"static_mesh_GBUFFER_ALPHA_TEST",            "static_mesh_GBUFFER_ALPHA_TEST",           DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{"static_mesh_GBUFFER_ALPHA_TEST",            "static_mesh_GBUFFER_ALPHA_TEST",           DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
+    DeviceMaterialData{"static_mesh_GBUFFER_SPECULAR",              "static_mesh_GBUFFER_SPECULAR",             DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{"static_mesh_GBUFFER_SPECULAR_ALPHA_TEST",   "static_mesh_GBUFFER_SPECULAR_ALPHA_TEST",  DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
+    DeviceMaterialData{"static_mesh_GBUFFER_SPECULAR_ALPHA_TEST",   "static_mesh_GBUFFER_SPECULAR_ALPHA_TEST",  DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
 
-    DeviceMaterialData{"opaque_SPECULAR", "opaque_SPECULAR", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
-    DeviceMaterialData{"opaque_SPECULAR_ALPHA_TEST", "opaque_SPECULAR_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::Back, true},
-    DeviceMaterialData{"opaque_SPECULAR_ALPHA_TEST", "opaque_SPECULAR_ALPHA_TEST", DepthTestMode::Standard, BlendMode::None, CullMode::None, true},
+    DeviceMaterialData{"static_mesh_FORWARD",                       "static_mesh_FORWARD",                      DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, false},
+    DeviceMaterialData{"static_mesh_FORWARD_ALPHA_TEST",            "static_mesh_FORWARD_ALPHA_TEST",           DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, false},
+    DeviceMaterialData{"static_mesh_FORWARD_ALPHA_TEST",            "static_mesh_FORWARD_ALPHA_TEST",           DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::None, false},
+    DeviceMaterialData{"static_mesh_FORWARD_SPECULAR",              "static_mesh_FORWARD_SPECULAR",             DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, false},
+    DeviceMaterialData{"static_mesh_FORWARD_SPECULAR_ALPHA_TEST",   "static_mesh_FORWARD_SPECULAR_ALPHA_TEST",  DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::Back, false},
+    DeviceMaterialData{"static_mesh_FORWARD_SPECULAR_ALPHA_TEST",   "static_mesh_FORWARD_SPECULAR_ALPHA_TEST",  DepthTestMode::Standard, BlendMode::SrcAlpha, CullMode::None, false},
 
-    DeviceMaterialData{"deferred_light_POINT", "deferred_light_POINT", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
-    DeviceMaterialData{"deferred_light_SPOT", "deferred_light_SPOT", DepthTestMode::Reversed, BlendMode::Add, CullMode::Front, false},
-    DeviceMaterialData::screen("deferred_ambient", true),
+
     DeviceMaterialData::screen("atmosphere"),
     DeviceMaterialData::screen("tonemap"),
     DeviceMaterialData::screen("passthrough"),
@@ -102,8 +106,11 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "ibl_convolution_EQUIREC",
     "ibl_convolution_CUBE",
     "brdf_integrator",
-    "deferred_locals",
-    "deferred_locals_DEBUG",
+    "light_cluster",
+    "deferred_single_pass",
+    "deferred_single_pass_DEBUG",
+    "deferred_ambient_GI",
+    "deferred_ambient_AO",
     "linearize_depth",
     "ssao",
     "ssao_upsample",
@@ -117,9 +124,16 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "taa_resolve",
     "update_transforms",
     "filter_ao",
+    "bilateral",
+    "bilateral_HORIZONTAL",
     "picking",
-    "rtao",
-    "rt",
+    "rtao_UPDATE",
+    "rtao_APPLY",
+    "rtao_TRIM",
+    "rtgi_COUNT",
+    "rtgi_UPDATE",
+    "rtgi_APPLY",
+    "rtgi_TRIM",
 };
 
 
@@ -266,7 +280,7 @@ DeviceResources::DeviceResources() {
     {
         y_profile_zone("Materials");
         _materials = std::make_unique<AssetPtr<Material>[]>(usize(MaxMaterials));
-        _materials[0] = make_asset<Material>(&_material_templates[usize(TexturedMaterialTemplate)]);
+        _materials[0] = make_asset<Material>(MaterialData{});
     }
 
     {

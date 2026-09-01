@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,11 @@ SOFTWARE.
 
 #include <atomic>
 #include <algorithm>
+#include <cstring>
 
 #ifdef Y_OS_WIN
 #include <windows.h>
+#include <processthreadsapi.h>
 #endif
 
 namespace y {
@@ -48,7 +50,8 @@ void set_thread_name(const char* thread_name) {
     std::copy_n(thread_name, len, detail::thread_name);
 
 #ifdef Y_OS_WIN
-    if(auto set_thread_desc = reinterpret_cast<decltype(&::SetThreadDescription)>(::GetProcAddress(::GetModuleHandleA("Kernel32.dll"), "SetThreadDescription"))) {
+    using set_thread_desc_func = HRESULT (*)(HANDLE hThread, PCWSTR lpThreadDescription);
+    if(auto set_thread_desc = reinterpret_cast<set_thread_desc_func>(reinterpret_cast<void*>(::GetProcAddress(::GetModuleHandleA("Kernel32.dll"), "SetThreadDescription")))) {
         wchar_t w_thread_name[sizeof(detail::thread_name)] = {};
         std::copy_n(thread_name, len, w_thread_name);
         set_thread_desc(::GetCurrentThread(), w_thread_name);

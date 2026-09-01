@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -93,7 +93,7 @@ static ShadowSubPass create_sub_pass(FrameGraphPassBuilder& builder,
     y_profile();
 
     if(!size) {
-        log_msg("Unable to allocate shadow altas: too many shadow casters", Log::Warning);
+        log_msg("Unable to allocate shadow atlas: too many shadow casters", Log::Warning);
     }
 
     const float size_f = float(size);
@@ -233,7 +233,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneVisibilit
         log_msg("Shadow map size is not a power of two", Log::Warning);
     }
 
-    const math::Vec2ui shadow_map_size = math::Vec2ui(1, settings.shadow_atlas_size) * first_level_size;
+    const math::Vec2ui shadow_map_size(first_level_size);
     const math::Vec2 uv_mul = 1.0f / math::Vec2(shadow_map_size);
 
     const auto shadow_map = builder.declare_image(shadow_format, shadow_map_size);
@@ -241,9 +241,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneVisibilit
     const SceneView& scene_view = visibility.scene_view;
     const ShadowCastingLights lights = collect_shadow_casting_lights(visibility);
 
-    const float downsample_factor = settings.spill_policy == ShadowMapSpillPolicy::DownSample
-        ? total_occupancy(lights) / settings.shadow_atlas_size
-        : 1.0f;
+    const float downsample_factor = settings.spill_policy == ShadowMapSpillPolicy::DownSample ? total_occupancy(lights)  : 1.0f;
     const u32 lod_offset = log2ui(u32(std::ceil(downsample_factor)));
 
     ShadowMapPass pass;
@@ -302,8 +300,11 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneVisibilit
         for(usize i = 0; i != passes.size(); ++i) {
             const ShadowSubPass& pass = passes[i];
             shadow_infos[i] = pass.info;
+            
+            const char* pass_name = pass.scene_pass.scene_view.camera().is_orthographic() ? "Directional cascade" : "Spot light";
+            y_profile_dyn_zone(pass_name);
 
-            const auto region = render_pass.region(pass.scene_pass.scene_view.camera().is_orthographic() ? "Directional cascade" : "Spot light");
+            const auto region = render_pass.region(pass_name);
             render_pass.set_viewport(Viewport(math::Vec2(float(pass.viewport_size)), pass.viewport_offset));
             pass.scene_pass.render(render_pass, self);
         }

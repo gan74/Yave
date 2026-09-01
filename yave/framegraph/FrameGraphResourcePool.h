@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,8 @@ class FrameGraphResourcePool : NonMovable {
         TransientImage create_image(ImageFormat format, const math::Vec2ui& size, u32 mips, ImageUsage usage);
         TransientVolume create_volume(ImageFormat format, const math::Vec3ui& size, ImageUsage usage);
         TransientBuffer create_buffer(u64 byte_size, BufferUsage usage, MemoryType memory, bool exact = true);
+
+        std::pair<const TransientBuffer&, bool> create_scratch_buffer(u64 byte_size, BufferUsage usage, FrameGraphPersistentResourceId persistent_id);
 
         void release(TransientImage image, core::Span<FrameGraphPersistentResourceId> persistent_ids = {});
         void release(TransientVolume volume, core::Span<FrameGraphPersistentResourceId> persistent_ids = {});

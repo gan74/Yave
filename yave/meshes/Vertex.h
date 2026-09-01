@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -93,8 +93,8 @@ static_assert(sizeof(IndexedTriangle) == 3 * sizeof(u32));
 struct SkinWeights {
     static constexpr usize size = 4;
 
-    math::Vec<size, u32> indices;
-    math::Vec<size, float> weights;
+    math::Vec<size, u16> indices;
+    math::Vec<size, u16> weights;
 };
 
 struct SkinnedVertex {

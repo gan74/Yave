@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,8 @@ enum class VertexStreamType : u32 {
 template<VertexStreamType Type>
 struct VertexStreamInfo {};
 
+
+
 #define DECLARE_STREAM_INFOS(VST, Type) template<> struct VertexStreamInfo<VertexStreamType::VST> {  using type = Type; }
     DECLARE_STREAM_INFOS(Position, math::Vec3);
     DECLARE_STREAM_INFOS(NormalTangent, math::Vec2ui);
@@ -63,6 +65,21 @@ inline constexpr usize vertex_stream_element_size(VertexStreamType type) {
     }
 #undef STREAM_CASE
 }
+
+inline constexpr std::string_view vertex_stream_name(VertexStreamType type) {
+#define STREAM_CASE(Type) case VertexStreamType::Type: return #Type;
+    switch(type) {
+        STREAM_CASE(Position);
+        STREAM_CASE(NormalTangent);
+        STREAM_CASE(Uv);
+        default:
+            y_fatal("Unknown stream type");
+    }
+#undef STREAM_CASE
+}
+
+
+
 
 inline constexpr usize compute_total_vertex_streams_size() {
     usize total_size = 0;
@@ -86,13 +103,22 @@ class MeshVertexStreams {
 
         usize vertex_count() const;
 
-        bool has_stream(VertexStreamType type) const;
         bool is_empty() const;
+
+        usize stream_byte_size(VertexStreamType type) const;
 
         u8* data(VertexStreamType type);
         const u8* data(VertexStreamType type) const;
 
         PackedVertex operator[](usize index) const;
+
+        inline auto stream_data(VertexStreamType type) {
+            return core::MutableSpan<u8>(data(type), stream_byte_size(type));
+        }
+
+        inline auto stream_data(VertexStreamType type) const {
+            return core::Span<u8>(data(type), stream_byte_size(type));
+        }
 
         template<VertexStreamType Type>
         inline auto stream() {
@@ -115,7 +141,7 @@ class MeshVertexStreams {
         }
 
 
-        y_reflect(MeshVertexStreams, _vertex_count, _stream_offsets, _storage);
+        y_reflect(MeshVertexStreams, _vertex_count, _stream_offsets, _storage)
 
     private:
         void set_vertex(usize index, PackedVertex vertex);

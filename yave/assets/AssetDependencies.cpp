@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -62,7 +62,7 @@ AssetLoadingState AssetDependencies::state() const {
 
 AssetLoadingErrorType AssetDependencies::error() const {
     for(const auto& d : _deps) {
-        if(!d.is_failed()) {
+        if(d.is_failed()) {
             return d.error();
         }
     }

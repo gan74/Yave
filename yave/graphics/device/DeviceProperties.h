@@ -1,5 +1,6 @@
+
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,8 +41,9 @@ struct DeviceProperties {
     u32 max_sampled_image_desc_array_size;
     u32 max_storage_image_desc_array_size;
 
-    float timestamp_period;
+    u32 max_compute_dispatch_size[3];
 
+    float timestamp_period;
 
     bool has_raytracing;
 

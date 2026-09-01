@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -156,7 +156,7 @@ void FrameGraphPassBuilderBase::add_storage_output(FrameGraphMutableBufferId res
 }
 
 
-// --------------------------------- Storage intput ---------------------------------
+// --------------------------------- Storage input ---------------------------------
 
 void FrameGraphPassBuilderBase::add_storage_input(FrameGraphBufferId res, PipelineStage stage, i32 ds_index) {
     add_to_pass(res, BufferUsage::StorageBit, false, or_default(stage));

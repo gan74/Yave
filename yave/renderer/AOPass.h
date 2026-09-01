@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -41,20 +41,20 @@ struct AOSettings {
 
     AOMethod method = AOMethod::RTAO;
 
-    struct {
+    struct MiniAOSettings {
         u32 level_count = 2;
         float blur_tolerance = 4.6f;
         float upsample_tolerance = 12.0f;
         float noise_filter_tolerance = 0.0f;
     } mini_engine;
 
-    struct {
+    struct RTAOSettings {
         u32 ray_count = 1;
         float max_dist = 2.0f;
-
+        u32 hash_size = 21;
+        float lod_dist = 10.0f;
+        float base_cell_size = 0.05f;
         float filter_sigma = 4.0f;
-
-        bool temporal = true;
     } rtao;
 };
 

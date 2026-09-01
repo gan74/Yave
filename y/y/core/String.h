@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -55,7 +55,7 @@ class String {
         u8 _len : 7;
         u8 _is_long : 1;
 
-        // Y_TODO(SSO implementation squeeze an extra byte at the cost of 0 initilisation. Bench needed)
+        // Y_TODO(SSO implementation squeeze an extra byte at the cost of 0 initialisation. Bench needed)
         ShortLenType(usize l = 0) : _len(u8(max_short_size - l)), _is_long(0) {
         }
 
@@ -150,9 +150,6 @@ class String {
 
         char* data();
         const char* data() const;
-
-        iterator find(const char* str);
-        const_iterator find(const char* str) const;
 
         iterator find(std::string_view str);
         const_iterator find(std::string_view str) const;

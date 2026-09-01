@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -272,7 +272,7 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
             const u32 signal_count = signal_semaphores[1] ? 2 : 1;
             const u32 wait_count = u32(wait_semaphores.size());
 
-            const core::ScratchPad<VkPipelineStageFlags> wait_stages(wait_count, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+            const core::ScratchPad<VkPipelineStageFlags> wait_stages(wait_count, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
             VkTimelineSemaphoreSubmitInfo timeline_info = vk_struct();
             {
@@ -345,6 +345,10 @@ CmdBufferPool& CmdQueue::cmd_pool_for_thread() {
         }
         return *cmd_pools.emplace_back(thread_id, std::make_unique<CmdBufferPool>(this)).second;
     });
+}
+
+const ProfiledMutexed<VkQueue>& CmdQueue::queue() const {
+    return _queue;
 }
 
 void CmdQueue::clear_thread(u32 thread_id) {

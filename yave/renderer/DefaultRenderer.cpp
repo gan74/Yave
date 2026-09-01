@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,16 +36,30 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
     DefaultRenderer renderer;
 
     renderer.visibility     = SceneVisibilitySubPass::create(scene_view);
+
     renderer.camera         = settings.taa.enable
-                                ? CameraBufferPass::create(framegraph, scene_view, size, persistent_id, settings.jitter)
-                                : CameraBufferPass::create_no_jitter(framegraph, scene_view, persistent_id);
+        ? CameraBufferPass::create(framegraph, scene_view, size, persistent_id, settings.jitter)
+        : CameraBufferPass::create_no_jitter(framegraph, scene_view, persistent_id)
+    ;
 
     renderer.gbuffer        = GBufferPass::create(framegraph, renderer.camera, renderer.visibility, size);
-    renderer.ao             = AOPass::create(framegraph, renderer.gbuffer, settings.ao);
-    renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.ao.ao, settings.lighting);
-    renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.lighting.lit);
 
-    renderer.taa            = TAAPass::create(framegraph, renderer.gbuffer, renderer.atmosphere.lit, settings.taa);
+    renderer.cluster        = LightClusterPass::create(framegraph, renderer.gbuffer, settings.shadow);
+    renderer.lighting       = LightingPass::create(framegraph, renderer.gbuffer, renderer.cluster, settings.lighting);
+
+    if(raytracing_enabled() && settings.ambient_pipe == AmbientPipe::GI) {
+        renderer.rtgi       = RTGIPass::create(framegraph, renderer.gbuffer, renderer.lighting.lit, settings.rtgi);
+        renderer.ambient    = AmbientPass::create(framegraph, renderer.gbuffer, renderer.lighting.lit, renderer.rtgi);
+    } else {
+        renderer.ao         = AOPass::create(framegraph, renderer.gbuffer, settings.ao);
+        renderer.ambient    = AmbientPass::create(framegraph, renderer.gbuffer, renderer.lighting.lit, renderer.ao);
+    }
+
+    renderer.atmosphere     = AtmospherePass::create(framegraph, renderer.gbuffer, renderer.ambient.lit);
+
+    renderer.forward        = ForwardPass::create(framegraph, renderer.gbuffer.depth, renderer.atmosphere.lit, renderer.camera, renderer.cluster, renderer.visibility);
+
+    renderer.taa            = TAAPass::create(framegraph, renderer.gbuffer, renderer.forward.lit, settings.taa);
 
     renderer.exposure       = ExposurePass::create(framegraph, renderer.taa.anti_aliased);
     renderer.bloom          = BloomPass::create(framegraph, renderer.taa.anti_aliased, renderer.exposure.params, settings.bloom);
@@ -53,11 +67,6 @@ DefaultRenderer DefaultRenderer::create(FrameGraph& framegraph, const SceneView&
 
     renderer.final = renderer.tone_mapping.tone_mapped;
     renderer.depth = renderer.gbuffer.depth;
-
-
-    // renderer.rt             = RaytracingPass::create(framegraph, renderer.camera, size);
-    // renderer.final = renderer.rt.raytraced;
-
 
     return renderer;
 }

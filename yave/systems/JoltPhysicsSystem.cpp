@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "JoltPhysicsSystem.h"
 
-#include <yave/components/ColliderComponent.h>
+#include <yave/components/RigidBodyComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/meshes/MeshData.h>
@@ -47,6 +47,7 @@ SOFTWARE.
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
+#include <Jolt/Physics/Body/BodyFilter.h>
 #include <Jolt/Renderer/DebugRenderer.h>
 #include <Jolt/Renderer/DebugRendererSimple.h>
 
@@ -88,7 +89,7 @@ y_force_inline static JPH::Quat to_jph(const math::Quaternion<>& q) {
     return JPH::Quat(q.x(), q.y(), q.z(), q.w());
 }
 
-y_force_inline static JPH::EMotionType to_jph(ColliderComponent::Type type) {
+y_force_inline static JPH::EMotionType to_jph(RigidBodyComponent::Type type) {
     return JPH::EMotionType(type);
 }
 
@@ -98,9 +99,31 @@ y_force_inline static JPH::IndexedTriangle to_jph(IndexedTriangle t) {
 
 
 
+
+struct DebugDrawFilter final : public JPH::BodyDrawFilter {
+    public:
+        DebugDrawFilter(bool draw_static, bool draw_movable) : _draw_static(draw_static), _draw_movable(draw_movable) {
+        }
+
+        bool ShouldDraw(const JPH::Body& body) const override {
+            switch(body.GetMotionType()) {
+                case JPH::EMotionType::Static:
+                    return _draw_static;
+                case JPH::EMotionType::Kinematic:
+                case JPH::EMotionType::Dynamic:
+                    return _draw_movable;
+            }
+            return true;
+        }
+
+    private:
+        bool _draw_static;
+        bool _draw_movable;
+};
+
 class DebugDrawer final : public JPH::DebugRendererSimple {
     public:
-        DebugDrawer() : _prim(editor::debug_drawer().add_primitive("Jolt Debug")) {
+        DebugDrawer(DirectDraw* drawer) : _prim(drawer->add_primitive("Jolt Debug")) {
             JPH::DebugRenderer::Initialize();
         }
 
@@ -130,6 +153,7 @@ struct BPLayerInterface final : JPH::BroadPhaseLayerInterface {
     }
 
     JPH::BroadPhaseLayer GetBroadPhaseLayer(JPH::ObjectLayer layer) const override {
+        unused(layer);
         y_debug_assert(!layer);
         return JPH::BroadPhaseLayer(0);
     }
@@ -174,7 +198,6 @@ struct BodyActivationListener : JPH::BodyActivationListener, NonMovable {
     }
 
     ecs::EntityWorld* world = nullptr;
-
 };
 
 struct JoltData : NonMovable {
@@ -199,46 +222,6 @@ struct JoltData : NonMovable {
         body_interface = &physics_system.GetBodyInterface();
 
         physics_system.SetGravity(JPH::Vec3(0.0f, -9.81f, 0.0f));
-
-#if 0
-        // Next we can create a rigid body to serve as the floor, we make a large box
-        // Create the settings for the collision volume (the shape).
-        // Note that for simple shapes (like boxes) you can also directly construct a BoxShape.
-        JPH::BoxShapeSettings floor_shape_settings(JPH::Vec3(100.0f, 10.0f, 100.0f));
-        // floor_shape_settings.SetEmbedded(); // A ref counted object on the stack (base class RefTarget) should be marked as such to prevent it from being freed when its reference count goes to 0.
-
-        // Create the shape
-        JPH::ShapeSettings::ShapeResult floor_shape_result = floor_shape_settings.Create();
-        JPH::ShapeRefC floor_shape = floor_shape_result.Get(); // We don't expect an error here, but you can check floor_shape_result for HasError() / GetError()
-
-        // Create the settings for the body itself. Note that here you can also set other properties like the restitution / friction.
-        JPH::BodyCreationSettings floor_settings(floor_shape, JPH::RVec3(0.0f, -10.0f, 0.0f), JPH::Quat::sIdentity(), JPH::EMotionType::Static, JPH::ObjectLayer(0));
-        floor_settings.mUserData = ecs::EntityId().as_u64();
-
-        // Create the actual rigid body
-        JPH::Body *floor = body_interface->CreateBody(floor_settings); // Note that if we run out of bodies this can return nullptr
-
-        // Add it to the world
-        body_interface->AddBody(floor->GetID(), JPH::EActivation::DontActivate);
-
-        // Now create a dynamic body to bounce on the floor
-        // Note that this uses the shorthand version of creating and adding a body to the world
-        JPH::BodyCreationSettings sphere_settings(new JPH::SphereShape(0.5f), JPH::RVec3(0.0f, 2.0f, 0.0f), JPH::Quat::sIdentity(), JPH::EMotionType::Dynamic, JPH::ObjectLayer(0));
-        sphere_settings.mUserData = ecs::EntityId().as_u64();
-        sphere_settings.mRestitution = 1.0f;
-
-        JPH::BodyID sphere_id = body_interface->CreateAndAddBody(sphere_settings, JPH::EActivation::Activate);
-
-        // Now you can interact with the dynamic body, in this case we're going to give it a velocity.
-        // (note that if we had used CreateBody then we could have set the velocity straight on the body before adding it to the physics system)
-        body_interface->SetLinearVelocity(sphere_id, JPH::Vec3(0.0f, -5.0f, 0.0f));
-
-
-        // Optional step: Before starting the physics simulation you can optimize the broad phase. This improves collision detection performance (it's pointless here because we only have 2 bodies).
-        // You should definitely not call this every frame or when e.g. streaming in a new level section as it is an expensive operation.
-        // Instead insert all new objects in batches instead of 1 at a time to keep the broad phase efficient.
-        physics_system.OptimizeBroadPhase();
-#endif
     }
 
 
@@ -249,6 +232,14 @@ struct JoltData : NonMovable {
 
 
 
+static void jph_trace_func(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    char buffer[512] = {};
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+    log_msg(buffer, Log::Warning);
+}
 
 
 
@@ -261,6 +252,7 @@ static void init_jolt() {
 
     init = true;
 
+    JPH::Trace = jph_trace_func;
     JPH::RegisterDefaultAllocator();
 
     JPH::Factory::sInstance = new JPH::Factory();
@@ -272,6 +264,8 @@ static JPH::Ref<JPH::Shape> create_static_shape(JoltData* data, const StaticMesh
 
     if(!shape.GetPtr()) {
         y_profile();
+
+        core::DebugTimer timer("Create static shape");
 
         const MeshTriangleData& triangle_data = mesh->triangle_data();
         JPH::Array<JPH::Float3> vertices(triangle_data.positions.size());
@@ -292,6 +286,8 @@ static JPH::Ref<JPH::Shape> create_movable_shape(JoltData* data, const StaticMes
 
     if(!shape.GetPtr()) {
         y_profile();
+
+        core::DebugTimer timer("Create movable shape");
 
         const MeshTriangleData& triangle_data = mesh->triangle_data();
         JPH::Array<JPH::Vec3> vertices(triangle_data.positions.size());
@@ -315,37 +311,44 @@ JoltPhysicsSystem::JoltPhysicsSystem() : ecs::System("JoltPhysicsSystem") {
 }
 
 JoltPhysicsSystem::~JoltPhysicsSystem() {
-
 }
 
-void JoltPhysicsSystem::set_debug_draw(bool enable) {
-    _debug_draw = enable;
+void JoltPhysicsSystem::set_debug_drawer(DirectDraw* drawer) {
+    _drawer = drawer;
+}
+
+void JoltPhysicsSystem::set_debug_draw_static(bool enable) {
+    _debug_draw_static = enable;
+}
+
+void JoltPhysicsSystem::set_debug_draw_movable(bool enable) {
+    _debug_draw_movable = enable;
 }
 
 void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
     _jolt = std::make_unique<JoltData>(&world());
 
     const auto collect_job = sched.schedule(ecs::SystemSchedule::Update, "Collect colliders", [this](ecs::EntityGroup<
-            ecs::AnyChanged<ColliderComponent>,
+            ecs::AnyChanged<RigidBodyComponent>,
             ecs::AnyChanged<StaticMeshComponent>,
             TransformableComponent
         >&& group) {
 
-        for(auto&& [id, coll, mesh, tr] : group.id_components()) {
+        for(auto&& [id, body, mesh, tr] : group.id_components()) {
             if(!mesh.is_fully_loaded()) {
                 continue;
             }
 
-            if(!coll._body_id.IsInvalid()) {
-                _jolt->body_interface->RemoveBody(coll._body_id);
-                coll._body_id = {};
+            if(body._body_id != RigidBodyComponent::invalid_index) {
+                _jolt->body_interface->RemoveBody(JPH::BodyID(body._body_id));
+                body._body_id = RigidBodyComponent::invalid_index;
             }
 
             if(const AssetPtr<StaticMesh>& static_mesh = mesh.mesh()) {
                 const math::Transform<>& transform = tr.transform();
                 const auto [translation, rotation, scale] = transform.decompose();
 
-                JPH::Ref<JPH::Shape> shape = coll._type == ColliderComponent::Type::Static
+                JPH::Ref<JPH::Shape> shape = body._type == RigidBodyComponent::Type::Static
                     ? create_static_shape(_jolt.get(), static_mesh.get())
                     : create_movable_shape(_jolt.get(), static_mesh.get())
                 ;
@@ -355,27 +358,34 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
                     shape = scaled_settings.Create().Get();
                 }
 
-                JPH::BodyCreationSettings body_settings = JPH::BodyCreationSettings(shape, to_jph(translation), to_jph(rotation), to_jph(coll._type), JPH::ObjectLayer(0));
+                JPH::BodyCreationSettings body_settings = JPH::BodyCreationSettings(shape, to_jph(translation), to_jph(rotation), to_jph(body._type), JPH::ObjectLayer(0));
                 body_settings.mUserData = id.as_u64();
 
-                coll._scale = scale;
-                coll._body_id = _jolt->body_interface->CreateAndAddBody(body_settings, JPH::EActivation::Activate);
+                body._scale = scale;
+                body._body_id = _jolt->body_interface->CreateAndAddBody(body_settings, JPH::EActivation::Activate).GetIndexAndSequenceNumber();
             }
         }
     });
 
-
+    const auto delete_job = sched.schedule(ecs::SystemSchedule::Update, "Delete colliders", [this](ecs::EntityGroup<ecs::Deleted<RigidBodyComponent>>&& group) {
+        for(auto&& [body] : group) {
+            if(body._body_id != RigidBodyComponent::invalid_index) {
+                _jolt->body_interface->RemoveBody(JPH::BodyID(body._body_id));
+                body._body_id = RigidBodyComponent::invalid_index;
+            }
+        }
+    }, collect_job);
 
     const auto physics_job = sched.schedule(ecs::SystemSchedule::Update, "Update physics", [this](const ecs::EntityWorld& world) {
         const float dt = TimeSystem::dt(world);
         if(dt > 0.0f) {
             _jolt->update(std::min(dt, 0.2f));
         }
-    }, collect_job);
+    }, delete_job);
 
     sched.schedule(ecs::SystemSchedule::Update, "Copy transforms", [this](ecs::EntityGroup<
             JoltActiveComponent,
-            ColliderComponent,
+            RigidBodyComponent,
             ecs::Mutate<TransformableComponent>
         >&& group) {
 
@@ -396,11 +406,13 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
     }, physics_job);
 
     sched.schedule(ecs::SystemSchedule::PostUpdate, "Debug draw", [this]() {
-        if(!_debug_draw) {
+        if(!_drawer || (!_debug_draw_static && !_debug_draw_movable)) {
             return;
         }
-        DebugDrawer renderer;
-        _jolt->physics_system.DrawBodies(JPH::BodyManager::DrawSettings{}, &renderer);
+
+        DebugDrawer renderer(_drawer);
+        DebugDrawFilter filter(_debug_draw_static, _debug_draw_movable);
+        _jolt->physics_system.DrawBodies(JPH::BodyManager::DrawSettings{}, &renderer, &filter);
     });
 }
 

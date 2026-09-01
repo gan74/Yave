@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,8 +25,9 @@ SOFTWARE.
 #include "ecs.h"
 #include "ComponentRuntimeInfo.h"
 
-#include <y/core/AssocVector.h>
+#include <yave/assets/AssetPtr.h>
 
+#include <y/core/AssocVector.h>
 #include <y/serde3/archives.h>
 
 namespace yave {

@@ -33,7 +33,7 @@ void draw_line(float lum, int x_offset, int image_height, float3 color) {
 }
 
 [shader("compute")]
-[numthreads(lum_histogram_size)]
+[numthreads(constants.lum_histogram_size)]
 void comp_main() {
     const uint bin_size = in_histogram[int2(semantics.local_index, 0)];
 
@@ -49,7 +49,7 @@ void comp_main() {
 
     GroupMemoryBarrierWithGroupSync();
 
-    const int bar = int(max(1, (bin_size * bar_height) / max_bin));
+    const int bar = int(max(1, (bin_size * bar_height) / max(1, max_bin)));
     const int x_offset = int(semantics.local_index * (bar_width + 1));
     const int image_height = int(image_size(out_color).y);
 

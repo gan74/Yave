@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +58,7 @@ class IndexAllocator {
 
     private:
         core::Vector<index_type> _free;
-        usize _max = 0;
+        index_type _max = {};
 };
 
 }

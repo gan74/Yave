@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -86,7 +86,7 @@ class PagedSet : Allocator, NonCopyable {
 
                 inline pointer operator->() const {
                     const usize index = *_it;
-                    return _pages[index / page_size][index % page_size];
+                    return &_pages[index / page_size][index % page_size];
                 }
 
                 operator Iterator<true>() const {

@@ -1,8 +1,22 @@
+
 #ifndef STRUCT_SLANG
 #define STRUCT_SLANG
 
 
-enum TextureSlots : uint32_t {
+#ifdef __cplusplus
+#define SLANG_PTR(type) u64
+#define SLANG_CTOR(Type) Type
+#define SLANG_CONST const
+#else
+#define SLANG_PTR(type) type*
+#define SLANG_CTOR(Type) __init
+#define SLANG_CONST
+#endif
+
+static const uint max_light_per_tile = 30;
+static const uint light_cluster_tile_size = 16;
+
+enum /*class*/ TextureSlots : uint {
     Albedo                      = 0,
     Normal                      = 1,
     Emissive                    = 2,
@@ -10,12 +24,18 @@ enum TextureSlots : uint32_t {
     SpecularColor               = 4,
 };
 
-enum TAAFeatureBits : uint32_t {
-    ClampingBit                 = 0x01,
-    DenoiseBit                  = 0x02,
+enum class MaterialFlags : uint {
+    None                        = 0x00,
+    AlphaTested                 = 0x01,
 };
 
-enum TAAMask : uint32_t {
+enum class TAAFeatureBits : uint {
+    ClampingBit                 = 0x01,
+    DenoiseBit                  = 0x02,
+    LumWeightBit                = 0x04,
+};
+
+enum class TAAMask : uint {
     None                        = 0,
     UvOutOfBounds               = 1,
     MotionMismatch              = 2,
@@ -53,6 +73,9 @@ struct Camera {
     float3 position;
     float aspect;
 
+    float3 prev_position;
+    uint padding_0;
+
     float3 forward;
     uint padding_1;
 
@@ -70,7 +93,12 @@ struct MaterialData {
     float3 specular_color_factor;
     float specular_factor;
 
-    uint texture_indices[8];
+    uint texture_indices[7];
+    MaterialFlags flags;
+
+    bool is(MaterialFlags f) SLANG_CONST {
+        return (uint(flags) & uint(f)) == uint(f);
+    }
 };
 
 struct ExposureParams {
@@ -86,7 +114,7 @@ struct DirectionalLight {
     float cos_disk;
 
     float3 color;
-    uint padding_1;
+    uint cast_shadow;
 
     uint4 shadow_map_indices;
 };
@@ -118,8 +146,6 @@ struct SpotLight {
 
     float3 encl_sphere_center;
     float encl_sphere_radius;
-
-    float4x4 draw_model; // TODO remove
 };
 
 struct ShadowMapInfo {
@@ -151,6 +177,44 @@ struct AtmosphereParams {
 struct PickingData {
     float depth;
     uint entity_index;
+};
+
+struct MeshObject {
+    uint transform_index;
+    uint material_index;
+    uint mesh_data_index;
+};
+
+struct LightTile {
+    uint16_t point_count;
+    uint16_t spot_count;
+    uint16_t indices[max_light_per_tile];
+};
+
+struct LightClusterInfo {
+    uint directional_count;
+    uint point_count;
+    uint spot_count;
+    uint grid_size_x;
+
+    SLANG_PTR(DirectionalLight) directional_lights;
+    SLANG_PTR(PointLight) point_lights;
+    SLANG_PTR(SpotLight) spot_lights;
+};
+
+struct UnalignedFloat3 {
+    float x, y, z;
+
+    float3 to_float3() SLANG_CONST {
+        return float3(x, y, z);
+    }
+};
+
+struct StaticMeshData {
+    SLANG_PTR(UnalignedFloat3) positions;
+    SLANG_PTR(uint2) tbns;
+    SLANG_PTR(float2) uvs;
+    SLANG_PTR(uint) padding_1;
 };
 
 #endif

@@ -1,3 +1,4 @@
+
 cmake_minimum_required(VERSION 3.24)
 project(yave)
 
@@ -65,23 +66,18 @@ endfunction(optimize_shader)
 function(add_slang_shader SHADER_TARGET SHADER_FILE SHADER_DEFINES)
     get_filename_component(SHADER_NAME ${SHADER_FILE} NAME_WE)
     foreach(DEF ${SHADER_DEFINES})
-        set(COMPILE_ARGS "${COMPILE_ARGS} -D${DEF}=1")
+        set(COMPILE_ARGS ${COMPILE_ARGS} -D${DEF}=1)
         set(NAME_SUFFIX "${NAME_SUFFIX}_${DEF}")
     endforeach()
     string(STRIP "${COMPILE_ARGS}" COMPILE_ARGS)
     set(SHADER_BIN "${SHADER_NAME}${NAME_SUFFIX}.spv")
+    set(SHADER_CMD ${Vulkan_SLANGC_EXECUTABLE} ${COMPILE_ARGS} -target spirv -matrix-layout-column-major -fvk-use-entrypoint-name -preserve-params -O0 -o ${SHADER_BIN} \"${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}\")
     add_custom_command(
         TARGET ${SHADER_TARGET}
-        COMMAND ${Vulkan_SLANGC_EXECUTABLE}
-            ${COMPILE_ARGS}
-            -target spirv
-            -matrix-layout-column-major
-            -fvk-use-entrypoint-name
-            -preserve-params
-            -O0
-            -o ${SHADER_BIN}
-            "${CMAKE_SOURCE_DIR}/shaders/${SHADER_FILE}"
+        POST_BUILD
+        COMMAND ${SHADER_CMD}
     )
+    # message("${SHADER_CMD}")
     optimize_shader(${SHADER_TARGET}_optim ${SHADER_BIN})
 endfunction(add_slang_shader)
 
@@ -130,14 +126,6 @@ endif()
 add_subdirectory(y)
 
 
-# setup includes
-include_directories(${y_SOURCE_DIR})
-include_directories(${yave_SOURCE_DIR})
-include_directories(${Vulkan_INCLUDE_DIRS})
-include_directories(external/sol/include)
-include_directories(external/LuaJIT/src)
-
-
 # Yave's core file
 file(GLOB_RECURSE YAVE_FILES
     "yave/*.h"
@@ -182,19 +170,18 @@ file(GLOB_RECURSE SHADER_FILES
 
 
 function(build_engine_shaders SHADER_TARGET)
-    add_slang_shader(${SHADER_TARGET} "deferred_light.slang" "POINT")
-    add_slang_shader(${SHADER_TARGET} "deferred_light.slang" "SPOT")
+    add_slang_shader(${SHADER_TARGET} "light_cluster.slang" "")
+    add_slang_shader(${SHADER_TARGET} "deferred_single_pass.slang" "")
+    add_slang_shader(${SHADER_TARGET} "deferred_single_pass.slang" "DEBUG")
 
-    add_slang_shader(${SHADER_TARGET} "deferred_locals.slang" "")
-    add_slang_shader(${SHADER_TARGET} "deferred_locals.slang" "DEBUG")
+    add_slang_shader(${SHADER_TARGET} "deferred_ambient.slang" "GI")
+    add_slang_shader(${SHADER_TARGET} "deferred_ambient.slang" "AO")
 
     add_slang_shader(${SHADER_TARGET} "ssao.slang" "")
     add_slang_shader(${SHADER_TARGET} "ssao_upsample.slang" "")
     add_slang_shader(${SHADER_TARGET} "ssao_upsample.slang" "COMBINE_HIGH")
 
     add_slang_shader(${SHADER_TARGET} "atmosphere.slang" "")
-
-    add_slang_shader(${SHADER_TARGET} "deferred_ambient.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "blur.slang" "HORIZONTAL")
     add_slang_shader(${SHADER_TARGET} "blur.slang" "VERTICAL")
@@ -220,10 +207,15 @@ function(build_engine_shaders SHADER_TARGET)
 
     add_slang_shader(${SHADER_TARGET} "id.slang" "")
 
-    add_slang_shader(${SHADER_TARGET} "opaque.slang" "")
-    add_slang_shader(${SHADER_TARGET} "opaque.slang" "ALPHA_TEST")
-    add_slang_shader(${SHADER_TARGET} "opaque.slang" "SPECULAR")
-    add_slang_shader(${SHADER_TARGET} "opaque.slang" "SPECULAR;ALPHA_TEST")
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "FORWARD")
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "FORWARD;ALPHA_TEST")
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "FORWARD;SPECULAR")
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "FORWARD;SPECULAR;ALPHA_TEST")
+
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "GBUFFER")
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "GBUFFER;ALPHA_TEST")
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "GBUFFER;SPECULAR")
+    add_slang_shader(${SHADER_TARGET} "static_mesh.slang" "GBUFFER;SPECULAR;ALPHA_TEST")
 
     add_slang_shader(${SHADER_TARGET} "directdraw.slang" "")
     add_slang_shader(${SHADER_TARGET} "copy.slang" "")
@@ -235,10 +227,19 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "denoise.slang" "")
     add_slang_shader(${SHADER_TARGET} "picking.slang" "")
 
-    add_slang_shader(${SHADER_TARGET} "rtao.slang" "")
+    add_slang_shader(${SHADER_TARGET} "bilateral.slang" "")
+    add_slang_shader(${SHADER_TARGET} "bilateral.slang" "HORIZONTAL")
+
+    add_slang_shader(${SHADER_TARGET} "rtao.slang" "UPDATE")
+    add_slang_shader(${SHADER_TARGET} "rtao.slang" "APPLY")
+    add_slang_shader(${SHADER_TARGET} "rtao.slang" "TRIM")
+
     add_slang_shader(${SHADER_TARGET} "filter_ao.slang" "")
 
-    add_slang_shader(${SHADER_TARGET} "rt.slang" "")
+    add_slang_shader(${SHADER_TARGET} "rtgi.slang" "COUNT")
+    add_slang_shader(${SHADER_TARGET} "rtgi.slang" "UPDATE")
+    add_slang_shader(${SHADER_TARGET} "rtgi.slang" "APPLY")
+    add_slang_shader(${SHADER_TARGET} "rtgi.slang" "TRIM")
 endfunction(build_engine_shaders)
 
 function(build_editor_shaders SHADER_TARGET)
@@ -258,20 +259,27 @@ if(YAVE_UNITY_BUILD)
 endif()
 
 if(YAVE_BUILD_YAVE)
-    add_library(yave STATIC ${YAVE_FILES} ${SPIRV_REFLECT_FILES} ${SHADER_FILES} ${SHADER_LIBS})
+    add_library(yave STATIC ${YAVE_FILES} ${SPIRV_REFLECT_FILES} ${SHADER_FILES})
 
     if(UNIX)
         target_link_libraries(yave PRIVATE xcb)
     endif()
 
     if(YAVE_TRACY_PROFILING)
-        option(TRACY_ENABLE "" ON)
+        set(TRACY_ENABLE ON CACHE BOOL "" FORCE)
+        set(TRACY_ON_DEMAND ON CACHE BOOL "" FORCE)
+        set(TRACY_ONLY_LOCALHOST ON CACHE BOOL "" FORCE)
         add_subdirectory(external/tracy)
-        target_link_libraries(yave PUBLIC Tracy::TracyClient)
+        target_link_libraries(yave PUBLIC TracyClient)
     endif()
 
     target_link_libraries(yave PUBLIC y luajit Jolt)
-    
+    target_include_directories(yave PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/sol/include
+        ${Vulkan_INCLUDE_DIRS}
+    )
+
     add_custom_target(shaders)
     add_custom_target(shaders_optim)
     build_engine_shaders(shaders)

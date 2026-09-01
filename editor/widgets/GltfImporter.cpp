@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,7 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/PointLightComponent.h>
+#include <yave/components/RigidBodyComponent.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/material/Material.h>
 
@@ -79,9 +80,15 @@ static AssetId import_asset(const core::String& name, const T& asset, AssetType 
     return AssetId::invalid_id();
 }
 
-static AssetId import_node(import::ParsedScene& scene, int index, bool import_child_prefab_as_assets, const core::String& import_path);
+struct PrefabImportSettings {
+    core::String import_path;
+    bool import_child_prefabs_as_assets;
+    bool create_colliders;
+};
 
-static std::pair<std::unique_ptr<ecs::EntityPrefab>, core::String> create_prefab(import::ParsedScene& scene, int index, bool import_child_prefabs_as_assets, const core::String& import_path) {
+static AssetId import_node(import::ParsedScene& scene, int index, const PrefabImportSettings& settings);
+
+static std::pair<std::unique_ptr<ecs::EntityPrefab>, core::String> create_prefab(import::ParsedScene& scene, int index, const PrefabImportSettings& settings) {
     if(index < 0 || scene.nodes[index].is_error) {
         return {};
     }
@@ -101,6 +108,10 @@ static std::pair<std::unique_ptr<ecs::EntityPrefab>, core::String> create_prefab
             });
 
             prefab->add(StaticMeshComponent(make_asset_with_id<StaticMesh>(mesh.asset_id), std::move(materials)));
+
+            if(settings.create_colliders) {
+                prefab->add(RigidBodyComponent());
+            }
         }
     }
 
@@ -116,12 +127,12 @@ static std::pair<std::unique_ptr<ecs::EntityPrefab>, core::String> create_prefab
     }
 
     for(const int child_index : node.children) {
-        if(import_child_prefabs_as_assets) {
-            if(const AssetId id = import_node(scene, child_index, import_child_prefabs_as_assets, import_path); id != AssetId::invalid_id()) {
+        if(settings.import_child_prefabs_as_assets) {
+            if(const AssetId id = import_node(scene, child_index, settings); id != AssetId::invalid_id()) {
                 prefab->add_child(make_asset_with_id<ecs::EntityPrefab>(id));
             }
         } else {
-            if(auto child = create_prefab(scene, child_index, import_child_prefabs_as_assets, import_path); child.first) {
+            if(auto child = create_prefab(scene, child_index, settings); child.first) {
                 prefab->add_child(std::move(child.first));
             }
         }
@@ -133,7 +144,7 @@ static std::pair<std::unique_ptr<ecs::EntityPrefab>, core::String> create_prefab
     return {std::move(prefab), node.name};
 }
 
-static AssetId import_node(import::ParsedScene& scene, int index, bool import_child_prefabs_as_assets, const core::String& import_path) {
+static AssetId import_node(import::ParsedScene& scene, int index, const PrefabImportSettings& settings) {
     if(index < 0 || scene.nodes[index].is_error) {
         return AssetId();
     }
@@ -143,14 +154,13 @@ static AssetId import_node(import::ParsedScene& scene, int index, bool import_ch
         return node.asset_id;
     }
 
-    const auto [prefab, name] = create_prefab(scene, index, import_child_prefabs_as_assets, import_path);
-    node.set_id(import_asset(name, *prefab, AssetType::Prefab, import_path));
+    const auto [prefab, name] = create_prefab(scene, index, settings);
+    node.set_id(import_asset(name, *prefab, AssetType::Prefab, settings.import_path));
 
     return node.asset_id;
 }
 
-template<typename T>
-static void import_all(concurrent::JobSystem& job_system, import::ParsedScene& scene, T settings) {
+static void import_all(concurrent::JobSystem& job_system, import::ParsedScene& scene, const PrefabImportSettings& settings) {
     core::Vector<concurrent::JobSystem::JobHandle> image_jobs;
     core::Vector<concurrent::JobSystem::JobHandle> material_jobs;
     core::Vector<concurrent::JobSystem::JobHandle> mesh_jobs;
@@ -183,7 +193,7 @@ static void import_all(concurrent::JobSystem& job_system, import::ParsedScene& s
     }
 
     job_system.schedule([settings, &scene] {
-        import_node(scene, scene.root_node, settings.import_child_prefabs_as_assets, settings.import_path);
+        import_node(scene, scene.root_node, settings);
     }, mesh_jobs);
 }
 
@@ -200,7 +210,7 @@ GltfImporter::GltfImporter(core::String dst_import_path) :
     _browser.set_selection_filter(import::supported_scene_extensions());
     _browser.set_canceled_callback([this] { close(); return true; });
     _browser.set_selected_callback([this](const auto& filename) {
-        _job_system.schedule([=] {
+        _job_system.schedule([=, this] {
             y_profile_zone("parsing import");
             _scene = import::parse_scene(filename);
         });
@@ -231,7 +241,7 @@ void GltfImporter::on_gui() {
             }
 
             if(ImGui::Button("Cancel")) {
-                _job_system.cancel_pending_jobs();
+                // _job_system.cancel_pending_jobs();
                 close();
             }
         break;
@@ -252,9 +262,15 @@ void GltfImporter::on_gui() {
             }
 
             ImGui::Checkbox("Import children prefabs as assets", &_settings.import_child_prefabs_as_assets);
+            ImGui::Checkbox("Create colliders", &_settings.create_colliders);
 
             if(ImGui::Button(ICON_FA_CHECK " Import")) {
-                import_all(_job_system, _scene.unwrap(), _settings);
+                const PrefabImportSettings settings {
+                    _settings.import_path,
+                    _settings.import_child_prefabs_as_assets,
+                    _settings.create_colliders,
+                };
+                import_all(_job_system, _scene.unwrap(), settings);
                 _state = State::Importing;
             }
         } break;
@@ -266,7 +282,7 @@ void GltfImporter::on_gui() {
                 _state = State::Done;
             } else {
                 if(ImGui::Button("Cancel")) {
-                    _job_system.cancel_pending_jobs();
+                    // _job_system.cancel_pending_jobs();
                     close();
                 }
             }

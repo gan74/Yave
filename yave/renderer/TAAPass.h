@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,7 @@ namespace yave {
 struct TAASettings {
     bool use_clamping = true;
     bool use_denoise = false;
+    bool luminance_weighting = true;
 
     float clamping_range = 1.0f;
     float anti_flicker_strength = 1.0f;

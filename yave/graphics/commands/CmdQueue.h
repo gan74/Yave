@@ -1,5 +1,5 @@
 /*******************************
-Copyright (c) 2016-2025 Grégoire Angerand
+Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -69,7 +69,10 @@ class CmdQueue final : NonMovable {
 
         CmdBufferPool& cmd_pool_for_thread();
 
+        const ProfiledMutexed<VkQueue>& queue() const;
+
         VkResult present(CmdBufferRecorder&& recorder, const FrameToken& token, const Swapchain::FrameSyncObjects& swaphain_sync);
+
 
 #ifdef YAVE_GPU_PROFILING
         TracyVkCtx profiling_context() const;
