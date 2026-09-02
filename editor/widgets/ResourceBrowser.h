@@ -43,7 +43,7 @@ class ResourceBrowser : public Widget {
 
         template<typename F>
         void set_filter_delegate(F&& f) {
-            _fs_view.set_filter_delegate(y_fwd(f));
+            _filesystem_view.set_filter_delegate(y_fwd(f));
         }
 
         template<typename F>
@@ -59,7 +59,7 @@ class ResourceBrowser : public Widget {
         void draw_path_bar();
         core::Result<core::String> draw_path_bar_element(std::string_view path);
 
-        FileSystemView _fs_view;
+        FileSystemView _filesystem_view;
 
         std::function<bool(AssetId)> _selected_delegate = [](AssetId) { return false; };
 };

@@ -98,6 +98,9 @@ bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGu
 bool icon_button(const UiIcon& icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags = 0);
 bool icon_button(UiTexture icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags = 0);
 
+bool thumbnail_button(const UiIcon& icon, const char* str_id, bool selected, float thumb_size, ImGuiSelectableFlags flags = 0);
+bool thumbnail_button(UiTexture icon, const char* str_id, bool selected, float thumb_size, ImGuiSelectableFlags flags = 0);
+
 bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_size);
 
 

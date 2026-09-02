@@ -55,10 +55,10 @@ editor_action("Import image", add_detached_widget<ImageImporter>)
 ResourceBrowser::ResourceBrowser() : ResourceBrowser(ICON_FA_FOLDER_OPEN " Resource Browser") {
 }
 
-ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _fs_view(asset_store().filesystem()) {
-    _fs_view.set_split_mode_enabled(true);
+ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _filesystem_view(asset_store().filesystem()) {
+    _filesystem_view.set_split_mode_enabled(true);
 
-    _fs_view.set_clicked_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+    _filesystem_view.set_clicked_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
         if(type == FileSystemModel::EntryType::File) {
             if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
                 return _selected_delegate(id);
@@ -67,7 +67,7 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _fs_vi
         return false;
     });
 
-    _fs_view.set_preview_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) -> UiTexture {
+    _filesystem_view.set_preview_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) -> UiTexture {
         if(type == FileSystemModel::EntryType::File) {
             if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
                 if(const TextureView* tex = thumbnail_renderer().thumbnail_img(id)) {
@@ -78,7 +78,7 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _fs_vi
         return {};
     });
 
-    _fs_view.set_tooltip_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+    _filesystem_view.set_tooltip_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
         ImGui::TextUnformatted(full_name.data(), full_name.data() + full_name.size());
         if(type == FileSystemModel::EntryType::File) {
             if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
@@ -109,10 +109,10 @@ AssetType ResourceBrowser::asset_type(AssetId id) const {
 
 void ResourceBrowser::draw_import_menu() {
     if(ImGui::Selectable("Import glTF")) {
-        add_detached_widget<GltfImporter>(_fs_view.path());
+        add_detached_widget<GltfImporter>(_filesystem_view.path());
     }
     if(ImGui::Selectable("Import image")) {
-        add_detached_widget<ImageImporter>(_fs_view.path());
+        add_detached_widget<ImageImporter>(_filesystem_view.path());
     }
 }
 
@@ -133,8 +133,8 @@ void ResourceBrowser::on_gui() {
 
         ImGui::SameLine();
         if(ImGui::Button(ICON_FA_ARROW_UP)) {
-            const FileSystemModel* fs = _fs_view.filesystem();
-            _fs_view.set_path(fs->parent_path(_fs_view.path()).unwrap_or(_fs_view.root_path()));
+            const FileSystemModel* fs = _filesystem_view.filesystem();
+            _filesystem_view.set_path(fs->parent_path(_filesystem_view.path()).unwrap_or(_filesystem_view.root_path()));
         }
 
         ImGui::SameLine();
@@ -143,30 +143,30 @@ void ResourceBrowser::on_gui() {
         draw_path_bar();
     }
 
-    _fs_view.draw_gui_inside();
+    _filesystem_view.draw_gui_inside();
 }
 
 
 void ResourceBrowser::draw_path_bar() {
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{});
-    const auto res = draw_path_bar_element(_fs_view.path());
+    const auto res = draw_path_bar_element(_filesystem_view.path());
     ImGui::PopStyleColor();
     if(res) {
-        _fs_view.set_path(res.unwrap());
+        _filesystem_view.set_path(res.unwrap());
     }
 }
 
 core::Result<core::String> ResourceBrowser::draw_path_bar_element(std::string_view path) {
     if(path.empty()) {
         if(ImGui::Button("root")) {
-            return core::Ok(_fs_view.root_path());
+            return core::Ok(_filesystem_view.root_path());
         }
         ImGui::SameLine();
         ImGui::TextUnformatted(ICON_FA_CHEVRON_RIGHT);
         return core::Err();
     }
 
-    const FileSystemModel* fs = _fs_view.filesystem();
+    const FileSystemModel* fs = _filesystem_view.filesystem();
     if(const auto parent = fs->parent_path(path)) {
         if(auto res = draw_path_bar_element(parent.unwrap())) {
             return res;

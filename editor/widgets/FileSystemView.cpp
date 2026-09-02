@@ -120,7 +120,7 @@ const FileSystemView::Entry* FileSystemView::entry(usize index) const {
 }
 
 void FileSystemView::entry_clicked(const Entry& entry) {
-    if(!_clicked_delegate(entry.full_name, entry.type)) {
+    if(!_delegates.clicked(entry.full_name, entry.type)) {
         if(entry.type == EntryType::Directory) {
             set_path(entry.full_name);
         }
@@ -187,8 +187,8 @@ void FileSystemView::update() {
     if(filesystem()->exists(path).unwrap_or(false)) {
         filesystem()->for_each(path, [this, path](const auto& info) {
             core::String full_name = filesystem()->join(path, info.name);
-            if(_filter_delegate(full_name, info.type)) {
-                const UiIcon icon = _icon_delegate(full_name, info.type);
+            if(_delegates.filter(full_name, info.type)) {
+                const UiIcon icon = _delegates.icon(full_name, info.type);
                 _entries.emplace_back(Entry {
                     std::move(full_name),
                     info.name,
@@ -218,8 +218,6 @@ void FileSystemView::update() {
 
     _update_timer.reset();
     _need_update = false;
-
-    _on_update();
 }
 
 
@@ -291,7 +289,7 @@ void FileSystemView::on_gui() {
         ImGui::SameLine();
 
         if(ImGui::BeginChild("##fileentriespanel")) {
-            const float icon_size = 60.0f;
+            const float icon_size = 100.0f;
             const usize entry_per_row = std::max(1_uu, usize(ImGui::GetContentRegionAvail().x / icon_size));
 
 
@@ -313,10 +311,10 @@ void FileSystemView::on_gui() {
 
                         bool clicked = false;
                         bool double_clicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
-                        if(UiTexture preview = _preview_delegate(entry.full_name, entry.type)) {
-                            clicked = imgui::icon_button(preview, fmt_c_str("{}##{}", entry.name, index), selected, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
+                        if(UiTexture preview = _delegates.preview(entry.full_name, entry.type)) {
+                            clicked = imgui::thumbnail_button(preview, fmt_c_str("{}##{}", entry.name, index), selected, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
                         } else {
-                            clicked = imgui::icon_button(entry.icon, fmt_c_str("{}##{}", entry.name, index), selected, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
+                            clicked = imgui::thumbnail_button(entry.icon, fmt_c_str("{}##{}", entry.name, index), selected, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
                         }
                         double_clicked &= clicked;
                         const bool is_right_clicked = ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right);
@@ -326,7 +324,7 @@ void FileSystemView::on_gui() {
                         }
 
                         if(ImGui::BeginItemTooltip()) {
-                            _tooltip_delegate(entry.full_name, entry.type);
+                            _delegates.tooltip(entry.full_name, entry.type);
                             ImGui::EndTooltip();
                         }
 

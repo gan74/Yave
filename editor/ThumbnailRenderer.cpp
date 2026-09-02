@@ -70,7 +70,7 @@ static void fill_world(ecs::EntityWorld& world) {
     const ecs::EntityId sky_id = world.create_entity();
     SkyLightComponent* sky = world.get_or_add_component<SkyLightComponent>(sky_id);
     sky->probe() = device_resources().ibl_probe();
-    sky->intensity() = 0.5f;
+    sky->intensity() = 0.75f;
 }
 
 static AABB merge_empty_aabb(const AABB& a, const AABB& b) {
@@ -111,7 +111,7 @@ static Texture render_world(ecs::EntityWorld& world) {
 
     const EcsScene scene(&world);
 
-    const float camera_distance = std::max(math::epsilon<float>, aabb.radius()) * 2.0f;
+    const float camera_distance = std::max(math::epsilon<float>, aabb.radius()) * 1.6f;
     const Camera camera(
         math::look_at(aabb.center() + math::Vec3(0.0f, 1.0f, 1.0f) * camera_distance, aabb.center(), math::Vec3(0.0f, 1.0f, 0.0f)),
         math::perspective(math::to_rad(45.0f), 1.0f, 0.1f)
@@ -133,6 +133,7 @@ static Texture render_world(ecs::EntityWorld& world) {
             settings.tone_mapping.exposure = 10.0f;
             settings.taa.enable = false;
             settings.ao.method = AOSettings::AOMethod::RTAOFallback;
+            settings.ambient_pipe = AmbientPipe::IBLOcclusion;
         }
 
         const DefaultRenderer renderer = DefaultRenderer::create(graph, scene_view, out.size(), settings);
