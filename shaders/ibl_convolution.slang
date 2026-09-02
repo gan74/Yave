@@ -18,7 +18,7 @@ InputSampler in_envmap;
 RWTexture2DArray out_image;
 
 [[vk::binding(2)]]
-cbuffer Roughness_Inline {
+cbuffer Roughness {
     float roughness;
     float size;
 };

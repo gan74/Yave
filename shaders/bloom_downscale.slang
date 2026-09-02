@@ -7,7 +7,7 @@ Sampler2D in_color;
 ConstantBuffer<ExposureParams> exposure_params;
 
 [[vk::binding(2)]]
-cbuffer BloomParams_Inline {
+cbuffer BloomParams {
     uint pass;
 };
 

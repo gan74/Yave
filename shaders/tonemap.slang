@@ -13,7 +13,7 @@ Sampler2D in_color;
 ConstantBuffer<ExposureParams> params;
 
 [[vk::binding(2)]]
-cbuffer Settings_Inline {
+cbuffer Settings {
     float exposure;
     uint tone_mapper;
 };

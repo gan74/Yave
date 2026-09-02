@@ -10,7 +10,7 @@ StructuredBuffer<float4x4> in_transforms;
 StructuredBuffer<uint> in_indices;
 
 [[vk::binding(3)]]
-cbuffer Params_Inline {
+cbuffer Params {
     uint transform_count;
 };
 

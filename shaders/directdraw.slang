@@ -34,7 +34,7 @@ VertexStageOut vert_main(VertexStageIn in) {
 }
 
 [shader("fragment")]
-float4 frag_main(VertexStageOut in) {
+float4 frag_main(VertexStageOut in) : SV_Target0 {
     float4 color = unpack_color(in.color);
     if(lit != 0) {
         const float3 normal = normalize(cross(ddx(in.position), ddy(in.position)));
