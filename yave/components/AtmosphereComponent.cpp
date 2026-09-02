@@ -23,28 +23,12 @@ SOFTWARE.
 #include "AtmosphereComponent.h"
 
 #include <yave/ecs/ComponentInspector.h>
+#include <yave/components/DirectionalLightComponent.h>
 
 namespace yave {
 
-
-float AtmosphereComponent::planet_radius() const {
-    return _planet_radius;
-}
-
-float AtmosphereComponent::atmosphere_height() const {
-    return _atmosphere_height;
-}
-
-float AtmosphereComponent::density_falloff() const {
-    return _density_falloff;
-}
-
-float AtmosphereComponent::scattering_strength() const {
-    return _scattering_strength;
-}
-
-float AtmosphereComponent::zero_altitude() const {
-    return _zero_altitude;
+float AtmosphereComponent::sea_level() const {
+    return _sea_level;
 }
 
 ecs::EntityId AtmosphereComponent::sun() const {
@@ -52,17 +36,8 @@ ecs::EntityId AtmosphereComponent::sun() const {
 }
 
 void AtmosphereComponent::inspect(ecs::ComponentInspector* inspector) {
-#if 0
-    inspector->inspect("Planet radius", _planet_radius, ecs::ComponentInspector::FloatRole::DistanceKilometers);
-    inspector->inspect("Atmosphere height", _atmosphere_height, ecs::ComponentInspector::FloatRole::DistanceKilometers);
-    inspector->inspect("Sea level altitude", _zero_altitude, ecs::ComponentInspector::FloatRole::DistanceKilometers);
-    inspector->inspect("Density falloff", _density_falloff, 0.0f);
-    inspector->inspect("Scattering strength", _scattering_strength, 0.0f);
-#else
-    inspector->inspect("Density", _density_falloff, 0.0f);
-#endif
+    inspector->inspect("Sea level", _sea_level, ecs::ComponentInspector::FloatRole::Distance);
     inspector->inspect("Sun", _sun, ecs::type_index<DirectionalLightComponent>());
 }
 
 }
-

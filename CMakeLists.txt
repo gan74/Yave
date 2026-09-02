@@ -182,6 +182,9 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "ssao_upsample.slang" "COMBINE_HIGH")
 
     add_slang_shader(${SHADER_TARGET} "atmosphere.slang" "")
+    add_slang_shader(${SHADER_TARGET} "atmosphere_precompute.slang" "SINGLE")
+    add_slang_shader(${SHADER_TARGET} "atmosphere_precompute.slang" "MULTIPLE")
+
 
     add_slang_shader(${SHADER_TARGET} "blur.slang" "HORIZONTAL")
     add_slang_shader(${SHADER_TARGET} "blur.slang" "VERTICAL")

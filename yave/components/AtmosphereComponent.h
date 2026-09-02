@@ -22,41 +22,27 @@ SOFTWARE.
 #ifndef YAVE_COMPONENTS_ATMOSPHERECOMPONENT_H
 #define YAVE_COMPONENTS_ATMOSPHERECOMPONENT_H
 
-#include <yave/assets/AssetPtr.h>
-
-#include <yave/graphics/images/IBLProbe.h>
-
 #include <yave/ecs/ecs.h>
+#include <y/reflect/reflect.h>
 
 namespace yave {
 
 class AtmosphereComponent final {
     public:
-        float planet_radius() const;
-        float atmosphere_height() const;
-        float density_falloff() const;
-        float scattering_strength() const;
-        float zero_altitude() const;
+        float sea_level() const;
 
         ecs::EntityId sun() const;
 
         void inspect(ecs::ComponentInspector* inspector);
 
-        y_reflect(AtmosphereComponent, _planet_radius, _atmosphere_height, _zero_altitude, _density_falloff, _scattering_strength, _sun)
+        y_reflect(AtmosphereComponent, _sea_level, _sun)
 
     private:
-        float _planet_radius = 6400.0f;
-        float _atmosphere_height = 100.0f;
-        float _zero_altitude = 6400.0f;
-
-        float _density_falloff = 5.0f;
-        float _scattering_strength = 0.1f;
+        float _sea_level = 0.0f;
 
         ecs::EntityId _sun;
-
 };
 
 }
 
 #endif // YAVE_COMPONENTS_ATMOSPHERECOMPONENT_H
-

@@ -68,6 +68,9 @@ class DeviceResources final : NonMovable {
             BilateralHorizontalProgram,
             PickingProgram,
 
+            AtmosphereSingleProgram,
+            AtmosphereMultipleProgram,
+
             MaxNonRTComputePrograms,
 
             RTAOUpdateProgram = MaxNonRTComputePrograms,
@@ -166,6 +169,9 @@ class DeviceResources final : NonMovable {
         TextureView brdf_lut() const;
         TextureView white_noise() const;
 
+        TextureView atmosphere_transmittance_lut() const;
+        VolumeView atmosphere_scattering_lut() const;
+
         const AssetPtr<IBLProbe>& ibl_probe() const;
         const AssetPtr<IBLProbe>& empty_probe() const;
 
@@ -191,6 +197,9 @@ class DeviceResources final : NonMovable {
 
         Texture _brdf_lut;
         Texture _white_noise;
+
+        StorageTexture _atmosphere_transmittance;
+        StorageVolume _atmosphere_scattering;
 };
 }
 

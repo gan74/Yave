@@ -127,6 +127,8 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "bilateral",
     "bilateral_HORIZONTAL",
     "picking",
+    "atmosphere_precompute_SINGLE",
+    "atmosphere_precompute_MULTIPLE",
     "rtao_UPDATE",
     "rtao_APPLY",
     "rtao_TRIM",
@@ -168,23 +170,9 @@ MeshData sphere_mesh_data();
 MeshData simple_sphere_mesh_data();
 MeshData cone_mesh_data();
 
-static Texture create_brdf_lut(const ComputeProgram& brdf_integrator, usize size = 512) {
-    y_profile();
-
-    core::DebugTimer _("create_ibl_lut()");
-
-    StorageTexture image(ImageFormat(VK_FORMAT_R16G16_UNORM), {size, size});
-
-    CmdBufferRecorder recorder = create_disposable_cmd_buffer();
-    {
-        const auto region = recorder.region("create_brdf_lut");
-        const auto descriptors = make_descriptor_set(StorageView(image));
-        recorder.dispatch_threads(brdf_integrator, image.size(), DescriptorSetProxy(descriptors));
-    }
-    recorder.submit().wait();
-
-    return image;
-}
+// implemented in DeviceResourcesLUT.cpp
+Texture create_brdf_lut(const ComputeProgram& brdf_integrator, usize size = 512);
+void create_atmosphere_luts(const DeviceResources& resources, StorageTexture& transmittance_out, StorageVolume& scattering_out);
 
 static Texture create_white_noise(usize size = 256) {
     y_profile();
@@ -301,6 +289,12 @@ DeviceResources::DeviceResources() {
         _white_noise = create_white_noise();
         set_name(_white_noise.vk_image(), "White Noise");
         set_name(_white_noise.vk_view(), "White Noise View");
+
+        create_atmosphere_luts(*this, _atmosphere_transmittance, _atmosphere_scattering);
+        set_name(_atmosphere_transmittance.vk_image(), "Atmosphere Transmittance LUT");
+        set_name(_atmosphere_transmittance.vk_view(), "Atmosphere Transmittance LUT View");
+        set_name(_atmosphere_scattering.vk_image(), "Atmosphere Scattering LUT");
+        set_name(_atmosphere_scattering.vk_view(), "Atmosphere Scattering LUT View");
     }
 
     {
@@ -327,6 +321,14 @@ TextureView DeviceResources::brdf_lut() const {
 
 TextureView DeviceResources::white_noise() const {
     return _white_noise;
+}
+
+TextureView DeviceResources::atmosphere_transmittance_lut() const {
+    return _atmosphere_transmittance;
+}
+
+VolumeView DeviceResources::atmosphere_scattering_lut() const {
+    return _atmosphere_scattering;
 }
 
 const AssetPtr<IBLProbe>& DeviceResources::ibl_probe() const {

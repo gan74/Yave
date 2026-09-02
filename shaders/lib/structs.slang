@@ -62,7 +62,7 @@ struct Camera {
     float2 prev_jitter;
 
     float2 combined_jitter;
-    float2 padding;
+    float2 padding_0;
 
     float4x4 proj;
     float4x4 inv_proj;
@@ -74,13 +74,13 @@ struct Camera {
     float aspect;
 
     float3 prev_position;
-    uint padding_0;
-
-    float3 forward;
     uint padding_1;
 
-    float3 up;
+    float3 forward;
     uint padding_2;
+
+    float3 up;
+    uint padding_3;
 };
 
 struct MaterialData {
@@ -160,20 +160,6 @@ struct ShadowMapInfo {
     uint padding_1;
 };
 
-struct AtmosphereParams {
-    float3 center;
-    float planet_radius;
-
-    float3 scattering_coeffs;
-    float atmosphere_height;
-
-    float3 sun_dir;
-    float radius; // planet_radius + atmosphere_height
-
-    float3 sun_color;
-    float density_falloff;
-};
-
 struct PickingData {
     float depth;
     uint entity_index;
@@ -214,7 +200,25 @@ struct StaticMeshData {
     SLANG_PTR(UnalignedFloat3) positions;
     SLANG_PTR(uint2) tbns;
     SLANG_PTR(float2) uvs;
-    SLANG_PTR(uint) padding_1;
+    SLANG_PTR(uint) padding_0;
+};
+
+struct AtmosphereParams {
+    float3 solar_irradiance;
+    float sun_angular_radius;
+
+    float bottom_radius;
+    float top_radius;
+    float2 padding_0;
+
+    SLANG_CTOR(AtmosphereParams)() {
+        // Bruneton Earth defaults (demo.cc); wavelengths 680/550/440 nm.
+        solar_irradiance = float3(1.5);
+        sun_angular_radius = 0.00935 / 2.0;
+        bottom_radius = 6360000.0;
+        top_radius = 6420000.0;
+        padding_0 = float2(0.0);
+    }
 };
 
 #endif

@@ -157,7 +157,6 @@ struct AssetId;
 struct AsyncSubmitData;
 struct AtmosphereObject;
 struct AtmospherePass;
-struct AtmosphereSettings;
 struct Attachment;
 struct Attribute;
 struct BilateralPass;

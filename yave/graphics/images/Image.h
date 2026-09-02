@@ -132,12 +132,14 @@ class Image : public ImageBase {
 using Texture = Image<ImageUsage::TextureBit>;
 using DstTexture = Image<ImageUsage::TextureBit | ImageUsage::TransferDstBit>;
 using StorageTexture = Image<ImageUsage::TextureBit | ImageUsage::StorageBit>;
+using StorageVolume = Image<ImageUsage::TextureBit | ImageUsage::StorageBit, ImageType::ThreeD>;
 using DepthAttachment = Image<ImageUsage::DepthBit>;
 using ColorAttachment = Image<ImageUsage::ColorBit>;
 using DepthTextureAttachment = Image<ImageUsage::DepthBit | ImageUsage::TextureBit>;
 using ColorTextureAttachment = Image<ImageUsage::ColorBit | ImageUsage::TextureBit>;
 
 using Cubemap = Image<ImageUsage::TextureBit, ImageType::Cube>;
+using Volume = Image<ImageUsage::TextureBit, ImageType::ThreeD>;
 
 YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(Texture, ImageData, AssetType::Image);
 

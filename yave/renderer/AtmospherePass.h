@@ -26,17 +26,13 @@ SOFTWARE.
 
 namespace yave {
 
-struct AtmosphereSettings {
-};
-
 struct AtmospherePass {
     FrameGraphImageId lit;
 
-    static AtmospherePass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const AtmosphereSettings& settings = {});
+    static AtmospherePass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit);
 };
 
 
 }
 
 #endif // YAVE_RENDERER_ATMOSPHEREPASS_H
-
