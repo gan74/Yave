@@ -30,12 +30,13 @@ SOFTWARE.
 
 
 namespace yave {
-namespace detail {
 
+namespace detail {
 ScriptTypeIndex next_script_type_index() {
     static std::atomic<std::underlying_type_t<ScriptTypeIndex>> global_type_index = 0;
     return ScriptTypeIndex(global_type_index++);
 }
+
 }
 
 

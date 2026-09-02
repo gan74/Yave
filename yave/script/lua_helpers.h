@@ -146,7 +146,7 @@ void bind_type(lua_State* L, const char* name) {
 
         methods.emplace_back(
             "__tostring", [](lua_State* L) {
-                lua_pushfstring(L, fmt_c_str("userdata({})", metatable_name<T>()));
+                lua_pushstring(L, fmt_c_str("userdata({})", metatable_name<T>()));
                 return 1;
             }
         );
@@ -168,6 +168,9 @@ void bind_type(lua_State* L, const char* name) {
         methods.emplace_back(nullptr, nullptr);
     }
 
+    [[maybe_unused]] 
+    const int top = lua_gettop(L);
+
     luaL_newmetatable(L, metatable_name<T>());
     luaL_setfuncs(L, methods.data(), 0);
 
@@ -188,6 +191,9 @@ void bind_type(lua_State* L, const char* name) {
     lua_setfield(L, -2, "new");
 
     lua_setglobal(L, name);
+    lua_pop(L, 1);
+
+    y_debug_assert(lua_gettop(L) == top);
 }
 
 
