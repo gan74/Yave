@@ -53,17 +53,11 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
 
     if(ImGui::IsKeyDown(to_imgui_key(settings.center_on_obj))) {
         if(current_world().has_selected_entities()) {
-            core::Result<AABB> aabb = core::Err();
-            for(const ecs::EntityId id : current_world().selected_entities()) {
-                /*if(const TransformableComponent* tr = current_world().component<TransformableComponent>(id)) {
-                    // aabb = core::Ok(tr->global_aabb());
-                }*/
-            }
-
-            if(aabb) {
-                cam_pos = aabb.unwrap().center() - cam_fwd * (aabb.unwrap().radius() * 1.5f);
-            } else {
-                log_msg("No AABB found", Log::Error);
+            if(const ecs::EntityId id = current_world().selected_entity(); id.is_valid()) {
+                if(const TransformableComponent* tr = current_world().component<TransformableComponent>(id)) {
+                    const math::Vec3 to_obj = tr->position() - cam_pos;
+                    cam_pos += to_obj - cam_fwd * to_obj.dot(cam_fwd);
+                }
             }
         }
     }
