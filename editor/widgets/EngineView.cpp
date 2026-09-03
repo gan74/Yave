@@ -29,6 +29,8 @@ SOFTWARE.
 #include <editor/utils/ui.h>
 
 #include <yave/scene/EcsScene.h>
+#include <yave/assets/AssetStore.h>
+#include <yave/assets/AssetLoader.h>
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -43,6 +45,8 @@ SOFTWARE.
 
 #include <yave/systems/TimeSystem.h>
 
+#include <yave/components/TransformableComponent.h>
+#include <yave/components/StaticMeshComponent.h>
 
 #include <yave/utils/color.h>
 #include <yave/utils/DirectDraw.h>
@@ -338,11 +342,42 @@ void EngineView::update_picking() {
 
 void EngineView::make_drop_target() {
     if(ImGui::BeginDragDropTarget()) {
+        y_defer(ImGui::EndDragDropTarget());
         if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_path_id)) {
-            const std::string_view name = static_cast<const char*>(payload->Data);
-            current_world().set_selected(current_world().add_prefab(name));
+            const AssetId asset_id = asset_store().id(static_cast<const char*>(payload->Data)).unwrap_or(AssetId());
+            if(asset_id == AssetId::invalid_id()) {
+                return;
+            }
+
+            ecs::EntityId id;
+            const AssetType type = asset_store().asset_type(asset_id).unwrap_or(AssetType::Unknown);
+            switch(type) {
+                case AssetType::Prefab:
+                    id = current_world().add_prefab(asset_id);
+                break;
+
+                case AssetType::Mesh: {
+                    id = current_world().create_entity();
+                    current_world().add_or_replace_component<TransformableComponent>(id);
+                    current_world().add_or_replace_component<StaticMeshComponent>(id,
+                        asset_loader().load_async<StaticMesh>(asset_id),
+                        device_resources()[DeviceResources::EmptyMaterial]
+                    );
+                }
+                break;
+
+                default:
+                break;
+            }
+
+            if(id.is_valid()) {
+                if(TransformableComponent* transformable = current_world().component_mut<TransformableComponent>(id)) {
+                    transformable->set_position(_cursor_world_pos);
+                }
+                current_world().set_selected(id);
+            }
+
         }
-        ImGui::EndDragDropTarget();
     }
 }
 
