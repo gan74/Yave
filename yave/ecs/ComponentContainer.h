@@ -124,7 +124,7 @@ class ComponentContainer final : public ComponentContainerBase {
         }
 
         template<typename... Args>
-        T* add_or_replace(EntityId id, Args&... args) {
+        T* add_or_replace(EntityId id, Args&&... args) {
             if(_components.contains(id)) {
                 _mutated.insert(id);
                 _to_delete.erase(id);
@@ -233,7 +233,7 @@ class ComponentContainer final : public ComponentContainerBase {
 
 
         template<typename... Args>
-        T* add(EntityId id, Args&... args) {
+        T* add(EntityId id, Args&&... args) {
             add_required_components(id);
             T* component =  &_components.insert(id, y_fwd(args)...);
             _matrix->add_component<T>(id);
