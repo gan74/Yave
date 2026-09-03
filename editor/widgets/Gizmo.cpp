@@ -218,28 +218,37 @@ void TranslationGizmo::draw() {
     _is_dragging &= ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
     EditorWorld& world = current_world();
-    const ecs::EntityId selected = world.selected_entity();
-
-    if(!selected.is_valid()) {
+    const auto selected = world.selected_entities();
+    if(selected.is_empty()) {
         return;
     }
 
-    const TransformableComponent* transformable = world.component<TransformableComponent>(selected);
+    math::Vec3 obj_pos;
+    math::Quaternion<> obj_rot;
+    usize transformable_count = 0;
+    for(const ecs::EntityId id : selected) {
+        if(const TransformableComponent* transformable = world.component<TransformableComponent>(id)) {
+            const auto [pos, rot, scale] = transformable->transform().decompose();
+            obj_pos += pos;
+            if(!transformable_count) {
+                obj_rot = rot;
+            }
+            ++transformable_count;
+        }
+    }
 
-    if(!transformable) {
+    if(!transformable_count) {
         return;
     }
 
-
-
+    obj_pos /= float(transformable_count);
+    
 
     const math::Vec2 mouse_pos = to_y(ImGui::GetIO().MousePos);
 
     const math::Vec3 cam_pos = _scene_view->camera().position();
     const math::Vec3 cam_fwd = _scene_view->camera().forward();
     const math::Matrix4<> view_proj = _scene_view->camera().view_proj_matrix();
-
-    const auto [obj_pos, obj_rot, obj_scale] = transformable->transform().decompose();
 
     if(cam_fwd.dot(obj_pos - cam_pos) <= 0.0f || (cam_pos - obj_pos).length() < math::epsilon<float>) {
         return;
@@ -248,8 +257,9 @@ void TranslationGizmo::draw() {
     const float perspective = (view_proj * math::Vec4(obj_pos, 1.0f)).w() * gizmo_size;
     const math::Vec2 gizmo_screen_center = to_window_pos(obj_pos);
 
+    const bool use_object_space = _use_object_space && transformable_count == 1;
     auto transform_to_local = [&](const math::Vec3& v) {
-        return _use_object_space ? obj_rot(v) : v;
+        return use_object_space ? obj_rot(v) : v;
     };
 
     const std::array basis = {
@@ -314,10 +324,26 @@ void TranslationGizmo::draw() {
     auto set_position = [&](const math::Vec3& pos) {
         y_profile_zone("set position");
 
-        const math::Transform<> old_transform = transformable->transform();
-        math::Transform<> new_transform = old_transform;
-        new_transform.position() = pos;
-        move_recursive(world, selected, old_transform, new_transform);
+        const math::Vec3 delta = pos - obj_pos;
+        for(const ecs::EntityId id : selected) {
+            bool has_selected_ancestor = false;
+            for(const ecs::EntityId parent : world.parents(id)) {
+                if(world.is_selected(parent)) {
+                    has_selected_ancestor = true;
+                    break;
+                }
+            }
+            if(has_selected_ancestor) {
+                continue;
+            }
+
+            if(TransformableComponent* transformable = world.component_mut<TransformableComponent>(id)) {
+                const math::Transform<> old_transform = transformable->transform();
+                math::Transform<> new_transform = old_transform;
+                new_transform.position() += delta;
+                move_recursive(world, id, old_transform, new_transform);
+            }
+        }
     };
 
 
@@ -425,28 +451,31 @@ void RotationGizmo::draw() {
     _is_dragging &= ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
     EditorWorld& world = current_world();
-    const ecs::EntityId selected = world.selected_entity();
-
-    if(!selected.is_valid()) {
+    const auto selected = world.selected_entities();
+    if(selected.is_empty()) {
         return;
     }
 
-    const TransformableComponent* transformable = world.component<TransformableComponent>(selected);
+    math::Vec3 obj_pos;
+    usize transformable_count = 0;
+    for(const ecs::EntityId id : selected) {
+        if(const TransformableComponent* transformable = world.component<TransformableComponent>(id)) {
+            obj_pos += transformable->position();
+            ++transformable_count;
+        }
+    }
 
-    if(!transformable) {
+    if(!transformable_count) {
         return;
     }
 
-
-
+    obj_pos /= float(transformable_count);
 
     const math::Vec2 mouse_pos = to_y(ImGui::GetIO().MousePos);
 
     const math::Vec3 cam_pos = _scene_view->camera().position();
     const math::Vec3 cam_fwd = _scene_view->camera().forward();
     const math::Matrix4<> view_proj = _scene_view->camera().view_proj_matrix();
-
-    const auto [obj_pos, obj_rot, obj_scale] = transformable->transform().decompose();
 
     if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f || (cam_pos - obj_pos).length() < math::epsilon<float>) {
         return;
@@ -534,13 +563,30 @@ void RotationGizmo::draw() {
 
 
 
-    auto set_rotation = [transformable, selected, &world](const math::Quaternion<>& quat) {
+    auto set_rotation = [&](const math::Quaternion<>& quat) {
         y_profile_zone("set set_rotation");
 
-        const math::Transform<> old_transform = transformable->transform();
-        const auto [obj_pos, obj_rot, obj_scale] = old_transform.decompose();
-        const math::Transform<> new_transform(obj_pos, quat * obj_rot, obj_scale);
-        move_recursive(world, selected, old_transform, new_transform);
+        const math::Transform<> pivot(obj_pos);
+        const math::Transform<> rotation(math::Vec3{}, quat);
+        const math::Transform<> world_delta = pivot * rotation * pivot.inverse();
+
+        for(const ecs::EntityId id : selected) {
+            bool has_selected_ancestor = false;
+            for(const ecs::EntityId parent : world.parents(id)) {
+                if(world.is_selected(parent)) {
+                    has_selected_ancestor = true;
+                    break;
+                }
+            }
+            if(has_selected_ancestor) {
+                continue;
+            }
+
+            if(TransformableComponent* transformable = world.component_mut<TransformableComponent>(id)) {
+                const math::Transform<> old_transform = transformable->transform();
+                move_recursive(world, id, old_transform, world_delta * old_transform);
+            }
+        }
     };
 
 
