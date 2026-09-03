@@ -650,6 +650,7 @@ static bool thumbnail_button(const UiIcon& icon, UiTexture tex_icon, const char*
     const float img_bottom = padding.y * 2.0f + padded_img_size.y;
     const ImVec2 cell_size(thumb_size, img_bottom + max_text_height + padding.y);
 
+    ImGui::PushID(str_id);
     ImGui::BeginGroup();
 
     const ImVec2 cursor = ImGui::GetCursorPos();
@@ -700,6 +701,8 @@ static bool thumbnail_button(const UiIcon& icon, UiTexture tex_icon, const char*
     }
 
     ImGui::EndGroup();
+    ImGui::PopID();
+    
     return activated;
 }
 

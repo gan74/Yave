@@ -196,6 +196,7 @@ static void setup_style() {
     colors[ImGuiCol_DockingEmptyBg]         = none;
     colors[ImGuiCol_ModalWindowDimBg]       = none;
     colors[ImGuiCol_TableRowBg]             = none;
+    colors[ImGuiCol_DragDropTargetBg]       = none;
 
     colors[ImGuiCol_TableRowBgAlt]          = gr(26, 0.5f);
 
@@ -253,6 +254,8 @@ static void setup_style() {
     colors[ImGuiCol_SliderGrabActive]       = highlight;
     colors[ImGuiCol_ScrollbarGrabActive]    = highlight;
     colors[ImGuiCol_ResizeGripActive]       = highlight;
+    colors[ImGuiCol_DragDropTarget]         = highlight;
+
 
     colors[ImGuiCol_HeaderHovered]              = math::lerp(child, highlight, 0.25f);
     colors[ImGuiCol_SeparatorHovered]           = math::lerp(child, highlight, 0.25f);

@@ -246,7 +246,7 @@ void FileSystemView::on_gui() {
             if(ImGui::BeginDragDropTarget()) {
                 make_drop_target(entry.full_name);
                 ImGui::EndDragDropTarget();
-            } else if(ImGui::BeginDragDropSource()) {
+            } else if(ImGui::GetItemID() && ImGui::BeginDragDropSource()) {
                 ImGui::SetDragDropPayload(imgui::drag_drop_path_id, entry.full_name.data(), entry.full_name.size() + 1);
                 ImGui::EndDragDropSource();
             }
@@ -323,10 +323,12 @@ void FileSystemView::on_gui() {
                             _selected_index = index;
                         }
 
-                        if(ImGui::BeginItemTooltip()) {
+                        if(!ImGui::GetDragDropPayload() && ImGui::BeginItemTooltip()) {
                             _delegates.tooltip(entry.full_name, entry.type);
                             ImGui::EndTooltip();
                         }
+
+                        post_draw_entry(index);
 
                         if(i + 1 < entry_per_row) {
                             ImGui::SameLine();
