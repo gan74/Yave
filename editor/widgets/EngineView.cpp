@@ -457,11 +457,35 @@ void EngineView::draw_toolbar() {
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImGui::GetStyle().ItemSpacing * 2.0f);
     y_defer(ImGui::PopStyleVar());
 
-    if(ImGui::BeginMenu(ICON_FA_ADJUST)) {
-        draw_menu();
+    {
+        static constexpr const char* output_names[] = {"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "AO", "GI"};
+        if(ImGui::BeginMenu(fmt_c_str(ICON_FA_ADJUST " {}", output_names[usize(_view)]))) {
+            for(usize i = 0; i != usize(RenderView::Max); ++i) {
+                if(ImGui::MenuItem(output_names[i], nullptr, usize(_view) == i)) {
+                    _view = RenderView(i);
+                }
+            }
+            ImGui::EndMenu();
+        }
+    }
+
+    ImGui::Separator();
+
+    if(ImGui::BeginMenu(fmt_c_str(ICON_FA_DESKTOP " {}", _resolution < 0 ? "VP" : standard_resolutions()[_resolution].first))) {
+        draw_resolution_menu();
         ImGui::EndMenu();
     }
-    
+
+    ImGui::Separator();
+
+    if(ImGui::BeginMenu(ICON_FA_COG)) {
+        ImGui::MenuItem("Editor entities", nullptr, &_settings.show_editor_entities);
+        ImGui::Separator();
+        draw_settings_menu();
+        ImGui::EndMenu();
+    }
+
+
     ImGui::Separator();
 
     {
@@ -488,14 +512,6 @@ void EngineView::draw_toolbar() {
         }
     }
 
-    if(_resolution >= 0) {
-        ImGui::Separator();
-        if(ImGui::BeginMenu(standard_resolutions()[_resolution].first)) {
-            draw_resolution_menu();
-            ImGui::EndMenu();
-        }
-    }
-
     ImGui::Separator();
 
     if(TimeSystem* time = current_world().find_system<TimeSystem>()) {
@@ -503,44 +519,6 @@ void EngineView::draw_toolbar() {
         if(ImGui::MenuItem(paused ? ICON_FA_PLAY : ICON_FA_PAUSE)) {
             time->set_time_scale(paused ? 1.0f : 0.0f);
         }
-    }
-}
-
-void EngineView::draw_menu() {
-    ImGui::MenuItem("Editor entities", nullptr, &_settings.show_editor_entities);
-
-    ImGui::Separator();
-
-    {
-        const char* output_names[] = {"Lit", "Albedo", "Normals", "Metallic", "Roughness", "Depth", "Motion", "AO", "GI"};
-        for(usize i = 0; i != usize(RenderView::Max); ++i) {
-            bool selected = usize(_view) == i;
-            ImGui::MenuItem(output_names[i], nullptr, &selected);
-            if(selected) {
-                _view = RenderView(i);
-            }
-        }
-    }
-
-    ImGui::Separator();
-
-    if(ImGui::BeginMenu("Rendering Settings")) {
-        draw_settings_menu();
-        ImGui::EndMenu();
-    }
-
-    ImGui::Separator();
-
-    if(ImGui::BeginMenu("Camera")) {
-        if(ImGui::MenuItem("Reset camera")) {
-            reset_camera();
-        }
-        ImGui::EndMenu();
-    }
-
-    if(ImGui::BeginMenu("Resolution")) {
-        draw_resolution_menu();
-        ImGui::EndMenu();
     }
 }
 

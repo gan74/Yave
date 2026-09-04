@@ -90,7 +90,6 @@ class EngineView final : public Widget {
 
         void draw_gizmos();
         void draw_toolbar();
-        void draw_menu();
         void draw_resolution_menu();
         void draw_settings_menu();
 
