@@ -43,6 +43,8 @@ SOFTWARE.
 #include <yave/graphics/commands/CmdTimestampPool.h>
 #include <yave/graphics/device/DeviceResources.h>
 
+#include <yave/graphics/images/ImageData.h>
+
 #include <yave/systems/TimeSystem.h>
 
 #include <yave/components/TransformableComponent.h>
@@ -260,8 +262,12 @@ void EngineView::update() {
     set_is_moving_camera(false);
 
     if(!ImGui::IsWindowHovered() || !is_mouse_inside()) {
-        _picking_valid = false;
-        return;
+        if(ImGui::BeginDragDropTarget()) {
+            ImGui::EndDragDropTarget();
+        } else {
+            _picking_valid = false;
+            return;
+        }
     }
 
     bool focussed = ImGui::IsWindowFocused();
@@ -337,47 +343,63 @@ void EngineView::update_picking() {
     }
 
     // const float dist = (_picking_result.world_pos - request.camera.position()).length();
-    debug_drawer().add_primitive("debug")->add_marker(0xFF0000FF, _cursor_world_pos);
+    debug_drawer().add_primitive("debug")->add_marker(0xFF0000FF, _cursor_world_pos, 0.5f);
 }
 
 void EngineView::make_drop_target() {
-    if(ImGui::BeginDragDropTarget()) {
-        y_defer(ImGui::EndDragDropTarget());
-        if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_path_id)) {
-            const AssetId asset_id = asset_store().id(static_cast<const char*>(payload->Data)).unwrap_or(AssetId());
-            if(asset_id == AssetId::invalid_id()) {
-                return;
-            }
+    if(!ImGui::BeginDragDropTarget()) {
+        return;
+    }
+    y_defer(ImGui::EndDragDropTarget());
 
-            ecs::EntityId id;
-            const AssetType type = asset_store().asset_type(asset_id).unwrap_or(AssetType::Unknown);
-            switch(type) {
-                case AssetType::Prefab:
-                    id = current_world().add_prefab(asset_id);
-                break;
+    const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_path_id);
+    if(!payload) {
+        return;
+    }
 
-                case AssetType::Mesh: {
-                    id = current_world().create_entity();
-                    current_world().add_or_replace_component<TransformableComponent>(id);
-                    current_world().add_or_replace_component<StaticMeshComponent>(id,
-                        asset_loader().load_async<StaticMesh>(asset_id),
-                        device_resources()[DeviceResources::EmptyMaterial]
-                    );
+    const AssetId asset_id = asset_store().id(static_cast<const char*>(payload->Data)).unwrap_or(AssetId());
+    if(asset_id == AssetId::invalid_id()) {
+        return;
+    }
+
+    ecs::EntityId added_id;
+    const AssetType type = asset_store().asset_type(asset_id).unwrap_or(AssetType::Unknown);
+    switch(type) {
+        case AssetType::Prefab:
+            added_id = current_world().add_prefab(asset_id);
+        break;
+
+        case AssetType::Mesh: {
+            added_id = current_world().create_entity();
+            current_world().add_or_replace_component<TransformableComponent>(added_id);
+            current_world().add_or_replace_component<StaticMeshComponent>(added_id,
+                asset_loader().load_async<StaticMesh>(asset_id),
+                device_resources()[DeviceResources::EmptyMaterial]
+            );
+        } break;
+
+        case AssetType::Material: {
+            if(_picking_valid && _picking_result.hit()) {
+                const ecs::EntityId picked_id = dynamic_cast<const EcsScene*>(&current_scene())->id_from_index(_picking_result.entity_index);
+                if(StaticMeshComponent* mesh = current_world().component_mut<StaticMeshComponent>(picked_id)) {
+                    const AssetPtr<Material> material = asset_loader().load_async<Material>(asset_id);
+                    for(AssetPtr<Material>& slot : mesh->materials()) {
+                        slot = material;
+                    }
+                    current_world().set_selected(picked_id);
                 }
-                break;
-
-                default:
-                break;
             }
+        } break;
 
-            if(id.is_valid()) {
-                if(TransformableComponent* transformable = current_world().component_mut<TransformableComponent>(id)) {
-                    transformable->set_position(_cursor_world_pos);
-                }
-                current_world().set_selected(id);
-            }
+        default:
+        break;
+    }
 
+    if(added_id.is_valid()) {
+        if(TransformableComponent* transformable = current_world().component_mut<TransformableComponent>(added_id)) {
+            transformable->set_position(_cursor_world_pos);
         }
+        current_world().set_selected(added_id);
     }
 }
 
