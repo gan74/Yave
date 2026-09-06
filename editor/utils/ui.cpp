@@ -32,6 +32,7 @@ SOFTWARE.
 #include <yave/assets/AssetStore.h>
 #include <yave/utils/FileSystemModel.h>
 
+#include <y/utils/log.h>
 #include <y/utils/format.h>
 
 #include <external/imgui/imgui.h>
@@ -656,17 +657,16 @@ static bool thumbnail_button(const UiIcon& icon, UiTexture tex_icon, const char*
     const ImVec2 cursor = ImGui::GetCursorPos();
     const ImVec2 screen_pos = ImGui::GetCursorScreenPos();
 
-    const bool activated = ImGui::InvisibleButton(str_id, cell_size);
-    const bool hovered = ImGui::IsItemHovered();
+    const bool activated = ImGui::Selectable("###thumbnailbutton", selected, ImGuiSelectableFlags_AllowDoubleClick, cell_size);
 
-    if(selected || hovered) {
+    /*if(selected || ImGui::IsItemHovered()) {
         const ImGuiCol col = (selected && hovered) ? ImGuiCol_HeaderActive : (selected ? ImGuiCol_Header : ImGuiCol_HeaderHovered);
         ImGui::GetWindowDrawList()->AddRectFilled(screen_pos, screen_pos + cell_size, ImGui::GetColorU32(col));
-    }
+    }*/
 
     {
-        const ImU32 bg_color = ImGui::GetColorU32(ImGuiCol_Button, 0.35f);
-        
+        const ImU32 bg_color = ImGui::GetColorU32(ImGuiCol_Button, 0.5f);
+
         const bool bg_image_only = false;
         if(bg_image_only) {
             const ImVec2 img_screen_pos = screen_pos + padding;
@@ -702,7 +702,7 @@ static bool thumbnail_button(const UiIcon& icon, UiTexture tex_icon, const char*
 
     ImGui::EndGroup();
     ImGui::PopID();
-    
+
     return activated;
 }
 
