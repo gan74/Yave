@@ -32,15 +32,6 @@ SOFTWARE.
 
 namespace yave {
 
-static VkHandle<VkSemaphore> create_cmd_buffer_semaphore() {
-    VkHandle<VkSemaphore> semaphore;
-
-    VkSemaphoreCreateInfo create_info = vk_struct();
-    vk_check(vkCreateSemaphore(vk_device(), &create_info, vk_allocation_callbacks(), semaphore.get_ptr_for_init()));
-
-    return semaphore;
-}
-
 #ifdef YAVE_GPU_PROFILING
 static auto create_profiling_ctx(VkQueue queue, u32 family_index) {
     y_profile();
@@ -72,18 +63,14 @@ static auto create_profiling_ctx(VkQueue queue, u32 family_index) {
 #endif
 
 
-
 concurrent::Mutexed<core::Vector<CmdQueue*>> CmdQueue::_all_queues = {};
+
+
 
 CmdQueue::CmdQueue(u32 family_index, VkQueue queue) : _queue(queue), _family_index(family_index){
     _all_queues.locked([&](auto&& all_queues) {
         y_debug_assert(std::find(all_queues.begin(), all_queues.end(), this) == all_queues.end());
         all_queues << this;
-    });
-
-    _async_submit_data.locked([&](auto&& submit_data) {
-        submit_data.current_fence = _timeline.current_timeline();
-        submit_data.next_fence = _timeline.advance_timeline();
     });
 
 #ifdef Y_DEBUG
@@ -100,11 +87,10 @@ CmdQueue::CmdQueue(u32 family_index, VkQueue queue) : _queue(queue), _family_ind
 CmdQueue::~CmdQueue() {
     wait();
 
-    // "Fake" submit to set consume _async_submit_data.next_fence
+    // "Fake" submit to set consume the timeline
     _queue.locked([&](auto&& queue) {
-        const TimelineFence next_fence = _async_submit_data.locked([](auto&& submit_data) { return submit_data.next_fence; });
-        const VkSemaphore signal_sem = _timeline.vk_semaphore();
-        const u64 signal_value = next_fence.value();
+        const VkSemaphore semaphore = _timeline.vk_semaphore();
+        const u64 signal_value = _timeline.advance_timeline().value();
 
         VkTimelineSemaphoreSubmitInfo timeline_info = vk_struct();
         {
@@ -116,7 +102,7 @@ CmdQueue::~CmdQueue() {
         {
             submit_info.pNext = &timeline_info;
             submit_info.signalSemaphoreCount = 1;
-            submit_info.pSignalSemaphores = &signal_sem;
+            submit_info.pSignalSemaphores = &semaphore;
         }
 
         vk_check(vkQueueSubmit(queue, 1, &submit_info, {}));
@@ -165,19 +151,9 @@ void CmdQueue::clear_all_cmd_pools() {
     });
 }
 
-void CmdQueue::submit_async_start(CmdBufferData* data) {
-    if(!data->_semaphore) {
-        data->_semaphore = create_cmd_buffer_semaphore();
-    }
-
-    Y_TODO(not async start)
-    submit_internal(data, {}, {}, {}, false);
-}
-
 TimelineFence CmdQueue::submit(CmdBufferData* data) {
-    return submit_internal(data);
+    return submit_internal(data, {}, {}, {});
 }
-
 
 VkResult CmdQueue::present(CmdBufferRecorder&& recorder, const FrameToken& token, const Swapchain::FrameSyncObjects& swaphain_sync) {
     y_profile();
@@ -202,129 +178,6 @@ VkResult CmdQueue::present(CmdBufferRecorder&& recorder, const FrameToken& token
         return vkQueuePresentKHR(queue, &present_info);
     });
 }
-
-TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, VkSemaphore signal, VkFence fence, bool async_start) {
-    y_profile();
-    y_always_assert(!data->is_secondary(), "Secondaries can not be submitted directly");
-
-    const VkCommandBuffer cmd_buffer = data->vk_cmd_buffer();
-
-    vk_check(vkEndCommandBuffer(cmd_buffer));
-
-    TimelineFence next_fence;
-    core::SmallVector<CmdBufferData*> pending;
-    if(async_start) {
-        y_debug_assert(data->_semaphore);
-        y_always_assert(!wait && !signal && !fence, "Invalid submit");
-
-        _queue.locked([&](auto&& queue) {
-            _async_submit_data.locked([&](auto&& submit_data) {
-                const VkSemaphore semaphore = data->_semaphore;
-                submit_data.semaphores << semaphore;
-
-                VkSubmitInfo submit_info = vk_struct();
-                {
-                    submit_info.commandBufferCount = 1;
-                    submit_info.pCommandBuffers = &cmd_buffer;
-                    submit_info.signalSemaphoreCount = 1;
-                    submit_info.pSignalSemaphores = &semaphore;
-                }
-
-                next_fence = submit_data.next_fence;
-
-                y_profile_zone("vkQueueSubmit async");
-                vk_check(vkQueueSubmit(queue, 1, &submit_info, fence));
-            });
-        });
-    } else {
-        _queue.locked([&](auto&& queue) {
-            core::Vector<VkSemaphore> wait_semaphores;
-            TimelineFence current_fence;
-
-            _async_submit_data.locked([&](auto&& submit_data) {
-                current_fence = submit_data.current_fence;
-                next_fence = submit_data.next_fence;
-                submit_data.current_fence = _timeline.current_timeline();
-                submit_data.next_fence = _timeline.advance_timeline();
-                wait_semaphores.swap(submit_data.semaphores);
-            });
-
-            core::SmallVector<u64> wait_values;
-            wait_values.set_min_size(wait_semaphores.size(), u64(0));
-
-            const VkSemaphore timeline_semaphore = _timeline.vk_semaphore();
-
-            {
-                if(wait) {
-                    wait_semaphores.push_back(wait);
-                    wait_values.push_back(0);
-                }
-
-                wait_semaphores.push_back(timeline_semaphore);
-                wait_values.push_back(current_fence.value());
-            }
-
-            y_debug_assert(current_fence.value() + 1 == next_fence.value());
-            y_debug_assert(wait_semaphores.size() == wait_values.size());
-
-
-            const std::array<u64, 2> signal_values = {next_fence.value(), 0};
-            const std::array<VkSemaphore, 2> signal_semaphores = {timeline_semaphore, signal};
-            const u32 signal_count = signal_semaphores[1] ? 2 : 1;
-            const u32 wait_count = u32(wait_semaphores.size());
-
-            const core::ScratchPad<VkPipelineStageFlags> wait_stages(wait_count, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-
-            VkTimelineSemaphoreSubmitInfo timeline_info = vk_struct();
-            {
-                y_debug_assert(wait_semaphores.size() == wait_values.size());
-                timeline_info.waitSemaphoreValueCount = wait_count;
-                timeline_info.pWaitSemaphoreValues = wait_values.data();
-                timeline_info.signalSemaphoreValueCount = signal_count;
-                timeline_info.pSignalSemaphoreValues = signal_values.data();
-            }
-
-            VkSubmitInfo submit_info = vk_struct();
-            {
-                submit_info.commandBufferCount = 1;
-                submit_info.pCommandBuffers = &cmd_buffer;
-                submit_info.pNext = &timeline_info;
-                submit_info.pWaitDstStageMask = wait_stages.data();
-                submit_info.waitSemaphoreCount = wait_count;
-                submit_info.pWaitSemaphores = wait_semaphores.data();
-                submit_info.signalSemaphoreCount = signal_count;
-                submit_info.pSignalSemaphores = signal_semaphores.data();
-            }
-
-            y_profile_zone("vkQueueSubmit");
-            y_profile_msg(fmt_c_str("Waiting for {} semaphores", wait_count));
-            vk_check(vkQueueSubmit(queue, 1, &submit_info, fence));
-        });
-    }
-
-    data->_timeline_fence = next_fence;
-    pending << data;
-
-    {
-        y_profile_zone("push secondaries");
-        for(usize i = 0, size = pending.size(); i != size; ++i) {
-            for(CmdBufferData* secondary : pending[i]->_secondaries) {
-                y_debug_assert(secondary->is_secondary());
-                y_debug_assert(!secondary->_timeline_fence.is_valid());
-
-                secondary->_timeline_fence = next_fence;
-                pending << secondary;
-            }
-            pending[i]->_secondaries.make_empty();
-        }
-    }
-
-    lifetime_manager().register_pending(pending);
-
-
-    return next_fence;
-}
-
 
 CmdBufferPool& CmdQueue::cmd_pool_for_thread() {
     y_profile();
@@ -362,6 +215,91 @@ void CmdQueue::clear_thread(u32 thread_id) {
         }
     });
 }
+
+
+
+
+
+
+
+
+
+TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, VkSemaphore signal, VkFence fence) {
+    y_profile();
+    y_always_assert(!data->is_secondary(), "Secondaries can not be submitted directly");
+    y_always_assert(data->_secondaries.is_empty(), "Secondaries are not supported");
+
+    const VkCommandBuffer cmd_buffer = data->vk_cmd_buffer();
+
+    vk_check(vkEndCommandBuffer(cmd_buffer));
+
+    const TimelineFence next_fence = _queue.locked([&](auto&& queue) {
+        core::Vector<VkSemaphore> wait_semaphores;
+        const TimelineFence current_fence = _timeline.current_timeline();
+        const TimelineFence next_fence = _timeline.advance_timeline();
+
+        core::SmallVector<u64> wait_values;
+        wait_values.set_min_size(wait_semaphores.size(), u64(0));
+
+        const VkSemaphore timeline_semaphore = _timeline.vk_semaphore();
+
+        {
+            if(wait) {
+                wait_semaphores.push_back(wait);
+                wait_values.push_back(0);
+            }
+
+            wait_semaphores.push_back(timeline_semaphore);
+            wait_values.push_back(current_fence.value());
+        }
+
+        y_debug_assert(current_fence.value() + 1 == next_fence.value());
+        y_debug_assert(wait_semaphores.size() == wait_values.size());
+
+
+        const std::array<u64, 2> signal_values = {next_fence.value(), 0};
+        const std::array<VkSemaphore, 2> signal_semaphores = {timeline_semaphore, signal};
+        const u32 signal_count = signal_semaphores[1] ? 2 : 1;
+        const u32 wait_count = u32(wait_semaphores.size());
+
+        const core::ScratchPad<VkPipelineStageFlags> wait_stages(wait_count, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+        VkTimelineSemaphoreSubmitInfo timeline_info = vk_struct();
+        {
+            y_debug_assert(wait_semaphores.size() == wait_values.size());
+            timeline_info.waitSemaphoreValueCount = wait_count;
+            timeline_info.pWaitSemaphoreValues = wait_values.data();
+            timeline_info.signalSemaphoreValueCount = signal_count;
+            timeline_info.pSignalSemaphoreValues = signal_values.data();
+        }
+
+        VkSubmitInfo submit_info = vk_struct();
+        {
+            submit_info.commandBufferCount = 1;
+            submit_info.pCommandBuffers = &cmd_buffer;
+            submit_info.pNext = &timeline_info;
+            submit_info.pWaitDstStageMask = wait_stages.data();
+            submit_info.waitSemaphoreCount = wait_count;
+            submit_info.pWaitSemaphores = wait_semaphores.data();
+            submit_info.signalSemaphoreCount = signal_count;
+            submit_info.pSignalSemaphores = signal_semaphores.data();
+        }
+
+        y_profile_zone("vkQueueSubmit");
+        y_profile_msg(fmt_c_str("Waiting for {} semaphores", wait_count));
+        vk_check(vkQueueSubmit(queue, 1, &submit_info, fence));
+
+        return next_fence;
+    });
+
+
+    data->_timeline_fence = next_fence;
+
+    lifetime_manager().register_pending(data);
+
+    return next_fence;
+}
+
 
 }
 

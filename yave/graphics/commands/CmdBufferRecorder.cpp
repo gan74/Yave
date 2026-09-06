@@ -618,7 +618,7 @@ TimelineFence CmdBufferRecorderBase::submit() {
 }
 
 void CmdBufferRecorderBase::submit_async() {
-    _data->queue()->submit_async_start(std::exchange(_data, nullptr));
+    submit();
 }
 
 

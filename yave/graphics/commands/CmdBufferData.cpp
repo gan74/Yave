@@ -38,7 +38,6 @@ CmdBufferData::CmdBufferData(VkCommandBuffer buffer, CmdBufferPool* pool, VkComm
 
 CmdBufferData::~CmdBufferData() {
     y_debug_assert(!_pool || is_ready());
-    destroy_graphic_resource(std::move(_semaphore));
 }
 
 void CmdBufferData::push_secondary(CmdBufferData* data) {
