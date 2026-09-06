@@ -54,7 +54,8 @@ UiManager& ui();
 AssetStore& asset_store();
 AssetLoader& asset_loader();
 ThumbnailRenderer& thumbnail_renderer();
-concurrent::JobSystem& job_system();
+concurrent::JobSystem& world_job_system();
+concurrent::JobSystem& editor_job_system();
 
 const EditorResources& resources();
 

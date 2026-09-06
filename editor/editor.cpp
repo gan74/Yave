@@ -73,7 +73,8 @@ std::unique_ptr<DirectDraw> debug_drawer;
 std::unique_ptr<UiManager> ui;
 std::unique_ptr<EditorWorld> world;
 
-std::unique_ptr<concurrent::JobSystem> job_system;
+std::unique_ptr<concurrent::JobSystem> world_job_system;
+std::unique_ptr<concurrent::JobSystem> editor_job_system;
 
 ImGuiPlatform* imgui_platform = nullptr;
 
@@ -180,7 +181,8 @@ void post_tick() {
 void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::settings = settings;
     application::imgui_platform = platform;
-    application::job_system = std::make_unique<concurrent::JobSystem>();
+    application::world_job_system = std::make_unique<concurrent::JobSystem>();
+    application::editor_job_system = std::make_unique<concurrent::JobSystem>();
 
     const auto& store_dir = app_settings().editor.asset_store;
 
@@ -210,12 +212,13 @@ void destroy_editor() {
     application::debug_drawer = nullptr;
     application::resources = nullptr;
     application::ui = nullptr;
-    application::job_system = nullptr;
+    application::editor_job_system = nullptr;
+    application::world_job_system = nullptr;
 }
 
 void run_editor() {
     application::imgui_platform->exec([] {
-        application::world->tick(*application::job_system);
+        application::world->tick(*application::world_job_system);
         application::world->process_deferred_changes();
         application::ui->on_gui();
         post_tick();
@@ -242,8 +245,12 @@ ThumbnailRenderer& thumbnail_renderer() {
     return *application::thumbnail_renderer;
 }
 
-concurrent::JobSystem& job_system() {
-    return *application::job_system;
+concurrent::JobSystem& world_job_system() {
+    return *application::world_job_system;
+}
+
+concurrent::JobSystem& editor_job_system() {
+    return *application::editor_job_system;
 }
 
 const EditorResources& resources() {
