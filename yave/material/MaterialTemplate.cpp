@@ -37,31 +37,33 @@ MaterialTemplate::MaterialTemplate(MaterialTemplateData&& data) : _data(std::mov
 }
 
 const GraphicPipeline& MaterialTemplate::compile(const RenderPass& render_pass) const {
-    Y_TODO(make material compilation thread safe?)
-    if(!render_pass.vk_render_pass()) {
-        y_fatal("Unable to compile material: null renderpass");
-    }
+    y_debug_assert(render_pass.vk_render_pass());
 
     const auto& key = render_pass.layout();
-    const auto it = _compiled.find(key);
-    if(it == _compiled.end()) {
-        if(_compiled.size() == max_compiled_pipelines) {
-            log_msg("Discarding graphic pipeline", Log::Warning);
-            std::move(_compiled.begin() + 1, _compiled.end(), _compiled.begin());
-            _compiled.pop();
+
+    return _compiled.locked([&](auto&& compiled) -> const GraphicPipeline& {
+        const auto it = compiled.find(key);
+        if(it != compiled.end()) {
+            return it->second;
         }
 
-        _compiled.insert(key, MaterialCompiler::compile(this, render_pass));
+        if(compiled.size() == max_compiled_pipelines) {
+            log_msg("Discarding graphic pipeline", Log::Warning);
+            std::move(compiled.begin() + 1, compiled.end(), compiled.begin());
+            compiled.pop();
+        }
+
+        compiled.insert(key, MaterialCompiler::compile(this, render_pass));
 
 #ifdef Y_DEBUG
         if(const auto* debug = debug_utils(); debug && !_name.is_empty()) {
-            debug->set_resource_name(_compiled.last().second.vk_pipeline(), _name.data());
+            debug->set_resource_name(compiled.last().second.vk_pipeline(), _name.data());
         }
 #endif
 
-        return _compiled.last().second;
-    }
-    return it->second;
+        return compiled.last().second;
+    });
+
 }
 
 

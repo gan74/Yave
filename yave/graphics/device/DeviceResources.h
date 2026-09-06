@@ -185,7 +185,7 @@ class DeviceResources final : NonMovable {
 
     private:
         std::unique_ptr<ComputeProgram[]> _computes;
-        std::unique_ptr<MaterialTemplate[]> _material_templates;
+        std::unique_ptr<std::unique_ptr<MaterialTemplate>[]> _material_templates;
         std::unique_ptr<RaytracingProgram[]> _raytracing_programs;
 
         std::unique_ptr<AssetPtr<Texture>[]> _textures;

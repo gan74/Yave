@@ -193,7 +193,7 @@ DeviceResources::DeviceResources() {
     y_profile();
 
     _computes = std::make_unique<ComputeProgram[]>(compute_datas.size());
-    _material_templates = std::make_unique<MaterialTemplate[]>(material_datas.size());
+    _material_templates = std::make_unique<std::unique_ptr<MaterialTemplate>[]>(material_datas.size());
     _textures = std::make_unique<AssetPtr<Texture>[]>(texture_colors.size());
 
     if(raytracing_enabled()) {
@@ -260,8 +260,8 @@ DeviceResources::DeviceResources() {
                 .set_depth_write(data.depth_write)
                 .set_primitive_type(data.primitive_type);
             ;
-            _material_templates[i] = MaterialTemplate(std::move(template_data));
-            _material_templates[i].set_name(fmt_c_str("{} | {}", data.vert, data.frag));
+            _material_templates[i] = std::make_unique<MaterialTemplate>(std::move(template_data));
+            _material_templates[i]->set_name(fmt_c_str("{} | {}", data.vert, data.frag));
         }
     }
 
@@ -346,7 +346,7 @@ const ComputeProgram& DeviceResources::operator[](ComputePrograms i) const {
 
 const MaterialTemplate* DeviceResources::operator[](MaterialTemplates i) const {
     y_debug_assert(usize(i) < usize(MaxMaterialTemplates));
-    return &_material_templates[usize(i)];
+    return _material_templates[usize(i)].get();
 }
 
 const RaytracingProgram& DeviceResources::operator[](RaytracingPrograms i) const {

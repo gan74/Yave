@@ -25,6 +25,8 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include <yave/graphics/framebuffer/RenderPass.h>
+#include <y/concurrent/SpinLock.h>
+#include <y/concurrent/Mutexed.h>
 #include <y/core/AssocVector.h>
 #include <y/core/String.h>
 
@@ -33,10 +35,10 @@ SOFTWARE.
 
 namespace yave {
 
-class MaterialTemplate final {
+class MaterialTemplate final : NonMovable {
 
     public:
-        static constexpr usize max_compiled_pipelines = 8;
+        static constexpr usize max_compiled_pipelines = 16;
 
         MaterialTemplate() = default;
         MaterialTemplate(MaterialTemplateData&& data);
@@ -52,7 +54,7 @@ class MaterialTemplate final {
     private:
         //void swap(Material& other);
 
-        mutable core::AssocVector<RenderPass::Layout, GraphicPipeline> _compiled;
+        mutable concurrent::Mutexed<core::AssocVector<RenderPass::Layout, GraphicPipeline>, concurrent::SpinLock> _compiled;
 
         MaterialTemplateData _data;
 

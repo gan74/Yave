@@ -64,7 +64,7 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
 
 EditorResources::EditorResources() :
         _computes(std::make_unique<ComputeProgram[]>(compute_datas.size())),
-        _material_templates(std::make_unique<MaterialTemplate[]>(material_datas.size())) {
+        _material_templates(std::make_unique<std::unique_ptr<MaterialTemplate>[]>(material_datas.size())) {
 
     load_resources();
 }
@@ -109,8 +109,8 @@ void EditorResources::load_resources() {
             template_data.set_geom_data(load_spirv(data.geom));
         }
 
-        _material_templates[i] = MaterialTemplate(std::move(template_data));
-        _material_templates[i].set_name(fmt_c_str("{} | {}", data.vert, data.frag));
+        _material_templates[i] = std::make_unique<MaterialTemplate>(std::move(template_data));
+        _material_templates[i]->set_name(fmt_c_str("{} | {}", data.vert, data.frag));
     }
 }
 
@@ -121,7 +121,7 @@ const ComputeProgram& EditorResources::operator[](ComputePrograms i) const {
 
 const MaterialTemplate* EditorResources::operator[](MaterialTemplates i) const {
     y_debug_assert(usize(i) < usize(MaxMaterialTemplates));
-    return &_material_templates[usize(i)];
+    return _material_templates[usize(i)].get();
 }
 
 void EditorResources::reload() {

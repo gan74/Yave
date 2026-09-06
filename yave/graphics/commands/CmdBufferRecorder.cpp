@@ -124,6 +124,8 @@ void RenderPassRecorder::bind_material_template(const MaterialTemplate* material
     Y_VK_CMD
 
     const GraphicPipeline& pipeline = material_template->compile(*_cmd_buffer._render_pass);
+
+    y_debug_assert(pipeline.vk_pipeline());
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vk_pipeline());
 
     for(usize i = 0; i != descriptor_sets.size(); ++i) {
@@ -511,6 +513,7 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
 
     check_no_renderpass();
 
+    y_debug_assert(program.vk_pipeline());
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, program.vk_pipeline());
 
     for(usize i = 0; i != descriptor_sets.size(); ++i) {
@@ -548,6 +551,7 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
 
     check_no_renderpass();
 
+    y_debug_assert(program.vk_pipeline());
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, program.vk_pipeline());
 
     if(!descriptors.is_empty()) {
@@ -592,6 +596,7 @@ void CmdBufferRecorderBase::raytrace(const RaytracingProgram& program, const mat
 
     check_no_renderpass();
 
+    y_debug_assert(program.vk_pipeline());
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, program.vk_pipeline());
 
     for(usize i = 0; i != descriptor_sets.size(); ++i) {
