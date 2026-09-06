@@ -38,7 +38,7 @@ FileSystemView::FileSystemView(const FileSystemModel* fs, std::string_view name)
     set_icon_delegate([](const core::String&, EntryType type) {
         switch(type) {
             case EntryType::Directory:
-                return UiIcon{ICON_FA_FOLDER, imgui::folder_icon_color};
+                return UiIcon{ICON_FA_FOLDER_OPEN, imgui::folder_icon_color};
 
             case EntryType::File:
                 return UiIcon{ICON_FA_FILE_ALT, 0xFFFFFFFF};

@@ -71,7 +71,7 @@ math::Vec2 from_client_pos(const math::Vec2& pos);
 
 usize text_line_count(std::string_view text);
 
-std::pair<math::Vec2, math::Vec2> compute_glyph_uv_size(const char* c);
+std::pair<math::Vec2, math::Vec2> compute_glyph_uv_size(const char* c, float size = 0.0f);
 
 void text_icon(const UiIcon& icon);
 

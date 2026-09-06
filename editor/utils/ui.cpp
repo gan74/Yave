@@ -158,17 +158,16 @@ usize text_line_count(std::string_view text) {
 }
 
 
-std::pair<math::Vec2, math::Vec2> compute_glyph_uv_size(const char* c) {
-    math::Vec2 uv;
-    math::Vec2 size(1.0f);
-
+std::pair<math::Vec2, math::Vec2> compute_glyph_uv_size(const char* c, float size) {
     unsigned u = 0;
     ImTextCharFromUtf8(&u, c, c + std::strlen(c));
-    if(const ImFontGlyph* glyph = ImGui::GetFontBaked()->FindGlyph(ImWchar(u))) {
-        uv = math::Vec2{glyph->U0, glyph->V0};
-        size = math::Vec2{glyph->U1, glyph->V1} - uv;
+
+    const float font_size = size > 0.0f ? size : ImGui::GetFontSize();
+    if(const ImFontGlyph* glyph = ImGui::GetFont()->GetFontBaked(font_size)->FindGlyph(ImWchar(u))) {
+        const math::Vec2 uv{glyph->U0, glyph->V0};
+        return {uv, math::Vec2{glyph->U1, glyph->V1} - uv};
     }
-    return {uv, size};
+    return {{}, math::Vec2(1.0f)};
 }
 
 void text_icon(const UiIcon& icon) {
@@ -609,7 +608,7 @@ static bool icon_button(const UiIcon& icon, UiTexture tex_icon, const char* str_
     if(tex_icon) {
         ImGui::Image(tex_icon, padded_size);
     } else {
-        const auto [uv, uv_size] = imgui::compute_glyph_uv_size(icon.icon.data());
+        const auto [uv, uv_size] = imgui::compute_glyph_uv_size(icon.icon.data(), std::max(padded_size.x, padded_size.y));
         const ImVec4 color = ImGui::ColorConvertU32ToFloat4(icon.color);
         ImGui::ImageWithBg({}, padded_size, to_im(uv), to_im(uv + uv_size), {}, color);
     }
@@ -682,7 +681,7 @@ static bool thumbnail_button(const UiIcon& icon, UiTexture tex_icon, const char*
     if(tex_icon) {
         ImGui::Image(tex_icon, padded_img_size);
     } else {
-        const auto [uv, uv_size] = imgui::compute_glyph_uv_size(icon.icon.data());
+        const auto [uv, uv_size] = imgui::compute_glyph_uv_size(icon.icon.data(), std::max(padded_img_size.x, padded_img_size.y));
         const ImVec4 color = ImGui::ColorConvertU32ToFloat4(icon.color);
         ImGui::ImageWithBg({}, padded_img_size, to_im(uv), to_im(uv + uv_size), {}, color);
     }
