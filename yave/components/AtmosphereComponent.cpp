@@ -35,9 +35,18 @@ ecs::EntityId AtmosphereComponent::sun() const {
     return _sun;
 }
 
+bool& AtmosphereComponent::display_sky() {
+    return _display_sky;
+}
+
+bool AtmosphereComponent::display_sky() const {
+    return _display_sky;
+}
+
 void AtmosphereComponent::inspect(ecs::ComponentInspector* inspector) {
     inspector->inspect("Sea level", _sea_level, ecs::ComponentInspector::FloatRole::Distance);
     inspector->inspect("Sun", _sun, ecs::type_index<DirectionalLightComponent>());
+    inspector->inspect("Display sky", _display_sky);
 }
 
 }

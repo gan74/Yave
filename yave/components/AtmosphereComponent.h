@@ -33,12 +33,16 @@ class AtmosphereComponent final {
 
         ecs::EntityId sun() const;
 
+        bool& display_sky();
+        bool display_sky() const;
+
         void inspect(ecs::ComponentInspector* inspector);
 
-        y_reflect(AtmosphereComponent, _sea_level, _sun)
+        y_reflect(AtmosphereComponent, _sea_level, _sun, _display_sky)
 
     private:
         float _sea_level = 0.0f;
+        bool _display_sky = true;
 
         ecs::EntityId _sun;
 };

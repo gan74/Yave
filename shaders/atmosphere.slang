@@ -25,6 +25,11 @@ cbuffer Params {
     float sun_intensity;
     float3 sun_color;
     float sea_level;
+
+    uint display_sky;
+    uint padding_0;
+    uint padding_1;
+    uint padding_2;
 };
 
 
@@ -56,6 +61,10 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
 
     float3 transmittance;
     if(is_depth_far(depth)) {
+        if(display_sky == 0) {
+            discard;
+        }
+
         const float3 view_dir = view_direction(in_uv);
         float3 radiance = sky_radiance(
             atmos_params,
@@ -84,14 +93,15 @@ float4 frag_main(float2 in_uv) : SV_Target0 {
         }
     }
 
-    const float3 in_scatter = sky_radiance_to_point(
+    const float3 scatter = sky_radiance_to_point(
         atmos_params,
         transmittance_texture,
         scattering_texture,
         camera_planet,
         point_planet,
         sun_dir,
-        transmittance);
+        transmittance
+    );
 
-    return float4(color * transmittance + in_scatter * sun_color * sun_intensity, 1.0);
+    return float4(color * transmittance + scatter * sun_color * sun_intensity, 1.0);
 }

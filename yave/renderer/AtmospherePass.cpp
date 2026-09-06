@@ -37,26 +37,34 @@ namespace yave {
 AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit) {
     const Scene* scene = gbuffer.scene_pass.scene_view.scene();
 
-    const AtmosphereObject* atmo_object = scene->atmosphere();
-    if(!atmo_object) {
+    const AtmosphereObject* obj = scene->atmosphere();
+    if(!obj) {
         AtmospherePass pass;
         pass.lit = lit;
         return pass;
     }
 
-    const AtmosphereComponent& atmosphere = atmo_object->component;
-    const DirectionalLightComponent& sun = atmo_object->sun;
+    const AtmosphereComponent& atmosphere = obj->component;
+    const DirectionalLightComponent& sun = obj->sun;
 
     struct Params {
         math::Vec3 sun_direction;
         float sun_intensity;
         math::Vec3 sun_color;
         float sea_level;
+
+        u32 display_sky;
+        u32 padding_0;
+        u32 padding_1;
+        u32 padding_2;
     } params {
         -sun.direction().normalized(),
         sun.intensity(),
         sun.color(),
         atmosphere.sea_level(),
+
+        atmosphere.display_sky() ? 1u : 0u,
+        0u, 0u, 0u,
     };
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Atmosphere pass");

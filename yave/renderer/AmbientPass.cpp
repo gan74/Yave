@@ -54,13 +54,14 @@ static FrameGraphMutableImageId ambient_pass(FrameGraph& framegraph,
     const Texture& black = *device_resources()[DeviceResources::BlackTexture];
     const Texture& white = *device_resources()[DeviceResources::WhiteTexture];
 
-    const bool has_atmosphere = gbuffer.scene_pass.scene_view.scene()->atmosphere() != nullptr;
+    const AtmosphereObject* atmosphere = gbuffer.scene_pass.scene_view.scene()->atmosphere();
+    const bool has_atmosphere = atmosphere && atmosphere->component.display_sky();
 
     struct Params {
         u32 display_sky;
         float ibl_intensity;
     } params {
-        (!has_atmosphere && sky) ? 1u : 0u,
+        (sky && !has_atmosphere) ? 1u : 0u,
         intensity
     };
 
