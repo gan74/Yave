@@ -38,8 +38,8 @@ const ecs::EntityWorld* EcsScene::world() const {
 }
 
 template<typename S>
-void EcsScene::register_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage) {
-    u32& index = _indices.get_or_insert(id).*index_ptr;
+void EcsScene::register_object(const ecs::EntityId id, IndexType type, S& storage) {
+    u32& index = _indices.get_or_insert(id).indices[type];
 
     if(index == u32(-1)) {
         index = u32(storage.size());
@@ -51,15 +51,14 @@ void EcsScene::register_object(const ecs::EntityId id, u32 ObjectIndices::* inde
 }
 
 template<typename S>
-u32 EcsScene::unregister_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage) {
+u32 EcsScene::unregister_object(const ecs::EntityId id, IndexType type, S& storage) {
     ObjectIndices* object = _indices.try_get(id);
     if(!object) {
         return u32(-1);
     }
 
-    const u32 index = std::exchange(object->*index_ptr, u32(-1));
+    const u32 index = std::exchange(object->indices[type], u32(-1));
     const u32 last_index = u32(storage.size() - 1);
-    object->*index_ptr = u32(-1);
 
     y_debug_assert(id.is_valid());
     y_debug_assert(storage[index].entity_index == id.index());
@@ -67,7 +66,7 @@ u32 EcsScene::unregister_object(const ecs::EntityId id, u32 ObjectIndices::* ind
     if(index != last_index) {
         const ecs::EntityId last_id = id_from_index(storage[last_index].entity_index);
         if(ObjectIndices* last_object = _indices.try_get(last_id)) {
-            last_object->*index_ptr = index;
+            last_object->indices[type] = index;
             std::swap(storage[index], storage[last_index]);
         }
     }
@@ -85,11 +84,11 @@ u32 EcsScene::unregister_object(const ecs::EntityId id, u32 ObjectIndices::* ind
 }
 
 template<typename T, typename S>
-void EcsScene::process_component_visibility(u32 ObjectIndices::* index_ptr, S& storage) {
+void EcsScene::process_component_visibility(IndexType type, S& storage) {
     y_profile();
 
     auto update_visibility = [&](ecs::EntityId id, u32 mask) {
-        const u32 index = _indices.try_get(id)->*index_ptr;
+        const u32 index = _indices.try_get(id)->indices[type];
         if(index != u32(-1)) {
             storage[index].visibility_mask = mask;
         }
@@ -109,7 +108,7 @@ void EcsScene::process_component_visibility(u32 ObjectIndices::* index_ptr, S& s
 }
 
 template<typename T, typename S>
-bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage) {
+bool EcsScene::process_transformable_components(IndexType type, S& storage) {
     y_profile();
 
     auto update_transform = [this](auto& obj, const TransformableComponent& tr, const auto& comp) {
@@ -128,7 +127,7 @@ bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
     {
         y_profile_zone("Add new objects");
         for(const ecs::EntityId id : group_provider->added_ids()) {
-            register_object(id, index_ptr, storage);
+            register_object(id, type, storage);
         }
     }
 
@@ -136,7 +135,7 @@ bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
         y_profile_zone("Update components");
         auto group = _world->create_group<TransformableComponent, ecs::Changed<T>>();
         for(const auto& [id, tr, comp] : group.id_components()) {
-            auto& obj = storage[_indices.try_get(id)->*index_ptr];
+            auto& obj = storage[_indices.try_get(id)->indices[type]];
 
             obj.component = comp;
             // We need to update in case the AABB has changed
@@ -148,7 +147,7 @@ bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
         y_profile_zone("Update transforms");
         auto group = _world->create_group<ecs::Changed<TransformableComponent>, T>();
         for(const auto& [id, tr, comp] : group.id_components()) {
-            auto& obj = storage[_indices.try_get(id)->*index_ptr];
+            auto& obj = storage[_indices.try_get(id)->indices[type]];
             update_transform(obj, tr, comp);
         }
     }
@@ -156,20 +155,20 @@ bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
     {
         y_profile_zone("Delete stale objects");
         for(const ecs::EntityId id : group_provider->removed_ids()) {
-            if(const u32 transform_index = unregister_object(id, index_ptr, storage); transform_index != u32(-1)) {
+            if(const u32 transform_index = unregister_object(id, type, storage); transform_index != u32(-1)) {
                 _transform_manager.free_transform(transform_index);
             }
         }
     }
 
-    process_component_visibility<T>(index_ptr, storage);
+    process_component_visibility<T>(type, storage);
 
     return !group_provider->removed_ids().is_empty();
 }
 
 
 template<typename T, typename S>
-void EcsScene::process_components(u32 ObjectIndices::* index_ptr, S& storage) {
+void EcsScene::process_components(IndexType type, S& storage) {
     y_profile();
 
     auto group = _world->create_group<ecs::Changed<T>>();
@@ -178,14 +177,14 @@ void EcsScene::process_components(u32 ObjectIndices::* index_ptr, S& storage) {
     {
         y_profile_zone("Add new objects");
         for(const ecs::EntityId id : group_base->added_ids()) {
-            register_object(id, index_ptr, storage);
+            register_object(id, type, storage);
         }
     }
 
     {
         y_profile_zone("Update components");
         for(const auto& [id, comp] : group.id_components()) {
-            auto& obj = storage[_indices.try_get(id)->*index_ptr];
+            auto& obj = storage[_indices.try_get(id)->indices[type]];
             obj.component = comp;
         }
     }
@@ -193,11 +192,11 @@ void EcsScene::process_components(u32 ObjectIndices::* index_ptr, S& storage) {
     {
         y_profile_zone("Delete stale objects");
         for(const ecs::EntityId id : group_base->removed_ids()) {
-            unregister_object(id, index_ptr, storage);
+            unregister_object(id, type, storage);
         }
     }
 
-    process_component_visibility<T>(index_ptr, storage);
+    process_component_visibility<T>(type, storage);
 }
 
 void EcsScene::process_atmosphere() {
@@ -226,27 +225,27 @@ void EcsScene::process_atmosphere() {
 }
 
 const StaticMeshObject* EcsScene::mesh(ecs::EntityId id) const {
-    if(const ObjectIndices* indices = _indices.try_get(id)) {
-        if(indices->mesh != u32(-1)) {
-            return &_meshes[indices->mesh];
+    if(const ObjectIndices* object = _indices.try_get(id)) {
+        if(object->indices[IndexType::Mesh] != u32(-1)) {
+            return &_meshes[object->indices[IndexType::Mesh]];
         }
     }
     return nullptr;
 }
 
 const PointLightObject* EcsScene::point_light(ecs::EntityId id) const {
-    if(const ObjectIndices* indices = _indices.try_get(id)) {
-        if(indices->point_light != u32(-1)) {
-            return &_point_lights[indices->point_light];
+    if(const ObjectIndices* object = _indices.try_get(id)) {
+        if(object->indices[IndexType::PointLight] != u32(-1)) {
+            return &_point_lights[object->indices[IndexType::PointLight]];
         }
     }
     return nullptr;
 }
 
 const SpotLightObject* EcsScene::spot_light(ecs::EntityId id) const {
-    if(const ObjectIndices* indices = _indices.try_get(id)) {
-        if(indices->spot_light != u32(-1)) {
-            return &_spot_lights[indices->spot_light];
+    if(const ObjectIndices* object = _indices.try_get(id)) {
+        if(object->indices[IndexType::SpotLight] != u32(-1)) {
+            return &_spot_lights[object->indices[IndexType::SpotLight]];
         }
     }
     return nullptr;
@@ -263,13 +262,13 @@ void EcsScene::update_from_world() {
 
 
     bool need_tlas_rebuild = _tlas.is_null();
-    need_tlas_rebuild |= process_transformable_components<StaticMeshComponent>(&ObjectIndices::mesh, _meshes);
+    need_tlas_rebuild |= process_transformable_components<StaticMeshComponent>(IndexType::Mesh, _meshes);
 
-    process_transformable_components<PointLightComponent>(&ObjectIndices::point_light, _point_lights);
-    process_transformable_components<SpotLightComponent>(&ObjectIndices::spot_light, _spot_lights);
+    process_transformable_components<PointLightComponent>(IndexType::PointLight, _point_lights);
+    process_transformable_components<SpotLightComponent>(IndexType::SpotLight, _spot_lights);
 
-    process_components<DirectionalLightComponent>(&ObjectIndices::directional_light, _directionals);
-    process_components<SkyLightComponent>(&ObjectIndices::sky_light, _sky_lights);
+    process_components<DirectionalLightComponent>(IndexType::DirectionalLight, _directionals);
+    process_components<SkyLightComponent>(IndexType::SkyLight, _sky_lights);
 
     process_atmosphere();
 
@@ -292,18 +291,17 @@ void EcsScene::audit() const {
     y_profile();
 
     for(const auto& [id, object] : _indices) {
-        if(object.mesh != u32(-1)) {
-            y_debug_assert(_meshes[object.mesh].entity_index == id.index());
+        if(object.indices[IndexType::Mesh] != u32(-1)) {
+            y_debug_assert(_meshes[object.indices[IndexType::Mesh]].entity_index == id.index());
         }
     }
 
     for(usize i = 0; i != _meshes.size(); ++i) {
         const ecs::EntityId id = id_from_index(_meshes[i].entity_index);
         y_debug_assert(id.is_valid());
-        y_debug_assert(_indices[id].mesh == u32(i));
+        y_debug_assert(_indices[id].indices[IndexType::Mesh] == u32(i));
     }
 #endif
 }
 
 }
-
