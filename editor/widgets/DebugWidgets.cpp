@@ -122,18 +122,26 @@ class CullingDebug : public Widget {
 
     protected:
         void on_gui() override {
-            const core::StopWatch timer;
-            const SceneVisibilitySubPass visibility = SceneVisibilitySubPass::create(scene_view());
-            const core::Duration durr = timer.elapsed();
+            if(ImGui::CollapsingHeader("Visibility")) {
+                const core::StopWatch timer;
+                const SceneVisibilitySubPass visibility = SceneVisibilitySubPass::create(scene_view());
+                const core::Duration durr = timer.elapsed();
 
-            ImGui::TextUnformatted("Visible for current camera:");
-            ImGui::TextUnformatted(fmt_c_str("{} meshes", visibility.visible->meshes.size()));
-            ImGui::TextUnformatted(fmt_c_str("{} point lights", visibility.visible->point_lights.size()));
-            ImGui::TextUnformatted(fmt_c_str("{} spot lights", visibility.visible->spot_lights.size()));
+                ImGui::TextUnformatted("Visible for current camera:");
+                ImGui::TextUnformatted(fmt_c_str("{} meshes", visibility.visible->meshes.size()));
+                ImGui::TextUnformatted(fmt_c_str("{} point lights", visibility.visible->point_lights.size()));
+                ImGui::TextUnformatted(fmt_c_str("{} spot lights", visibility.visible->spot_lights.size()));
 
-            ImGui::Separator();
+                ImGui::Separator();
 
-            ImGui::TextUnformatted(fmt_c_str("visibility time: {:.2}ms", durr.to_millis()));
+                ImGui::TextUnformatted(fmt_c_str("visibility time: {:.2}ms", durr.to_millis()));
+            }
+
+            if(ImGui::CollapsingHeader("Spatial partition", ImGuiTreeNodeFlags_DefaultOpen)) {
+                const Scene& scene = current_scene();
+                ImGui::TextUnformatted(fmt_c_str("{} meshes in {} cells", scene.meshes_partition().size(), scene.meshes_partition().cell_count()));
+                ImGui::TextUnformatted(fmt_c_str("{} point lights in {} cells", scene.point_lights_partition().size(), scene.point_lights_partition().cell_count()));
+            }
         }
 };
 

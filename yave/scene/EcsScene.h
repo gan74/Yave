@@ -26,24 +26,31 @@ SOFTWARE.
 
 #include <yave/ecs/SparseComponentSet.h>
 
+#include <array>
+#include <algorithm>
+
 namespace yave {
 
 class EcsScene : public Scene {
+    enum IndexType {
+        Mesh = 0,
+        PointLight,
+        SpotLight,
+        DirectionalLight,
+        SkyLight,
+
+        Count
+    };
+
     struct ObjectIndices {
-        u32 mesh = u32(-1);
-        u32 point_light = u32(-1);
-        u32 spot_light = u32(-1);
-        u32 directional_light = u32(-1);
-        u32 sky_light = u32(-1);
+        std::array<u32, IndexType::Count> indices;
+
+        ObjectIndices() {
+            std::fill(indices.begin(), indices.end(), u32(-1));
+        }
 
         bool is_empty() const {
-            return
-                mesh == u32(-1) &&
-                point_light == u32(-1) &&
-                spot_light == u32(-1) &&
-                directional_light == u32(-1) &&
-                sky_light == u32(-1)
-            ;
+            return std::all_of(indices.begin(), indices.end(), [](u32 i) { return i == u32(-1); });
         }
     };
 
@@ -62,16 +69,16 @@ class EcsScene : public Scene {
 
     private:
         template<typename S>
-        u32 unregister_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage);
+        u32 unregister_object(const ecs::EntityId id, IndexType type, S& storage);
 
         template<typename T, typename S>
-        void process_component_visibility(u32 ObjectIndices::* index_ptr, S& storage);
-
-        template<typename T>
-        bool process_transformable_components(u32 ObjectIndices::* index_ptr, SpatialPartition<TransformableSceneObject<T>>& storage);
+        void process_component_visibility(IndexType type, S& storage);
 
         template<typename T, typename S>
-        void process_components(u32 ObjectIndices::* index_ptr, S& storage);
+        bool process_transformable_components(IndexType type, S& storage);
+
+        template<typename T, typename S>
+        void process_components(IndexType type, S& storage);
 
         void process_atmosphere();
 
@@ -85,4 +92,3 @@ class EcsScene : public Scene {
 }
 
 #endif // YAVE_SCENE_ECSSCENE_H
-

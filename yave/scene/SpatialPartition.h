@@ -39,6 +39,7 @@ template<typename T>
 class SpatialPartition : NonMovable {
     static constexpr float min_obj_size = 0.1f;
     static constexpr float cell_margin = 0.25f;
+    static constexpr float cell_size_exponent = 4.0f;
 
     struct ObjectData {
         math::Vec4i cell_id;
@@ -50,8 +51,14 @@ class SpatialPartition : NonMovable {
     };
 
     static AABB compute_cell_aabb(const math::Vec4i& cell_id) {
-        const float cell_spacing = std::pow(2.0f, float(cell_id.w()));
+        const float cell_spacing = std::pow(cell_size_exponent, float(cell_id.w()));
         return AABB::from_center_extent(cell_id.to<3>() * cell_spacing, math::Vec3(cell_spacing * (1.0f + cell_margin)));
+    }
+
+    [[maybe_unused]]
+    static AABB compute_cell_aabb_no_margin(const math::Vec4i& cell_id) {
+        const float cell_spacing = std::pow(cell_size_exponent, float(cell_id.w()));
+        return AABB::from_center_extent(cell_id.to<3>() * cell_spacing, math::Vec3(cell_spacing));
     }
 
     public:
@@ -75,12 +82,12 @@ class SpatialPartition : NonMovable {
             return *insert(AABB{}, y_fwd(args)...);
         }
 
-        void update(const_iterator it, const AABB& aabb) {
+        void update(const_iterator it, const AABB& aabb, bool force = false) {
             const usize index = it - _objects.data();
             y_debug_assert(index < _objects.size());
 
             ObjectData& data = _datas[index];
-            if(compute_cell_aabb(data.cell_id).contains(aabb)) {
+            if(!force && compute_cell_aabb(data.cell_id).contains(aabb)) {
                 data.aabb = aabb;
                 return;
             }
@@ -156,6 +163,10 @@ class SpatialPartition : NonMovable {
             return _objects.size();
         }
 
+        usize cell_count() const {
+            return _cells.size();
+        }
+
         T& operator[](usize i) {
             return _objects[i];
         }
@@ -171,9 +182,19 @@ class SpatialPartition : NonMovable {
         core::Vector<ObjectData> _datas;
 
         void reinsert(const AABB& aabb, usize index) {
-            const float size = std::max(min_obj_size, aabb.origin_radius());
-            const i32 level = i32(std::ceil(std::log2(size / cell_margin)));
-            const float cell_spacing = std::pow(2.0f, float(level));
+            const float size = std::max(min_obj_size, aabb.radius());
+
+            Y_TODO(fixme)
+            float cell_spacing = 0.0f;
+            i32 level = -2;
+            for(;; ++level) {
+                cell_spacing = std::pow(cell_size_exponent, float(level));
+                if(cell_spacing * cell_margin >= size * 2.0f) {
+                    break;
+                }
+            }
+
+
             const math::Vec3 cell_center = aabb.center() / cell_spacing;
             const math::Vec4i cell_id(
                 i32(std::round(cell_center.x())),
@@ -182,6 +203,8 @@ class SpatialPartition : NonMovable {
                 level
             );
 
+            y_debug_assert(size <= compute_cell_aabb_no_margin(cell_id).half_extent().x() * cell_margin);
+            y_debug_assert(size * cell_size_exponent >= compute_cell_aabb_no_margin(cell_id).half_extent().x() * cell_margin);
             y_debug_assert(compute_cell_aabb(cell_id).contains(aabb));
 
             _datas[index].cell_id = cell_id;
