@@ -32,15 +32,26 @@ u32 TransformManager::alloc_transform() {
     const u32 index = _index_allocator.alloc();
 
     _transforms.set_min_size(index + 1);
-    _dirty << index;
 
-    y_debug_assert(!std::exchange(_transforms[index].is_valid, true));
+    auto& data = _transforms[index];
+    {
+        y_debug_assert(!std::exchange(_transforms[index].is_valid, true));
+        data.is_dirty = true;
+        data.to_reset = true;
+    }
+
+    _dirty << index;
 
     return index;
 }
 
 void TransformManager::free_transform(u32 index) {
-    y_debug_assert(std::exchange(_transforms[index].is_valid, false));
+    auto& data = _transforms[index];
+    {
+        y_debug_assert(std::exchange(_transforms[index].is_valid, false));
+        data.is_dirty = false;
+        data.to_reset = false;
+    }
 
     _index_allocator.free(index);
 }
@@ -77,7 +88,7 @@ bool TransformManager::need_update() const {
 void TransformManager::update_buffer(ComputeCapableCmdBufferRecorder& recorder) {
     y_profile();
 
-    const usize update_count = _dirty.size();
+    usize update_count = _dirty.size();
     if(!update_count) {
         return;
     }
@@ -89,7 +100,6 @@ void TransformManager::update_buffer(ComputeCapableCmdBufferRecorder& recorder) 
         new_buffer = TransformBuffer(new_base_size);
     };
 
-
     auto transform_staging = TypedBuffer<math::Transform<>, BufferUsage::StorageBit, MemoryType::Staging>(update_count);
     auto index_staging = TypedBuffer<u32, BufferUsage::StorageBit, MemoryType::Staging>(update_count);
 
@@ -99,15 +109,25 @@ void TransformManager::update_buffer(ComputeCapableCmdBufferRecorder& recorder) 
         auto index_mapping = index_staging.map(MappingAccess::WriteOnly);
 
         for(const u32 index : _dirty) {
-            y_debug_assert(_transforms[index].is_valid);
-
             const auto& data = _transforms[index];
+            if(!data.is_dirty && !data.to_reset) {
+                continue;
+            }
+
+            y_debug_assert(data.is_valid);
+
             transform_mapping[updates] = data.transform;
             index_mapping[updates] = (index | (data.to_reset ? 0x80000000 : 0x00000000)); // Noop on little endian
             ++updates;
         }
 
-        y_debug_assert(updates == update_count);
+        y_debug_assert(updates <= update_count);
+        update_count = updates;
+    }
+
+    if(!update_count) {
+        _dirty.make_empty();
+        return;
     }
 
     {
@@ -135,9 +155,13 @@ void TransformManager::update_buffer(ComputeCapableCmdBufferRecorder& recorder) 
 
     auto next_dirty = core::Vector<u32>::with_capacity(_dirty.size());
     for(const u32 index : _dirty) {
-        y_debug_assert(_transforms[index].is_valid);
-
         auto& data = _transforms[index];
+        if(!data.is_dirty && !data.to_reset) {
+            continue;
+        }
+
+        y_debug_assert(data.is_valid);
+
         if(!data.to_reset) {
             data.to_reset = true;
             data.is_dirty = false;
