@@ -36,14 +36,23 @@ class PointLightComponent final : public LocalLightBase {
     public:
         PointLightComponent() = default;
 
+        bool& cast_shadow();
+        bool cast_shadow() const;
+
+        u32& shadow_lod();
+        u32 shadow_lod() const;
+
         AABB aabb() const;
 
-        y_reflect(PointLightComponent, _color, _intensity, _range, _min_radius, _falloff)
+        void inspect(ecs::ComponentInspector* inspector);
+
+        y_reflect(PointLightComponent, _color, _intensity, _range, _min_radius, _falloff, _cast_shadow, _shadow_lod)
 
     private:
+        bool _cast_shadow = false;
+        u32 _shadow_lod = 2;
 };
 
 }
 
 #endif // YAVE_COMPONENTS_POINTLIGHTCOMPONENT_H
-

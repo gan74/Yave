@@ -63,7 +63,7 @@ static void fill_directional_light_buffer(shader::DirectionalLight* directionals
     }
 }
 
-static void fill_point_light_buffer(shader::PointLight* points, const SceneVisibilitySubPass& visibility) {
+static void fill_point_light_buffer(shader::PointLight* points, const SceneVisibilitySubPass& visibility, const ShadowMapPass& shadow_pass) {
     y_profile();
 
     const Scene* scene = visibility.scene_view.scene();
@@ -76,6 +76,13 @@ static void fill_point_light_buffer(shader::PointLight* points, const SceneVisib
         const float scale = transform.scale().max_component();
         const float scaled_range = light.range() * scale;
 
+        math::Vec4ui shadow_indices(u32(-1));
+        if(light.cast_shadow()) {
+            if(const auto it = shadow_pass.shadow_indices->find(&light); it != shadow_pass.shadow_indices->end()) {
+                shadow_indices = it->second;
+            }
+        }
+
         points[count++] = {
             transform.position(),
             scaled_range,
@@ -83,8 +90,9 @@ static void fill_point_light_buffer(shader::PointLight* points, const SceneVisib
             light.color() * light.intensity(),
             std::max(math::epsilon<float>, light.falloff()),
 
-            {},
             light.min_radius(),
+            shadow_indices[0],
+            0u, 0u,
         };
     }
 }
@@ -186,7 +194,7 @@ LightClusterPass LightClusterPass::create(FrameGraph& framegraph, const GBufferP
             auto spots = self->resources().map_buffer(spot_buffer);
 
             fill_directional_light_buffer(directionals.data(), visibility, shadow_pass);
-            fill_point_light_buffer(points.data(), visibility);
+            fill_point_light_buffer(points.data(), visibility, shadow_pass);
             fill_spot_light_buffer(spots.data(), visibility, shadow_pass);
         }
 

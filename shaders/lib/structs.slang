@@ -126,8 +126,10 @@ struct PointLight {
     float3 color;
     float falloff;
 
-    float3 padding_0;
     float min_radius;
+    uint shadow_map_index;
+    uint padding_0;
+    uint padding_1;
 };
 
 struct SpotLight {

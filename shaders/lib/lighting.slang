@@ -19,6 +19,17 @@ uint shadow_cascade_index(StructuredBuffer<ShadowMapInfo> shadow_infos, uint4 in
     return 0xFFFFFFFF;
 }
 
+uint point_shadow_face(float3 dir) {
+    const float3 a = abs(dir);
+    if(a.x >= a.y && a.x >= a.z) {
+        return dir.x > 0.0 ? 0 : 1;
+    }
+    if(a.y >= a.z) {
+        return dir.y > 0.0 ? 2 : 3;
+    }
+    return dir.z > 0.0 ? 4 : 5;
+}
+
 float3 cascade_debug_color(uint shadow_map_index, uint4 indices) {
     if(shadow_map_index == indices[0]) {
         return float3(0.0, 0.0, 1.0);
@@ -91,7 +102,13 @@ float3 compute_lighting(SurfaceInfo surface,
         const uint index = tile.indices[i];
         const PointLight light = cluster_info.point_lights[index];
         const AreaLightInfo area = karis_area_light(surface, light, world_pos, view_dir);
-        const float att = attenuation(area.orig_light_dist * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
+        float att = attenuation(area.orig_light_dist * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
+
+        if(att > 0.0 && light.shadow_map_index < 0xFFFFFFFF) {
+            const uint face = point_shadow_face(world_pos - light.position);
+            const ShadowMapInfo info = shadow_infos[light.shadow_map_index + face];
+            att *= compute_shadow_pcf(in_shadows, info, world_pos);
+        }
 
         if(att > 0.0) {
             const float3 radiance = light.color * att;

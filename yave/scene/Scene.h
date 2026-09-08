@@ -103,7 +103,7 @@ class Scene : NonMovable {
                 if((obj.visibility_mask & visibility_mask) == 0) {
                     continue;
                 }
-                if(frustum.intersection(obj.global_aabb) == Intersection::Outside) {
+                if(frustum.intersection(obj.global_aabb, cam.far_plane_dist()) == Intersection::Outside) {
                     continue;
                 }
                 visible << &obj;
