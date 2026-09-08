@@ -94,18 +94,14 @@ MeshDrawData MeshAllocator::alloc_mesh(const MeshVertexStreams& streams, core::S
 
         const auto lock = std::unique_lock(_lock);
 
-        if(_free.is_empty()) {
+        const u32 index = _indices.alloc();
+        if(index >= _mesh_datas.size()) {
             const usize new_size = std::max(1024_uu, _mesh_datas.size() * 2);
             TypedDataBuffer<shader::StaticMeshData> new_mesh_datas(new_size);
             recorder.unbarriered_copy(_mesh_datas, SubBuffer<BufferUsage::TransferDstBit>(new_mesh_datas, _mesh_datas.byte_size(), 0));
-            for(usize i = new_mesh_datas.size(); i != _mesh_datas.size(); --i) {
-                _free << u32(i - 1);
-            }
             _mesh_datas = std::move(new_mesh_datas);
         }
 
-
-        const u32 index = _free.pop();
         mesh_data._mesh_data_index = index;
 
         _mesh_buffers.set_min_size(index + 1);
@@ -155,7 +151,7 @@ void MeshAllocator::recycle(MeshDrawData* data) {
         u64(data->_cmd.index_count) / 3,
     };
 
-    _free << data->_mesh_data_index;
+    _indices.free(data->_mesh_data_index);
     _mesh_buffers[data->_mesh_data_index] = {};
 
     {

@@ -26,6 +26,7 @@ SOFTWARE.
 #include <yave/meshes/MeshDrawData.h>
 
 #include <yave/graphics/shader_structs.h>
+#include <yave/utils/IndexAllocator.h>
 
 #include <y/core/Span.h>
 #include <y/core/Vector.h>
@@ -79,7 +80,7 @@ class MeshAllocator : NonMovable {
         bool _should_compact = false;
         mutable ProfiledLock<> _lock;
 
-        core::Vector<u32> _free;
+        IndexAllocator<u32> _indices;
         core::Vector<Buffers> _mesh_buffers;
         TypedDataBuffer<shader::StaticMeshData> _mesh_datas;
 };

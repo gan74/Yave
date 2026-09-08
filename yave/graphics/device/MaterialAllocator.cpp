@@ -29,8 +29,6 @@ SOFTWARE.
 
 #include <yave/graphics/device/DebugUtils.h>
 
-#include <numeric>
-
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
@@ -57,11 +55,6 @@ static std::array<TextureView, MaterialData::max_texture_count> material_texture
 
 
 MaterialAllocator::MaterialAllocator() : _materials(max_materials) {
-    _free.locked([&](auto&& free) {
-        free.set_min_size(_materials.size());
-        std::iota(free.begin(), free.end(), 0);
-    });
-
 #ifdef Y_DEBUG
     if(const auto* debug = debug_utils()) {
         debug->set_resource_name(_materials.vk_buffer(), "Material allocator material buffer");
@@ -70,8 +63,8 @@ MaterialAllocator::MaterialAllocator() : _materials(max_materials) {
 }
 
 MaterialAllocator::~MaterialAllocator() {
-    _free.locked([&](auto&& free) {
-        y_always_assert(free.size() == _materials.size(), "Not all materials have been released");
+    _indices.locked([&](auto&& indices) {
+        y_always_assert(indices.size() == 0, "Not all materials have been released");
     });
 }
 
@@ -94,9 +87,9 @@ MaterialDrawData MaterialAllocator::allocate_material(const MaterialData& materi
         }
     }
 
-    const u32 index = _free.locked([&](auto&& free) {
-        y_always_assert(!free.is_empty(), "Max number of materials reached");
-        return free.pop();
+    const u32 index = _indices.locked([&](auto&& indices) {
+        y_always_assert(indices.size() < max_materials, "Max number of materials reached");
+        return indices.alloc();
     });
 
     {
@@ -116,8 +109,8 @@ void MaterialAllocator::recycle(MaterialDrawData* data) {
     y_debug_assert(!data->is_null());
     y_debug_assert(data->_parent == this);
 
-    _free.locked([&](auto&& free) {
-        free << data->_index;
+    _indices.locked([&](auto&& indices) {
+        indices.free(data->_index);
     });
 
     for(const auto& tex : data->_textures) {
