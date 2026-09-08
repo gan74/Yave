@@ -165,6 +165,18 @@ static void render_selection(DirectDraw& draw, const SceneView& scene_view) {
                 draw.add_primitive("selected bbox")->add_wire_box(editor_pass_draw_color, obj->global_aabb);
             }
         }
+
+        if(app_settings().debug.display_selected_cell) {
+            if(const StaticMeshObject* obj = scene->mesh(selected)) {
+                draw.add_primitive("selected cell")->add_wire_box(editor_pass_draw_color, scene->meshes_partition().cell_aabb(obj));
+            }
+            if(const PointLightObject* obj = scene->point_light(selected)) {
+                draw.add_primitive("selected cell")->add_wire_box(editor_pass_draw_color, scene->point_lights_partition().cell_aabb(obj));
+            }
+            if(const SpotLightObject* obj = scene->spot_light(selected)) {
+                draw.add_primitive("selected cell")->add_wire_box(editor_pass_draw_color, scene->spot_lights_partition().cell_aabb(obj));
+            }
+        }
     }
 }
 

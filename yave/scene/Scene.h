@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_SCENE_SCENE_H
 
 #include "TransformManager.h"
+#include "SpatialPartition.h"
 
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/PointLightComponent.h>
@@ -83,14 +84,19 @@ class Scene : NonMovable {
 
         const TLAS& tlas() const;
 
+        const SpatialPartition<StaticMeshObject>&   meshes_partition() const        { return _meshes; }
+        const SpatialPartition<PointLightObject>&   point_lights_partition() const  { return _point_lights; }
+        const SpatialPartition<SpotLightObject>&    spot_lights_partition() const   { return _spot_lights; }
 
-        core::Span<StaticMeshObject>        meshes() const          { return _meshes; }
-        core::Span<PointLightObject>        point_lights() const    { return _point_lights; }
-        core::Span<SpotLightObject>         spot_lights() const     { return _spot_lights; }
-        core::Span<DirectionalLightObject>  directionals() const    { return _directionals; }
-        core::Span<SkyLightObject>          sky_lights() const      { return _sky_lights; }
+        core::Span<StaticMeshObject>                meshes() const                  { return _meshes.values(); }
+        core::Span<PointLightObject>                point_lights() const            { return _point_lights.values(); }
+        core::Span<SpotLightObject>                 spot_lights() const             { return _spot_lights.values(); }
+        core::Span<DirectionalLightObject>          directionals() const            { return _directionals; }
+        core::Span<SkyLightObject>                  sky_lights() const              { return _sky_lights; }
 
-        const AtmosphereObject*             atmosphere() const      { return _atmosphere.get(); }
+        const AtmosphereObject*                     atmosphere() const              { return _atmosphere.get(); }
+
+
 
 
         template<typename T>
@@ -140,9 +146,9 @@ class Scene : NonMovable {
         void update_tlas();
 
     protected:
-        core::Vector<StaticMeshObject> _meshes;
-        core::Vector<PointLightObject> _point_lights;
-        core::Vector<SpotLightObject> _spot_lights;
+        SpatialPartition<StaticMeshObject> _meshes;
+        SpatialPartition<PointLightObject> _point_lights;
+        SpatialPartition<SpotLightObject> _spot_lights;
 
         core::Vector<DirectionalLightObject> _directionals;
         core::Vector<SkyLightObject> _sky_lights;

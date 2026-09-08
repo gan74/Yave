@@ -38,19 +38,6 @@ const ecs::EntityWorld* EcsScene::world() const {
 }
 
 template<typename S>
-void EcsScene::register_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage) {
-    u32& index = _indices.get_or_insert(id).*index_ptr;
-
-    if(index == u32(-1)) {
-        index = u32(storage.size());
-
-        auto& obj = storage.emplace_back();
-        y_debug_assert(obj.entity_index == u32(-1) || obj.entity_index == id.index());
-        obj.entity_index = id.index();
-    }
-}
-
-template<typename S>
 u32 EcsScene::unregister_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage) {
     ObjectIndices* object = _indices.try_get(id);
     if(!object) {
@@ -59,29 +46,29 @@ u32 EcsScene::unregister_object(const ecs::EntityId id, u32 ObjectIndices::* ind
 
     const u32 index = std::exchange(object->*index_ptr, u32(-1));
     const u32 last_index = u32(storage.size() - 1);
-    object->*index_ptr = u32(-1);
 
     y_debug_assert(id.is_valid());
     y_debug_assert(storage[index].entity_index == id.index());
+
+    u32 transform_index = u32(-1);
+    if constexpr(std::is_base_of_v<TransformableSceneObjectData, typename S::value_type>) {
+        transform_index = storage[index].transform_index;
+    }
 
     if(index != last_index) {
         const ecs::EntityId last_id = id_from_index(storage[last_index].entity_index);
         if(ObjectIndices* last_object = _indices.try_get(last_id)) {
             last_object->*index_ptr = index;
-            std::swap(storage[index], storage[last_index]);
         }
     }
+
+    storage.erase_unordered(storage.begin() + index);
 
     if(object->is_empty()) {
         _indices.erase(id);
     }
 
-    if constexpr(std::is_base_of_v<TransformableSceneObjectData, typename S::value_type>) {
-        return storage.pop().transform_index;
-    } else {
-        storage.pop();
-        return u32(-1);
-    }
+    return transform_index;
 }
 
 template<typename T, typename S>
@@ -108,18 +95,18 @@ void EcsScene::process_component_visibility(u32 ObjectIndices::* index_ptr, S& s
     }
 }
 
-template<typename T, typename S>
-bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage) {
+template<typename T>
+bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, SpatialPartition<TransformableSceneObject<T>>& storage) {
     y_profile();
 
-    auto update_transform = [this](auto& obj, const TransformableComponent& tr, const auto& comp) {
+    auto update_transform = [this, &storage](auto& obj, const TransformableComponent& tr, const auto& comp) {
         if(!obj.has_transform()) {
             obj.transform_index = _transform_manager.alloc_transform();
         }
 
-
         _transform_manager.set_transform(obj.transform_index, tr.transform());
         obj.global_aabb = tr.to_global(comp.aabb());
+        storage.update(&obj, obj.global_aabb);
     };
 
 
@@ -128,7 +115,20 @@ bool EcsScene::process_transformable_components(u32 ObjectIndices::* index_ptr, 
     {
         y_profile_zone("Add new objects");
         for(const ecs::EntityId id : group_provider->added_ids()) {
-            register_object(id, index_ptr, storage);
+            u32& index = _indices.get_or_insert(id).*index_ptr;
+
+            if(index == u32(-1)) {
+                const TransformableComponent& tr = *_world->component<TransformableComponent>(id);
+                const T& comp = *_world->component<T>(id);
+                const AABB aabb = tr.to_global(comp.aabb());
+
+                index = u32(storage.size());
+
+                auto& obj = *storage.insert(aabb);
+                y_debug_assert(obj.entity_index == u32(-1) || obj.entity_index == id.index());
+                obj.entity_index = id.index();
+                obj.global_aabb = aabb;
+            }
         }
     }
 
@@ -178,7 +178,15 @@ void EcsScene::process_components(u32 ObjectIndices::* index_ptr, S& storage) {
     {
         y_profile_zone("Add new objects");
         for(const ecs::EntityId id : group_base->added_ids()) {
-            register_object(id, index_ptr, storage);
+            u32& index = _indices.get_or_insert(id).*index_ptr;
+
+            if(index == u32(-1)) {
+                index = u32(storage.size());
+
+                auto& obj = storage.emplace_back();
+                y_debug_assert(obj.entity_index == u32(-1) || obj.entity_index == id.index());
+                obj.entity_index = id.index();
+            }
         }
     }
 
@@ -306,4 +314,3 @@ void EcsScene::audit() const {
 }
 
 }
-

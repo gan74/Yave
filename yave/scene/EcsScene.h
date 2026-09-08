@@ -62,16 +62,13 @@ class EcsScene : public Scene {
 
     private:
         template<typename S>
-        void register_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage);
-
-        template<typename S>
         u32 unregister_object(const ecs::EntityId id, u32 ObjectIndices::* index_ptr, S& storage);
 
         template<typename T, typename S>
         void process_component_visibility(u32 ObjectIndices::* index_ptr, S& storage);
 
-        template<typename T, typename S>
-        bool process_transformable_components(u32 ObjectIndices::* index_ptr, S& storage);
+        template<typename T>
+        bool process_transformable_components(u32 ObjectIndices::* index_ptr, SpatialPartition<TransformableSceneObject<T>>& storage);
 
         template<typename T, typename S>
         void process_components(u32 ObjectIndices::* index_ptr, S& storage);
