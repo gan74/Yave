@@ -44,22 +44,18 @@ class EditorComponent {
 
         math::Vec3& euler();
 
-        void set_hidden_in_editor(bool hide);
-        bool is_hidden_in_editor() const;
-
         void set_parent_prefab(AssetId id);
         AssetId parent_prefab() const;
         bool is_prefab() const;
 
         void inspect(ecs::ComponentInspector* inspector);
 
-        y_reflect(EditorComponent, _name, _prefab, _hide_in_editor)
+        y_reflect(EditorComponent, _name, _prefab)
 
     private:
         core::String _name = "Unnamed entity";
         AssetId _prefab;
 
-        bool _hide_in_editor = false;
         math::Vec3 _euler;
 };
 

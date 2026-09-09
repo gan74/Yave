@@ -212,7 +212,7 @@ void UndoRedoSystem::setup(ecs::SystemScheduler& sched) {
                         GetterInspector inspector(state.redo_properties.emplace_back(key, core::Vector<Property>()).second);
                         world().inspect_components(id, &inspector, container->type_id());
                     } else {
-                        ComponentData& data = state.removed_components.emplace_back(id, ComponentData{}).second;
+                        ComponentData& data = state.added_components.emplace_back(id, ComponentData{}).second;
                         data.type_id = type_id;
                         serde3::WritableArchive arc(data.buffer);
                         arc.serialize(world().create_box_from_component(id, type_id)).unwrap();

@@ -95,10 +95,14 @@ static bool is_hovering_axis(math::Vec2 a, math::Vec2 b) {
     return d_2 < (gizmo_hover_width * gizmo_hover_width);
 }
 
-static math::Vec3 intersect_ray_plane(const math::Vec3& orig, const math::Vec3& dir, const math::Vec3& normal, float d) {
+static bool intersect_ray_plane(const math::Vec3& orig, const math::Vec3& dir, const math::Vec3& normal, float d, math::Vec3& hit) {
     const float denom = normal.dot(dir);
+    if(std::abs(denom) < math::epsilon<float>) {
+        return false;
+    }
     const float t = -(normal.dot(orig) + d) / denom;
-    return orig + dir * t;
+    hit = orig + dir * t;
+    return true;
 }
 
 [[nodiscard]] static bool intersect_lines(const math::Vec3& start_a, const math::Vec3& end_a, const math::Vec3& start_b, const math::Vec3& end_b, math::Vec3& closest) {
@@ -520,7 +524,10 @@ void RotationGizmo::draw() {
         const math::Vec3 v_axis = basis[(axis_index + 2) % 3];
 
         const math::Vec3 projected_mouse = to_world_pos(mouse_pos);
-        const math::Vec3 pt = intersect_ray_plane(cam_pos, (projected_mouse - cam_pos).normalized(), axis, -obj_pos.dot(axis));
+        math::Vec3 pt;
+        if(!intersect_ray_plane(cam_pos, (projected_mouse - cam_pos).normalized(), axis, -obj_pos.dot(axis), pt)) {
+            return 0.0f;
+        }
         const math::Vec3 to_point = (pt - obj_pos).normalized();
         return std::acos(to_point.dot(u_axis)) * math::sign(to_point.dot(v_axis));
     };

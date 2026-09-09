@@ -370,7 +370,7 @@ void EngineView::make_drop_target() {
         break;
 
         case AssetType::Mesh: {
-            added_id = current_world().create_entity();
+            added_id = current_world().create_named_entity(asset_store().name(asset_id).unwrap_or("Mesh"));
             current_world().add_or_replace_component<TransformableComponent>(added_id);
             current_world().add_or_replace_component<StaticMeshComponent>(added_id,
                 asset_loader().load_async<StaticMesh>(asset_id),

@@ -203,6 +203,8 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
 
 
 void destroy_editor() {
+    application::ui = nullptr;
+    application::editor_job_system = nullptr; // finish thumbnail jobs before destroying their targets
     application::thumbnail_renderer = nullptr;
     application::world = nullptr;
     application::scene_view  = nullptr;
@@ -211,8 +213,6 @@ void destroy_editor() {
     application::asset_store = nullptr;
     application::debug_drawer = nullptr;
     application::resources = nullptr;
-    application::ui = nullptr;
-    application::editor_job_system = nullptr;
     application::world_job_system = nullptr;
 }
 

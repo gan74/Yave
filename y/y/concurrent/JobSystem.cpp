@@ -117,14 +117,14 @@ JobSystem::JobHandle JobSystem::schedule_n(JobFunc&& func, u32 count, core::Span
 
         if(dep_count) {
             handle._data->dependencies = dep_count;
-            ++_total_jobs;
+            _total_jobs += count;
             ++_waiting;
             return handle;
         }
     }
 
     y_debug_assert(!handle._data->dependencies);
-    ++_total_jobs;
+    _total_jobs += count;
     _jobs.emplace_back(handle._data);
 
     if(count == 1) {

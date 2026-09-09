@@ -65,10 +65,8 @@ u32 EcsScene::unregister_object(const ecs::EntityId id, IndexType type, S& stora
 
     if(index != last_index) {
         const ecs::EntityId last_id = id_from_index(storage[last_index].entity_index);
-        if(ObjectIndices* last_object = _indices.try_get(last_id)) {
-            last_object->indices[type] = index;
-            std::swap(storage[index], storage[last_index]);
-        }
+        _indices[last_id].indices[type] = index;
+        std::swap(storage[index], storage[last_index]);
     }
 
     if(object->is_empty()) {
@@ -125,6 +123,15 @@ bool EcsScene::process_transformable_components(IndexType type, S& storage) {
     const ecs::EntityGroupProvider* group_provider = _world->get_or_create_group_provider<TransformableComponent, T>();
 
     {
+        y_profile_zone("Delete stale objects");
+        for(const ecs::EntityId id : group_provider->removed_ids()) {
+            if(const u32 transform_index = unregister_object(id, type, storage); transform_index != u32(-1)) {
+                _transform_manager.free_transform(transform_index);
+            }
+        }
+    }
+
+    {
         y_profile_zone("Add new objects");
         for(const ecs::EntityId id : group_provider->added_ids()) {
             register_object(id, type, storage);
@@ -152,15 +159,6 @@ bool EcsScene::process_transformable_components(IndexType type, S& storage) {
         }
     }
 
-    {
-        y_profile_zone("Delete stale objects");
-        for(const ecs::EntityId id : group_provider->removed_ids()) {
-            if(const u32 transform_index = unregister_object(id, type, storage); transform_index != u32(-1)) {
-                _transform_manager.free_transform(transform_index);
-            }
-        }
-    }
-
     process_component_visibility<T>(type, storage);
 
     return !group_provider->removed_ids().is_empty();
@@ -175,6 +173,13 @@ void EcsScene::process_components(IndexType type, S& storage) {
     const auto* group_base = group.base();
 
     {
+        y_profile_zone("Delete stale objects");
+        for(const ecs::EntityId id : group_base->removed_ids()) {
+            unregister_object(id, type, storage);
+        }
+    }
+
+    {
         y_profile_zone("Add new objects");
         for(const ecs::EntityId id : group_base->added_ids()) {
             register_object(id, type, storage);
@@ -186,13 +191,6 @@ void EcsScene::process_components(IndexType type, S& storage) {
         for(const auto& [id, comp] : group.id_components()) {
             auto& obj = storage[_indices.try_get(id)->indices[type]];
             obj.component = comp;
-        }
-    }
-
-    {
-        y_profile_zone("Delete stale objects");
-        for(const ecs::EntityId id : group_base->removed_ids()) {
-            unregister_object(id, type, storage);
         }
     }
 

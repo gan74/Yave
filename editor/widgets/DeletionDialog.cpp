@@ -23,7 +23,6 @@ SOFTWARE.
 #include "DeletionDialog.h"
 
 #include <editor/EditorWorld.h>
-#include <editor/components/EditorComponent.h>
 
 #include <editor/utils/ui.h>
 
@@ -57,9 +56,8 @@ void DeletionDialog::on_gui() {
     }
 
     if(_ids.size() == 1) {
-        const EditorComponent* component = world.component<EditorComponent>(_ids[0]);
-        y_debug_assert(component);
-        ImGui::Text("Delete \"%s\"?", component->name().data());
+        const std::string_view name = world.entity_name(_ids[0]);
+        ImGui::Text("Delete \"%s\"?", name.empty() ? "entity" : name.data());
     } else {
         ImGui::Text("Delete %u entities?", u32(_ids.size()));
     }

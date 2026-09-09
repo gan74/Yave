@@ -104,20 +104,43 @@ void UiManager::on_gui() {
    if(!to_destroy.is_empty()) {
         y_profile_zone("destroy widgets");
 
+        // destroy children of destroyed widgets
         for(usize i = 0;  i != _widgets.size(); ++i) {
             Widget* wid = _widgets[i].get();
+
             bool destroy = to_destroy.contains(wid);
             for(Widget* parent = wid->_parent; parent && !destroy; parent = parent->_parent) {
                 destroy |= to_destroy.contains(parent);
             }
 
             if(destroy) {
-                y_profile_dyn_zone(fmt_c_str("destroying '{}'", wid->_title_with_id));
-                _focussed = _focussed == wid ? nullptr : _focussed;
-                _last_focussed = _last_focussed == wid ? nullptr : _last_focussed;
-                _ids[typeid(*wid)].released << wid->_id;
-                _widgets.erase_unordered(_widgets.begin() + i);
-                --i;
+                to_destroy[wid];
+            }
+        }
+
+        // don't destroy widget that have a child with keep alive
+        for(usize i = 0;  i != _widgets.size(); ++i) {
+            Widget* wid = _widgets[i].get();
+
+            if(wid->should_keep_alive()) {
+                for(Widget* parent = wid->_parent; parent; parent = parent->_parent) {
+                    to_destroy.erase(parent);
+                }
+                to_destroy.erase(wid);
+            }
+        }
+
+        if(!to_destroy.is_empty()) {
+            for(usize i = 0;  i != _widgets.size(); ++i) {
+                Widget* wid = _widgets[i].get();
+                if(to_destroy.contains(wid)) {
+                    y_profile_dyn_zone(fmt_c_str("destroying '{}'", wid->_title_with_id));
+                    _focussed = _focussed == wid ? nullptr : _focussed;
+                    _last_focussed = _last_focussed == wid ? nullptr : _last_focussed;
+                    _ids[typeid(*wid)].released << wid->_id;
+                    _widgets.erase_unordered(_widgets.begin() + i);
+                    --i;
+                }
             }
         }
     }

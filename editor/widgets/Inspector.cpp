@@ -247,7 +247,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
         void inspect(const core::String& name, usize& e, core::Span<std::string_view> values) override {
             auto row = begin_property_row(name);
-            if(ImGui::BeginCombo("###combo", fmt_c_str("{}", values[e]))) {
+            if(ImGui::BeginCombo("###combo", (e < values.size() ? "" : fmt_c_str("{}", values[e])))) {
                 for(usize i = 0; i != values.size(); ++i) {
                     ImGui::PushID(int(i));
                     if(ImGui::Selectable(fmt_c_str("{}", values[i]))) {
@@ -374,8 +374,11 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
                 case Vec3Role::Direction: {
                     float elevation = -math::to_deg(std::asin(v.z()));
-                    const math::Vec2 dir_2d = v.to<2>().normalized();
-                    float azimuth = math::to_deg(std::copysign(std::acos(dir_2d.x()), std::asin(dir_2d.y())));
+                    float azimuth = 0.0f;
+                    if(v.to<2>().sq_length() > math::epsilon<float>) {
+                        const math::Vec2 dir_2d = v.to<2>().normalized();
+                        azimuth = math::to_deg(std::copysign(std::acos(dir_2d.x()), std::asin(dir_2d.y())));
+                    }
 
                     bool changed = false;
                     changed |= ImGui::DragFloat("Azimuth", &azimuth, 1.0, -180.0f, 180.0f, "%.2f°");

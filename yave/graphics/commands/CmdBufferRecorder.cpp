@@ -439,8 +439,13 @@ void CmdBufferRecorderBase::clear(const ImageBase& dst) {
             range.levelCount = 1;
         }
 
-        const VkClearColorValue value = {};
-        vkCmdClearColorImage(vk_cmd_buffer(), dst.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &value, 1, &range);
+        if(dst.format().is_depth_format()) {
+            const VkClearDepthStencilValue value = {0.0f, 0}; // reversed Z
+            vkCmdClearDepthStencilImage(vk_cmd_buffer(), dst.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &value, 1, &range);
+        } else {
+            const VkClearColorValue value = {};
+            vkCmdClearColorImage(vk_cmd_buffer(), dst.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &value, 1, &range);
+        }
     }
 
     barriers(ImageBarrier::transition_from_barrier(dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL));

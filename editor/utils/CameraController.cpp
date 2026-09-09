@@ -73,14 +73,11 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
 HoudiniCameraController::HoudiniCameraController() {
 }
 
-static core::StopWatch timer;
-
 bool HoudiniCameraController::viewport_clicked(const PickingResult& point) {
     if(ImGui::IsKeyDown(ImGuiMod_Alt)) {
         _picked_pos = point.world_pos;
         _picking_uvs = point.uv;
         _picking_depth = point.depth;
-        timer.reset();
         _init = true;
 
         return true;
@@ -142,11 +139,6 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 
     if(!fps && _mouse_button < 0) {
         return;
-    }
-
-    
-    if(timer.elapsed().to_secs() > 3.0) {
-        y_breakpoint;
     }
 
     math::Vec3 out_cam_pos = camera.position();
