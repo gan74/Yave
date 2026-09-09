@@ -30,14 +30,8 @@ SOFTWARE.
 #include <external/bc7enc_rdo/bc7enc.h>
 #include <external/bc7enc_rdo/rgbcx.h>
 
+#include <array>
 
-#if defined(Y_MSVC) || defined(__SSE4_2__)
-#define USE_SIMD
-#include <immintrin.h>
-#include <xmmintrin.h>
-#include <emmintrin.h>
-#include <smmintrin.h>
-#endif
 
 namespace editor {
 namespace import {
@@ -46,15 +40,45 @@ static ImageData copy(const ImageData& image) {
     return ImageData(image.size().to<2>(), image.data(), image.format(), image.mipmaps());
 }
 
-static void unpack_with_gamma(const u8* in, usize size, float* out) {
+static core::Span<float> unpack_gamma_lut() {
+    static const auto lut = [] {
+        std::array<float, 256> values;
+        for(usize i = 0; i != values.size(); ++i) {
+            values[i] = std::pow(i / 255.0f, 2.2f);
+        }
+        return values;
+    }();
+    return lut;
+}
+
+
+static core::Span<u8> pack_gamma_lut() {
+    static const auto lut = [] {
+        std::array<u8, (1 << 10)> values;
+        const float inv_lut_factor = 1.0f / (values.size() - 1);
+        const float inv_gamma = 1.0f / 2.2f;
+        for(usize i = 0; i != values.size(); ++i) {
+            const float with_gamma = std::pow(i * inv_lut_factor, inv_gamma);
+            y_debug_assert(with_gamma <= 1.0f);
+            values[i] = u8(with_gamma * 255.0f);
+        }
+        return values;
+    }();
+    return lut;
+}
+
+static void unpack_with_gamma(const u8* in, usize size, float* out, usize components) {
     y_profile();
-    float gamma_lut[256];
-    for(usize i = 0; i != 256; ++i) {
-        gamma_lut[i] = std::pow(i / 255.0f, 2.2f);
-    }
+
+    const core::Span<float> gamma_lut = unpack_gamma_lut();
+    const bool has_alpha = components == 4;
 
     for(usize i = 0; i != size; ++i) {
-        out[i] = gamma_lut[in[i]];
+        if(has_alpha && (i % 4) == 3) {
+            out[i] = in[i] / 255.0f;
+        } else {
+            out[i] = gamma_lut[in[i]];
+        }
         y_debug_assert(out[i] >= 0.0f);
         y_debug_assert(out[i] <= 1.0f);
     }
@@ -69,67 +93,32 @@ static void unpack(const u8* in, usize size, float* out) {
     }
 }
 
-static void pack_with_gamma(const float* in, usize size, u8* out) {
+static void pack_with_gamma(const float* in, usize size, u8* out, usize components) {
     y_profile();
-    const usize lut_size = 1 << 12;
-    const float lut_factor = float(lut_size - 1);
-    const float inv_lut_factor = 1.0f / lut_factor;
-    const float inv_gamma = 1.0f / 2.2f;
+    const core::Span<u8> gamma_lut = pack_gamma_lut();
+    const float lut_factor = float(gamma_lut.size() - 1);
 
-    u8 gamma_lut[lut_size];
-    for(usize i = 0; i != lut_size; ++i) {
-        const float with_gamma = std::pow(i * inv_lut_factor, inv_gamma);
-        y_debug_assert(with_gamma <= 1.0f);
-        gamma_lut[i] = u8(with_gamma * 255.0f);
-    }
+    const bool has_alpha = components == 4;
 
-#ifdef USE_SIMD
-    const __m128 norm = _mm_set1_ps(lut_factor);
-
-    y_always_assert(size % 4 == 0, "Size should be a multiple of 4");
-    for(usize i = 0; i != size; i += 4) {
-        const __m128 a = _mm_loadu_ps(in + i);
-        const __m128 b = _mm_mul_ps(a, norm);
-        const __m128 c = _mm_round_ps(b, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);    // round
-        const __m128i d = _mm_cvtps_epi32(c);           // to int
-        const u32* indices = reinterpret_cast<const u32*>(&d);
-        for(usize comp = 0; comp != 4; ++comp) {
-            out[i + comp] = gamma_lut[indices[comp]];
+    for(usize i = 0; i != size; ++i) {
+        if(has_alpha && (i % 4) == 3) {
+            y_debug_assert(in[i] >= 0.0f);
+            y_debug_assert(in[i] <= 1.0f);
+            out[i] = u8(std::round(in[i] * 255.0f));
+        } else {
+            const usize lut_index = usize(std::round(in[i] * lut_factor));
+            out[i] = gamma_lut[lut_index];
         }
     }
-#else
-    for(usize i = 0; i != size; ++i) {
-        const usize lut_index = usize(std::round(in[i] * lut_factor));
-        y_debug_assert(lut_index < lut_size);
-        out[i] = gamma_lut[lut_index];
-    }
-#endif
 }
 
 static void pack(const float* in, usize size, u8* out) {
     y_profile();
-
-#ifdef USE_SIMD
-    const char n = 15;
-    const __m128 norm = _mm_set1_ps(255.0f);
-    const __m128i mask = _mm_set_epi8(n, n, n, n, n, n, n, n, n, n, n, n, 12, 8, 4, 0);
-
-    y_always_assert(size % 4 == 0, "Size should be a multiple of 4");
-    for(usize i = 0; i != size; i += 4) {
-        const __m128 a = _mm_loadu_ps(in + i);
-        const __m128 b = _mm_mul_ps(a, norm);
-        const __m128 c = _mm_round_ps(b, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);    // round
-        const __m128i d = _mm_cvtps_epi32(c);           // to int
-        const __m128i e = _mm_shuffle_epi8(d, mask);    // extract bytes
-        _mm_storeu_si32(out + i, e);                    // store
-    }
-#else
     for(usize i = 0; i < size; ++i) {
         y_debug_assert(in[i] >= 0.0f);
         y_debug_assert(in[i] <= 1.0f);
         out[i] = u8(std::round(in[i] * 255.0f));
     }
-#endif
 }
 
 core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, const math::Vec2ui& size, usize components, usize mip_count) {
@@ -212,8 +201,7 @@ ImageData compute_mipmaps(const ImageData& image) {
     {
         y_profile_zone("unpack");
         if(is_sRGB) {
-            Y_TODO(Alpha should not be gamma-corrected)
-            unpack_with_gamma(image.data(), input.size(), input.data());
+            unpack_with_gamma(image.data(), input.size(), input.data(), components);
         } else {
             unpack(image.data(), input.size(), input.data());
         }
@@ -224,7 +212,7 @@ ImageData compute_mipmaps(const ImageData& image) {
     {
         y_profile_zone("pack");
         if(is_sRGB) {
-            pack_with_gamma(output.data(), output.size(), data.data());
+            pack_with_gamma(output.data(), output.size(), data.data(), components);
         } else {
             pack(output.data(), output.size(), data.data());
         }
