@@ -75,17 +75,5 @@ bool AssetLoader::is_loading() const {
     return _thread_pool.is_processing();
 }
 
-core::Result<AssetId> AssetLoader::load_or_import(std::string_view name, std::string_view import_from, AssetType type) {
-    if(auto id = _store->id(name)) {
-        return id;
-    }
-
-    if(auto file = io2::File::open(import_from)) {
-        return _store->import(file.unwrap(), name, type);
-    }
-
-    return core::Err();
-}
-
 }
 

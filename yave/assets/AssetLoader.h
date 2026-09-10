@@ -126,9 +126,6 @@ class AssetLoader : NonMovable {
         template<typename T>
         inline AssetPtr<T> reload(const AssetPtr<T>& ptr);
 
-        template<typename T>
-        inline Result<T> import(std::string_view name, std::string_view import_from);
-
    private:
         template<typename T>
         friend class Loader;
@@ -140,8 +137,6 @@ class AssetLoader : NonMovable {
 
         template<typename T>
         inline Loader<T>& loader_for_type();
-
-        core::Result<AssetId> load_or_import(std::string_view name, std::string_view import_from, AssetType type);
 
         ProfiledMutexed<core::FlatHashMap<std::type_index, std::unique_ptr<LoaderBase>>, std::recursive_mutex> _loaders;
         std::shared_ptr<AssetStore> _store;

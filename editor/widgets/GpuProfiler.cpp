@@ -61,18 +61,11 @@ void GpuProfiler::on_gui() {
         return;
     }
 
-    if(ImGui::Button("Clear history")) {
-        _history.clear();
-    }
-
     if(instance_params().validation_layers) {
-        ImGui::SameLine();
         ImGui::TextColored(imgui::error_text_color, "(Debug layers enabled)");
     }
 
-    if(ImGui::Checkbox("Display hierarchy", &_display_tree)) {
-        _history.clear();
-    }
+    ImGui::Checkbox("Display hierarchy", &_display_tree);
 
     if(ImGui::BeginChild("##hierarchy")) {
         const ImGuiTableFlags table_flags =
@@ -127,17 +120,6 @@ void GpuProfiler::on_gui() {
                 i += zones[i].contained_zones;
             }
 
-
-            /*for(usize i = 0; i < zones.size(); ++i) {
-                const auto& zone = zones[i];
-                const double gpu_ms = double(zone.gpu_nanos * ns_to_ms);
-                const double cpu_ms = double(zone.cpu_nanos * ns_to_ms);
-
-                auto& zone_history = _history[i64(ImGui::GetID("zone"))];
-                zone_history.update(gpu_ms, cpu_ms);
-            }*/
-
-
             const u32 color_u32 = ImGui::GetColorU32(ImGuiCol_PlotHistogram, 0.4f);
             auto draw_bg = [=](float ratio) {
                 const float width = ImGui::GetContentRegionAvail().x * std::min(1.0f, ratio);
@@ -172,12 +154,6 @@ void GpuProfiler::on_gui() {
                 if(gpu_ms >= 0.0) {
                     draw_bg(float(gpu_ms / gpu_total_ms));
                     ImGui::Text("%.2f ms", gpu_ms);
-
-                    /*if(ImGui::BeginItemTooltip()) {
-                        ImGui::Text("avg: %.2f ms", zone_history.gpu_ms_sum / zone_history.sample_count);
-                        ImGui::Text("max: %.2f ms", zone_history.gpu_ms_max);
-                        ImGui::EndTooltip();
-                    }*/
                 }
 
                 ImGui::TableSetColumnIndex(2);
@@ -185,12 +161,6 @@ void GpuProfiler::on_gui() {
                 {
                     draw_bg(float(cpu_ms / cpu_total_ms));
                     ImGui::Text("%.2f ms", cpu_ms);
-
-                    /*if(ImGui::BeginItemTooltip()) {
-                        ImGui::Text("avg: %.2f ms", zone_history.cpu_ms_sum / zone_history.sample_count);
-                        ImGui::Text("max: %.2f ms", zone_history.cpu_ms_max);
-                        ImGui::EndTooltip();
-                    }*/
                 }
 
                 if(as_tree) {

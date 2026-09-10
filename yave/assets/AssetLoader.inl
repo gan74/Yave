@@ -272,10 +272,6 @@ AssetPtr<T> AssetLoader::reload(const AssetPtr<T>& ptr) {
     return loader_for_type<T>().reload(ptr);
 }
 
-template<typename T>
-AssetLoader::Result<T> AssetLoader::import(std::string_view name, std::string_view import_from) {
-    return load<T>(load_or_import(name, import_from, AssetTraits<T>::type));
-}
 
 template<typename T, typename E>
 AssetLoader::Result<T> AssetLoader::load(core::Result<AssetId, E> id) {
