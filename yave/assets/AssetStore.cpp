@@ -70,5 +70,24 @@ AssetStore::Result<AssetType> AssetStore::asset_type(AssetId id) const {
     return core::Err(ErrorType::UnsupportedOperation);
 }
 
+AssetStore::Result<core::Span<AssetId>> AssetStore::references(AssetId id) const {
+    unused(id);
+    return core::Err(ErrorType::UnsupportedOperation);
+}
+
+AssetStore::Result<> AssetStore::search_references(AssetId id, const std::function<void(AssetId)>& found) const {
+    unused(id, found);
+    return core::Err(ErrorType::UnsupportedOperation);
+}
+
+AssetStore::Result<usize> AssetStore::reference_count(AssetId id) const {
+    usize count = 0;
+    if(auto res = search_references(id, [&](AssetId) { ++count; }); res.is_error()) {
+        return core::Err(res.error());
+    }
+
+    return core::Ok(count);
+}
+
 }
 

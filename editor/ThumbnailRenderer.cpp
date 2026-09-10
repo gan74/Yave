@@ -251,6 +251,15 @@ std::unique_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_re
 
         const AssetType asset_type = _loader->store().asset_type(id).unwrap_or(AssetType::Unknown);
 
+
+        if(const core::Span<AssetId> refs = _loader->store().references(id).unwrap_or(core::Span<AssetId>()); !refs.is_empty()) {
+            data->infos.emplace_back(fmt("References {} assets", refs.size()));
+        }
+
+        if(const auto ref_count = _loader->store().reference_count(id)) {
+            data->infos.emplace_back(fmt("Referenced by {} assets", ref_count.unwrap()));
+        }
+
         if(const auto r = _loader->store().data(id); r.is_ok()) {
             data->infos.emplace_back(fmt("Size on disk: {}",  byte_size_text(r.unwrap()->remaining())));
         }

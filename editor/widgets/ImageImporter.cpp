@@ -99,7 +99,7 @@ void ImageImporter::import(const core::String& filename) {
         buffer.reset();
 
         const core::String full_name = asset_store().filesystem()->join(_import_path, import::clean_asset_name(filename));
-        if(!asset_store().import(buffer, full_name, AssetType::Image)) {
+        if(!asset_store().import(buffer, full_name, AssetType::Image, {})) {
             log_msg("Unable to import image", Log::Error);
         }
     });
