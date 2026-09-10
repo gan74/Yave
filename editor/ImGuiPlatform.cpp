@@ -678,6 +678,7 @@ void ImGuiPlatform::update_textures(ImDrawData* draw_data) {
                 if(tex_data->UnusedFrames > 0) {
                     y_debug_assert(tex_data->BackendUserData);
                     delete reinterpret_cast<ImGuiImage*>(std::exchange(tex_data->BackendUserData, nullptr));
+                    tex_data->SetTexID(ImTextureID_Invalid);
                     tex_data->SetStatus(ImTextureStatus_Destroyed);
                 }
             break;

@@ -204,7 +204,7 @@ void CVarConsole::on_gui() {
                         pop_color = true;
                     }
 
-                    std::copy_n(value.data(), std::max(value.size(), _value.size() - 1) + 1, _value.data());
+                    std::copy_n(value.data(), std::min(value.size(), _value.size() - 1) + 1, _value.data());
 
                     if(imgui::selectable_input("##value", false, _value.data(), _value.size())) {
                         var.error = !var.from_string(_value.data());

@@ -235,6 +235,8 @@ void FileSystemView::on_gui() {
             const core::String target_name = fs->join(drop_path, fs->filename(original_name));
             if(!fs->rename(original_name, target_name)) {
                 log_msg(fmt("Unable to move \"{}\" to \"{}\"", original_name, drop_path), Log::Error);
+            } else {
+                log_msg(fmt("Move \"{}\" to \"{}\"", original_name, drop_path));
             }
             refresh_all();
         }
@@ -243,7 +245,7 @@ void FileSystemView::on_gui() {
     auto post_draw_entry = [&](usize index) {
         const Entry& entry = _entries[index];
         if(_allow_modify) {
-            if(ImGui::BeginDragDropTarget()) {
+            if(entry.type == EntryType::Directory && ImGui::BeginDragDropTarget()) {
                 make_drop_target(entry.full_name);
                 ImGui::EndDragDropTarget();
             } else if(ImGui::GetItemID() && ImGui::BeginDragDropSource()) {

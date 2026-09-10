@@ -138,10 +138,6 @@ KeyCombination::KeyCombination(Key key) {
     operator+=(key);
 }
 
-KeyCombination& KeyCombination::operator+=(Key key) {
-    _bits |= u64(1) << packed_key_index(key);
-    return *this;
-}
 
 bool KeyCombination::contains(KeyCombination keys) const {
     return (_bits & keys._bits) == keys._bits;
@@ -153,6 +149,19 @@ bool KeyCombination::contains(Key key) const {
 
 bool KeyCombination::is_empty() const {
     return !_bits;
+}
+
+KeyCombination& KeyCombination::operator+=(Key key) {
+    _bits |= (u64(1) << packed_key_index(key));
+    return *this;
+}
+
+bool KeyCombination::operator==(const KeyCombination& other) const {
+    return _bits == other._bits;
+}
+
+bool KeyCombination::operator!=(const KeyCombination& other) const {
+    return _bits != other._bits;
 }
 
 KeyCombination operator+(Key a, Key b) {

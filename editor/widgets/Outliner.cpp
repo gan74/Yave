@@ -362,7 +362,7 @@ bool Outliner::make_drop_target(EditorWorld& world, ecs::EntityId id) {
     }
 
     if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_entity_id)) {
-        if(const ecs::EntityId dragged = *static_cast<const ecs::EntityId*>(payload->Data); world.exists(dragged) && !world.is_parent(id, dragged)) {
+        if(const ecs::EntityId dragged = *static_cast<const ecs::EntityId*>(payload->Data); world.exists(dragged) && dragged != id && !world.is_parent(id, dragged)) {
             world.set_parent(dragged, id);
         }
     }

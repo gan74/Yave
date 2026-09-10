@@ -230,14 +230,15 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
         });
     }
 
-    if(is_mouse_inside()) {
+    if(is_mouse_inside() && _picking_requests.size() < 32) {
         const math::Vec2 mouse_pos = to_y(ImGui::GetIO().MousePos) - to_y(ImGui::GetWindowPos());
+        const math::Vec2 scale_factor = math::Vec2(output_size) / math::Vec2(content_size());
 
         const IdBufferPass id_buffer = IdBufferPass::create(framegraph, renderer.renderer);
         const EditorPass editor_pass = EditorPass::create(framegraph, id_buffer.scene_pass.scene_view, id_buffer.scene_pass.visibility, id_buffer.depth, FrameGraphImageId(), id_buffer.id);
 
         _picking_requests.emplace_back(
-            picking_pass(framegraph, editor_pass.id, editor_pass.depth, math::Vec2ui(mouse_pos)),
+            picking_pass(framegraph, editor_pass.id, editor_pass.depth, math::Vec2ui(mouse_pos * scale_factor)),
             _scene_view.camera(),
             mouse_pos / math::Vec2(content_size()),
             recorder.create_fence()

@@ -247,7 +247,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
         void inspect(const core::String& name, usize& e, core::Span<std::string_view> values) override {
             auto row = begin_property_row(name);
-            if(ImGui::BeginCombo("###combo", (e < values.size() ? "" : fmt_c_str("{}", values[e])))) {
+            if(ImGui::BeginCombo("###combo", (e < values.size() ? fmt_c_str("{}", values[e]) : ""))) {
                 for(usize i = 0; i != values.size(); ++i) {
                     ImGui::PushID(int(i));
                     if(ImGui::Selectable(fmt_c_str("{}", values[i]))) {

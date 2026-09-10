@@ -176,7 +176,7 @@ void UiManager::update_shortcuts() {
     }
 
     for(auto&& action : _shortcuts) {
-        if(keys.contains(action.first->shortcut)) {
+        if(keys == action.first->shortcut) {
             if(!action.second) {
                 action.first->function();
                 action.second = true;
@@ -327,6 +327,9 @@ void UiManager::open_default_widgets() {
 void UiManager::close_all() {
     _widgets.clear();
     _ids.clear();
+    _focussed = nullptr;
+    _last_focussed = nullptr;
+    _auto_parent = nullptr;
 }
 
 core::Span<std::unique_ptr<Widget>> UiManager::widgets() const {

@@ -129,7 +129,9 @@ void UndoRedoSystem::UndoState::undo(ecs::EntityWorld& world) {
     }
 
     for(const auto& [id, prev, next] : parent_changed) {
-        world.set_parent(id, prev);
+        if(world.exists(id)) {
+            world.set_parent(id, prev);
+        }
     }
 }
 
@@ -160,7 +162,9 @@ void UndoRedoSystem::UndoState::redo(ecs::EntityWorld& world) {
     }
 
     for(const auto& [id, prev, next] : parent_changed) {
-        world.set_parent(id, next);
+        if(world.exists(id)) {
+            world.set_parent(id, next);
+        }
     }
 }
 
@@ -308,7 +312,7 @@ void UndoRedoSystem::push_state(UndoState state) {
             if(tra && trb) {
                 const float epsilon = 0.0001f;
                 const auto [a_pos, a_rot, a_scale] = tra->decompose();
-                const auto [b_pos, b_rot, b_scale] = tra->decompose();
+                const auto [b_pos, b_rot, b_scale] = trb->decompose();
                 if((a_pos - b_pos).sq_length() > epsilon) {
                     return false;
                 }

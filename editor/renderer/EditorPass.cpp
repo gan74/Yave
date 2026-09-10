@@ -137,8 +137,7 @@ static void render_selection(DirectDraw& draw, const SceneView& scene_view) {
         return;
     }
 
-    if(const ecs::EntityId selected = world.selected_entity(); selected.is_valid()) {
-
+    for(const ecs::EntityId selected : world.selected_entities()) {
         if(const PointLightObject* obj = scene->point_light(selected)) {
             const math::Transform<> tr = scene->transform(*obj);
             draw.add_primitive("selected light")->add_sphere_3circles(editor_pass_draw_color, tr.position(), tr.scale().max_component() * obj->component.range());
@@ -148,7 +147,6 @@ static void render_selection(DirectDraw& draw, const SceneView& scene_view) {
             const math::Transform<> tr = scene->transform(*obj);
             const u32 inner_color = pack_to_u32(math::Vec4(1.0f, 1.0f, 0.0f, 0.25f));
             const float scale = tr.scale().max_component();
-            const auto sphere = obj->component.enclosing_sphere();
             draw.add_primitive("selected light outer")->add_wire_cone(editor_pass_draw_color, tr.position(), tr.forward(), tr.up(), obj->component.range() * scale, obj->component.half_angle());
             draw.add_primitive("selected light inner")->add_wire_cone(inner_color, tr.position(), tr.forward(), tr.up(), obj->component.range() * scale, obj->component.half_inner_angle());
             // draw.add_primitive("selected light sphere")->add_sphere_3circles(tr.transform_point(math::Vec3(0.0f, sphere.dist_to_center, 0.0f)), sphere.radius * scale);

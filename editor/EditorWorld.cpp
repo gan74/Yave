@@ -185,6 +185,9 @@ void EditorWorld::set_selected(ecs::EntityId id) {
 
 void EditorWorld::toggle_selected(ecs::EntityId id, bool reset_selection) {
     if(!id.is_valid()) {
+        if(reset_selection) {
+            clear_selection();
+        }
         return;
     }
 

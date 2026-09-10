@@ -198,7 +198,7 @@ bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags, 
 }
 
 bool text_input_multiline(const char* name, core::String& str, const math::Vec2& size, ImGuiInputTextFlags flags) {
-    return ImGui::InputTextMultiline(name, str.data(), str.capacity() + 1, to_im(size), ImGuiInputTextFlags_CallbackResize | flags, str_resize_callback, &str);
+    return ImGui::InputTextMultiline(name, str.data(), str.size() + 1, to_im(size), ImGuiInputTextFlags_CallbackResize | flags, str_resize_callback, &str);
 }
 
 void text_read_only(const char* name, std::string_view str) {
