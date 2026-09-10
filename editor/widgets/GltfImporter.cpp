@@ -44,7 +44,7 @@ SOFTWARE.
 namespace editor {
 
 template<typename T>
-static AssetId import_asset(const core::String& name, const T& asset, AssetType type, const core::String& import_path) {
+static AssetId import_asset(const core::String& name, const T& asset, AssetType type, const core::String& import_path, core::Span<AssetId> refs) {
     y_profile();
     y_profile_msg(fmt_c_str("Importing {} {}", asset_type_name(type), name));
 
@@ -64,7 +64,7 @@ static AssetId import_asset(const core::String& name, const T& asset, AssetType 
 
         core::String suffix;
         for(usize i = 0;; ++i) {
-            if(const auto res = asset_store().import(buffer, asset_store().filesystem()->join(import_path, name + suffix), type); res.is_ok()) {
+            if(const auto res = asset_store().import(buffer, asset_store().filesystem()->join(import_path, name + suffix), type, refs); res.is_ok()) {
                 log_msg(fmt("Imported {} \"{}\" as {}", asset_type_name(type), name, stringify_id(res.unwrap())));
                 return res.unwrap();
             } else if(res.error() == AssetStore::ErrorType::NameAlreadyExists) {
@@ -144,6 +144,50 @@ static std::pair<std::unique_ptr<ecs::EntityPrefab>, core::String> create_prefab
     return {std::move(prefab), node.name};
 }
 
+
+static void deduplicate_refs(core::Vector<AssetId>& refs) {
+    std::sort(refs.begin(), refs.end());
+    refs.shrink_to(std::unique(refs.begin(), refs.end()) - refs.begin());
+}
+
+static core::Vector<AssetId> collect_refs(const MaterialData& data) {
+    core::Vector<AssetId> refs;
+    for(const auto& tex : data.textures()) {
+        refs << tex.id();
+    }
+    deduplicate_refs(refs);
+    return refs;
+}
+
+static void collect_refs(const ecs::EntityPrefab& prefab, core::Vector<AssetId>& refs) {
+    for(const auto& child : prefab.asset_children()) {
+        refs << child.id();
+    }
+
+    for(const auto& child : prefab.children()) {
+        collect_refs(*child, refs);
+    }
+
+    for(const auto& box : prefab.components()) {
+        if(const auto* mesh_box = dynamic_cast<const ecs::ComponentBox<StaticMeshComponent>*>(box.get())) {
+            const StaticMeshComponent& mesh = mesh_box->component();
+            refs << mesh.mesh().id();
+            for(const auto& mat : mesh.materials()) {
+                refs << mat.id();
+            }
+        }
+    }
+}
+
+static core::Vector<AssetId> collect_refs(const ecs::EntityPrefab& prefab) {
+    core::Vector<AssetId> refs;
+    collect_refs(prefab, refs);
+    deduplicate_refs(refs);
+    return refs;
+}
+
+
+
 static AssetId import_node(import::ParsedScene& scene, int index, const PrefabImportSettings& settings) {
     if(index < 0 || scene.nodes[index].is_error) {
         return AssetId();
@@ -155,7 +199,8 @@ static AssetId import_node(import::ParsedScene& scene, int index, const PrefabIm
     }
 
     const auto [prefab, name] = create_prefab(scene, index, settings);
-    node.set_id(import_asset(name, *prefab, AssetType::Prefab, settings.import_path));
+    const core::Vector<AssetId> refs = collect_refs(*prefab);
+    node.set_id(import_asset(name, *prefab, AssetType::Prefab, settings.import_path, refs));
 
     return node.asset_id;
 }
@@ -169,7 +214,7 @@ static void import_all(concurrent::JobSystem& job_system, import::ParsedScene& s
         image_jobs.emplace_back(job_system.schedule([i, settings, &scene] {
             auto& image = scene.images[i];
             if(const auto image_data = scene.create_image(int(i), true)) {
-                image.set_id(import_asset(image.name, image_data.unwrap(), AssetType::Image, settings.import_path));
+                image.set_id(import_asset(image.name, image_data.unwrap(), AssetType::Image, settings.import_path, {}));
             }
         }));
     }
@@ -177,8 +222,9 @@ static void import_all(concurrent::JobSystem& job_system, import::ParsedScene& s
     for(usize i = 0; i != scene.materials.size(); ++i) {
         material_jobs.emplace_back(job_system.schedule([i, settings, &scene] {
             auto& material = scene.materials[i];
-            if(const auto material_data = scene.create_material(int(i))) {
-                material.set_id(import_asset(material.name, material_data.unwrap(), AssetType::Material, settings.import_path));
+            if(auto material_data = scene.create_material(int(i))) {
+                const core::Vector<AssetId> refs = collect_refs(material_data.unwrap());
+                material.set_id(import_asset(material.name, std::move(material_data.unwrap()), AssetType::Material, settings.import_path, refs));
             }
         }, image_jobs));
     }
@@ -187,7 +233,7 @@ static void import_all(concurrent::JobSystem& job_system, import::ParsedScene& s
         mesh_jobs.emplace_back(job_system.schedule([i, settings, &scene] {
             auto& mesh = scene.meshes[i];
             if(const auto mesh_data = scene.create_mesh(int(i))) {
-                mesh.set_id(import_asset(mesh.name, mesh_data.unwrap(), AssetType::Mesh, settings.import_path));
+                mesh.set_id(import_asset(mesh.name, mesh_data.unwrap(), AssetType::Mesh, settings.import_path, {}));
             }
         }, material_jobs));
     }

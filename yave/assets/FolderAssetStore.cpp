@@ -393,34 +393,55 @@ AssetStore::Result<FolderAssetStore::AssetDesc> FolderAssetStore::load_desc(Asse
         return core::Err(ErrorType::UnknownID);
     }
 
+
+    core::Span<char> data(reinterpret_cast<const char*>(buffer.data()), buffer.size());
+    auto read_line = [&] {
+        for(usize i = 0; i != data.size(); ++i) {
+            if(data[i] == '\n') {
+                const std::string_view line(data.data(), i);
+                data = data.take(i + 1);
+                return line;
+            }
+        }
+        const std::string_view line(data.data(), data.size());
+        data = {};
+        return line;
+    };
+
+
     AssetDesc desc;
 
-    const char* data = reinterpret_cast<const char*>(buffer.data());
-    for(usize i = 0; i != buffer.size(); ++i) {
-        const char c = data[i];
-        if(c != '\n') {
-            desc.name.push_back(c);
+    desc.name = core::trim(read_line());
+
+    {
+        u32 type = 0;
+        const std::string_view type_line = core::trim(read_line());
+        if(std::from_chars(type_line.data(), type_line.data() + type_line.size(), type).ec == std::errc()) {
+            desc.type = AssetType(type);
         } else {
-            const core::String leftover(data + i + 1, data + buffer.size());
-            const std::string_view trimmed = core::trim(leftover);
-
-            u32 type = 0;
-            if(std::from_chars(trimmed.data(), trimmed.data() + trimmed.size(), type).ec == std::errc()) {
-                desc.type = AssetType(type);
-                return core::Ok(std::move(desc));
-            }
-
-            break;
+            return core::Err(ErrorType::Unknown);
         }
     }
 
-    return core::Err(ErrorType::Unknown);
+    while(!data.is_empty()) {
+        if(auto r = parse_id(read_line())) {
+            desc.refs << r.unwrap();
+        } else {
+            return core::Err(ErrorType::Unknown);
+        }
+    }
+
+    return core::Ok(std::move(desc));
 }
 
 AssetStore::Result<> FolderAssetStore::save_desc(AssetId id, const AssetDesc& desc) const {
     y_profile();
 
-    const std::string_view data = fmt("{}\n{}\n", desc.name, desc.type);
+    core::String data = fmt("{}\n{}\n", desc.name, desc.type);
+    for(const AssetId ref : desc.refs) {
+        data += stringify_id(ref);
+        data += "\n";
+    }
 
     const core::String file_name = asset_desc_file_name(id);
     const core::String tmp_file = file_name + "_";
@@ -455,7 +476,7 @@ const FileSystemModel* FolderAssetStore::filesystem() const {
     return &_filesystem;
 }
 
-AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::string_view dst_name, AssetType type) {
+AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::string_view dst_name, AssetType type, core::Span<AssetId> refs) {
     y_profile();
 
     dst_name = strict_path(dst_name);
@@ -487,10 +508,13 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::str
         lock.lock();
     }
 
-    const AssetDesc desc = { dst_name, type };
+    auto owned_refs = core::Vector<AssetId>::with_capacity(refs.size());
+    std::copy_if(refs.begin(), refs.end(), std::back_inserter(owned_refs), [](AssetId id) { return id != AssetId::invalid_id(); });
+
+    const AssetDesc desc = { dst_name, type, core::Vector<AssetId>(owned_refs) };
     y_try(save_desc(id, desc));
 
-    const auto it = _assets.emplace(dst_name, AssetData{id, type}).first;
+    const auto it = _assets.emplace(dst_name, AssetData{id, type, 0, std::move(owned_refs)}).first;
     if(_ids) {
         (*_ids)[id] = it;
     }
@@ -629,6 +653,24 @@ AssetStore::Result<AssetType> FolderAssetStore::asset_type(AssetId id) const {
     rebuild_id_map();
     if(const auto it = _ids->find(id); it != _ids->end()) {
         return core::Ok(it->second->second.type);
+    }
+
+    return core::Err(ErrorType::UnknownID);
+}
+
+AssetStore::Result<core::Span<AssetId>> FolderAssetStore::references(AssetId id) const {
+    y_profile();
+
+    if(id == AssetId::invalid_id()) {
+        return core::Err(ErrorType::UnknownID);
+    }
+
+    const auto lock = std::unique_lock(_lock);
+
+    rebuild_id_map();
+    if(const auto it = _ids->find(id); it != _ids->end()) {
+        const core::Span<AssetId> refs = it->second->second.refs;
+        return core::Ok(refs);
     }
 
     return core::Err(ErrorType::UnknownID);
@@ -803,7 +845,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
                     const AssetId id = AssetId::from_id(uid);
                     if(auto r = load_desc(id)) {
                         AssetDesc desc = r.unwrap();
-                        AssetData data = { id, desc.type, 0 };
+                        AssetData data = { id, desc.type, 0, std::move(desc.refs) };
 
                         if(const auto it = asset_sizes.find(uid); it != asset_sizes.end()) {
                             data.file_size = it->second;
@@ -828,7 +870,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
         usize emergency_id = 1;
         for(auto& a : assets) {
             for(auto& [desc, data] : a) {
-                if(!_assets.emplace(desc.name, data).second) {
+                if(!_assets.emplace(desc.name, std::move(data)).second) {
                     log_msg(fmt("\"{}\" already exists in asset database", desc.name), Log::Error);
 
                     {

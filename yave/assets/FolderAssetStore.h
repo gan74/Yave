@@ -69,11 +69,13 @@ class FolderAssetStore final : NonMovable, public AssetStore {
         AssetId id;
         AssetType type;
         usize file_size;
+        core::Vector<AssetId> refs;
     };
 
     struct AssetDesc {
         core::String name;
         AssetType type;
+        core::Vector<AssetId> refs;
     };
 
     public:
@@ -82,7 +84,7 @@ class FolderAssetStore final : NonMovable, public AssetStore {
 
         const FileSystemModel* filesystem() const override;
 
-        Result<AssetId> import(io2::Reader& data, std::string_view dst_name, AssetType type) override;
+        Result<AssetId> import(io2::Reader& data, std::string_view dst_name, AssetType type, core::Span<AssetId> refs) override;
         Result<> write(AssetId id, io2::Reader& data) override;
 
         Result<AssetId> id(std::string_view name) const override;
@@ -96,6 +98,7 @@ class FolderAssetStore final : NonMovable, public AssetStore {
         Result<> rename(std::string_view from, std::string_view to) override;
 
         Result<AssetType> asset_type(AssetId id) const override;
+        Result<core::Span<AssetId>> references(AssetId id) const override;
 
     private:
         AssetId generate_id();

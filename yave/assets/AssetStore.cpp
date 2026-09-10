@@ -70,5 +70,10 @@ AssetStore::Result<AssetType> AssetStore::asset_type(AssetId id) const {
     return core::Err(ErrorType::UnsupportedOperation);
 }
 
+AssetStore::Result<core::Span<AssetId>> AssetStore::references(AssetId id) const {
+    unused(id);
+    return core::Err(ErrorType::UnsupportedOperation);
+}
+
 }
 

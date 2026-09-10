@@ -56,7 +56,7 @@ class AssetStore : NonCopyable {
 
         virtual const FileSystemModel* filesystem() const;
 
-        virtual Result<AssetId> import(io2::Reader& data, std::string_view dst_name, AssetType type) = 0;
+        virtual Result<AssetId> import(io2::Reader& data, std::string_view dst_name, AssetType type, core::Span<AssetId> refs) = 0;
         virtual Result<> write(AssetId id, io2::Reader& data);
 
         virtual Result<AssetId> id(std::string_view name) const = 0;
@@ -71,6 +71,7 @@ class AssetStore : NonCopyable {
         virtual Result<> rename(std::string_view from, std::string_view to);
 
         virtual Result<AssetType> asset_type(AssetId id) const;
+        virtual Result<core::Span<AssetId>> references(AssetId id) const;
 };
 
 }
