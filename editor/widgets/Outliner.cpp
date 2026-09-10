@@ -127,6 +127,7 @@ static void add_debug_cubes(bool animate) {
         world.add_or_replace_component<StaticMeshComponent>(entity, device_resources()[DeviceResources::CubeMesh], device_resources()[DeviceResources::EmptyMaterial]);
 
         if(animate) {
+            world.component_mut<EditorComponent>(entity)->set_ignore_undo(true);
             world.get_or_add_component<DebugAnimateComponent>(entity);
         }
     }

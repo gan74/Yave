@@ -48,6 +48,9 @@ class EditorComponent {
         AssetId parent_prefab() const;
         bool is_prefab() const;
 
+        bool ignore_undo() const;
+        void set_ignore_undo(bool ignore);
+
         void inspect(ecs::ComponentInspector* inspector);
 
         y_reflect(EditorComponent, _name, _prefab)
@@ -57,6 +60,7 @@ class EditorComponent {
         AssetId _prefab;
 
         math::Vec3 _euler;
+        bool _ignore_undo = false;
 };
 
 }

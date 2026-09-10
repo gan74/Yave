@@ -53,6 +53,14 @@ bool EditorComponent::is_prefab() const {
     return _prefab != AssetId::invalid_id();
 }
 
+bool EditorComponent::ignore_undo() const {
+    return _ignore_undo;
+}
+
+void EditorComponent::set_ignore_undo(bool ignore) {
+    _ignore_undo = ignore;
+}
+
 void EditorComponent::inspect(ecs::ComponentInspector* inspector) {
     inspector->inspect("Name", _name);
 }

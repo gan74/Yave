@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "UndoRedoSystem.h"
 
+#include <editor/components/EditorComponent.h>
+
 #include <yave/ecs/EntityWorld.h>
 #include <yave/ecs/ComponentBox.h>
 
@@ -186,6 +188,11 @@ void UndoRedoSystem::setup(ecs::SystemScheduler& sched) {
     sched.schedule(ecs::SystemSchedule::TickSequential, "TickSeq", [this]() {
         y_debug_assert(_snapshot);
         if(!_do_undo && !_do_redo) {
+            const auto ignore_undo = [&](ecs::EntityId id) {
+                const EditorComponent* comp = world().component<EditorComponent>(id);
+                return comp && comp->ignore_undo();
+            };
+
             UndoState state;
             for(const ecs::EntityId id : world().pending_deletions()) {
                 state.removed_entities.emplace_back(id, world().parent(id));
@@ -207,6 +214,10 @@ void UndoRedoSystem::setup(ecs::SystemScheduler& sched) {
                 const ecs::ComponentTypeIndex type_id = container->type_id();
 
                 for(const ecs::EntityId id : container->mutated_ids()) {
+                    if(ignore_undo(id)) {
+                        continue;
+                    }
+
                     if(_snapshot->exists(id) && _snapshot->has_component(id, type_id)) {
                         const ComponentKey key{id, type_id};
                         GetterInspector inspector(state.redo_properties.emplace_back(key, core::Vector<Property>()).second);
