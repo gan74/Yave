@@ -19,36 +19,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_ENTITYSELECTOR_H
-#define EDITOR_WIDGETS_ENTITYSELECTOR_H
+#ifndef EDITOR_WORKSPACE_H
+#define EDITOR_WORKSPACE_H
 
-#include <yave/ecs/ecs.h>
-
-#include <editor/Widget.h>
-
-#include <functional>
+#include <editor/editor.h>
 
 namespace editor {
 
-class EntitySelector final : public WorkspaceWidget<WorldWorkspace> {
+class Workspace : NonMovable {
     public:
-        EntitySelector(ecs::ComponentTypeIndex filter = ecs::ComponentTypeIndex::invalid_index, WorldWorkspace* ws = nullptr);
+        virtual ~Workspace() = default;
 
-        template<typename F>
-        void set_selected_callback(F&& func) {
-            _selected = y_fwd(func);
-        }
-
-    protected:
-        void on_gui() override;
-
-    private:
-        ecs::ComponentTypeIndex _filter = ecs::ComponentTypeIndex::invalid_index;
-        bool _show_all = false;
-
-        std::function<bool(ecs::EntityId)> _selected = [](const auto&) { return false; };
+        virtual void update() = 0;
 };
 
 }
 
-#endif // EDITOR_WIDGETS_ENTITYSELECTOR_H
+#endif // EDITOR_WORKSPACE_H

@@ -127,6 +127,21 @@ class Widget : NonMovable {
         Widget* _parent = nullptr;
         int _flags = 0;
 };
+
+
+template<typename WorkspaceType>
+class WorkspaceWidget : public Widget {
+    public:
+        WorkspaceWidget(std::string_view title, WorkspaceType* workspace, int flags = 0) :
+                Widget(title, flags),
+                _workspace(workspace) {
+            y_debug_assert(_workspace);
+        }
+
+    protected:
+        WorkspaceType* _workspace = nullptr;
+};
+
 }
 
 

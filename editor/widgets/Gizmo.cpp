@@ -21,6 +21,8 @@ SOFTWARE.
 **********************************/
 #include "Gizmo.h"
 
+#include <editor/WorldWorkspace.h>
+
 #include <editor/EditorWorld.h>
 
 #include <yave/scene/SceneView.h>
@@ -164,7 +166,9 @@ static bool is_inside(core::Span<math::Vec2> pts, const math::Vec2& p) {
 
 
 
-GizmoBase::GizmoBase(SceneView* view) : _scene_view(view) {
+GizmoBase::GizmoBase(SceneView* view, WorldWorkspace* ws) :
+        _scene_view(view),
+        _workspace(ws ? ws : &world_workspace()) {
 }
 
 GizmoBase::~GizmoBase() {
@@ -209,7 +213,7 @@ math::Vec3 GizmoBase::to_world_pos(const math::Vec2& window) const {
 
 
 
-TranslationGizmo::TranslationGizmo(SceneView* view) : GizmoBase(view) {
+TranslationGizmo::TranslationGizmo(SceneView* view, WorldWorkspace* ws) : GizmoBase(view, ws) {
 }
 
 bool TranslationGizmo::is_hovered(usize axis) const {
@@ -221,7 +225,7 @@ void TranslationGizmo::draw() {
 
     _is_dragging &= ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
-    EditorWorld& world = current_world();
+    EditorWorld& world = _workspace->world();
     const auto selected = world.selected_entities();
     if(selected.is_empty()) {
         return;
@@ -446,7 +450,7 @@ void TranslationGizmo::draw() {
 
 
 
-RotationGizmo::RotationGizmo(SceneView* view) : GizmoBase(view) {
+RotationGizmo::RotationGizmo(SceneView* view, WorldWorkspace* ws) : GizmoBase(view, ws) {
 }
 
 void RotationGizmo::draw() {
@@ -454,7 +458,7 @@ void RotationGizmo::draw() {
 
     _is_dragging &= ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
-    EditorWorld& world = current_world();
+    EditorWorld& world = _workspace->world();
     const auto selected = world.selected_entities();
     if(selected.is_empty()) {
         return;
@@ -656,7 +660,7 @@ void RotationGizmo::draw() {
 
 
 
-OrientationGizmo::OrientationGizmo(SceneView* view) : GizmoBase(view) {
+OrientationGizmo::OrientationGizmo(SceneView* view, WorldWorkspace* ws) : GizmoBase(view, ws) {
 }
 
 void OrientationGizmo::draw() {

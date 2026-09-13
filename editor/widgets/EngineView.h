@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <editor/Widget.h>
 #include <editor/Picker.h>
+#include <editor/WorldWorkspace.h>
 #include <editor/renderer/EditorRenderer.h>
 #include <editor/utils/CameraController.h>
 
@@ -39,7 +40,7 @@ SOFTWARE.
 
 namespace editor {
 
-class EngineView final : public Widget {
+class EngineView final : public WorkspaceWidget<WorldWorkspace> {
 
     editor_widget_open(EngineView, "View")
 
@@ -68,7 +69,7 @@ class EngineView final : public Widget {
             Max,
         };
 
-        EngineView();
+        EngineView(WorldWorkspace* ws = nullptr);
         ~EngineView() override;
 
         void reset_camera();

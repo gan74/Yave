@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "Inspector.h"
 
-#include <editor/EditorWorld.h>
+#include <editor/WorldWorkspace.h>
 #include <editor/widgets/AssetSelector.h>
 #include <editor/widgets/EntitySelector.h>
 #include <editor/components/EditorComponent.h>
@@ -562,18 +562,19 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
 
 
-Inspector::Inspector() : Widget(ICON_FA_WRENCH " Inspector") {
+Inspector::Inspector(WorldWorkspace* ws) :
+        WorkspaceWidget(ICON_FA_WRENCH " Inspector", ws ? ws : &world_workspace()) {
 }
 
 void Inspector::on_gui() {
-    EditorWorld& world = current_world();
+    EditorWorld& world = _workspace->world();
 
-    const ecs::EntityId selected = current_world().selected_entity();
+    const ecs::EntityId selected = world.selected_entity();
     const ecs::EntityId id = _locked.is_valid() ? _locked : selected;
     EditorComponent* component = world.component_mut<EditorComponent>(id);
 
     if(!id.is_valid() || !component) {
-        if(const usize selected_count = current_world().selected_entity_count(); selected_count > 1) {
+        if(const usize selected_count = world.selected_entity_count(); selected_count > 1) {
             ImGui::Text("%u selected entities", u32(selected_count));
         } else {
             ImGui::TextUnformatted("No entity selected");

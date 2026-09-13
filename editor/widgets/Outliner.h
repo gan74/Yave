@@ -28,12 +28,12 @@ SOFTWARE.
 
 namespace editor {
 
-class Outliner final : public Widget {
+class Outliner final : public WorkspaceWidget<WorldWorkspace> {
 
     editor_widget_open(Outliner)
 
     public:
-        Outliner();
+        Outliner(WorldWorkspace* ws = nullptr);
 
     protected:
         void on_gui() override;
@@ -53,4 +53,3 @@ class Outliner final : public Widget {
 }
 
 #endif // EDITOR_WIDGETS_OUTLINER_H
-

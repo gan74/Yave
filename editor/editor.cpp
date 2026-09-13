@@ -26,19 +26,12 @@ SOFTWARE.
 #include "UiManager.h"
 #include "ImGuiPlatform.h"
 #include "ThumbnailRenderer.h"
-#include "EditorWorld.h"
+#include "WorldWorkspace.h"
 
 #include <yave/assets/FolderAssetStore.h>
 #include <yave/assets/AssetLoader.h>
-#include <yave/utils/DirectDraw.h>
-#include <yave/scene/SceneView.h>
-#include <yave/scene/EcsScene.h>
 #include <yave/utils/DebugValues.h>
-#include <yave/systems/SceneSystem.h>
-#include <yave/systems/JoltPhysicsSystem.h>
 
-#include <y/io2/File.h>
-#include <y/serde3/archives.h>
 #include <y/utils/log.h>
 #include <y/test/test.h>
 
@@ -69,107 +62,14 @@ std::unique_ptr<EditorResources> resources;
 std::shared_ptr<AssetStore> asset_store;
 std::unique_ptr<AssetLoader> loader;
 std::unique_ptr<ThumbnailRenderer> thumbnail_renderer;
-std::unique_ptr<DirectDraw> debug_drawer;
 std::unique_ptr<UiManager> ui;
-std::unique_ptr<EditorWorld> world;
+std::unique_ptr<Workspace> workspace;
 
-std::unique_ptr<concurrent::JobSystem> world_job_system;
 std::unique_ptr<concurrent::JobSystem> editor_job_system;
 
 ImGuiPlatform* imgui_platform = nullptr;
 
-SceneView default_scene_view;
-SceneView* scene_view = nullptr;
-
 Settings settings;
-core::StopWatch update_timer;
-
-enum DeferredActions : u32 {
-    None    = 0x00,
-    Save    = 0x01,
-    Load    = 0x02,
-    New     = 0x04,
-};
-
-u32 deferred_actions = None;
-}
-
-
-
-
-static void create_scene_view() {
-    application::default_scene_view = SceneView(&current_scene());
-    set_scene_view(nullptr);
-}
-
-static void save_world_deferred() {
-    y_profile();
-
-    auto file = io2::File::create(app_settings().editor.world_file);
-    if(!file) {
-        log_msg("Unable to open world file", Log::Error);
-        return;
-    }
-
-    serde3::WritableArchive arc(file.unwrap());
-    if(auto r = application::world->save_state(arc); !r) {
-        log_msg(fmt("Unable to save world: {}", serde3::error_msg(r.error())), Log::Error);
-        return;
-    }
-
-    log_msg("World saved");
-}
-
-static void load_world_deferred() {
-    y_profile();
-
-    auto file = io2::File::open(app_settings().editor.world_file);
-    if(!file) {
-        log_msg("Unable to open world file", Log::Error);
-        return;
-    }
-
-    auto world = std::make_unique<EditorWorld>(*application::loader);
-
-    serde3::ReadableArchive arc(file.unwrap(), serde3::DeserializationFlags::DontPropagatePolyFailure);
-    if(auto r = world->load_state(arc); !r) {
-        const char* member_name = r.error().member ? r.error().member : "unknown member";
-        log_msg(fmt("Unable to load world: {} (for {})", serde3::error_msg(r.error()), member_name), Log::Error);
-        return;
-    } else if(r.unwrap() == serde3::Success::Partial) {
-        log_msg("World was only partially loaded", Log::Warning);
-    }
-
-    application::world = std::move(world);
-    create_scene_view();
-
-    log_msg("World loaded");
-}
-
-void post_tick() {
-    y_profile();
-    {
-        if(application::deferred_actions & application::Save) {
-            save_world_deferred();
-        }
-
-        if(application::deferred_actions & application::Load) {
-            load_world_deferred();
-        }
-
-        if(application::deferred_actions & application::New) {
-            application::world = std::make_unique<EditorWorld>(*application::loader);
-            create_scene_view();
-        }
-
-        application::deferred_actions = application::None;
-    }
-
-    if(JoltPhysicsSystem* jolt = application::world->find_system<JoltPhysicsSystem>()) {
-        jolt->set_debug_drawer(&debug_drawer());
-        jolt->set_debug_draw_static(application::settings.debug.display_static_colliders);
-        jolt->set_debug_draw_movable(application::settings.debug.display_movable_colliders);
-    }
 }
 
 
@@ -181,7 +81,6 @@ void post_tick() {
 void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::settings = settings;
     application::imgui_platform = platform;
-    application::world_job_system = std::make_unique<concurrent::JobSystem>();
     application::editor_job_system = std::make_unique<concurrent::JobSystem>();
 
     const auto& store_dir = app_settings().editor.asset_store;
@@ -191,14 +90,13 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::asset_store = std::make_shared<FolderAssetStore>(store_dir);
     application::loader = std::make_unique<AssetLoader>(application::asset_store, AssetLoadingFlags::SkipFailedDependenciesBit, 4);
     application::thumbnail_renderer = std::make_unique<ThumbnailRenderer>(*application::loader);
-    application::world = std::make_unique<EditorWorld>(*application::loader);
-    application::debug_drawer = std::make_unique<DirectDraw>();
 
-    create_scene_view();
+    auto world_ws = std::make_unique<WorldWorkspace>(*application::loader);
+    world_ws->load_world();
+    application::workspace = std::move(world_ws);
 
-    application::deferred_actions = application::Load;
-
-    post_tick();
+    world_workspace().update();
+    world_workspace().post_update();
 }
 
 
@@ -206,22 +104,17 @@ void destroy_editor() {
     application::ui = nullptr;
     application::editor_job_system = nullptr; // finish thumbnail jobs before destroying their targets
     application::thumbnail_renderer = nullptr;
-    application::world = nullptr;
-    application::scene_view  = nullptr;
-    application::default_scene_view = {};
+    application::workspace = nullptr;
     application::loader = nullptr;
     application::asset_store = nullptr;
-    application::debug_drawer = nullptr;
     application::resources = nullptr;
-    application::world_job_system = nullptr;
 }
 
 void run_editor() {
     application::imgui_platform->exec([] {
-        application::world->tick(*application::world_job_system);
-        application::world->process_deferred_changes();
+        world_workspace().update();
         application::ui->on_gui();
-        post_tick();
+        world_workspace().post_update();
     });
 }
 
@@ -246,7 +139,7 @@ ThumbnailRenderer& thumbnail_renderer() {
 }
 
 concurrent::JobSystem& world_job_system() {
-    return *application::world_job_system;
+    return world_workspace().job_system();
 }
 
 concurrent::JobSystem& editor_job_system() {
@@ -257,47 +150,48 @@ const EditorResources& resources() {
     return *application::resources;
 }
 
+Workspace& current_workspace() {
+    y_debug_assert(application::workspace);
+    return *application::workspace;
+}
+
+WorldWorkspace& world_workspace() {
+    WorldWorkspace* ws = dynamic_cast<WorldWorkspace*>(application::workspace.get());
+    y_debug_assert(ws);
+    return *ws;
+}
+
 void save_world() {
-    application::deferred_actions |= application::Save;
+    world_workspace().save_world();
 }
 
 void load_world() {
-    application::deferred_actions |= application::Load;
+    world_workspace().load_world();
 }
 
 void new_world() {
-    application::deferred_actions |= application::New;
+    world_workspace().new_world();
 }
 
 EditorWorld& current_world() {
-    return *application::world;
+    return world_workspace().world();
 }
 
 const Scene& current_scene() {
-    const Scene* sce = application::world->find_system<SceneSystem>()->scene();
-    y_debug_assert(sce);
-    return *sce;
+    return world_workspace().scene();
 }
 
 void set_scene_view(SceneView* scene) {
-    if(!scene) {
-        application::scene_view = &application::default_scene_view;
-    } else {
-        application::scene_view = scene;
-    }
+    world_workspace().set_scene_view(scene);
 }
 
 void unset_scene_view(SceneView* scene) {
-    if(application::scene_view == scene) {
-        set_scene_view(nullptr);
-    }
+    world_workspace().unset_scene_view(scene);
 }
 
 const SceneView& scene_view() {
-    return *application::scene_view;
+    return world_workspace().scene_view();
 }
-
-
 
 
 
@@ -309,7 +203,7 @@ DebugValues& debug_values() {
 }
 
 DirectDraw& debug_drawer() {
-    return *application::debug_drawer;
+    return world_workspace().debug_drawer();
 }
 
 
@@ -344,4 +238,3 @@ const EditorAction* all_actions() {
 }
 
 }
-

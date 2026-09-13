@@ -100,17 +100,17 @@ static bool keep_taa(EngineView::RenderView view) {
 
 
 
-EngineView::EngineView() :
-        Widget(ICON_FA_DESKTOP " Engine View", ImGuiWindowFlags_MenuBar),
+EngineView::EngineView(WorldWorkspace* ws) :
+        WorkspaceWidget(ICON_FA_DESKTOP " Engine View", ws ? ws : &world_workspace(), ImGuiWindowFlags_MenuBar),
         _resource_pool(std::make_shared<FrameGraphResourcePool>()),
         _camera_controller(std::make_unique<HoudiniCameraController>()),
-        _tr_gizmo(&_scene_view),
-        _rot_gizmo(&_scene_view),
-        _orientation_gizmo(&_scene_view) {
+        _tr_gizmo(&_scene_view, _workspace),
+        _rot_gizmo(&_scene_view, _workspace),
+        _orientation_gizmo(&_scene_view, _workspace) {
 }
 
 EngineView::~EngineView() {
-    unset_scene_view(&_scene_view);
+    _workspace->unset_scene_view(&_scene_view);
 }
 
 void EngineView::reset_camera() {
@@ -284,15 +284,15 @@ void EngineView::update() {
                 // Nothing
             } else if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                 if(!is_dragging_gizmo()) {
-                    const ecs::EntityId picked_id = _picking_result.hit() ? dynamic_cast<const EcsScene*>(&current_scene())->id_from_index(_picking_result.entity_index) : ecs::EntityId();
-                    current_world().toggle_selected(picked_id, !ImGui::GetIO().KeyCtrl);
+                    const ecs::EntityId picked_id = _picking_result.hit() ? dynamic_cast<const EcsScene*>(&_workspace->scene())->id_from_index(_picking_result.entity_index) : ecs::EntityId();
+                    _workspace->world().toggle_selected(picked_id, !ImGui::GetIO().KeyCtrl);
                 }
             }
         }
     }
 
     if(focussed) {
-        set_scene_view(&_scene_view);
+        _workspace->set_scene_view(&_scene_view);
 
         if(_camera_controller) {
             auto& camera = _scene_view.camera();
@@ -308,8 +308,8 @@ void EngineView::update() {
 }
 
 void EngineView::update_scene_view() {
-    if(_scene_view.scene() != &current_scene()) {
-        _scene_view = SceneView(&current_scene());
+    if(_scene_view.scene() != &_workspace->scene()) {
+        _scene_view = SceneView(&_workspace->scene());
     }
 
     const CameraSettings& settings = app_settings().camera;
@@ -344,7 +344,7 @@ void EngineView::update_picking() {
     }
 
     // const float dist = (_picking_result.world_pos - request.camera.position()).length();
-    debug_drawer().add_primitive("debug")->add_marker(0xFF0000FF, _cursor_world_pos, 0.5f);
+    _workspace->debug_drawer().add_primitive("debug")->add_marker(0xFF0000FF, _cursor_world_pos, 0.5f);
 }
 
 void EngineView::make_drop_target() {
@@ -364,16 +364,17 @@ void EngineView::make_drop_target() {
     }
 
     ecs::EntityId added_id;
+    EditorWorld& world = _workspace->world();
     const AssetType type = asset_store().asset_type(asset_id).unwrap_or(AssetType::Unknown);
     switch(type) {
         case AssetType::Prefab:
-            added_id = current_world().add_prefab(asset_id);
+            added_id = world.add_prefab(asset_id);
         break;
 
         case AssetType::Mesh: {
-            added_id = current_world().create_named_entity(asset_store().name(asset_id).unwrap_or("Mesh"));
-            current_world().add_or_replace_component<TransformableComponent>(added_id);
-            current_world().add_or_replace_component<StaticMeshComponent>(added_id,
+            added_id = world.create_named_entity(asset_store().name(asset_id).unwrap_or("Mesh"));
+            world.add_or_replace_component<TransformableComponent>(added_id);
+            world.add_or_replace_component<StaticMeshComponent>(added_id,
                 asset_loader().load_async<StaticMesh>(asset_id),
                 device_resources()[DeviceResources::EmptyMaterial]
             );
@@ -381,13 +382,13 @@ void EngineView::make_drop_target() {
 
         case AssetType::Material: {
             if(_picking_valid && _picking_result.hit()) {
-                const ecs::EntityId picked_id = dynamic_cast<const EcsScene*>(&current_scene())->id_from_index(_picking_result.entity_index);
-                if(StaticMeshComponent* mesh = current_world().component_mut<StaticMeshComponent>(picked_id)) {
+                const ecs::EntityId picked_id = dynamic_cast<const EcsScene*>(&_workspace->scene())->id_from_index(_picking_result.entity_index);
+                if(StaticMeshComponent* mesh = world.component_mut<StaticMeshComponent>(picked_id)) {
                     const AssetPtr<Material> material = asset_loader().load_async<Material>(asset_id);
                     for(AssetPtr<Material>& slot : mesh->materials()) {
                         slot = material;
                     }
-                    current_world().set_selected(picked_id);
+                    world.set_selected(picked_id);
                 }
             }
         } break;
@@ -397,10 +398,10 @@ void EngineView::make_drop_target() {
     }
 
     if(added_id.is_valid()) {
-        if(TransformableComponent* transformable = current_world().component_mut<TransformableComponent>(added_id)) {
+        if(TransformableComponent* transformable = world.component_mut<TransformableComponent>(added_id)) {
             transformable->set_position(_cursor_world_pos);
         }
-        current_world().set_selected(added_id);
+        world.set_selected(added_id);
     }
 }
 
@@ -515,7 +516,7 @@ void EngineView::draw_toolbar() {
 
     ImGui::Separator();
 
-    if(TimeSystem* time = current_world().find_system<TimeSystem>()) {
+    if(TimeSystem* time = _workspace->world().find_system<TimeSystem>()) {
         const bool paused = time->time_scale() <= 0.0f;
         if(ImGui::MenuItem(paused ? ICON_FA_PLAY : ICON_FA_PAUSE)) {
             time->set_time_scale(paused ? 1.0f : 0.0f);

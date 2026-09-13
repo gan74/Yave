@@ -59,6 +59,9 @@ concurrent::JobSystem& editor_job_system();
 
 const EditorResources& resources();
 
+Workspace& current_workspace();
+WorldWorkspace& world_workspace();
+
 void save_world();
 void load_world();
 void new_world();

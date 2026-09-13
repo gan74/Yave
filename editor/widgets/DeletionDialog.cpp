@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "DeletionDialog.h"
 
-#include <editor/EditorWorld.h>
+#include <editor/WorldWorkspace.h>
 
 #include <editor/utils/ui.h>
 
@@ -40,15 +40,15 @@ static void remove_children(EditorWorld& world, ecs::EntityId id) {
     }
 }
 
-DeletionDialog::DeletionDialog(core::Span<ecs::EntityId> ids) :
-        Widget("Confirm", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking),
+DeletionDialog::DeletionDialog(core::Span<ecs::EntityId> ids, WorldWorkspace* ws) :
+        WorkspaceWidget("Confirm", ws ? ws : &world_workspace(), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking),
         _ids(ids) {
 
    set_modal(true);
 }
 
 void DeletionDialog::on_gui() {
-    EditorWorld& world = current_world();
+    EditorWorld& world = _workspace->world();
 
     const bool exists = std::any_of(_ids.begin(), _ids.end(), [&](const ecs::EntityId id) { return world.exists(id); });
     if(!exists) {
@@ -91,4 +91,3 @@ void DeletionDialog::on_gui() {
 }
 
 }
-

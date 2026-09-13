@@ -66,6 +66,8 @@ class TranslationGizmo;
 class UiManager;
 class UndoRedoSystem;
 class Widget;
+class Workspace;
+class WorldWorkspace;
 struct CVar;
 struct CameraSettings;
 struct ComponentData;

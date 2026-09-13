@@ -30,9 +30,9 @@ SOFTWARE.
 
 namespace editor {
 
-class DeletionDialog final : public Widget {
+class DeletionDialog final : public WorkspaceWidget<WorldWorkspace> {
     public:
-        DeletionDialog(core::Span<ecs::EntityId> ids);
+        DeletionDialog(core::Span<ecs::EntityId> ids, WorldWorkspace* ws = nullptr);
 
     protected:
         void on_gui() override;
@@ -45,4 +45,3 @@ class DeletionDialog final : public Widget {
 }
 
 #endif // EDITOR_WIDGETS_DELETIONDIALOG_H
-

@@ -28,12 +28,12 @@ SOFTWARE.
 
 namespace editor {
 
-class Inspector final : public Widget {
+class Inspector final : public WorkspaceWidget<WorldWorkspace> {
 
     editor_widget_open(Inspector)
 
     public:
-        Inspector();
+        Inspector(WorldWorkspace* ws = nullptr);
 
     protected:
         void on_gui() override;
@@ -45,4 +45,3 @@ class Inspector final : public Widget {
 }
 
 #endif // EDITOR_WIDGETS_INSPECTOR_H
-
