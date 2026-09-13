@@ -26,6 +26,7 @@ SOFTWARE.
 // TODO: Nested classes will not be declared correctly
 
 namespace editor {
+class AssetReferenceWidget;
 class AssetSelector;
 class AssetStringifier;
 class CVarConsole;
@@ -69,6 +70,7 @@ struct CVar;
 struct CameraSettings;
 struct ComponentData;
 struct DebugSettings;
+struct Delegates;
 struct EditorAction;
 struct EditorPass;
 struct EditorRenderer;
@@ -89,7 +91,6 @@ struct UiIcon;
 struct UiSettings;
 struct UndoState;
 struct WidgetIdStack;
-struct ZoneHistory;
 }
 
 
