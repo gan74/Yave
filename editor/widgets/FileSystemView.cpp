@@ -426,21 +426,26 @@ void FileSystemView::draw_context_menu() {
         refresh_all();
     }
 
-    if(_allow_modify && _selected_index < _entries.size()) {
-        ImGui::Separator();
+    if(_selected_index < _entries.size()) {
+        const Entry& entry = _entries[_selected_index];
 
-        const auto& entry = _entries[_selected_index];
-        const core::String full_name = filesystem()->join(_current_path, entry.name);
+        _delegates.context_menu(entry.full_name, entry.type);
 
-        if(ImGui::MenuItem("Rename")) {
-            add_detached_widget<FileRenamer>(filesystem(), full_name);
-        }
+        if(_allow_modify) {
+            ImGui::Separator();
 
-        if(ImGui::MenuItem("Delete")) {
-            if(!filesystem()->remove(full_name)) {
-                log_msg(fmt("Unable to delete {}", full_name), Log::Error);
+            const core::String full_name = filesystem()->join(_current_path, entry.name);
+
+            if(ImGui::MenuItem("Rename")) {
+                add_detached_widget<FileRenamer>(filesystem(), full_name);
             }
-            refresh_all();
+
+            if(ImGui::MenuItem("Delete")) {
+                if(!filesystem()->remove(full_name)) {
+                    log_msg(fmt("Unable to delete {}", full_name), Log::Error);
+                }
+                refresh_all();
+            }
         }
     }
 }

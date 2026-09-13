@@ -103,6 +103,11 @@ class FileSystemView : public Widget {
             _delegates.clicked = y_fwd(f);
         }
 
+        template<typename F>
+        void set_context_menu_delegate(F&& f) {
+            _delegates.context_menu = y_fwd(f);
+        }
+
     protected:
         void on_gui() override;
 
@@ -132,6 +137,7 @@ class FileSystemView : public Widget {
 
             std::function<UiTexture(const core::String&, EntryType)> preview = [](const core::String&, EntryType) { return UiTexture{}; };
             std::function<bool(const core::String&, EntryType)> clicked   = [](const core::String&, EntryType) { return false; };
+            std::function<void(const core::String&, EntryType)> context_menu = [](const core::String&, EntryType) {};
         } _delegates;
 
         usize _selected_index = usize(-1);

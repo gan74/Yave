@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include "ResourceBrowser.h"
 
+#include "AssetReferenceWidget.h"
 #include "GltfImporter.h"
 #include "ImageImporter.h"
 
@@ -93,6 +94,18 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _files
                         ImGui::TextUnformatted(info.data());
                     }
                 }
+            }
+        }
+    });
+
+    _filesystem_view.set_context_menu_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+        if(type != FileSystemModel::EntryType::File) {
+            return;
+        }
+        if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
+            ImGui::Separator();
+            if(ImGui::MenuItem("Show references")) {
+                add_detached_widget<AssetReferenceWidget>(id);
             }
         }
     });
