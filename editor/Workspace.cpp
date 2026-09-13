@@ -19,26 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WORKSPACE_H
-#define EDITOR_WORKSPACE_H
 
-#include <editor/editor.h>
+#include "Workspace.h"
+
+#include <atomic>
 
 namespace editor {
 
-class Workspace : NonMovable {
-    public:
-        Workspace();
-        virtual ~Workspace();
-
-        u32 workspace_id() const;
-
-        virtual void update() = 0;
-
-    private:
-        const u32 _id;
-};
-
+static u32 generate_ws_id() {
+    static std::atomic<u32> id = 0;
+    return ++id;
 }
 
-#endif // EDITOR_WORKSPACE_H
+Workspace::Workspace() : _id(generate_ws_id()) {
+}
+
+Workspace::~Workspace() {
+}
+
+u32 Workspace::workspace_id() const {
+    return _id;
+}
+
+}

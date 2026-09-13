@@ -19,26 +19,44 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WORKSPACE_H
-#define EDITOR_WORKSPACE_H
 
-#include <editor/editor.h>
+#include "WorkArea.h"
 
 namespace editor {
 
-class Workspace : NonMovable {
-    public:
-        Workspace();
-        virtual ~Workspace();
+WorkArea::WorkArea() :
+        Widget(ICON_FA_LAYER_GROUP " Work Area"),
+        _workspace(std::make_unique<WorldWorkspace>(asset_loader())) {
 
-        u32 workspace_id() const;
-
-        virtual void update() = 0;
-
-    private:
-        const u32 _id;
-};
-
+    set_current_workspace(_workspace.get());
+    _workspace->load_world();
 }
 
-#endif // EDITOR_WORKSPACE_H
+WorkArea::~WorkArea() {
+    if(current_workspace_ptr() == _workspace.get()) {
+        set_current_workspace(nullptr);
+    }
+}
+
+WorldWorkspace& WorkArea::workspace() {
+    return *_workspace;
+}
+
+const WorldWorkspace& WorkArea::workspace() const {
+    return *_workspace;
+}
+
+void WorkArea::on_gui() {
+    ImGuiWindowClass window_class;
+    window_class.ClassId = _workspace->workspace_id();
+    window_class.DockingAllowUnclassed = false;
+
+    const ImGuiID dockspace_id = ImGui::GetID("##workarea_dock");
+    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None, &window_class);
+}
+
+bool WorkArea::should_keep_alive() const {
+    return true;
+}
+
+}

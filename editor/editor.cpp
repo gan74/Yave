@@ -63,7 +63,7 @@ std::shared_ptr<AssetStore> asset_store;
 std::unique_ptr<AssetLoader> loader;
 std::unique_ptr<ThumbnailRenderer> thumbnail_renderer;
 std::unique_ptr<UiManager> ui;
-std::unique_ptr<Workspace> workspace;
+Workspace* workspace = nullptr;
 
 std::unique_ptr<concurrent::JobSystem> editor_job_system;
 
@@ -90,21 +90,14 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::asset_store = std::make_shared<FolderAssetStore>(store_dir);
     application::loader = std::make_unique<AssetLoader>(application::asset_store, AssetLoadingFlags::SkipFailedDependenciesBit, 4);
     application::thumbnail_renderer = std::make_unique<ThumbnailRenderer>(*application::loader);
-
-    auto world_ws = std::make_unique<WorldWorkspace>(*application::loader);
-    world_ws->load_world();
-    application::workspace = std::move(world_ws);
-
-    world_workspace().update();
-    world_workspace().post_update();
 }
 
 
 void destroy_editor() {
     application::ui = nullptr;
+    application::workspace = nullptr;
     application::editor_job_system = nullptr; // finish thumbnail jobs before destroying their targets
     application::thumbnail_renderer = nullptr;
-    application::workspace = nullptr;
     application::loader = nullptr;
     application::asset_store = nullptr;
     application::resources = nullptr;
@@ -112,9 +105,13 @@ void destroy_editor() {
 
 void run_editor() {
     application::imgui_platform->exec([] {
-        world_workspace().update();
+        if(application::workspace) {
+            world_workspace().update();
+        }
         application::ui->on_gui();
-        world_workspace().post_update();
+        if(application::workspace) {
+            world_workspace().post_update();
+        }
     });
 }
 
@@ -155,10 +152,18 @@ Workspace& current_workspace() {
     return *application::workspace;
 }
 
+Workspace* current_workspace_ptr() {
+    return application::workspace;
+}
+
 WorldWorkspace& world_workspace() {
-    WorldWorkspace* ws = dynamic_cast<WorldWorkspace*>(application::workspace.get());
+    WorldWorkspace* ws = dynamic_cast<WorldWorkspace*>(application::workspace);
     y_debug_assert(ws);
     return *ws;
+}
+
+void set_current_workspace(Workspace* workspace) {
+    application::workspace = workspace;
 }
 
 void save_world() {

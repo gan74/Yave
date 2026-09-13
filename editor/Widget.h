@@ -28,6 +28,8 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 
+#include <external/imgui/imgui.h>
+
 #include <array>
 #include <tuple>
 
@@ -100,6 +102,7 @@ class Widget : NonMovable {
         virtual void on_gui();
         virtual bool before_gui();
         virtual void after_gui();
+        virtual void prepare_window();
 
         virtual bool should_keep_alive() const;
 
@@ -129,17 +132,27 @@ class Widget : NonMovable {
 };
 
 
-template<typename WorkspaceType>
+template<typename W>
 class WorkspaceWidget : public Widget {
+    //static_assert(std::is_base_of_v<Workspace, W>);
+
     public:
-        WorkspaceWidget(std::string_view title, WorkspaceType* workspace, int flags = 0) :
+        WorkspaceWidget(std::string_view title, W* workspace, int flags = 0) :
                 Widget(title, flags),
                 _workspace(workspace) {
+
             y_debug_assert(_workspace);
         }
 
     protected:
-        WorkspaceType* _workspace = nullptr;
+        void prepare_window() override {
+            ImGuiWindowClass window_class;
+            window_class.ClassId = _workspace->workspace_id();
+            window_class.DockingAllowUnclassed = false;
+            ImGui::SetNextWindowClass(&window_class);
+        }
+
+        W* _workspace = nullptr;
 };
 
 }

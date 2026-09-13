@@ -19,26 +19,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WORKSPACE_H
-#define EDITOR_WORKSPACE_H
+#ifndef EDITOR_WIDGETS_WORKAREA_H
+#define EDITOR_WIDGETS_WORKAREA_H
 
-#include <editor/editor.h>
+#include <editor/Widget.h>
+#include <editor/WorldWorkspace.h>
+
+#include <memory>
 
 namespace editor {
 
-class Workspace : NonMovable {
+class WorkArea final : public Widget {
+
+    editor_widget(WorkArea, "View")
+
     public:
-        Workspace();
-        virtual ~Workspace();
+        WorkArea();
+        ~WorkArea() override;
 
-        u32 workspace_id() const;
+        WorldWorkspace& workspace();
+        const WorldWorkspace& workspace() const;
 
-        virtual void update() = 0;
+    protected:
+        void on_gui() override;
+
+        bool should_keep_alive() const override;
 
     private:
-        const u32 _id;
+        std::unique_ptr<WorldWorkspace> _workspace;
 };
 
 }
 
-#endif // EDITOR_WORKSPACE_H
+#endif // EDITOR_WIDGETS_WORKAREA_H
