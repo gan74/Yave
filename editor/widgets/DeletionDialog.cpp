@@ -22,8 +22,6 @@ SOFTWARE.
 
 #include "DeletionDialog.h"
 
-#include <editor/WorldWorkspace.h>
-
 #include <editor/utils/ui.h>
 
 namespace editor {
@@ -40,8 +38,8 @@ static void remove_children(EditorWorld& world, ecs::EntityId id) {
     }
 }
 
-DeletionDialog::DeletionDialog(core::Span<ecs::EntityId> ids, WorldWorkspace* ws) :
-        WorkspaceWidget("Confirm", ws ? ws : &world_workspace(), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking),
+DeletionDialog::DeletionDialog(WorldWorkspace* ws, core::Span<ecs::EntityId> ids) :
+        WorkspaceWidget("Confirm", ws, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking),
         _ids(ids) {
 
    set_modal(true);

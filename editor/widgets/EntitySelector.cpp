@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "EntitySelector.h"
 
-#include <editor/WorldWorkspace.h>
 #include <editor/components/EditorComponent.h>
 
 #include <editor/utils/ui.h>
@@ -31,11 +30,11 @@ SOFTWARE.
 
 namespace editor {
 
-EntitySelector::EntitySelector(ecs::ComponentTypeIndex filter, WorldWorkspace* ws) :
+EntitySelector::EntitySelector(WorldWorkspace* ws, ecs::ComponentTypeIndex filter) :
         WorkspaceWidget(filter == ecs::ComponentTypeIndex::invalid_index
             ? "Select an entity"
-            : fmt("Select a {}", (ws ? ws : &world_workspace())->world().component_type_name(filter)),
-            ws ? ws : &world_workspace()),
+            : fmt("Select a {}", ws->world().component_type_name(filter)),
+            ws),
         _filter(filter) {
     set_modal(true);
 }

@@ -101,7 +101,7 @@ static bool keep_taa(EngineView::RenderView view) {
 
 
 EngineView::EngineView(WorldWorkspace* ws) :
-        WorkspaceWidget(ICON_FA_DESKTOP " Engine View", ws ? ws : &world_workspace(), ImGuiWindowFlags_MenuBar),
+        WorkspaceWidget(ICON_FA_DESKTOP " Engine View", ws, ImGuiWindowFlags_MenuBar),
         _resource_pool(std::make_shared<FrameGraphResourcePool>()),
         _camera_controller(std::make_unique<HoudiniCameraController>()),
         _tr_gizmo(&_scene_view, _workspace),
@@ -441,12 +441,12 @@ void EngineView::on_gui() {
                     continue;
                 }
 
-                if(action->enabled && !(action->enabled())) {
+                if(action->enabled && !(action->enabled(_workspace))) {
                     continue;
                 }
 
                 if(ImGui::MenuItem(action->name.data())) {
-                    action->function();
+                    action->function(_workspace);
                 }
             }
             ImGui::EndPopup();
@@ -530,10 +530,10 @@ void EngineView::draw_gizmos() {
     }
 
     switch(_gizmo) {
-        case GizmoType::Translate: 
+        case GizmoType::Translate:
             _tr_gizmo.draw();
         break;
-        case GizmoType::Rotate: 
+        case GizmoType::Rotate:
             _rot_gizmo.draw();
         break;
     }

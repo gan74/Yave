@@ -27,11 +27,13 @@ SOFTWARE.
 #include <editor/utils/StringMatcher.h>
 #include <editor/widgets/PerformanceMetrics.h>
 #include <editor/widgets/DebugValueEditor.h>
+#include <editor/widgets/WorkArea.h>
 #include <yave/graphics/device/Instance.h>
 
 #include <yave/assets/AssetLoader.h>
 #include <y/core/HashMap.h>
 
+#include <algorithm>
 #include <tuple>
 
 namespace editor {
@@ -178,7 +180,7 @@ void UiManager::update_shortcuts() {
     for(auto&& action : _shortcuts) {
         if(keys == action.first->shortcut) {
             if(!action.second) {
-                action.first->function();
+                action.first->function(current_workspace());
                 action.second = true;
             }
         } else {
@@ -241,7 +243,7 @@ void UiManager::draw_menu_bar() {
             if(stack_size == action->menu.size()) {
                 const core::String shortcut = shortcut_text(action->shortcut);
                 if(ImGui::MenuItem(action->name.data(), shortcut.is_empty() ? nullptr : shortcut.data())) {
-                    action->function();
+                    action->function(current_workspace());
                 }
             }
 
@@ -269,14 +271,14 @@ void UiManager::draw_menu_bar() {
                             continue;
                         }
 
-                        if(action->enabled && !(action->enabled())) {
+                        if(action->enabled && !(action->enabled(current_workspace()))) {
                             continue;
                         }
 
                         if(matcher.matches(action->name)) {
                             const core::String shortcut = shortcut_text(action->shortcut);
                             if(imgui::suggestion_item(action->name.data(), shortcut.is_empty() ? nullptr : shortcut.data())) {
-                                action->function();
+                                action->function(current_workspace());
                                 _search_pattern[0] = 0;
                             }
                             if(!action->description.empty() && ImGui::IsItemHovered()) {
@@ -317,6 +319,13 @@ void UiManager::restore_default_layout() {
 }
 
 void UiManager::open_default_widgets() {
+    const bool has_work_area = std::any_of(_widgets.begin(), _widgets.end(), [](const auto& widget) {
+        return dynamic_cast<WorkArea*>(widget.get());
+    });
+    if(!has_work_area) {
+        add_widget(std::make_unique<WorkArea>(), false);
+    }
+
     for(const EditorWidget* widget = all_widgets(); widget; widget = widget->next) {
         if(widget->open_on_startup) {
             widget->create();

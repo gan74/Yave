@@ -93,14 +93,14 @@ class SetterInspector final : public ecs::TemplateComponentInspector<SetterInspe
         bool _value_set = false;
 };
 
-static void id_selector(ecs::EntityId& property_id, const core::String& name, ecs::EntityId entity_id, ecs::ComponentTypeIndex comp_type, ecs::ComponentTypeIndex target_type) {
+static void id_selector(ecs::EntityId& property_id, const core::String& name, ecs::EntityId entity_id, ecs::ComponentTypeIndex comp_type, ecs::ComponentTypeIndex target_type, WorldWorkspace* workspace) {
     bool browse = false;
-    imgui::id_selector(property_id, current_world(), target_type, &browse);
+    imgui::id_selector(property_id, workspace->world(), target_type, &browse);
     if(browse) {
-        add_child_widget<EntitySelector>(target_type)->set_selected_callback(
+        add_child_widget<EntitySelector>(workspace, target_type)->set_selected_callback(
             [=](ecs::EntityId new_id) {
                 SetterInspector<ecs::EntityId> setter(name, new_id);
-                current_world().inspect_components(entity_id, &setter, comp_type);
+                workspace->world().inspect_components(entity_id, &setter, comp_type);
                 return true;
             }
         );
@@ -108,7 +108,7 @@ static void id_selector(ecs::EntityId& property_id, const core::String& name, ec
 }
 
 template<typename T>
-static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, ecs::EntityId id, ecs::ComponentTypeIndex comp_type) {
+static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, ecs::EntityId id, ecs::ComponentTypeIndex comp_type, WorldWorkspace* workspace) {
     y_always_assert(ptr.matches<T>(), "AssetPtr doesn't match given type");
 
     bool clear = false;
@@ -118,7 +118,7 @@ static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, e
             [=](AssetId asset) {
                 if(const auto loaded = asset_loader().load_res<T>(asset)) {
                     SetterInspector<GenericAssetPtr> setter(name, loaded.unwrap());
-                    current_world().inspect_components(id, &setter, comp_type);
+                    workspace->world().inspect_components(id, &setter, comp_type);
                 }
                 return true;
             });
@@ -163,10 +163,10 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
     }
 
     public:
-        InspectorPanelInspector(ecs::EntityId id, EditorComponent* editor, EditorWorld* world) :
+        InspectorPanelInspector(ecs::EntityId id, EditorComponent* editor, WorldWorkspace* workspace) :
                 _id(id),
                 _editor(editor),
-                _world(world) {
+                _workspace(workspace) {
         }
 
         ~InspectorPanelInspector() {
@@ -205,7 +205,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                 const float button_size = ImGui::GetFrameHeight();
                 const ImVec2 button_pos = ImVec2(ImGui::GetContentRegionAvail().x - button_size, 0.0f) + ImGui::GetCursorScreenPos();
                 ImGui::SetCursorScreenPos(button_pos);
-                const bool can_remove = !_world->is_component_required(_id, info.type_id);
+                const bool can_remove = !_workspace->world().is_component_required(_id, info.type_id);
                 const bool remove_component = ImGui::InvisibleButton(ICON_FA_TRASH "###invisible", ImVec2(button_size, button_size));
 
                 ImGui::SameLine();
@@ -222,7 +222,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                     if(!can_remove) {
                         log_msg(fmt("{} can not be deleted as it is required by some other component", info.clean_component_name()), Log::Warning);
                     } else {
-                        _world->remove_component(_id, info.type_id);
+                        _workspace->world().remove_component(_id, info.type_id);
                     }
                 }
             }
@@ -499,7 +499,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             y_defer(ImGui::PopID());
 
             auto row = begin_property_row(name);
-            id_selector(id, name, _id, _type, type);
+            id_selector(id, name, _id, _type, type, _workspace);
         }
 
         void inspect(const core::String& name, GenericAssetPtr& p) override {
@@ -510,19 +510,19 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
             switch(p.type()) {
                 case AssetType::Mesh:
-                    asset_ptr_selector<StaticMesh>(p, name, _id, _type);
+                    asset_ptr_selector<StaticMesh>(p, name, _id, _type, _workspace);
                 break;
 
                 case AssetType::Image:
                     if(p.matches<Texture>()) {
-                        asset_ptr_selector<Texture>(p, name, _id, _type);
+                        asset_ptr_selector<Texture>(p, name, _id, _type, _workspace);
                     } else if(p.matches<IBLProbe>()) {
-                        asset_ptr_selector<IBLProbe>(p, name, _id, _type);
+                        asset_ptr_selector<IBLProbe>(p, name, _id, _type, _workspace);
                     }
                 break;
 
                 case AssetType::Material:
-                    asset_ptr_selector<Material>(p, name, _id, _type);
+                    asset_ptr_selector<Material>(p, name, _id, _type, _workspace);
                 break;
 
                 default:
@@ -552,7 +552,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
         ecs::EntityId _id;
         EditorComponent* _editor = nullptr;
-        EditorWorld* _world = nullptr;
+        WorldWorkspace* _workspace = nullptr;
         ecs::ComponentTypeIndex _type = {};
 
 
@@ -563,7 +563,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
 
 Inspector::Inspector(WorldWorkspace* ws) :
-        WorkspaceWidget(ICON_FA_WRENCH " Inspector", ws ? ws : &world_workspace()) {
+        WorkspaceWidget(ICON_FA_WRENCH " Inspector", ws) {
 }
 
 void Inspector::on_gui() {
@@ -620,7 +620,7 @@ void Inspector::on_gui() {
         ImGui::EndGroup();
     }
 
-    InspectorPanelInspector inspector(id, component, &world);
+    InspectorPanelInspector inspector(id, component, _workspace);
     world.inspect_components(id, &inspector);
 
     ImGui::Separator();

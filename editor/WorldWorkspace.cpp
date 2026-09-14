@@ -51,6 +51,10 @@ WorldWorkspace::~WorldWorkspace() {
     _job_system = nullptr;
 }
 
+std::string_view WorldWorkspace::name() const {
+    return "World";
+}
+
 void WorldWorkspace::update() {
     y_profile();
 
@@ -70,16 +74,12 @@ void WorldWorkspace::post_update() {
     }
 }
 
-void WorldWorkspace::save_world() {
+void WorldWorkspace::save() {
     _deferred_actions |= Save;
 }
 
-void WorldWorkspace::load_world() {
+void WorldWorkspace::load() {
     _deferred_actions |= Load;
-}
-
-void WorldWorkspace::new_world() {
-    _deferred_actions |= New;
 }
 
 EditorWorld& WorldWorkspace::world() {

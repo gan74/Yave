@@ -168,7 +168,8 @@ static bool is_inside(core::Span<math::Vec2> pts, const math::Vec2& p) {
 
 GizmoBase::GizmoBase(SceneView* view, WorldWorkspace* ws) :
         _scene_view(view),
-        _workspace(ws ? ws : &world_workspace()) {
+        _workspace(ws) {
+    y_debug_assert(_workspace);
 }
 
 GizmoBase::~GizmoBase() {

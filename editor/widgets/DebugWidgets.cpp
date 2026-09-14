@@ -20,8 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include <editor/Widget.h>
-#include <editor/WorldWorkspace.h>
+#include <editor/widgets/WorkArea.h>
 #include <editor/utils/memory.h>
 #include <editor/ThumbnailRenderer.h>
 #include <editor/systems/UndoRedoSystem.h>
@@ -50,8 +49,8 @@ class CameraDebug : public WorkspaceWidget<WorldWorkspace> {
     editor_widget(CameraDebug, "View", "Debug")
 
     public:
-        CameraDebug(WorldWorkspace* ws = nullptr) :
-                WorkspaceWidget(ICON_FA_VIDEO " Camera debug", ws ? ws : &world_workspace(), ImGuiWindowFlags_AlwaysAutoResize) {
+        CameraDebug(WorldWorkspace* ws) :
+                WorkspaceWidget(ICON_FA_VIDEO " Camera debug", ws, ImGuiWindowFlags_AlwaysAutoResize) {
         }
 
     protected:
@@ -118,8 +117,8 @@ class CullingDebug : public WorkspaceWidget<WorldWorkspace> {
     editor_widget(CullingDebug, "View", "Debug")
 
     public:
-        CullingDebug(WorldWorkspace* ws = nullptr) :
-                WorkspaceWidget("Culling debug", ws ? ws : &world_workspace(), ImGuiWindowFlags_AlwaysAutoResize) {
+        CullingDebug(WorldWorkspace* ws) :
+                WorkspaceWidget("Culling debug", ws, ImGuiWindowFlags_AlwaysAutoResize) {
         }
 
     protected:
@@ -168,8 +167,8 @@ class EcsDebug : public WorkspaceWidget<WorldWorkspace> {
     editor_widget(EcsDebug, "View", "Debug")
 
     public:
-        EcsDebug(WorldWorkspace* ws = nullptr) :
-                WorkspaceWidget("ECS debug", ws ? ws : &world_workspace()) {
+        EcsDebug(WorldWorkspace* ws) :
+                WorkspaceWidget("ECS debug", ws) {
         }
 
     protected:
@@ -274,8 +273,8 @@ class SelectionDebug : public WorkspaceWidget<WorldWorkspace> {
     editor_widget(SelectionDebug, "View", "Debug")
 
     public:
-        SelectionDebug(WorldWorkspace* ws = nullptr) :
-                WorkspaceWidget("Selection debug", ws ? ws : &world_workspace()) {
+        SelectionDebug(WorldWorkspace* ws) :
+                WorkspaceWidget("Selection debug", ws) {
         }
 
     protected:
@@ -314,8 +313,8 @@ class RaytracingDebug : public WorkspaceWidget<WorldWorkspace> {
     editor_widget(RaytracingDebug, "View", "Debug")
 
     public:
-        RaytracingDebug(WorldWorkspace* ws = nullptr) :
-                WorkspaceWidget("Raytracing debug", ws ? ws : &world_workspace()) {
+        RaytracingDebug(WorldWorkspace* ws) :
+                WorkspaceWidget("Raytracing debug", ws) {
         }
 
     protected:
@@ -336,8 +335,8 @@ class UndoRedoDebug : public WorkspaceWidget<WorldWorkspace> {
     editor_widget(UndoRedoDebug)
 
     public:
-        UndoRedoDebug(WorldWorkspace* ws = nullptr) :
-                WorkspaceWidget("Undo Redo", ws ? ws : &world_workspace()) {
+        UndoRedoDebug(WorldWorkspace* ws) :
+                WorkspaceWidget("Undo Redo", ws) {
         }
 
         void on_gui() override {
@@ -392,8 +391,8 @@ class VisibilityDebug : public WorkspaceWidget<WorldWorkspace> {
     editor_widget(VisibilityDebug)
 
     public:
-        VisibilityDebug(WorldWorkspace* ws = nullptr) :
-                WorkspaceWidget("Visibility debug", ws ? ws : &world_workspace()) {
+        VisibilityDebug(WorldWorkspace* ws) :
+                WorkspaceWidget("Visibility debug", ws) {
         }
 
         void on_gui() override {

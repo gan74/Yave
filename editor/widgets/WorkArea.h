@@ -26,29 +26,35 @@ SOFTWARE.
 #include <editor/WorldWorkspace.h>
 
 #include <memory>
+#include <array>
+#include <tuple>
 
 namespace editor {
 
 class WorkArea final : public Widget {
 
-    editor_widget(WorkArea, "View")
-
     public:
         WorkArea();
         ~WorkArea() override;
 
-        WorldWorkspace& workspace();
-        const WorldWorkspace& workspace() const;
+        WorldWorkspace* workspace();
+        const WorldWorkspace* workspace() const;
 
     protected:
         void on_gui() override;
+        void on_inactive_gui() override;
 
         bool should_keep_alive() const override;
 
     private:
+        void draw_dockspace(ImGuiDockNodeFlags flags);
+
         std::unique_ptr<WorldWorkspace> _workspace;
 };
 
+WorkArea* find_work_area();
+
 }
+
 
 #endif // EDITOR_WIDGETS_WORKAREA_H

@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 
-#include <editor/Widget.h>
+#include <editor/widgets/WorkArea.h>
 
 namespace editor {
 
@@ -33,7 +33,7 @@ class Outliner final : public WorkspaceWidget<WorldWorkspace> {
     editor_widget_open(Outliner)
 
     public:
-        Outliner(WorldWorkspace* ws = nullptr);
+        Outliner(WorldWorkspace* ws);
 
     protected:
         void on_gui() override;

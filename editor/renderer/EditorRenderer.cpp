@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
+#include <editor/widgets/WorkArea.h>
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -67,7 +68,7 @@ static SceneVisibilitySubPass filter_selected(const SceneVisibilitySubPass& visi
 
 
 static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, FrameGraphImageId color, FrameGraphImageId depth, FrameGraphImageId selection_depth, FrameGraphImageId selection_id) {
-    if(!current_world().has_selected_entities()) {
+    if(!find_work_area()->workspace()->world().has_selected_entities()) {
         return color;
     }
 

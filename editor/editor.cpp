@@ -26,7 +26,7 @@ SOFTWARE.
 #include "UiManager.h"
 #include "ImGuiPlatform.h"
 #include "ThumbnailRenderer.h"
-#include "WorldWorkspace.h"
+#include "widgets/WorkArea.h"
 
 #include <yave/assets/FolderAssetStore.h>
 #include <yave/assets/AssetLoader.h>
@@ -51,9 +51,8 @@ editor_action("Restore default layout", [] { ui().restore_default_layout(); })
 
 editor_action_desc("Lag", "Pause execution for 1s to simulate load", [] { core::Duration::sleep(core::Duration::seconds(1)); })
 
-editor_action_shortcut(ICON_FA_SAVE " Save", Key::Ctrl + Key::S, [] { save_world(); }, "File")
-editor_action(ICON_FA_FOLDER " Load", [] { load_world(); }, "File")
-editor_action_shortcut("New", Key::Ctrl + Key::N, [] { new_world(); }, "File")
+editor_action_shortcut(ICON_FA_SAVE " Save", Key::Ctrl + Key::S, [](Workspace* ws) { ws->save(); }, "File")
+editor_action(ICON_FA_FOLDER " Load", [](Workspace* ws) { ws->load(); }, "File")
 
 
 
@@ -63,7 +62,6 @@ std::shared_ptr<AssetStore> asset_store;
 std::unique_ptr<AssetLoader> loader;
 std::unique_ptr<ThumbnailRenderer> thumbnail_renderer;
 std::unique_ptr<UiManager> ui;
-Workspace* workspace = nullptr;
 
 std::unique_ptr<concurrent::JobSystem> editor_job_system;
 
@@ -95,7 +93,6 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
 
 void destroy_editor() {
     application::ui = nullptr;
-    application::workspace = nullptr;
     application::editor_job_system = nullptr; // finish thumbnail jobs before destroying their targets
     application::thumbnail_renderer = nullptr;
     application::loader = nullptr;
@@ -105,12 +102,18 @@ void destroy_editor() {
 
 void run_editor() {
     application::imgui_platform->exec([] {
-        if(application::workspace) {
-            world_workspace().update();
+        for(const auto& widget : application::ui->widgets()) {
+            if(WorkArea* area = dynamic_cast<WorkArea*>(widget.get())) {
+                area->workspace()->update();
+            }
         }
+
         application::ui->on_gui();
-        if(application::workspace) {
-            world_workspace().post_update();
+
+        for(const auto& widget : application::ui->widgets()) {
+            if(WorkArea* area = dynamic_cast<WorkArea*>(widget.get())) {
+                area->workspace()->post_update();
+            }
         }
     });
 }
@@ -135,10 +138,6 @@ ThumbnailRenderer& thumbnail_renderer() {
     return *application::thumbnail_renderer;
 }
 
-concurrent::JobSystem& world_job_system() {
-    return world_workspace().job_system();
-}
-
 concurrent::JobSystem& editor_job_system() {
     return *application::editor_job_system;
 }
@@ -147,60 +146,11 @@ const EditorResources& resources() {
     return *application::resources;
 }
 
-Workspace& current_workspace() {
-    y_debug_assert(application::workspace);
-    return *application::workspace;
+Workspace* current_workspace() {
+    WorkArea* area = find_work_area();
+    y_debug_assert(area);
+    return area->workspace();
 }
-
-Workspace* current_workspace_ptr() {
-    return application::workspace;
-}
-
-WorldWorkspace& world_workspace() {
-    WorldWorkspace* ws = dynamic_cast<WorldWorkspace*>(application::workspace);
-    y_debug_assert(ws);
-    return *ws;
-}
-
-void set_current_workspace(Workspace* workspace) {
-    application::workspace = workspace;
-}
-
-void save_world() {
-    world_workspace().save_world();
-}
-
-void load_world() {
-    world_workspace().load_world();
-}
-
-void new_world() {
-    world_workspace().new_world();
-}
-
-EditorWorld& current_world() {
-    return world_workspace().world();
-}
-
-const Scene& current_scene() {
-    return world_workspace().scene();
-}
-
-void set_scene_view(SceneView* scene) {
-    world_workspace().set_scene_view(scene);
-}
-
-void unset_scene_view(SceneView* scene) {
-    world_workspace().unset_scene_view(scene);
-}
-
-const SceneView& scene_view() {
-    return world_workspace().scene_view();
-}
-
-
-
-
 
 DebugValues& debug_values() {
     static DebugValues values = {};
@@ -208,7 +158,9 @@ DebugValues& debug_values() {
 }
 
 DirectDraw& debug_drawer() {
-    return world_workspace().debug_drawer();
+    WorkArea* area = find_work_area();
+    y_debug_assert(area);
+    return area->workspace()->debug_drawer();
 }
 
 

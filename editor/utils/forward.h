@@ -66,6 +66,7 @@ class TranslationGizmo;
 class UiManager;
 class UndoRedoSystem;
 class Widget;
+class WorkArea;
 class Workspace;
 class WorldWorkspace;
 struct CVar;

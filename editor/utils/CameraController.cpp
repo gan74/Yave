@@ -25,6 +25,7 @@ SOFTWARE.
 #include <editor/Picker.h>
 #include <editor/Settings.h>
 #include <editor/EditorWorld.h>
+#include <editor/widgets/WorkArea.h>
 
 #include <editor/utils/ui.h>
 
@@ -52,9 +53,10 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
     const math::Vec3 cam_rht = camera.right();
 
     if(ImGui::IsKeyDown(to_imgui_key(settings.center_on_obj))) {
-        if(current_world().has_selected_entities()) {
-            if(const ecs::EntityId id = current_world().selected_entity(); id.is_valid()) {
-                if(const TransformableComponent* tr = current_world().component<TransformableComponent>(id)) {
+        EditorWorld& world = find_work_area()->workspace()->world();
+        if(world.has_selected_entities()) {
+            if(const ecs::EntityId id = world.selected_entity(); id.is_valid()) {
+                if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
                     const math::Vec3 to_obj = tr->position() - cam_pos;
                     cam_pos += to_obj - cam_fwd * to_obj.dot(cam_fwd);
                 }

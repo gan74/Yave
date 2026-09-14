@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "EditorWorld.h"
 
+#include <editor/WorldWorkspace.h>
+
 #include <yave/ecs/tags.h>
 #include <yave/ecs/ComponentRuntimeInfo.h>
 
@@ -52,14 +54,14 @@ SOFTWARE.
 
 namespace editor {
 
-editor_action("Remove all entities", [] { current_world().remove_all_entities(); })
+editor_action("Remove all entities", [](WorldWorkspace* ws) { ws->world().remove_all_entities(); })
 
-editor_action_shortcut(ICON_FA_UNDO " Undo", Key::Ctrl + Key::Z, [] { current_world().undo(); })
-editor_action_shortcut(ICON_FA_REDO " Redo", Key::Ctrl + Key::Y, [] { current_world().redo(); })
+editor_action_shortcut(ICON_FA_UNDO " Undo", Key::Ctrl + Key::Z, [](WorldWorkspace* ws) { ws->world().undo(); })
+editor_action_shortcut(ICON_FA_REDO " Redo", Key::Ctrl + Key::Y, [](WorldWorkspace* ws) { ws->world().redo(); })
 
 
-editor_action_enable(ICON_FA_PLAY " Play", [] { current_world().find_system<TimeSystem>()->set_time_scale(1.0f); }, [] { return !!current_world().find_system<TimeSystem>(); })
-editor_action_enable(ICON_FA_PAUSE " Pause", [] { current_world().find_system<TimeSystem>()->set_time_scale(0.0f); }, [] { return !!current_world().find_system<TimeSystem>(); })
+editor_action_enable(ICON_FA_PLAY " Play", [](WorldWorkspace* ws) { ws->world().find_system<TimeSystem>()->set_time_scale(1.0f); }, [](WorldWorkspace* ws) { return !!ws->world().find_system<TimeSystem>(); })
+editor_action_enable(ICON_FA_PAUSE " Pause", [](WorldWorkspace* ws) { ws->world().find_system<TimeSystem>()->set_time_scale(0.0f); }, [](WorldWorkspace* ws) { return !!ws->world().find_system<TimeSystem>(); })
 
 
 EditorWorld::EditorWorld(AssetLoader& loader) {

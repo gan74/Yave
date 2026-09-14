@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_INSPECTOR_H
 #define EDITOR_WIDGETS_INSPECTOR_H
 
-#include <editor/Widget.h>
+#include <editor/widgets/WorkArea.h>
 
 #include <yave/ecs/ecs.h>
 
@@ -33,7 +33,7 @@ class Inspector final : public WorkspaceWidget<WorldWorkspace> {
     editor_widget_open(Inspector)
 
     public:
-        Inspector(WorldWorkspace* ws = nullptr);
+        Inspector(WorldWorkspace* ws);
 
     protected:
         void on_gui() override;

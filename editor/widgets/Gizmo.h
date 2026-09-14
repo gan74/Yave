@@ -30,7 +30,7 @@ namespace editor {
 
 class GizmoBase {
     public:
-        GizmoBase(SceneView* view, WorldWorkspace* ws = nullptr);
+        GizmoBase(SceneView* view, WorldWorkspace* ws);
         virtual ~GizmoBase();
 
         void set_allow_dragging(bool allow);
@@ -53,7 +53,7 @@ class GizmoBase {
 
 class TranslationGizmo final : public GizmoBase {
     public:
-        TranslationGizmo(SceneView* view, WorldWorkspace* ws = nullptr);
+        TranslationGizmo(SceneView* view, WorldWorkspace* ws);
 
         void draw() override;
 
@@ -70,7 +70,7 @@ class TranslationGizmo final : public GizmoBase {
 
 class RotationGizmo final : public GizmoBase {
     public:
-        RotationGizmo(SceneView* view, WorldWorkspace* ws = nullptr);
+        RotationGizmo(SceneView* view, WorldWorkspace* ws);
 
         void draw() override;
 
@@ -82,7 +82,7 @@ class RotationGizmo final : public GizmoBase {
 
 class OrientationGizmo final : public GizmoBase {
     public:
-        OrientationGizmo(SceneView* view, WorldWorkspace* ws = nullptr);
+        OrientationGizmo(SceneView* view, WorldWorkspace* ws);
 
         void draw() override;
 };

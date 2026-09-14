@@ -40,11 +40,12 @@ class WorldWorkspace final : public Workspace {
         ~WorldWorkspace() override;
 
         void update() override;
-        void post_update();
+        void post_update() override;
 
-        void save_world();
-        void load_world();
-        void new_world();
+        std::string_view name() const override;
+
+        void save() override;
+        void load() override;
 
         EditorWorld& world();
         const EditorWorld& world() const;

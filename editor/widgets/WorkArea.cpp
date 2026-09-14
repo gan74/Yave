@@ -22,41 +22,56 @@ SOFTWARE.
 
 #include "WorkArea.h"
 
+#include <editor/UiManager.h>
+
 namespace editor {
 
 WorkArea::WorkArea() :
         Widget(ICON_FA_LAYER_GROUP " Work Area"),
         _workspace(std::make_unique<WorldWorkspace>(asset_loader())) {
 
-    set_current_workspace(_workspace.get());
-    _workspace->load_world();
+    _workspace->load();
 }
 
 WorkArea::~WorkArea() {
-    if(current_workspace_ptr() == _workspace.get()) {
-        set_current_workspace(nullptr);
-    }
 }
 
-WorldWorkspace& WorkArea::workspace() {
-    return *_workspace;
+WorldWorkspace* WorkArea::workspace() {
+    return _workspace.get();
 }
 
-const WorldWorkspace& WorkArea::workspace() const {
-    return *_workspace;
+const WorldWorkspace* WorkArea::workspace() const {
+    return _workspace.get();
 }
 
 void WorkArea::on_gui() {
+    draw_dockspace(ImGuiDockNodeFlags_None);
+}
+
+void WorkArea::on_inactive_gui() {
+    draw_dockspace(ImGuiDockNodeFlags_KeepAliveOnly);
+}
+
+void WorkArea::draw_dockspace(ImGuiDockNodeFlags flags) {
     ImGuiWindowClass window_class;
     window_class.ClassId = _workspace->workspace_id();
     window_class.DockingAllowUnclassed = false;
 
     const ImGuiID dockspace_id = ImGui::GetID("##workarea_dock");
-    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None, &window_class);
+    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), flags, &window_class);
 }
 
 bool WorkArea::should_keep_alive() const {
     return true;
+}
+
+WorkArea* find_work_area() {
+    for(const auto& widget : ui().widgets()) {
+        if(WorkArea* area = dynamic_cast<WorkArea*>(widget.get())) {
+            return area;
+        }
+    }
+    return nullptr;
 }
 
 }

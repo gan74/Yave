@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include <yave/ecs/ecs.h>
 
-#include <editor/Widget.h>
+#include <editor/widgets/WorkArea.h>
 
 #include <functional>
 
@@ -32,7 +32,7 @@ namespace editor {
 
 class EntitySelector final : public WorkspaceWidget<WorldWorkspace> {
     public:
-        EntitySelector(ecs::ComponentTypeIndex filter = ecs::ComponentTypeIndex::invalid_index, WorldWorkspace* ws = nullptr);
+        EntitySelector(WorldWorkspace* ws, ecs::ComponentTypeIndex filter = ecs::ComponentTypeIndex::invalid_index);
 
         template<typename F>
         void set_selected_callback(F&& func) {

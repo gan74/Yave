@@ -41,4 +41,8 @@ u32 Workspace::workspace_id() const {
     return _id;
 }
 
+void Workspace::post_update() {
+    // nothing
+}
+
 }

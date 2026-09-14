@@ -24,9 +24,9 @@ SOFTWARE.
 #include "AssetSelector.h"
 #include "DeletionDialog.h"
 #include "Renamer.h"
+#include "WorkArea.h"
 
 #include <editor/Settings.h>
-#include <editor/WorldWorkspace.h>
 #include <editor/widgets/EngineView.h>
 #include <editor/components/EditorComponent.h>
 
@@ -45,40 +45,41 @@ SOFTWARE.
 
 namespace editor {
 
-static math::Vec3 new_entity_pos(float size) {
-    const Camera& camera = scene_view().camera();
+static math::Vec3 new_entity_pos(WorldWorkspace* ws, float size) {
+    const Camera& camera = ws->scene_view().camera();
     return camera.position() + camera.forward() * size;
 }
 
-static void set_new_entity_pos(ecs::EntityId id, bool on_cursor) {
+static void set_new_entity_pos(WorldWorkspace* ws, ecs::EntityId id, bool on_cursor) {
     if(!id.is_valid()) {
         return;
     }
-    EditorWorld& world = current_world();
+    EditorWorld& world = ws->world();
     if(TransformableComponent* transformable = world.component_mut<TransformableComponent>(id)) {
         if(const EngineView* en = last_focussed_widget_typed<EngineView>(); en && on_cursor) {
             transformable->set_position(en->cursor_world_pos());
         } else {
-            transformable->set_position(new_entity_pos(10.0f));
+            transformable->set_position(new_entity_pos(ws, 10.0f));
         }
     }
 }
 
-static void add_prefab(bool on_cursor = false) {
+static void add_prefab(WorldWorkspace* ws, bool on_cursor = false) {
     add_detached_widget<AssetSelector>(AssetType::Prefab, "Add prefab")->set_selected_callback(
-        [on_cursor](AssetId asset) {
-            const ecs::EntityId id = current_world().add_prefab(asset);
-            current_world().set_selected(id);
-            set_new_entity_pos(id, on_cursor);
+        [ws, on_cursor](AssetId asset) {
+            EditorWorld& world = ws->world();
+            const ecs::EntityId id = world.add_prefab(asset);
+            world.set_selected(id);
+            set_new_entity_pos(ws, id, on_cursor);
             return id.is_valid();
         }
     );
 }
 
-static void add_debug_lights() {
+static void add_debug_lights(WorldWorkspace* ws) {
     y_profile();
 
-    EditorWorld& world = current_world();
+    EditorWorld& world = ws->world();
 
     const float spacing =  app_settings().debug.entity_spacing;
     const usize entity_count = app_settings().debug.entity_count;
@@ -103,10 +104,10 @@ static void add_debug_lights() {
     }
 }
 
-static void add_debug_cubes(bool animate) {
+static void add_debug_cubes(WorldWorkspace* ws, bool animate) {
     y_profile();
 
-    EditorWorld& world = current_world();
+    EditorWorld& world = ws->world();
 
     const float spacing =  app_settings().debug.entity_spacing;
     const usize entity_count = app_settings().debug.entity_count;
@@ -133,17 +134,17 @@ static void add_debug_cubes(bool animate) {
     }
 }
 
-static void create_empty_entity() {
-    auto& world = current_world();
+static void create_empty_entity(WorldWorkspace* ws) {
+    auto& world = ws->world();
     world.set_selected(world.create_named_entity("New entity"));
 }
 
 template<typename T>
-static void create_entity_with_component(std::string_view name, bool on_cursor = false) {
-    auto& world = current_world();
+static void create_entity_with_component(WorldWorkspace* ws, std::string_view name, bool on_cursor = false) {
+    auto& world = ws->world();
     const ecs::EntityId id = world.create_named_entity(name);
     world.add_or_replace_component<T>(id);
-    set_new_entity_pos(id, on_cursor);
+    set_new_entity_pos(ws, id, on_cursor);
     world.set_selected(id);
 }
 
@@ -153,21 +154,25 @@ static bool is_engine_view_focussed() {
 
 
 editor_action("Add debug lights", add_debug_lights)
-editor_action("Add debug cubes", [] { add_debug_cubes(false); })
-editor_action("Add animated debug cubes", [] { add_debug_cubes(true); })
+editor_action("Add debug cubes", [](WorldWorkspace* ws) { add_debug_cubes(ws, false); })
+editor_action("Add animated debug cubes", [](WorldWorkspace* ws) { add_debug_cubes(ws, true); })
 
 editor_action("Add empty entity", create_empty_entity)
-editor_action("Add point light", [] { create_entity_with_component<PointLightComponent>("Point light"); })
-editor_action("Add spot light", [] { create_entity_with_component<SpotLightComponent>("Spot light"); })
-editor_action("Add prefab", add_prefab)
+editor_action("Add point light", [](WorldWorkspace* ws) { create_entity_with_component<PointLightComponent>(ws, "Point light"); })
+editor_action("Add spot light", [](WorldWorkspace* ws) { create_entity_with_component<SpotLightComponent>(ws, "Spot light"); })
+editor_action("Add prefab", [](WorldWorkspace* ws) { add_prefab(ws); })
 
-editor_action_contextual("Add point light here", ([] { create_entity_with_component<PointLightComponent>("Point light", true); }), is_engine_view_focussed)
-editor_action_contextual("Add spot light here", ([] { create_entity_with_component<SpotLightComponent>("Spot light", true); }), is_engine_view_focussed)
-editor_action_contextual("Add prefab here", [] { add_prefab(true); }, is_engine_view_focussed)
+editor_action_contextual("Add point light here", ([](WorldWorkspace* ws) { create_entity_with_component<PointLightComponent>(ws, "Point light", true); }), [](WorldWorkspace*) { return is_engine_view_focussed(); })
+editor_action_contextual("Add spot light here", ([](WorldWorkspace* ws) { create_entity_with_component<SpotLightComponent>(ws, "Spot light", true); }), [](WorldWorkspace*) { return is_engine_view_focussed(); })
+editor_action_contextual("Add prefab here", [](WorldWorkspace* ws) { add_prefab(ws, true); }, [](WorldWorkspace*) { return is_engine_view_focussed(); })
 
 editor_action_contextual(ICON_FA_TRASH " Delete selected",
-    [] { add_child_widget<DeletionDialog>(current_world().selected_entities()); },
-    [] { return current_world().has_selected_entities(); }
+    [](WorldWorkspace* ws) {
+        add_child_widget<DeletionDialog>(ws, ws->world().selected_entities());
+    },
+    [](WorldWorkspace* ws) {
+        return ws->world().has_selected_entities();
+    }
 )
 
 
@@ -175,7 +180,7 @@ editor_action_contextual(ICON_FA_TRASH " Delete selected",
 
 
 Outliner::Outliner(WorldWorkspace* ws) :
-        WorkspaceWidget(ICON_FA_SITEMAP " Outliner", ws ? ws : &world_workspace()) {
+        WorkspaceWidget(ICON_FA_SITEMAP " Outliner", ws) {
     _tag_buttons.emplace_back(ICON_FA_EYE, ecs::tags::hidden, false);
 }
 
@@ -200,7 +205,7 @@ void Outliner::on_gui() {
         ImGui::Separator();
 
         if(ImGui::MenuItem("Add Prefab")) {
-            add_prefab();
+            add_prefab(_workspace);
         }
 
         ImGui::EndPopup();
@@ -338,7 +343,7 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id, bool recursive
         }
 
         if(ImGui::MenuItem(ICON_FA_TRASH " Delete")) {
-            add_child_widget<DeletionDialog>(_context_menu_target, _workspace);
+            add_child_widget<DeletionDialog>(_workspace, _context_menu_target);
         }
 
         ImGui::EndPopup();

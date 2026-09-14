@@ -26,6 +26,7 @@ SOFTWARE.
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
 #include <editor/ImGuiPlatform.h>
+#include <editor/widgets/WorkArea.h>
 
 #include <yave/graphics/buffers/Buffer.h>
 
@@ -130,7 +131,7 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
 }
 
 static void render_selection(DirectDraw& draw, const SceneView& scene_view) {
-    const EditorWorld& world = current_world();
+    const EditorWorld& world = find_work_area()->workspace()->world();
     const EcsScene* scene = dynamic_cast<const EcsScene*>(scene_view.scene());
 
     if(!scene) {

@@ -32,47 +32,10 @@ SOFTWARE.
 
 #include <array>
 #include <tuple>
-
-#define editor_widget_(type, on_startup, ...)                                                                       \
-    inline static struct widget_register_t {                                                                        \
-        widget_register_t() {                                                                                       \
-            auto open_func = [] { editor::add_detached_widget<type>(); };                                           \
-            static editor::EditorWidget widget = {                                                                  \
-                #type, (on_startup), open_func, nullptr                                                             \
-            };                                                                                                      \
-            static constexpr usize arg_count = std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value;      \
-            static const std::array<std::string_view, arg_count> menu = {__VA_ARGS__};                              \
-            static editor::EditorAction action = {                                                                  \
-                #type, "Open a new " #type, EditorAction::Widget, yave::KeyCombination(),                           \
-                open_func, nullptr, menu, nullptr                                                                   \
-            };                                                                                                      \
-            editor::detail::register_widget(&widget);                                                               \
-            editor::detail::register_action(&action);                                                               \
-        }                                                                                                           \
-        void trigger() {}                                                                                           \
-    } widget_registerer;                                                                                            \
-
-
-
-#define editor_widget(type, ...)        editor_widget_(type, false, __VA_ARGS__)
-#define editor_widget_open(type, ...)   editor_widget_(type, true, __VA_ARGS__)
+#include <type_traits>
 
 
 namespace editor {
-
-struct EditorWidget {
-    std::string_view name;
-    bool open_on_startup = false;
-    void (*create)() = nullptr;
-    EditorWidget* next = nullptr;
-};
-
-const EditorWidget* all_widgets();
-
-namespace detail {
-void register_widget(EditorWidget* widget);
-}
-
 
 
 class Widget : NonMovable {
@@ -100,6 +63,7 @@ class Widget : NonMovable {
 
     protected:
         virtual void on_gui();
+        virtual void on_inactive_gui();
         virtual bool before_gui();
         virtual void after_gui();
         virtual void prepare_window();
@@ -132,13 +96,19 @@ class Widget : NonMovable {
 };
 
 
-template<typename W>
-class WorkspaceWidget : public Widget {
-    //static_assert(std::is_base_of_v<Workspace, W>);
+class WorkspaceWidgetBase : public Widget {
+    protected:
+        using Widget::Widget;
+};
 
+
+template<typename W>
+class WorkspaceWidget : public WorkspaceWidgetBase {
     public:
+        using workspace_type = W;
+
         WorkspaceWidget(std::string_view title, W* workspace, int flags = 0) :
-                Widget(title, flags),
+                WorkspaceWidgetBase(title, flags),
                 _workspace(workspace) {
 
             y_debug_assert(_workspace);
@@ -155,7 +125,71 @@ class WorkspaceWidget : public Widget {
         W* _workspace = nullptr;
 };
 
+
+struct EditorWidget {
+    std::string_view name;
+    bool open_on_startup = false;
+    void (*create)() = nullptr;
+    EditorWidget* next = nullptr;
+};
+
+const EditorWidget* all_widgets();
+
+namespace detail {
+void register_widget(EditorWidget* widget);
+
+template<typename T>
+void create_workspace_widget(Workspace* workspace) {
+    if constexpr(std::is_base_of_v<WorkspaceWidgetBase, T>) {
+        if(auto* ws = dynamic_cast<typename T::workspace_type*>(workspace)) {
+            add_detached_widget<T>(ws);
+        }
+    } else {
+        add_detached_widget<T>();
+    }
 }
+
+template<typename T>
+bool can_create_workspace_widget(Workspace* workspace) {
+    if constexpr(std::is_base_of_v<WorkspaceWidgetBase, T>) {
+        return dynamic_cast<typename T::workspace_type*>(workspace);
+    }
+    return true;
+}
+
+template<typename T>
+void create_widget() {
+    create_workspace_widget<T>(current_workspace());
+}
+}
+
+}
+
+
+#define editor_widget_(type, on_startup, ...)                                                                           \
+        inline static struct widget_register_t {                                                                        \
+            widget_register_t() {                                                                                       \
+            static editor::EditorWidget widget = {                                                                      \
+                #type, (on_startup), editor::detail::create_widget<type>, nullptr                                       \
+            };                                                                                                          \
+            static constexpr usize arg_count = std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value;          \
+            static const std::array<std::string_view, arg_count> menu = {__VA_ARGS__};                                  \
+            static editor::EditorAction action = {                                                                      \
+                #type, "Open a new " #type, EditorAction::Widget, yave::KeyCombination(),                               \
+                editor::detail::create_workspace_widget<type>,                                                          \
+                editor::detail::can_create_workspace_widget<type>,                                                      \
+                menu, nullptr                                                                                           \
+            };                                                                                                          \
+            editor::detail::register_widget(&widget);                                                                   \
+            editor::detail::register_action(&action);                                                                   \
+        }                                                                                                               \
+        void trigger() {}                                                                                               \
+    } widget_registerer;
+
+#define editor_widget(type, ...)        editor_widget_(type, false, __VA_ARGS__)
+#define editor_widget_open(type, ...)   editor_widget_(type, true, __VA_ARGS__)
+
+
 
 
 #endif // EDITOR_WIDGET_H

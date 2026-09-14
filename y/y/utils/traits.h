@@ -84,7 +84,6 @@ struct function_traits<Ret(Args...)> {
 
     template<usize I>
     using arg_type = typename args<I>::type;
-
 };
 
 template<typename T>

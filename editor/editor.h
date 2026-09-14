@@ -31,9 +31,12 @@ SOFTWARE.
 
 #include <y/core/Span.h>
 #include <y/concurrent/JobSystem.h>
+#include <y/utils/traits.h>
 
 #include <memory>
 #include <string_view>
+#include <type_traits>
+#include <concepts>
 
 
 // Just for convenience
@@ -54,30 +57,11 @@ UiManager& ui();
 AssetStore& asset_store();
 AssetLoader& asset_loader();
 ThumbnailRenderer& thumbnail_renderer();
-concurrent::JobSystem& world_job_system();
 concurrent::JobSystem& editor_job_system();
 
 const EditorResources& resources();
 
-Workspace& current_workspace();
-Workspace* current_workspace_ptr();
-WorldWorkspace& world_workspace();
-void set_current_workspace(Workspace* workspace);
-
-void save_world();
-void load_world();
-void new_world();
-EditorWorld& current_world();
-const Scene& current_scene();
-
-void set_scene_view(SceneView* scene);
-void unset_scene_view(SceneView* scene);
-
-const SceneView& scene_view();
-
-
-
-
+Workspace* current_workspace();
 
 DebugValues& debug_values();
 DirectDraw& debug_drawer();
@@ -127,8 +111,8 @@ struct EditorAction {
     std::string_view description;
     Flags flags = Flags::None;
     KeyCombination shortcut;
-    void (*function)() = nullptr;
-    bool (*enabled)() = nullptr;
+    void (*function)(Workspace*) = nullptr;
+    bool (*enabled)(Workspace*) = nullptr;
     core::Span<std::string_view> menu;
     EditorAction const* next = nullptr;
 };
@@ -137,27 +121,61 @@ const EditorAction* all_actions();
 
 namespace detail {
 void register_action(EditorAction* action);
+
+template<typename F>
+bool invoke_action_func(F&& func, Workspace* workspace) {
+    if constexpr(!std::same_as<F, nullptr_t>) {
+        using traits = function_traits<F>;
+        auto invoke_as_bool = [&](auto&&... args) -> bool {
+            if constexpr(std::same_as<typename traits::return_type, bool>) {
+                return func(y_fwd(args)...);
+            } else {
+                func(y_fwd(args)...);
+                return true;
+            }
+        };
+
+        if constexpr(std::invocable<F>) {
+            return invoke_as_bool();
+        } else if constexpr(std::invocable<F, Workspace*>) {
+            return invoke_as_bool(workspace);
+        } else {
+            using WS = std::remove_pointer_t<typename traits::template arg_type<0>>;
+            if(WS* w = dynamic_cast<WS*>(workspace)) {
+                return invoke_as_bool(w);
+            }
+            return false;
+        }
+    }
+    return true;
+}
 }
 
 }
 
 
-#define editor_action_(name, desc, flags, shortcut, func, enabled, ...)                                 \
-    namespace {                                                                                         \
-        inline static struct y_create_name_with_prefix(action_register_t) {                             \
-            y_create_name_with_prefix(action_register_t)() {                                            \
-                static constexpr std::string_view names[] = { name, __VA_ARGS__ };                      \
-                static editor::EditorAction action = {                                                  \
-                    names[0], desc, (flags), yave::KeyCombination(shortcut), [] { func(); }, enabled,   \
-                    y::core::Span<std::string_view>(names + 1, std::size(names) - 1), nullptr           \
-                };                                                                                      \
-                editor::detail::register_action(&action);                                               \
-            }                                                                                           \
-            void trigger() {}                                                                           \
-        } y_create_name_with_prefix(action_register);                                                   \
-    }                                                                                                   \
-    void y_register_action(y_create_name_with_prefix(action_register_t)) {                              \
-        y_create_name_with_prefix(action_register).trigger();                                           \
+#define editor_action_(name, desc, flags, shortcut, func, enabled, ...)                                         \
+    namespace {                                                                                                 \
+        inline static struct y_create_name_with_prefix(action_register_t) {                                     \
+            y_create_name_with_prefix(action_register_t)() {                                                    \
+                static constexpr std::string_view names[] = { name, __VA_ARGS__ };                              \
+                static auto action_fn = func;                                                                   \
+                static auto enabled_fn = enabled;                                                               \
+                static editor::EditorAction action = {                                                          \
+                    names[0], desc, (flags), yave::KeyCombination(shortcut),                                    \
+                    [](editor::Workspace* w) { editor::detail::invoke_action_func(func, w); },                  \
+                    enabled                                                                                     \
+                        ? [](editor::Workspace* w) { return editor::detail::invoke_action_func(enabled, w); }   \
+                        : nullptr,                                                                              \
+                    y::core::Span<std::string_view>(names + 1, std::size(names) - 1), nullptr                   \
+                };                                                                                              \
+                editor::detail::register_action(&action);                                                       \
+            }                                                                                                   \
+            void trigger() {}                                                                                   \
+        } y_create_name_with_prefix(action_register);                                                           \
+    }                                                                                                           \
+    void y_register_action(y_create_name_with_prefix(action_register_t)) {                                      \
+        y_create_name_with_prefix(action_register).trigger();                                                   \
     }
 
 
@@ -165,9 +183,7 @@ void register_action(EditorAction* action);
 #define editor_action_desc(name, desc, func, ...)           editor_action_(name, desc, EditorAction::None, /* no shortcut */, func, nullptr, __VA_ARGS__)
 #define editor_action_contextual(name, func, enabled, ...)  editor_action_(name, "", EditorAction::Contextual, /* no shortcut */, func, enabled, __VA_ARGS__)
 #define editor_action_enable(name, func, enabled, ...)      editor_action_(name, "", EditorAction::None, /* no shortcut */, func, enabled, __VA_ARGS__)
-
-#define editor_action(name, func, ...)  editor_action_desc(name, "", func, __VA_ARGS__)
+#define editor_action(name, func, ...)                      editor_action_desc(name, "", func, __VA_ARGS__)
 
 
 #endif // EDITOR_EDITOR_H
-

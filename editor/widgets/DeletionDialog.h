@@ -22,7 +22,7 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_DELETIONDIALOG_H
 #define EDITOR_WIDGETS_DELETIONDIALOG_H
 
-#include <editor/Widget.h>
+#include <editor/widgets/WorkArea.h>
 
 #include <yave/ecs/ecs.h>
 
@@ -32,7 +32,7 @@ namespace editor {
 
 class DeletionDialog final : public WorkspaceWidget<WorldWorkspace> {
     public:
-        DeletionDialog(core::Span<ecs::EntityId> ids, WorldWorkspace* ws = nullptr);
+        DeletionDialog(WorldWorkspace* ws, core::Span<ecs::EntityId> ids);
 
     protected:
         void on_gui() override;

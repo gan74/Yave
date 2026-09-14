@@ -90,6 +90,9 @@ void Widget::on_gui() {
     ImGui::TextUnformatted("Empty widget");
 }
 
+void Widget::on_inactive_gui() {
+}
+
 bool Widget::before_gui() {
     ImGui::PushStyleColor(ImGuiCol_MenuBarBg, 0);
 
@@ -98,6 +101,9 @@ bool Widget::before_gui() {
 
 void Widget::after_gui() {
     ImGui::PopStyleColor();
+}
+
+void Widget::prepare_window() {
 }
 
 void Widget::draw_gui_inside() {
@@ -130,6 +136,7 @@ void Widget::draw(bool inside) {
             }
             opened = ImGui::BeginPopupModal(_title_with_id.data(), &_visible, _flags);
         } else {
+            prepare_window();
             opened = ImGui::Begin(_title_with_id.data(), &_visible, _flags);
         }
         ImGui::PopStyleVar();
@@ -139,6 +146,8 @@ void Widget::draw(bool inside) {
     _focussed = opened && ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
     if(opened) {
         on_gui();
+    } else {
+        on_inactive_gui();
     }
 
     if(inside) {

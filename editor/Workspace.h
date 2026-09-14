@@ -33,7 +33,27 @@ class Workspace : NonMovable {
 
         u32 workspace_id() const;
 
+        virtual std::string_view name() const = 0;
+
         virtual void update() = 0;
+        virtual void post_update();
+
+        virtual void save() = 0;
+        virtual void load() = 0;
+
+    private:
+        const u32 _id;
+};
+
+
+class EmptyWorkspace : public Workspace {
+    
+    public:
+        std::string_view name() const override { return "Empty workspace"; }
+        void update() override {}
+
+        void save() override {}
+        void load() override {}
 
     private:
         const u32 _id;

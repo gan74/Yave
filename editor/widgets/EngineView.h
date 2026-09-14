@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "Gizmo.h"
 
-#include <editor/Widget.h>
+#include <editor/widgets/WorkArea.h>
 #include <editor/Picker.h>
 #include <editor/WorldWorkspace.h>
 #include <editor/renderer/EditorRenderer.h>
@@ -69,7 +69,7 @@ class EngineView final : public WorkspaceWidget<WorldWorkspace> {
             Max,
         };
 
-        EngineView(WorldWorkspace* ws = nullptr);
+        EngineView(WorldWorkspace* ws);
         ~EngineView() override;
 
         void reset_camera();
