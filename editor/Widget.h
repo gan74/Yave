@@ -114,6 +114,7 @@ class WorkspaceWidget : public WorkspaceWidgetBase {
             y_debug_assert(_workspace);
         }
 
+
     protected:
         void prepare_window() override {
             ImGuiWindowClass window_class;
@@ -124,6 +125,9 @@ class WorkspaceWidget : public WorkspaceWidgetBase {
 
         W* _workspace = nullptr;
 };
+
+
+
 
 
 struct EditorWidget {

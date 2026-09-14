@@ -28,6 +28,8 @@ SOFTWARE.
 #include <editor/widgets/PerformanceMetrics.h>
 #include <editor/widgets/DebugValueEditor.h>
 #include <editor/widgets/WorkArea.h>
+#include <editor/WorldWorkspace.h>
+
 #include <yave/graphics/device/Instance.h>
 
 #include <yave/assets/AssetLoader.h>
@@ -53,6 +55,9 @@ static core::String shortcut_text(KeyCombination shortcut) {
     return text;
 }
 
+
+
+
 UiManager::UiManager() {
     for(const EditorAction* action = all_actions(); action; action = action->next) {
         _actions << action;
@@ -69,12 +74,12 @@ UiManager::UiManager() {
 UiManager::~UiManager() {
 }
 
+
+
+
 void UiManager::on_gui() {
     y_profile();
 
-    if(!_frame_number) {
-        open_default_widgets();
-    }
 
     update_fps_counter();
     update_shortcuts();
@@ -177,14 +182,17 @@ void UiManager::update_shortcuts() {
         }
     }
 
-    for(auto&& action : _shortcuts) {
-        if(keys == action.first->shortcut) {
-            if(!action.second) {
-                action.first->function(current_workspace());
-                action.second = true;
+    {
+        Workspace* workspace = current_workspace();
+        for(auto&& action : _shortcuts) {
+            if(keys == action.first->shortcut) {
+                if(!action.second) {
+                    action.first->function(workspace);
+                    action.second = true;
+                }
+            } else {
+                action.second = false;
             }
-        } else {
-            action.second = false;
         }
     }
 }
@@ -227,6 +235,8 @@ void UiManager::draw_menu_bar() {
             add_widget(std::make_unique<DebugValueEditor>());
         }
 
+        Workspace* workspace = current_workspace();
+
         for(const EditorAction* action : _actions) {
             if(!action->menu.size()) {
                 continue;
@@ -243,7 +253,7 @@ void UiManager::draw_menu_bar() {
             if(stack_size == action->menu.size()) {
                 const core::String shortcut = shortcut_text(action->shortcut);
                 if(ImGui::MenuItem(action->name.data(), shortcut.is_empty() ? nullptr : shortcut.data())) {
-                    action->function(current_workspace());
+                    action->function(workspace);
                 }
             }
 
@@ -271,14 +281,14 @@ void UiManager::draw_menu_bar() {
                             continue;
                         }
 
-                        if(action->enabled && !(action->enabled(current_workspace()))) {
+                        if(action->enabled && !(action->enabled(workspace))) {
                             continue;
                         }
 
                         if(matcher.matches(action->name)) {
                             const core::String shortcut = shortcut_text(action->shortcut);
                             if(imgui::suggestion_item(action->name.data(), shortcut.is_empty() ? nullptr : shortcut.data())) {
-                                action->function(current_workspace());
+                                action->function(workspace);
                                 _search_pattern[0] = 0;
                             }
                             if(!action->description.empty() && ImGui::IsItemHovered()) {
@@ -311,26 +321,6 @@ Widget* UiManager::add_widget(std::unique_ptr<Widget> widget, bool auto_parent) 
     _widgets << std::move(widget);
 
     return wid;
-}
-
-void UiManager::restore_default_layout() {
-    close_all();
-    open_default_widgets();
-}
-
-void UiManager::open_default_widgets() {
-    const bool has_work_area = std::any_of(_widgets.begin(), _widgets.end(), [](const auto& widget) {
-        return dynamic_cast<WorkArea*>(widget.get());
-    });
-    if(!has_work_area) {
-        add_widget(std::make_unique<WorkArea>(), false);
-    }
-
-    for(const EditorWidget* widget = all_widgets(); widget; widget = widget->next) {
-        if(widget->open_on_startup) {
-            widget->create();
-        }
-    }
 }
 
 void UiManager::close_all() {

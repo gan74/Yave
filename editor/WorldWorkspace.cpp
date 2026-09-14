@@ -23,10 +23,10 @@ SOFTWARE.
 #include "WorldWorkspace.h"
 
 #include "editor.h"
+#include <editor/widgets/WorkArea.h>
 
 #include <yave/assets/AssetLoader.h>
 #include <yave/systems/SceneSystem.h>
-#include <yave/systems/JoltPhysicsSystem.h>
 
 #include <y/io2/File.h>
 #include <y/serde3/archives.h>
@@ -35,20 +35,23 @@ SOFTWARE.
 
 namespace editor {
 
-WorldWorkspace::WorldWorkspace(AssetLoader& loader) :
-        _world(std::make_unique<EditorWorld>(loader)),
+editor_action("New world workspace", [] { add_detached_widget<WorkArea>(std::make_unique<WorldWorkspace>()); })
+
+WorldWorkspace::WorldWorkspace() :
+        _world(std::make_unique<EditorWorld>(asset_loader())),
         _job_system(std::make_unique<concurrent::JobSystem>()),
         _debug_drawer(std::make_unique<DirectDraw>()) {
 
+    load();
     create_default_scene_view();
 }
 
 WorldWorkspace::~WorldWorkspace() {
-    _scene_view = nullptr;
+    /*_scene_view = nullptr;
     _default_scene_view = {};
     _world = nullptr;
     _debug_drawer = nullptr;
-    _job_system = nullptr;
+    _job_system = nullptr;*/
 }
 
 std::string_view WorldWorkspace::name() const {
@@ -65,13 +68,20 @@ void WorldWorkspace::update() {
 void WorldWorkspace::post_update() {
     y_profile();
 
-    process_deferred_actions();
-
-    if(JoltPhysicsSystem* jolt = _world->find_system<JoltPhysicsSystem>()) {
-        jolt->set_debug_drawer(_debug_drawer.get());
-        jolt->set_debug_draw_static(app_settings().debug.display_static_colliders);
-        jolt->set_debug_draw_movable(app_settings().debug.display_movable_colliders);
+    if(_deferred_actions & Save) {
+        save_world_deferred();
     }
+
+    if(_deferred_actions & Load) {
+        load_world_deferred();
+    }
+
+    if(_deferred_actions & New) {
+        _world = std::make_unique<EditorWorld>(asset_loader());
+        create_default_scene_view();
+    }
+
+    _deferred_actions = None;
 }
 
 void WorldWorkspace::save() {
@@ -113,10 +123,6 @@ void WorldWorkspace::unset_scene_view(SceneView* scene) {
 const SceneView& WorldWorkspace::scene_view() const {
     y_debug_assert(_scene_view);
     return *_scene_view;
-}
-
-concurrent::JobSystem& WorldWorkspace::job_system() {
-    return *_job_system;
 }
 
 DirectDraw& WorldWorkspace::debug_drawer() {
@@ -170,23 +176,6 @@ void WorldWorkspace::load_world_deferred() {
     create_default_scene_view();
 
     log_msg("World loaded");
-}
-
-void WorldWorkspace::process_deferred_actions() {
-    if(_deferred_actions & Save) {
-        save_world_deferred();
-    }
-
-    if(_deferred_actions & Load) {
-        load_world_deferred();
-    }
-
-    if(_deferred_actions & New) {
-        _world = std::make_unique<EditorWorld>(asset_loader());
-        create_default_scene_view();
-    }
-
-    _deferred_actions = None;
 }
 
 }

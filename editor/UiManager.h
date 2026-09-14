@@ -51,8 +51,6 @@ class UiManager : NonMovable {
 
         Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent = true);
 
-        void restore_default_layout();
-        void open_default_widgets();
         void close_all();
 
         core::Span<std::unique_ptr<Widget>> widgets() const;

@@ -49,14 +49,11 @@ class Workspace : NonMovable {
 class EmptyWorkspace : public Workspace {
     
     public:
-        std::string_view name() const override { return "Empty workspace"; }
+        std::string_view name() const override { return "Empty"; }
         void update() override {}
 
         void save() override {}
         void load() override {}
-
-    private:
-        const u32 _id;
 };
 
 }

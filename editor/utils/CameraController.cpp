@@ -41,7 +41,7 @@ namespace editor {
 CameraController::CameraController() {
 }
 
-void CameraController::process_generic_shortcuts(Camera& camera) {
+void CameraController::process_generic_shortcuts(EditorWorld& world, Camera& camera) {
     const ImGuiIO& io = ImGui::GetIO();
     if(io.WantCaptureKeyboard || !ImGui::IsWindowHovered()) {
         return;
@@ -53,7 +53,6 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
     const math::Vec3 cam_rht = camera.right();
 
     if(ImGui::IsKeyDown(to_imgui_key(settings.center_on_obj))) {
-        EditorWorld& world = find_work_area()->workspace()->world();
         if(world.has_selected_entities()) {
             if(const ecs::EntityId id = world.selected_entity(); id.is_valid()) {
                 if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {

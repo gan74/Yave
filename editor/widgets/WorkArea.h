@@ -23,7 +23,7 @@ SOFTWARE.
 #define EDITOR_WIDGETS_WORKAREA_H
 
 #include <editor/Widget.h>
-#include <editor/WorldWorkspace.h>
+#include <editor/Workspace.h>
 
 #include <memory>
 #include <array>
@@ -34,11 +34,11 @@ namespace editor {
 class WorkArea final : public Widget {
 
     public:
-        WorkArea();
+        WorkArea(std::unique_ptr<Workspace> workspace);
         ~WorkArea() override;
 
-        WorldWorkspace* workspace();
-        const WorldWorkspace* workspace() const;
+        Workspace* workspace();
+        const Workspace* workspace() const;
 
     protected:
         void on_gui() override;
@@ -49,7 +49,7 @@ class WorkArea final : public Widget {
     private:
         void draw_dockspace(ImGuiDockNodeFlags flags);
 
-        std::unique_ptr<WorldWorkspace> _workspace;
+        std::unique_ptr<Workspace> _workspace;
 };
 
 WorkArea* find_work_area();

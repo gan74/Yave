@@ -36,7 +36,7 @@ namespace editor {
 
 class WorldWorkspace final : public Workspace {
     public:
-        WorldWorkspace(AssetLoader& loader);
+        WorldWorkspace();
         ~WorldWorkspace() override;
 
         void update() override;
@@ -56,14 +56,12 @@ class WorldWorkspace final : public Workspace {
         void unset_scene_view(SceneView* scene);
         const SceneView& scene_view() const;
 
-        concurrent::JobSystem& job_system();
         DirectDraw& debug_drawer();
 
     private:
         void create_default_scene_view();
         void save_world_deferred();
         void load_world_deferred();
-        void process_deferred_actions();
 
         enum DeferredActions : u32 {
             None    = 0x00,

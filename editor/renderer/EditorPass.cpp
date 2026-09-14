@@ -131,14 +131,18 @@ static void render_editor_entities(RenderPassRecorder& recorder, const FrameGrap
 }
 
 static void render_selection(DirectDraw& draw, const SceneView& scene_view) {
-    const EditorWorld& world = find_work_area()->workspace()->world();
     const EcsScene* scene = dynamic_cast<const EcsScene*>(scene_view.scene());
-
     if(!scene) {
         return;
     }
 
-    for(const ecs::EntityId selected : world.selected_entities()) {
+    const EditorWorld* world = dynamic_cast<const EditorWorld*>(scene->world());
+    if(!world) {
+        return;
+    }
+
+
+    for(const ecs::EntityId selected : world->selected_entities()) {
         if(const PointLightObject* obj = scene->point_light(selected)) {
             const math::Transform<> tr = scene->transform(*obj);
             draw.add_primitive("selected light")->add_sphere_3circles(editor_pass_draw_color, tr.position(), tr.scale().max_component() * obj->component.range());

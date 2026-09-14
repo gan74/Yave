@@ -138,7 +138,7 @@ bool invoke_action_func(F&& func, Workspace* workspace) {
         if constexpr(std::invocable<F>) {
             return invoke_as_bool();
         } else if constexpr(std::invocable<F, Workspace*>) {
-            return invoke_as_bool(workspace);
+            return workspace && invoke_as_bool(workspace);
         } else {
             using WS = std::remove_pointer_t<typename traits::template arg_type<0>>;
             if(WS* w = dynamic_cast<WS*>(workspace)) {

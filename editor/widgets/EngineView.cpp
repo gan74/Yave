@@ -296,7 +296,7 @@ void EngineView::update() {
 
         if(_camera_controller) {
             auto& camera = _scene_view.camera();
-            _camera_controller->process_generic_shortcuts(camera);
+            _camera_controller->process_generic_shortcuts(_workspace->world(), camera);
 
             if(!is_dragging_gizmo() && _camera_controller->continue_moving()) {
                 set_is_moving_camera(true);

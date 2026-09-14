@@ -44,6 +44,8 @@ static SceneVisibilitySubPass filter_selected(const SceneVisibilitySubPass& visi
     y_profile();
 
     const EcsScene* scene = dynamic_cast<const EcsScene*>(visibility.scene_view.scene());
+    y_debug_assert(scene);
+
     const ecs::SparseIdSet* selected = scene->world()->tag_set(ecs::tags::selected);
 
     auto filter = [&](const auto& objects) {
@@ -67,8 +69,10 @@ static SceneVisibilitySubPass filter_selected(const SceneVisibilitySubPass& visi
 
 
 
-static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, FrameGraphImageId color, FrameGraphImageId depth, FrameGraphImageId selection_depth, FrameGraphImageId selection_id) {
-    if(!find_work_area()->workspace()->world().has_selected_entities()) {
+static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, const SceneView& view, FrameGraphImageId color, FrameGraphImageId depth, FrameGraphImageId selection_depth, FrameGraphImageId selection_id) {
+    const EcsScene* scene = dynamic_cast<const EcsScene*>(view.scene());
+    const EditorWorld* world = scene ? dynamic_cast<const EditorWorld*>(scene->world()) : nullptr;
+    if(!world || world->has_selected_entities()) {
         return color;
     }
 
@@ -144,7 +148,7 @@ EditorRenderer EditorRenderer::create(FrameGraph& framegraph, const SceneView& v
             ? id_and_depth(EditorPass::create(framegraph, scene_view, id_pass.scene_pass.visibility, id_pass.depth, {}, id_pass.id))
             : id_and_depth(id_pass);
 
-        renderer.final = render_selection_outline(framegraph, renderer.final, renderer.depth, depth, id);
+            renderer.final = render_selection_outline(framegraph, scene_view, renderer.final, renderer.depth, depth, id);
     }
 
     if(settings.show_debug_drawer) {

@@ -26,21 +26,17 @@ SOFTWARE.
 
 namespace editor {
 
-WorkArea::WorkArea() :
-        Widget(ICON_FA_LAYER_GROUP " Work Area"),
-        _workspace(std::make_unique<WorldWorkspace>(asset_loader())) {
-
-    _workspace->load();
+WorkArea::WorkArea(std::unique_ptr<Workspace> workspace) : Widget(workspace->name()), _workspace(std::move(workspace)) {
 }
 
 WorkArea::~WorkArea() {
 }
 
-WorldWorkspace* WorkArea::workspace() {
+Workspace* WorkArea::workspace() {
     return _workspace.get();
 }
 
-const WorldWorkspace* WorkArea::workspace() const {
+const Workspace* WorkArea::workspace() const {
     return _workspace.get();
 }
 

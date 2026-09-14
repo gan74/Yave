@@ -22,9 +22,13 @@ SOFTWARE.
 
 #include "Workspace.h"
 
+#include <editor/widgets/WorkArea.h>
+
 #include <atomic>
 
 namespace editor {
+
+editor_action("New empty workspace", [] { add_detached_widget<WorkArea>(std::make_unique<EmptyWorkspace>()); })
 
 static u32 generate_ws_id() {
     static std::atomic<u32> id = 0;
@@ -44,5 +48,6 @@ u32 Workspace::workspace_id() const {
 void Workspace::post_update() {
     // nothing
 }
+
 
 }

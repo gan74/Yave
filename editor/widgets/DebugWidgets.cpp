@@ -21,10 +21,11 @@ SOFTWARE.
 **********************************/
 
 #include <editor/widgets/WorkArea.h>
-#include <editor/utils/memory.h>
+#include <editor/WorldWorkspace.h>
 #include <editor/ThumbnailRenderer.h>
 #include <editor/systems/UndoRedoSystem.h>
 #include <editor/components/EditorComponent.h>
+#include <editor/utils/memory.h>
 
 #include <yave/scene/SceneView.h>
 #include <yave/graphics/device/MeshAllocator.h>

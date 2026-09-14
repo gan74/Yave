@@ -40,7 +40,7 @@ class EntityWorld : NonMovable {
 
     public:
         EntityWorld();
-        ~EntityWorld();
+        virtual ~EntityWorld();
 
         TickId tick_id() const;
 

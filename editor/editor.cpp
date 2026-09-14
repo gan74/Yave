@@ -26,7 +26,9 @@ SOFTWARE.
 #include "UiManager.h"
 #include "ImGuiPlatform.h"
 #include "ThumbnailRenderer.h"
-#include "widgets/WorkArea.h"
+
+#include <editor/WorldWorkspace.h>
+#include <editor/widgets/WorkArea.h>
 
 #include <yave/assets/FolderAssetStore.h>
 #include <yave/assets/AssetLoader.h>
@@ -47,7 +49,7 @@ editor_action_desc("Debug assert", "Calls assert(false) and crashes the program"
 
 editor_action("Quit", [] { imgui_platform()->main_window()->close(); })
 editor_action("Show ImGui demo", [] { imgui_platform()->show_demo(); })
-editor_action("Restore default layout", [] { ui().restore_default_layout(); })
+editor_action("Close all", [] { ui().close_all(); })
 
 editor_action_desc("Lag", "Pause execution for 1s to simulate load", [] { core::Duration::sleep(core::Duration::seconds(1)); })
 
@@ -148,8 +150,7 @@ const EditorResources& resources() {
 
 Workspace* current_workspace() {
     WorkArea* area = find_work_area();
-    y_debug_assert(area);
-    return area->workspace();
+    return area ? area->workspace() : nullptr;
 }
 
 DebugValues& debug_values() {
@@ -160,7 +161,7 @@ DebugValues& debug_values() {
 DirectDraw& debug_drawer() {
     WorkArea* area = find_work_area();
     y_debug_assert(area);
-    return area->workspace()->debug_drawer();
+    return dynamic_cast<WorldWorkspace*>(area->workspace())->debug_drawer();
 }
 
 

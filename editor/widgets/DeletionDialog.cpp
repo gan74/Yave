@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include "DeletionDialog.h"
 
+#include <editor/WorldWorkspace.h>
 #include <editor/utils/ui.h>
 
 namespace editor {

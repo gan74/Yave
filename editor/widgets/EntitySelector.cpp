@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <editor/components/EditorComponent.h>
 
+#include <editor/WorldWorkspace.h>
 #include <editor/utils/ui.h>
 
 #include <y/utils/format.h>
@@ -36,6 +37,7 @@ EntitySelector::EntitySelector(WorldWorkspace* ws, ecs::ComponentTypeIndex filte
             : fmt("Select a {}", ws->world().component_type_name(filter)),
             ws),
         _filter(filter) {
+
     set_modal(true);
 }
 
