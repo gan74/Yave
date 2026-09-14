@@ -495,7 +495,7 @@ class FlatHashMap : Hasher, Equal {
                         best_index = index;
                     }
                     if(state == detail::empty_state) {
-                        return {index, false};
+                        return {best_index != invalid_index ? best_index : index, false};
                     }
                 } else if(state == make_state(h) && equal(_entries[index].key(), key)) {
                     return {index, true};
