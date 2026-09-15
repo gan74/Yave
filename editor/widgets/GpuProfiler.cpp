@@ -37,15 +37,27 @@ namespace editor {
 static const double ns_to_ms = 1.0 / 1'000'000.0;
 
 static EngineView* current_view() {
-    for(const auto& widget : ui().widgets()) {
-        if(EngineView* view = dynamic_cast<EngineView*>(widget.get())) {
-            return view;
+    WorldWorkspace* ws = dynamic_cast<WorldWorkspace*>(current_workspace());
+    if(!ws) {
+        return nullptr;
+    }
+
+    for(const auto& widget : ui().top_level_widgets()) {
+        if(const WorkArea* area = dynamic_cast<const WorkArea*>(widget.get())) {
+            if(area->workspace() != ws) {
+                continue;
+            }
+            for(const auto& child : area->children()) {
+                if(EngineView* view = dynamic_cast<EngineView*>(child.get())) {
+                    return view;
+                }
+            }
         }
     }
     return nullptr;
 }
 
-GpuProfiler::GpuProfiler() :Widget(ICON_FA_CLOCK " GPU Profiler") {
+GpuProfiler::GpuProfiler() : Widget(ICON_FA_CLOCK " GPU Profiler") {
 }
 
 void GpuProfiler::on_gui() {

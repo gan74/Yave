@@ -61,6 +61,8 @@ class Widget : NonMovable {
             return dynamic_cast<T*>(add_child_widget(std::make_unique<T>(y_fwd(args)...)));
         }
 
+        core::Span<std::unique_ptr<Widget>> children() const;
+
         virtual void refresh();
         virtual void refresh_all();
 

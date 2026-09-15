@@ -83,6 +83,10 @@ Widget* Widget::add_child_widget(std::unique_ptr<Widget> child) {
     return widget;
 }
 
+core::Span<std::unique_ptr<Widget>> Widget::children() const {
+    return _children;
+}
+
 void Widget::refresh() {
 }
 

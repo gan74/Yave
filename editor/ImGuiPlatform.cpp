@@ -566,9 +566,6 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                 y_profile_zone("imgui");
                 ImGui::NewFrame();
 
-                ImGuiViewport* viewport = ImGui::GetMainViewport();
-                ImGui::DockSpaceOverViewport(0, viewport);
-
                 if(_demo_window) {
                     ImGui::PushStyleColor(ImGuiCol_MenuBarBg, 0);
                     ImGui::ShowDemoWindow(&_demo_window);

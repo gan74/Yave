@@ -73,12 +73,11 @@ UiManager::UiManager() {
 UiManager::~UiManager() {
 }
 
-
-
-
 void UiManager::on_gui() {
     y_profile();
 
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::DockSpaceOverViewport(0, viewport);
 
     update_fps_counter();
     update_shortcuts();
@@ -169,6 +168,8 @@ void UiManager::update_shortcuts() {
 }
 
 void UiManager::draw_menu_bar() {
+    Workspace* workspace = current_workspace();
+
     ImGui::PushID("##mainmenubar");
     if(ImGui::BeginMainMenuBar()) {
         if(ImGui::BeginMenu("File")) {
@@ -194,7 +195,7 @@ void UiManager::draw_menu_bar() {
             draw_fps_counter();
         }
 
-        if(Workspace* workspace = current_workspace()) {
+        if(workspace) {
             ImGui::TextUnformatted(fmt_c_str("{}: {}", workspace->name(), static_cast<const void*>(workspace)));
         }
 
@@ -210,7 +211,6 @@ void UiManager::draw_menu_bar() {
             add_top_level_widget(std::make_unique<DebugValueEditor>());
         }
 
-        Workspace* workspace = current_workspace();
 
         for(const EditorAction* action : _actions) {
             if(!action->menu.size()) {
@@ -286,9 +286,7 @@ void UiManager::draw_menu_bar() {
 }
 
 Widget* UiManager::add_top_level_widget(std::unique_ptr<Widget> widget) {
-    Widget* wid = widget.get();
-    _widgets << std::move(widget);
-    return wid;
+    return _widgets.emplace_back(std::move(widget)).get();
 }
 
 void UiManager::close_all() {
@@ -297,7 +295,7 @@ void UiManager::close_all() {
     _last_focussed = nullptr;
 }
 
-core::Span<std::unique_ptr<Widget>> UiManager::widgets() const {
+core::Span<std::unique_ptr<Widget>> UiManager::top_level_widgets() const {
     return _widgets;
 }
 

@@ -43,10 +43,11 @@ class UiManager : NonMovable {
         void on_gui();
 
         Widget* add_top_level_widget(std::unique_ptr<Widget> widget);
+        
+        core::Span<std::unique_ptr<Widget>> top_level_widgets() const;
 
         void close_all();
 
-        core::Span<std::unique_ptr<Widget>> widgets() const;
 
         Widget* last_focussed_widget();
 

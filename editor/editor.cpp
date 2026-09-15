@@ -109,7 +109,7 @@ void destroy_editor() {
 
 void run_editor() {
     application::imgui_platform->exec([] {
-        for(const auto& widget : application::ui->widgets()) {
+        for(const auto& widget : application::ui->top_level_widgets()) {
             if(WorkArea* area = dynamic_cast<WorkArea*>(widget.get())) {
                 area->workspace()->update();
             }
@@ -117,7 +117,7 @@ void run_editor() {
 
         application::ui->on_gui();
 
-        for(const auto& widget : application::ui->widgets()) {
+        for(const auto& widget : application::ui->top_level_widgets()) {
             if(WorkArea* area = dynamic_cast<WorkArea*>(widget.get())) {
                 area->workspace()->post_update();
             }
