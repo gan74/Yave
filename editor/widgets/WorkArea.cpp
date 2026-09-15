@@ -24,9 +24,14 @@ SOFTWARE.
 
 #include <editor/UiManager.h>
 
+#include <y/utils/format.h>
+
 namespace editor {
 
 WorkArea::WorkArea(std::unique_ptr<Workspace> workspace) : Widget(workspace->name()), _workspace(std::move(workspace)) {
+    _window_class.ClassId = ui().main_dock_id();
+    _window_class.DockingAllowUnclassed = true;
+
     for(const EditorWidget* widget = all_widgets(); widget; widget = widget->next) {
         if(widget->open_on_startup) {
             if(std::unique_ptr child = widget->create(_workspace.get())) {
@@ -58,10 +63,11 @@ void WorkArea::on_inactive_gui() {
 
 void WorkArea::draw_dockspace(ImGuiDockNodeFlags flags) {
     ImGuiWindowClass window_class;
-    window_class.ClassId = _workspace->workspace_id();
-    window_class.DockingAllowUnclassed = true;
-
-    const ImGuiID dockspace_id = ImGui::GetID("##workarea_dock");
+    {
+        window_class.ClassId = _workspace->workspace_id();
+        window_class.DockingAllowUnclassed = true;
+    }
+    const ImGuiID dockspace_id = ImGui::GetID(fmt_c_str("##workarea_{}", widget_id()));
     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), flags, &window_class);
 }
 

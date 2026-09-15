@@ -54,6 +54,8 @@ class Widget : NonMovable {
 
         void set_modal(bool modal);
 
+        u64 widget_id() const;
+
         Widget* add_child_widget(std::unique_ptr<Widget> child);
         
         template<typename T, typename... Args>
@@ -73,13 +75,14 @@ class Widget : NonMovable {
         virtual void on_inactive_gui();
         virtual bool before_gui();
         virtual void after_gui();
-        virtual void prepare_window();
 
         virtual bool should_keep_alive() const;
 
         bool is_focussed() const;
 
         math::Vec2ui content_size() const;
+
+        ImGuiWindowClass _window_class = {};
 
     private:
         friend class UiManager;
@@ -123,6 +126,9 @@ class WorkspaceWidget : public WorkspaceWidgetBase {
                 _workspace(workspace) {
 
             y_debug_assert(_workspace);
+
+            _window_class.ClassId = _workspace->workspace_id();
+            _window_class.DockingAllowUnclassed = true;
         }
 
 
@@ -132,13 +138,6 @@ class WorkspaceWidget : public WorkspaceWidgetBase {
                 set_current_workspace(_workspace);
             }
             Widget::after_gui();
-        }
-
-        void prepare_window() override {
-            ImGuiWindowClass window_class;
-            window_class.ClassId = _workspace->workspace_id();
-            window_class.DockingAllowUnclassed = false;
-            ImGui::SetNextWindowClass(&window_class);
         }
 
         W* _workspace = nullptr;

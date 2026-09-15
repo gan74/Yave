@@ -57,7 +57,7 @@ static core::String shortcut_text(KeyCombination shortcut) {
 
 
 
-UiManager::UiManager() {
+UiManager::UiManager() : _main_dock_id(generate_dock_id()) {
     for(const EditorAction* action = all_actions(); action; action = action->next) {
         _actions << action;
         if(!action->shortcut.is_empty()) {
@@ -77,7 +77,7 @@ void UiManager::on_gui() {
     y_profile();
 
     ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::DockSpaceOverViewport(0, viewport);
+    ImGui::DockSpaceOverViewport(0, viewport, ImGuiDockNodeFlags_AutoHideTabBar);
 
     update_fps_counter();
     update_shortcuts();
@@ -301,6 +301,14 @@ core::Span<std::unique_ptr<Widget>> UiManager::top_level_widgets() const {
 
 Widget* UiManager::last_focussed_widget() {
     return _last_focussed;
+}
+
+u32 UiManager::generate_dock_id() {
+    return ++_dock_id;
+}
+
+u32 UiManager::main_dock_id() const {
+    return _main_dock_id;
 }
 
 }

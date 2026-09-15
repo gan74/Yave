@@ -71,6 +71,10 @@ void Widget::set_modal(bool modal) {
     _modal = modal;
 }
 
+u64 Widget::widget_id() const {
+    return _id;
+}
+
 Widget* Widget::add_child_widget(std::unique_ptr<Widget> child) {
     Widget* widget = child.get();
 
@@ -110,9 +114,6 @@ bool Widget::before_gui() {
 
 void Widget::after_gui() {
     ImGui::PopStyleColor();
-}
-
-void Widget::prepare_window() {
 }
 
 void Widget::draw_gui_inside() {
@@ -201,7 +202,7 @@ void Widget::draw(bool inside) {
             }
             opened = ImGui::BeginPopupModal(_title_with_id.data(), &_visible, _flags);
         } else {
-            prepare_window();
+            ImGui::SetNextWindowClass(&_window_class);
             opened = ImGui::Begin(_title_with_id.data(), &_visible, _flags);
         }
         ImGui::PopStyleVar();

@@ -48,8 +48,10 @@ class UiManager : NonMovable {
 
         void close_all();
 
-
         Widget* last_focussed_widget();
+
+        u32 generate_dock_id();
+        u32 main_dock_id() const;
 
     private:
         friend class Widget;
@@ -73,6 +75,9 @@ class UiManager : NonMovable {
         core::FixedArray<float> _frame_times = core::FixedArray<float>(60);
         float _total_time = 0.0f;
         u64 _frame_number = 0;
+
+        u32 _dock_id = 0;
+        u32 _main_dock_id = 0;
 };
 
 }
