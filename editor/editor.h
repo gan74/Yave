@@ -68,31 +68,20 @@ DirectDraw& debug_drawer();
 
 
 
-Widget* focussed_widget();
 Widget* last_focussed_widget();
 
-template<typename T>
-T* focussed_widget_typed() {
-    return dynamic_cast<T*>(focussed_widget());
-}
 template<typename T>
 T* last_focussed_widget_typed() {
     return dynamic_cast<T*>(last_focussed_widget());
 }
 
-
-
-Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent = true);
+Widget* add_top_level_widget(std::unique_ptr<Widget> widget);
 
 template<typename T, typename... Args>
-T* add_child_widget(Args&&... args) {
-    return dynamic_cast<T*>(add_widget(std::make_unique<T>(y_fwd(args)...), true));
+T* add_top_level_widget(Args&&... args) {
+    return dynamic_cast<T*>(add_top_level_widget(std::make_unique<T>(y_fwd(args)...)));
 }
 
-template<typename T, typename... Args>
-T* add_detached_widget(Args&&... args) {
-    return dynamic_cast<T*>(add_widget(std::make_unique<T>(y_fwd(args)...), false));
-}
 
 
 
@@ -159,8 +148,6 @@ bool invoke_action_func(F&& func, Workspace* workspace) {
         inline static struct y_create_name_with_prefix(action_register_t) {                                     \
             y_create_name_with_prefix(action_register_t)() {                                                    \
                 static constexpr std::string_view names[] = { name, __VA_ARGS__ };                              \
-                static auto action_fn = func;                                                                   \
-                static auto enabled_fn = enabled;                                                               \
                 static editor::EditorAction action = {                                                          \
                     names[0], desc, (flags), yave::KeyCombination(shortcut),                                    \
                     [](editor::Workspace* w) { editor::detail::invoke_action_func(func, w); },                  \

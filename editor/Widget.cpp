@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "Widget.h"
+#include "UiManager.h"
 
 #include <editor/utils/ui.h>
 
@@ -42,7 +43,12 @@ const EditorWidget* all_widgets() {
 }
 
 
-Widget::Widget(std::string_view title, int flags) : _flags(flags) {
+static u64 next_widget_id() {
+    static u64 id = 0;
+    return ++id;
+}
+
+Widget::Widget(std::string_view title, int flags) : _id(next_widget_id()), _flags(flags) {
     set_title(title);
 }
 
@@ -53,29 +59,28 @@ void Widget::close() {
     _visible = false;
 }
 
-std::string_view Widget::title() const {
-    return _title;
-}
-
 bool Widget::is_visible() const {
     return _visible;
-}
-
-bool Widget::is_focussed() const {
-    return _focussed;
 }
 
 void Widget::set_visible(bool visible) {
     _visible = visible;
 }
 
-void Widget::set_parent(Widget* parent) {
-    y_debug_assert(!parent != !_parent);
-    _parent = parent;
-}
-
 void Widget::set_modal(bool modal) {
     _modal = modal;
+}
+
+Widget* Widget::add_child_widget(std::unique_ptr<Widget> child) {
+    Widget* widget = child.get();
+
+    y_debug_assert(widget);
+    y_debug_assert(!widget->_parent);
+
+    widget->_parent = this;
+    _children << std::move(child);
+    
+    return widget;
 }
 
 void Widget::refresh() {
@@ -114,8 +119,60 @@ bool Widget::should_keep_alive() const {
     return false;
 }
 
+bool Widget::has_keep_alive() const {
+    if(should_keep_alive()) {
+        return true;
+    }
+    for(const auto& child : _children) {
+        if(child->has_keep_alive()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+Widget* Widget::find_focussed() {
+    for(auto& child : _children) {
+        if(Widget* focussed = child->find_focussed()) {
+            return focussed;
+        }
+    }
+    return _focussed ? this : nullptr;
+}
+
+void Widget::draw_children() {
+    for(usize i = 0; i != _children.size(); ++i) {
+        _children[i]->draw(false);
+    }
+    prune_children();
+}
+
+void Widget::prune_children() {
+    UiManager& ui_manager = ui();
+    for(usize i = 0; i != _children.size(); ++i) {
+        Widget* child = _children[i].get();
+        if(!child->is_visible() && !child->has_keep_alive()) {
+            for(Widget* w = ui_manager._focussed; w; w = w->_parent) {
+                if(w == child) {
+                    ui_manager._focussed = nullptr;
+                    break;
+                }
+            }
+            for(Widget* w = ui_manager._last_focussed; w; w = w->_parent) {
+                if(w == child) {
+                    ui_manager._last_focussed = nullptr;
+                    break;
+                }
+            }
+            _children.erase_unordered(_children.begin() + i);
+            --i;
+        }
+    }
+}
+
 void Widget::draw(bool inside) {
     if(!_visible || !before_gui()) {
+        draw_children();
         return;
     }
 
@@ -162,24 +219,16 @@ void Widget::draw(bool inside) {
     }
 
     after_gui();
+
+    draw_children();
 }
 
 math::Vec2ui Widget::content_size() const {
     return math::Vec2ui(to_y(ImGui::GetWindowSize())); //(math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin())).max(math::Vec2(1.0f));
 }
 
-void Widget::set_flags(int flags) {
-    _flags |= flags;
-}
-
-void Widget::set_id(u64 id) {
-    _id = id;
-    set_title(_title);
-}
-
 void Widget::set_title(std::string_view title) {
     _title_with_id = fmt("{}##{}", title, _id);
-    _title = std::string_view(_title_with_id.begin(), title.size());
 }
 
 }

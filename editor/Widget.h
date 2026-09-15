@@ -25,12 +25,14 @@ SOFTWARE.
 #include <editor/editor.h>
 
 #include <y/core/String.h>
+#include <y/core/Vector.h>
 
 #include <y/utils/log.h>
 
 #include <external/imgui/imgui.h>
 
 #include <array>
+#include <memory>
 #include <tuple>
 #include <type_traits>
 
@@ -46,15 +48,18 @@ class Widget : NonMovable {
 
         void close();
 
-        std::string_view title() const;
         bool is_visible() const;
-        bool is_focussed() const;
 
         void set_visible(bool visible);
 
-        void set_parent(Widget* parent);
-
         void set_modal(bool modal);
+
+        Widget* add_child_widget(std::unique_ptr<Widget> child);
+        
+        template<typename T, typename... Args>
+        T* add_child_widget(Args&&... args) {
+            return dynamic_cast<T*>(add_child_widget(std::make_unique<T>(y_fwd(args)...)));
+        }
 
         virtual void refresh();
         virtual void refresh_all();
@@ -72,26 +77,28 @@ class Widget : NonMovable {
 
         math::Vec2ui content_size() const;
 
-        void set_flags(int flags);
-
     private:
         friend class UiManager;
 
         void draw(bool inside);
+        void draw_children();
+        void prune_children();
 
-        void set_id(u64 id);
+        bool has_keep_alive() const;
+        Widget* find_focussed();
+
         void set_title(std::string_view title);
 
         core::String _title_with_id;
-
-        std::string_view _title;
-        u64 _id = 0;
+        const u64 _id;
 
         bool _visible = true;
         bool _modal = false;
         bool _focussed = false;
 
         Widget* _parent = nullptr;
+        core::Vector<std::unique_ptr<Widget>> _children;
+
         int _flags = 0;
 };
 
@@ -133,7 +140,7 @@ class WorkspaceWidget : public WorkspaceWidgetBase {
 struct EditorWidget {
     std::string_view name;
     bool open_on_startup = false;
-    void (*create)() = nullptr;
+    std::unique_ptr<Widget> (*create)(Workspace*) = nullptr;
     EditorWidget* next = nullptr;
 };
 
@@ -143,14 +150,15 @@ namespace detail {
 void register_widget(EditorWidget* widget);
 
 template<typename T>
-void create_workspace_widget(Workspace* workspace) {
+std::unique_ptr<Widget> create_workspace_widget(Workspace* workspace) {
     if constexpr(std::is_base_of_v<WorkspaceWidgetBase, T>) {
         if(auto* ws = dynamic_cast<typename T::workspace_type*>(workspace)) {
-            add_detached_widget<T>(ws);
+            return std::make_unique<T>(ws);
         }
     } else {
-        add_detached_widget<T>();
+        return std::make_unique<T>();
     }
+    return nullptr;
 }
 
 template<typename T>
@@ -161,33 +169,29 @@ bool can_create_workspace_widget(Workspace* workspace) {
     return true;
 }
 
-template<typename T>
-void create_widget() {
-    create_workspace_widget<T>(current_workspace());
-}
 }
 
 }
 
 
-#define editor_widget_(type, on_startup, ...)                                                                           \
-        inline static struct widget_register_t {                                                                        \
-            widget_register_t() {                                                                                       \
-            static editor::EditorWidget widget = {                                                                      \
-                #type, (on_startup), editor::detail::create_widget<type>, nullptr                                       \
-            };                                                                                                          \
-            static constexpr usize arg_count = std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value;          \
-            static const std::array<std::string_view, arg_count> menu = {__VA_ARGS__};                                  \
-            static editor::EditorAction action = {                                                                      \
-                #type, "Open a new " #type, EditorAction::Widget, yave::KeyCombination(),                               \
-                editor::detail::create_workspace_widget<type>,                                                          \
-                editor::detail::can_create_workspace_widget<type>,                                                      \
-                menu, nullptr                                                                                           \
-            };                                                                                                          \
-            editor::detail::register_widget(&widget);                                                                   \
-            editor::detail::register_action(&action);                                                                   \
-        }                                                                                                               \
-        void trigger() {}                                                                                               \
+#define editor_widget_(type, on_startup, ...)                                                                               \
+        inline static struct widget_register_t {                                                                            \
+            widget_register_t() {                                                                                           \
+            static editor::EditorWidget widget = {                                                                          \
+                #type, (on_startup), editor::detail::create_workspace_widget<type>, nullptr                                 \
+            };                                                                                                              \
+            static constexpr usize arg_count = std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value;              \
+            static const std::array<std::string_view, arg_count> menu = {__VA_ARGS__};                                      \
+            static editor::EditorAction action = {                                                                          \
+                #type, "Open a new " #type, EditorAction::Widget, yave::KeyCombination(),                                   \
+                [](Workspace* w) { editor::add_top_level_widget(editor::detail::create_workspace_widget<type>(w)); },       \
+                editor::detail::can_create_workspace_widget<type>,                                                          \
+                menu, nullptr                                                                                               \
+            };                                                                                                              \
+            editor::detail::register_widget(&widget);                                                                       \
+            editor::detail::register_action(&action);                                                                       \
+        }                                                                                                                   \
+        void trigger() {}                                                                                                   \
     } widget_registerer;
 
 #define editor_widget(type, ...)        editor_widget_(type, false, __VA_ARGS__)

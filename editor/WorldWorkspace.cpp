@@ -35,7 +35,7 @@ SOFTWARE.
 
 namespace editor {
 
-editor_action("New world workspace", [] { add_detached_widget<WorkArea>(std::make_unique<WorldWorkspace>()); })
+editor_action("New world workspace", [] { add_top_level_widget<WorkArea>(std::make_unique<WorldWorkspace>()); })
 
 WorldWorkspace::WorldWorkspace() :
         _world(std::make_unique<EditorWorld>(asset_loader())),

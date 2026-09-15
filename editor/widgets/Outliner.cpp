@@ -65,7 +65,7 @@ static void set_new_entity_pos(WorldWorkspace* ws, ecs::EntityId id, bool on_cur
 }
 
 static void add_prefab(WorldWorkspace* ws, bool on_cursor = false) {
-    add_detached_widget<AssetSelector>(AssetType::Prefab, "Add prefab")->set_selected_callback(
+    add_top_level_widget<AssetSelector>(AssetType::Prefab, "Add prefab")->set_selected_callback(
         [ws, on_cursor](AssetId asset) {
             EditorWorld& world = ws->world();
             const ecs::EntityId id = world.add_prefab(asset);
@@ -168,7 +168,7 @@ editor_action_contextual("Add prefab here", [](WorldWorkspace* ws) { add_prefab(
 
 editor_action_contextual(ICON_FA_TRASH " Delete selected",
     [](WorldWorkspace* ws) {
-        add_child_widget<DeletionDialog>(ws, ws->world().selected_entities());
+        add_top_level_widget<DeletionDialog>(ws, ws->world().selected_entities());
     },
     [](WorldWorkspace* ws) {
         return ws->world().has_selected_entities();

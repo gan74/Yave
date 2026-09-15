@@ -168,16 +168,12 @@ DirectDraw& debug_drawer() {
 
 
 
-Widget* focussed_widget() {
-    return ui().focussed_widget();
-}
-
 Widget* last_focussed_widget() {
     return ui().last_focussed_widget();
 }
 
-Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent) {
-    return ui().add_widget(std::move(widget), auto_parent);
+Widget* add_top_level_widget(std::unique_ptr<Widget> widget) {
+    return ui().add_top_level_widget(std::move(widget));
 }
 
 

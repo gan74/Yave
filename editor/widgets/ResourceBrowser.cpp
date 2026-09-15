@@ -47,8 +47,8 @@ SOFTWARE.
 
 namespace editor {
 
-editor_action("Import glTF", add_detached_widget<GltfImporter>)
-editor_action("Import image", add_detached_widget<ImageImporter>)
+editor_action("Import glTF", add_top_level_widget<GltfImporter>)
+editor_action("Import image", add_top_level_widget<ImageImporter>)
 
 
 
@@ -105,7 +105,7 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _files
         if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
             ImGui::Separator();
             if(ImGui::MenuItem("Show references")) {
-                add_detached_widget<AssetReferenceWidget>(id);
+                add_top_level_widget<AssetReferenceWidget>(id);
             }
         }
     });
@@ -122,10 +122,10 @@ AssetType ResourceBrowser::asset_type(AssetId id) const {
 
 void ResourceBrowser::draw_import_menu() {
     if(ImGui::Selectable("Import glTF")) {
-        add_detached_widget<GltfImporter>(_filesystem_view.path());
+        add_top_level_widget<GltfImporter>(_filesystem_view.path());
     }
     if(ImGui::Selectable("Import image")) {
-        add_detached_widget<ImageImporter>(_filesystem_view.path());
+        add_top_level_widget<ImageImporter>(_filesystem_view.path());
     }
 }
 

@@ -97,7 +97,7 @@ static void id_selector(ecs::EntityId& property_id, const core::String& name, ec
     bool browse = false;
     imgui::id_selector(property_id, workspace->world(), target_type, &browse);
     if(browse) {
-        add_child_widget<EntitySelector>(workspace, target_type)->set_selected_callback(
+        add_top_level_widget<EntitySelector>(workspace, target_type)->set_selected_callback(
             [=](ecs::EntityId new_id) {
                 SetterInspector<ecs::EntityId> setter(name, new_id);
                 workspace->world().inspect_components(entity_id, &setter, comp_type);
@@ -114,7 +114,7 @@ static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, e
     bool clear = false;
     const AssetType type = ptr.type();
     if(imgui::asset_selector(ptr.id(), type, asset_type_name(type, false, false), &clear)) {
-        add_child_widget<AssetSelector>(type)->set_selected_callback(
+        add_top_level_widget<AssetSelector>(type)->set_selected_callback(
             [=](AssetId asset) {
                 if(const auto loaded = asset_loader().load_res<T>(asset)) {
                     SetterInspector<GenericAssetPtr> setter(name, loaded.unwrap());

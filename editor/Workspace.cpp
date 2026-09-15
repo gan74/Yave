@@ -28,7 +28,7 @@ SOFTWARE.
 
 namespace editor {
 
-editor_action("New empty workspace", [] { add_detached_widget<WorkArea>(std::make_unique<EmptyWorkspace>()); })
+editor_action("New empty workspace", [] { add_top_level_widget<WorkArea>(std::make_unique<EmptyWorkspace>()); })
 
 static u32 generate_ws_id() {
     static std::atomic<u32> id = 0;

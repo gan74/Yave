@@ -33,7 +33,6 @@ SOFTWARE.
 #include <yave/graphics/device/Instance.h>
 
 #include <yave/assets/AssetLoader.h>
-#include <y/core/HashMap.h>
 
 #include <algorithm>
 #include <tuple>
@@ -87,68 +86,40 @@ void UiManager::on_gui() {
 
 
     Widget* focussed = nullptr;
-    core::FlatHashMap<Widget*, int> to_destroy;
-    for(auto& widget : _widgets) {
+    for(usize i = 0; i != _widgets.size(); ++i) {
+        Widget* widget = _widgets[i].get();
         y_profile_dyn_zone(widget->_title_with_id.data());
 
-        _auto_parent = widget.get();
         widget->draw(false);
 
-        if(widget->is_focussed()) {
-            focussed = widget.get();
-        }
-
-        if(!widget->is_visible() && !widget->should_keep_alive()) {
-            to_destroy[widget.get()];
+        if(Widget* f = widget->find_focussed()) {
+            focussed = f;
         }
     }
 
     _focussed = focussed;
     _last_focussed = _focussed ? _focussed : _last_focussed;
 
-    _auto_parent = nullptr;
+    for(usize i = 0; i != _widgets.size(); ++i) {
+        Widget* widget = _widgets[i].get();
+        if(!widget->is_visible() && !widget->has_keep_alive()) {
+            y_profile_dyn_zone(fmt_c_str("destroying '{}'", widget->_title_with_id));
 
-   if(!to_destroy.is_empty()) {
-        y_profile_zone("destroy widgets");
-
-        // destroy children of destroyed widgets
-        for(usize i = 0;  i != _widgets.size(); ++i) {
-            Widget* wid = _widgets[i].get();
-
-            bool destroy = to_destroy.contains(wid);
-            for(Widget* parent = wid->_parent; parent && !destroy; parent = parent->_parent) {
-                destroy |= to_destroy.contains(parent);
-            }
-
-            if(destroy) {
-                to_destroy[wid];
-            }
-        }
-
-        // don't destroy widget that have a child with keep alive
-        for(usize i = 0;  i != _widgets.size(); ++i) {
-            Widget* wid = _widgets[i].get();
-
-            if(wid->should_keep_alive()) {
-                for(Widget* parent = wid->_parent; parent; parent = parent->_parent) {
-                    to_destroy.erase(parent);
-                }
-                to_destroy.erase(wid);
-            }
-        }
-
-        if(!to_destroy.is_empty()) {
-            for(usize i = 0;  i != _widgets.size(); ++i) {
-                Widget* wid = _widgets[i].get();
-                if(to_destroy.contains(wid)) {
-                    y_profile_dyn_zone(fmt_c_str("destroying '{}'", wid->_title_with_id));
-                    _focussed = _focussed == wid ? nullptr : _focussed;
-                    _last_focussed = _last_focussed == wid ? nullptr : _last_focussed;
-                    _ids[typeid(*wid)].released << wid->_id;
-                    _widgets.erase_unordered(_widgets.begin() + i);
-                    --i;
+            for(Widget* w = _focussed; w; w = w->_parent) {
+                if(w == widget) {
+                    _focussed = nullptr;
+                    break;
                 }
             }
+            for(Widget* w = _last_focussed; w; w = w->_parent) {
+                if(w == widget) {
+                    _last_focussed = nullptr;
+                    break;
+                }
+            }
+
+            _widgets.erase_unordered(_widgets.begin() + i);
+            --i;
         }
     }
 }
@@ -163,7 +134,7 @@ void UiManager::update_fps_counter() {
 void UiManager::draw_fps_counter() {
     const float avg_time = _total_time / std::min(u64(_frame_times.size()), _frame_number);
     if(ImGui::MenuItem(fmt_c_str("FPS: {:.1f} {:.01f} ms", 1000.0f / avg_time, avg_time))) {
-        add_widget(std::make_unique<PerformanceMetrics>());
+        add_top_level_widget(std::make_unique<PerformanceMetrics>());
     }
 }
 
@@ -232,7 +203,7 @@ void UiManager::draw_menu_bar() {
         }
 
         if(ImGui::MenuItem(ICON_FA_BUG)) {
-            add_widget(std::make_unique<DebugValueEditor>());
+            add_top_level_widget(std::make_unique<DebugValueEditor>());
         }
 
         Workspace* workspace = current_workspace();
@@ -310,46 +281,24 @@ void UiManager::draw_menu_bar() {
     ImGui::PopID();
 }
 
-Widget* UiManager::add_widget(std::unique_ptr<Widget> widget, bool auto_parent) {
+Widget* UiManager::add_top_level_widget(std::unique_ptr<Widget> widget) {
     Widget* wid = widget.get();
-
-    if(auto_parent && _auto_parent) {
-        wid->set_parent(_auto_parent);
-    }
-
-    set_widget_id(wid);
     _widgets << std::move(widget);
-
     return wid;
 }
 
 void UiManager::close_all() {
     _widgets.clear();
-    _ids.clear();
     _focussed = nullptr;
     _last_focussed = nullptr;
-    _auto_parent = nullptr;
 }
 
 core::Span<std::unique_ptr<Widget>> UiManager::widgets() const {
     return _widgets;
 }
 
-Widget* UiManager::focussed_widget() {
-    return _focussed;
-}
-
 Widget* UiManager::last_focussed_widget() {
     return _last_focussed;
-}
-
-void UiManager::set_widget_id(Widget* widget) {
-    WidgetIdStack& ids = _ids[typeid(*widget)];
-    if(!ids.released.is_empty()) {
-        widget->set_id(ids.released.pop());
-    } else {
-        widget->set_id(++ids.next);
-    }
 }
 
 }

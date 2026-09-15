@@ -25,11 +25,9 @@ SOFTWARE.
 #include "Widget.h"
 
 #include <y/core/Vector.h>
-#include <y/core/HashMap.h>
 #include <y/core/FixedArray.h>
 #include <y/core/Chrono.h>
 
-#include <typeindex>
 #include <memory>
 
 #include <functional>
@@ -38,37 +36,30 @@ namespace editor {
 
 class UiManager : NonMovable {
 
-    struct WidgetIdStack {
-        core::Vector<u64> released;
-        u64 next = 0;
-    };
-
     public:
         UiManager();
         ~UiManager();
 
         void on_gui();
 
-        Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent = true);
+        Widget* add_top_level_widget(std::unique_ptr<Widget> widget);
 
         void close_all();
 
         core::Span<std::unique_ptr<Widget>> widgets() const;
 
-        Widget* focussed_widget();
         Widget* last_focussed_widget();
 
     private:
+        friend class Widget;
+
         void update_fps_counter();
         void draw_fps_counter();
         void update_shortcuts();
         void draw_menu_bar();
-        void set_widget_id(Widget* widget);
 
         core::Vector<std::unique_ptr<Widget>> _widgets;
-        core::FlatHashMap<std::type_index, WidgetIdStack> _ids;
 
-        Widget* _auto_parent = nullptr;
         Widget* _focussed = nullptr;
         Widget* _last_focussed = nullptr;
 

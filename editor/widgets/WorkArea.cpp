@@ -27,6 +27,13 @@ SOFTWARE.
 namespace editor {
 
 WorkArea::WorkArea(std::unique_ptr<Workspace> workspace) : Widget(workspace->name()), _workspace(std::move(workspace)) {
+    for(const EditorWidget* widget = all_widgets(); widget; widget = widget->next) {
+        if(widget->open_on_startup) {
+            if(std::unique_ptr child = widget->create(_workspace.get())) {
+                add_child_widget(std::move(child));
+            }
+        }
+    }
 }
 
 WorkArea::~WorkArea() {

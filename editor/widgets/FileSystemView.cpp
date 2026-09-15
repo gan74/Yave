@@ -437,7 +437,7 @@ void FileSystemView::draw_context_menu() {
             const core::String full_name = filesystem()->join(_current_path, entry.name);
 
             if(ImGui::MenuItem("Rename")) {
-                add_detached_widget<FileRenamer>(filesystem(), full_name);
+                add_top_level_widget<FileRenamer>(filesystem(), full_name);
             }
 
             if(ImGui::MenuItem("Delete")) {
