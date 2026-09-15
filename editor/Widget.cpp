@@ -119,6 +119,10 @@ bool Widget::should_keep_alive() const {
     return false;
 }
 
+bool Widget::is_focussed() const {
+    return _focussed;
+}
+
 bool Widget::has_keep_alive() const {
     if(should_keep_alive()) {
         return true;

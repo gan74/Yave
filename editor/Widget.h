@@ -75,6 +75,8 @@ class Widget : NonMovable {
 
         virtual bool should_keep_alive() const;
 
+        bool is_focussed() const;
+
         math::Vec2ui content_size() const;
 
     private:
@@ -123,6 +125,13 @@ class WorkspaceWidget : public WorkspaceWidgetBase {
 
 
     protected:
+        void after_gui() override {
+            if(is_focussed()) {
+                set_current_workspace(_workspace);
+            }
+            Widget::after_gui();
+        }
+
         void prepare_window() override {
             ImGuiWindowClass window_class;
             window_class.ClassId = _workspace->workspace_id();

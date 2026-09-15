@@ -194,6 +194,10 @@ void UiManager::draw_menu_bar() {
             draw_fps_counter();
         }
 
+        if(Workspace* workspace = current_workspace()) {
+            ImGui::TextUnformatted(fmt_c_str("{}: {}", workspace->name(), static_cast<const void*>(workspace)));
+        }
+
         if(ImGui::GetIO().WantCaptureKeyboard) {
             ImGui::TextUnformatted(ICON_FA_KEYBOARD);
         }

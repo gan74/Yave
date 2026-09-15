@@ -27,12 +27,13 @@ SOFTWARE.
 #include "ImGuiPlatform.h"
 #include "ThumbnailRenderer.h"
 
-#include <editor/WorldWorkspace.h>
 #include <editor/widgets/WorkArea.h>
+#include <editor/WorldWorkspace.h>
 
 #include <yave/assets/FolderAssetStore.h>
 #include <yave/assets/AssetLoader.h>
 #include <yave/utils/DebugValues.h>
+#include <yave/utils/DirectDraw.h>
 
 #include <y/utils/log.h>
 #include <y/test/test.h>
@@ -64,10 +65,12 @@ std::shared_ptr<AssetStore> asset_store;
 std::unique_ptr<AssetLoader> loader;
 std::unique_ptr<ThumbnailRenderer> thumbnail_renderer;
 std::unique_ptr<UiManager> ui;
+std::unique_ptr<DirectDraw> debug_drawer;
 
 std::unique_ptr<concurrent::JobSystem> editor_job_system;
 
 ImGuiPlatform* imgui_platform = nullptr;
+Workspace* workspace = nullptr;
 
 Settings settings;
 }
@@ -90,10 +93,12 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::asset_store = std::make_shared<FolderAssetStore>(store_dir);
     application::loader = std::make_unique<AssetLoader>(application::asset_store, AssetLoadingFlags::SkipFailedDependenciesBit, 4);
     application::thumbnail_renderer = std::make_unique<ThumbnailRenderer>(*application::loader);
+    application::debug_drawer = std::make_unique<DirectDraw>();
 }
 
 
 void destroy_editor() {
+    application::debug_drawer = nullptr;
     application::ui = nullptr;
     application::editor_job_system = nullptr; // finish thumbnail jobs before destroying their targets
     application::thumbnail_renderer = nullptr;
@@ -148,20 +153,31 @@ const EditorResources& resources() {
     return *application::resources;
 }
 
-Workspace* current_workspace() {
-    WorkArea* area = find_work_area();
-    return area ? area->workspace() : nullptr;
-}
-
 DebugValues& debug_values() {
     static DebugValues values = {};
     return values;
 }
 
 DirectDraw& debug_drawer() {
-    WorkArea* area = find_work_area();
-    y_debug_assert(area);
-    return dynamic_cast<WorldWorkspace*>(area->workspace())->debug_drawer();
+    WorldWorkspace* workspace = dynamic_cast<WorldWorkspace*>(application::workspace);
+    return workspace ? workspace->debug_drawer() : *application::debug_drawer.get();
+}
+
+
+
+
+Workspace* current_workspace() {
+    return application::workspace;
+}
+
+void set_current_workspace(Workspace* workspace) {
+    application::workspace = workspace;
+}
+
+void unset_current_workspace(Workspace* workspace) {
+    if(application::workspace == workspace) {
+        application::workspace = nullptr;
+    }
 }
 
 

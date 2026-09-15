@@ -61,11 +61,14 @@ concurrent::JobSystem& editor_job_system();
 
 const EditorResources& resources();
 
-Workspace* current_workspace();
 
 DebugValues& debug_values();
 DirectDraw& debug_drawer();
 
+
+Workspace* current_workspace();
+void set_current_workspace(Workspace* workspace);
+void unset_current_workspace(Workspace* workspace);
 
 
 Widget* last_focussed_widget();
@@ -112,8 +115,20 @@ namespace detail {
 void register_action(EditorAction* action);
 
 template<typename F>
+bool action_matches_workspace(F&&, Workspace* workspace) {
+    if constexpr(std::same_as<std::remove_cvref_t<F>, nullptr_t> || std::invocable<F>) {
+        return true;
+    } else if constexpr(std::invocable<F, Workspace*>) {
+        return !!workspace;
+    } else {
+        using WS = std::remove_pointer_t<typename function_traits<F>::template arg_type<0>>;
+        return dynamic_cast<WS*>(workspace);
+    }
+}
+
+template<typename F>
 bool invoke_action_func(F&& func, Workspace* workspace) {
-    if constexpr(!std::same_as<F, nullptr_t>) {
+    if constexpr(!std::same_as<std::remove_cvref_t<F>, nullptr_t>) {
         using traits = function_traits<F>;
         auto invoke_as_bool = [&](auto&&... args) -> bool {
             if constexpr(std::same_as<typename traits::return_type, bool>) {
@@ -151,9 +166,10 @@ bool invoke_action_func(F&& func, Workspace* workspace) {
                 static editor::EditorAction action = {                                                          \
                     names[0], desc, (flags), yave::KeyCombination(shortcut),                                    \
                     [](editor::Workspace* w) { editor::detail::invoke_action_func(func, w); },                  \
-                    enabled                                                                                     \
-                        ? [](editor::Workspace* w) { return editor::detail::invoke_action_func(enabled, w); }   \
-                        : nullptr,                                                                              \
+                    [](editor::Workspace* w) {                                                                  \
+                        return editor::detail::action_matches_workspace(func, w)                                \
+                            && editor::detail::invoke_action_func(enabled, w);                                  \
+                    },                                                                                          \
                     y::core::Span<std::string_view>(names + 1, std::size(names) - 1), nullptr                   \
                 };                                                                                              \
                 editor::detail::register_action(&action);                                                       \

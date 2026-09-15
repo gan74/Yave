@@ -166,11 +166,11 @@ bool EngineView::before_gui() {
     ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetColorU32(ImGuiCol_HeaderActive));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{});
 
-    return Widget::before_gui();
+    return WorkspaceWidget::before_gui();
 }
 
 void EngineView::after_gui() {
-    Widget::after_gui();
+    WorkspaceWidget::after_gui();
 
     ImGui::PopStyleColor(2);
     ImGui::PopStyleVar();

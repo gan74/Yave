@@ -37,6 +37,7 @@ WorkArea::WorkArea(std::unique_ptr<Workspace> workspace) : Widget(workspace->nam
 }
 
 WorkArea::~WorkArea() {
+    unset_current_workspace(_workspace.get());
 }
 
 Workspace* WorkArea::workspace() {
@@ -58,7 +59,7 @@ void WorkArea::on_inactive_gui() {
 void WorkArea::draw_dockspace(ImGuiDockNodeFlags flags) {
     ImGuiWindowClass window_class;
     window_class.ClassId = _workspace->workspace_id();
-    window_class.DockingAllowUnclassed = false;
+    window_class.DockingAllowUnclassed = true;
 
     const ImGuiID dockspace_id = ImGui::GetID("##workarea_dock");
     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), flags, &window_class);
@@ -66,15 +67,6 @@ void WorkArea::draw_dockspace(ImGuiDockNodeFlags flags) {
 
 bool WorkArea::should_keep_alive() const {
     return true;
-}
-
-WorkArea* find_work_area() {
-    for(const auto& widget : ui().widgets()) {
-        if(WorkArea* area = dynamic_cast<WorkArea*>(widget.get())) {
-            return area;
-        }
-    }
-    return nullptr;
 }
 
 }

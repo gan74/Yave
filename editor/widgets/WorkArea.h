@@ -52,8 +52,6 @@ class WorkArea final : public Widget {
         std::unique_ptr<Workspace> _workspace;
 };
 
-WorkArea* find_work_area();
-
 }
 
 
