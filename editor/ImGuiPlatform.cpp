@@ -194,9 +194,10 @@ static void setup_style() {
 
     colors[ImGuiCol_BorderShadow]           = none;
     colors[ImGuiCol_DockingEmptyBg]         = none;
-    colors[ImGuiCol_ModalWindowDimBg]       = none;
     colors[ImGuiCol_TableRowBg]             = none;
     colors[ImGuiCol_DragDropTargetBg]       = none;
+
+    colors[ImGuiCol_ModalWindowDimBg]       = gr(12, 0.8f);
 
     colors[ImGuiCol_TableRowBgAlt]          = gr(26, 0.5f);
 

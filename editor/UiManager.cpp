@@ -83,6 +83,24 @@ void UiManager::on_gui() {
     update_shortcuts();
     draw_menu_bar();
 
+    if(!std::any_of(_widgets.begin(), _widgets.end(), [](const auto& w) { return dynamic_cast<const WorkArea*>(w.get()); })) {
+        ImGui::OpenPopup("##noworkspace");
+        
+        const ImGuiWindowFlags flags = 
+            ImGuiWindowFlags_NoTitleBar |
+            ImGuiWindowFlags_AlwaysAutoResize
+        ;
+
+        if(ImGui::BeginPopupModal("##noworkspace", nullptr, flags)) {
+            if(ImGui::Button("New world workspace")) {
+                add_top_level_widget(std::make_unique<WorkArea>(std::make_unique<WorldWorkspace>()));
+            }
+            if(ImGui::Button("New empty workspace")) {
+                add_top_level_widget(std::make_unique<WorkArea>(std::make_unique<EmptyWorkspace>()));
+            }
+            ImGui::EndPopup();
+        }
+    }
 
     Widget* focussed = nullptr;
     for(usize i = 0; i != _widgets.size(); ++i) {
