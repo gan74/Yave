@@ -65,10 +65,11 @@ class UiManager : NonMovable {
         void draw_menu_bar();
         void draw_workspace_dockspaces();
 
-        core::Vector<std::unique_ptr<Widget>> _widgets;
-        
+
         core::Vector<std::unique_ptr<Workspace>> _workspaces;
         core::Vector<std::unique_ptr<Workspace>> _to_destroy;
+        
+        core::Vector<std::unique_ptr<Widget>> _widgets;
 
         Widget* _focussed = nullptr;
         Widget* _last_focussed = nullptr;

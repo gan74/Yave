@@ -77,6 +77,7 @@ UiManager::UiManager() : _main_dock_id(generate_dock_id()) {
 }
 
 UiManager::~UiManager() {
+    close_all();
 }
 
 void UiManager::draw_workspace_dockspaces() {
@@ -234,7 +235,10 @@ void UiManager::update_shortcuts() {
         for(auto&& action : _shortcuts) {
             if(keys == action.first->shortcut) {
                 if(!action.second) {
-                    action.first->function(workspace);
+                    const EditorAction* a = action.first;
+                    if(!a->enabled || a->enabled(workspace)) {
+                        a->function(workspace);
+                    }
                     action.second = true;
                 }
             } else {
@@ -304,7 +308,8 @@ void UiManager::draw_menu_bar() {
 
             if(stack_size == action->menu.size()) {
                 const core::String shortcut = shortcut_text(action->shortcut);
-                if(ImGui::MenuItem(action->name.data(), shortcut.is_empty() ? nullptr : shortcut.data())) {
+                const bool enabled = !action->enabled || action->enabled(workspace);
+                if(ImGui::MenuItem(action->name.data(), shortcut.is_empty() ? nullptr : shortcut.data(), false, enabled)) {
                     action->function(workspace);
                 }
             }
@@ -363,6 +368,9 @@ void UiManager::draw_menu_bar() {
 }
 
 Widget* UiManager::add_top_level_widget(std::unique_ptr<Widget> widget) {
+    if(!widget) {
+        return nullptr;
+    }
     return _widgets.emplace_back(std::move(widget)).get();
 }
 
@@ -384,6 +392,7 @@ Workspace* UiManager::add_workspace(std::unique_ptr<Workspace> workspace) {
 void UiManager::close_all() {
     _widgets.clear();
     _workspaces.clear();
+    _to_destroy.clear();
     _focussed = nullptr;
     _last_focussed = nullptr;
     set_current_workspace(nullptr);
