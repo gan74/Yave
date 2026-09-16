@@ -25,7 +25,6 @@ SOFTWARE.
 
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
-#include <editor/widgets/WorkArea.h>
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>

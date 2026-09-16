@@ -23,7 +23,6 @@ SOFTWARE.
 #include "WorldWorkspace.h"
 
 #include "editor.h"
-#include <editor/widgets/WorkArea.h>
 
 #include <yave/assets/AssetLoader.h>
 #include <yave/systems/SceneSystem.h>
@@ -34,8 +33,6 @@ SOFTWARE.
 #include <y/utils/format.h>
 
 namespace editor {
-
-editor_action("New world workspace", [] { add_top_level_widget<WorkArea>(std::make_unique<WorldWorkspace>()); })
 
 WorldWorkspace::WorldWorkspace() :
         _world(std::make_unique<EditorWorld>(asset_loader())),

@@ -23,6 +23,7 @@ SOFTWARE.
 #define EDITOR_UIMANAGER_H
 
 #include "Widget.h"
+#include "Workspace.h"
 
 #include <y/core/Vector.h>
 #include <y/core/FixedArray.h>
@@ -43,8 +44,10 @@ class UiManager : NonMovable {
         void on_gui();
 
         Widget* add_top_level_widget(std::unique_ptr<Widget> widget);
-        
+        Workspace* add_workspace(std::unique_ptr<Workspace> workspace);
+
         core::Span<std::unique_ptr<Widget>> top_level_widgets() const;
+        core::Span<std::unique_ptr<Workspace>> workspaces() const;
 
         void close_all();
 
@@ -60,8 +63,12 @@ class UiManager : NonMovable {
         void draw_fps_counter();
         void update_shortcuts();
         void draw_menu_bar();
+        void draw_workspace_dockspaces();
 
         core::Vector<std::unique_ptr<Widget>> _widgets;
+        
+        core::Vector<std::unique_ptr<Workspace>> _workspaces;
+        core::Vector<std::unique_ptr<Workspace>> _to_destroy;
 
         Widget* _focussed = nullptr;
         Widget* _last_focussed = nullptr;
@@ -73,6 +80,8 @@ class UiManager : NonMovable {
 
         core::StopWatch _timer;
         core::FixedArray<float> _frame_times = core::FixedArray<float>(60);
+
+
         float _total_time = 0.0f;
         u64 _frame_number = 0;
 
@@ -83,4 +92,3 @@ class UiManager : NonMovable {
 }
 
 #endif // EDITOR_UIMANAGER_H
-

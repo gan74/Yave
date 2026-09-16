@@ -25,7 +25,6 @@ SOFTWARE.
 #include <editor/Picker.h>
 #include <editor/Settings.h>
 #include <editor/EditorWorld.h>
-#include <editor/widgets/WorkArea.h>
 
 #include <editor/utils/ui.h>
 

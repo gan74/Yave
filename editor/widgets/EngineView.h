@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "Gizmo.h"
 
-#include <editor/widgets/WorkArea.h>
+#include <editor/Widget.h>
 #include <editor/Picker.h>
 #include <editor/WorldWorkspace.h>
 #include <editor/renderer/EditorRenderer.h>

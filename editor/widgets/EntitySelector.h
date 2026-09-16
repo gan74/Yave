@@ -24,7 +24,8 @@ SOFTWARE.
 
 #include <yave/ecs/ecs.h>
 
-#include <editor/widgets/WorkArea.h>
+#include <editor/Widget.h>
+#include <editor/WorldWorkspace.h>
 
 #include <functional>
 

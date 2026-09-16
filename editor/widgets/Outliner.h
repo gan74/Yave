@@ -24,7 +24,8 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 
-#include <editor/widgets/WorkArea.h>
+#include <editor/Widget.h>
+#include <editor/WorldWorkspace.h>
 
 namespace editor {
 

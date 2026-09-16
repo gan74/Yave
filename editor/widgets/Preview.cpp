@@ -153,7 +153,7 @@ void Preview::draw_mesh_menu() {
         }
         ImGui::Separator();
         if(ImGui::MenuItem("Custom")) {
-            add_child_widget<AssetSelector>(AssetType::Mesh)->set_selected_callback(
+            add_top_level_widget<AssetSelector>(AssetType::Mesh)->set_selected_callback(
                 [this](AssetId id) {
                     if(auto mesh = asset_loader().load_res<StaticMesh>(id)) {
                         set_object(mesh.unwrap());
@@ -208,7 +208,7 @@ void Preview::on_gui() {
 
         ImGui::SetCursorPos(top_left + ImVec2(4.0f, 4.0f));
         if(ImGui::Button(ICON_FA_CIRCLE)) {
-            add_child_widget<AssetSelector>(AssetType::Image)->set_selected_callback(
+            add_top_level_widget<AssetSelector>(AssetType::Image)->set_selected_callback(
                 [this](AssetId id) {
                     if(const auto tex = asset_loader().load_res<IBLProbe>(id)) {
                         _ibl_probe = tex.unwrap();

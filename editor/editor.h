@@ -85,6 +85,13 @@ T* add_top_level_widget(Args&&... args) {
     return dynamic_cast<T*>(add_top_level_widget(std::make_unique<T>(y_fwd(args)...)));
 }
 
+Workspace* add_workspace(std::unique_ptr<Workspace> workspace);
+
+template<typename T, typename... Args>
+T* add_workspace(Args&&... args) {
+    return dynamic_cast<T*>(add_workspace(std::make_unique<T>(y_fwd(args)...)));
+}
+
 
 
 

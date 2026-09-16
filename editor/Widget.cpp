@@ -21,7 +21,6 @@ SOFTWARE.
 **********************************/
 
 #include "Widget.h"
-#include "UiManager.h"
 
 #include <editor/utils/ui.h>
 
@@ -75,28 +74,16 @@ u64 Widget::widget_id() const {
     return _id;
 }
 
-Widget* Widget::add_child_widget(std::unique_ptr<Widget> child) {
-    Widget* widget = child.get();
-
-    y_debug_assert(widget);
-    y_debug_assert(!widget->_parent);
-
-    widget->_parent = this;
-    _children << std::move(child);
-    
-    return widget;
-}
-
-core::Span<std::unique_ptr<Widget>> Widget::children() const {
-    return _children;
-}
-
 void Widget::refresh() {
 }
 
 void Widget::refresh_all() {
     Y_TODO(fix refresh)
     refresh();
+}
+
+bool Widget::belongs_to(const Workspace*) const {
+    return false;
 }
 
 void Widget::on_gui() {
@@ -128,60 +115,8 @@ bool Widget::is_focussed() const {
     return _focussed;
 }
 
-bool Widget::has_keep_alive() const {
-    if(should_keep_alive()) {
-        return true;
-    }
-    for(const auto& child : _children) {
-        if(child->has_keep_alive()) {
-            return true;
-        }
-    }
-    return false;
-}
-
-Widget* Widget::find_focussed() {
-    for(auto& child : _children) {
-        if(Widget* focussed = child->find_focussed()) {
-            return focussed;
-        }
-    }
-    return _focussed ? this : nullptr;
-}
-
-void Widget::draw_children() {
-    for(usize i = 0; i != _children.size(); ++i) {
-        _children[i]->draw(false);
-    }
-    prune_children();
-}
-
-void Widget::prune_children() {
-    UiManager& ui_manager = ui();
-    for(usize i = 0; i != _children.size(); ++i) {
-        Widget* child = _children[i].get();
-        if(!child->is_visible() && !child->has_keep_alive()) {
-            for(Widget* w = ui_manager._focussed; w; w = w->_parent) {
-                if(w == child) {
-                    ui_manager._focussed = nullptr;
-                    break;
-                }
-            }
-            for(Widget* w = ui_manager._last_focussed; w; w = w->_parent) {
-                if(w == child) {
-                    ui_manager._last_focussed = nullptr;
-                    break;
-                }
-            }
-            _children.erase_unordered(_children.begin() + i);
-            --i;
-        }
-    }
-}
-
 void Widget::draw(bool inside) {
     if(!_visible || !before_gui()) {
-        draw_children();
         return;
     }
 
@@ -228,8 +163,6 @@ void Widget::draw(bool inside) {
     }
 
     after_gui();
-
-    draw_children();
 }
 
 math::Vec2ui Widget::content_size() const {
@@ -241,4 +174,3 @@ void Widget::set_title(std::string_view title) {
 }
 
 }
-

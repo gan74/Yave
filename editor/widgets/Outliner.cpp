@@ -24,7 +24,6 @@ SOFTWARE.
 #include "AssetSelector.h"
 #include "DeletionDialog.h"
 #include "Renamer.h"
-#include "WorkArea.h"
 
 #include <editor/Settings.h>
 #include <editor/widgets/EngineView.h>
@@ -334,7 +333,7 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id, bool recursive
         ImGui::Separator();
 
         if(ImGui::MenuItem("Rename")) {
-            add_child_widget<Renamer>(component->name(), [target_id = _context_menu_target, workspace = _workspace](std::string_view name) {
+            add_top_level_widget<Renamer>(component->name(), [target_id = _context_menu_target, workspace = _workspace](std::string_view name) {
                 if(EditorComponent* comp = workspace->world().component_mut<EditorComponent>(target_id)) {
                     comp->set_name(name);
                 }
@@ -343,7 +342,7 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id, bool recursive
         }
 
         if(ImGui::MenuItem(ICON_FA_TRASH " Delete")) {
-            add_child_widget<DeletionDialog>(_workspace, _context_menu_target);
+            add_top_level_widget<DeletionDialog>(_workspace, _context_menu_target);
         }
 
         ImGui::EndPopup();

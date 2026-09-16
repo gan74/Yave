@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include <editor/widgets/WorkArea.h>
+#include <editor/Widget.h>
 #include <editor/WorldWorkspace.h>
 #include <editor/ThumbnailRenderer.h>
 #include <editor/systems/UndoRedoSystem.h>

@@ -22,7 +22,8 @@ SOFTWARE.
 #ifndef EDITOR_WIDGETS_DELETIONDIALOG_H
 #define EDITOR_WIDGETS_DELETIONDIALOG_H
 
-#include <editor/widgets/WorkArea.h>
+#include <editor/Widget.h>
+#include <editor/WorldWorkspace.h>
 
 #include <yave/ecs/ecs.h>
 

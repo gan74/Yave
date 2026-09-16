@@ -27,17 +27,23 @@ SOFTWARE.
 #include <editor/utils/StringMatcher.h>
 #include <editor/widgets/PerformanceMetrics.h>
 #include <editor/widgets/DebugValueEditor.h>
-#include <editor/widgets/WorkArea.h>
 #include <editor/WorldWorkspace.h>
 
 #include <yave/graphics/device/Instance.h>
 
 #include <yave/assets/AssetLoader.h>
 
+#include <y/utils/format.h>
+
 #include <algorithm>
 #include <tuple>
 
 namespace editor {
+
+editor_action("New empty workspace", [] { add_workspace(std::make_unique<EmptyWorkspace>()); })
+editor_action("New world workspace", [] { add_workspace(std::make_unique<WorldWorkspace>()); })
+
+
 
 static core::String shortcut_text(KeyCombination shortcut) {
     core::String text;
@@ -73,6 +79,41 @@ UiManager::UiManager() : _main_dock_id(generate_dock_id()) {
 UiManager::~UiManager() {
 }
 
+void UiManager::draw_workspace_dockspaces() {
+    ImGuiWindowClass host_class;
+    {
+        host_class.ClassId = _main_dock_id;
+        host_class.DockingAllowUnclassed = true;
+    }
+
+    for(usize i = 0; i != _workspaces.size(); ++i) {
+        Workspace* workspace = _workspaces[i].get();
+
+        ImGui::SetNextWindowClass(&host_class);
+        ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
+
+        bool open = true;
+        const bool visible = ImGui::Begin(fmt_c_str("{}##workspace_{}", workspace->name(), workspace->workspace_id()), &open);
+
+        ImGuiWindowClass window_class;
+        {
+            window_class.ClassId = workspace->workspace_id();
+            window_class.DockingAllowUnclassed = true;
+        }
+
+        const ImGuiID dockspace_id = ImGui::GetID(fmt_c_str("##dock_{}", workspace->workspace_id()));
+        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), visible ? ImGuiDockNodeFlags_None : ImGuiDockNodeFlags_KeepAliveOnly, &window_class);
+
+        ImGui::End();
+
+        if(!open) {
+            _to_destroy.emplace_back(std::move(_workspaces[i]));
+            _workspaces.erase_unordered(_workspaces.begin() + i);
+            --i;
+        }
+    }
+}
+
 void UiManager::on_gui() {
     y_profile();
 
@@ -83,59 +124,77 @@ void UiManager::on_gui() {
     update_shortcuts();
     draw_menu_bar();
 
-    if(!std::any_of(_widgets.begin(), _widgets.end(), [](const auto& w) { return dynamic_cast<const WorkArea*>(w.get()); })) {
+    if(_workspaces.is_empty()) {
         ImGui::OpenPopup("##noworkspace");
-        
-        const ImGuiWindowFlags flags = 
+
+        const ImGuiWindowFlags flags =
             ImGuiWindowFlags_NoTitleBar |
+            ImGuiWindowFlags_NoMove |
             ImGuiWindowFlags_AlwaysAutoResize
         ;
 
         if(ImGui::BeginPopupModal("##noworkspace", nullptr, flags)) {
             if(ImGui::Button("New world workspace")) {
-                add_top_level_widget(std::make_unique<WorkArea>(std::make_unique<WorldWorkspace>()));
+                add_workspace(std::make_unique<WorldWorkspace>());
             }
             if(ImGui::Button("New empty workspace")) {
-                add_top_level_widget(std::make_unique<WorkArea>(std::make_unique<EmptyWorkspace>()));
+                add_workspace(std::make_unique<EmptyWorkspace>());
             }
             ImGui::EndPopup();
         }
     }
 
+    draw_workspace_dockspaces();
+
     Widget* focussed = nullptr;
-    for(usize i = 0; i != _widgets.size(); ++i) {
-        Widget* widget = _widgets[i].get();
+    for(const auto& widget : _widgets) {
         y_profile_dyn_zone(widget->_title_with_id.data());
 
         widget->draw(false);
 
-        if(Widget* f = widget->find_focussed()) {
-            focussed = f;
+        if(widget->_focussed) {
+            focussed = widget.get();
         }
     }
 
     _focussed = focussed;
     _last_focussed = _focussed ? _focussed : _last_focussed;
 
+    for(const auto& workspace : _to_destroy) {
+        for(const auto& widget : _widgets) {
+            if(widget->belongs_to(workspace.get())) {
+                widget->close();
+            }
+        }
+    }
+
     for(usize i = 0; i != _widgets.size(); ++i) {
         Widget* widget = _widgets[i].get();
-        if(!widget->is_visible() && !widget->has_keep_alive()) {
+
+        if(!widget->is_visible() && !widget->should_keep_alive()) {
             y_profile_dyn_zone(fmt_c_str("destroying '{}'", widget->_title_with_id));
 
-            for(Widget* w = _focussed; w; w = w->_parent) {
-                if(w == widget) {
-                    _focussed = nullptr;
-                    break;
-                }
+            if(_focussed == widget) {
+                _focussed = nullptr;
             }
-            for(Widget* w = _last_focussed; w; w = w->_parent) {
-                if(w == widget) {
-                    _last_focussed = nullptr;
-                    break;
-                }
+            if(_last_focussed == widget) {
+                _last_focussed = nullptr;
             }
 
             _widgets.erase_unordered(_widgets.begin() + i);
+            --i;
+        }
+    }
+
+    for(usize i = 0; i != _to_destroy.size(); ++i) {
+        bool keep_alive = false;
+        for(const auto& widget : _widgets) {
+            keep_alive |= widget->belongs_to(_to_destroy[i].get());
+        }
+        if(!keep_alive) {
+            log_msg(fmt("Closing workspace: '{}'", _to_destroy[i]->name()));
+            unset_current_workspace(_to_destroy[i].get());
+            _to_destroy.erase_unordered(_to_destroy.begin() + i);
             --i;
         }
     }
@@ -307,14 +366,35 @@ Widget* UiManager::add_top_level_widget(std::unique_ptr<Widget> widget) {
     return _widgets.emplace_back(std::move(widget)).get();
 }
 
+Workspace* UiManager::add_workspace(std::unique_ptr<Workspace> workspace) {
+    Workspace* ws = _workspaces.emplace_back(std::move(workspace)).get();
+
+    for(const EditorWidget* widget = all_widgets(); widget; widget = widget->next) {
+        if(widget->open_on_startup) {
+            if(std::unique_ptr child = widget->create(ws)) {
+                add_top_level_widget(std::move(child));
+            }
+        }
+    }
+
+    set_current_workspace(ws);
+    return ws;
+}
+
 void UiManager::close_all() {
     _widgets.clear();
+    _workspaces.clear();
     _focussed = nullptr;
     _last_focussed = nullptr;
+    set_current_workspace(nullptr);
 }
 
 core::Span<std::unique_ptr<Widget>> UiManager::top_level_widgets() const {
     return _widgets;
+}
+
+core::Span<std::unique_ptr<Workspace>> UiManager::workspaces() const {
+    return _workspaces;
 }
 
 Widget* UiManager::last_focussed_widget() {
@@ -330,4 +410,3 @@ u32 UiManager::main_dock_id() const {
 }
 
 }
-

@@ -27,7 +27,6 @@ SOFTWARE.
 #include "ImGuiPlatform.h"
 #include "ThumbnailRenderer.h"
 
-#include <editor/widgets/WorkArea.h>
 #include <editor/WorldWorkspace.h>
 
 #include <yave/assets/FolderAssetStore.h>
@@ -109,18 +108,14 @@ void destroy_editor() {
 
 void run_editor() {
     application::imgui_platform->exec([] {
-        for(const auto& widget : application::ui->top_level_widgets()) {
-            if(WorkArea* area = dynamic_cast<WorkArea*>(widget.get())) {
-                area->workspace()->update();
-            }
+        for(const auto& workspace : application::ui->workspaces()) {
+            workspace->update();
         }
 
         application::ui->on_gui();
 
-        for(const auto& widget : application::ui->top_level_widgets()) {
-            if(WorkArea* area = dynamic_cast<WorkArea*>(widget.get())) {
-                area->workspace()->post_update();
-            }
+        for(const auto& workspace : application::ui->workspaces()) {
+            workspace->post_update();
         }
     });
 }
@@ -190,6 +185,10 @@ Widget* last_focussed_widget() {
 
 Widget* add_top_level_widget(std::unique_ptr<Widget> widget) {
     return ui().add_top_level_widget(std::move(widget));
+}
+
+Workspace* add_workspace(std::unique_ptr<Workspace> workspace) {
+    return ui().add_workspace(std::move(workspace));
 }
 
 

@@ -37,20 +37,15 @@ namespace editor {
 static const double ns_to_ms = 1.0 / 1'000'000.0;
 
 static EngineView* current_view() {
-    WorldWorkspace* ws = dynamic_cast<WorldWorkspace*>(current_workspace());
-    if(!ws) {
+    const Workspace* workspace = current_workspace();
+    if(!workspace) {
         return nullptr;
     }
 
     for(const auto& widget : ui().top_level_widgets()) {
-        if(const WorkArea* area = dynamic_cast<const WorkArea*>(widget.get())) {
-            if(area->workspace() != ws) {
-                continue;
-            }
-            for(const auto& child : area->children()) {
-                if(EngineView* view = dynamic_cast<EngineView*>(child.get())) {
-                    return view;
-                }
+        if(EngineView* view = dynamic_cast<EngineView*>(widget.get())) {
+            if(view->workspace() == workspace) {
+                return view;
             }
         }
     }

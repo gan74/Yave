@@ -25,7 +25,6 @@ SOFTWARE.
 #include <editor/editor.h>
 
 #include <y/core/String.h>
-#include <y/core/Vector.h>
 
 #include <y/utils/log.h>
 
@@ -56,17 +55,10 @@ class Widget : NonMovable {
 
         u64 widget_id() const;
 
-        Widget* add_child_widget(std::unique_ptr<Widget> child);
-        
-        template<typename T, typename... Args>
-        T* add_child_widget(Args&&... args) {
-            return dynamic_cast<T*>(add_child_widget(std::make_unique<T>(y_fwd(args)...)));
-        }
-
-        core::Span<std::unique_ptr<Widget>> children() const;
-
         virtual void refresh();
         virtual void refresh_all();
+
+        virtual bool belongs_to(const Workspace*) const; 
 
         void draw_gui_inside();
 
@@ -88,11 +80,6 @@ class Widget : NonMovable {
         friend class UiManager;
 
         void draw(bool inside);
-        void draw_children();
-        void prune_children();
-
-        bool has_keep_alive() const;
-        Widget* find_focussed();
 
         void set_title(std::string_view title);
 
@@ -102,9 +89,6 @@ class Widget : NonMovable {
         bool _visible = true;
         bool _modal = false;
         bool _focussed = false;
-
-        Widget* _parent = nullptr;
-        core::Vector<std::unique_ptr<Widget>> _children;
 
         int _flags = 0;
 };
@@ -128,9 +112,15 @@ class WorkspaceWidget : public WorkspaceWidgetBase {
             y_debug_assert(_workspace);
 
             _window_class.ClassId = _workspace->workspace_id();
-            _window_class.DockingAllowUnclassed = true;
         }
 
+        W* workspace() const {
+            return _workspace;
+        }
+
+        bool belongs_to(const Workspace* workspace) const override {
+            return workspace == _workspace;
+        }
 
     protected:
         void after_gui() override {
@@ -211,4 +201,3 @@ bool can_create_workspace_widget(Workspace* workspace) {
 
 
 #endif // EDITOR_WIDGET_H
-

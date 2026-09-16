@@ -26,7 +26,6 @@ SOFTWARE.
 #include <editor/EditorWorld.h>
 #include <editor/EditorResources.h>
 #include <editor/ImGuiPlatform.h>
-#include <editor/widgets/WorkArea.h>
 
 #include <yave/graphics/buffers/Buffer.h>
 

@@ -296,7 +296,7 @@ void GltfImporter::on_gui() {
             y_debug_assert(_scene.is_ok());
 
             if(imgui::path_selector("Import path:", _settings.import_path)) {
-                FileBrowser* browser = add_child_widget<FileBrowser>(asset_store().filesystem());
+                FileBrowser* browser = add_top_level_widget<FileBrowser>(asset_store().filesystem());
                 browser->set_selection_filter("", FileBrowser::FilterFlags::IncludeDirs);
                 browser->set_selected_callback([this](const auto& filename) {
                     if(asset_store().filesystem()->is_directory(filename).unwrap_or(false)) {
