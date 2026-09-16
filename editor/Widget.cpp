@@ -70,6 +70,10 @@ void Widget::set_modal(bool modal) {
     _modal = modal;
 }
 
+bool Widget::is_modal() const {
+    return _modal;
+}
+
 u64 Widget::widget_id() const {
     return _id;
 }

@@ -63,7 +63,7 @@ class UiManager : NonMovable {
         void draw_fps_counter();
         void update_shortcuts();
         void draw_menu_bar();
-        void draw_workspace_dockspaces();
+        void draw_dockspaces();
 
 
         core::Vector<std::unique_ptr<Workspace>> _workspaces;

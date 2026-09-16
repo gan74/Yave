@@ -52,6 +52,7 @@ class Widget : NonMovable {
         void set_visible(bool visible);
 
         void set_modal(bool modal);
+        bool is_modal() const;
 
         u64 widget_id() const;
 

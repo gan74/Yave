@@ -80,7 +80,7 @@ UiManager::~UiManager() {
     close_all();
 }
 
-void UiManager::draw_workspace_dockspaces() {
+void UiManager::draw_dockspaces() {
     ImGuiWindowClass host_class;
     {
         host_class.ClassId = _main_dock_id;
@@ -127,14 +127,13 @@ void UiManager::on_gui() {
 
     if(_workspaces.is_empty()) {
         ImGui::OpenPopup("##noworkspace");
-
-        const ImGuiWindowFlags flags =
+        
+        const ImGuiWindowFlags popup_flags =
             ImGuiWindowFlags_NoTitleBar |
             ImGuiWindowFlags_NoMove |
             ImGuiWindowFlags_AlwaysAutoResize
         ;
-
-        if(ImGui::BeginPopupModal("##noworkspace", nullptr, flags)) {
+        if(ImGui::BeginPopupModal("##noworkspace", nullptr, popup_flags)) {
             if(ImGui::Button("New world workspace")) {
                 add_workspace(std::make_unique<WorldWorkspace>());
             }
@@ -145,7 +144,7 @@ void UiManager::on_gui() {
         }
     }
 
-    draw_workspace_dockspaces();
+    draw_dockspaces();
 
     Widget* focussed = nullptr;
     for(const auto& widget : _widgets) {
@@ -169,6 +168,7 @@ void UiManager::on_gui() {
         }
     }
 
+    bool has_modal = false;
     for(usize i = 0; i != _widgets.size(); ++i) {
         Widget* widget = _widgets[i].get();
 
@@ -184,19 +184,23 @@ void UiManager::on_gui() {
 
             _widgets.erase_unordered(_widgets.begin() + i);
             --i;
+        } else {
+            has_modal |= widget->is_modal();
         }
     }
 
-    for(usize i = 0; i != _to_destroy.size(); ++i) {
-        bool keep_alive = false;
-        for(const auto& widget : _widgets) {
-            keep_alive |= widget->belongs_to(_to_destroy[i].get());
-        }
-        if(!keep_alive) {
-            log_msg(fmt("Closing workspace: '{}'", _to_destroy[i]->name()));
-            unset_current_workspace(_to_destroy[i].get());
-            _to_destroy.erase_unordered(_to_destroy.begin() + i);
-            --i;
+    if(!has_modal) {
+        for(usize i = 0; i != _to_destroy.size(); ++i) {
+            bool keep_alive = false;
+            for(const auto& widget : _widgets) {
+                keep_alive |= widget->belongs_to(_to_destroy[i].get());
+            }
+            if(!keep_alive) {
+                log_msg(fmt("Closing workspace: '{}'", _to_destroy[i]->name()));
+                unset_current_workspace(_to_destroy[i].get());
+                _to_destroy.erase_unordered(_to_destroy.begin() + i);
+                --i;
+            }
         }
     }
 }
