@@ -93,6 +93,10 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::loader = std::make_unique<AssetLoader>(application::asset_store, AssetLoadingFlags::SkipFailedDependenciesBit, 4);
     application::thumbnail_renderer = std::make_unique<ThumbnailRenderer>(*application::loader);
     application::debug_drawer = std::make_unique<DirectDraw>();
+
+    if(application::settings.editor.open_world_workspace) {
+        add_workspace(std::make_unique<WorldWorkspace>());
+    }
 }
 
 
