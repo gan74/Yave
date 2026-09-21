@@ -118,8 +118,17 @@ void UiManager::draw_dockspaces() {
 void UiManager::on_gui() {
     y_profile();
 
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::DockSpaceOverViewport(0, viewport, ImGuiDockNodeFlags_AutoHideTabBar);
+    {
+        ImGuiWindowClass main_class;
+        {
+            main_class.ClassId = _main_dock_id;
+            main_class.DockingAllowUnclassed = true;
+        }
+
+        ImGui::PushStyleColor(ImGuiCol_DockingEmptyBg, ImGui::GetStyleColorVec4(ImGuiCol_ModalWindowDimBg));
+        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_AutoHideTabBar, &main_class);
+        ImGui::PopStyleColor();
+    }
 
     update_fps_counter();
     update_shortcuts();
