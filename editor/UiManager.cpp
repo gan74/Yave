@@ -102,8 +102,7 @@ void UiManager::draw_dockspaces() {
             window_class.DockingAllowUnclassed = true;
         }
 
-        const ImGuiID dockspace_id = ImGui::GetID(fmt_c_str("##dock_{}", workspace->workspace_id()));
-        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), visible ? ImGuiDockNodeFlags_None : ImGuiDockNodeFlags_KeepAliveOnly, &window_class);
+        ImGui::DockSpace(workspace->workspace_id(), ImVec2(0.0f, 0.0f), visible ? ImGuiDockNodeFlags_None : ImGuiDockNodeFlags_KeepAliveOnly, &window_class);
 
         ImGui::End();
 

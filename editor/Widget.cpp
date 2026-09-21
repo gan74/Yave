@@ -126,6 +126,10 @@ void Widget::draw(bool inside) {
 
     ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
 
+    if(_window_class.ClassId) {
+        ImGui::SetNextWindowDockID(_window_class.ClassId, ImGuiCond_FirstUseEver);
+    }
+
     const bool is_modal = _modal;
 
     bool opened = false;
