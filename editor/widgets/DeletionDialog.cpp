@@ -47,7 +47,7 @@ DeletionDialog::DeletionDialog(WorldWorkspace* ws, core::Span<ecs::EntityId> ids
 }
 
 void DeletionDialog::on_gui() {
-    EditorWorld& world = _workspace->world();
+    EditorWorld& world = workspace()->world();
 
     const bool exists = std::any_of(_ids.begin(), _ids.end(), [&](const ecs::EntityId id) { return world.exists(id); });
     if(!exists) {

@@ -38,10 +38,16 @@ SOFTWARE.
 #include <algorithm>
 #include <tuple>
 
+
+#include <external/imgui/imgui_internal.h>
+
+
 namespace editor {
 
 editor_action("New empty workspace", [] { add_workspace(std::make_unique<EmptyWorkspace>()); })
 editor_action("New world workspace", [] { add_workspace(std::make_unique<WorldWorkspace>()); })
+
+
 
 
 
@@ -81,92 +87,100 @@ UiManager::~UiManager() {
 }
 
 void UiManager::draw_dockspaces() {
+    y_profile();
+
     ImGuiWindowClass host_class;
     {
         host_class.ClassId = _main_dock_id;
         host_class.DockingAllowUnclassed = true;
     }
 
-    for(usize i = 0; i != _workspaces.size(); ++i) {
-        Workspace* workspace = _workspaces[i].get();
+    auto draw_workspace = [&](Workspace* workspace, bool open_widgets) {
+        const u32 id = workspace->workspace_id();
 
         ImGui::SetNextWindowClass(&host_class);
         ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
 
         bool open = true;
-        const bool visible = ImGui::Begin(fmt_c_str("{}##workspace_{}", workspace->name(), workspace->workspace_id()), &open);
+        const bool visible = ImGui::Begin(fmt_c_str("{}##workspace_{}", workspace->name(), id), &open);
+
+        if(open_widgets) {
+            ImGuiID left = 0;
+            ImGuiID right = 0;
+            ImGuiID center = id;
+            ImGui::DockBuilderAddNode(id, ImGuiDockNodeFlags_DockSpace);
+            ImGui::DockBuilderSetNodeSize(id, ImGui::GetContentRegionAvail());
+            ImGui::DockBuilderSplitNode(id, ImGuiDir_Left, 0.25f, &left, &center);
+            ImGui::DockBuilderSplitNode(center, ImGuiDir_Right, 0.25f, &right, &center);
+            ImGui::DockBuilderFinish(id);
+
+            for(const EditorWidgetDesc* desc = all_widget_descs(); desc; desc = desc->next) {
+                if(desc->default_node != DockingNode::None) {
+                    if(std::unique_ptr<Widget> widget = desc->create(workspace)) {
+                        switch(desc->default_node) {
+                            case DockingNode::Left:
+                                ImGui::DockBuilderSplitNode(left, ImGuiDir_Down, 0.5f, &left, &widget->_dock_id);
+                            break;
+
+                            case DockingNode::Right:
+                                ImGui::DockBuilderSplitNode(right, ImGuiDir_Down, 0.5f, &right, &widget->_dock_id);
+                            break;
+
+                            default:
+                                widget->_dock_id = center;
+                            break;
+                        }
+                        add_widget(std::move(widget));
+                    }
+                }
+            }
+
+            ImGui::DockBuilderFinish(id);
+        }
 
         ImGuiWindowClass window_class;
         {
-            window_class.ClassId = workspace->workspace_id();
+            window_class.ClassId = id;
             window_class.DockingAllowUnclassed = true;
         }
 
-        ImGui::DockSpace(workspace->workspace_id(), ImVec2(0.0f, 0.0f), visible ? ImGuiDockNodeFlags_None : ImGuiDockNodeFlags_KeepAliveOnly, &window_class);
-
+        ImGui::DockSpace(id, ImVec2(0.0f, 0.0f), visible ? ImGuiDockNodeFlags_None : ImGuiDockNodeFlags_KeepAliveOnly, &window_class);
         ImGui::End();
 
-        if(!open) {
+        return open;
+    };
+
+    for(const auto& workspace : _new_workspaces) {
+        draw_workspace(workspace.get(), true);
+    }
+
+    for(usize i = 0; i != _workspaces.size(); ++i) {
+        if(!draw_workspace(_workspaces[i].get(), false)) {
             _to_destroy.emplace_back(std::move(_workspaces[i]));
             _workspaces.erase_unordered(_workspaces.begin() + i);
             --i;
         }
     }
+ 
+    {
+        for(auto& workspace : _new_workspaces) {
+            _workspaces.emplace_back(std::move(workspace));
+        }
+        _new_workspaces.clear();
+    }
 }
 
-void UiManager::on_gui() {
+void UiManager::process_new_widgets() {
     y_profile();
 
-    {
-        ImGuiWindowClass main_class;
-        {
-            main_class.ClassId = _main_dock_id;
-            main_class.DockingAllowUnclassed = true;
-        }
-
-        ImGui::PushStyleColor(ImGuiCol_DockingEmptyBg, ImGui::GetStyleColorVec4(ImGuiCol_ModalWindowDimBg));
-        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_AutoHideTabBar, &main_class);
-        ImGui::PopStyleColor();
+    for(auto& widget : _new_widgets) {
+        _widgets.emplace_back(std::move(widget));
     }
+    _new_widgets.clear();
+}
 
-    update_fps_counter();
-    update_shortcuts();
-    draw_menu_bar();
-
-    if(_workspaces.is_empty()) {
-        ImGui::OpenPopup("##noworkspace");
-        
-        const ImGuiWindowFlags popup_flags =
-            ImGuiWindowFlags_NoTitleBar |
-            ImGuiWindowFlags_NoMove |
-            ImGuiWindowFlags_AlwaysAutoResize
-        ;
-        if(ImGui::BeginPopupModal("##noworkspace", nullptr, popup_flags)) {
-            if(ImGui::Button("New world workspace")) {
-                add_workspace(std::make_unique<WorldWorkspace>());
-            }
-            if(ImGui::Button("New empty workspace")) {
-                add_workspace(std::make_unique<EmptyWorkspace>());
-            }
-            ImGui::EndPopup();
-        }
-    }
-
-    draw_dockspaces();
-
-    Widget* focussed = nullptr;
-    for(const auto& widget : _widgets) {
-        y_profile_dyn_zone(widget->_title_with_id.data());
-
-        widget->draw(false);
-
-        if(widget->_focussed) {
-            focussed = widget.get();
-        }
-    }
-
-    _focussed = focussed;
-    _last_focussed = _focussed ? _focussed : _last_focussed;
+void UiManager::process_deletions() {
+    y_profile();
 
     for(const auto& workspace : _to_destroy) {
         for(const auto& widget : _widgets) {
@@ -213,6 +227,68 @@ void UiManager::on_gui() {
     }
 }
 
+void UiManager::on_gui() {
+    y_profile();
+
+    {
+        ImGuiWindowClass main_class;
+        {
+            main_class.ClassId = _main_dock_id;
+            main_class.DockingAllowUnclassed = true;
+        }
+
+        ImGui::PushStyleColor(ImGuiCol_DockingEmptyBg, ImGui::GetStyleColorVec4(ImGuiCol_ModalWindowDimBg));
+        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_AutoHideTabBar, &main_class);
+        ImGui::PopStyleColor();
+    }
+
+    update_fps_counter();
+    update_shortcuts();
+    draw_menu_bar();
+
+    draw_dockspaces();
+
+    process_new_widgets();
+    
+    if(_workspaces.is_empty()) {
+        ImGui::OpenPopup("##noworkspace");
+        
+        const ImGuiWindowFlags popup_flags =
+            ImGuiWindowFlags_NoTitleBar |
+            ImGuiWindowFlags_NoMove |
+            ImGuiWindowFlags_AlwaysAutoResize
+        ;
+        if(ImGui::BeginPopupModal("##noworkspace", nullptr, popup_flags)) {
+            if(ImGui::Button("New world workspace")) {
+                add_workspace(std::make_unique<WorldWorkspace>());
+            }
+            if(ImGui::Button("New empty workspace")) {
+                add_workspace(std::make_unique<EmptyWorkspace>());
+            }
+            ImGui::EndPopup();
+        }
+    }
+
+
+    {
+        Widget* focussed = nullptr;
+        for(const auto& widget : _widgets) {
+            y_profile_dyn_zone(widget->_title_with_id.data());
+
+            widget->draw(false);
+
+            if(widget->_focussed) {
+                focussed = widget.get();
+            }
+        }
+
+        _focussed = focussed;
+        _last_focussed = _focussed ? _focussed : _last_focussed;
+    }
+
+    process_deletions();
+}
+
 void UiManager::update_fps_counter() {
     float& current_frame = _frame_times[_frame_number++ % _frame_times.size()];
     _total_time -= current_frame;
@@ -223,7 +299,7 @@ void UiManager::update_fps_counter() {
 void UiManager::draw_fps_counter() {
     const float avg_time = _total_time / std::min(u64(_frame_times.size()), _frame_number);
     if(ImGui::MenuItem(fmt_c_str("FPS: {:.1f} {:.01f} ms", 1000.0f / avg_time, avg_time))) {
-        add_top_level_widget(std::make_unique<PerformanceMetrics>());
+        add_widget(std::make_unique<PerformanceMetrics>());
     }
 }
 
@@ -301,7 +377,7 @@ void UiManager::draw_menu_bar() {
         }
 
         if(ImGui::MenuItem(ICON_FA_BUG)) {
-            add_top_level_widget(std::make_unique<DebugValueEditor>());
+            add_widget(std::make_unique<DebugValueEditor>());
         }
 
 
@@ -379,32 +455,23 @@ void UiManager::draw_menu_bar() {
     ImGui::PopID();
 }
 
-Widget* UiManager::add_top_level_widget(std::unique_ptr<Widget> widget) {
+Widget* UiManager::add_widget(std::unique_ptr<Widget> widget) {
     if(!widget) {
         return nullptr;
     }
-    return _widgets.emplace_back(std::move(widget)).get();
+    return _new_widgets.emplace_back(std::move(widget)).get();
 }
 
 Workspace* UiManager::add_workspace(std::unique_ptr<Workspace> workspace) {
-    Workspace* ws = _workspaces.emplace_back(std::move(workspace)).get();
-
-    for(const EditorWidget* widget = all_widgets(); widget; widget = widget->next) {
-        if(widget->open_on_startup) {
-            if(std::unique_ptr child = widget->create(ws)) {
-                add_top_level_widget(std::move(child));
-            }
-        }
-    }
-
-    set_current_workspace(ws);
-    return ws;
+    return _new_workspaces.emplace_back(std::move(workspace)).get();
 }
 
 void UiManager::close_all() {
     _widgets.clear();
     _workspaces.clear();
     _to_destroy.clear();
+    _new_widgets.clear();
+    _new_workspaces.clear();
     _focussed = nullptr;
     _last_focussed = nullptr;
     set_current_workspace(nullptr);

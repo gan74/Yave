@@ -40,8 +40,8 @@ namespace editor {
 
 
 class Widget : NonMovable {
-
     public:
+
         Widget(std::string_view title, int flags = 0);
         virtual ~Widget();
 
@@ -92,12 +92,21 @@ class Widget : NonMovable {
         bool _focussed = false;
 
         int _flags = 0;
+        u32 _dock_id = 0;
 };
 
 
 class WorkspaceWidgetBase : public Widget {
+    public:
+        bool belongs_to(const Workspace* workspace) const override;
+
     protected:
-        using Widget::Widget;
+        void after_gui() override;
+
+    protected:
+        WorkspaceWidgetBase(std::string_view title, Workspace* workspace, int flags);
+
+        Workspace* _workspace = nullptr;
 };
 
 
@@ -105,50 +114,34 @@ template<typename W>
 class WorkspaceWidget : public WorkspaceWidgetBase {
     public:
         using workspace_type = W;
-
-        WorkspaceWidget(std::string_view title, W* workspace, int flags = 0) :
-                WorkspaceWidgetBase(title, flags),
-                _workspace(workspace) {
-
-            y_debug_assert(_workspace);
-
-            _window_class.ClassId = _workspace->workspace_id();
+        
+        WorkspaceWidget(std::string_view title, W* workspace, int flags = 0) : WorkspaceWidgetBase(title, workspace, flags) {
         }
 
         W* workspace() const {
-            return _workspace;
+            return dynamic_cast<W*>(this->_workspace);
         }
-
-        bool belongs_to(const Workspace* workspace) const override {
-            return workspace == _workspace;
-        }
-
-    protected:
-        void after_gui() override {
-            if(is_focussed()) {
-                set_current_workspace(_workspace);
-            }
-            Widget::after_gui();
-        }
-
-        W* _workspace = nullptr;
 };
 
 
+enum class DockingNode : i32 {
+    None,
+    Left,
+    Right,
+    Center,
+};
 
-
-
-struct EditorWidget {
+struct EditorWidgetDesc {
     std::string_view name;
-    bool open_on_startup = false;
+    DockingNode default_node = DockingNode::None;
     std::unique_ptr<Widget> (*create)(Workspace*) = nullptr;
-    EditorWidget* next = nullptr;
+    EditorWidgetDesc* next = nullptr;
 };
 
-const EditorWidget* all_widgets();
+const EditorWidgetDesc* all_widget_descs();
 
 namespace detail {
-void register_widget(EditorWidget* widget);
+void register_widget_desc(EditorWidgetDesc* desc);
 
 template<typename T>
 std::unique_ptr<Widget> create_workspace_widget(Workspace* workspace) {
@@ -175,11 +168,11 @@ bool can_create_workspace_widget(Workspace* workspace) {
 }
 
 
-#define editor_widget_(type, on_startup, ...)                                                                               \
+#define editor_widget_(type, node, ...)                                                                                     \
         inline static struct widget_register_t {                                                                            \
             widget_register_t() {                                                                                           \
-            static editor::EditorWidget widget = {                                                                          \
-                #type, (on_startup), editor::detail::create_workspace_widget<type>, nullptr                                 \
+            static editor::EditorWidgetDesc desc = {                                                                        \
+                #type, editor::DockingNode::node, editor::detail::create_workspace_widget<type>, nullptr                    \
             };                                                                                                              \
             static constexpr usize arg_count = std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value;              \
             static const std::array<std::string_view, arg_count> menu = {__VA_ARGS__};                                      \
@@ -189,14 +182,14 @@ bool can_create_workspace_widget(Workspace* workspace) {
                 editor::detail::can_create_workspace_widget<type>,                                                          \
                 menu, nullptr                                                                                               \
             };                                                                                                              \
-            editor::detail::register_widget(&widget);                                                                       \
+            editor::detail::register_widget_desc(&desc);                                                                    \
             editor::detail::register_action(&action);                                                                       \
         }                                                                                                                   \
         void trigger() {}                                                                                                   \
     } widget_registerer;
 
-#define editor_widget(type, ...)        editor_widget_(type, false, __VA_ARGS__)
-#define editor_widget_open(type, ...)   editor_widget_(type, true, __VA_ARGS__)
+#define editor_widget(type, ...)                editor_widget_(type, None, __VA_ARGS__)
+#define editor_widget_open(type, node, ...)     editor_widget_(type, node, __VA_ARGS__)
 
 
 

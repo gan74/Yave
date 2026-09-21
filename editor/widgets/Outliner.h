@@ -31,7 +31,7 @@ namespace editor {
 
 class Outliner final : public WorkspaceWidget<WorldWorkspace> {
 
-    editor_widget_open(Outliner)
+    editor_widget_open(Outliner, Right)
 
     public:
         Outliner(WorldWorkspace* ws);

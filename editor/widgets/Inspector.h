@@ -31,7 +31,7 @@ namespace editor {
 
 class Inspector final : public WorkspaceWidget<WorldWorkspace> {
 
-    editor_widget_open(Inspector)
+    editor_widget_open(Inspector, Right)
 
     public:
         Inspector(WorldWorkspace* ws);

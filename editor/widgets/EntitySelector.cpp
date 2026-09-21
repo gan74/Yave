@@ -43,7 +43,7 @@ EntitySelector::EntitySelector(WorldWorkspace* ws, ecs::ComponentTypeIndex filte
 
 
 void EntitySelector::on_gui() {
-    const EditorWorld& world = _workspace->world();
+    const EditorWorld& world = workspace()->world();
 
     const bool has_filter = (_filter != ecs::ComponentTypeIndex::invalid_index);
 

@@ -178,13 +178,12 @@ editor_action_contextual(ICON_FA_TRASH " Delete selected",
 
 
 
-Outliner::Outliner(WorldWorkspace* ws) :
-        WorkspaceWidget(ICON_FA_SITEMAP " Outliner", ws) {
+Outliner::Outliner(WorldWorkspace* ws) : WorkspaceWidget(ICON_FA_SITEMAP " Outliner", ws) {
     _tag_buttons.emplace_back(ICON_FA_EYE, ecs::tags::hidden, false);
 }
 
 void Outliner::on_gui() {
-    EditorWorld& world = _workspace->world();
+    EditorWorld& world = workspace()->world();
 
     if(ImGui::Button(ICON_FA_PLUS)) {
         ImGui::OpenPopup("##plusmenu");
@@ -204,7 +203,7 @@ void Outliner::on_gui() {
         ImGui::Separator();
 
         if(ImGui::MenuItem("Add Prefab")) {
-            add_prefab(_workspace);
+            add_prefab(workspace());
         }
 
         ImGui::EndPopup();
@@ -333,7 +332,7 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id, bool recursive
         ImGui::Separator();
 
         if(ImGui::MenuItem("Rename")) {
-            add_top_level_widget<Renamer>(component->name(), [target_id = _context_menu_target, workspace = _workspace](std::string_view name) {
+            add_top_level_widget<Renamer>(component->name(), [target_id = _context_menu_target, workspace = workspace()](std::string_view name) {
                 if(EditorComponent* comp = workspace->world().component_mut<EditorComponent>(target_id)) {
                     comp->set_name(name);
                 }
@@ -342,7 +341,7 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id, bool recursive
         }
 
         if(ImGui::MenuItem(ICON_FA_TRASH " Delete")) {
-            add_top_level_widget<DeletionDialog>(_workspace, _context_menu_target);
+            add_top_level_widget<DeletionDialog>(workspace(), _context_menu_target);
         }
 
         ImGui::EndPopup();

@@ -104,13 +104,13 @@ EngineView::EngineView(WorldWorkspace* ws) :
         WorkspaceWidget(ICON_FA_DESKTOP " Engine View", ws, ImGuiWindowFlags_MenuBar),
         _resource_pool(std::make_shared<FrameGraphResourcePool>()),
         _camera_controller(std::make_unique<HoudiniCameraController>()),
-        _tr_gizmo(&_scene_view, _workspace),
-        _rot_gizmo(&_scene_view, _workspace),
-        _orientation_gizmo(&_scene_view, _workspace) {
+        _tr_gizmo(&_scene_view, workspace()),
+        _rot_gizmo(&_scene_view, workspace()),
+        _orientation_gizmo(&_scene_view, workspace()) {
 }
 
 EngineView::~EngineView() {
-    _workspace->unset_scene_view(&_scene_view);
+    workspace()->unset_scene_view(&_scene_view);
 }
 
 void EngineView::reset_camera() {
@@ -284,19 +284,19 @@ void EngineView::update() {
                 // Nothing
             } else if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                 if(!is_dragging_gizmo()) {
-                    const ecs::EntityId picked_id = _picking_result.hit() ? dynamic_cast<const EcsScene*>(&_workspace->scene())->id_from_index(_picking_result.entity_index) : ecs::EntityId();
-                    _workspace->world().toggle_selected(picked_id, !ImGui::GetIO().KeyCtrl);
+                    const ecs::EntityId picked_id = _picking_result.hit() ? dynamic_cast<const EcsScene*>(&workspace()->scene())->id_from_index(_picking_result.entity_index) : ecs::EntityId();
+                    workspace()->world().toggle_selected(picked_id, !ImGui::GetIO().KeyCtrl);
                 }
             }
         }
     }
 
     if(focussed) {
-        _workspace->set_scene_view(&_scene_view);
+        workspace()->set_scene_view(&_scene_view);
 
         if(_camera_controller) {
             auto& camera = _scene_view.camera();
-            _camera_controller->process_generic_shortcuts(_workspace->world(), camera);
+            _camera_controller->process_generic_shortcuts(workspace()->world(), camera);
 
             if(!is_dragging_gizmo() && _camera_controller->continue_moving()) {
                 set_is_moving_camera(true);
@@ -308,8 +308,8 @@ void EngineView::update() {
 }
 
 void EngineView::update_scene_view() {
-    if(_scene_view.scene() != &_workspace->scene()) {
-        _scene_view = SceneView(&_workspace->scene());
+    if(_scene_view.scene() != &workspace()->scene()) {
+        _scene_view = SceneView(&workspace()->scene());
     }
 
     const CameraSettings& settings = app_settings().camera;
@@ -344,7 +344,7 @@ void EngineView::update_picking() {
     }
 
     // const float dist = (_picking_result.world_pos - request.camera.position()).length();
-    _workspace->debug_drawer().add_primitive("debug")->add_marker(0xFF0000FF, _cursor_world_pos, 0.5f);
+    workspace()->debug_drawer().add_primitive("debug")->add_marker(0xFF0000FF, _cursor_world_pos, 0.5f);
 }
 
 void EngineView::make_drop_target() {
@@ -364,7 +364,7 @@ void EngineView::make_drop_target() {
     }
 
     ecs::EntityId added_id;
-    EditorWorld& world = _workspace->world();
+    EditorWorld& world = workspace()->world();
     const AssetType type = asset_store().asset_type(asset_id).unwrap_or(AssetType::Unknown);
     switch(type) {
         case AssetType::Prefab:
@@ -382,7 +382,7 @@ void EngineView::make_drop_target() {
 
         case AssetType::Material: {
             if(_picking_valid && _picking_result.hit()) {
-                const ecs::EntityId picked_id = dynamic_cast<const EcsScene*>(&_workspace->scene())->id_from_index(_picking_result.entity_index);
+                const ecs::EntityId picked_id = dynamic_cast<const EcsScene*>(&workspace()->scene())->id_from_index(_picking_result.entity_index);
                 if(StaticMeshComponent* mesh = world.component_mut<StaticMeshComponent>(picked_id)) {
                     const AssetPtr<Material> material = asset_loader().load_async<Material>(asset_id);
                     for(AssetPtr<Material>& slot : mesh->materials()) {
@@ -516,7 +516,7 @@ void EngineView::draw_toolbar() {
 
     ImGui::Separator();
 
-    if(TimeSystem* time = _workspace->world().find_system<TimeSystem>()) {
+    if(TimeSystem* time = workspace()->world().find_system<TimeSystem>()) {
         const bool paused = time->time_scale() <= 0.0f;
         if(ImGui::MenuItem(paused ? ICON_FA_PLAY : ICON_FA_PAUSE)) {
             time->set_time_scale(paused ? 1.0f : 0.0f);

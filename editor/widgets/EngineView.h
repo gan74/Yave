@@ -42,7 +42,7 @@ namespace editor {
 
 class EngineView final : public WorkspaceWidget<WorldWorkspace> {
 
-    editor_widget_open(EngineView, "View")
+    editor_widget_open(EngineView, Center, "View")
 
     enum class GizmoType : u32 {
         Translate,

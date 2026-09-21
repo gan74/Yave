@@ -56,7 +56,7 @@ class CameraDebug : public WorkspaceWidget<WorldWorkspace> {
 
     protected:
         void on_gui() override {
-            const Camera& camera = _workspace->scene_view().camera();
+            const Camera& camera = workspace()->scene_view().camera();
             const math::Vec3 pos = camera.position();
             const math::Vec3 fwd = camera.forward();
             const math::Vec3 rht = camera.right();
@@ -125,7 +125,7 @@ class CullingDebug : public WorkspaceWidget<WorldWorkspace> {
     protected:
         void on_gui() override {
             const core::StopWatch timer;
-            const SceneVisibilitySubPass visibility = SceneVisibilitySubPass::create(_workspace->scene_view());
+            const SceneVisibilitySubPass visibility = SceneVisibilitySubPass::create(workspace()->scene_view());
             const core::Duration durr = timer.elapsed();
 
             ImGui::TextUnformatted("Visible for current camera:");
@@ -174,7 +174,7 @@ class EcsDebug : public WorkspaceWidget<WorldWorkspace> {
 
     protected:
         void on_gui() override {
-            EditorWorld& world = _workspace->world();
+            EditorWorld& world = workspace()->world();
 
 
             if(!world.find_system<TestSystem>()){
@@ -280,7 +280,7 @@ class SelectionDebug : public WorkspaceWidget<WorldWorkspace> {
 
     protected:
         void on_gui() override {
-            EditorWorld& world = _workspace->world();
+            EditorWorld& world = workspace()->world();
             if(ImGui::CollapsingHeader(fmt_c_str("{} entity selected###header", world.selected_entities().size()), ImGuiTreeNodeFlags_DefaultOpen)) {
                 for(const ecs::EntityId id : world.selected_entities()) {
                     imgui::text_read_only(fmt_c_str("##{}", id.index()), fmt("{:#08x}", id.index()));
@@ -325,7 +325,7 @@ class RaytracingDebug : public WorkspaceWidget<WorldWorkspace> {
                 return;
             }
 
-            const TLAS& tlas = _workspace->scene().tlas();
+            const TLAS& tlas = workspace()->scene().tlas();
             ImGui::Text("TLAS size = %uKB", u32(tlas.buffer().byte_size() / 1024));
         }
 };
@@ -341,7 +341,7 @@ class UndoRedoDebug : public WorkspaceWidget<WorldWorkspace> {
         }
 
         void on_gui() override {
-            EditorWorld& world = _workspace->world();
+            EditorWorld& world = workspace()->world();
             UndoRedoSystem* system = world.find_system<UndoRedoSystem>();
             const auto states = system->undo_states();
 
@@ -397,8 +397,8 @@ class VisibilityDebug : public WorkspaceWidget<WorldWorkspace> {
         }
 
         void on_gui() override {
-            EditorWorld& world = _workspace->world();
-            const std::shared_ptr<SceneVisibility> visible = SceneVisibilitySubPass::create(_workspace->scene_view()).visible;
+            EditorWorld& world = workspace()->world();
+            const std::shared_ptr<SceneVisibility> visible = SceneVisibilitySubPass::create(workspace()->scene_view()).visible;
             ImGui::TextUnformatted(fmt_c_str("{} visible meshes", visible->meshes.size()));
             ImGui::TextUnformatted(fmt_c_str("{} visible point lights", visible->point_lights.size()));
             ImGui::TextUnformatted(fmt_c_str("{} visible spot lights", visible->spot_lights.size()));

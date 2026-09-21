@@ -43,7 +43,7 @@ class UiManager : NonMovable {
 
         void on_gui();
 
-        Widget* add_top_level_widget(std::unique_ptr<Widget> widget);
+        Widget* add_widget(std::unique_ptr<Widget> widget);
         Workspace* add_workspace(std::unique_ptr<Workspace> workspace);
 
         core::Span<std::unique_ptr<Widget>> top_level_widgets() const;
@@ -64,12 +64,17 @@ class UiManager : NonMovable {
         void update_shortcuts();
         void draw_menu_bar();
         void draw_dockspaces();
+        void process_new_widgets();
+        void process_deletions();
 
 
         core::Vector<std::unique_ptr<Workspace>> _workspaces;
         core::Vector<std::unique_ptr<Workspace>> _to_destroy;
         
         core::Vector<std::unique_ptr<Widget>> _widgets;
+
+        core::Vector<std::unique_ptr<Widget>> _new_widgets;
+        core::Vector<std::unique_ptr<Workspace>> _new_workspaces;
 
         Widget* _focussed = nullptr;
         Widget* _last_focussed = nullptr;

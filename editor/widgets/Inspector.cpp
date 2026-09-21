@@ -567,7 +567,7 @@ Inspector::Inspector(WorldWorkspace* ws) :
 }
 
 void Inspector::on_gui() {
-    EditorWorld& world = _workspace->world();
+    EditorWorld& world = workspace()->world();
 
     const ecs::EntityId selected = world.selected_entity();
     const ecs::EntityId id = _locked.is_valid() ? _locked : selected;
@@ -620,7 +620,7 @@ void Inspector::on_gui() {
         ImGui::EndGroup();
     }
 
-    InspectorPanelInspector inspector(id, component, _workspace);
+    InspectorPanelInspector inspector(id, component, workspace());
     world.inspect_components(id, &inspector);
 
     ImGui::Separator();

@@ -38,6 +38,7 @@ class DeletionDialog;
 class EditorComponent;
 class EditorResources;
 class EditorWorld;
+class EmptyWorkspace;
 class EngineView;
 class EntitySelector;
 class FileBrowser;
@@ -67,6 +68,7 @@ class UiManager;
 class UndoRedoSystem;
 class Widget;
 class Workspace;
+class WorkspaceWidgetBase;
 class WorldWorkspace;
 struct CVar;
 struct CameraSettings;
@@ -78,7 +80,7 @@ struct EditorPass;
 struct EditorRenderer;
 struct EditorRendererSettings;
 struct EditorSettings;
-struct EditorWidget;
+struct EditorWidgetDesc;
 struct Entry;
 struct ImGuiImage;
 struct PerfSettings;
@@ -92,7 +94,6 @@ struct TreeNode;
 struct UiIcon;
 struct UiSettings;
 struct UndoState;
-struct WidgetIdStack;
 }
 
 

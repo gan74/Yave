@@ -188,7 +188,7 @@ Widget* last_focussed_widget() {
 }
 
 Widget* add_top_level_widget(std::unique_ptr<Widget> widget) {
-    return ui().add_top_level_widget(std::move(widget));
+    return ui().add_widget(std::move(widget));
 }
 
 Workspace* add_workspace(std::unique_ptr<Workspace> workspace) {
