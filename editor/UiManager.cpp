@@ -28,6 +28,7 @@ SOFTWARE.
 #include <editor/widgets/PerformanceMetrics.h>
 #include <editor/widgets/DebugValueEditor.h>
 #include <editor/WorldWorkspace.h>
+#include <editor/MaterialWorkspace.h>
 
 #include <yave/graphics/device/Instance.h>
 
@@ -46,6 +47,7 @@ namespace editor {
 
 editor_action("New empty workspace", [] { add_workspace(std::make_unique<EmptyWorkspace>()); })
 editor_action("New world workspace", [] { add_workspace(std::make_unique<WorldWorkspace>()); })
+editor_action("New material workspace", [] { add_workspace(std::make_unique<MaterialWorkspace>()); })
 
 
 

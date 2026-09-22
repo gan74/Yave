@@ -28,6 +28,7 @@ SOFTWARE.
 
 #include <editor/ImGuiPlatform.h>
 #include <editor/ThumbnailRenderer.h>
+#include <editor/MaterialWorkspace.h>
 
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
@@ -104,6 +105,11 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _files
         }
         if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
             ImGui::Separator();
+            if(asset_type(id) == AssetType::Material) {
+                if(ImGui::MenuItem("Edit")) {
+                    add_workspace(std::make_unique<MaterialWorkspace>(id));
+                }
+            }
             if(ImGui::MenuItem("Show references")) {
                 add_top_level_widget<AssetReferenceWidget>(id);
             }
