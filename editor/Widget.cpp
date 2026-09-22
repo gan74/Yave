@@ -129,7 +129,7 @@ void Widget::draw(bool inside) {
     ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
 
     if(_dock_id) {
-        ImGui::SetNextWindowDockID(_dock_id, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowDockID(_dock_id, ImGuiCond_Once);
     }
 
     const bool is_modal = _modal;

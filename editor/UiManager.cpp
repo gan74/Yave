@@ -70,7 +70,6 @@ static core::String shortcut_text(KeyCombination shortcut) {
 
 
 
-
 UiManager::UiManager() : _main_dock_id(generate_dock_id()) {
     for(const EditorAction* action = all_actions(); action; action = action->next) {
         _actions << action;
@@ -107,37 +106,7 @@ void UiManager::draw_dockspaces() {
         const bool visible = ImGui::Begin(fmt_c_str("{}##workspace_{}", workspace->name(), id), &open);
 
         if(open_widgets) {
-            ImGuiID left = 0;
-            ImGuiID right = 0;
-            ImGuiID center = id;
-            ImGui::DockBuilderAddNode(id, ImGuiDockNodeFlags_DockSpace);
-            ImGui::DockBuilderSetNodeSize(id, ImGui::GetContentRegionAvail());
-            ImGui::DockBuilderSplitNode(id, ImGuiDir_Left, 0.25f, &left, &center);
-            ImGui::DockBuilderSplitNode(center, ImGuiDir_Right, 0.25f, &right, &center);
-            ImGui::DockBuilderFinish(id);
-
-            for(const EditorWidgetDesc* desc = all_widget_descs(); desc; desc = desc->next) {
-                if(desc->default_node != DockingNode::None) {
-                    if(std::unique_ptr<Widget> widget = desc->create(workspace)) {
-                        switch(desc->default_node) {
-                            case DockingNode::Left:
-                                ImGui::DockBuilderSplitNode(left, ImGuiDir_Down, 0.5f, &left, &widget->_dock_id);
-                            break;
-
-                            case DockingNode::Right:
-                                ImGui::DockBuilderSplitNode(right, ImGuiDir_Down, 0.5f, &right, &widget->_dock_id);
-                            break;
-
-                            default:
-                                widget->_dock_id = center;
-                            break;
-                        }
-                        add_widget(std::move(widget));
-                    }
-                }
-            }
-
-            ImGui::DockBuilderFinish(id);
+            create_workspace_widgets(workspace);
         }
 
         ImGuiWindowClass window_class;
@@ -169,6 +138,56 @@ void UiManager::draw_dockspaces() {
             _workspaces.emplace_back(std::move(workspace));
         }
         _new_workspaces.clear();
+    }
+}
+
+void UiManager::create_workspace_widgets(Workspace* workspace) {
+    const u32 id = workspace->workspace_id();
+
+    // Skip building layout if it already exists in the ini
+    const bool build_layout = !ImGui::DockBuilderGetNode(id);
+
+    ImGuiID left = 0;
+    ImGuiID right = 0;
+    ImGuiID center = id;
+
+    if(build_layout) {
+        ImGui::DockBuilderAddNode(id, ImGuiDockNodeFlags_DockSpace);
+        ImGui::DockBuilderSetNodeSize(id, ImGui::GetContentRegionAvail());
+    }
+
+    auto create_docking_node = [&](DockingNode node) {
+        switch(node) {
+            case DockingNode::Left:
+                if(!left) {
+                    ImGui::DockBuilderSplitNode(center, ImGuiDir_Left, 0.25f, &left, &center);
+                }
+                return left;
+
+            case DockingNode::Right:
+                if(!right) {
+                    ImGui::DockBuilderSplitNode(center, ImGuiDir_Right, 0.25f, &right, &center);
+                }
+                return right;
+
+            default:
+                return center;
+        }
+    };
+
+    for(const EditorWidgetDesc* desc = all_widget_descs(); desc; desc = desc->next) {
+        if(desc->default_node != DockingNode::None) {
+            if(std::unique_ptr<Widget> widget = desc->create(workspace)) {
+                if(build_layout) {
+                    widget->_dock_id = create_docking_node(desc->default_node);
+                }
+                add_widget(std::move(widget));
+            }
+        }
+    }
+
+    if(build_layout) {
+        ImGui::DockBuilderFinish(id);
     }
 }
 
@@ -221,6 +240,7 @@ void UiManager::process_deletions() {
             }
             if(!keep_alive) {
                 log_msg(fmt("Closing workspace: '{}'", _to_destroy[i]->name()));
+                ImGui::DockBuilderRemoveNode(_to_destroy[i]->workspace_id());
                 unset_current_workspace(_to_destroy[i].get());
                 _to_destroy.erase_unordered(_to_destroy.begin() + i);
                 --i;
@@ -492,7 +512,8 @@ Widget* UiManager::last_focussed_widget() {
 }
 
 u32 UiManager::generate_dock_id() {
-    return ++_dock_id;
+    // Avoid collision with imgui's own ids
+    return 0xF0000000u + (++_dock_id);
 }
 
 u32 UiManager::main_dock_id() const {

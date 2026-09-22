@@ -67,6 +67,8 @@ class UiManager : NonMovable {
         void process_new_widgets();
         void process_deletions();
 
+        void create_workspace_widgets(Workspace* workspace);
+
 
         core::Vector<std::unique_ptr<Workspace>> _workspaces;
         core::Vector<std::unique_ptr<Workspace>> _to_destroy;
