@@ -85,7 +85,7 @@ class FolderAssetStore final : NonMovable, public AssetStore {
         const FileSystemModel* filesystem() const override;
 
         Result<AssetId> import(io2::Reader& data, std::string_view dst_name, AssetType type, core::Span<AssetId> refs) override;
-        Result<> write(AssetId id, io2::Reader& data) override;
+        Result<> write(AssetId id, io2::Reader& data, core::Span<AssetId> refs) override;
 
         Result<AssetId> id(std::string_view name) const override;
         Result<core::String> name(AssetId id) const override;

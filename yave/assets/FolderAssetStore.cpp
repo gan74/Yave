@@ -523,7 +523,7 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::str
     return core::Ok(id);
 }
 
-AssetStore::Result<> FolderAssetStore::write(AssetId id, io2::Reader& data) {
+AssetStore::Result<> FolderAssetStore::write(AssetId id, io2::Reader& data, core::Span<AssetId> refs) {
     y_profile();
 
     if(id == AssetId::invalid_id()) {
@@ -532,14 +532,23 @@ AssetStore::Result<> FolderAssetStore::write(AssetId id, io2::Reader& data) {
 
     const auto lock = std::unique_lock(_lock);
 
-    const core::String data_file_name = asset_data_file_name(id);
-    if(!io2::File::open(data_file_name)) {
+    rebuild_id_map();
+    const auto it = _ids->find(id);
+    if(it == _ids->end()) {
         return core::Err(ErrorType::UnknownID);
     }
 
-    if(!io2::File::copy(data, data_file_name)) {
+    if(!io2::File::copy(data, asset_data_file_name(id))) {
         return core::Err(ErrorType::FilesytemError);
     }
+
+    auto owned_refs = core::Vector<AssetId>::with_capacity(refs.size());
+    std::copy_if(refs.begin(), refs.end(), std::back_inserter(owned_refs), [](AssetId id) { return id != AssetId::invalid_id(); });
+
+    AssetData& asset = _assets.find(it->second->first)->second;
+    const AssetDesc desc = { it->second->first, asset.type, core::Vector<AssetId>(owned_refs) };
+    y_try(save_desc(id, desc));
+    asset.refs = std::move(owned_refs);
 
     return core::Ok();
 }

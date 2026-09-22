@@ -60,8 +60,8 @@ AssetStore::Result<> AssetStore::rename(std::string_view from, std::string_view 
     return core::Err(ErrorType::UnknownID);
 }
 
-AssetStore::Result<> AssetStore::write(AssetId id, io2::Reader& data) {
-    unused(id, data);
+AssetStore::Result<> AssetStore::write(AssetId id, io2::Reader& data, core::Span<AssetId> refs) {
+    unused(id, data, refs);
     return core::Err(ErrorType::UnsupportedOperation);
 }
 
