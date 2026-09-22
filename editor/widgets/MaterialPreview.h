@@ -18,25 +18,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_MATERIALEDITOR_H
-#define EDITOR_WIDGETS_MATERIALEDITOR_H
+#ifndef EDITOR_WIDGETS_MATERIALPREVIEW_H
+#define EDITOR_WIDGETS_MATERIALPREVIEW_H
+
+#include "Preview.h"
 
 #include <editor/Widget.h>
 #include <editor/MaterialWorkspace.h>
 
 namespace editor {
 
-class MaterialEditor final : public WorkspaceWidget<MaterialWorkspace> {
+class MaterialPreview final : public WorkspaceWidget<MaterialWorkspace> {
 
-    editor_widget_open(MaterialEditor, Right)
+    editor_widget_open(MaterialPreview, Center)
 
     public:
-        MaterialEditor(MaterialWorkspace* ws);
+        MaterialPreview(MaterialWorkspace* ws);
 
     protected:
         void on_gui() override;
+
+    private:
+        Preview _preview;
 };
 
 }
 
-#endif // EDITOR_WIDGETS_MATERIALEDITOR_H
+#endif // EDITOR_WIDGETS_MATERIALPREVIEW_H

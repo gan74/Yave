@@ -18,25 +18,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_MATERIALEDITOR_H
-#define EDITOR_WIDGETS_MATERIALEDITOR_H
 
-#include <editor/Widget.h>
-#include <editor/MaterialWorkspace.h>
+#include "MaterialPreview.h"
+
+#include <yave/material/Material.h>
+#include <yave/assets/AssetPtr.h>
 
 namespace editor {
 
-class MaterialEditor final : public WorkspaceWidget<MaterialWorkspace> {
-
-    editor_widget_open(MaterialEditor, Right)
-
-    public:
-        MaterialEditor(MaterialWorkspace* ws);
-
-    protected:
-        void on_gui() override;
-};
-
+MaterialPreview::MaterialPreview(MaterialWorkspace* ws) :
+        WorkspaceWidget(ICON_FA_EYE " Material Preview", ws, ImGuiWindowFlags_NoScrollbar) {
 }
 
-#endif // EDITOR_WIDGETS_MATERIALEDITOR_H
+void MaterialPreview::on_gui() {
+    _preview.set_material(make_asset<Material>(workspace()->material_data()));
+    _preview.draw_gui_inside();
+}
+
+}

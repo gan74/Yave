@@ -23,7 +23,6 @@ SOFTWARE.
 #include "Preview.h"
 #include "AssetSelector.h"
 
-#include <editor/EditorWorld.h>
 #include <editor/ImGuiPlatform.h>
 #include <editor/Settings.h>
 #include <editor/utils/ui.h>
@@ -40,11 +39,8 @@ SOFTWARE.
 #include <yave/graphics/images/IBLProbe.h>
 #include <yave/framegraph/FrameGraphResourcePool.h>
 #include <yave/graphics/device/DeviceResources.h>
-#include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/SkyLightComponent.h>
-#include <yave/components/PointLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
-#include <yave/systems/SceneSystem.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/assets/AssetLoader.h>
 #include <yave/utils/color.h>
@@ -63,24 +59,19 @@ Preview::Preview() :
 }
 
 Preview::~Preview() {
-
 }
 
 void Preview::refresh() {
 }
 
 void Preview::set_material(const AssetPtr<Material>& material) {
-    if(_material == material) {
-        return;
-    }
-
     _material = material;
-    reset_world();
+    reset_scene();
 }
 
 void Preview::set_object(const AssetPtr<StaticMesh>& mesh) {
     _mesh = mesh;
-    reset_world();
+    reset_scene();
 }
 
 void Preview::set_object(PreviewObject obj) {
@@ -92,7 +83,8 @@ void Preview::set_object(PreviewObject obj) {
         default:
             _mesh = device_resources()[DeviceResources::SphereMesh];
     }
-    reset_world();
+
+    reset_scene();
 }
 
 const AssetPtr<Material>& Preview::material() const {
@@ -121,26 +113,25 @@ void Preview::update_camera() {
 }
 
 
-void Preview::reset_world() {
-    _world = std::make_unique<EditorWorld>(asset_loader());
-    _view = SceneView(_world->find_system<SceneSystem>()->scene());
+void Preview::reset_scene() {
+    _scene = std::make_unique<SimpleScene>();
+    _view = SceneView(_scene.get());
 
     {
-        const ecs::EntityId sky_id = _world->create_entity();
-        SkyLightComponent* sky = _world->get_or_add_component<SkyLightComponent>(sky_id);
-        sky->probe() = _ibl_probe ? _ibl_probe : device_resources().ibl_probe();
-        sky->display_sky() = true;
+        SkyLightComponent sky;
+        sky.probe() = _ibl_probe ? _ibl_probe : device_resources().ibl_probe();
+        sky.display_sky() = true;
+        _scene->add(std::move(sky));
     }
 
     if(!_mesh.is_empty() && !_material.is_empty()) {
-        const ecs::EntityId id = _world->create_entity();
-        *_world->get_or_add_component<StaticMeshComponent>(id) = StaticMeshComponent(_mesh, _material);
+        _scene->add(StaticMeshComponent(_mesh, _material));
 
         const float radius = _mesh->radius();
         _cam_distance = radius * 1.5f;
     }
 
-    // _world->tick();
+    _scene->update_transforms();
 }
 
 void Preview::draw_mesh_menu() {
@@ -173,15 +164,20 @@ void Preview::on_gui() {
     DstTexture output;
     {
         RendererSettings settings;
-        settings.ao.method = AOSettings::AOMethod::None;
-        settings.tone_mapping.exposure = 2.0f;
+        {
+            settings.tone_mapping.auto_exposure = false;
+            settings.tone_mapping.exposure = 2.0f;
+            settings.taa.enable = false;
+            settings.ao.method = AOSettings::AOMethod::RTAOFallback;
+            settings.ambient_pipe = AmbientPipe::IBLOcclusion;
+        }
 
         FrameGraph graph(_resource_pool);
         const DefaultRenderer renderer = DefaultRenderer::create(graph, _view, content_size(), settings);
 
         FrameGraphComputePassBuilder builder = graph.add_compute_pass("ImGui texture pass");
 
-        const auto output_image = builder.declare_copy(renderer.lighting.lit);
+        const auto output_image = builder.declare_copy(renderer.tone_mapping.tone_mapped);
         builder.add_input_usage(output_image, ImageUsage::TransferSrcBit);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
             const auto& src = self->resources().image_base(output_image);
@@ -192,8 +188,10 @@ void Preview::on_gui() {
 
         {
             CmdBufferRecorder recorder = create_disposable_cmd_buffer();
-            const auto region = recorder.region("Peview render", nullptr, math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
-            graph.render(recorder);
+            {
+                const auto region = recorder.region("Preview render", nullptr, math::Vec4(0.7f, 0.7f, 0.7f, 1.0f));
+                graph.render(recorder);
+            }
             recorder.submit();
         }
     }
@@ -212,10 +210,11 @@ void Preview::on_gui() {
                 [this](AssetId id) {
                     if(const auto tex = asset_loader().load_res<IBLProbe>(id)) {
                         _ibl_probe = tex.unwrap();
-                        reset_world();
+                        reset_scene();
                     }
                     return true;
-                });
+                }
+            );
         }
 
         ImGui::SameLine();
@@ -226,9 +225,8 @@ void Preview::on_gui() {
 
         draw_mesh_menu();
 
-        ImGui::SetCursorPos(bottom);
+        // ImGui::SetCursorPos(bottom);
     }
 }
 
 }
-
