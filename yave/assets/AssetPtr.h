@@ -111,11 +111,15 @@ class AssetPtrDataBase : NonMovable {
 
         inline AssetLoader* loader() const;
 
+        inline void set_reloaded(std::shared_ptr<AssetPtrDataBase> ptr);
+        inline std::shared_ptr<AssetPtrDataBase> grab_reloaded() const;
+
     protected:
         inline AssetPtrDataBase(AssetId i, AssetLoader* loader, AssetLoadingState s = AssetLoadingState::NotLoaded);
 
         std::atomic<AssetLoadingState> _state = AssetLoadingState::NotLoaded;
         AssetLoader* _loader = nullptr;
+        std::shared_ptr<AssetPtrDataBase> _reloaded;
 };
 
 template<typename T>
@@ -175,6 +179,7 @@ class AssetPtr {
         void load_async(AssetLoadingContext& context);
 
         void unlink();
+        bool grab_reloaded();
 
         y_reflect(AssetPtr, _id)
 
@@ -271,6 +276,16 @@ class GenericAssetPtr {
 
         inline void unlink() {
             _data = nullptr;
+        }
+
+        inline bool grab_reloaded() {
+            if(_data) {
+                if(auto reloaded = _data->grab_reloaded()) {
+                    _data = std::move(reloaded);
+                    return true;
+                }
+            }
+            return false;
         }
 
         template<typename T>

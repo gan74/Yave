@@ -138,6 +138,29 @@ AssetPtr<T> AssetLoader::Loader<T>::load_async(AssetId id) {
     return ptr;
 }
 
+template<typename T>
+AssetPtr<T> AssetLoader::Loader<T>::reload(AssetId id) {
+    y_profile();
+
+    y_debug_assert(id != AssetId::invalid_id());
+
+    AssetPtr<T> new_ptr;
+    _loaded.locked([&](auto&& loaded) {
+        new_ptr = std::make_shared<Data>(id, parent());
+
+        if(const auto cached = loaded[id].lock()) {
+            cached->set_reloaded(new_ptr._data);
+            cached->asset = T();
+        }
+
+        loaded[id] = new_ptr._data;
+    });
+
+    y_debug_assert(new_ptr.is_loading());
+    parent()->_thread_pool.add_loading_job(create_loading_job(new_ptr));
+    return new_ptr;
+}
+
 
 namespace detail {
 template<typename T>
@@ -268,8 +291,8 @@ AssetPtr<T> AssetLoader::load_async(AssetId id) {
 
 
 template<typename T>
-AssetPtr<T> AssetLoader::reload(const AssetPtr<T>& ptr) {
-    return loader_for_type<T>().reload(ptr);
+AssetPtr<T> AssetLoader::reload(AssetId id) {
+    return loader_for_type<T>().reload(id);
 }
 
 

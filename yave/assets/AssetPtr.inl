@@ -76,6 +76,22 @@ AssetLoader* AssetPtrDataBase::loader() const {
     return _loader;
 }
 
+void AssetPtrDataBase::set_reloaded(std::shared_ptr<AssetPtrDataBase> ptr) {
+    y_debug_assert(ptr);
+    _reloaded = std::move(ptr);
+}
+
+std::shared_ptr<AssetPtrDataBase> AssetPtrDataBase::grab_reloaded() const {
+    std::shared_ptr<AssetPtrDataBase> current = _reloaded;
+    if(!current) {
+        return nullptr;
+    }
+    while(current->_reloaded) {
+        current = current->_reloaded;
+    }
+    return current;
+}
+
 
 template<typename T>
 AssetPtrData<T>::AssetPtrData(AssetId id, AssetLoader* loader) : AssetPtrDataBase(id, loader, AssetLoadingState::NotLoaded) {
@@ -116,6 +132,18 @@ AssetPtr<T>::AssetPtr(std::shared_ptr<Data> ptr) : _data(std::move(ptr)) {
     if(_data) {
         _id = _data->id;
     }
+}
+
+template<typename T>
+bool AssetPtr<T>::grab_reloaded() {
+    if(!_data) {
+        if(auto reloaded = _data->grab_reloaded()) {
+            auto* typed = static_cast<Data*>(reloaded.get());
+            _data = std::shared_ptr<Data>(std::move(reloaded), typed);
+            return true;
+        }
+    }
+    return false;
 }
 
 template<typename T>

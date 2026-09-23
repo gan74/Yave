@@ -82,7 +82,7 @@ class AssetLoader : NonMovable {
                 inline AssetPtr<T> load(AssetId id);
                 inline AssetPtr<T> load_async(AssetId id);
 
-                inline AssetPtr<T> reload(const AssetPtr<T>& ptr);
+                inline AssetPtr<T> reload(AssetId id);
 
                 AssetType type() const override {
                     return traits::type;
@@ -124,7 +124,7 @@ class AssetLoader : NonMovable {
         inline AssetPtr<T> load_async(AssetId id);
 
         template<typename T>
-        inline AssetPtr<T> reload(const AssetPtr<T>& ptr);
+        inline AssetPtr<T> reload(AssetId id);
 
    private:
         template<typename T>
