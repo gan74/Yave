@@ -136,7 +136,7 @@ AssetPtr<T>::AssetPtr(std::shared_ptr<Data> ptr) : _data(std::move(ptr)) {
 
 template<typename T>
 bool AssetPtr<T>::grab_reloaded() {
-    if(!_data) {
+    if(_data) {
         if(auto reloaded = _data->grab_reloaded()) {
             auto* typed = static_cast<Data*>(reloaded.get());
             _data = std::shared_ptr<Data>(std::move(reloaded), typed);

@@ -150,7 +150,6 @@ AssetPtr<T> AssetLoader::Loader<T>::reload(AssetId id) {
 
         if(const auto cached = loaded[id].lock()) {
             cached->set_reloaded(new_ptr._data);
-            cached->asset = T();
         }
 
         loaded[id] = new_ptr._data;

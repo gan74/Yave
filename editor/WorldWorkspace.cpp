@@ -35,6 +35,8 @@ SOFTWARE.
 
 namespace editor {
 
+editor_action("Refresh assets", [](WorldWorkspace* ws) { ws->grab_reloaded(); })
+
 WorldWorkspace::WorldWorkspace() :
         _world(std::make_unique<EditorWorld>(asset_loader())),
         _job_system(std::make_unique<concurrent::JobSystem>()),
