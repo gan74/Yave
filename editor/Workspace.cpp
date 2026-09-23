@@ -42,5 +42,9 @@ void Workspace::post_update() {
     // nothing
 }
 
+void Workspace::grab_reloaded() {
+    // nothing
+}
+
 
 }

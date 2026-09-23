@@ -47,6 +47,8 @@ class WorldWorkspace final : public Workspace {
         void save() override;
         void load() override;
 
+        void grab_reloaded() override;
+
         EditorWorld& world();
         const EditorWorld& world() const;
 

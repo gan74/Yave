@@ -25,6 +25,7 @@ SOFTWARE.
 #include "editor.h"
 
 #include <yave/assets/AssetLoader.h>
+#include <yave/systems/AssetLoaderSystem.h>
 #include <yave/systems/SceneSystem.h>
 
 #include <y/io2/File.h>
@@ -87,6 +88,12 @@ void WorldWorkspace::save() {
 
 void WorldWorkspace::load() {
     _deferred_actions |= Load;
+}
+
+void WorldWorkspace::grab_reloaded() {
+    if(AssetLoaderSystem* system = _world->find_system<AssetLoaderSystem>()) {
+        system->grab_reloaded();
+    }
 }
 
 EditorWorld& WorldWorkspace::world() {

@@ -22,12 +22,14 @@ SOFTWARE.
 #include "MaterialWorkspace.h"
 
 #include "editor.h"
+#include "UiManager.h"
 
 #include <yave/assets/AssetLoader.h>
 #include <yave/assets/AssetStore.h>
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/images/ImageData.h>
 #include <yave/graphics/shader_structs.h>
+#include <yave/material/Material.h>
 
 #include <y/io2/Buffer.h>
 #include <y/serde3/archives.h>
@@ -138,6 +140,11 @@ void MaterialWorkspace::save() {
     if(const auto res = asset_store().write(_id, buffer, refs); res.is_error()) {
         log_msg(fmt("Unable to write material, error: {}", res.error()), Log::Error);
         return;
+    }
+
+    asset_loader().reload<Material>(_id);
+    for(const auto& workspace : ui().workspaces()) {
+        workspace->grab_reloaded();
     }
 
     log_msg("Material saved");

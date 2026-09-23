@@ -27,6 +27,8 @@ SOFTWARE.
 #include <y/core/Vector.h>
 #include <y/core/HashMap.h>
 
+#include <y/reflect/reflect.h>
+
 
 namespace yave {
 
@@ -36,12 +38,15 @@ class AssetLoaderSystem : public ecs::System {
 
         void setup(ecs::SystemScheduler& sched) override;
 
+        void grab_reloaded();
+
         template<typename T>
         void register_component_type() {
             _infos << LoadableComponentTypeInfo {
                 ct_type_name<T>(),
                 &load_components<T, false>,
                 &load_components<T, true>,
+                &grab_reloaded_components<T>,
                 &update_loading_status<T>
             };
         }
@@ -51,6 +56,7 @@ class AssetLoaderSystem : public ecs::System {
             std::string_view type_name;
             void (*load_all)(ecs::EntityWorld&, AssetLoadingContext&) = nullptr;
             void (*load_recent)(ecs::EntityWorld&, AssetLoadingContext&) = nullptr;
+            void (*grab_reloaded)(ecs::EntityWorld&) = nullptr;
             void (*update_status)(ecs::EntityWorld&) = nullptr;
         };
 
@@ -80,6 +86,22 @@ class AssetLoaderSystem : public ecs::System {
         }
 
         template<typename T>
+        static void grab_reloaded_components(ecs::EntityWorld& world) {
+            auto group = world.create_group<ecs::Mutate<T>>();
+            for(auto&& [id, comp] : group.id_components()) {
+                bool any_reloaded = false;
+                reflect::explore_recursive(comp, [&](auto& m) {
+                    if constexpr(requires { m.grab_reloaded(); }) {
+                        any_reloaded |= m.grab_reloaded();
+                    }
+                });
+                if(any_reloaded) {
+                    world.get_or_add_component<LoadingTag<T>>(id);
+                }
+            }
+        }
+
+        template<typename T>
         static void update_loading_status(ecs::EntityWorld& world) {
             auto group = world.create_group<ecs::Mutate<T>, LoadingTag<T>>();
             for(auto&& [id, comp, loading] : group.id_components()) {
@@ -99,4 +121,3 @@ class AssetLoaderSystem : public ecs::System {
 }
 
 #endif // YAVE_SYSTEMS_ASSETLOADERSYSTEM_H
-

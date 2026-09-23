@@ -38,8 +38,11 @@ class Workspace : NonMovable {
         virtual void update() = 0;
         virtual void post_update();
 
+        virtual void grab_reloaded();
+
         virtual void save() = 0;
         virtual void load() = 0;
+
 
     private:
         const u32 _id;
