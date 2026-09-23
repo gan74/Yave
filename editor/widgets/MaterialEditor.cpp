@@ -52,6 +52,8 @@ static void property_label(const char* name) {
 static void edit_texture(AssetPtr<Texture>& texture, const char* name) {
     property_label(name);
 
+    ImGui::PushID(name);
+
     bool clear = false;
     if(imgui::asset_selector(texture.id(), AssetType::Image, asset_type_name(AssetType::Image, false, false), &clear)) {
         add_top_level_widget<AssetSelector>(AssetType::Image)->set_selected_callback(
@@ -64,15 +66,17 @@ static void edit_texture(AssetPtr<Texture>& texture, const char* name) {
     } else if(clear) {
         texture = {};
     }
+
+    ImGui::PopID();
 }
 
 static void edit_color(math::Vec3& color, const char* name) {
     property_label(name);
 
-    if(ImGui::ColorButton("##color", to_im(math::Vec4(color, 1.0f)), color_flags)) {
-        ImGui::OpenPopup("##color");
+    if(ImGui::ColorButton(fmt_c_str("##color_{}", name), to_im(math::Vec4(color, 1.0f)), color_flags)) {
+        ImGui::OpenPopup(fmt_c_str("##popup_{}", name));
     }
-    if(ImGui::BeginPopup("##color")) {
+    if(ImGui::BeginPopup(fmt_c_str("##popup_{}", name))) {
         ImGui::ColorPicker3("##picker", color.begin(), color_flags);
         ImGui::EndPopup();
     }
@@ -80,18 +84,20 @@ static void edit_color(math::Vec3& color, const char* name) {
 
 static void edit_float(float& value, const char* name, float min = 0.0f, float max = 1.0f) {
     property_label(name);
-    ImGui::DragFloat("##value", &value, 0.01f, min, max);
+
+    ImGui::DragFloat(fmt_c_str("##float_{}", name), &value, 0.01f, min, max);
 }
 
 static void edit_bool(bool& value, const char* name) {
     property_label(name);
-    ImGui::Checkbox("##value", &value);
+    
+    ImGui::Checkbox(fmt_c_str("##bool_{}", name), &value);
 }
 
 static void edit_blend_mode(BlendMode& mode) {
     property_label("Blend");
 
-    const char* names[] = {"None", "Add", "SrcAlpha"};
+    const char* names[] = {"None", "Add", "Alpha"};
     int current = int(mode);
     if(ImGui::Combo("##blend", &current, names, int(std::size(names)))) {
         mode = BlendMode(current);
