@@ -30,6 +30,7 @@ SOFTWARE.
 #include <yave/graphics/images/ImageData.h>
 #include <yave/graphics/shader_structs.h>
 #include <yave/material/Material.h>
+#include <yave/utils/FileSystemModel.h>
 
 #include <y/io2/Buffer.h>
 #include <y/serde3/archives.h>
@@ -54,22 +55,29 @@ static MaterialData::CommonMaterialData common_from_material(const MaterialData&
 }
 
 static MaterialWorkspace::EditMaterial to_edit_data(const MaterialData& data) {
-    if(data.material_type() == MaterialData::Type::Specular) {
-        MaterialData::SpecularMaterialData specular;
-        specular.common = common_from_material(data);
-        specular.specular = data.textures()[shader::TextureSlots::MetallicRoughnessSpecular];
-        specular.specular_color = data.textures()[shader::TextureSlots::SpecularColor];
-        specular.specular_color_factor = data.specular_color();
-        specular.specular_factor = data.specular_factor();
-        return specular;
-    }
+    switch(data.material_type()) {
+        case MaterialData::Type::Specular: {
+            MaterialData::SpecularMaterialData specular;
+            specular.common = common_from_material(data);
+            specular.specular = data.textures()[shader::TextureSlots::MetallicRoughnessSpecular];
+            specular.specular_color = data.textures()[shader::TextureSlots::SpecularColor];
+            specular.specular_color_factor = data.specular_color();
+            specular.specular_factor = data.specular_factor();
+            return specular;
+        }
 
-    MaterialData::MetallicRoughnessMaterialData metallic;
-    metallic.common = common_from_material(data);
-    metallic.metallic_roughness = data.textures()[shader::TextureSlots::MetallicRoughnessSpecular];
-    metallic.roughness_factor = data.roughness_factor();
-    metallic.metallic_factor = data.metallic_factor();
-    return metallic;
+        case MaterialData::Type::MetallicRoughness: {
+            MaterialData::MetallicRoughnessMaterialData metallic;
+            metallic.common = common_from_material(data);
+            metallic.metallic_roughness = data.textures()[shader::TextureSlots::MetallicRoughnessSpecular];
+            metallic.roughness_factor = data.roughness_factor();
+            metallic.metallic_factor = data.metallic_factor();
+            return metallic;
+        }
+
+        default:
+            y_fatal("Unknown material variant");
+    }
 }
 
 static void load_texture(AssetPtr<Texture>& texture) {
@@ -197,10 +205,10 @@ MaterialData MaterialWorkspace::material_data() const {
 }
 
 void MaterialWorkspace::update_name() {
-    _name = "Material";
+    _name = ICON_FA_BRUSH " Material";
     if(_id != AssetId::invalid_id()) {
         if(auto name = asset_store().name(_id)) {
-            _name = std::move(name.unwrap());
+            _name = fmt("{} {}", ICON_FA_BRUSH, asset_store().filesystem()->filename(name.unwrap()));
         }
     }
 }

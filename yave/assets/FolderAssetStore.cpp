@@ -207,6 +207,36 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::for_each(std:
 
 }
 
+FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::search(std::string_view path, std::string_view pattern, const for_each_f& found) const {
+    y_profile();
+
+    path = strict_path(path);
+
+    const auto lock = std::unique_lock(_parent->_lock);
+
+    const auto search_in = [&](const auto& entries, auto make_info) {
+        for(auto it = entries.lower_bound(path); it != entries.end(); ++it) {
+            const EntryInfo info = make_info(it);
+            if(path.empty() || is_strict_indirect_parent(path, info.name)) {
+                if(info.name.find(pattern) != info.name.end()) {
+                    found(info);
+                }
+            } else if(!info.name.starts_with(path)) {
+                break;
+            }
+        }
+    };
+
+    search_in(_parent->_folders, [](auto it) {
+        return EntryInfo{EntryType::Directory, *it, 0};
+    });
+    search_in(_parent->_assets, [](auto it) {
+        return EntryInfo{EntryType::File, it->first, it->second.file_size};
+    });
+
+    return core::Ok();
+}
+
 FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::create_directory(std::string_view path) const {
     y_profile();
 

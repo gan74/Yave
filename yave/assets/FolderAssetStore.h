@@ -37,7 +37,7 @@ namespace yave {
 
 class FolderAssetStore final : NonMovable, public AssetStore {
 
-    class FolderFileSystemModel final : public FileSystemModel {
+    class FolderFileSystemModel final : public FileSystemModel, public SearchableFileSystemModel {
         public:
 
             core::String filename(std::string_view path) const override;
@@ -55,7 +55,7 @@ class FolderAssetStore final : NonMovable, public AssetStore {
             Result<> remove(std::string_view path) const override;
             Result<> rename(std::string_view from, std::string_view to) const override;
 
-            //Result<core::Vector<core::String>> search(std::string_view pattern) const override;
+            Result<> search(std::string_view path, std::string_view pattern, const for_each_f& found) const override;
 
         private:
             friend class FolderAssetStore;
@@ -99,6 +99,7 @@ class FolderAssetStore final : NonMovable, public AssetStore {
 
         Result<AssetType> asset_type(AssetId id) const override;
         Result<core::Span<AssetId>> references(AssetId id) const override;
+
         Result<> search_references(AssetId id, const std::function<void(AssetId)>& found) const override;
 
     private:
