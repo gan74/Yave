@@ -157,9 +157,19 @@ void ResourceBrowser::on_gui() {
         }
 
         ImGui::SameLine();
-        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-
         draw_path_bar();
+
+        if(dynamic_cast<const SearchableFileSystemModel*>(_filesystem_view.filesystem())) {
+            const float search_bar_size = 180.0f;
+            const float max_x = ImGui::GetContentRegionAvail().x + ImGui::GetCursorScreenPos().x - ImGui::GetWindowPos().x;
+            const float offset = max_x - search_bar_size;
+            if(offset > 0.0f) {
+                ImGui::SameLine(offset);
+                ImGui::SetNextItemWidth(search_bar_size);
+                imgui::text_input("##search", _search_pattern, ImGuiInputTextFlags_AutoSelectAll, ICON_FA_SEARCH " Search");
+                _filesystem_view.set_search(_search_pattern);
+            }
+        }
     }
 
     _filesystem_view.draw_gui_inside();

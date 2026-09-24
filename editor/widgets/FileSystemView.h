@@ -75,6 +75,8 @@ class FileSystemView : public Widget {
         void set_path(const core::String& path);
         const core::String& path() const;
 
+        void set_search(std::string_view pattern);
+
         template<typename F>
         void set_filter_delegate(F&& f) {
             _delegates.filter = y_fwd(f);
@@ -129,6 +131,7 @@ class FileSystemView : public Widget {
 
         const FileSystemModel* _filesystem = nullptr;
         core::String _current_path;
+        core::String _search;
 
         struct Delegates {
             std::function<bool(const core::String&, EntryType)> filter;

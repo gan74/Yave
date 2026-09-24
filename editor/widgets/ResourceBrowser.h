@@ -60,6 +60,7 @@ class ResourceBrowser : public Widget {
         core::Result<core::String> draw_path_bar_element(std::string_view path);
 
         FileSystemView _filesystem_view;
+        core::String _search_pattern;
 
         std::function<bool(AssetId)> _selected_delegate = [](AssetId) { return false; };
 };

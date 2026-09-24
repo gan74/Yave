@@ -156,7 +156,7 @@ CVarConsole::CVarConsole() : Widget(ICON_FA_STREAM " CVars") {
 
 void CVarConsole::on_gui() {
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(ICON_FA_FILTER " ").x);
-    imgui::text_input(ICON_FA_FILTER "##search", _search_pattern, ImGuiInputTextFlags_AutoSelectAll, "Search");
+    imgui::text_input("##search", _search_pattern, ImGuiInputTextFlags_AutoSelectAll, ICON_FA_SEARCH " Search");
     const StringMatcher matcher(_search_pattern);
 
     const ImGuiTableFlags table_flags =

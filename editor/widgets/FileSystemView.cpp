@@ -112,6 +112,13 @@ const core::String& FileSystemView::path() const {
     return _current_path;
 }
 
+void FileSystemView::set_search(std::string_view pattern) {
+    if(_search != pattern) {
+        _search = pattern;
+        _need_update = true;
+    }
+}
+
 const FileSystemView::Entry* FileSystemView::entry(usize index) const {
     if(index < _entries.size()) {
         return &_entries[index];
@@ -185,18 +192,31 @@ void FileSystemView::update() {
 
     const std::string_view path = _current_path;
     if(filesystem()->exists(path).unwrap_or(false)) {
-        filesystem()->for_each(path, [this, path](const auto& info) {
-            core::String full_name = filesystem()->join(path, info.name);
-            if(_delegates.filter(full_name, info.type)) {
-                const UiIcon icon = _delegates.icon(full_name, info.type);
+        auto add_entry = [&](core::String full_name, core::String name, EntryType type) {
+            if(_delegates.filter(full_name, type)) {
+                const UiIcon icon = _delegates.icon(full_name, type);
                 _entries.emplace_back(Entry {
                     std::move(full_name),
-                    info.name,
-                    info.type,
+                    std::move(name),
+                    type,
                     icon,
                 });
             }
-        }).ignore();
+        };
+
+        const auto* searchable = !_search.is_empty() ? dynamic_cast<const SearchableFileSystemModel*>(filesystem()) : nullptr;
+        if(searchable) {
+            searchable->search(path, _search, [&](const auto& info) {
+                core::String name = path.empty() || info.name.size() <= path.size()
+                    ? info.name
+                    : core::String(info.name.sub_str(path.size() + 1));
+                add_entry(info.name, std::move(name), info.type);
+            }).ignore();
+        } else {
+            filesystem()->for_each(path, [&](const auto& info) {
+                add_entry(filesystem()->join(path, info.name), info.name, info.type);
+            }).ignore();
+        }
         std::sort(_entries.begin(), _entries.end());
     } else {
         if(const auto p = filesystem()->parent_path(path)) {
@@ -434,15 +454,13 @@ void FileSystemView::draw_context_menu() {
         if(_allow_modify) {
             ImGui::Separator();
 
-            const core::String full_name = filesystem()->join(_current_path, entry.name);
-
             if(ImGui::MenuItem("Rename")) {
-                add_top_level_widget<FileRenamer>(filesystem(), full_name);
+                add_top_level_widget<FileRenamer>(filesystem(), entry.full_name);
             }
 
             if(ImGui::MenuItem("Delete")) {
-                if(!filesystem()->remove(full_name)) {
-                    log_msg(fmt("Unable to delete {}", full_name), Log::Error);
+                if(!filesystem()->remove(entry.full_name)) {
+                    log_msg(fmt("Unable to delete {}", entry.full_name), Log::Error);
                 }
                 refresh_all();
             }
