@@ -50,11 +50,13 @@ void test_bp_compile() {
     int i = 5;
     double d = 7.0;
 
-    auto c = LambdaBlueprintNodeBuilder<>()
+    auto factory = LambdaBlueprintNodeBuilder<>()
         .add_input<int>("x")
         .add_output<double>("out")
         .add_input<double>("y")
         .build([](int x, double& out, double y) { out = x * y; });
+
+    auto c = factory();
 
     y_debug_assert(c->input_name(0) == "x");
     y_debug_assert(c->input_name(1) == "y");

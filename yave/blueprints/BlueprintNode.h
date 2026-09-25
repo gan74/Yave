@@ -28,11 +28,13 @@ SOFTWARE.
 #include <y/core/Span.h>
 #include <y/core/Vector.h>
 
-#include <algorithm>
 #include <array>
 #include <memory>
-#include <string_view>
 #include <tuple>
+#include <functional>
+#include <string_view>
+#include <algorithm>
+
 
 namespace yave {
 
@@ -51,6 +53,9 @@ BlueprintParamTypeIndex blueprint_param_type_index() {
     return type;
 }
 
+
+
+
 namespace detail {
 template<typename T, usize N, usize... I>
 auto make_ref_tuple_impl(const std::array<const void*, N>& a, std::index_sequence<I...>) {
@@ -62,22 +67,14 @@ auto make_ref_tuple_impl(const std::array<const void*, N>& a, std::index_sequenc
 template<typename T, usize N>
 auto make_ref_tuple(const std::array<const void*, N>& a) {
     static_assert(std::tuple_size_v<T> == N);
-
     return make_ref_tuple_impl<T>(a, std::make_index_sequence<N>{});
 }
 
+template<typename T>
+struct bp_in { using type = T; static constexpr bool is_input = true; };
 
 template<typename T>
-struct bp_in {
-    using type = T;
-    static constexpr bool is_input = true;
-};
-
-template<typename T>
-struct bp_out {
-    using type = T;
-    static constexpr bool is_input = false;
-};
+struct bp_out { using type = T; static constexpr bool is_input = false; };
 
 template<typename Port>
 using bp_maybe_in = std::conditional_t<Port::is_input, std::tuple<typename Port::type>, std::tuple<>>;
@@ -140,8 +137,9 @@ template<typename Tuple>
 auto make_bp_types() {
     return make_bp_types<Tuple>(std::make_index_sequence<std::tuple_size_v<Tuple>>{});
 }
-
 }
+
+
 
 class BlueprintNode : NonMovable {
     public:
@@ -246,9 +244,6 @@ class LambdaBlueprintNodeBuilder {
     public:
         LambdaBlueprintNodeBuilder() = default;
 
-        explicit LambdaBlueprintNodeBuilder(core::Vector<std::string_view> names) : _names(std::move(names)) {
-        }
-
         template<typename T>
         LambdaBlueprintNodeBuilder<Ports..., detail::bp_in<T>> add_input(std::string_view name) {
             core::Vector<std::string_view> names(_names);
@@ -264,12 +259,20 @@ class LambdaBlueprintNodeBuilder {
         }
 
         template<typename F>
-        std::unique_ptr<BlueprintNode> build(F&& func) {
+        std::function<std::unique_ptr<BlueprintNode>()> build(F&& func) {
             static_assert(function_traits<std::remove_cvref_t<F>>::arg_count == sizeof...(Ports));
-            return std::make_unique<detail::LambdaBlueprintNode<std::remove_cvref_t<F>, Ports...>>(y_fwd(func), std::move(_names));
+            return [f = y_fwd(func), names = std::move(_names)] { 
+                return std::make_unique<detail::LambdaBlueprintNode<std::remove_cvref_t<F>, Ports...>>(f, names); 
+            };
         }
 
     private:
+        template<typename... P>
+        friend class LambdaBlueprintNodeBuilder;
+
+        LambdaBlueprintNodeBuilder(core::Vector<std::string_view> names) : _names(std::move(names)) {
+        }
+
         core::Vector<std::string_view> _names;
 };
 
