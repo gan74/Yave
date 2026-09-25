@@ -215,7 +215,7 @@ class LambdaBlueprintNode : public BlueprintNode {
         }
 
         const void* output_ptr(usize index) const override {
-            return _output_ptrs[index];
+            return make_tuple_ptrs(_outputs)[index];
         }
 
         void eval() override {
@@ -224,15 +224,14 @@ class LambdaBlueprintNode : public BlueprintNode {
         }
 
     private:
-        std::array<BlueprintParamTypeIndex, in_count> _input_types = make_bp_types<inputs_t>();
-        std::array<BlueprintParamTypeIndex, out_count> _output_types = make_bp_types<outputs_t>();
+        static inline const std::array<BlueprintParamTypeIndex, in_count> _input_types = make_bp_types<inputs_t>();
+        static inline const std::array<BlueprintParamTypeIndex, out_count> _output_types = make_bp_types<outputs_t>();
 
         std::array<std::string_view, in_count> _input_names = {};
         std::array<std::string_view, out_count> _output_names = {};
 
         std::array<const void*, in_count> _inputs = {};
         outputs_t _outputs = {};
-        std::array<const void*, out_count> _output_ptrs = make_tuple_ptrs(_outputs);
 
         F _func;
 };
