@@ -47,31 +47,24 @@ auto make_func_bp_node(F&& func) {
 void test_bp_compile() {
     auto test_func = [](int x, double y) -> double { return x * y; };
 
-    int i = 4;
+    int i = 5;
     double d = 7.0;
 
-    auto a = make_func_bp_node(test_func);
-    auto b = make_func_bp_node(test_func);
+    auto c = LambdaBlueprintNodeBuilder<>()
+        .add_input<int>("x")
+        .add_output<double>("out")
+        .add_input<double>("y")
+        .build([](int x, double& out, double y) { out = x * y; });
 
-    a.set_input(0, &i);
-    a.set_input(1, &d);
+    y_debug_assert(c->input_name(0) == "x");
+    y_debug_assert(c->input_name(1) == "y");
+    y_debug_assert(c->output_name(0) == "out");
 
-    b.set_input(0, &i);
-    b.set_input(1, a.output_ptr(0));
+    c->set_input(0, &i);
+    c->set_input(1, &d);
+    c->eval();
 
-    a.eval();
-    b.eval();
-
-    y_debug_assert(static_cast<const double*>(b.output_ptr(0))[0] == (i * d) * i);
-
-    i = 5;
-
-    y_debug_assert(static_cast<const double*>(b.output_ptr(0))[0] == (4 * d) * 4);
-
-    a.eval();
-    b.eval();
-
-    y_debug_assert(static_cast<const double*>(b.output_ptr(0))[0] == (i * d) * i);
+    y_debug_assert(static_cast<const double*>(c->output_ptr(0))[0] == i * d);
 }
 
 }
