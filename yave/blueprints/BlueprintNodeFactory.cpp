@@ -24,7 +24,15 @@ SOFTWARE.
 
 namespace yave {
 
+BlueprintNodeFactory::BlueprintNodeFactory(std::shared_ptr<SharedBlueprintNodeData> shared_data) : _shared_data(std::move(shared_data)) {
+    y_debug_assert(_shared_data);
+}
+
 BlueprintNodeFactory::~BlueprintNodeFactory() {
+}
+
+std::string_view BlueprintNodeFactory::name() const {
+    return _shared_data->name;
 }
 
 }

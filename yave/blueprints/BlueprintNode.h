@@ -24,6 +24,9 @@ SOFTWARE.
 
 #include <yave/yave.h>
 
+#include <y/core/String.h>
+#include <y/core/Vector.h>
+
 #include <memory>
 #include <string_view>
 
@@ -44,22 +47,36 @@ BlueprintParamTypeIndex blueprint_param_type_index() {
     return type;
 }
 
+class SharedBlueprintNodeData {
+    public:
+        core::String name;
+        core::Vector<core::String> input_names;
+        core::Vector<core::String> output_names;
+};
+
 class BlueprintNode : NonMovable {
     public:
         virtual ~BlueprintNode();
 
+        std::string_view name() const;
+        std::string_view input_name(usize index) const;
+        std::string_view output_name(usize index) const;
+
         virtual usize input_count() const = 0;
         virtual BlueprintParamTypeIndex input_type(usize index) const = 0;
-        virtual std::string_view input_name(usize index) const = 0;
         virtual void set_input(usize index, const void* ptr) = 0;
 
         virtual usize output_count() const = 0;
         virtual BlueprintParamTypeIndex output_type(usize index) const = 0;
-        virtual std::string_view output_name(usize index) const = 0;
         virtual const void* output_ptr(usize index) const = 0;
 
         virtual void eval() = 0;
 
+    protected:
+        BlueprintNode(std::shared_ptr<SharedBlueprintNodeData> shared_data);
+
+    private:
+        std::shared_ptr<SharedBlueprintNodeData> _shared_data;
 };
 
 }

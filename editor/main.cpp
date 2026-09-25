@@ -100,7 +100,7 @@ void test_bp_compile() {
     int i = 5;
     double d = 7.0;
 
-    auto factory = LambdaBlueprintNodeBuilder<>()
+    auto factory = LambdaBlueprintNodeBuilder<>("boop")
         .add_input<int>("x")
         .add_output<double>("out")
         .add_input<double>("y")

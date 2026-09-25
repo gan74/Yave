@@ -32,8 +32,23 @@ BlueprintParamTypeIndex next_blueprint_param_type_index() {
 }
 
 
+BlueprintNode::BlueprintNode(std::shared_ptr<SharedBlueprintNodeData> shared_data) : _shared_data(std::move(shared_data)) {
+    y_debug_assert(_shared_data);
+}
+
 BlueprintNode::~BlueprintNode() {
 }
 
+std::string_view BlueprintNode::name() const {
+    return _shared_data ? std::string_view(_shared_data->name) : std::string_view("Unnamed node");
 }
 
+std::string_view BlueprintNode::input_name(usize index) const {
+    return _shared_data ? std::string_view(_shared_data->input_names[index]) : std::string_view("Unnamed input");
+}
+
+std::string_view BlueprintNode::output_name(usize index) const {
+    return _shared_data ? std::string_view(_shared_data->output_names[index]) : std::string_view("Unnamed output");
+}
+
+}

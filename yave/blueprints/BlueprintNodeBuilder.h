@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <y/utils/traits.h>
 #include <y/core/Span.h>
+#include <y/core/String.h>
 #include <y/core/Vector.h>
 
 #include <array>
@@ -105,6 +106,21 @@ auto make_bp_types() {
     return make_bp_types<Tuple>(std::make_index_sequence<std::tuple_size_v<Tuple>>{});
 }
 
+template<typename... Ports>
+std::shared_ptr<SharedBlueprintNodeData> make_bp_shared_data(core::String name, core::Vector<core::String> names) {
+    y_debug_assert(names.size() == sizeof...(Ports));
+
+    auto data = std::make_shared<SharedBlueprintNodeData>();
+    data->name = std::move(name);
+    if constexpr(sizeof...(Ports) > 0) {
+        usize i = 0;
+        ((Ports::is_input
+            ? void(data->input_names.push_back(std::move(names[i++])))
+            : void(data->output_names.push_back(std::move(names[i++])))), ...);
+    }
+    return data;
+}
+
 template<typename F, typename... Ports>
 class LambdaBlueprintNode : public BlueprintNode {
     public:
@@ -116,17 +132,9 @@ class LambdaBlueprintNode : public BlueprintNode {
         using outputs_t = bp_outputs_t<Ports...>;
 
         template<typename G>
-        LambdaBlueprintNode(G&& func, core::Span<std::string_view> names) : _func(y_fwd(func)) {
-            y_debug_assert(names.size() == port_count);
-
-            if constexpr(port_count > 0) {
-                usize in_i = 0;
-                usize out_i = 0;
-                usize i = 0;
-                ((Ports::is_input
-                    ? void(_input_names[in_i++] = names[i++])
-                    : void(_output_names[out_i++] = names[i++])), ...);
-            }
+        LambdaBlueprintNode(G&& func, std::shared_ptr<SharedBlueprintNodeData> shared_data) :
+                BlueprintNode(std::move(shared_data)),
+                _func(y_fwd(func)) {
         }
 
         usize input_count() const override {
@@ -135,10 +143,6 @@ class LambdaBlueprintNode : public BlueprintNode {
 
         BlueprintParamTypeIndex input_type(usize index) const override {
             return _input_types[index];
-        }
-
-        std::string_view input_name(usize index) const override {
-            return _input_names[index];
         }
 
         void set_input(usize index, const void* ptr) override {
@@ -153,10 +157,6 @@ class LambdaBlueprintNode : public BlueprintNode {
             return _output_types[index];
         }
 
-        std::string_view output_name(usize index) const override {
-            return _output_names[index];
-        }
-
         const void* output_ptr(usize index) const override {
             return make_tuple_ptrs(_outputs)[index];
         }
@@ -168,9 +168,6 @@ class LambdaBlueprintNode : public BlueprintNode {
     private:
         static inline const std::array<BlueprintParamTypeIndex, in_count> _input_types = make_bp_types<inputs_t>();
         static inline const std::array<BlueprintParamTypeIndex, out_count> _output_types = make_bp_types<outputs_t>();
-
-        std::array<std::string_view, in_count> _input_names = {};
-        std::array<std::string_view, out_count> _output_names = {};
 
         std::array<const void*, in_count> _inputs = {};
 
@@ -184,16 +181,17 @@ template<typename F, typename... Ports>
 class LambdaBlueprintNodeFactory : public BlueprintNodeFactory {
     public:
         template<typename G>
-        LambdaBlueprintNodeFactory(G&& func, core::Vector<std::string_view> names) : _func(y_fwd(func)), _names(std::move(names)) {
+        LambdaBlueprintNodeFactory(G&& func, core::String name, core::Vector<core::String> names) :
+                BlueprintNodeFactory(make_bp_shared_data<Ports...>(std::move(name), std::move(names))),
+                _func(y_fwd(func)) {
         }
 
         std::unique_ptr<BlueprintNode> create_node() override {
-            return std::make_unique<LambdaBlueprintNode<F, Ports...>>(_func, _names);
+            return std::make_unique<LambdaBlueprintNode<F, Ports...>>(_func, _shared_data);
         }
 
     private:
         F _func;
-        core::Vector<std::string_view> _names;
 };
 
 }
@@ -201,36 +199,38 @@ class LambdaBlueprintNodeFactory : public BlueprintNodeFactory {
 template<typename... Ports>
 class LambdaBlueprintNodeBuilder {
     public:
-        LambdaBlueprintNodeBuilder() = default;
+        explicit LambdaBlueprintNodeBuilder(core::String name) : _name(std::move(name)) {
+        }
 
         template<typename T>
         LambdaBlueprintNodeBuilder<Ports..., detail::bp_in<T>> add_input(std::string_view name) {
-            core::Vector<std::string_view> names(_names);
-            names.push_back(name);
-            return LambdaBlueprintNodeBuilder<Ports..., detail::bp_in<T>>(std::move(names));
+            core::Vector<core::String> names(_names);
+            names.emplace_back(name);
+            return LambdaBlueprintNodeBuilder<Ports..., detail::bp_in<T>>(std::move(names), _name);
         }
 
         template<typename T>
         LambdaBlueprintNodeBuilder<Ports..., detail::bp_out<T>> add_output(std::string_view name) {
-            core::Vector<std::string_view> names(_names);
-            names.push_back(name);
-            return LambdaBlueprintNodeBuilder<Ports..., detail::bp_out<T>>(std::move(names));
+            core::Vector<core::String> names(_names);
+            names.emplace_back(name);
+            return LambdaBlueprintNodeBuilder<Ports..., detail::bp_out<T>>(std::move(names), _name);
         }
 
         template<typename F>
         std::unique_ptr<BlueprintNodeFactory> build(F&& func) {
             static_assert(function_traits<std::remove_cvref_t<F>>::arg_count == sizeof...(Ports));
-            return std::make_unique<detail::LambdaBlueprintNodeFactory<std::remove_cvref_t<F>, Ports...>>(y_fwd(func), std::move(_names));
+            return std::make_unique<detail::LambdaBlueprintNodeFactory<std::remove_cvref_t<F>, Ports...>>(y_fwd(func), std::move(_name), std::move(_names));
         }
 
     private:
         template<typename... P>
         friend class LambdaBlueprintNodeBuilder;
 
-        LambdaBlueprintNodeBuilder(core::Vector<std::string_view> names) : _names(std::move(names)) {
+        LambdaBlueprintNodeBuilder(core::Vector<core::String> names, core::String name) : _names(std::move(names)), _name(std::move(name)) {
         }
 
-        core::Vector<std::string_view> _names;
+        core::Vector<core::String> _names;
+        core::String _name;
 };
 
 }

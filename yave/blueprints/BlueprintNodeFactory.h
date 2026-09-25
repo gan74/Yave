@@ -30,7 +30,14 @@ class BlueprintNodeFactory : NonMovable {
     public:
         virtual ~BlueprintNodeFactory();
 
+        std::string_view name() const;
+
         virtual std::unique_ptr<BlueprintNode> create_node() = 0;
+
+    protected:
+        BlueprintNodeFactory(std::shared_ptr<SharedBlueprintNodeData> shared_data);
+
+        std::shared_ptr<SharedBlueprintNodeData> _shared_data;
 };
 
 }
