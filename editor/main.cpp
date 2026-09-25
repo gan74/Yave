@@ -88,9 +88,15 @@ static Instance create_instance() {
     return Instance(inst_params);
 }
 
-
+namespace yave {
+    void test_bp_compile();
+}
 
 int main(int argc, char** argv) {
+    test_bp_compile();
+
+    return 0;
+/*
     concurrent::set_thread_name("Main thread");
 
     parse_args(argc, argv);
@@ -118,6 +124,6 @@ int main(int argc, char** argv) {
 
     log_msg("exiting...");
 
-    return 0;
+    return 0;*/
 }
 
