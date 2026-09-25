@@ -19,21 +19,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef YAVE_BLUEPRINTS_BLUEPRINTNODEFACTORY_H
+#define YAVE_BLUEPRINTS_BLUEPRINTNODEFACTORY_H
 
 #include "BlueprintNode.h"
 
 namespace yave {
 
-namespace detail {
-BlueprintParamTypeIndex next_blueprint_param_type_index() {
-    static std::atomic<std::underlying_type_t<BlueprintParamTypeIndex>> global_type_index = 0;
-    return BlueprintParamTypeIndex(global_type_index++);
-}
-}
+class BlueprintNodeFactory : NonMovable {
+    public:
+        virtual ~BlueprintNodeFactory();
 
-
-BlueprintNode::~BlueprintNode() {
-}
+        virtual std::unique_ptr<BlueprintNode> create_node() = 0;
+};
 
 }
 
+#endif // YAVE_BLUEPRINTS_BLUEPRINTNODEFACTORY_H

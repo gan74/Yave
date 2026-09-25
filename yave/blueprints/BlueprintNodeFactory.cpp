@@ -20,20 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "BlueprintNode.h"
+#include "BlueprintNodeFactory.h"
 
 namespace yave {
 
-namespace detail {
-BlueprintParamTypeIndex next_blueprint_param_type_index() {
-    static std::atomic<std::underlying_type_t<BlueprintParamTypeIndex>> global_type_index = 0;
-    return BlueprintParamTypeIndex(global_type_index++);
-}
-}
-
-
-BlueprintNode::~BlueprintNode() {
+BlueprintNodeFactory::~BlueprintNodeFactory() {
 }
 
 }
-
