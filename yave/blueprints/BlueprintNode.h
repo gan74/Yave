@@ -113,19 +113,22 @@ auto make_tuple_ptrs(Tuple& t) {
     return make_tuple_ptrs(t, std::make_index_sequence<std::tuple_size_v<Tuple>>{});
 }
 
-template<usize I, typename... Ports, usize N, typename Outputs>
-decltype(auto) bp_port_ref(const std::array<const void*, N>& inputs, Outputs& outputs) {
+template<usize I, typename... Ports, usize N, typename Inputs, typename Outputs>
+decltype(auto) bp_port_ref(const std::array<const void*, N>& inputs, const Inputs& defaults, Outputs& outputs) {
     using Port = std::tuple_element_t<I, std::tuple<Ports...>>;
     if constexpr(Port::is_input) {
-        return *static_cast<const typename Port::type*>(inputs[bp_count_before<I, 0, Ports...>::inputs]);
+        constexpr usize slot = bp_count_before<I, 0, Ports...>::inputs;
+        return inputs[slot]
+            ? *static_cast<const typename Port::type*>(inputs[slot])
+            : std::get<slot>(defaults);
     } else {
         return std::get<bp_count_before<I, 0, Ports...>::outputs>(outputs);
     }
 }
 
-template<typename... Ports, typename F, usize N, typename Outputs, usize... I>
-void eval_bp_ports(F& func, const std::array<const void*, N>& inputs, Outputs& outputs, std::index_sequence<I...>) {
-    std::apply(func, std::forward_as_tuple(bp_port_ref<I, Ports...>(inputs, outputs)...));
+template<typename... Ports, typename F, usize N, typename Inputs, typename Outputs, usize... I>
+void eval_bp_ports(F& func, const std::array<const void*, N>& inputs, const Inputs& defaults, Outputs& outputs, std::index_sequence<I...>) {
+    std::apply(func, std::forward_as_tuple(bp_port_ref<I, Ports...>(inputs, defaults, outputs)...));
 }
 
 template<typename Tuple, usize... I>
@@ -219,8 +222,7 @@ class LambdaBlueprintNode : public BlueprintNode {
         }
 
         void eval() override {
-            y_debug_assert(std::all_of(_inputs.begin(), _inputs.end(), [](const void* p) { return p; }));
-            eval_bp_ports<Ports...>(_func, _inputs, _outputs, std::make_index_sequence<port_count>{});
+            eval_bp_ports<Ports...>(_func, _inputs, _default_inputs, _outputs, std::make_index_sequence<port_count>{});
         }
 
     private:
@@ -231,6 +233,8 @@ class LambdaBlueprintNode : public BlueprintNode {
         std::array<std::string_view, out_count> _output_names = {};
 
         std::array<const void*, in_count> _inputs = {};
+
+        inputs_t _default_inputs = {};
         outputs_t _outputs = {};
 
         F _func;
