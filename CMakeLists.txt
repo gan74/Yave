@@ -151,6 +151,8 @@ file(GLOB_RECURSE EDITOR_FILES
 file(GLOB_RECURSE IMGUI_FILES
     "external/imgui/*.cpp"
     "external/imgui/*.h"
+    "external/imgui-node-editor/*.h"
+    "external/imgui-node-editor/*.cpp"
 )
 
 file(GLOB_RECURSE EDITOR_EXTERNAL_FILES
@@ -293,7 +295,7 @@ endif()
 
 if(YAVE_BUILD_EDITOR)
     add_library(imgui ${IMGUI_FILES})
-    target_include_directories(imgui PRIVATE external/imgui)
+    target_include_directories(imgui PUBLIC external/imgui)
 
     add_library(bc7enc ${BC7ENC_FILES})
     target_include_directories(bc7enc PRIVATE external/bc7enc_rdo)
