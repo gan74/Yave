@@ -105,6 +105,10 @@ void UiManager::draw_dockspaces() {
         bool open = true;
         const bool visible = ImGui::Begin(fmt_c_str("{}##workspace_{}", workspace->name(), id), &open);
 
+        if(visible || ImGui::IsWindowFocused()) {
+            set_current_workspace(workspace);
+        }
+
         if(open_widgets) {
             create_workspace_widgets(workspace);
         }
@@ -132,7 +136,7 @@ void UiManager::draw_dockspaces() {
             --i;
         }
     }
- 
+
     {
         for(auto& workspace : _new_workspaces) {
             _workspaces.emplace_back(std::move(workspace));
@@ -271,10 +275,10 @@ void UiManager::on_gui() {
     draw_dockspaces();
 
     process_new_widgets();
-    
+
     if(_workspaces.is_empty()) {
         ImGui::OpenPopup("##noworkspace");
-        
+
         const ImGuiWindowFlags popup_flags =
             ImGuiWindowFlags_NoTitleBar |
             ImGuiWindowFlags_NoMove |
