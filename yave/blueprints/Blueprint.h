@@ -28,17 +28,18 @@ SOFTWARE.
 
 namespace yave {
 
-struct BlueprintLink {
-    BlueprintNode* start = nullptr;
-    BlueprintNode* end = nullptr;
-    usize start_pin = 0;
-    usize end_pin = 0;
-    BlueprintParamTypeIndex type = BlueprintParamTypeIndex::invalid_index;
-};
+class Blueprint : NonCopyable {
+    public:
+        const core::Span<std::unique_ptr<BlueprintNode>> all_nodes() const;
 
-struct Blueprint {
-    core::Vector<std::unique_ptr<BlueprintNode>> nodes;
-    core::Vector<BlueprintLink> links;
+        const BlueprintNode* add_node(std::unique_ptr<BlueprintNode> node);
+
+        void clear_links();
+        bool is_link_valid(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin) const;
+        void add_link(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin);
+
+    private:
+        core::Vector<std::unique_ptr<BlueprintNode>> _nodes;
 };
 
 }

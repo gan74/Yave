@@ -51,4 +51,11 @@ std::string_view BlueprintNode::output_name(usize index) const {
     return _shared_data ? std::string_view(_shared_data->output_names[index]) : std::string_view("Unnamed output");
 }
 
+void BlueprintNode::reset_inputs() {
+    const usize c = input_count();
+    for(usize i = 0; i != c; ++i) {
+        set_input(i, nullptr);
+    }
+}
+
 }

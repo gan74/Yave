@@ -7,6 +7,7 @@ in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
+
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
@@ -26,6 +27,8 @@ SOFTWARE.
 
 #include <yave/blueprints/Blueprint.h>
 
+#include <y/core/Vector.h>
+
 namespace ax::NodeEditor {
 struct EditorContext;
 }
@@ -44,10 +47,23 @@ class BlueprintEditor final : public WorkspaceWidget<BlueprintWorkspace> {
         void on_gui() override;
 
     private:
+        struct Link {
+            u64 id = 0;
+            uintptr_t start_pin = 0;
+            uintptr_t end_pin = 0;
+            BlueprintParamTypeIndex type = BlueprintParamTypeIndex::invalid_index;
+        };
+
         void draw_node(const BlueprintNode& node);
+        void process_links();
+        void rebuild_blueprint_links();
+        bool is_pin_linked(uintptr_t pin) const;
 
         ax::NodeEditor::EditorContext* _context = nullptr;
         std::unique_ptr<Blueprint> _blueprint;
+
+        core::Vector<Link> _links;
+        u64 _next_link_id = 1;
 };
 
 }

@@ -149,6 +149,10 @@ class LambdaBlueprintNode : public BlueprintNode {
             _inputs[index] = ptr;
         }
 
+        const void* input(usize index) const override {
+            return _inputs[index];
+        }
+
         usize output_count() const override {
             return out_count;
         }

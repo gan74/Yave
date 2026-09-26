@@ -62,9 +62,12 @@ class BlueprintNode : NonMovable {
         std::string_view input_name(usize index) const;
         std::string_view output_name(usize index) const;
 
+        virtual void reset_inputs();
+
         virtual usize input_count() const = 0;
         virtual BlueprintParamTypeIndex input_type(usize index) const = 0;
         virtual void set_input(usize index, const void* ptr) = 0;
+        virtual const void* input(usize index) const = 0;
 
         virtual usize output_count() const = 0;
         virtual BlueprintParamTypeIndex output_type(usize index) const = 0;
