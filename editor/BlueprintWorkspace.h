@@ -25,6 +25,9 @@ SOFTWARE.
 #include "Workspace.h"
 
 #include <yave/blueprints/Blueprint.h>
+#include <yave/blueprints/BlueprintNodeFactory.h>
+
+#include <y/core/Vector.h>
 
 namespace editor {
 
@@ -47,6 +50,7 @@ class BlueprintWorkspace final : public Workspace {
         void set_selected_node(BlueprintNode* node);
 
     private:
+        core::Vector<std::unique_ptr<BlueprintNodeFactory>> _node_factories;
         Blueprint _blueprint;
         BlueprintNode* _selected_node = nullptr;
 };

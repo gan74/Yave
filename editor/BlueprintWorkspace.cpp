@@ -24,66 +24,195 @@ SOFTWARE.
 
 #include <yave/blueprints/BlueprintNodeBuilder.h>
 
+#include <y/math/Vec.h>
+#include <y/utils/log.h>
+#include <y/utils/format.h>
+
 #include <external/imgui/imgui.h>
 
 namespace editor {
 
-static Blueprint create_blueprint(usize node_count = 1000) {
+template<typename T>
+static void add_math_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories, std::string_view type_name) {
+    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Const {}", type_name))
+        .add_output<T>("value")
+        .build([](T& value) { value = T(1); })
+    );
+
+    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Negate {}", type_name))
+        .add_input<T>("in")
+        .add_output<T>("out")
+        .build([](T in, T& out) { out = -in; })
+    );
+
+    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Add {}", type_name))
+        .add_input<T>("a")
+        .add_input<T>("b")
+        .add_output<T>("out")
+        .build([](T a, T b, T& out) { out = a + b; })
+    );
+
+    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Multiply {}", type_name))
+        .add_input<T>("a")
+        .add_input<T>("b")
+        .add_output<T>("out")
+        .build([](T a, T b, T& out) { out = a * b; })
+    );
+
+    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Divide {}", type_name))
+        .add_input<T>("a")
+        .add_input<T>("b")
+        .add_output<T>("out")
+        .build([](T a, T b, T& out) {
+            if(b == T(0)) {
+                log_msg("Divide by 0", Log::Error);
+                out = T(0);
+            } else {
+                out = a / b;
+            }
+        })
+    );
+}
+
+template<typename V>
+static void add_vec_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories, std::string_view type_name) {
+    using T = typename V::value_type;
+    static constexpr usize N = V::size();
+
+    auto create_1 = LambdaBlueprintNodeBuilder<>(fmt_to_owned("Create {}", type_name)).add_output<V>("out").add_input<T>("x");
+    auto decomp_1 = LambdaBlueprintNodeBuilder<>(fmt_to_owned("Decompose {}", type_name)).add_input<V>("in").add_output<T>("x");
+    if constexpr(N == 1) {
+        factories.emplace_back(create_1.build([](V& out, T x) { out = V(x); }));
+        factories.emplace_back(decomp_1.build([](V out, T& x) { x = out[0]; }));
+    } else {
+        auto create_2 = create_1.add_input<T>("y");
+        auto decomp_2 = decomp_1.add_output<T>("y");
+        if constexpr(N == 2) {
+            factories.emplace_back(create_2.build([](V& out, T x, T y) { out = V(x, y); }));
+            factories.emplace_back(decomp_2.build([](V out, T& x, T& y) { x = out[0]; y = out[1]; }));
+        } else {
+            auto create_3 = create_2.add_input<T>("z");
+            auto decomp_3 = decomp_2.add_output<T>("z");
+            if constexpr(N == 3) {
+                factories.emplace_back(create_3.build([](V& out, T x, T y, T z) { out = V(x, y, z); }));
+                factories.emplace_back(decomp_3.build([](V out, T& x, T& y, T& z) { x = out[0]; y = out[1]; z = out[2]; }));
+            } else {
+                static_assert(N == 4);
+                auto create_4 = create_3.add_input<T>("w");
+                auto decomp_4 = decomp_3.add_output<T>("w");
+                factories.emplace_back(create_4.build([](V& out, T x, T y, T z, T w) { out = V(x, y, z, w); }));
+                factories.emplace_back(decomp_4.build([](V out, T& x, T& y, T& z, T& w) { x = out[0]; y = out[1]; z = out[2]; w = out[3]; }));
+            }
+        }
+    }
+}
+
+
+static BlueprintNodeFactory* find_factory(core::Span<std::unique_ptr<BlueprintNodeFactory>> factories, std::string_view name) {
+    for(const auto& factory : factories) {
+        if(factory->name() == name) {
+            return factory.get();
+        }
+    }
+    y_fatal("Unknown blueprint node factory '{}'", name);
+}
+
+static Blueprint create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactory>> factories, usize node_count = 200) {
     y_profile();
 
-    const auto const_factory = LambdaBlueprintNodeBuilder<>("Const")
-        .add_output<float>("value")
-        .build([](float& value) { value = 1.0f; })
-    ;
-
-    const auto negate_factory = LambdaBlueprintNodeBuilder<>("Negate")
-        .add_input<float>("in")
-        .add_output<float>("out")
-        .build([](float in, float& out) { out = -in; })
-    ;
-
-    const auto add_factory = LambdaBlueprintNodeBuilder<>("Add")
-        .add_input<float>("a")
-        .add_input<float>("b")
-        .add_output<float>("out")
-        .build([](float a, float b, float& out) { out = a + b; })
-    ;
-
-    const auto mul_factory = LambdaBlueprintNodeBuilder<>("Multiply")
-        .add_input<float>("a")
-        .add_input<float>("b")
-        .add_output<float>("out")
-        .build([](float a, float b, float& out) { out = a * b; })
-    ;
-
-    auto nodes = core::Vector<const BlueprintNode*>::with_capacity(node_count);
-
     Blueprint blueprint;
+    core::Vector<const BlueprintNode*> floats;
+    core::Vector<const BlueprintNode*> vec2s;
+    core::Vector<const BlueprintNode*> vec3s;
+    core::Vector<const BlueprintNode*> vec4s;
 
-    const usize const_count = node_count / 10;
-    for(usize i = 0; i != const_count; ++i) {
-        nodes.emplace_back(blueprint.add_node(const_factory->create_node()));
-    }
+    auto add_unary = [&](core::Vector<const BlueprintNode*>& srcs, std::string_view name) {
+        const BlueprintNode* node = blueprint.add_node(find_factory(factories, name)->create_node());
+        blueprint.add_link(srcs.last(), 0, node, 0);
+        srcs.emplace_back(node);
+    };
 
-    for(usize i = const_count; i != node_count; ++i) {
-        const usize a = i - 1;
-        const usize b = (i - const_count) % const_count;
-        const usize kind = i % 3;
+    auto add_binary = [&](core::Vector<const BlueprintNode*>& srcs, std::string_view name) {
+        const BlueprintNode* node = blueprint.add_node(find_factory(factories, name)->create_node());
+        blueprint.add_link(srcs[srcs.size() - 1], 0, node, 0);
+        blueprint.add_link(srcs[srcs.size() / 2], 0, node, 1);
+        srcs.emplace_back(node);
+    };
 
+    // Divisor is always the type's Const (value 1) so we never divide by zero.
+    auto add_divide = [&](core::Vector<const BlueprintNode*>& srcs, std::string_view name) {
+        const BlueprintNode* node = blueprint.add_node(find_factory(factories, name)->create_node());
+        blueprint.add_link(srcs.last(), 0, node, 0);
+        blueprint.add_link(srcs[0], 0, node, 1);
+        srcs.emplace_back(node);
+    };
+
+    auto add_create_decompose = [&](core::Vector<const BlueprintNode*>& vecs, usize comps, std::string_view type_name) {
+        const BlueprintNode* create = blueprint.add_node(find_factory(factories, fmt("Create {}", type_name))->create_node());
+        for(usize c = 0; c != comps; ++c) {
+            blueprint.add_link(floats[floats.size() - 1 - c], 0, create, c);
+        }
+        vecs.emplace_back(create);
+
+        const BlueprintNode* decomp = blueprint.add_node(find_factory(factories, fmt("Decompose {}", type_name))->create_node());
+        blueprint.add_link(create, 0, decomp, 0);
+        floats.emplace_back(decomp);
+    };
+
+    floats.emplace_back(blueprint.add_node(find_factory(factories, "Const float")->create_node()));
+    vec2s.emplace_back(blueprint.add_node(find_factory(factories, "Const Vec2")->create_node()));
+    vec3s.emplace_back(blueprint.add_node(find_factory(factories, "Const Vec3")->create_node()));
+    vec4s.emplace_back(blueprint.add_node(find_factory(factories, "Const Vec4")->create_node()));
+
+    // One of each math op per type (also connects the seed consts).
+    add_unary(floats, "Negate float");
+    add_binary(floats, "Add float");
+    add_binary(floats, "Multiply float");
+    add_divide(floats, "Divide float");
+
+    add_unary(vec2s, "Negate Vec2");
+    add_binary(vec2s, "Add Vec2");
+    add_binary(vec2s, "Multiply Vec2");
+    add_divide(vec2s, "Divide Vec2");
+
+    add_unary(vec3s, "Negate Vec3");
+    add_binary(vec3s, "Add Vec3");
+    add_binary(vec3s, "Multiply Vec3");
+    add_divide(vec3s, "Divide Vec3");
+
+    add_unary(vec4s, "Negate Vec4");
+    add_binary(vec4s, "Add Vec4");
+    add_binary(vec4s, "Multiply Vec4");
+    add_divide(vec4s, "Divide Vec4");
+
+    // Create / decompose for each vector type.
+    add_create_decompose(vec2s, 2, "Vec2");
+    add_create_decompose(vec3s, 3, "Vec3");
+    add_create_decompose(vec4s, 4, "Vec4");
+
+    // Fill the rest with a rotating mix.
+    for(usize i = 0; blueprint.all_nodes().size() < node_count; ++i) {
+        const usize kind = i % 10;
         if(kind == 0) {
-            const BlueprintNode* node = blueprint.add_node(negate_factory->create_node());
-            blueprint.add_link(nodes[a], 0, node, 0);
-            nodes.emplace_back(node);
+            add_unary(floats, "Negate float");
         } else if(kind == 1) {
-            const BlueprintNode* node = blueprint.add_node(add_factory->create_node());
-            blueprint.add_link(nodes[a], 0, node, 0);
-            blueprint.add_link(nodes[b], 0, node, 1);
-            nodes.emplace_back(node);
+            add_binary(floats, "Add float");
+        } else if(kind == 2) {
+            add_binary(floats, "Multiply float");
+        } else if(kind == 3) {
+            add_divide(floats, "Divide float");
+        } else if(kind == 4) {
+            add_binary(vec2s, "Add Vec2");
+        } else if(kind == 5) {
+            add_binary(vec3s, "Multiply Vec3");
+        } else if(kind == 6) {
+            add_unary(vec4s, "Negate Vec4");
+        } else if(kind == 7) {
+            add_create_decompose(vec2s, 2, "Vec2");
+        } else if(kind == 8) {
+            add_create_decompose(vec3s, 3, "Vec3");
         } else {
-            const BlueprintNode* node = blueprint.add_node(mul_factory->create_node());
-            blueprint.add_link(nodes[b], 0, node, 0);
-            blueprint.add_link(nodes[a], 0, node, 1);
-            nodes.emplace_back(node);
+            add_create_decompose(vec4s, 4, "Vec4");
         }
     }
 
@@ -91,8 +220,22 @@ static Blueprint create_blueprint(usize node_count = 1000) {
 }
 
 
+static core::Vector<std::unique_ptr<BlueprintNodeFactory>> create_node_factories() {
+    core::Vector<std::unique_ptr<BlueprintNodeFactory>> factories;
 
-BlueprintWorkspace::BlueprintWorkspace() : _blueprint(create_blueprint()) {
+    add_math_nodes<float>(factories, "float");
+    add_math_nodes<math::Vec2>(factories, "Vec2");
+    add_math_nodes<math::Vec3>(factories, "Vec3");
+    add_math_nodes<math::Vec4>(factories, "Vec4");
+
+    add_vec_nodes<math::Vec2>(factories, "Vec2");
+    add_vec_nodes<math::Vec3>(factories, "Vec3");
+    add_vec_nodes<math::Vec4>(factories, "Vec4");
+
+    return factories;
+}
+
+BlueprintWorkspace::BlueprintWorkspace() : _node_factories(create_node_factories()), _blueprint(create_blueprint(_node_factories)) {
 }
 
 BlueprintWorkspace::~BlueprintWorkspace() {

@@ -23,6 +23,7 @@ SOFTWARE.
 #include "BlueprintEditor.h"
 
 #include <y/utils/hash.h>
+#include <yave/utils/color.h>
 
 #include <external/imgui-node-editor/imgui_node_editor.h>
 
@@ -57,12 +58,9 @@ static ImColor pin_type_color(BlueprintParamTypeIndex type) {
         return ImColor(68, 201, 156);
     }
 
-    const u32 h = u32(hash(u32(type)));
-    return ImColor(
-        int(70 + (h & 0x7F)),
-        int(70 + ((h >> 8) & 0x7F)),
-        int(70 + ((h >> 16) & 0x7F))
-    );
+    const float hue = float(hash(u32(type)) & 0xFFFF) / float(0xFFFF);
+    const math::Vec3 rgb = hsv_to_rgb(hue, 0.65f, 0.9f);
+    return ImColor(rgb.x(), rgb.y(), rgb.z());
 }
 
 static ImColor node_header_color(std::string_view name) {
