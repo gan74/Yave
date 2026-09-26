@@ -61,7 +61,7 @@ void Blueprint::clear_links() {
 bool Blueprint::is_link_valid(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin) const {
     y_profile();
 
-    if(!src || !dst || src_pin >= src->output_count() || dst_pin >= dst->input_count()) {
+    if(!src || !dst || src == dst || src_pin >= src->output_count() || dst_pin >= dst->input_count()) {
         return false;
     }
     if(src->output_type(src_pin) != dst->input_type(dst_pin)) {
@@ -77,25 +77,35 @@ bool Blueprint::is_link_valid(const BlueprintNode* src, usize src_pin, const Blu
     const usize src_index = src_it - _nodes.begin();
     const usize dst_index = dst_it - _nodes.begin();
 
-    core::ScratchPad<bool> visited(_nodes.size(), false);
-    core::ScratchVector<usize> stack(_nodes.size());
+    if(src_index < dst_index) {
+        return true;
+    }
+
+    core::ScratchPad<bool> visited(src_index - dst_index + 1, false);
+    core::ScratchVector<usize> stack(src_index - dst_index + 1);
     stack.push_back(dst_index);
     while(!stack.is_empty()) {
         const usize index = stack.pop();
         if(index == src_index) {
             return false;
         }
-        if(visited[index]) {
+
+        const usize visited_index = index - dst_index;
+        if(visited[visited_index]) {
             continue;
         }
-        visited[index] = true;
+        visited[visited_index] = true;
 
         const BlueprintNode* node = _nodes[index].get();
-        for(usize y = 0; y != _nodes.size(); ++y) {
-            if(!visited[y]) {
-                for(usize i = 0; i != _nodes[y]->input_count(); ++i) {
-                    if(const void* in = _nodes[y]->input(i)) {
-                        if(find_output(in).first == node) {
+        for(usize y = index + 1; y <= src_index; ++y) {
+            if(visited[y - dst_index]) {
+                continue;
+            }
+            for(usize i = 0; i != _nodes[y]->input_count(); ++i) {
+                if(const void* in = _nodes[y]->input(i)) {
+                    const usize output_count = node->output_count();
+                    for(usize k = 0; k != output_count; ++k) {
+                        if(node->output_ptr(k) == in) {
                             stack.push_back(y);
                             break;
                         }
