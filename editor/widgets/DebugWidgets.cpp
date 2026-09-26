@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include <editor/Widget.h>
 #include <editor/WorldWorkspace.h>
+#include <editor/BlueprintWorkspace.h>
 #include <editor/ThumbnailRenderer.h>
 #include <editor/systems/UndoRedoSystem.h>
 #include <editor/components/EditorComponent.h>
@@ -412,6 +413,44 @@ class VisibilityDebug : public WorkspaceWidget<WorldWorkspace> {
                 row.template operator()<StaticMeshComponent>("meshes");
                 row.template operator()<PointLightComponent>("point lights");
                 row.template operator()<SpotLightComponent>("spot lights");
+            }
+        }
+};
+
+class BlueprintNodeDebug : public WorkspaceWidget<BlueprintWorkspace> {
+    editor_widget(BlueprintNodeDebug, "View", "Debug")
+
+    public:
+        BlueprintNodeDebug(BlueprintWorkspace* ws) : WorkspaceWidget("Blueprint node debug", ws) {
+        }
+
+    protected:
+        void on_gui() override {
+            const Blueprint& blueprint = workspace()->blueprint();
+            ImGui::TextUnformatted(fmt_c_str("{} nodes", blueprint.all_nodes().size()));
+
+            for(const auto& node : blueprint.all_nodes()) {
+                if(!ImGui::TreeNode(fmt_c_str("{}###{}", node->name(), static_cast<const void*>(node.get())))) {
+                    continue;
+                }
+
+                if(node->input_count() && ImGui::TreeNode("Inputs")) {
+                    for(usize i = 0; i != node->input_count(); ++i) {
+                        const std::string_view name = node->input_name(i);
+                        ImGui::TextUnformatted(fmt_c_str("{}{}", name, node->input(i) ? " (linked)" : ""));
+                    }
+                    ImGui::TreePop();
+                }
+
+                if(node->output_count() && ImGui::TreeNode("Outputs")) {
+                    for(usize i = 0; i != node->output_count(); ++i) {
+                        const std::string_view name = node->output_name(i);
+                        ImGui::TextUnformatted(name.data(), name.data() + name.size());
+                    }
+                    ImGui::TreePop();
+                }
+
+                ImGui::TreePop();
             }
         }
 };

@@ -25,8 +25,6 @@ SOFTWARE.
 #include <editor/Widget.h>
 #include <editor/BlueprintWorkspace.h>
 
-#include <yave/blueprints/Blueprint.h>
-
 #include <y/core/Vector.h>
 
 namespace ax::NodeEditor {
@@ -60,7 +58,6 @@ class BlueprintEditor final : public WorkspaceWidget<BlueprintWorkspace> {
         bool is_pin_linked(uintptr_t pin) const;
 
         ax::NodeEditor::EditorContext* _context = nullptr;
-        std::unique_ptr<Blueprint> _blueprint;
 
         core::Vector<Link> _links;
         u64 _next_link_id = 1;

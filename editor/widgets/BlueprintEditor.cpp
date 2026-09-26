@@ -22,11 +22,7 @@ SOFTWARE.
 
 #include "BlueprintEditor.h"
 
-#include <yave/blueprints/BlueprintNodeBuilder.h>
-
 #include <y/utils/hash.h>
-#include <y/utils/log.h>
-#include <y/utils/format.h>
 
 #include <external/imgui-node-editor/imgui_node_editor.h>
 
@@ -71,11 +67,11 @@ static ImColor pin_type_color(BlueprintParamTypeIndex type) {
 }
 
 static ImColor node_header_color(std::string_view name) {
-    // Unreal-like blue/teal headers; vary slightly per name.
+    // Green / teal headers; vary slightly per name.
     const u32 h = ct_str_hash(name);
-    const int r = 40 + int(h & 0x3F);
-    const int g = 90 + int((h >> 8) & 0x3F);
-    const int b = 140 + int((h >> 16) & 0x3F);
+    const int r = 30 + int(h & 0x2F);
+    const int g = 120 + int((h >> 8) & 0x4F);
+    const int b = 70 + int((h >> 16) & 0x3F);
     return ImColor(r, g, b);
 }
 
@@ -174,41 +170,9 @@ static void draw_node_header(ed::NodeId node_id, const ImVec2& header_min, const
         1.0f);
 }
 
-static std::unique_ptr<Blueprint> make_default_blueprint() {
-    auto blueprint = std::make_unique<Blueprint>();
-
-    blueprint->add_node(LambdaBlueprintNodeBuilder<>("Add")
-        .add_input<float>("a")
-        .add_input<float>("b")
-        .add_output<float>("out")
-        .build([](float a, float b, float& out) { out = a + b; })->create_node()
-    );
-
-    blueprint->add_node(LambdaBlueprintNodeBuilder<>("Multiply")
-        .add_input<float>("a")
-        .add_input<float>("b")
-        .add_output<float>("out")
-        .build([](float a, float b, float& out) { out = a * b; })->create_node()
-    );
-
-    blueprint->add_node(LambdaBlueprintNodeBuilder<>("Negate")
-        .add_input<float>("in")
-        .add_output<float>("out")
-        .build([](float in, float& out) { out = -in; })->create_node()
-    );
-
-    blueprint->add_node(LambdaBlueprintNodeBuilder<>("Const")
-        .add_output<float>("value")
-        .build([](float& value) { value = 1.0f; })->create_node()
-    );
-
-    return blueprint;
-}
-
 
 BlueprintEditor::BlueprintEditor(BlueprintWorkspace* ws) :
-        WorkspaceWidget(ICON_FA_PROJECT_DIAGRAM " Blueprint Editor", ws, ImGuiWindowFlags_NoScrollbar),
-        _blueprint(make_default_blueprint()) {
+        WorkspaceWidget(ICON_FA_PROJECT_DIAGRAM " Blueprint Editor", ws, ImGuiWindowFlags_NoScrollbar) {
 
     ed::Config config;
     config.SettingsFile = nullptr;
@@ -221,7 +185,7 @@ BlueprintEditor::BlueprintEditor(BlueprintWorkspace* ws) :
         style.NodeRounding = 5.0f;
         style.NodeBorderWidth = 1.0f;
         style.HoveredNodeBorderWidth = 4.0f;
-        style.SelectedNodeBorderWidth = 2.0f;
+        style.SelectedNodeBorderWidth = 4.0f;
         style.PinRounding = 0.0f;
         style.PinBorderWidth = 0.0f;
         style.Colors[ed::StyleColor_Bg] = ImColor(30, 30, 30, 255);
@@ -235,7 +199,7 @@ BlueprintEditor::BlueprintEditor(BlueprintWorkspace* ws) :
 
     ed::SetCurrentEditor(_context);
     {
-        const core::Span nodes = _blueprint->all_nodes();
+        const core::Span nodes = workspace()->blueprint().all_nodes();
         for(usize i = 0; i != nodes.size(); ++i) {
             ed::SetNodePosition(ed::NodeId(uintptr_t(nodes[i].get())), ImVec2(40.0f + float(i) * 240.0f, 40.0f));
         }
@@ -251,7 +215,7 @@ void BlueprintEditor::on_gui() {
     ed::SetCurrentEditor(_context);
     ed::Begin("##blueprint", ImGui::GetContentRegionAvail());
 
-    for(const auto& node : _blueprint->all_nodes()) {
+    for(const auto& node : workspace()->blueprint().all_nodes()) {
         draw_node(*node);
     }
 
@@ -260,6 +224,13 @@ void BlueprintEditor::on_gui() {
     }
 
     process_links();
+
+    if(ed::HasSelectionChanged()) {
+        ed::NodeId id;
+        workspace()->set_selected_node(ed::GetSelectedNodes(&id, 1) == 1
+            ? reinterpret_cast<BlueprintNode*>(id.Get())
+            : nullptr);
+    }
 
     ed::End();
     ed::SetCurrentEditor(nullptr);
@@ -274,18 +245,14 @@ bool BlueprintEditor::is_pin_linked(uintptr_t pin) const {
 void BlueprintEditor::rebuild_blueprint_links() {
     y_profile();
 
-    _blueprint->clear_links();
+    Blueprint& blueprint = workspace()->blueprint();
+    blueprint.clear_links();
     for(const Link& link : _links) {
-        const PinInfo start = find_pin(*_blueprint, ed::PinId(link.start_pin));
-        const PinInfo end = find_pin(*_blueprint, ed::PinId(link.end_pin));
+        const PinInfo start = find_pin(blueprint, ed::PinId(link.start_pin));
+        const PinInfo end = find_pin(blueprint, ed::PinId(link.end_pin));
         y_debug_assert(start.node && !start.is_input);
         y_debug_assert(end.node && end.is_input);
-        _blueprint->add_link(start.node, start.index, end.node, end.index);
-    }
-
-    log_msg(fmt("{} nodes:", _blueprint->all_nodes().size()));
-    for(const auto& node : _blueprint->all_nodes()) {
-        log_msg(fmt("  -> {}", node->name()));
+        blueprint.add_link(start.node, start.index, end.node, end.index);
     }
 }
 
@@ -296,8 +263,8 @@ void BlueprintEditor::process_links() {
         ed::PinId start_id;
         ed::PinId end_id;
         if(ed::QueryNewLink(&start_id, &end_id) && start_id && end_id) {
-            PinInfo start = find_pin(*_blueprint, start_id);
-            PinInfo end = find_pin(*_blueprint, end_id);
+            PinInfo start = find_pin(workspace()->blueprint(), start_id);
+            PinInfo end = find_pin(workspace()->blueprint(), end_id);
 
             if(start.node && start.is_input) {
                 std::swap(start, end);
@@ -307,7 +274,7 @@ void BlueprintEditor::process_links() {
             const bool valid =
                 start.node && end.node &&
                 !start.is_input && end.is_input &&
-                _blueprint->is_link_valid(start.node, start.index, end.node, end.index)
+                workspace()->blueprint().is_link_valid(start.node, start.index, end.node, end.index)
             ;
 
             if(valid && ed::AcceptNewItem()) {

@@ -7,6 +7,7 @@ in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
+
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
@@ -21,11 +22,37 @@ SOFTWARE.
 
 #include "BlueprintWorkspace.h"
 
+#include <yave/blueprints/BlueprintNodeBuilder.h>
+
 #include <external/imgui/imgui.h>
 
 namespace editor {
 
 BlueprintWorkspace::BlueprintWorkspace() {
+    _blueprint.add_node(LambdaBlueprintNodeBuilder<>("Add")
+        .add_input<float>("a")
+        .add_input<float>("b")
+        .add_output<float>("out")
+        .build([](float a, float b, float& out) { out = a + b; })->create_node()
+    );
+
+    _blueprint.add_node(LambdaBlueprintNodeBuilder<>("Multiply")
+        .add_input<float>("a")
+        .add_input<float>("b")
+        .add_output<float>("out")
+        .build([](float a, float b, float& out) { out = a * b; })->create_node()
+    );
+
+    _blueprint.add_node(LambdaBlueprintNodeBuilder<>("Negate")
+        .add_input<float>("in")
+        .add_output<float>("out")
+        .build([](float in, float& out) { out = -in; })->create_node()
+    );
+
+    _blueprint.add_node(LambdaBlueprintNodeBuilder<>("Const")
+        .add_output<float>("value")
+        .build([](float& value) { value = 1.0f; })->create_node()
+    );
 }
 
 BlueprintWorkspace::~BlueprintWorkspace() {
@@ -42,6 +69,22 @@ void BlueprintWorkspace::save() {
 }
 
 void BlueprintWorkspace::load() {
+}
+
+Blueprint& BlueprintWorkspace::blueprint() {
+    return _blueprint;
+}
+
+const Blueprint& BlueprintWorkspace::blueprint() const {
+    return _blueprint;
+}
+
+BlueprintNode* BlueprintWorkspace::selected_node() const {
+    return _selected_node;
+}
+
+void BlueprintWorkspace::set_selected_node(BlueprintNode* node) {
+    _selected_node = node;
 }
 
 }
