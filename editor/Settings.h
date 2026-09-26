@@ -34,9 +34,11 @@ struct EditorSettings {
     core::String asset_store = "../store";
 
     float max_fps = 60.0f;
-    bool open_world_workspace = true;
 
-    y_reflect(EditorSettings, world_file, asset_store, max_fps, open_world_workspace)
+    bool open_world_workspace = true;
+    bool open_blueprint_workspace = true;
+
+    y_reflect(EditorSettings, world_file, asset_store, max_fps, open_world_workspace, open_blueprint_workspace)
 };
 
 struct CameraSettings {

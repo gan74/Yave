@@ -28,6 +28,7 @@ SOFTWARE.
 #include "ThumbnailRenderer.h"
 
 #include <editor/WorldWorkspace.h>
+#include <editor/BlueprintWorkspace.h>
 
 #include <yave/assets/FolderAssetStore.h>
 #include <yave/assets/AssetLoader.h>
@@ -96,6 +97,10 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
 
     if(application::settings.editor.open_world_workspace) {
         add_workspace(std::make_unique<WorldWorkspace>());
+    }
+
+    if(application::settings.editor.open_blueprint_workspace) {
+        add_workspace(std::make_unique<BlueprintWorkspace>());
     }
 }
 
