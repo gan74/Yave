@@ -32,9 +32,9 @@ namespace editor {
 
 namespace ed = ax::NodeEditor;
 
-static constexpr float pin_icon_size = 24.0f;
-static constexpr float pin_column_gap = 32.0f;
-static constexpr ImVec4 node_padding = ImVec4(8.0f, 4.0f, 8.0f, 8.0f);
+static constexpr float pin_icon_size = 16.0f;
+static constexpr float pin_column_gap = 20.0f;
+static constexpr ImVec4 node_padding = ImVec4(6.0f, 2.0f, 6.0f, 4.0f);
 
 // Layout / look adapted from thedmd/imgui-node-editor blueprints example.
 static ImColor pin_type_color(BlueprintParamTypeIndex type) {
@@ -159,6 +159,8 @@ BlueprintEditor::BlueprintEditor(BlueprintWorkspace* ws) : WorkspaceWidget(ICON_
         style.SelectedNodeBorderWidth = 2.0f;
         style.PinRounding = 0.0f;
         style.PinBorderWidth = 0.0f;
+        style.Colors[ed::StyleColor_Bg] = ImColor(30, 30, 30, 255);
+        style.Colors[ed::StyleColor_Grid] = ImColor(255, 255, 255, 40);
         style.Colors[ed::StyleColor_NodeBg] = ImColor(24, 24, 24, 220);
         style.Colors[ed::StyleColor_NodeBorder] = ImColor(40, 40, 40, 255);
         style.Colors[ed::StyleColor_SelNodeBorder] = ImColor(255, 176, 50, 255);
@@ -220,16 +222,12 @@ void BlueprintEditor::draw_node(const BlueprintNode& node, usize index) {
     ImGui::PushID(int(base));
 
     ImGui::BeginGroup();
-    {
-        ImGui::Dummy(ImVec2(0.0f, 2.0f));
-        ImGui::TextUnformatted(node.name().data(), node.name().data() + node.name().size());
-        ImGui::Dummy(ImVec2(0.0f, 2.0f));
-    }
+    ImGui::TextUnformatted(node.name().data(), node.name().data() + node.name().size());
     ImGui::EndGroup();
     const ImVec2 header_min = ImGui::GetItemRectMin();
     const ImVec2 header_max = ImGui::GetItemRectMax();
 
-    ImGui::Dummy(ImVec2(0.0f, ImGui::GetStyle().ItemSpacing.y));
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
     ImGui::BeginGroup();
     for(usize p = 0; p != node.input_count(); ++p) {
