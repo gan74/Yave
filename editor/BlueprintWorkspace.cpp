@@ -28,31 +28,71 @@ SOFTWARE.
 
 namespace editor {
 
-BlueprintWorkspace::BlueprintWorkspace() {
-    _blueprint.add_node(LambdaBlueprintNodeBuilder<>("Add")
-        .add_input<float>("a")
-        .add_input<float>("b")
-        .add_output<float>("out")
-        .build([](float a, float b, float& out) { out = a + b; })->create_node()
-    );
+static Blueprint create_blueprint(usize node_count = 1000) {
+    y_profile();
 
-    _blueprint.add_node(LambdaBlueprintNodeBuilder<>("Multiply")
-        .add_input<float>("a")
-        .add_input<float>("b")
-        .add_output<float>("out")
-        .build([](float a, float b, float& out) { out = a * b; })->create_node()
-    );
+    const auto const_factory = LambdaBlueprintNodeBuilder<>("Const")
+        .add_output<float>("value")
+        .build([](float& value) { value = 1.0f; })
+    ;
 
-    _blueprint.add_node(LambdaBlueprintNodeBuilder<>("Negate")
+    const auto negate_factory = LambdaBlueprintNodeBuilder<>("Negate")
         .add_input<float>("in")
         .add_output<float>("out")
-        .build([](float in, float& out) { out = -in; })->create_node()
-    );
+        .build([](float in, float& out) { out = -in; })
+    ;
 
-    _blueprint.add_node(LambdaBlueprintNodeBuilder<>("Const")
-        .add_output<float>("value")
-        .build([](float& value) { value = 1.0f; })->create_node()
-    );
+    const auto add_factory = LambdaBlueprintNodeBuilder<>("Add")
+        .add_input<float>("a")
+        .add_input<float>("b")
+        .add_output<float>("out")
+        .build([](float a, float b, float& out) { out = a + b; })
+    ;
+
+    const auto mul_factory = LambdaBlueprintNodeBuilder<>("Multiply")
+        .add_input<float>("a")
+        .add_input<float>("b")
+        .add_output<float>("out")
+        .build([](float a, float b, float& out) { out = a * b; })
+    ;
+
+    auto nodes = core::Vector<const BlueprintNode*>::with_capacity(node_count);
+
+    Blueprint blueprint;
+
+    const usize const_count = node_count / 10;
+    for(usize i = 0; i != const_count; ++i) {
+        nodes.emplace_back(blueprint.add_node(const_factory->create_node()));
+    }
+
+    for(usize i = const_count; i != node_count; ++i) {
+        const usize a = i - 1;
+        const usize b = (i - const_count) % const_count;
+        const usize kind = i % 3;
+
+        if(kind == 0) {
+            const BlueprintNode* node = blueprint.add_node(negate_factory->create_node());
+            blueprint.add_link(nodes[a], 0, node, 0);
+            nodes.emplace_back(node);
+        } else if(kind == 1) {
+            const BlueprintNode* node = blueprint.add_node(add_factory->create_node());
+            blueprint.add_link(nodes[a], 0, node, 0);
+            blueprint.add_link(nodes[b], 0, node, 1);
+            nodes.emplace_back(node);
+        } else {
+            const BlueprintNode* node = blueprint.add_node(mul_factory->create_node());
+            blueprint.add_link(nodes[b], 0, node, 0);
+            blueprint.add_link(nodes[a], 0, node, 1);
+            nodes.emplace_back(node);
+        }
+    }
+
+    return blueprint;
+}
+
+
+
+BlueprintWorkspace::BlueprintWorkspace() : _blueprint(create_blueprint()) {
 }
 
 BlueprintWorkspace::~BlueprintWorkspace() {

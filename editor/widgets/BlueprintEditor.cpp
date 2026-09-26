@@ -195,6 +195,7 @@ BlueprintEditor::BlueprintEditor(BlueprintWorkspace* ws) :
 
     ed::Config config;
     config.SettingsFile = nullptr;
+    config.SaveSettings = [](const char*, size_t, ed::SaveReasonFlags, void*) { return true; };
     _context = ed::CreateEditor(&config);
 
     {
@@ -218,9 +219,12 @@ BlueprintEditor::BlueprintEditor(BlueprintWorkspace* ws) :
 
     ed::SetCurrentEditor(_context);
     {
+        constexpr usize cols = 10;
         const core::Span nodes = workspace()->blueprint().all_nodes();
         for(usize i = 0; i != nodes.size(); ++i) {
-            ed::SetNodePosition(ed::NodeId(uintptr_t(nodes[i].get())), ImVec2(40.0f + float(i) * 240.0f, 40.0f));
+            ed::SetNodePosition(
+                ed::NodeId(uintptr_t(nodes[i].get())),
+                ImVec2(40.0f + float(i % cols) * 220.0f, 40.0f + float(i / cols) * 140.0f));
         }
     }
     ed::SetCurrentEditor(nullptr);
@@ -238,24 +242,30 @@ void BlueprintEditor::on_gui() {
         ed::Begin("##blueprint", ImGui::GetContentRegionAvail());
 
         const Blueprint& blueprint = workspace()->blueprint();
-        for(const auto& node : blueprint.all_nodes()) {
-            draw_node(*node);
+        {
+            y_profile_zone("draw nodes");
+            for(const auto& node : blueprint.all_nodes()) {
+                draw_node(*node);
+            }
         }
 
-        for(const auto& dst : blueprint.all_nodes()) {
-            const usize input_count = dst->input_count();
-            for(usize i = 0; i != input_count; ++i) {
-                if(const void* in = dst->input(i)) {
-                    const auto [src_node, src_pin] = blueprint.find_output(in);
-                    y_debug_assert(src_node);
-                    const PinId start = output_pin_id(*src_node, src_pin);
-                    const PinId end = input_pin_id(*dst, i);
-                    ed::Link(
-                        ed::LinkId(uintptr_t(end)),
-                        ed::PinId(uintptr_t(start)),
-                        ed::PinId(uintptr_t(end)),
-                        pin_type_color(src_node->output_type(src_pin)),
-                        2.0f);
+        {
+            y_profile_zone("draw links");
+            for(const auto& dst : blueprint.all_nodes()) {
+                const usize input_count = dst->input_count();
+                for(usize i = 0; i != input_count; ++i) {
+                    if(const void* in = dst->input(i)) {
+                        const auto [src_node, src_pin] = blueprint.find_output(in);
+                        y_debug_assert(src_node);
+                        const PinId start = output_pin_id(*src_node, src_pin);
+                        const PinId end = input_pin_id(*dst, i);
+                        ed::Link(
+                            ed::LinkId(uintptr_t(end)),
+                            ed::PinId(uintptr_t(start)),
+                            ed::PinId(uintptr_t(end)),
+                            pin_type_color(src_node->output_type(src_pin)),
+                            2.0f);
+                    }
                 }
             }
         }
@@ -276,6 +286,8 @@ void BlueprintEditor::on_gui() {
 }
 
 void BlueprintEditor::process_links() {
+    y_profile();
+
     Blueprint& blueprint = workspace()->blueprint();
 
     if(ed::BeginCreate()) {

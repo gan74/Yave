@@ -109,6 +109,8 @@ bool Blueprint::is_link_valid(const BlueprintNode* src, usize src_pin, const Blu
 }
 
 void Blueprint::add_link(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin) {
+    y_profile();
+
     y_debug_assert(is_link_valid(src, src_pin, dst, dst_pin));
 
     const auto src_it = std::find_if(_nodes.begin(), _nodes.end(), [=](const auto& n) { return n.get() == src; });
