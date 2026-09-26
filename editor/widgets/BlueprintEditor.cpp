@@ -213,27 +213,32 @@ BlueprintEditor::~BlueprintEditor() {
 
 void BlueprintEditor::on_gui() {
     ed::SetCurrentEditor(_context);
-    ed::Begin("##blueprint", ImGui::GetContentRegionAvail());
+    y_defer(ed::SetCurrentEditor(nullptr));
 
-    for(const auto& node : workspace()->blueprint().all_nodes()) {
-        draw_node(*node);
+    {
+        ed::Begin("##blueprint", ImGui::GetContentRegionAvail());
+
+        for(const auto& node : workspace()->blueprint().all_nodes()) {
+            draw_node(*node);
+        }
+
+        for(const Link& link : _links) {
+            ed::Link(ed::LinkId(link.id), ed::PinId(link.start_pin), ed::PinId(link.end_pin), pin_type_color(link.type), 2.0f);
+        }
+
+        process_links();
+
+        ed::End();
     }
-
-    for(const Link& link : _links) {
-        ed::Link(ed::LinkId(link.id), ed::PinId(link.start_pin), ed::PinId(link.end_pin), pin_type_color(link.type), 2.0f);
-    }
-
-    process_links();
 
     if(ed::HasSelectionChanged()) {
         ed::NodeId id;
-        workspace()->set_selected_node(ed::GetSelectedNodes(&id, 1) == 1
-            ? reinterpret_cast<BlueprintNode*>(id.Get())
-            : nullptr);
+        if(ed::GetSelectedNodes(&id, 1) == 1) {
+            workspace()->set_selected_node(reinterpret_cast<BlueprintNode*>(id.Get()));
+        } else {
+            workspace()->set_selected_node(nullptr);
+        }
     }
-
-    ed::End();
-    ed::SetCurrentEditor(nullptr);
 }
 
 bool BlueprintEditor::is_pin_linked(uintptr_t pin) const {
