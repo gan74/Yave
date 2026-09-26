@@ -25,7 +25,6 @@ SOFTWARE.
 
 #include <y/utils/hash.h>
 
-#include <external/imgui/imgui_internal.h>
 #include <external/imgui-node-editor/imgui_node_editor.h>
 
 namespace editor {
@@ -72,9 +71,8 @@ static void draw_pin_icon(ImColor color, bool connected) {
         const ImVec2 b = a + size;
         ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
-        const ImRect rect(a, b);
-        const float rect_w = rect.GetWidth();
-        const ImVec2 center = rect.GetCenter();
+        const float rect_w = size.x;
+        const ImVec2 center = (a + b) * 0.5f;
         const float outline_scale = rect_w / 24.0f;
         const int extra_segments = int(2.0f * outline_scale);
         const ImU32 outer = color;
@@ -142,8 +140,35 @@ static void draw_node_header(ed::NodeId node_id, const ImVec2& header_min, const
         1.0f);
 }
 
+static std::unique_ptr<Blueprint> make_default_blueprint() {
+    auto blueprint = std::make_unique<Blueprint>();
 
-BlueprintEditor::BlueprintEditor(BlueprintWorkspace* ws) : WorkspaceWidget(ICON_FA_PROJECT_DIAGRAM " Blueprint Editor", ws, ImGuiWindowFlags_NoScrollbar) {
+    blueprint->nodes << LambdaBlueprintNodeBuilder<>("Add")
+        .add_input<float>("a")
+        .add_input<float>("b")
+        .add_output<float>("out")
+        .build([](float a, float b, float& out) { out = a + b; })->create_node();
+
+    blueprint->nodes << LambdaBlueprintNodeBuilder<>("Multiply")
+        .add_input<float>("a")
+        .add_input<float>("b")
+        .add_output<float>("out")
+        .build([](float a, float b, float& out) { out = a * b; })->create_node();
+
+    blueprint->nodes << LambdaBlueprintNodeBuilder<>("Negate")
+        .add_input<float>("in")
+        .add_output<float>("out")
+        .build([](float in, float& out) { out = -in; })->create_node();
+
+    blueprint->nodes << LambdaBlueprintNodeBuilder<>("Const")
+        .add_output<float>("value")
+        .build([](float& value) { value = 1.0f; })->create_node();
+
+    return blueprint;
+}
+
+
+BlueprintEditor::BlueprintEditor(BlueprintWorkspace* ws) : WorkspaceWidget(ICON_FA_PROJECT_DIAGRAM " Blueprint Editor", ws, ImGuiWindowFlags_NoScrollbar), _blueprint(make_default_blueprint()) {
 
     ed::Config config;
     config.SettingsFile = nullptr;
@@ -168,30 +193,9 @@ BlueprintEditor::BlueprintEditor(BlueprintWorkspace* ws) : WorkspaceWidget(ICON_
         ed::SetCurrentEditor(nullptr);
     }
 
-    _nodes << LambdaBlueprintNodeBuilder<>("Add")
-        .add_input<float>("a")
-        .add_input<float>("b")
-        .add_output<float>("out")
-        .build([](float a, float b, float& out) { out = a + b; })->create_node();
-
-    _nodes << LambdaBlueprintNodeBuilder<>("Multiply")
-        .add_input<float>("a")
-        .add_input<float>("b")
-        .add_output<float>("out")
-        .build([](float a, float b, float& out) { out = a * b; })->create_node();
-
-    _nodes << LambdaBlueprintNodeBuilder<>("Negate")
-        .add_input<float>("in")
-        .add_output<float>("out")
-        .build([](float in, float& out) { out = -in; })->create_node();
-
-    _nodes << LambdaBlueprintNodeBuilder<>("Const")
-        .add_output<float>("value")
-        .build([](float& value) { value = 1.0f; })->create_node();
-
     ed::SetCurrentEditor(_context);
-    for(usize i = 0; i != _nodes.size(); ++i) {
-        ed::SetNodePosition(ed::NodeId((i + 1) * 1000), ImVec2(40.0f + float(i) * 240.0f, 40.0f));
+    for(usize i = 0; i != _blueprint->nodes.size(); ++i) {
+        ed::SetNodePosition(ed::NodeId(uintptr_t(_blueprint->nodes[i].get())), ImVec2(40.0f + float(i) * 240.0f, 40.0f));
     }
     ed::SetCurrentEditor(nullptr);
 }
@@ -204,36 +208,40 @@ void BlueprintEditor::on_gui() {
     ed::SetCurrentEditor(_context);
     ed::Begin("##blueprint", ImGui::GetContentRegionAvail());
 
-    for(usize i = 0; i != _nodes.size(); ++i) {
-        draw_node(*_nodes[i], i);
+    for(const auto& node : _blueprint->nodes) {
+        draw_node(*node);
     }
 
     ed::End();
     ed::SetCurrentEditor(nullptr);
 }
 
-void BlueprintEditor::draw_node(const BlueprintNode& node, usize index) {
-    const uintptr_t base = (index + 1) * 1000;
+void BlueprintEditor::draw_node(const BlueprintNode& node) {
+    const uintptr_t base = uintptr_t(&node);
+    const uintptr_t input_base = base + 1;
+    const uintptr_t output_base = input_base + node.input_count();
+
     const ed::NodeId node_id(base);
     const ImColor header_color = node_header_color(node.name());
 
-    ed::PushStyleVar(ed::StyleVar_NodePadding, node_padding);
     ed::BeginNode(node_id);
     ImGui::PushID(int(base));
 
     ImGui::BeginGroup();
     ImGui::TextUnformatted(node.name().data(), node.name().data() + node.name().size());
     ImGui::EndGroup();
+
     const ImVec2 header_min = ImGui::GetItemRectMin();
     const ImVec2 header_max = ImGui::GetItemRectMax();
 
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
     ImGui::BeginGroup();
-    for(usize p = 0; p != node.input_count(); ++p) {
-        draw_input_pin(ed::PinId(base + 1 + p), node.input_name(p), node.input_type(p));
-    }
-    if(!node.input_count()) {
+    if(node.input_count()) {
+        for(usize p = 0; p != node.input_count(); ++p) {
+            draw_input_pin(ed::PinId(input_base + p), node.input_name(p), node.input_type(p));
+        }
+    } else {
         ImGui::Dummy(ImVec2(pin_icon_size, pin_icon_size));
     }
     ImGui::EndGroup();
@@ -242,10 +250,11 @@ void BlueprintEditor::draw_node(const BlueprintNode& node, usize index) {
     ImGui::SameLine(0.0f, pin_column_gap);
 
     ImGui::BeginGroup();
-    for(usize p = 0; p != node.output_count(); ++p) {
-        draw_output_pin(ed::PinId(base + 500 + p), node.output_name(p), node.output_type(p));
-    }
-    if(!node.output_count()) {
+    if(node.output_count()) {
+        for(usize p = 0; p != node.output_count(); ++p) {
+            draw_output_pin(ed::PinId(output_base + p), node.output_name(p), node.output_type(p));
+        }
+    } else {
         ImGui::Dummy(ImVec2(pin_icon_size, pin_icon_size));
     }
     ImGui::EndGroup();
@@ -256,7 +265,6 @@ void BlueprintEditor::draw_node(const BlueprintNode& node, usize index) {
 
     ImGui::PopID();
     ed::EndNode();
-    ed::PopStyleVar();
 
     draw_node_header(node_id, header_min, full_header_max, header_color);
 }

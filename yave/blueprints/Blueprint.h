@@ -7,6 +7,7 @@ in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
+
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
@@ -18,38 +19,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_BLUEPRINTEDITOR_H
-#define EDITOR_WIDGETS_BLUEPRINTEDITOR_H
+#ifndef YAVE_BLUEPRINTS_BLUEPRINT_H
+#define YAVE_BLUEPRINTS_BLUEPRINT_H
 
-#include <editor/Widget.h>
-#include <editor/BlueprintWorkspace.h>
+#include "BlueprintNode.h"
 
-#include <yave/blueprints/Blueprint.h>
+#include <memory>
 
-namespace ax::NodeEditor {
-struct EditorContext;
-}
+namespace yave {
 
-namespace editor {
+struct BlueprintLink {
+    BlueprintNode* start = nullptr;
+    BlueprintNode* end = nullptr;
+    usize start_pin = 0;
+    usize end_pin = 0;
+    BlueprintParamTypeIndex type = BlueprintParamTypeIndex::invalid_index;
+};
 
-class BlueprintEditor final : public WorkspaceWidget<BlueprintWorkspace> {
-
-    editor_widget_open(BlueprintEditor, Center)
-
-    public:
-        BlueprintEditor(BlueprintWorkspace* ws);
-        ~BlueprintEditor() override;
-
-    protected:
-        void on_gui() override;
-
-    private:
-        void draw_node(const BlueprintNode& node);
-
-        ax::NodeEditor::EditorContext* _context = nullptr;
-        std::unique_ptr<Blueprint> _blueprint;
+struct Blueprint {
+    core::Vector<std::unique_ptr<BlueprintNode>> nodes;
+    core::Vector<BlueprintLink> links;
 };
 
 }
 
-#endif // EDITOR_WIDGETS_BLUEPRINTEDITOR_H
+#endif // YAVE_BLUEPRINTS_BLUEPRINT_H
