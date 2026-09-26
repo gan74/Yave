@@ -68,6 +68,7 @@ class BlueprintNode : NonMovable {
         virtual BlueprintParamTypeIndex input_type(usize index) const = 0;
         virtual void set_input(usize index, const void* ptr) = 0;
         virtual const void* input(usize index) const = 0;
+        virtual void* default_input(usize index) = 0;
 
         virtual usize output_count() const = 0;
         virtual BlueprintParamTypeIndex output_type(usize index) const = 0;

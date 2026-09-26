@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "BlueprintNodeInspector.h"
 
+#include <editor/utils/ui.h>
+
 #include <y/utils/format.h>
 
 namespace editor {
@@ -30,26 +32,38 @@ BlueprintNodeInspector::BlueprintNodeInspector(BlueprintWorkspace* ws) : Workspa
 }
 
 void BlueprintNodeInspector::on_gui() {
-    const BlueprintNode* node = workspace()->selected_node();
+    BlueprintNode* node = workspace()->selected_node();
     if(!node) {
         ImGui::TextDisabled("No node selected");
         return;
     }
 
-    ImGui::TextUnformatted(node->name().data(), node->name().data() + node->name().size());
+    imgui::text_read_only("##name", node->name());
     ImGui::Separator();
 
     if(node->input_count() && ImGui::CollapsingHeader("Inputs", ImGuiTreeNodeFlags_DefaultOpen)) {
         for(usize i = 0; i != node->input_count(); ++i) {
             const std::string_view name = node->input_name(i);
-            ImGui::TextUnformatted(fmt_c_str("{}{}", name, node->input(i) ? " (linked)" : ""));
+            const bool linked = node->input(i);
+
+            if(node->input_type(i) == blueprint_param_type_index<float>()) {
+                float* value = static_cast<float*>(node->default_input(i));
+                ImGui::DragFloat(fmt_c_str("{}{}", name, linked ? " (linked)" : ""), value, 0.1f);
+            } else {
+                ImGui::TextUnformatted(fmt_c_str("{}{}", name, linked ? " (linked)" : ""));
+            }
         }
     }
 
     if(node->output_count() && ImGui::CollapsingHeader("Outputs", ImGuiTreeNodeFlags_DefaultOpen)) {
         for(usize i = 0; i != node->output_count(); ++i) {
             const std::string_view name = node->output_name(i);
-            ImGui::TextUnformatted(name.data(), name.data() + name.size());
+            if(node->output_type(i) == blueprint_param_type_index<float>()) {
+                const float value = *static_cast<const float*>(node->output_ptr(i));
+                ImGui::TextUnformatted(fmt_c_str("{}: {}", name, value));
+            } else {
+                ImGui::TextUnformatted(name.data(), name.data() + name.size());
+            }
         }
     }
 }

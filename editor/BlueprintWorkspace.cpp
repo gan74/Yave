@@ -63,6 +63,7 @@ std::string_view BlueprintWorkspace::name() const {
 }
 
 void BlueprintWorkspace::update() {
+    _blueprint.eval();
 }
 
 void BlueprintWorkspace::save() {

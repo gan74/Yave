@@ -142,15 +142,23 @@ class LambdaBlueprintNode : public BlueprintNode {
         }
 
         BlueprintParamTypeIndex input_type(usize index) const override {
+            y_debug_assert(index < in_count);
             return _input_types[index];
         }
 
         void set_input(usize index, const void* ptr) override {
+            y_debug_assert(index < in_count);
             _inputs[index] = ptr;
         }
 
         const void* input(usize index) const override {
+            y_debug_assert(index < in_count);
             return _inputs[index];
+        }
+
+        void* default_input(usize index) override {
+            y_debug_assert(index < in_count);
+            return const_cast<void*>(make_tuple_ptrs(const_cast<inputs_t&>(_default_inputs))[index]);
         }
 
         usize output_count() const override {
@@ -158,10 +166,12 @@ class LambdaBlueprintNode : public BlueprintNode {
         }
 
         BlueprintParamTypeIndex output_type(usize index) const override {
+            y_debug_assert(index < out_count);
             return _output_types[index];
         }
 
         const void* output_ptr(usize index) const override {
+            y_debug_assert(index < out_count);
             return make_tuple_ptrs(_outputs)[index];
         }
 

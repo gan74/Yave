@@ -117,4 +117,11 @@ void Blueprint::add_link(const BlueprintNode* src, usize src_pin, const Blueprin
     }
 }
 
+void Blueprint::eval() {
+    y_profile();
+    for(auto& node : _nodes) {
+        node->eval();
+    }
+}
+
 }

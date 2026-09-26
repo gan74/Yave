@@ -38,6 +38,8 @@ class Blueprint : NonCopyable {
         bool is_link_valid(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin) const;
         void add_link(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin);
 
+        void eval();
+
     private:
         core::Vector<std::unique_ptr<BlueprintNode>> _nodes;
 };
