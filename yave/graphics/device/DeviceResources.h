@@ -184,6 +184,9 @@ class DeviceResources final : NonMovable {
         const AssetPtr<StaticMesh>& operator[](Meshes i) const;
 
     private:
+        void ensure_loaded(ComputePrograms prog);
+        void ensure_loaded(MaterialTemplates mat);
+
         std::unique_ptr<ComputeProgram[]> _computes;
         std::unique_ptr<std::unique_ptr<MaterialTemplate>[]> _material_templates;
         std::unique_ptr<RaytracingProgram[]> _raytracing_programs;

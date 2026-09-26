@@ -187,7 +187,54 @@ static Texture create_white_noise(usize size = 256) {
     return Texture(ImageData(math::Vec2ui(size, size), reinterpret_cast<const u8*>(data.get()), VK_FORMAT_R8G8B8A8_UNORM));
 }
 
+static SpirVData load_spirv(std::string_view name) {
+    y_debug_assert(!name.empty());
+    const core::String filename = fmt_to_owned("{}.spv", name);
+    return SpirVData::deserialized(io2::File::open(filename).expected(fmt_c_str("Unable to open SPIR-V file ({})", filename)));
+}
 
+
+
+void DeviceResources::ensure_loaded(ComputePrograms prog) {
+    const usize i = usize(prog);
+    y_debug_assert(i < usize(MaxComputePrograms));
+
+    if(!_computes[i].is_null()) {
+        return;
+    }
+
+    if(i >= MaxNonRTComputePrograms && !raytracing_enabled()) {
+        return;
+    }
+
+    _computes[i] = ComputeProgram(ComputeShader(load_spirv(compute_datas[i])));
+
+    if(const auto* debug = debug_utils()) {
+        debug->set_resource_name(_computes[i].vk_pipeline(), fmt_c_str("{}", compute_datas[i]));
+    }
+}
+
+void DeviceResources::ensure_loaded(MaterialTemplates mat) {
+    const usize i = usize(mat);
+    y_debug_assert(i < usize(MaxMaterialTemplates));
+
+    if(_material_templates[i]) {
+        return;
+    }
+
+    const auto& data = material_datas[i];
+    auto template_data = MaterialTemplateData()
+        .set_frag_data(load_spirv(data.frag))
+        .set_vert_data(load_spirv(data.vert))
+        .set_depth_mode(data.depth_test)
+        .set_cull_mode(data.cull_mode)
+        .set_blend_mode(data.blend_mode)
+        .set_depth_write(data.depth_write)
+        .set_primitive_type(data.primitive_type)
+    ;
+    _material_templates[i] = std::make_unique<MaterialTemplate>(std::move(template_data));
+    _material_templates[i]->set_name(fmt_c_str("{} | {}", data.vert, data.frag));
+}
 
 DeviceResources::DeviceResources() {
     y_profile();
@@ -217,8 +264,9 @@ DeviceResources::DeviceResources() {
         }
     }
 
+#ifndef YAVE_LAZY_DEVICE_RESOURCES
     core::FlatHashMap<core::String, SpirVData> spirvs;
-    auto load_spirv = [&](std::string_view name) -> const SpirVData& {
+    auto load_spirv_cached = [&](std::string_view name) -> const SpirVData& {
         y_debug_assert(!name.empty());
         const core::String filename = fmt_to_owned("{}.spv", name);
         auto& spirv = spirvs[filename];
@@ -231,19 +279,9 @@ DeviceResources::DeviceResources() {
     {
         for(usize i = 0; i != compute_datas.size(); ++i) {
             if(i < MaxNonRTComputePrograms || raytracing_enabled()) {
-                _computes[i] = ComputeProgram(ComputeShader(load_spirv(compute_datas[i])));
+                _computes[i] = ComputeProgram(ComputeShader(load_spirv_cached(compute_datas[i])));
                 set_name(_computes[i].vk_pipeline(), fmt_c_str("{}", compute_datas[i]));
             }
-        }
-    }
-
-    if(_raytracing_programs) {
-        for(usize i = 0; i != raytracing_datas.size(); ++i) {
-            const auto& spirv = load_spirv(raytracing_datas[i]);
-            _raytracing_programs[i] = RaytracingProgram(
-                RayGenShader(spirv), MissShader(spirv), ClosestHitShader(spirv)
-            );
-            set_name(_raytracing_programs[i].vk_pipeline(), fmt_c_str("{}", raytracing_datas[i]));
         }
     }
 
@@ -252,16 +290,27 @@ DeviceResources::DeviceResources() {
         for(usize i = 0; i != material_datas.size(); ++i) {
             const auto& data = material_datas[i];
             auto template_data = MaterialTemplateData()
-                .set_frag_data(load_spirv(data.frag))
-                .set_vert_data(load_spirv(data.vert))
+                .set_frag_data(load_spirv_cached(data.frag))
+                .set_vert_data(load_spirv_cached(data.vert))
                 .set_depth_mode(data.depth_test)
                 .set_cull_mode(data.cull_mode)
                 .set_blend_mode(data.blend_mode)
                 .set_depth_write(data.depth_write)
-                .set_primitive_type(data.primitive_type);
+                .set_primitive_type(data.primitive_type)
             ;
             _material_templates[i] = std::make_unique<MaterialTemplate>(std::move(template_data));
             _material_templates[i]->set_name(fmt_c_str("{} | {}", data.vert, data.frag));
+        }
+    }
+#endif
+
+    if(_raytracing_programs) {
+        for(usize i = 0; i != raytracing_datas.size(); ++i) {
+            const auto spirv = load_spirv(raytracing_datas[i]);
+            _raytracing_programs[i] = RaytracingProgram(
+                RayGenShader(spirv), MissShader(spirv), ClosestHitShader(spirv)
+            );
+            set_name(_raytracing_programs[i].vk_pipeline(), fmt_c_str("{}", raytracing_datas[i]));
         }
     }
 
@@ -341,11 +390,17 @@ const AssetPtr<IBLProbe>& DeviceResources::empty_probe() const {
 
 const ComputeProgram& DeviceResources::operator[](ComputePrograms i) const {
     y_debug_assert(usize(i) < usize(MaxComputePrograms));
+#ifdef YAVE_LAZY_DEVICE_RESOURCES
+    const_cast<DeviceResources*>(this)->ensure_loaded(i);
+#endif
     return _computes[usize(i)];
 }
 
 const MaterialTemplate* DeviceResources::operator[](MaterialTemplates i) const {
     y_debug_assert(usize(i) < usize(MaxMaterialTemplates));
+#ifdef YAVE_LAZY_DEVICE_RESOURCES
+    const_cast<DeviceResources*>(this)->ensure_loaded(i);
+#endif
     return _material_templates[usize(i)].get();
 }
 
@@ -371,4 +426,3 @@ const AssetPtr<StaticMesh>& DeviceResources::operator[](Meshes i) const {
 }
 
 }
-

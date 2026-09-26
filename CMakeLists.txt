@@ -62,6 +62,7 @@ option(YAVE_BUILD_YAVE "Build yave" ON)
 option(YAVE_BUILD_EDITOR "Build editor" ON)
 option(YAVE_TRACY_PROFILING "Use Tracy profiling" ON)
 option(YAVE_UNITY_BUILD "Force unity build" OFF)
+option(YAVE_LAZY_DEVICE_RESOURCES "Lazy-load shaders on first use" OFF)
 
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -251,6 +252,10 @@ if(YAVE_BUILD_YAVE)
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${Vulkan_INCLUDE_DIRS}
     )
+
+    if(YAVE_LAZY_DEVICE_RESOURCES)
+        target_compile_definitions(yave PUBLIC YAVE_LAZY_DEVICE_RESOURCES)
+    endif()
 
     add_custom_target(shaders)
     add_custom_target(shaders_optim)
