@@ -32,19 +32,18 @@ namespace editor {
 
 namespace ed = ax::NodeEditor;
 
-static constexpr float pin_icon_size = 16.0f;
-static constexpr float pin_column_gap = 20.0f;
-static constexpr ImVec4 node_padding = ImVec4(6.0f, 2.0f, 6.0f, 4.0f);
+enum class PinId : uintptr_t {
+};
 
 struct PinInfo {
     const BlueprintNode* node = nullptr;
     usize index = 0;
     bool is_input = false;
-
-    BlueprintParamTypeIndex type() const {
-        return is_input ? node->input_type(index) : node->output_type(index);
-    }
 };
+
+static constexpr float pin_icon_size = 16.0f;
+static constexpr float pin_column_gap = 20.0f;
+static constexpr ImVec4 node_padding = ImVec4(6.0f, 2.0f, 6.0f, 4.0f);
 
 // Layout / look adapted from thedmd/imgui-node-editor blueprints example.
 static ImColor pin_type_color(BlueprintParamTypeIndex type) {
@@ -75,8 +74,16 @@ static ImColor node_header_color(std::string_view name) {
     return ImColor(r, g, b);
 }
 
-static PinInfo find_pin(const Blueprint& blueprint, ed::PinId id) {
-    const uintptr_t pin = id.Get();
+static PinId input_pin_id(const BlueprintNode& node, usize index) {
+    return PinId(uintptr_t(&node) + 1 + index);
+}
+
+static PinId output_pin_id(const BlueprintNode& node, usize index) {
+    return PinId(uintptr_t(&node) + 1 + node.input_count() + index);
+}
+
+static PinInfo find_pin(const Blueprint& blueprint, PinId pin_id) {
+    const uintptr_t pin = uintptr_t(pin_id);
     for(const auto& node : blueprint.all_nodes()) {
         const uintptr_t base = uintptr_t(node.get());
         const usize in_count = node->input_count();
@@ -92,6 +99,18 @@ static PinInfo find_pin(const Blueprint& blueprint, ed::PinId id) {
         }
     }
     return {};
+}
+
+static bool is_output_linked(const Blueprint& blueprint, const BlueprintNode& node, usize index) {
+    const void* out = node.output_ptr(index);
+    for(const auto& dst : blueprint.all_nodes()) {
+        for(usize i = 0; i != dst->input_count(); ++i) {
+            if(dst->input(i) == out) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 static void draw_pin_icon(ImColor color, bool connected) {
@@ -218,12 +237,27 @@ void BlueprintEditor::on_gui() {
     {
         ed::Begin("##blueprint", ImGui::GetContentRegionAvail());
 
-        for(const auto& node : workspace()->blueprint().all_nodes()) {
+        const Blueprint& blueprint = workspace()->blueprint();
+        for(const auto& node : blueprint.all_nodes()) {
             draw_node(*node);
         }
 
-        for(const Link& link : _links) {
-            ed::Link(ed::LinkId(link.id), ed::PinId(link.start_pin), ed::PinId(link.end_pin), pin_type_color(link.type), 2.0f);
+        for(const auto& dst : blueprint.all_nodes()) {
+            const usize input_count = dst->input_count();
+            for(usize i = 0; i != input_count; ++i) {
+                if(const void* in = dst->input(i)) {
+                    const auto [src_node, src_pin] = blueprint.find_output(in);
+                    y_debug_assert(src_node);
+                    const PinId start = output_pin_id(*src_node, src_pin);
+                    const PinId end = input_pin_id(*dst, i);
+                    ed::Link(
+                        ed::LinkId(uintptr_t(end)),
+                        ed::PinId(uintptr_t(start)),
+                        ed::PinId(uintptr_t(end)),
+                        pin_type_color(src_node->output_type(src_pin)),
+                        2.0f);
+                }
+            }
         }
 
         process_links();
@@ -241,58 +275,31 @@ void BlueprintEditor::on_gui() {
     }
 }
 
-bool BlueprintEditor::is_pin_linked(uintptr_t pin) const {
-    return std::any_of(_links.begin(), _links.end(), [=](const Link& link) {
-        return link.start_pin == pin || link.end_pin == pin;
-    });
-}
-
-void BlueprintEditor::rebuild_blueprint_links() {
-    y_profile();
-
-    Blueprint& blueprint = workspace()->blueprint();
-    blueprint.clear_links();
-    for(const Link& link : _links) {
-        const PinInfo start = find_pin(blueprint, ed::PinId(link.start_pin));
-        const PinInfo end = find_pin(blueprint, ed::PinId(link.end_pin));
-        y_debug_assert(start.node && !start.is_input);
-        y_debug_assert(end.node && end.is_input);
-        blueprint.add_link(start.node, start.index, end.node, end.index);
-    }
-}
-
 void BlueprintEditor::process_links() {
-    bool changed = false;
+    Blueprint& blueprint = workspace()->blueprint();
 
     if(ed::BeginCreate()) {
         ed::PinId start_id;
         ed::PinId end_id;
         if(ed::QueryNewLink(&start_id, &end_id) && start_id && end_id) {
-            PinInfo start = find_pin(workspace()->blueprint(), start_id);
-            PinInfo end = find_pin(workspace()->blueprint(), end_id);
+            PinInfo start = find_pin(blueprint, PinId(start_id.Get()));
+            PinInfo end = find_pin(blueprint, PinId(end_id.Get()));
 
             if(start.node && start.is_input) {
                 std::swap(start, end);
-                std::swap(start_id, end_id);
             }
 
             const bool valid =
                 start.node && end.node &&
                 !start.is_input && end.is_input &&
-                workspace()->blueprint().is_link_valid(start.node, start.index, end.node, end.index)
+                blueprint.is_link_valid(start.node, start.index, end.node, end.index)
             ;
 
-            if(valid && ed::AcceptNewItem()) {
-                for(usize i = 0; i != _links.size();) {
-                    if(_links[i].end_pin == end_id.Get()) {
-                        _links.erase_unordered(_links.begin() + i);
-                    } else {
-                        ++i;
-                    }
+            if(valid) {
+                if(ed::AcceptNewItem()) {
+                    blueprint.add_link(start.node, start.index, end.node, end.index);
                 }
-                _links.emplace_back(Link{_next_link_id++, start_id.Get(), end_id.Get(), start.type()});
-                changed = true;
-            } else if(!valid) {
+            } else {
                 ed::RejectNewItem();
             }
         }
@@ -302,29 +309,22 @@ void BlueprintEditor::process_links() {
     if(ed::BeginDelete()) {
         ed::LinkId link_id;
         while(ed::QueryDeletedLink(&link_id)) {
-            if(!ed::AcceptDeletedItem()) {
-                continue;
-            }
-            const auto it = std::find_if(_links.begin(), _links.end(), [=](const Link& link) {
-                return link.id == link_id.Get();
-            });
-            if(it != _links.end()) {
-                _links.erase_unordered(it);
-                changed = true;
+            if(ed::AcceptDeletedItem()) {
+                const PinInfo end = find_pin(blueprint, PinId(link_id.Get()));
+                if(end.node && end.is_input) {
+                    blueprint.remove_link(end.node, end.index);
+                }
             }
         }
     }
     ed::EndDelete();
-
-    if(changed) {
-        rebuild_blueprint_links();
-    }
 }
 
 void BlueprintEditor::draw_node(const BlueprintNode& node) {
     const uintptr_t base = uintptr_t(&node);
     const ed::NodeId node_id(base);
     const ImColor header_color = node_header_color(node.name());
+    const Blueprint& blueprint = workspace()->blueprint();
 
     ed::BeginNode(node_id);
     ImGui::PushID(int(base));
@@ -341,8 +341,8 @@ void BlueprintEditor::draw_node(const BlueprintNode& node) {
     ImGui::BeginGroup();
     if(node.input_count()) {
         for(usize p = 0; p != node.input_count(); ++p) {
-            const uintptr_t pin = base + 1 + p;
-            draw_input_pin(ed::PinId(pin), node.input_name(p), node.input_type(p), is_pin_linked(pin));
+            const PinId pin = input_pin_id(node, p);
+            draw_input_pin(ed::PinId(uintptr_t(pin)), node.input_name(p), node.input_type(p), node.input(p) != nullptr);
         }
     } else {
         ImGui::Dummy(ImVec2(pin_icon_size, pin_icon_size));
@@ -354,10 +354,9 @@ void BlueprintEditor::draw_node(const BlueprintNode& node) {
 
     ImGui::BeginGroup();
     if(node.output_count()) {
-        const uintptr_t out_base = base + 1 + node.input_count();
         for(usize p = 0; p != node.output_count(); ++p) {
-            const uintptr_t pin = out_base + p;
-            draw_output_pin(ed::PinId(pin), node.output_name(p), node.output_type(p), is_pin_linked(pin));
+            const PinId pin = output_pin_id(node, p);
+            draw_output_pin(ed::PinId(uintptr_t(pin)), node.output_name(p), node.output_type(p), is_output_linked(blueprint, node, p));
         }
     } else {
         ImGui::Dummy(ImVec2(pin_icon_size, pin_icon_size));

@@ -25,6 +25,7 @@ SOFTWARE.
 #include "BlueprintNode.h"
 
 #include <memory>
+#include <utility>
 
 namespace yave {
 
@@ -34,9 +35,12 @@ class Blueprint : NonCopyable {
 
         const BlueprintNode* add_node(std::unique_ptr<BlueprintNode> node);
 
+        std::pair<const BlueprintNode*, usize> find_output(const void* ptr) const;
+
         void clear_links();
         bool is_link_valid(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin) const;
         void add_link(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin);
+        void remove_link(const BlueprintNode* dst, usize dst_pin);
 
         void eval();
 

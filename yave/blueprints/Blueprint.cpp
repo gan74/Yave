@@ -37,6 +37,21 @@ const BlueprintNode* Blueprint::add_node(std::unique_ptr<BlueprintNode> node) {
     return bp_node;
 }
 
+std::pair<const BlueprintNode*, usize> Blueprint::find_output(const void* ptr) const {
+    if(ptr) {
+        for(const auto& node : _nodes) {
+            const usize output_count = node->output_count();
+            for(usize i = 0; i != output_count; ++i) {
+                if(node->output_ptr(i) == ptr) {
+                    return {node.get(), i};
+                }
+            }
+        }
+    }
+
+    return {};
+}
+
 void Blueprint::clear_links() {
     for(auto& node : _nodes) {
         node->reset_inputs();
@@ -80,11 +95,9 @@ bool Blueprint::is_link_valid(const BlueprintNode* src, usize src_pin, const Blu
             if(!visited[y]) {
                 for(usize i = 0; i != _nodes[y]->input_count(); ++i) {
                     if(const void* in = _nodes[y]->input(i)) {
-                        for(usize o = 0; o != node->output_count(); ++o) {
-                            if(node->output_ptr(o) == in) {
-                                stack.push_back(y);
-                                break;
-                            }
+                        if(find_output(in).first == node) {
+                            stack.push_back(y);
+                            break;
                         }
                     }
                 }
@@ -115,6 +128,13 @@ void Blueprint::add_link(const BlueprintNode* src, usize src_pin, const Blueprin
             --index;
         }
     }
+}
+
+void Blueprint::remove_link(const BlueprintNode* dst, usize dst_pin) {
+    const auto dst_it = std::find_if(_nodes.begin(), _nodes.end(), [=](const auto& n) { return n.get() == dst; });
+    y_debug_assert(dst_it != _nodes.end());
+    y_debug_assert(dst_pin < dst->input_count());
+    (*dst_it)->set_input(dst_pin, nullptr);
 }
 
 void Blueprint::eval() {

@@ -25,8 +25,6 @@ SOFTWARE.
 #include <editor/Widget.h>
 #include <editor/BlueprintWorkspace.h>
 
-#include <y/core/Vector.h>
-
 namespace ax::NodeEditor {
 struct EditorContext;
 }
@@ -45,22 +43,10 @@ class BlueprintEditor final : public WorkspaceWidget<BlueprintWorkspace> {
         void on_gui() override;
 
     private:
-        struct Link {
-            u64 id = 0;
-            uintptr_t start_pin = 0;
-            uintptr_t end_pin = 0;
-            BlueprintParamTypeIndex type = BlueprintParamTypeIndex::invalid_index;
-        };
-
         void draw_node(const BlueprintNode& node);
         void process_links();
-        void rebuild_blueprint_links();
-        bool is_pin_linked(uintptr_t pin) const;
 
         ax::NodeEditor::EditorContext* _context = nullptr;
-
-        core::Vector<Link> _links;
-        u64 _next_link_id = 1;
 };
 
 }
