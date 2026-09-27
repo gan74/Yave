@@ -444,8 +444,14 @@ class BlueprintNodeDebug : public WorkspaceWidget<BlueprintWorkspace> {
 
                 if(node->output_count() && ImGui::TreeNode("Outputs")) {
                     for(usize i = 0; i != node->output_count(); ++i) {
-                        const std::string_view name = node->output_name(i);
-                        ImGui::TextUnformatted(name.data(), name.data() + name.size());
+                        ImGui::TextUnformatted(node->output_name(i).data());
+                    }
+                    ImGui::TreePop();
+                }
+
+                if(node->param_count() && ImGui::TreeNode("Params")) {
+                    for(usize i = 0; i != node->param_count(); ++i) {
+                        ImGui::TextUnformatted(node->param_name(i).data());
                     }
                     ImGui::TreePop();
                 }

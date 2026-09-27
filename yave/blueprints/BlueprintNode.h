@@ -57,31 +57,41 @@ class SharedBlueprintNodeData {
         core::String name;
         core::FixedArray<Pin> inputs;
         core::FixedArray<Pin> outputs;
+        core::FixedArray<Pin> params;
 };
 
 class BlueprintNode : NonMovable {
     public:
         virtual ~BlueprintNode();
 
+        y_serde3_poly_abstract_base(BlueprintNode)
+
         std::string_view name() const;
         std::string_view input_name(usize index) const;
         std::string_view output_name(usize index) const;
+        std::string_view param_name(usize index) const;
         BlueprintParamTypeIndex input_type(usize index) const;
         BlueprintParamTypeIndex output_type(usize index) const;
+        BlueprintParamTypeIndex param_type(usize index) const;
 
-        virtual void reset_inputs();
-
-        virtual usize input_count() const = 0;
-        virtual void set_input(usize index, const void* ptr) = 0;
-        virtual const void* input(usize index) const = 0;
-        virtual void* default_input(usize index) = 0;
-
-        virtual usize output_count() const = 0;
-        virtual const void* output_ptr(usize index) const = 0;
 
         virtual void eval() = 0; // may throw std::runtime_error
 
-        y_serde3_poly_abstract_base(BlueprintNode)
+        // inputs
+        virtual void reset_inputs();
+
+        virtual usize input_count() const;
+        virtual void set_input(usize index, const void* ptr);
+        virtual const void* input(usize index) const;
+        virtual void* default_input(usize index);
+
+        // outputs
+        virtual usize output_count() const;
+        virtual const void* output_ptr(usize index) const;
+
+        // params
+        virtual usize param_count() const;
+        virtual void* param_ptr(usize index);
 
     protected:
         BlueprintNode(std::shared_ptr<SharedBlueprintNodeData> shared_data = nullptr);

@@ -35,7 +35,6 @@ SOFTWARE.
 #include <y/concurrent/JobSystem.h>
 
 
-#include <yave/blueprints/LambdaBlueprintNode.h>
 
 #ifdef Y_OS_WIN
 #include <windows.h>

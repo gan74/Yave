@@ -50,6 +50,10 @@ std::string_view BlueprintNode::output_name(usize index) const {
     return _shared_data ? std::string_view(_shared_data->outputs[index].first) : std::string_view("Unnamed output");
 }
 
+std::string_view BlueprintNode::param_name(usize index) const {
+    return _shared_data ? std::string_view(_shared_data->params[index].first) : std::string_view("Unnamed param");
+}
+
 BlueprintParamTypeIndex BlueprintNode::input_type(usize index) const {
     return _shared_data ? _shared_data->inputs[index].second : BlueprintParamTypeIndex::invalid_index;
 }
@@ -58,11 +62,51 @@ BlueprintParamTypeIndex BlueprintNode::output_type(usize index) const {
     return _shared_data ? _shared_data->outputs[index].second : BlueprintParamTypeIndex::invalid_index;
 }
 
+BlueprintParamTypeIndex BlueprintNode::param_type(usize index) const {
+    return _shared_data ? _shared_data->params[index].second : BlueprintParamTypeIndex::invalid_index;
+}
+
 void BlueprintNode::reset_inputs() {
     const usize c = input_count();
     for(usize i = 0; i != c; ++i) {
         set_input(i, nullptr);
     }
+}
+
+usize BlueprintNode::input_count() const {
+    return 0;
+}
+
+void BlueprintNode::set_input(usize, const void*) {
+    y_debug_assert(false);
+}
+
+const void* BlueprintNode::input(usize) const {
+    y_debug_assert(false);
+    return nullptr;
+}
+
+void* BlueprintNode::default_input(usize) {
+    y_debug_assert(false);
+    return nullptr;
+}
+
+usize BlueprintNode::output_count() const {
+    return 0;
+}
+
+const void* BlueprintNode::output_ptr(usize) const {
+    y_debug_assert(false);
+    return nullptr;
+}
+
+usize BlueprintNode::param_count() const {
+    return 0;
+}
+
+void* BlueprintNode::param_ptr(usize) {
+    y_debug_assert(false);
+    return nullptr;
 }
 
 }

@@ -78,7 +78,18 @@ void BlueprintNodeInspector::on_gui() {
             if(const auto it = _drawers.find(node->input_type(i)); it != _drawers.end()) {
                 it->second.input(label, node->default_input(i));
             } else {
-                ImGui::TextUnformatted(label.data(), label.data() + label.size());
+                ImGui::TextUnformatted(label.data());
+            }
+        }
+    }
+
+    if(node->param_count() && ImGui::CollapsingHeader("Params", ImGuiTreeNodeFlags_DefaultOpen)) {
+        for(usize i = 0; i != node->param_count(); ++i) {
+            const std::string_view name = node->param_name(i);
+            if(const auto it = _drawers.find(node->param_type(i)); it != _drawers.end()) {
+                it->second.input(fmt("{}##param", name), node->param_ptr(i));
+            } else {
+                ImGui::TextUnformatted(name.data());
             }
         }
     }
@@ -89,7 +100,7 @@ void BlueprintNodeInspector::on_gui() {
             if(const auto it = _drawers.find(node->output_type(i)); it != _drawers.end()) {
                 it->second.output(name, node->output_ptr(i));
             } else {
-                ImGui::TextUnformatted(name.data(), name.data() + name.size());
+                ImGui::TextUnformatted(name.data());
             }
         }
     }
