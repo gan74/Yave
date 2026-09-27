@@ -48,6 +48,8 @@ static constexpr float pin_icon_size = 16.0f;
 static constexpr float pin_column_gap = 20.0f;
 static constexpr ImVec4 node_padding = ImVec4(6.0f, 2.0f, 6.0f, 4.0f);
 static constexpr ImVec2 layout_cell_size = ImVec2(260.0f, 300.0f);
+static constexpr ImColor error_color = ImColor(250, 20, 20, 255);
+static constexpr ImColor after_error_color = ImColor(255, 100, 70, 255);
 
 static ImColor pin_type_color(BlueprintParamTypeIndex type) {
     if(type == blueprint_param_type_index<float>()) {
@@ -160,7 +162,7 @@ static void draw_node_header(ed::NodeId node_id, float header_bottom, ImColor he
 
 
 BlueprintEditor::BlueprintEditor(BlueprintWorkspace* ws) :
-        WorkspaceWidget(ICON_FA_PROJECT_DIAGRAM " Blueprint Editor", ws, ImGuiWindowFlags_NoScrollbar) {
+        WorkspaceWidget(ICON_FA_PROJECT_DIAGRAM " Blueprint Editor", ws, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar) {
 
     ed::Config config;
     config.SettingsFile = nullptr;
@@ -194,6 +196,11 @@ BlueprintEditor::~BlueprintEditor() {
 }
 
 void BlueprintEditor::on_gui() {
+    if(ImGui::BeginMenuBar()) {
+        ImGui::Checkbox("Show execution order", &_show_execution_order);
+        ImGui::EndMenuBar();
+    }
+
     ed::SetCurrentEditor(_context);
     y_defer(ed::SetCurrentEditor(nullptr));
 
@@ -214,8 +221,21 @@ void BlueprintEditor::on_gui() {
 
         {
             y_profile_zone("draw nodes");
-            for(const auto& node : blueprint.all_nodes()) {
-                draw_node(*node, linked_outputs);
+            const usize error_node_index = workspace()->error_node_index();
+            const core::Span nodes = blueprint.all_nodes();
+            for(usize i = 0; i != nodes.size(); ++i) {
+                if(i >= error_node_index) {
+                    const bool is_error = i == error_node_index;
+                    ed::PushStyleColor(ed::StyleColor_NodeBorder, is_error ? error_color : after_error_color);
+                    ed::PushStyleVar(ed::StyleVar_NodeBorderWidth, is_error ? 6.0f : 3.0f);
+                }
+
+                draw_node(*nodes[i], linked_outputs);
+
+                if(i >= error_node_index) {
+                    ed::PopStyleVar();
+                    ed::PopStyleColor();
+                }
             }
         }
 

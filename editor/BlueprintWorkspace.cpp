@@ -49,7 +49,7 @@ static BlueprintNodeFactory* find_factory(core::Span<std::unique_ptr<BlueprintNo
     y_fatal("Unknown blueprint node factory '{}'", name);
 }
 
-static Blueprint create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactory>> factories, usize node_count = 200) {
+static Blueprint create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactory>> factories, usize node_count = 20) {
     y_profile();
 
     Blueprint blueprint;
@@ -204,7 +204,7 @@ std::string_view BlueprintWorkspace::name() const {
 }
 
 void BlueprintWorkspace::update() {
-    _blueprint.eval();
+    _error = _blueprint.eval();
 }
 
 void BlueprintWorkspace::save() {
@@ -284,6 +284,27 @@ Blueprint& BlueprintWorkspace::blueprint() {
 
 const Blueprint& BlueprintWorkspace::blueprint() const {
     return _blueprint;
+}
+
+const core::Result<void, BlueprintError>& BlueprintWorkspace::error() const {
+    return _error;
+}
+
+const BlueprintNode* BlueprintWorkspace::error_node() const {
+    if(_error.is_error()) {
+        const usize node_index = _error.error().node_index;
+        if(node_index < _blueprint.all_nodes().size()) {
+            return _blueprint.all_nodes()[node_index].get();
+        }
+    }
+    return nullptr;
+}
+
+usize BlueprintWorkspace::error_node_index() const {
+    if(_error.is_error()) {
+        return _error.error().node_index;
+    }
+    return usize(-1);
 }
 
 core::Span<std::unique_ptr<BlueprintNodeFactory>> BlueprintWorkspace::node_factories() const {

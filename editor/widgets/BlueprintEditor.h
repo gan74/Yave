@@ -50,6 +50,8 @@ class BlueprintEditor final : public WorkspaceWidget<BlueprintWorkspace> {
 
         ax::NodeEditor::EditorContext* _context = nullptr;
 
+        bool _show_execution_order = false;
+        
         core::String _node_filter;
         bool _open_node_menu = false;
 

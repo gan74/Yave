@@ -50,6 +50,10 @@ class BlueprintWorkspace final : public Workspace {
         Blueprint& blueprint();
         const Blueprint& blueprint() const;
 
+        const core::Result<void, BlueprintError>& error() const;
+        const BlueprintNode* error_node() const;
+        usize error_node_index() const;
+
         core::Span<std::unique_ptr<BlueprintNodeFactory>> node_factories() const;
 
         BlueprintNode* selected_node() const;
@@ -59,8 +63,11 @@ class BlueprintWorkspace final : public Workspace {
         void update_name();
 
         core::Vector<std::unique_ptr<BlueprintNodeFactory>> _node_factories;
+        
         Blueprint _blueprint;
         BlueprintNode* _selected_node = nullptr;
+        core::Result<void, BlueprintError> _error = core::Ok();
+
         AssetId _id;
         core::String _name = "Blueprint";
 };

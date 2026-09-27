@@ -162,18 +162,18 @@ void Blueprint::remove_link(const BlueprintNode* dst, usize dst_pin) {
     (*dst_it)->set_input(dst_pin, nullptr);
 }
 
-void Blueprint::eval() noexcept {
+core::Result<void, BlueprintError> Blueprint::eval() noexcept {
     y_profile();
 
-    for(auto& node : _nodes) {
+    for(usize i = 0; i != _nodes.size(); ++i) {
         try {
-            node->eval();
+            _nodes[i]->eval();
         } catch(const std::exception& e) {
-            log_msg(fmt("{} failed: {}", node->name(), e.what()), Log::Error);
-            break;
+            return core::Err(BlueprintError{i, core::String(e.what())});
         }
     }
 
+    return core::Ok();
 }
 
 }

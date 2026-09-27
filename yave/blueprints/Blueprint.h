@@ -29,6 +29,11 @@ SOFTWARE.
 
 namespace yave {
 
+struct BlueprintError {
+    usize node_index = 0;
+    core::String error;
+};
+
 class Blueprint : NonCopyable {
     public:
         Blueprint() = default;
@@ -45,7 +50,7 @@ class Blueprint : NonCopyable {
         void add_link(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin);
         void remove_link(const BlueprintNode* dst, usize dst_pin);
 
-        void eval() noexcept;
+        core::Result<void, BlueprintError> eval() noexcept;
 
     private:
         friend class BlueprintData;
