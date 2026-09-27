@@ -21,7 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "blueprint_nodes.h"
-#include "BlueprintNodeBuilder.h"
+#include "LambdaBlueprintNode.h"
 
 #include <y/math/Vec.h>
 #include <y/utils/log.h>
@@ -31,44 +31,29 @@ namespace yave {
 
 template<typename T>
 static void add_math_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories, std::string_view type_name) {
-    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Const {}", type_name))
-        .add_output<T>("value")
-        .template build<[](T& value) { value = T(1); }>()
-    );
+    struct Const { void operator()(T& value) const { value = T(1); } };
+    factories.emplace_back(make_blueprint_node_factory<Const>(fmt_to_owned("Const {}", type_name), "value"));
 
-    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Negate {}", type_name))
-        .add_input<T>("in")
-        .add_output<T>("out")
-        .template build<[](T in, T& out) { out = -in; }>()
-    );
+    struct Negate { void operator()(T in, T& out) const { out = -in; } };
+    factories.emplace_back(make_blueprint_node_factory<Negate>(fmt_to_owned("Negate {}", type_name), "in", "out"));
 
-    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Add {}", type_name))
-        .add_input<T>("a")
-        .add_input<T>("b")
-        .add_output<T>("out")
-        .template build<[](T a, T b, T& out) { out = a + b; }>()
-    );
+    struct Add { void operator()(T a, T b, T& out) const { out = a + b; } };
+    factories.emplace_back(make_blueprint_node_factory<Add>(fmt_to_owned("Add {}", type_name), "a", "b", "out"));
 
-    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Multiply {}", type_name))
-        .add_input<T>("a")
-        .add_input<T>("b")
-        .add_output<T>("out")
-        .template build<[](T a, T b, T& out) { out = a * b; }>()
-    );
+    struct Multiply { void operator()(T a, T b, T& out) const { out = a * b; } };
+    factories.emplace_back(make_blueprint_node_factory<Multiply>(fmt_to_owned("Multiply {}", type_name), "a", "b", "out"));
 
-    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Divide {}", type_name))
-        .add_input<T>("a")
-        .add_input<T>("b")
-        .add_output<T>("out")
-        .template build<[](T a, T b, T& out) {
+    struct Divide {
+        void operator()(T a, T b, T& out) const {
             if(b == T(0)) {
                 log_msg("Divide by 0", Log::Error);
                 out = T(0);
             } else {
                 out = a / b;
             }
-        }>()
-    );
+        }
+    };
+    factories.emplace_back(make_blueprint_node_factory<Divide>(fmt_to_owned("Divide {}", type_name), "a", "b", "out"));
 }
 
 template<typename V>
@@ -76,70 +61,48 @@ static void add_vec_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& f
     using T = typename V::value_type;
     static constexpr usize N = V::size();
 
-    auto create_1 = LambdaBlueprintNodeBuilder<>(fmt_to_owned("Create {}", type_name)).add_output<V>("out").add_input<T>("x");
-    auto decomp_1 = LambdaBlueprintNodeBuilder<>(fmt_to_owned("Decompose {}", type_name)).add_input<V>("in").add_output<T>("x");
+    const core::String create_name = fmt_to_owned("Create {}", type_name);
+    const core::String decomp_name = fmt_to_owned("Decompose {}", type_name);
     if constexpr(N == 1) {
-        factories.emplace_back(create_1.template build<[](V& out, T x) { out = V(x); }>());
-        factories.emplace_back(decomp_1.template build<[](V out, T& x) { x = out[0]; }>());
+        struct Create { void operator()(V& out, T x) const { out = V(x); } };
+        struct Decompose { void operator()(V in, T& x) const { x = in[0]; } };
+        factories.emplace_back(make_blueprint_node_factory<Create>(create_name, "out", "x"));
+        factories.emplace_back(make_blueprint_node_factory<Decompose>(decomp_name, "in", "x"));
+    } else if constexpr(N == 2) {
+        struct Create { void operator()(V& out, T x, T y) const { out = V(x, y); } };
+        struct Decompose { void operator()(V in, T& x, T& y) const { x = in[0]; y = in[1]; } };
+        factories.emplace_back(make_blueprint_node_factory<Create>(create_name, "out", "x", "y"));
+        factories.emplace_back(make_blueprint_node_factory<Decompose>(decomp_name, "in", "x", "y"));
+    } else if constexpr(N == 3) {
+        struct Create { void operator()(V& out, T x, T y, T z) const { out = V(x, y, z); } };
+        struct Decompose { void operator()(V in, T& x, T& y, T& z) const { x = in[0]; y = in[1]; z = in[2]; } };
+        factories.emplace_back(make_blueprint_node_factory<Create>(create_name, "out", "x", "y", "z"));
+        factories.emplace_back(make_blueprint_node_factory<Decompose>(decomp_name, "in", "x", "y", "z"));
     } else {
-        auto create_2 = create_1.add_input<T>("y");
-        auto decomp_2 = decomp_1.add_output<T>("y");
-        if constexpr(N == 2) {
-            factories.emplace_back(create_2.template build<[](V& out, T x, T y) { out = V(x, y); }>());
-            factories.emplace_back(decomp_2.template build<[](V out, T& x, T& y) { x = out[0]; y = out[1]; }>());
-        } else {
-            auto create_3 = create_2.add_input<T>("z");
-            auto decomp_3 = decomp_2.add_output<T>("z");
-            if constexpr(N == 3) {
-                factories.emplace_back(create_3.template build<[](V& out, T x, T y, T z) { out = V(x, y, z); }>());
-                factories.emplace_back(decomp_3.template build<[](V out, T& x, T& y, T& z) { x = out[0]; y = out[1]; z = out[2]; }>());
-            } else {
-                static_assert(N == 4);
-                auto create_4 = create_3.add_input<T>("w");
-                auto decomp_4 = decomp_3.add_output<T>("w");
-                factories.emplace_back(create_4.template build<[](V& out, T x, T y, T z, T w) { out = V(x, y, z, w); }>());
-                factories.emplace_back(decomp_4.template build<[](V out, T& x, T& y, T& z, T& w) { x = out[0]; y = out[1]; z = out[2]; w = out[3]; }>());
-            }
-        }
+        static_assert(N == 4);
+        struct Create { void operator()(V& out, T x, T y, T z, T w) const { out = V(x, y, z, w); } };
+        struct Decompose { void operator()(V in, T& x, T& y, T& z, T& w) const { x = in[0]; y = in[1]; z = in[2]; w = in[3]; } };
+        factories.emplace_back(make_blueprint_node_factory<Create>(create_name, "out", "x", "y", "z", "w"));
+        factories.emplace_back(make_blueprint_node_factory<Decompose>(decomp_name, "in", "x", "y", "z", "w"));
     }
 
-    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Dot {}", type_name))
-        .add_input<V>("a")
-        .add_input<V>("b")
-        .add_output<T>("out")
-        .template build<[](V a, V b, T& out) { out = a.dot(b); }>()
-    );
+    struct Dot { void operator()(V a, V b, T& out) const { out = a.dot(b); } };
+    factories.emplace_back(make_blueprint_node_factory<Dot>(fmt_to_owned("Dot {}", type_name), "a", "b", "out"));
 
-    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Cross {}", type_name))
-        .add_input<V>("a")
-        .add_input<V>("b")
-        .add_output<V>("out")
-        .template build<[](V a, V b, V& out) { out = a.cross(b); }>()
-    );
+    struct Cross { void operator()(V a, V b, V& out) const { out = a.cross(b); } };
+    factories.emplace_back(make_blueprint_node_factory<Cross>(fmt_to_owned("Cross {}", type_name), "a", "b", "out"));
 
-    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Normalize {}", type_name))
-        .add_input<V>("in")
-        .add_output<V>("out")
-        .template build<[](V in, V& out) { out = in.normalized(); }>()
-    );
+    struct Normalize { void operator()(V in, V& out) const { out = in.normalized(); } };
+    factories.emplace_back(make_blueprint_node_factory<Normalize>(fmt_to_owned("Normalize {}", type_name), "in", "out"));
 
-    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Length {}", type_name))
-        .add_input<V>("in")
-        .add_output<T>("out")
-        .template build<[](V in, T& out) { out = T(in.length()); }>()
-    );
+    struct Length { void operator()(V in, T& out) const { out = T(in.length()); } };
+    factories.emplace_back(make_blueprint_node_factory<Length>(fmt_to_owned("Length {}", type_name), "in", "out"));
 
-    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Abs {}", type_name))
-        .add_input<V>("in")
-        .add_output<V>("out")
-        .template build<[](V in, V& out) { out = in.abs(); }>()
-    );
+    struct Abs { void operator()(V in, V& out) const { out = in.abs(); } };
+    factories.emplace_back(make_blueprint_node_factory<Abs>(fmt_to_owned("Abs {}", type_name), "in", "out"));
 
-    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Saturate {}", type_name))
-        .add_input<V>("in")
-        .add_output<V>("out")
-        .template build<[](V in, V& out) { out = in.saturated(); }>()
-    );
+    struct Saturate { void operator()(V in, V& out) const { out = in.saturated(); } };
+    factories.emplace_back(make_blueprint_node_factory<Saturate>(fmt_to_owned("Saturate {}", type_name), "in", "out"));
 }
 
 void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {
