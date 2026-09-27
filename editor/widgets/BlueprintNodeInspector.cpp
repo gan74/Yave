@@ -28,7 +28,35 @@ SOFTWARE.
 
 namespace editor {
 
+template<typename T>
+static void draw_output(std::string_view label, const T& value) {
+    ImGui::TextUnformatted(fmt_c_str("{}: {}", label, value));
+}
+
+template<typename T, typename M, typename I, typename O>
+static void add_drawer(M& drawers, I input, O output) {
+    drawers[blueprint_param_type_index<T>()] = {
+        [=](std::string_view label, void* value) { input(label, *static_cast<T*>(value)); },
+        [=](std::string_view label, const void* value) { output(label, *static_cast<const T*>(value)); }
+    };
+}
+
 BlueprintNodeInspector::BlueprintNodeInspector(BlueprintWorkspace* ws) : WorkspaceWidget(ICON_FA_WRENCH " Blueprint Node Inspector", ws) {
+    add_drawer<float>(_drawers, [](std::string_view label, float& value) {
+        ImGui::DragFloat(fmt_c_str("{}", label), &value, 0.1f);
+    }, draw_output<float>);
+
+    add_drawer<math::Vec2>(_drawers, [](std::string_view label, math::Vec2& value) {
+        ImGui::DragFloat2(fmt_c_str("{}", label), value.data(), 0.1f);
+    }, draw_output<math::Vec2>);
+
+    add_drawer<math::Vec3>(_drawers, [](std::string_view label, math::Vec3& value) {
+        ImGui::DragFloat3(fmt_c_str("{}", label), value.data(), 0.1f);
+    }, draw_output<math::Vec3>);
+
+    add_drawer<math::Vec4>(_drawers, [](std::string_view label, math::Vec4& value) {
+        ImGui::DragFloat4(fmt_c_str("{}", label), value.data(), 0.1f);
+    }, draw_output<math::Vec4>);
 }
 
 void BlueprintNodeInspector::on_gui() {
@@ -45,12 +73,12 @@ void BlueprintNodeInspector::on_gui() {
         for(usize i = 0; i != node->input_count(); ++i) {
             const std::string_view name = node->input_name(i);
             const bool linked = node->input(i);
+            const std::string_view label = fmt("{}{}", name, linked ? " (linked)" : "");
 
-            if(node->input_type(i) == blueprint_param_type_index<float>()) {
-                float* value = static_cast<float*>(node->default_input(i));
-                ImGui::DragFloat(fmt_c_str("{}{}", name, linked ? " (linked)" : ""), value, 0.1f);
+            if(const auto it = _drawers.find(node->input_type(i)); it != _drawers.end()) {
+                it->second.input(label, node->default_input(i));
             } else {
-                ImGui::TextUnformatted(fmt_c_str("{}{}", name, linked ? " (linked)" : ""));
+                ImGui::TextUnformatted(label.data(), label.data() + label.size());
             }
         }
     }
@@ -58,9 +86,8 @@ void BlueprintNodeInspector::on_gui() {
     if(node->output_count() && ImGui::CollapsingHeader("Outputs", ImGuiTreeNodeFlags_DefaultOpen)) {
         for(usize i = 0; i != node->output_count(); ++i) {
             const std::string_view name = node->output_name(i);
-            if(node->output_type(i) == blueprint_param_type_index<float>()) {
-                const float value = *static_cast<const float*>(node->output_ptr(i));
-                ImGui::TextUnformatted(fmt_c_str("{}: {}", name, value));
+            if(const auto it = _drawers.find(node->output_type(i)); it != _drawers.end()) {
+                it->second.output(name, node->output_ptr(i));
             } else {
                 ImGui::TextUnformatted(name.data(), name.data() + name.size());
             }

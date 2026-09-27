@@ -25,6 +25,11 @@ SOFTWARE.
 #include <editor/Widget.h>
 #include <editor/BlueprintWorkspace.h>
 
+#include <y/core/HashMap.h>
+
+#include <functional>
+#include <string_view>
+
 namespace editor {
 
 class BlueprintNodeInspector final : public WorkspaceWidget<BlueprintWorkspace> {
@@ -36,6 +41,14 @@ class BlueprintNodeInspector final : public WorkspaceWidget<BlueprintWorkspace> 
 
     protected:
         void on_gui() override;
+
+    private:
+        struct ParamDrawer {
+            std::function<void(std::string_view, void*)> input;
+            std::function<void(std::string_view, const void*)> output;
+        };
+
+        core::FlatHashMap<BlueprintParamTypeIndex, ParamDrawer> _drawers;
 };
 
 }

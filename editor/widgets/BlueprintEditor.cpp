@@ -202,7 +202,6 @@ void BlueprintEditor::on_gui() {
 
         const Blueprint& blueprint = workspace()->blueprint();
 
-        // Inputs point directly to the output they are linked to
         core::Vector<const void*> linked_outputs;
         for(const auto& node : blueprint.all_nodes()) {
             for(usize i = 0; i != node->input_count(); ++i) {
