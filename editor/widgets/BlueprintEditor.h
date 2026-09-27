@@ -44,6 +44,7 @@ class BlueprintEditor final : public WorkspaceWidget<BlueprintWorkspace> {
 
     private:
         void draw_node(const BlueprintNode& node, core::Span<const void*> linked_outputs);
+        void draw_execution_order();
         void process_links();
         void draw_context_menu();
         void reset_node_layout();
