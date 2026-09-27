@@ -72,11 +72,14 @@ void BlueprintNodeInspector::on_gui() {
     if(node->input_count() && ImGui::CollapsingHeader("Inputs", ImGuiTreeNodeFlags_DefaultOpen)) {
         for(usize i = 0; i != node->input_count(); ++i) {
             const std::string_view name = node->input_name(i);
-            const bool linked = node->input(i);
+            const void* linked = node->input(i);
             const std::string_view label = fmt("{}{}", name, linked ? " (linked)" : "");
 
             if(const auto it = _drawers.find(node->input_type(i)); it != _drawers.end()) {
                 it->second.input(label, node->default_input(i));
+                if(linked) {
+                    it->second.output("received", linked);
+                }
             } else {
                 ImGui::TextUnformatted(label.data());
             }

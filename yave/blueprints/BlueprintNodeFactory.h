@@ -41,6 +41,17 @@ class BlueprintNodeFactory : NonMovable {
         std::shared_ptr<SharedBlueprintNodeData> _shared_data;
 };
 
+template<typename T>
+class GenericBlueprintNodeFactory : public BlueprintNodeFactory {
+    public:
+        GenericBlueprintNodeFactory(std::shared_ptr<SharedBlueprintNodeData> shared_data) : BlueprintNodeFactory(std::move(shared_data)) {
+        }
+
+        std::unique_ptr<BlueprintNode> create_node() override {
+            return std::make_unique<T>();
+        }
+};
+
 }
 
 #endif // YAVE_BLUEPRINTS_BLUEPRINTNODEFACTORY_H
