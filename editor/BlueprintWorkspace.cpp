@@ -286,6 +286,10 @@ const Blueprint& BlueprintWorkspace::blueprint() const {
     return _blueprint;
 }
 
+core::Span<std::unique_ptr<BlueprintNodeFactory>> BlueprintWorkspace::node_factories() const {
+    return _node_factories;
+}
+
 BlueprintNode* BlueprintWorkspace::selected_node() const {
     return _selected_node;
 }

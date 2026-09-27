@@ -22,8 +22,12 @@ SOFTWARE.
 
 #include "BlueprintEditor.h"
 
-#include <y/utils/hash.h>
+#include <editor/utils/StringMatcher.h>
+#include <editor/utils/ui.h>
+
 #include <yave/utils/color.h>
+
+#include <y/utils/hash.h>
 
 #include <external/imgui-node-editor/imgui_node_editor.h>
 
@@ -260,6 +264,7 @@ void BlueprintEditor::on_gui() {
         }
 
         process_links();
+        draw_context_menu();
 
         ed::End();
     }
@@ -331,6 +336,44 @@ void BlueprintEditor::process_links() {
         }
     }
     ed::EndDelete();
+}
+
+void BlueprintEditor::draw_context_menu() {
+    // Mouse position is in canvas space while inside ed::Begin/End
+    const ImVec2 mouse_pos = ImGui::GetMousePos();
+
+    ed::Suspend();
+    y_defer(ed::Resume());
+
+    if(ed::ShowBackgroundContextMenu()) {
+        _new_node_pos = math::Vec2(mouse_pos.x, mouse_pos.y);
+        _node_filter.make_empty();
+        ImGui::OpenPopup("##contextmenu");
+    }
+
+    if(ImGui::BeginPopup("##contextmenu")) {
+        if(ImGui::BeginMenu(ICON_FA_PLUS " Add node")) {
+            if(ImGui::IsWindowAppearing()) {
+                ImGui::SetKeyboardFocusHere();
+            }
+            imgui::text_input("##filter", _node_filter, ImGuiInputTextFlags_AutoSelectAll, ICON_FA_SEARCH " Search");
+            const StringMatcher matcher(_node_filter);
+
+            for(const auto& factory : workspace()->node_factories()) {
+                if(!matcher.is_empty() && !matcher.matches(factory->name())) {
+                    continue;
+                }
+
+                const core::String name(factory->name());
+                if(ImGui::MenuItem(name.data())) {
+                    const BlueprintNode* node = workspace()->blueprint().add_node(factory->create_node());
+                    ed::SetNodePosition(ed::NodeId(uintptr_t(node)), ImVec2(_new_node_pos.x(), _new_node_pos.y()));
+                }
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndPopup();
+    }
 }
 
 void BlueprintEditor::draw_node(const BlueprintNode& node) {

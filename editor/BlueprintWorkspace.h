@@ -50,6 +50,8 @@ class BlueprintWorkspace final : public Workspace {
         Blueprint& blueprint();
         const Blueprint& blueprint() const;
 
+        core::Span<std::unique_ptr<BlueprintNodeFactory>> node_factories() const;
+
         BlueprintNode* selected_node() const;
         void set_selected_node(BlueprintNode* node);
 
