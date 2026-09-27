@@ -47,6 +47,7 @@ struct PinInfo {
 static constexpr float pin_icon_size = 16.0f;
 static constexpr float pin_column_gap = 20.0f;
 static constexpr ImVec4 node_padding = ImVec4(6.0f, 2.0f, 6.0f, 4.0f);
+static constexpr ImVec2 layout_cell_size = ImVec2(260.0f, 300.0f);
 
 static ImColor pin_type_color(BlueprintParamTypeIndex type) {
     if(type == blueprint_param_type_index<float>()) {
@@ -250,15 +251,31 @@ void BlueprintEditor::on_gui() {
 }
 
 void BlueprintEditor::reset_node_layout() {
+    y_profile();
+
     ed::SetCurrentEditor(_context);
     y_defer(ed::SetCurrentEditor(nullptr));
 
-    constexpr usize cols = 10;
-    const core::Span nodes = workspace()->blueprint().all_nodes();
+    const Blueprint& blueprint = workspace()->blueprint();
+    const core::Span nodes = blueprint.all_nodes();
+
+    core::FixedArray<usize> column_sizes(nodes.size());
+    core::FixedArray<usize> depths(nodes.size());
     for(usize i = 0; i != nodes.size(); ++i) {
+        for(usize k = 0; k != nodes[i]->input_count(); ++k) {
+            if(const void* in = nodes[i]->input(k)) {
+                const BlueprintNode* src = blueprint.find_output(in).first;
+                const auto src_it = std::find_if(nodes.begin(), nodes.end(), [&](const auto& n) { return n.get() == src; });
+                depths[i] = std::max(depths[i], depths[usize(src_it - nodes.begin())] + 1);
+            }
+        }
+
+        const usize col = depths[i];
+        const usize row = column_sizes[col]++;
         ed::SetNodePosition(
             ed::NodeId(uintptr_t(nodes[i].get())),
-            ImVec2(40.0f + float(i % cols) * 220.0f, 40.0f + float(i / cols) * 140.0f));
+            ImVec2(40.0f + float(col) * layout_cell_size.x, 40.0f + float(row) * layout_cell_size.y)
+        );
     }
 }
 
