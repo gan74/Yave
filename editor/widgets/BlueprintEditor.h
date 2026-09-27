@@ -39,6 +39,8 @@ class BlueprintEditor final : public WorkspaceWidget<BlueprintWorkspace> {
         BlueprintEditor(BlueprintWorkspace* ws);
         ~BlueprintEditor() override;
 
+        void center_on_node(const BlueprintNode* node);
+
     protected:
         void on_gui() override;
 

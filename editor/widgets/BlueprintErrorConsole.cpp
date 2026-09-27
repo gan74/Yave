@@ -21,6 +21,9 @@ SOFTWARE.
 **********************************/
 
 #include "BlueprintErrorConsole.h"
+#include "BlueprintEditor.h"
+
+#include <editor/UiManager.h>
 
 #include <editor/utils/ui.h>
 
@@ -40,7 +43,21 @@ void BlueprintErrorConsole::on_gui() {
     }
 
     const BlueprintError& error = workspace()->error().error();
-    ImGui::TextColored(imgui::error_text_color, "%s", fmt_c_str("Node \"{}\": {}", error_node->name(), error.error));
+
+    ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
+    const bool clicked = ImGui::Selectable(fmt_c_str("Node \"{}\": {}", error_node->name(), error.error));
+    ImGui::PopStyleColor();
+
+    if(clicked) {
+        for(const auto& widget : ui().top_level_widgets()) {
+            if(auto* editor = dynamic_cast<BlueprintEditor*>(widget.get())) {
+                if(editor->workspace() == workspace()) {
+                    editor->center_on_node(error_node);
+                    break;
+                }
+            }
+        }
+    }
 }
 
 }

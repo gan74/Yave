@@ -49,7 +49,7 @@ static constexpr float pin_column_gap = 20.0f;
 static constexpr ImVec4 node_padding = ImVec4(6.0f, 2.0f, 6.0f, 4.0f);
 static constexpr ImVec2 layout_cell_size = ImVec2(260.0f, 300.0f);
 static constexpr ImColor error_color = ImColor(250, 20, 20, 255);
-static constexpr ImColor after_error_color = ImColor(255, 100, 70, 255);
+static constexpr ImColor after_error_color = error_color; // ImColor(255, 100, 70, 255);
 static constexpr ImColor arrow_color = ImColor(255, 255, 255, 255);
 
 static ImColor pin_type_color(BlueprintParamTypeIndex type) {
@@ -196,6 +196,14 @@ BlueprintEditor::~BlueprintEditor() {
     ed::DestroyEditor(_context);
 }
 
+void BlueprintEditor::center_on_node(const BlueprintNode* node) {
+    ed::SetCurrentEditor(_context);
+    y_defer(ed::SetCurrentEditor(nullptr));
+
+    ed::SelectNode(ed::NodeId(uintptr_t(node)));
+    ed::NavigateToSelection();
+}
+
 void BlueprintEditor::on_gui() {
     if(ImGui::BeginMenuBar()) {
         ImGui::Checkbox("Show execution order", &_show_execution_order);
@@ -228,7 +236,7 @@ void BlueprintEditor::on_gui() {
                 if(i >= error_node_index) {
                     const bool is_error = i == error_node_index;
                     ed::PushStyleColor(ed::StyleColor_NodeBorder, is_error ? error_color : after_error_color);
-                    ed::PushStyleVar(ed::StyleVar_NodeBorderWidth, is_error ? 6.0f : 3.0f);
+                    ed::PushStyleVar(ed::StyleVar_NodeBorderWidth, is_error ? 6.0f : 1.5f);
                 }
 
                 draw_node(*nodes[i], linked_outputs);
