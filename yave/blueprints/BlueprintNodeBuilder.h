@@ -121,7 +121,7 @@ std::shared_ptr<SharedBlueprintNodeData> make_bp_shared_data(core::String name, 
     return data;
 }
 
-template<typename F, typename... Ports>
+template<auto F, typename... Ports>
 class LambdaBlueprintNode : public BlueprintNode {
     public:
         static constexpr usize port_count = sizeof...(Ports);
@@ -131,10 +131,8 @@ class LambdaBlueprintNode : public BlueprintNode {
         using inputs_t = bp_inputs_t<Ports...>;
         using outputs_t = bp_outputs_t<Ports...>;
 
-        template<typename G>
-        LambdaBlueprintNode(G&& func, std::shared_ptr<SharedBlueprintNodeData> shared_data) :
-                BlueprintNode(std::move(shared_data)),
-                _func(y_fwd(func)) {
+        explicit LambdaBlueprintNode(std::shared_ptr<SharedBlueprintNodeData> shared_data) :
+                BlueprintNode(std::move(shared_data)) {
         }
 
         usize input_count() const override {
@@ -176,7 +174,8 @@ class LambdaBlueprintNode : public BlueprintNode {
         }
 
         void eval() override {
-            eval_bp_ports<Ports...>(_func, _inputs, _default_inputs, _outputs, std::make_index_sequence<port_count>{});
+            auto func = F;
+            eval_bp_ports<Ports...>(func, _inputs, _default_inputs, _outputs, std::make_index_sequence<port_count>{});
         }
 
     private:
@@ -187,25 +186,18 @@ class LambdaBlueprintNode : public BlueprintNode {
 
         inputs_t _default_inputs = {};
         outputs_t _outputs = {};
-
-        F _func;
 };
 
-template<typename F, typename... Ports>
+template<auto F, typename... Ports>
 class LambdaBlueprintNodeFactory : public BlueprintNodeFactory {
     public:
-        template<typename G>
-        LambdaBlueprintNodeFactory(G&& func, core::String name, core::Vector<core::String> names) :
-                BlueprintNodeFactory(make_bp_shared_data<Ports...>(std::move(name), std::move(names))),
-                _func(y_fwd(func)) {
+        LambdaBlueprintNodeFactory(core::String name, core::Vector<core::String> names) :
+                BlueprintNodeFactory(make_bp_shared_data<Ports...>(std::move(name), std::move(names))) {
         }
 
         std::unique_ptr<BlueprintNode> create_node() override {
-            return std::make_unique<LambdaBlueprintNode<F, Ports...>>(_func, _shared_data);
+            return std::make_unique<LambdaBlueprintNode<F, Ports...>>(_shared_data);
         }
-
-    private:
-        F _func;
 };
 
 }
@@ -230,10 +222,10 @@ class LambdaBlueprintNodeBuilder {
             return LambdaBlueprintNodeBuilder<Ports..., detail::bp_out<T>>(std::move(names), _name);
         }
 
-        template<typename F>
-        std::unique_ptr<BlueprintNodeFactory> build(F&& func) {
-            static_assert(function_traits<std::remove_cvref_t<F>>::arg_count == sizeof...(Ports));
-            return std::make_unique<detail::LambdaBlueprintNodeFactory<std::remove_cvref_t<F>, Ports...>>(y_fwd(func), std::move(_name), std::move(_names));
+        template<auto F>
+        std::unique_ptr<BlueprintNodeFactory> build() {
+            static_assert(function_traits<std::remove_cvref_t<decltype(F)>>::arg_count == sizeof...(Ports));
+            return std::make_unique<detail::LambdaBlueprintNodeFactory<F, Ports...>>(std::move(_name), std::move(_names));
         }
 
     private:
