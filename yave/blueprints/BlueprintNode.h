@@ -26,10 +26,12 @@ SOFTWARE.
 
 #include <y/core/String.h>
 #include <y/core/Vector.h>
+#include <y/core/FixedArray.h>
 #include <y/serde3/poly.h>
 
 #include <memory>
 #include <string_view>
+#include <utility>
 
 namespace yave {
 
@@ -50,11 +52,11 @@ BlueprintParamTypeIndex blueprint_param_type_index() {
 
 class SharedBlueprintNodeData {
     public:
+        using Pin = std::pair<core::String, BlueprintParamTypeIndex>;
+
         core::String name;
-        core::Vector<core::String> input_names;
-        core::Vector<core::String> output_names;
-        core::Vector<BlueprintParamTypeIndex> input_types;
-        core::Vector<BlueprintParamTypeIndex> output_types;
+        core::FixedArray<Pin> inputs;
+        core::FixedArray<Pin> outputs;
 };
 
 class BlueprintNode : NonMovable {

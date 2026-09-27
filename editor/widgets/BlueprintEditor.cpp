@@ -251,6 +251,8 @@ void BlueprintEditor::on_gui() {
 
 void BlueprintEditor::reset_node_layout() {
     ed::SetCurrentEditor(_context);
+    y_defer(ed::SetCurrentEditor(nullptr));
+
     constexpr usize cols = 10;
     const core::Span nodes = workspace()->blueprint().all_nodes();
     for(usize i = 0; i != nodes.size(); ++i) {
@@ -258,7 +260,6 @@ void BlueprintEditor::reset_node_layout() {
             ed::NodeId(uintptr_t(nodes[i].get())),
             ImVec2(40.0f + float(i % cols) * 220.0f, 40.0f + float(i / cols) * 140.0f));
     }
-    ed::SetCurrentEditor(nullptr);
 }
 
 void BlueprintEditor::process_links() {
@@ -342,6 +343,12 @@ void BlueprintEditor::draw_context_menu() {
 
         Blueprint& blueprint = workspace()->blueprint();
         const PinInfo link_pin = find_pin(blueprint, _new_node.link_pin);
+        const BlueprintParamTypeIndex link_type = !link_pin.node
+            ? BlueprintParamTypeIndex::invalid_index
+            : link_pin.is_input
+                ? link_pin.node->input_type(link_pin.index)
+                : link_pin.node->output_type(link_pin.index)
+        ;
 
         const core::Span factories = workspace()->node_factories();
         for(usize i = 0; i != factories.size(); ++i) {
@@ -355,14 +362,10 @@ void BlueprintEditor::draw_context_menu() {
             usize compatible_index = 0;
             if(link_pin.node) {
                 const SharedBlueprintNodeData& data = factory->shared_data();
-                const core::Span<BlueprintParamTypeIndex> types = link_pin.is_input ? data.output_types : data.input_types;
-                const BlueprintParamTypeIndex type = link_pin.is_input
-                    ? link_pin.node->input_type(link_pin.index)
-                    : link_pin.node->output_type(link_pin.index)
-                ;
-
-                if(const auto it = std::find(types.begin(), types.end(), type); it != types.end()) {
-                    compatible_index = usize(it - types.begin());
+                const auto& pins = link_pin.is_input ? data.outputs : data.inputs;
+                const auto it = std::find_if(pins.begin(), pins.end(), [&](const auto& pin) { return pin.second == link_type; });
+                if(it != pins.end()) {
+                    compatible_index = usize(it - pins.begin());
                 } else {
                     continue;
                 }
@@ -395,10 +398,11 @@ void BlueprintEditor::draw_context_menu() {
 
 void BlueprintEditor::draw_node(const BlueprintNode& node, core::Span<const void*> linked_outputs) {
     const ed::NodeId node_id = ed::NodeId(uintptr_t(&node));
+    const std::string_view name = node.name();
 
     ed::BeginNode(node_id);
 
-    ImGui::TextUnformatted(node.name().data(), node.name().data() + node.name().size());
+    ImGui::TextUnformatted(name.data());
     const float header_bottom = ImGui::GetItemRectMax().y;
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
@@ -419,7 +423,7 @@ void BlueprintEditor::draw_node(const BlueprintNode& node, core::Span<const void
 
     ed::EndNode();
 
-    draw_node_header(node_id, header_bottom, node_header_color(node.name()));
+    draw_node_header(node_id, header_bottom, node_header_color(name));
 }
 
 }

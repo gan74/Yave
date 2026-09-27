@@ -76,9 +76,13 @@ class LambdaBlueprintNode<F, Ret(Args...)> : public BlueprintNode {
             auto data = std::make_shared<SharedBlueprintNodeData>();
             data->name = std::move(name);
             const std::array<BlueprintParamTypeIndex, port_count> types = { blueprint_param_type_index<std::remove_cvref_t<Args>>()... };
-            for(usize i = 0; i != port_count; ++i) {
-                (is_input[i] ? data->input_names : data->output_names).push_back(std::move(names[i]));
-                (is_input[i] ? data->input_types : data->output_types).push_back(types[i]);
+            data->inputs = core::FixedArray<SharedBlueprintNodeData::Pin>(in_count);
+            for(usize i = 0; i != in_count; ++i) {
+                data->inputs[i] = { std::move(names[input_indices[i]]), types[input_indices[i]] };
+            }
+            data->outputs = core::FixedArray<SharedBlueprintNodeData::Pin>(out_count);
+            for(usize i = 0; i != out_count; ++i) {
+                data->outputs[i] = { std::move(names[output_indices[i]]), types[output_indices[i]] };
             }
             return data;
         }
