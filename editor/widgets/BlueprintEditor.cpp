@@ -161,6 +161,23 @@ static void draw_node_header(ed::NodeId node_id, float header_bottom, ImColor he
     );
 }
 
+static void draw_error_label(const BlueprintNode& node, const core::String& error) {
+    const ed::NodeId node_id = uintptr_t(&node);
+    const ImVec2 pos = ed::GetNodePosition(node_id);
+    const ImVec2 size = ed::GetNodeSize(node_id);
+
+    const ImVec2 text_size = ImGui::CalcTextSize(error.data());
+    const ImVec2 padding(6.0f, 4.0f);
+    const ImVec2 box_size = text_size + padding * 2.0f;
+    const ImVec2 box_min(pos.x + (size.x - box_size.x) * 0.5f, pos.y - box_size.y - 4.0f);
+    const ImVec2 box_max = box_min + box_size;
+
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    draw_list->AddRectFilled(box_min, box_max, ImColor(40, 10, 10, 230), 3.0f);
+    draw_list->AddRect(box_min, box_max, error_color, 3.0f);
+    draw_list->AddText(box_min + padding, error_color, error.data());
+}
+
 
 BlueprintEditor::BlueprintEditor(BlueprintWorkspace* ws) :
         WorkspaceWidget(ICON_FA_PROJECT_DIAGRAM " Blueprint Editor", ws, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar) {
@@ -205,8 +222,12 @@ void BlueprintEditor::center_on_node(const BlueprintNode* node) {
 }
 
 void BlueprintEditor::on_gui() {
+    const Blueprint& blueprint = workspace()->blueprint();
+
     if(ImGui::BeginMenuBar()) {
         ImGui::Checkbox("Show execution order", &_show_execution_order);
+        ImGui::Separator();
+        ImGui::TextUnformatted(fmt_c_str("{} nodes", blueprint.all_nodes().size()));
         ImGui::EndMenuBar();
     }
 
@@ -215,8 +236,6 @@ void BlueprintEditor::on_gui() {
 
     {
         ed::Begin("##blueprint", ImGui::GetContentRegionAvail());
-
-        const Blueprint& blueprint = workspace()->blueprint();
 
         core::Vector<const void*> linked_outputs;
         for(const auto& node : blueprint.all_nodes()) {
@@ -260,6 +279,10 @@ void BlueprintEditor::on_gui() {
                     }
                 }
             }
+        }
+
+        if(const BlueprintNode* error_node = workspace()->error_node()) {
+            draw_error_label(*error_node, workspace()->error().error().error);
         }
 
         if(_show_execution_order) {
