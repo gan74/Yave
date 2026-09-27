@@ -43,14 +43,21 @@ class BlueprintEditor final : public WorkspaceWidget<BlueprintWorkspace> {
         void on_gui() override;
 
     private:
-        void draw_node(const BlueprintNode& node);
+        void draw_node(const BlueprintNode& node, core::Span<const void*> linked_outputs);
         void process_links();
         void draw_context_menu();
         void reset_node_layout();
 
         ax::NodeEditor::EditorContext* _context = nullptr;
-        math::Vec2 _new_node_pos;
+
         core::String _node_filter;
+        bool _open_node_menu = false;
+
+        struct NewNode {
+            math::Vec2 pos;
+            uintptr_t link_pin = 0;
+        } _new_node;
+
 };
 
 }

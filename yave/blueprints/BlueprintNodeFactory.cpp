@@ -35,4 +35,8 @@ std::string_view BlueprintNodeFactory::name() const {
     return _shared_data->name;
 }
 
+const SharedBlueprintNodeData& BlueprintNodeFactory::shared_data() const {
+    return *_shared_data;
+}
+
 }

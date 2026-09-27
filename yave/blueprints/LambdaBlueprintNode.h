@@ -75,8 +75,10 @@ class LambdaBlueprintNode<F, Ret(Args...)> : public BlueprintNode {
         static std::shared_ptr<SharedBlueprintNodeData> make_shared_data(core::String name, core::Vector<core::String> names) {
             auto data = std::make_shared<SharedBlueprintNodeData>();
             data->name = std::move(name);
+            const std::array<BlueprintParamTypeIndex, port_count> types = { blueprint_param_type_index<std::remove_cvref_t<Args>>()... };
             for(usize i = 0; i != port_count; ++i) {
                 (is_input[i] ? data->input_names : data->output_names).push_back(std::move(names[i]));
+                (is_input[i] ? data->input_types : data->output_types).push_back(types[i]);
             }
             return data;
         }
@@ -97,11 +99,6 @@ class LambdaBlueprintNode<F, Ret(Args...)> : public BlueprintNode {
             return in_count;
         }
 
-        BlueprintParamTypeIndex input_type(usize index) const override {
-            y_debug_assert(index < in_count);
-            return _types[input_indices[index]];
-        }
-
         void set_input(usize index, const void* ptr) override {
             y_debug_assert(index < in_count);
             _inputs[index] = ptr;
@@ -119,11 +116,6 @@ class LambdaBlueprintNode<F, Ret(Args...)> : public BlueprintNode {
 
         usize output_count() const override {
             return out_count;
-        }
-
-        BlueprintParamTypeIndex output_type(usize index) const override {
-            y_debug_assert(index < out_count);
-            return _types[output_indices[index]];
         }
 
         const void* output_ptr(usize index) const override {
@@ -149,8 +141,6 @@ class LambdaBlueprintNode<F, Ret(Args...)> : public BlueprintNode {
         y_serde3_poly(LambdaBlueprintNode)
 
     private:
-        static inline const std::array<BlueprintParamTypeIndex, port_count> _types = { blueprint_param_type_index<std::remove_cvref_t<Args>>()... };
-
         std::array<const void*, in_count> _inputs = {};
 
         values_t _values = {};

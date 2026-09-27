@@ -50,6 +50,14 @@ std::string_view BlueprintNode::output_name(usize index) const {
     return _shared_data ? std::string_view(_shared_data->output_names[index]) : std::string_view("Unnamed output");
 }
 
+BlueprintParamTypeIndex BlueprintNode::input_type(usize index) const {
+    return _shared_data ? _shared_data->input_types[index] : BlueprintParamTypeIndex::invalid_index;
+}
+
+BlueprintParamTypeIndex BlueprintNode::output_type(usize index) const {
+    return _shared_data ? _shared_data->output_types[index] : BlueprintParamTypeIndex::invalid_index;
+}
+
 void BlueprintNode::reset_inputs() {
     const usize c = input_count();
     for(usize i = 0; i != c; ++i) {

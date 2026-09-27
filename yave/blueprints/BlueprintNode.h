@@ -53,6 +53,8 @@ class SharedBlueprintNodeData {
         core::String name;
         core::Vector<core::String> input_names;
         core::Vector<core::String> output_names;
+        core::Vector<BlueprintParamTypeIndex> input_types;
+        core::Vector<BlueprintParamTypeIndex> output_types;
 };
 
 class BlueprintNode : NonMovable {
@@ -62,17 +64,17 @@ class BlueprintNode : NonMovable {
         std::string_view name() const;
         std::string_view input_name(usize index) const;
         std::string_view output_name(usize index) const;
+        BlueprintParamTypeIndex input_type(usize index) const;
+        BlueprintParamTypeIndex output_type(usize index) const;
 
         virtual void reset_inputs();
 
         virtual usize input_count() const = 0;
-        virtual BlueprintParamTypeIndex input_type(usize index) const = 0;
         virtual void set_input(usize index, const void* ptr) = 0;
         virtual const void* input(usize index) const = 0;
         virtual void* default_input(usize index) = 0;
 
         virtual usize output_count() const = 0;
-        virtual BlueprintParamTypeIndex output_type(usize index) const = 0;
         virtual const void* output_ptr(usize index) const = 0;
 
         virtual void eval() = 0; // may throw std::runtime_error
