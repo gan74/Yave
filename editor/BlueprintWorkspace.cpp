@@ -105,6 +105,44 @@ static void add_vec_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& f
             }
         }
     }
+
+    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Dot {}", type_name))
+        .add_input<V>("a")
+        .add_input<V>("b")
+        .add_output<T>("out")
+        .build([](V a, V b, T& out) { out = a.dot(b); })
+    );
+
+    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Cross {}", type_name))
+        .add_input<V>("a")
+        .add_input<V>("b")
+        .add_output<V>("out")
+        .build([](V a, V b, V& out) { out = a.cross(b); })
+    );
+
+    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Normalize {}", type_name))
+        .add_input<V>("in")
+        .add_output<V>("out")
+        .build([](V in, V& out) { out = in.normalized(); })
+    );
+
+    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Length {}", type_name))
+        .add_input<V>("in")
+        .add_output<T>("out")
+        .build([](V in, T& out) { out = T(in.length()); })
+    );
+
+    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Abs {}", type_name))
+        .add_input<V>("in")
+        .add_output<V>("out")
+        .build([](V in, V& out) { out = in.abs(); })
+    );
+
+    factories.emplace_back(LambdaBlueprintNodeBuilder<>(fmt_to_owned("Saturate {}", type_name))
+        .add_input<V>("in")
+        .add_output<V>("out")
+        .build([](V in, V& out) { out = in.saturated(); })
+    );
 }
 
 
@@ -147,6 +185,19 @@ static Blueprint create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactor
         srcs.emplace_back(node);
     };
 
+    auto add_to_floats_unary = [&](core::Vector<const BlueprintNode*>& srcs, std::string_view name) {
+        const BlueprintNode* node = blueprint.add_node(find_factory(factories, name)->create_node());
+        blueprint.add_link(srcs.last(), 0, node, 0);
+        floats.emplace_back(node);
+    };
+
+    auto add_to_floats_binary = [&](core::Vector<const BlueprintNode*>& srcs, std::string_view name) {
+        const BlueprintNode* node = blueprint.add_node(find_factory(factories, name)->create_node());
+        blueprint.add_link(srcs[srcs.size() - 1], 0, node, 0);
+        blueprint.add_link(srcs[srcs.size() / 2], 0, node, 1);
+        floats.emplace_back(node);
+    };
+
     auto add_create_decompose = [&](core::Vector<const BlueprintNode*>& vecs, usize comps, std::string_view type_name) {
         const BlueprintNode* create = blueprint.add_node(find_factory(factories, fmt("Create {}", type_name))->create_node());
         for(usize c = 0; c != comps; ++c) {
@@ -157,6 +208,18 @@ static Blueprint create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactor
         const BlueprintNode* decomp = blueprint.add_node(find_factory(factories, fmt("Decompose {}", type_name))->create_node());
         blueprint.add_link(create, 0, decomp, 0);
         floats.emplace_back(decomp);
+    };
+
+    auto add_vec_ops = [&](core::Vector<const BlueprintNode*>& srcs, std::string_view type_name) {
+        add_unary(srcs, fmt("Normalize {}", type_name));
+        add_unary(srcs, fmt("Abs {}", type_name));
+        add_unary(srcs, fmt("Saturate {}", type_name));
+        add_binary(srcs, fmt("Cross {}", type_name));
+        add_binary(srcs, fmt("Min {}", type_name));
+        add_binary(srcs, fmt("Max {}", type_name));
+        add_to_floats_unary(srcs, fmt("Length {}", type_name));
+        add_to_floats_unary(srcs, fmt("Length Squared {}", type_name));
+        add_to_floats_binary(srcs, fmt("Dot {}", type_name));
     };
 
     floats.emplace_back(blueprint.add_node(find_factory(factories, "Const float")->create_node()));
@@ -190,9 +253,13 @@ static Blueprint create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactor
     add_create_decompose(vec3s, 3, "Vec3");
     add_create_decompose(vec4s, 4, "Vec4");
 
+    add_vec_ops(vec2s, "Vec2");
+    add_vec_ops(vec3s, "Vec3");
+    add_vec_ops(vec4s, "Vec4");
+
     // Fill the rest with a rotating mix.
     for(usize i = 0; blueprint.all_nodes().size() < node_count; ++i) {
-        const usize kind = i % 10;
+        const usize kind = i % 14;
         if(kind == 0) {
             add_unary(floats, "Negate float");
         } else if(kind == 1) {
@@ -211,8 +278,16 @@ static Blueprint create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactor
             add_create_decompose(vec2s, 2, "Vec2");
         } else if(kind == 8) {
             add_create_decompose(vec3s, 3, "Vec3");
-        } else {
+        } else if(kind == 9) {
             add_create_decompose(vec4s, 4, "Vec4");
+        } else if(kind == 10) {
+            add_unary(vec2s, "Normalize Vec2");
+        } else if(kind == 11) {
+            add_to_floats_binary(vec3s, "Dot Vec3");
+        } else if(kind == 12) {
+            add_binary(vec3s, "Cross Vec3");
+        } else {
+            add_to_floats_unary(vec4s, "Length Vec4");
         }
     }
 
