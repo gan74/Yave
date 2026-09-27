@@ -75,7 +75,7 @@ class BlueprintNode : NonMovable {
         virtual BlueprintParamTypeIndex output_type(usize index) const = 0;
         virtual const void* output_ptr(usize index) const = 0;
 
-        virtual void eval() = 0;
+        virtual void eval() = 0; // may throw std::runtime_error
 
         y_serde3_poly_abstract_base(BlueprintNode)
 

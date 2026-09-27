@@ -24,8 +24,9 @@ SOFTWARE.
 #include "LambdaBlueprintNode.h"
 
 #include <y/math/Vec.h>
-#include <y/utils/log.h>
 #include <y/utils/format.h>
+
+#include <exception>
 
 namespace yave {
 
@@ -46,8 +47,7 @@ static void add_math_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& 
     struct Divide {
         void operator()(T a, T b, T& out) const {
             if(b == T(0)) {
-                log_msg("Divide by 0", Log::Error);
-                out = T(0);
+                throw std::runtime_error("Division by zero");
             } else {
                 out = a / b;
             }

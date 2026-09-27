@@ -23,6 +23,8 @@ SOFTWARE.
 #include "BlueprintData.h"
 
 #include <y/core/ScratchPad.h>
+#include <y/utils/log.h>
+#include <y/utils/format.h>
 
 #include <memory>
 
@@ -160,11 +162,18 @@ void Blueprint::remove_link(const BlueprintNode* dst, usize dst_pin) {
     (*dst_it)->set_input(dst_pin, nullptr);
 }
 
-void Blueprint::eval() {
+void Blueprint::eval() noexcept {
     y_profile();
+
     for(auto& node : _nodes) {
-        node->eval();
+        try {
+            node->eval();
+        } catch(const std::exception& e) {
+            log_msg(fmt("{} failed: {}", node->name(), e.what()), Log::Error);
+            break;
+        }
     }
+
 }
 
 }

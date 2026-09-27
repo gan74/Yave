@@ -45,7 +45,7 @@ class Blueprint : NonCopyable {
         void add_link(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin);
         void remove_link(const BlueprintNode* dst, usize dst_pin);
 
-        void eval();
+        void eval() noexcept;
 
     private:
         friend class BlueprintData;
