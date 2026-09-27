@@ -19,26 +19,45 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#include "AssetType.h"
+#ifndef YAVE_BLUEPRINTS_BLUEPRINTDATA_H
+#define YAVE_BLUEPRINTS_BLUEPRINTDATA_H
+
+#include "Blueprint.h"
+
+#include <yave/assets/AssetTraits.h>
+
+#include <y/reflect/reflect.h>
+
+#include <memory>
 
 namespace yave {
 
-std::string_view asset_type_name(AssetType type) {
-    static constexpr std::string_view names[] = {
-        "asset",
-        "mesh",
-        "image",
-        "animation",
-        "font",
-        "blueprint",
-        "material",
-        "prefab",
-    };
+struct BlueprintLink {
+    u32 src_node = 0;
+    u32 src_pin = 0;
+    u32 dst_node = 0;
+    u32 dst_pin = 0;
 
-    y_debug_assert(usize(type) < sizeof(names) / sizeof(names[0]));
-    return names[usize(type)];
+    y_reflect(BlueprintLink, src_node, src_pin, dst_node, dst_pin)
+};
+
+class BlueprintData {
+    public:
+        BlueprintData() = default;
+
+        static BlueprintData from_blueprint(Blueprint&& blueprint);
+
+        y_reflect(BlueprintData, _nodes, _links)
+
+    private:
+        friend class Blueprint;
+
+        core::Vector<std::unique_ptr<BlueprintNode>> _nodes;
+        core::Vector<BlueprintLink> _links;
+};
+
+YAVE_DECLARE_GENERIC_ASSET_TRAITS(BlueprintData, AssetType::Blueprint);
+
 }
 
-}
-
-
+#endif // YAVE_BLUEPRINTS_BLUEPRINTDATA_H

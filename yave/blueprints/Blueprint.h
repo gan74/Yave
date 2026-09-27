@@ -31,6 +31,9 @@ namespace yave {
 
 class Blueprint : NonCopyable {
     public:
+        Blueprint() = default;
+        explicit Blueprint(BlueprintData&& data);
+
         const core::Span<std::unique_ptr<BlueprintNode>> all_nodes() const;
 
         const BlueprintNode* add_node(std::unique_ptr<BlueprintNode> node);
@@ -45,6 +48,8 @@ class Blueprint : NonCopyable {
         void eval();
 
     private:
+        friend class BlueprintData;
+
         core::Vector<std::unique_ptr<BlueprintNode>> _nodes;
 };
 

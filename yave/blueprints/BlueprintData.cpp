@@ -19,26 +19,42 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#include "AssetType.h"
+
+#include "BlueprintData.h"
 
 namespace yave {
 
-std::string_view asset_type_name(AssetType type) {
-    static constexpr std::string_view names[] = {
-        "asset",
-        "mesh",
-        "image",
-        "animation",
-        "font",
-        "blueprint",
-        "material",
-        "prefab",
-    };
+BlueprintData BlueprintData::from_blueprint(Blueprint&& blueprint) {
+    BlueprintData data;
 
-    y_debug_assert(usize(type) < sizeof(names) / sizeof(names[0]));
-    return names[usize(type)];
+    const core::Span nodes = blueprint.all_nodes();
+    for(usize dst_index = 0; dst_index != nodes.size(); ++dst_index) {
+        const BlueprintNode* dst = nodes[dst_index].get();
+        for(usize pin = 0; pin != dst->input_count(); ++pin) {
+            if(const void* in = dst->input(pin)) {
+                const auto [src, src_pin] = blueprint.find_output(in);
+                y_debug_assert(src);
+
+                usize src_index = 0;
+                for(; src_index != nodes.size(); ++src_index) {
+                    if(nodes[src_index].get() == src) {
+                        break;
+                    }
+                }
+                y_debug_assert(src_index != nodes.size());
+
+                data._links << BlueprintLink{
+                    u32(src_index),
+                    u32(src_pin),
+                    u32(dst_index),
+                    u32(pin),
+                };
+            }
+        }
+    }
+
+    data._nodes = std::move(blueprint._nodes);
+    return data;
 }
 
 }
-
-

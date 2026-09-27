@@ -27,6 +27,9 @@ SOFTWARE.
 #include <y/utils/traits.h>
 #include <y/core/String.h>
 #include <y/core/Vector.h>
+#include <y/reflect/reflect.h>
+#include <y/serde3/archives.h>
+#include <y/serde3/poly.h>
 
 #include <array>
 #include <tuple>
@@ -63,6 +66,11 @@ class LambdaBlueprintNode<F, Ret(Args...)> : public BlueprintNode {
     static constexpr auto input_indices = bp_port_indices<in_count>(is_input, true);
     static constexpr auto output_indices = bp_port_indices<out_count>(is_input, false);
 
+    static std::shared_ptr<SharedBlueprintNodeData>& registered_shared_data() {
+        static std::shared_ptr<SharedBlueprintNodeData> data;
+        return data;
+    }
+
     public:
         static std::shared_ptr<SharedBlueprintNodeData> make_shared_data(core::String name, core::Vector<core::String> names) {
             auto data = std::make_shared<SharedBlueprintNodeData>();
@@ -73,8 +81,16 @@ class LambdaBlueprintNode<F, Ret(Args...)> : public BlueprintNode {
             return data;
         }
 
+        static void register_shared_data(std::shared_ptr<SharedBlueprintNodeData> shared_data) {
+            registered_shared_data() = std::move(shared_data);
+        }
+
+        LambdaBlueprintNode() : BlueprintNode(registered_shared_data()) {
+        }
+
         explicit LambdaBlueprintNode(std::shared_ptr<SharedBlueprintNodeData> shared_data) :
-                BlueprintNode(std::move(shared_data)) {
+                BlueprintNode(shared_data) {
+            register_shared_data(std::move(shared_data));
         }
 
         usize input_count() const override {
@@ -129,6 +145,9 @@ class LambdaBlueprintNode<F, Ret(Args...)> : public BlueprintNode {
             }(std::make_index_sequence<port_count>{});
         }
 
+        y_reflect(LambdaBlueprintNode, _values)
+        y_serde3_poly(LambdaBlueprintNode)
+
     private:
         static inline const std::array<BlueprintParamTypeIndex, port_count> _types = { blueprint_param_type_index<std::remove_cvref_t<Args>>()... };
 
@@ -143,6 +162,7 @@ class LambdaBlueprintNodeFactory : public BlueprintNodeFactory {
     public:
         LambdaBlueprintNodeFactory(core::String name, core::Vector<core::String> names) :
                 BlueprintNodeFactory(LambdaBlueprintNode<F>::make_shared_data(std::move(name), std::move(names))) {
+            LambdaBlueprintNode<F>::register_shared_data(_shared_data);
         }
 
         std::unique_ptr<BlueprintNode> create_node() override {

@@ -54,6 +54,9 @@ std::string_view asset_type_icon(AssetType type) {
         case AssetType::Prefab:
             return ICON_FA_DATABASE;
 
+        case AssetType::Blueprint:
+            return ICON_FA_PROJECT_DIAGRAM;
+
         default:
             return ICON_FA_QUESTION;
     }

@@ -30,6 +30,7 @@ class AssetReferenceWidget;
 class AssetSelector;
 class AssetStringifier;
 class BlueprintEditor;
+class BlueprintNodeInspector;
 class BlueprintWorkspace;
 class CVarConsole;
 class CameraController;

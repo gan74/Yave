@@ -31,7 +31,7 @@ namespace yave {
 
 template<typename T>
 static void add_math_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories, std::string_view type_name) {
-    struct Const { void operator()(T& value) const { value = T(1); } };
+    struct Const { void operator()(T&) const {} };
     factories.emplace_back(make_blueprint_node_factory<Const>(fmt_to_owned("Const {}", type_name), "value"));
 
     struct Negate { void operator()(T in, T& out) const { out = -in; } };

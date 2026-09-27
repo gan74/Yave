@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <y/core/String.h>
 #include <y/core/Vector.h>
+#include <y/serde3/poly.h>
 
 #include <memory>
 #include <string_view>
@@ -76,10 +77,11 @@ class BlueprintNode : NonMovable {
 
         virtual void eval() = 0;
 
-    protected:
-        BlueprintNode(std::shared_ptr<SharedBlueprintNodeData> shared_data);
+        y_serde3_poly_abstract_base(BlueprintNode)
 
-    private:
+    protected:
+        BlueprintNode(std::shared_ptr<SharedBlueprintNodeData> shared_data = nullptr);
+
         std::shared_ptr<SharedBlueprintNodeData> _shared_data;
 };
 

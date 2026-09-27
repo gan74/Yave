@@ -45,6 +45,7 @@ class BlueprintEditor final : public WorkspaceWidget<BlueprintWorkspace> {
     private:
         void draw_node(const BlueprintNode& node);
         void process_links();
+        void reset_node_layout();
 
         ax::NodeEditor::EditorContext* _context = nullptr;
 };

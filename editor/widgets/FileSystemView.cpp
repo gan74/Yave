@@ -465,6 +465,8 @@ void FileSystemView::draw_context_menu() {
                 refresh_all();
             }
         }
+    } else {
+        _delegates.context_menu(path(), EntryType::Directory);
     }
 }
 

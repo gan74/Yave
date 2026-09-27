@@ -26,14 +26,17 @@ SOFTWARE.
 #include "GltfImporter.h"
 #include "ImageImporter.h"
 
+#include <editor/editor.h>
 #include <editor/ImGuiPlatform.h>
 #include <editor/ThumbnailRenderer.h>
+#include <editor/BlueprintWorkspace.h>
 #include <editor/MaterialWorkspace.h>
 
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
 
 #include <yave/assets/AssetStore.h>
+#include <yave/blueprints/BlueprintData.h>
 #include <yave/utils/FileSystemModel.h>
 #include <yave/material/MaterialData.h>
 
@@ -47,6 +50,37 @@ SOFTWARE.
 
 
 namespace editor {
+
+template<typename Data, typename Workspace, AssetType Type>
+static void create_empty_asset(const core::String& import_path) {
+    const Data data;
+    const std::string_view type_name = asset_type_name(Type);
+
+    io2::Buffer buffer;
+    {
+        serde3::WritableArchive arc(buffer);
+        if(const auto res = arc.serialize(data); res.is_error()) {
+            log_msg(fmt("Unable to serialize {}", type_name), Log::Error);
+            return;
+        }
+        buffer.reset();
+    }
+
+    core::String suffix;
+    for(usize i = 0;; ++i) {
+        const core::String name = asset_store().filesystem()->join(import_path, core::String(type_name) + suffix);
+        if(const auto res = asset_store().import(buffer, name, Type, {}); res.is_ok()) {
+            log_msg(fmt("Created {} \"{}\"", type_name, name));
+            add_workspace(std::make_unique<Workspace>(res.unwrap()));
+            break;
+        } else if(res.error() == AssetStore::ErrorType::NameAlreadyExists) {
+            suffix = fmt_to_owned(" ({})", i);
+        } else {
+            log_msg(fmt("Unable to create {}, error: {}", type_name, res.error()), Log::Error);
+            break;
+        }
+    }
+}
 
 editor_action("Import glTF", add_top_level_widget<GltfImporter>)
 editor_action("Import image", add_top_level_widget<ImageImporter>)
@@ -100,14 +134,27 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _files
     });
 
     _filesystem_view.set_context_menu_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+        if(ImGui::MenuItem("New blueprint")) {
+            create_empty_asset<BlueprintData, BlueprintWorkspace, AssetType::Blueprint>(_filesystem_view.path());
+        }
+        if(ImGui::MenuItem("New material")) {
+            create_empty_asset<MaterialData, MaterialWorkspace, AssetType::Material>(_filesystem_view.path());
+        }
+
         if(type != FileSystemModel::EntryType::File) {
             return;
         }
+
         if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
             ImGui::Separator();
             if(asset_type(id) == AssetType::Material) {
                 if(ImGui::MenuItem("Edit")) {
                     add_workspace(std::make_unique<MaterialWorkspace>(id));
+                }
+            }
+            if(asset_type(id) == AssetType::Blueprint) {
+                if(ImGui::MenuItem("Edit")) {
+                    add_workspace(std::make_unique<BlueprintWorkspace>(id));
                 }
             }
             if(ImGui::MenuItem("Show references")) {

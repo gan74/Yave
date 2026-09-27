@@ -20,12 +20,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 #include "Blueprint.h"
+#include "BlueprintData.h"
 
 #include <y/core/ScratchPad.h>
 
 #include <memory>
 
 namespace yave {
+
+Blueprint::Blueprint(BlueprintData&& data) : _nodes(std::move(data._nodes)) {
+    for(const BlueprintLink& link : data._links) {
+        y_debug_assert(link.src_node < _nodes.size());
+        y_debug_assert(link.dst_node < _nodes.size());
+        const void* out = _nodes[link.src_node]->output_ptr(link.src_pin);
+        _nodes[link.dst_node]->set_input(link.dst_pin, out);
+    }
+    data._links.make_empty();
+}
 
 const core::Span<std::unique_ptr<BlueprintNode>> Blueprint::all_nodes() const {
     return _nodes;

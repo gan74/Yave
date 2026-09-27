@@ -33,7 +33,6 @@ BlueprintParamTypeIndex next_blueprint_param_type_index() {
 
 
 BlueprintNode::BlueprintNode(std::shared_ptr<SharedBlueprintNodeData> shared_data) : _shared_data(std::move(shared_data)) {
-    y_debug_assert(_shared_data);
 }
 
 BlueprintNode::~BlueprintNode() {

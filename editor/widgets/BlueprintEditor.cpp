@@ -184,7 +184,8 @@ static void draw_node_header(ed::NodeId node_id, const ImVec2& header_min, const
         ImVec2(min.x, header_max.y - 0.5f),
         ImVec2(max.x, header_max.y - 0.5f),
         IM_COL32(255, 255, 255, int(96.0f * alpha / 3.0f)),
-        1.0f);
+        1.0f
+    );
 }
 
 
@@ -215,17 +216,7 @@ BlueprintEditor::BlueprintEditor(BlueprintWorkspace* ws) :
         ed::SetCurrentEditor(nullptr);
     }
 
-    ed::SetCurrentEditor(_context);
-    {
-        constexpr usize cols = 10;
-        const core::Span nodes = workspace()->blueprint().all_nodes();
-        for(usize i = 0; i != nodes.size(); ++i) {
-            ed::SetNodePosition(
-                ed::NodeId(uintptr_t(nodes[i].get())),
-                ImVec2(40.0f + float(i % cols) * 220.0f, 40.0f + float(i / cols) * 140.0f));
-        }
-    }
-    ed::SetCurrentEditor(nullptr);
+    reset_node_layout();
 }
 
 BlueprintEditor::~BlueprintEditor() {
@@ -281,6 +272,18 @@ void BlueprintEditor::on_gui() {
             workspace()->set_selected_node(nullptr);
         }
     }
+}
+
+void BlueprintEditor::reset_node_layout() {
+    ed::SetCurrentEditor(_context);
+    constexpr usize cols = 10;
+    const core::Span nodes = workspace()->blueprint().all_nodes();
+    for(usize i = 0; i != nodes.size(); ++i) {
+        ed::SetNodePosition(
+            ed::NodeId(uintptr_t(nodes[i].get())),
+            ImVec2(40.0f + float(i % cols) * 220.0f, 40.0f + float(i / cols) * 140.0f));
+    }
+    ed::SetCurrentEditor(nullptr);
 }
 
 void BlueprintEditor::process_links() {

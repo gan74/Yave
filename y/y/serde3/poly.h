@@ -134,13 +134,13 @@ struct PolyType {
 
 
 #define y_serde3_poly_abstract_base(base)                                                                           \
-    static y::serde3::detail::PolyType<base> _y_serde3_poly_base;                                                   \
+    inline static y::serde3::detail::PolyType<base> _y_serde3_poly_base = {};                                       \
     virtual y::serde3::TypeId _y_serde3_poly_type_id() const = 0;                                                   \
     virtual y::serde3::Result _y_serde3_poly_serialize(y::serde3::WritableArchive&) const = 0;                      \
     virtual y::serde3::Result _y_serde3_poly_deserialize(y::serde3::ReadableArchive&) = 0;
 
 #define y_serde3_poly_base(base)                                                                                    \
-    static y::serde3::detail::PolyType<base> _y_serde3_poly_base;                                                   \
+    inline static y::serde3::detail::PolyType<base> _y_serde3_poly_base = {};                                       \
     y_serde3_poly_qual(base, virtual, /*...*/)
 
 #define y_serde3_poly(base)                                                                                         \

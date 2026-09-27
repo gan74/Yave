@@ -34,7 +34,7 @@ enum class AssetType : u32 {
     Image = 2,
     Animation = 3,
     Font = 4,
-    // Unused 5
+    Blueprint = 5,
     Material = 6,
     Prefab = 7,
 };

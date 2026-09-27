@@ -22,9 +22,19 @@ SOFTWARE.
 
 #include "BlueprintWorkspace.h"
 
-#include <yave/blueprints/blueprint_nodes.h>
+#include "editor.h"
+#include "UiManager.h"
 
+#include <yave/assets/AssetLoader.h>
+#include <yave/assets/AssetStore.h>
+#include <yave/blueprints/BlueprintData.h>
+#include <yave/blueprints/blueprint_nodes.h>
+#include <yave/utils/FileSystemModel.h>
+
+#include <y/io2/Buffer.h>
+#include <y/serde3/archives.h>
 #include <y/utils/format.h>
+#include <y/utils/log.h>
 
 #include <external/imgui/imgui.h>
 
@@ -176,16 +186,21 @@ static Blueprint create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactor
 }
 
 
-BlueprintWorkspace::BlueprintWorkspace() {
+BlueprintWorkspace::BlueprintWorkspace(AssetId id) : _id(id) {
     add_all_nodes(_node_factories);
-    _blueprint = create_blueprint(_node_factories);
+    update_name();
+    if(_id != AssetId::invalid_id()) {
+        load();
+    } else {
+        _blueprint = create_blueprint(_node_factories);
+    }
 }
 
 BlueprintWorkspace::~BlueprintWorkspace() {
 }
 
 std::string_view BlueprintWorkspace::name() const {
-    return ICON_FA_PROJECT_DIAGRAM " Blueprint";
+    return _name;
 }
 
 void BlueprintWorkspace::update() {
@@ -193,9 +208,74 @@ void BlueprintWorkspace::update() {
 }
 
 void BlueprintWorkspace::save() {
+    y_profile();
+
+    if(_id == AssetId::invalid_id()) {
+        log_msg("Unable to save blueprint: no asset id", Log::Error);
+        return;
+    }
+
+    _selected_node = nullptr;
+    BlueprintData data = BlueprintData::from_blueprint(std::move(_blueprint));
+
+    io2::Buffer buffer;
+    {
+        serde3::WritableArchive arc(buffer);
+        if(const auto res = arc.serialize(data); res.is_error()) {
+            _blueprint = Blueprint(std::move(data));
+            log_msg("Unable to serialize blueprint", Log::Error);
+            return;
+        }
+        buffer.reset();
+    }
+
+    _blueprint = Blueprint(std::move(data));
+
+    if(const auto res = asset_store().write(_id, buffer, {}); res.is_error()) {
+        log_msg(fmt("Unable to write blueprint, error: {}", res.error()), Log::Error);
+        return;
+    }
+
+    asset_loader().reload<BlueprintData>(_id);
+    for(const auto& workspace : ui().workspaces()) {
+        workspace->grab_reloaded();
+    }
+
+    log_msg("Blueprint saved");
 }
 
 void BlueprintWorkspace::load() {
+    y_profile();
+
+    if(_id == AssetId::invalid_id()) {
+        log_msg("Unable to load blueprint: no asset id", Log::Error);
+        return;
+    }
+
+    const auto reader = asset_store().data(_id);
+    if(!reader) {
+        log_msg("Unable to find blueprint asset", Log::Error);
+        return;
+    }
+
+    BlueprintData data;
+    serde3::ReadableArchive arc(*reader.unwrap());
+    if(const auto res = arc.deserialize(data); res.is_error()) {
+        log_msg("Unable to load blueprint", Log::Error);
+        return;
+    } else if(res.unwrap() == serde3::Success::Partial) {
+        log_msg("Blueprint was only partially loaded", Log::Warning);
+    }
+
+    _selected_node = nullptr;
+    _blueprint = Blueprint(std::move(data));
+    update_name();
+
+    log_msg("Blueprint loaded");
+}
+
+AssetId BlueprintWorkspace::asset_id() const {
+    return _id;
 }
 
 Blueprint& BlueprintWorkspace::blueprint() {
@@ -212,6 +292,15 @@ BlueprintNode* BlueprintWorkspace::selected_node() const {
 
 void BlueprintWorkspace::set_selected_node(BlueprintNode* node) {
     _selected_node = node;
+}
+
+void BlueprintWorkspace::update_name() {
+    _name = ICON_FA_PROJECT_DIAGRAM " Blueprint";
+    if(_id != AssetId::invalid_id()) {
+        if(auto name = asset_store().name(_id)) {
+            _name = fmt("{} {}", ICON_FA_PROJECT_DIAGRAM, asset_store().filesystem()->filename(name.unwrap()));
+        }
+    }
 }
 
 }
