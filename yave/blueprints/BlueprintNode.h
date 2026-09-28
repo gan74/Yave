@@ -55,6 +55,7 @@ const BlueprintParamType* blueprint_param_type_index() {
 struct BlueprintPin {
     std::string_view name;
     const BlueprintParamType* type = nullptr;
+    bool is_generic = false;
 };
 
 inline bool are_blueprint_types_compatible(const BlueprintParamType* a, const BlueprintParamType* b) {

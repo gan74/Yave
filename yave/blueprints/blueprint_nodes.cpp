@@ -221,12 +221,12 @@ class IfBlueprintNode : public BlueprintNode {
         }
 
         void set_generic_type(const BlueprintParamType* type) override {
-            y_debug_assert(!_out_pin.type && type);
+            y_debug_assert(!_out_pin.type != !type);
             _in_pins[1].type = type;
             _in_pins[2].type = type;
             _out_pin.type = type;
 
-            _values = std::make_unique<std::max_align_t[]>(value_stride() * value_count);
+            _values = type ? std::make_unique<std::max_align_t[]>(value_stride() * value_count) : nullptr;
         }
 
         const BlueprintParamType* generic_type() const override {
@@ -282,8 +282,8 @@ class IfBlueprintNode : public BlueprintNode {
 
         core::String _name;
 
-        std::array<BlueprintPin, in_count> _in_pins = {{{"condition", blueprint_param_type_index<bool>()}, {"true"}, {"false"}}};
-        BlueprintPin _out_pin = {"out"};
+        std::array<BlueprintPin, in_count> _in_pins = {{{"condition", blueprint_param_type_index<bool>()}, {"true", nullptr, true}, {"false", nullptr, true}}};
+        BlueprintPin _out_pin = {"out", nullptr, true};
 
         std::array<const void*, in_count> _inputs = {};
 
@@ -377,7 +377,8 @@ static void add_vec_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& f
 }
 
 void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {
-    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<IfBlueprintNode>>(core::String("If")));
+    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<IfBlueprintNode>>("If"));
+    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<ConstantBlueprintNode<bool>>>("Const bool"));
 
     add_math_nodes<float>(factories, "float");
     add_math_nodes<math::Vec2>(factories, "Vec2");

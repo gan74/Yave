@@ -87,6 +87,26 @@ usize Blueprint::find_output_pin(const BlueprintNode& node, const void* ptr) {
     return usize(-1);
 }
 
+void Blueprint::update_generic_types() {
+    core::ScratchPad<bool> linked(_nodes.size(), false);
+    for(usize k = 0; k != _nodes.size(); ++k) {
+        const core::Span<BlueprintPin> inputs = _nodes[k]->input_pins();
+        for(usize i = 0; i != inputs.size(); ++i) {
+            if(const void* in = _nodes[k]->input(i)) {
+                const auto [src, src_pin] = find_output(in);
+                linked[k] |= inputs[i].is_generic;
+                linked[find_node_index(src)] |= src->output_pins()[src_pin].is_generic;
+            }
+        }
+    }
+
+    for(usize i = 0; i != _nodes.size(); ++i) {
+        if(!linked[i] && _nodes[i]->generic_type()) {
+            _nodes[i]->set_generic_type(nullptr);
+        }
+    }
+}
+
 const BlueprintNode* Blueprint::add_node(std::unique_ptr<BlueprintNode> node) {
     BlueprintNode* bp_node = _nodes.emplace_back(std::move(node)).get();
     bp_node->reset_inputs();
@@ -108,6 +128,8 @@ void Blueprint::remove_node(const BlueprintNode* node) {
     }
 
     _nodes.erase(_nodes.begin() + node_index);
+
+    update_generic_types();
 }
 
 std::pair<const BlueprintNode*, usize> Blueprint::find_output(const void* ptr) const {
@@ -126,6 +148,8 @@ void Blueprint::clear_links() {
     for(auto& node : _nodes) {
         node->reset_inputs();
     }
+
+    update_generic_types();
 }
 
 bool Blueprint::is_link_valid(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin) const {
@@ -193,6 +217,8 @@ void Blueprint::add_link(const BlueprintNode* src, usize src_pin, const Blueprin
     const void* out_ptr = _nodes[src_index]->output_ptr(src_pin);
     _nodes[dst_index]->set_input(dst_pin, out_ptr);
 
+    update_generic_types();
+
     {
         usize index = src_index;
         while(index > dst_index) {
@@ -207,7 +233,9 @@ void Blueprint::remove_link(const BlueprintNode* dst, usize dst_pin) {
     const usize dst_index = find_node_index(dst);
     y_debug_assert(dst_index < _nodes.size());
     y_debug_assert(dst_pin < dst->input_pins().size());
+
     _nodes[dst_index]->set_input(dst_pin, nullptr);
+    update_generic_types();
 }
 
 core::Result<void, BlueprintError> Blueprint::eval() noexcept {

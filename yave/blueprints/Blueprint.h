@@ -59,6 +59,8 @@ class Blueprint : NonCopyable {
         usize find_node_index(const BlueprintNode* node) const;
         static usize find_output_pin(const BlueprintNode& node, const void* ptr);
 
+        void update_generic_types();
+
         core::Vector<std::unique_ptr<BlueprintNode>> _nodes;
 };
 
