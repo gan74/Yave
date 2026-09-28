@@ -60,7 +60,7 @@ static ImColor pin_type_color(const BlueprintParamType* type) {
     if(type == blueprint_param_type_index<bool>()) {
         return ImColor(220, 48, 48);
     }
-    if(type == blueprint_param_type_index<GenericBlueprintParam>()) {
+    if(!type) {
         return ImColor(255, 255, 255);
     }
 
@@ -465,7 +465,7 @@ void BlueprintEditor::draw_context_menu() {
             if(link_pin.node) {
                 const std::unique_ptr<BlueprintNode> prototype = factory->create_node();
                 const core::Span<BlueprintPin> pins = link_pin.is_input ? prototype->output_pins() : prototype->input_pins();
-                const auto it = std::find_if(pins.begin(), pins.end(), [&](const BlueprintPin& pin) { return pin.type == link_type; });
+                const auto it = std::find_if(pins.begin(), pins.end(), [&](const BlueprintPin& pin) { return are_blueprint_types_compatible(pin.type, link_type); });
                 if(it != pins.end()) {
                     compatible_index = usize(it - pins.begin());
                 } else {

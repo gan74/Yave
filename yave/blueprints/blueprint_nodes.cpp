@@ -32,6 +32,8 @@ SOFTWARE.
 #include <y/serde3/poly.h>
 
 #include <array>
+#include <cstddef>
+#include <cstring>
 #include <stdexcept>
 #include <tuple>
 
@@ -197,6 +199,98 @@ class ConstantBlueprintNode : public BlueprintNode {
         T _value = {};
 };
 
+class IfBlueprintNode : public BlueprintNode {
+    static constexpr usize in_count = 3;
+
+    public:
+        IfBlueprintNode() = default;
+
+        IfBlueprintNode(core::String name) : _name(std::move(name)) {
+        }
+
+        std::string_view name() const override {
+            return _name;
+        }
+
+        core::Span<BlueprintPin> input_pins() const override {
+            return _in_pins;
+        }
+
+        core::Span<BlueprintPin> output_pins() const override {
+            return _out_pin;
+        }
+
+        void set_generic_type(const BlueprintParamType* type) override {
+            y_debug_assert(!_out_pin.type && type);
+            _in_pins[1].type = type;
+            _in_pins[2].type = type;
+            _out_pin.type = type;
+
+            _values = std::make_unique<std::max_align_t[]>(value_stride() * value_count);
+        }
+
+        const BlueprintParamType* generic_type() const override {
+            return _out_pin.type;
+        }
+
+        void eval() override {
+            if(!_out_pin.type) {
+                throw std::runtime_error("Unresolved generic type");
+            }
+
+            const bool condition = _inputs[0] ? *static_cast<const bool*>(_inputs[0]) : _default_cond;
+            const usize index = condition ? 1 : 2;
+            const void* src = _inputs[index] ? _inputs[index] : default_input(index);
+            std::memcpy(value_ptr(output_index), src, _out_pin.type->size);
+        }
+
+        void set_input(usize index, const void* ptr) override {
+            y_debug_assert(index < in_count);
+            _inputs[index] = ptr;
+        }
+
+        const void* input(usize index) const override {
+            y_debug_assert(index < in_count);
+            return _inputs[index];
+        }
+
+        void* default_input(usize index) override {
+            y_debug_assert(index < in_count);
+            return index ? value_ptr(index - 1) : &_default_cond;
+        }
+
+        const void* output_ptr(usize index) const override {
+            y_debug_assert(index == 0);
+            return value_ptr(output_index);
+        }
+
+        y_reflect(IfBlueprintNode, _name, _default_cond)
+        y_serde3_poly(IfBlueprintNode)
+
+    private:
+        static constexpr usize output_index = 2;
+        static constexpr usize value_count = 3;
+
+        usize value_stride() const {
+            return (_out_pin.type->size + sizeof(std::max_align_t) - 1) / sizeof(std::max_align_t);
+        }
+
+        void* value_ptr(usize index) const {
+            y_debug_assert(index < value_count);
+            return _values ? _values.get() + index * value_stride() : nullptr;
+        }
+
+        core::String _name;
+
+        std::array<BlueprintPin, in_count> _in_pins = {{{"condition", blueprint_param_type_index<bool>()}, {"true"}, {"false"}}};
+        BlueprintPin _out_pin = {"out"};
+
+        std::array<const void*, in_count> _inputs = {};
+
+        bool _default_cond = true;
+        std::unique_ptr<std::max_align_t[]> _values;
+};
+
 
 
 
@@ -283,6 +377,8 @@ static void add_vec_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& f
 }
 
 void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {
+    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<IfBlueprintNode>>(core::String("If")));
+
     add_math_nodes<float>(factories, "float");
     add_math_nodes<math::Vec2>(factories, "Vec2");
     add_math_nodes<math::Vec3>(factories, "Vec3");

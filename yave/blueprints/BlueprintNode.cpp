@@ -39,6 +39,14 @@ core::Span<BlueprintPin> BlueprintNode::param_pins() const {
     return {};
 }
 
+void BlueprintNode::set_generic_type(const BlueprintParamType*) {
+    y_debug_assert(false);
+}
+
+const BlueprintParamType* BlueprintNode::generic_type() const {
+    return nullptr;
+}
+
 void BlueprintNode::reset_inputs() {
     const usize c = input_pins().size();
     for(usize i = 0; i != c; ++i) {

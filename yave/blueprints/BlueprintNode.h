@@ -52,12 +52,14 @@ const BlueprintParamType* blueprint_param_type_index() {
     return &type;
 }
 
-struct GenericBlueprintParam {};
-
 struct BlueprintPin {
     std::string_view name;
     const BlueprintParamType* type = nullptr;
 };
+
+inline bool are_blueprint_types_compatible(const BlueprintParamType* a, const BlueprintParamType* b) {
+    return a && b ? a == b : a != b;
+}
 
 class BlueprintNode : NonMovable {
     public:
@@ -71,6 +73,8 @@ class BlueprintNode : NonMovable {
         virtual core::Span<BlueprintPin> output_pins() const;
         virtual core::Span<BlueprintPin> param_pins() const;
 
+        virtual void set_generic_type(const BlueprintParamType* type);
+        virtual const BlueprintParamType* generic_type() const;
 
         virtual void eval() = 0; // may throw std::runtime_error
 

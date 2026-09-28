@@ -57,6 +57,10 @@ BlueprintNodeInspector::BlueprintNodeInspector(BlueprintWorkspace* ws) : Workspa
     add_drawer<math::Vec4>(_drawers, [](std::string_view label, math::Vec4& value) {
         ImGui::DragFloat4(fmt_c_str("{}", label), value.data(), 0.1f);
     }, draw_output<math::Vec4>);
+
+    add_drawer<bool>(_drawers, [](std::string_view label, bool& value) {
+        ImGui::Checkbox(fmt_c_str("{}", label), &value);
+    }, draw_output<bool>);
 }
 
 void BlueprintNodeInspector::on_gui() {

@@ -30,10 +30,37 @@ SOFTWARE.
 
 namespace yave {
 
+static bool resolve_generic_link(BlueprintNode* src, usize src_pin, BlueprintNode* dst, usize dst_pin) {
+    const BlueprintParamType* src_type = src->output_pins()[src_pin].type;
+    const BlueprintParamType* dst_type = dst->input_pins()[dst_pin].type;
+    if(!src_type && dst_type) {
+        src->set_generic_type(dst_type);
+        return true;
+    }
+    if(src_type && !dst_type) {
+        dst->set_generic_type(src_type);
+        return true;
+    }
+    return false;
+}
+
 Blueprint::Blueprint(BlueprintData data) : _nodes(std::move(data._nodes)) {
+    y_profile();
+
+    for(;;) {
+        bool changed = false;
+        for(const BlueprintLink& link : data._links) {
+            y_debug_assert(link.src_node < _nodes.size());
+            y_debug_assert(link.dst_node < _nodes.size());
+            changed |= resolve_generic_link(_nodes[link.src_node].get(), link.src_pin, _nodes[link.dst_node].get(), link.dst_pin);
+        }
+
+        if(!changed) {
+            break;
+        }
+    }
+
     for(const BlueprintLink& link : data._links) {
-        y_debug_assert(link.src_node < _nodes.size());
-        y_debug_assert(link.dst_node < _nodes.size());
         const void* out = _nodes[link.src_node]->output_ptr(link.src_pin);
         _nodes[link.dst_node]->set_input(link.dst_pin, out);
     }
@@ -114,7 +141,7 @@ bool Blueprint::is_link_valid(const BlueprintNode* src, usize src_pin, const Blu
         return false;
     }
 
-    if(src_outputs[src_pin].type != dst_inputs[dst_pin].type) {
+    if(!are_blueprint_types_compatible(src_outputs[src_pin].type, dst_inputs[dst_pin].type)) {
         return false;
     }
 
@@ -160,6 +187,8 @@ void Blueprint::add_link(const BlueprintNode* src, usize src_pin, const Blueprin
 
     const usize src_index = find_node_index(src);
     const usize dst_index = find_node_index(dst);
+
+    resolve_generic_link(_nodes[src_index].get(), src_pin, _nodes[dst_index].get(), dst_pin);
 
     const void* out_ptr = _nodes[src_index]->output_ptr(src_pin);
     _nodes[dst_index]->set_input(dst_pin, out_ptr);
