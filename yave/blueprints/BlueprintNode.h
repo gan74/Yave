@@ -68,7 +68,7 @@ class BlueprintNode : NonMovable {
 
         y_serde3_poly_abstract_base(BlueprintNode)
 
-        virtual std::string_view name() const = 0;
+        std::string_view name() const;
 
         virtual core::Span<BlueprintPin> input_pins() const;
         virtual core::Span<BlueprintPin> output_pins() const;
@@ -94,6 +94,9 @@ class BlueprintNode : NonMovable {
 
     protected:
         BlueprintNode() = default;
+        BlueprintNode(core::String name);
+
+        core::String _name;
 };
 
 }

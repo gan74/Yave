@@ -32,6 +32,7 @@ SOFTWARE.
 #include <y/serde3/poly.h>
 
 #include <array>
+#include <concepts>
 #include <cstddef>
 #include <cstring>
 #include <stdexcept>
@@ -91,11 +92,7 @@ class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode 
     public:
         LambdaBlueprintNodeImpl() = default;
 
-        LambdaBlueprintNodeImpl(core::String name) : _name(std::move(name)) {
-        }
-
-        std::string_view name() const override {
-            return _name;
+        LambdaBlueprintNodeImpl(core::String name) : BlueprintNode(std::move(name)) {
         }
 
         core::Span<BlueprintPin> input_pins() const override {
@@ -144,8 +141,6 @@ class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode 
         y_serde3_poly(LambdaBlueprintNodeImpl)
 
     private:
-        core::String _name;
-
         std::array<const void*, in_count> _inputs = {};
 
         values_t _values = {};
@@ -162,11 +157,7 @@ class ConstantBlueprintNode : public BlueprintNode {
     public:
         ConstantBlueprintNode() = default;
 
-        ConstantBlueprintNode(core::String name) : _name(std::move(name)) {
-        }
-
-        std::string_view name() const override {
-            return _name;
+        ConstantBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
         }
 
         core::Span<BlueprintPin> output_pins() const override {
@@ -194,8 +185,6 @@ class ConstantBlueprintNode : public BlueprintNode {
         y_serde3_poly(ConstantBlueprintNode)
 
     private:
-        core::String _name;
-
         T _value = {};
 };
 
@@ -205,11 +194,7 @@ class IfBlueprintNode : public BlueprintNode {
     public:
         IfBlueprintNode() = default;
 
-        IfBlueprintNode(core::String name) : _name(std::move(name)) {
-        }
-
-        std::string_view name() const override {
-            return _name;
+        IfBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
         }
 
         core::Span<BlueprintPin> input_pins() const override {
@@ -280,8 +265,6 @@ class IfBlueprintNode : public BlueprintNode {
             return _values ? _values.get() + index * value_stride() : nullptr;
         }
 
-        core::String _name;
-
         std::array<BlueprintPin, in_count> _in_pins = {{{"condition", blueprint_param_type_index<bool>()}, {"true", nullptr, true}, {"false", nullptr, true}}};
         BlueprintPin _out_pin = {"out", nullptr, true};
 
@@ -303,7 +286,7 @@ static std::unique_ptr<BlueprintNodeFactory> make_blueprint_node_factory(core::S
 
 
 template<typename T>
-static void add_math_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories, std::string_view type_name) {
+static void add_arith_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories, std::string_view type_name) {
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<ConstantBlueprintNode<T>>>(fmt_to_owned("Const {}", type_name)));
 
     struct Negate { void operator()(T in, T& out) const { out = -in; } };
@@ -317,14 +300,45 @@ static void add_math_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& 
 
     struct Divide {
         void operator()(T a, T b, T& out) const {
-            if(b == T(0)) {
-                throw std::runtime_error("Division by zero");
+            if constexpr(is_iterable<T>) {
+                for(const auto& elem : b) {
+                    if(elem == std::remove_cvref_t<decltype(elem)>{}) {
+                        throw std::runtime_error("Division by zero");
+                    }
+                }
             } else {
-                out = a / b;
+                if(b == T{}) {
+                    throw std::runtime_error("Division by zero");
+                }
             }
+
+            out = a / b;
         }
     };
     factories.emplace_back(make_blueprint_node_factory<Divide, "a", "b", "out">(fmt_to_owned("Divide {}", type_name)));
+}
+
+template<typename T>
+static void add_comp_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories, std::string_view type_name) {
+    struct Equal { void operator()(T a, T b, bool& out) const { out = a == b; } };
+    factories.emplace_back(make_blueprint_node_factory<Equal, "a", "b", "out">(fmt_to_owned("Equal {}", type_name)));
+
+    struct NotEqual { void operator()(T a, T b, bool& out) const { out = a != b; } };
+    factories.emplace_back(make_blueprint_node_factory<NotEqual, "a", "b", "out">(fmt_to_owned("Not equal {}", type_name)));
+
+    if constexpr(std::totally_ordered<T>) {
+        struct Less { void operator()(T a, T b, bool& out) const { out = a < b; } };
+        factories.emplace_back(make_blueprint_node_factory<Less, "a", "b", "out">(fmt_to_owned("Less {}", type_name)));
+
+        struct Greater { void operator()(T a, T b, bool& out) const { out = a > b; } };
+        factories.emplace_back(make_blueprint_node_factory<Greater, "a", "b", "out">(fmt_to_owned("Greater {}", type_name)));
+
+        struct LessEqual { void operator()(T a, T b, bool& out) const { out = a <= b; } };
+        factories.emplace_back(make_blueprint_node_factory<LessEqual, "a", "b", "out">(fmt_to_owned("Less or equal {}", type_name)));
+
+        struct GreaterEqual { void operator()(T a, T b, bool& out) const { out = a >= b; } };
+        factories.emplace_back(make_blueprint_node_factory<GreaterEqual, "a", "b", "out">(fmt_to_owned("Greater or equal {}", type_name)));
+    }
 }
 
 template<typename V>
@@ -376,18 +390,40 @@ static void add_vec_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& f
     factories.emplace_back(make_blueprint_node_factory<Saturate, "in", "out">(fmt_to_owned("Saturate {}", type_name)));
 }
 
-void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {
-    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<IfBlueprintNode>>("If"));
+static void add_bool_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<ConstantBlueprintNode<bool>>>("Const bool"));
 
-    add_math_nodes<float>(factories, "float");
-    add_math_nodes<math::Vec2>(factories, "Vec2");
-    add_math_nodes<math::Vec3>(factories, "Vec3");
-    add_math_nodes<math::Vec4>(factories, "Vec4");
+    struct Not { void operator()(bool in, bool& out) const { out = !in; } };
+    factories.emplace_back(make_blueprint_node_factory<Not, "in", "out">("Not"));
+
+    struct And { void operator()(bool a, bool b, bool& out) const { out = a && b; } };
+    factories.emplace_back(make_blueprint_node_factory<And, "a", "b", "out">("And"));
+
+    struct Or { void operator()(bool a, bool b, bool& out) const { out = a || b; } };
+    factories.emplace_back(make_blueprint_node_factory<Or, "a", "b", "out">("Or"));
+
+    struct Xor { void operator()(bool a, bool b, bool& out) const { out = a != b; } };
+    factories.emplace_back(make_blueprint_node_factory<Xor, "a", "b", "out">("Xor"));
+}
+
+void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {
+    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<IfBlueprintNode>>("If"));
+
+    add_bool_nodes(factories);
+
+    add_arith_nodes<float>(factories, "float");
+    add_arith_nodes<math::Vec2>(factories, "Vec2");
+    add_arith_nodes<math::Vec3>(factories, "Vec3");
+    add_arith_nodes<math::Vec4>(factories, "Vec4");
 
     add_vec_nodes<math::Vec2>(factories, "Vec2");
     add_vec_nodes<math::Vec3>(factories, "Vec3");
     add_vec_nodes<math::Vec4>(factories, "Vec4");
+
+    add_comp_nodes<float>(factories, "float");
+    add_comp_nodes<math::Vec2>(factories, "Vec2");
+    add_comp_nodes<math::Vec3>(factories, "Vec3");
+    add_comp_nodes<math::Vec4>(factories, "Vec4");
 }
 
 }
