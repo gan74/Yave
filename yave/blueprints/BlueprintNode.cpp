@@ -90,4 +90,124 @@ void* BlueprintNode::param_ptr(usize) {
     return nullptr;
 }
 
+
+
+static void set_generic_pin_type(BlueprintPin& pin, const BlueprintParamType* type, u64& value_type, core::FixedArray<u8>& value) {
+    y_debug_assert(!pin.type != !type);
+    pin.type = type;
+
+    // Keep the value if the type didn't change (ie: after deserialization)
+    if(type && type->type_hash != value_type) {
+        value_type = type->type_hash;
+        value = core::FixedArray<u8>(type->size);
+    }
+}
+
+
+ParamInBlueprintNode::ParamInBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
+}
+
+std::string_view ParamInBlueprintNode::node_type_name() const {
+    return "ParamIn";
+}
+
+core::Span<BlueprintPin> ParamInBlueprintNode::output_pins() const {
+    return _pin;
+}
+
+core::Span<BlueprintPin> ParamInBlueprintNode::param_pins() const {
+    return _pin;
+}
+
+void ParamInBlueprintNode::set_generic_type(const BlueprintParamType* type) {
+    set_generic_pin_type(_pin, type, _value_type, _value);
+}
+
+const BlueprintParamType* ParamInBlueprintNode::generic_type() const {
+    return _pin.type;
+}
+
+void ParamInBlueprintNode::eval() {
+}
+
+const void* ParamInBlueprintNode::output_ptr(usize index) const {
+    unused(index);
+    y_debug_assert(index == 0);
+    return _pin.type ? _value.data() : nullptr;
+}
+
+void* ParamInBlueprintNode::param_ptr(usize index) {
+    unused(index);
+    y_debug_assert(index == 0);
+    return value();
+}
+
+void* ParamInBlueprintNode::value() {
+    return _pin.type ? _value.data() : nullptr;
+}
+
+u32 ParamInBlueprintNode::order() const {
+    return _order;
+}
+
+u32& ParamInBlueprintNode::order() {
+    return _order;
+}
+
+
+ParamOutBlueprintNode::ParamOutBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
+}
+
+std::string_view ParamOutBlueprintNode::node_type_name() const {
+    return "ParamOut";
+}
+
+core::Span<BlueprintPin> ParamOutBlueprintNode::input_pins() const {
+    return _pin;
+}
+
+void ParamOutBlueprintNode::set_generic_type(const BlueprintParamType* type) {
+    set_generic_pin_type(_pin, type, _value_type, _value);
+}
+
+const BlueprintParamType* ParamOutBlueprintNode::generic_type() const {
+    return _pin.type;
+}
+
+void ParamOutBlueprintNode::eval() {
+}
+
+void ParamOutBlueprintNode::set_input(usize index, const void* ptr) {
+    unused(index);
+    y_debug_assert(index == 0);
+    _input = ptr;
+}
+
+const void* ParamOutBlueprintNode::input(usize index) const {
+    unused(index);
+    y_debug_assert(index == 0);
+    return _input;
+}
+
+void* ParamOutBlueprintNode::default_input(usize index) {
+    unused(index);
+    y_debug_assert(index == 0);
+    return _pin.type ? _value.data() : nullptr;
+}
+
+const void* ParamOutBlueprintNode::value() const {
+    if(_input) {
+        return _input;
+    }
+    return _pin.type ? _value.data() : nullptr;
+}
+
+u32 ParamOutBlueprintNode::order() const {
+    return _order;
+}
+
+u32& ParamOutBlueprintNode::order() {
+    return _order;
+}
+
 }

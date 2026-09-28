@@ -433,6 +433,8 @@ static void add_bool_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& 
 }
 
 void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {
+    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<ParamInBlueprintNode>>("Param in"));
+    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<ParamOutBlueprintNode>>("Param out"));
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<IfBlueprintNode>>("If"));
 
     add_bool_nodes(factories);
