@@ -50,6 +50,8 @@ class BlueprintWorkspace final : public Workspace {
         Blueprint& blueprint();
         const Blueprint& blueprint() const;
 
+        bool add_blueprint(AssetId id);
+
         const core::Result<void, BlueprintError>& error() const;
         const BlueprintNode* error_node() const;
         usize error_node_index() const;

@@ -49,6 +49,30 @@ static BlueprintNodeFactory* find_factory(core::Span<std::unique_ptr<BlueprintNo
     y_fatal("Unknown blueprint node factory '{}'", name);
 }
 
+static core::Result<BlueprintData> read_blueprint_data(AssetId id) {
+    if(id == AssetId::invalid_id()) {
+        log_msg("Unable to load blueprint: no asset id", Log::Error);
+        return core::Err();
+    }
+
+    const auto reader = asset_store().data(id);
+    if(!reader) {
+        log_msg("Unable to find blueprint asset", Log::Error);
+        return core::Err();
+    }
+
+    BlueprintData data;
+    serde3::ReadableArchive arc(*reader.unwrap());
+    if(const auto res = arc.deserialize(data); res.is_error()) {
+        log_msg("Unable to load blueprint", Log::Error);
+        return core::Err();
+    } else if(res.unwrap() == serde3::Success::Partial) {
+        log_msg("Blueprint was only partially loaded", Log::Warning);
+    }
+
+    return core::Ok(std::move(data));
+}
+
 static Blueprint create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactory>> factories, usize node_count = 20) {
     y_profile();
 
@@ -247,31 +271,24 @@ void BlueprintWorkspace::save() {
 void BlueprintWorkspace::load() {
     y_profile();
 
-    if(_id == AssetId::invalid_id()) {
-        log_msg("Unable to load blueprint: no asset id", Log::Error);
-        return;
+    if(auto data = read_blueprint_data(_id)) {
+        _selected_node = nullptr;
+        _blueprint = Blueprint(std::move(data.unwrap()));
+        update_name();
+
+        log_msg("Blueprint loaded");
+    }
+}
+
+bool BlueprintWorkspace::add_blueprint(AssetId id) {
+    y_profile();
+
+    if(auto data = read_blueprint_data(id)) {
+        _blueprint.add_blueprint(Blueprint(std::move(data.unwrap())));
+        return true;
     }
 
-    const auto reader = asset_store().data(_id);
-    if(!reader) {
-        log_msg("Unable to find blueprint asset", Log::Error);
-        return;
-    }
-
-    BlueprintData data;
-    serde3::ReadableArchive arc(*reader.unwrap());
-    if(const auto res = arc.deserialize(data); res.is_error()) {
-        log_msg("Unable to load blueprint", Log::Error);
-        return;
-    } else if(res.unwrap() == serde3::Success::Partial) {
-        log_msg("Blueprint was only partially loaded", Log::Warning);
-    }
-
-    _selected_node = nullptr;
-    _blueprint = Blueprint(std::move(data));
-    update_name();
-
-    log_msg("Blueprint loaded");
+    return false;
 }
 
 AssetId BlueprintWorkspace::asset_id() const {

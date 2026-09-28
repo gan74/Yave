@@ -132,6 +132,12 @@ void Blueprint::remove_node(const BlueprintNode* node) {
     update_generic_types();
 }
 
+void Blueprint::add_blueprint(Blueprint blueprint) {
+    for(auto& node : blueprint._nodes) {
+        _nodes.emplace_back(std::move(node));
+    }
+}
+
 std::pair<const BlueprintNode*, usize> Blueprint::find_output(const void* ptr) const {
     if(ptr) {
         for(const auto& node : _nodes) {

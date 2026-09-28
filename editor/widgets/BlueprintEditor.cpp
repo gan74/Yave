@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "BlueprintEditor.h"
+#include "AssetSelector.h"
 
 #include <editor/utils/StringMatcher.h>
 #include <editor/utils/ui.h>
@@ -324,13 +325,17 @@ void BlueprintEditor::on_gui() {
 }
 
 void BlueprintEditor::reset_node_layout() {
+    layout_nodes(0, math::Vec2(40.0f));
+}
+
+void BlueprintEditor::layout_nodes(usize first_node, math::Vec2 origin) {
     y_profile();
 
     ed::SetCurrentEditor(_context);
     y_defer(ed::SetCurrentEditor(nullptr));
 
     const Blueprint& blueprint = workspace()->blueprint();
-    const core::Span nodes = blueprint.all_nodes();
+    const core::Span nodes = blueprint.all_nodes().take(first_node);
 
     core::FixedArray<usize> column_sizes(nodes.size());
     core::FixedArray<usize> depths(nodes.size());
@@ -340,7 +345,9 @@ void BlueprintEditor::reset_node_layout() {
             if(const void* in = nodes[i]->input(k)) {
                 const BlueprintNode* src = blueprint.find_output(in).first;
                 const auto src_it = std::find_if(nodes.begin(), nodes.end(), [&](const auto& n) { return n.get() == src; });
-                depths[i] = std::max(depths[i], depths[usize(src_it - nodes.begin())] + 1);
+                if(src_it != nodes.end()) {
+                    depths[i] = std::max(depths[i], depths[usize(src_it - nodes.begin())] + 1);
+                }
             }
         }
 
@@ -348,7 +355,7 @@ void BlueprintEditor::reset_node_layout() {
         const usize row = column_sizes[col]++;
         ed::SetNodePosition(
             ed::NodeId(uintptr_t(nodes[i].get())),
-            ImVec2(40.0f + float(col) * layout_cell_size.x, 40.0f + float(row) * layout_cell_size.y)
+            ImVec2(origin.x() + float(col) * layout_cell_size.x, origin.y() + float(row) * layout_cell_size.y)
         );
     }
 }
@@ -490,9 +497,25 @@ void BlueprintEditor::draw_context_menu() {
     if(ImGui::BeginPopup("##contextmenu")) {
         if(_new_node.link_pin) {
             show_node_list();
-        } else if(ImGui::BeginMenu("Add node")) {
-            show_node_list();
-            ImGui::EndMenu();
+        } else {
+            if(ImGui::BeginMenu("Add node")) {
+                show_node_list();
+                ImGui::EndMenu();
+            }
+
+            if(ImGui::MenuItem("Add blueprint")) {
+                const math::Vec2 pos = _new_node.pos;
+                add_top_level_widget<AssetSelector>(AssetType::Blueprint, "Add blueprint")->set_selected_callback(
+                    [this, pos](AssetId id) {
+                        const usize first_node = workspace()->blueprint().all_nodes().size();
+                        if(!workspace()->add_blueprint(id)) {
+                            return false;
+                        }
+                        layout_nodes(first_node, pos);
+                        return true;
+                    }
+                );
+            }
         }
         ImGui::EndPopup();
     }

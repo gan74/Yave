@@ -44,6 +44,8 @@ class Blueprint : NonCopyable {
         const BlueprintNode* add_node(std::unique_ptr<BlueprintNode> node);
         void remove_node(const BlueprintNode* node);
 
+        void add_blueprint(Blueprint blueprint);
+
         std::pair<const BlueprintNode*, usize> find_output(const void* ptr) const;
 
         void clear_links();

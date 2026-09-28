@@ -50,6 +50,7 @@ class BlueprintEditor final : public WorkspaceWidget<BlueprintWorkspace> {
         void process_actions();
         void draw_context_menu();
         void reset_node_layout();
+        void layout_nodes(usize first_node, math::Vec2 origin);
 
         ax::NodeEditor::EditorContext* _context = nullptr;
 
