@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-BlueprintData BlueprintData::from_blueprint(Blueprint&& blueprint) {
+BlueprintData BlueprintData::from_blueprint(Blueprint blueprint) {
     BlueprintData data;
 
     const core::Span nodes = blueprint.all_nodes();

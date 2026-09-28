@@ -45,7 +45,7 @@ class BlueprintData {
     public:
         BlueprintData() = default;
 
-        static BlueprintData from_blueprint(Blueprint&& blueprint);
+        static BlueprintData from_blueprint(Blueprint blueprint);
 
         y_reflect(BlueprintData, _nodes, _links)
 

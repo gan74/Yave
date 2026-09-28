@@ -37,7 +37,7 @@ struct BlueprintError {
 class Blueprint : NonCopyable {
     public:
         Blueprint() = default;
-        explicit Blueprint(BlueprintData&& data);
+        explicit Blueprint(BlueprintData data);
 
         const core::Span<std::unique_ptr<BlueprintNode>> all_nodes() const;
 

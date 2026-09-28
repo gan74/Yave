@@ -228,6 +228,16 @@ void BlueprintEditor::on_gui() {
         ImGui::Checkbox("Show execution order", &_show_execution_order);
         ImGui::Separator();
         ImGui::TextUnformatted(fmt_c_str("{} nodes", blueprint.all_nodes().size()));
+
+        if(const BlueprintNode* error_node = workspace()->error_node()) {
+            ImGui::Separator();
+            ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
+            if(ImGui::Selectable(fmt_c_str("Node \"{}\": {}", error_node->name(), workspace()->error().error().error))) {
+                center_on_node(error_node);
+            }
+            ImGui::PopStyleColor();
+        }
+
         ImGui::EndMenuBar();
     }
 
