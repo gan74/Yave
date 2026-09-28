@@ -25,6 +25,7 @@ SOFTWARE.
 #include <y/utils/traits.h>
 #include <y/core/String.h>
 #include <y/core/Vector.h>
+#include <y/core/FixedArray.h>
 #include <y/math/Vec.h>
 #include <y/utils/format.h>
 #include <y/reflect/reflect.h>
@@ -33,7 +34,6 @@ SOFTWARE.
 
 #include <array>
 #include <concepts>
-#include <cstddef>
 #include <cstring>
 #include <stdexcept>
 #include <tuple>
@@ -211,7 +211,10 @@ class IfBlueprintNode : public BlueprintNode {
             _in_pins[2].type = type;
             _out_pin.type = type;
 
-            _values = type ? std::make_unique<std::max_align_t[]>(value_stride() * value_count) : nullptr;
+            if(type && type->type_hash != _values_type) {
+                _values_type = type->type_hash;
+                _values = core::FixedArray<u8>(type->size * value_count);
+            }
         }
 
         const BlueprintParamType* generic_type() const override {
@@ -249,20 +252,20 @@ class IfBlueprintNode : public BlueprintNode {
             return value_ptr(output_index);
         }
 
-        y_reflect(IfBlueprintNode, _name, _default_cond)
+        y_reflect(IfBlueprintNode, _name, _default_cond, _values_type, _values)
         y_serde3_poly(IfBlueprintNode)
 
     private:
         static constexpr usize output_index = 2;
         static constexpr usize value_count = 3;
 
-        usize value_stride() const {
-            return (_out_pin.type->size + sizeof(std::max_align_t) - 1) / sizeof(std::max_align_t);
+        void* value_ptr(usize index) {
+            y_debug_assert(index < value_count);
+            return _out_pin.type ? _values.data() + index * _out_pin.type->size : nullptr;
         }
 
-        void* value_ptr(usize index) const {
-            y_debug_assert(index < value_count);
-            return _values ? _values.get() + index * value_stride() : nullptr;
+        const void* value_ptr(usize index) const {
+            return const_cast<IfBlueprintNode*>(this)->value_ptr(index);
         }
 
         std::array<BlueprintPin, in_count> _in_pins = {{{"condition", blueprint_param_type_index<bool>()}, {"true", nullptr, true}, {"false", nullptr, true}}};
@@ -271,7 +274,8 @@ class IfBlueprintNode : public BlueprintNode {
         std::array<const void*, in_count> _inputs = {};
 
         bool _default_cond = true;
-        std::unique_ptr<std::max_align_t[]> _values;
+        u64 _values_type = 0;
+        core::FixedArray<u8> _values;
 };
 
 
