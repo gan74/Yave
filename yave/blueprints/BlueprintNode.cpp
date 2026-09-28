@@ -47,6 +47,7 @@ core::Span<BlueprintPin> BlueprintNode::param_pins() const {
 }
 
 void BlueprintNode::set_generic_type(const BlueprintParamType* type) {
+    unused(type);
     y_debug_assert(!type);
 }
 

@@ -172,11 +172,13 @@ class ConstantBlueprintNode : public BlueprintNode {
         }
 
         const void* output_ptr(usize index) const override {
+            unused(index);
             y_debug_assert(index == 0);
             return &_value;
         }
 
         void* param_ptr(usize index) override {
+            unused(index);
             y_debug_assert(index == 0);
             return &_value;
         }
@@ -248,6 +250,7 @@ class IfBlueprintNode : public BlueprintNode {
         }
 
         const void* output_ptr(usize index) const override {
+            unused(index);
             y_debug_assert(index == 0);
             return value_ptr(output_index);
         }
