@@ -267,6 +267,33 @@ std::string_view trim(std::string_view str);
 
 core::String operator+(std::string_view l, const core::String& r);
 
+
+template<usize N>
+struct FixedString {
+        char chars[N];
+
+        constexpr FixedString(const char (&str)[N]) {
+            for (usize i = 0; i != N; ++i) {
+                chars[i] = str[i];
+            }
+        }
+
+        constexpr usize size() const {
+            return N - 1;
+        }
+
+        constexpr const char* data() const {
+            return chars;
+        }
+
+        constexpr operator std::string_view() const {
+            return {chars, N - 1};
+        }
+};
+
+template<usize N>
+FixedString(const char (&)[N]) -> FixedString<N>;
+
 }
 
 
