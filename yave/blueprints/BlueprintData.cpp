@@ -36,13 +36,8 @@ BlueprintData BlueprintData::from_blueprint(Blueprint blueprint) {
                 const auto [src, src_pin] = blueprint.find_output(in);
                 y_debug_assert(src);
 
-                usize src_index = 0;
-                for(; src_index != nodes.size(); ++src_index) {
-                    if(nodes[src_index].get() == src) {
-                        break;
-                    }
-                }
-                y_debug_assert(src_index != nodes.size());
+                const usize src_index = blueprint.find_node_index(src);
+                y_debug_assert(src_index != usize(-1));
 
                 data._links << BlueprintLink{
                     u32(src_index),

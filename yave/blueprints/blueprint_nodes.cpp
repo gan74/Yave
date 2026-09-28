@@ -32,7 +32,7 @@ SOFTWARE.
 #include <y/serde3/poly.h>
 
 #include <array>
-#include <exception>
+#include <stdexcept>
 #include <tuple>
 
 namespace yave {

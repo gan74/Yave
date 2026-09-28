@@ -30,7 +30,7 @@ namespace yave {
 
 class BlueprintNodeFactory : NonMovable {
     public:
-        virtual ~BlueprintNodeFactory();
+        virtual ~BlueprintNodeFactory() = default;
 
         virtual std::string_view name() const = 0;
         virtual std::unique_ptr<BlueprintNode> create_node() const = 0;

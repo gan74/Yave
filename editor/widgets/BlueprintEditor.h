@@ -47,14 +47,14 @@ class BlueprintEditor final : public WorkspaceWidget<BlueprintWorkspace> {
     private:
         void draw_node(const BlueprintNode& node, core::Span<const void*> linked_outputs);
         void draw_execution_order();
-        void process_links();
+        void process_actions();
         void draw_context_menu();
         void reset_node_layout();
 
         ax::NodeEditor::EditorContext* _context = nullptr;
 
         bool _show_execution_order = false;
-        
+
         core::String _node_filter;
         bool _open_node_menu = false;
 

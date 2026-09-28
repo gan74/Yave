@@ -307,7 +307,7 @@ void BlueprintEditor::on_gui() {
             draw_execution_order();
         }
 
-        process_links();
+        process_actions();
         draw_context_menu();
 
         ed::End();
@@ -353,7 +353,7 @@ void BlueprintEditor::reset_node_layout() {
     }
 }
 
-void BlueprintEditor::process_links() {
+void BlueprintEditor::process_actions() {
     y_profile();
 
     Blueprint& blueprint = workspace()->blueprint();

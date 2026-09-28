@@ -39,7 +39,7 @@ class Blueprint : NonCopyable {
         Blueprint() = default;
         explicit Blueprint(BlueprintData data);
 
-        const core::Span<std::unique_ptr<BlueprintNode>> all_nodes() const;
+        core::Span<std::unique_ptr<BlueprintNode>> all_nodes() const;
 
         const BlueprintNode* add_node(std::unique_ptr<BlueprintNode> node);
         void remove_node(const BlueprintNode* node);
@@ -55,6 +55,9 @@ class Blueprint : NonCopyable {
 
     private:
         friend class BlueprintData;
+
+        usize find_node_index(const BlueprintNode* node) const;
+        static usize find_output_pin(const BlueprintNode& node, const void* ptr);
 
         core::Vector<std::unique_ptr<BlueprintNode>> _nodes;
 };

@@ -39,8 +39,25 @@ Blueprint::Blueprint(BlueprintData data) : _nodes(std::move(data._nodes)) {
     }
 }
 
-const core::Span<std::unique_ptr<BlueprintNode>> Blueprint::all_nodes() const {
+core::Span<std::unique_ptr<BlueprintNode>> Blueprint::all_nodes() const {
     return _nodes;
+}
+
+usize Blueprint::find_node_index(const BlueprintNode* node) const {
+    const auto it = std::find_if(_nodes.begin(), _nodes.end(), [=](const auto& n) { return n.get() == node; });
+    return it == _nodes.end() ? usize(-1) : usize(it - _nodes.begin());
+}
+
+usize Blueprint::find_output_pin(const BlueprintNode& node, const void* ptr) {
+    if(ptr) {
+        const usize output_count = node.output_pins().size();
+        for(usize i = 0; i != output_count; ++i) {
+            if(node.output_ptr(i) == ptr) {
+                return i;
+            }
+        }
+    }
+    return usize(-1);
 }
 
 const BlueprintNode* Blueprint::add_node(std::unique_ptr<BlueprintNode> node) {
@@ -50,35 +67,27 @@ const BlueprintNode* Blueprint::add_node(std::unique_ptr<BlueprintNode> node) {
 }
 
 void Blueprint::remove_node(const BlueprintNode* node) {
-    const auto node_it = std::find_if(_nodes.begin(), _nodes.end(), [=](const auto& n) { return n.get() == node; });
-    y_debug_assert(node_it != _nodes.end());
+    const usize node_index = find_node_index(node);
+    y_debug_assert(node_index < _nodes.size());
 
-    const usize output_count = node->output_pins().size();
-    for(auto it = node_it + 1; it != _nodes.end(); ++it) {
-        const usize input_count = (*it)->input_pins().size();
+    for(usize k = node_index + 1; k != _nodes.size(); ++k) {
+        BlueprintNode* dst = _nodes[k].get();
+        const usize input_count = dst->input_pins().size();
         for(usize i = 0; i != input_count; ++i) {
-            if(const void* in = (*it)->input(i)) {
-                for(usize k = 0; k != output_count; ++k) {
-                    if(node->output_ptr(k) == in) {
-                        (*it)->set_input(i, nullptr);
-                        break;
-                    }
-                }
+            if(find_output_pin(*node, dst->input(i)) != usize(-1)) {
+                dst->set_input(i, nullptr);
             }
         }
     }
 
-    _nodes.erase(node_it);
+    _nodes.erase(_nodes.begin() + node_index);
 }
 
 std::pair<const BlueprintNode*, usize> Blueprint::find_output(const void* ptr) const {
     if(ptr) {
         for(const auto& node : _nodes) {
-            const usize output_count = node->output_pins().size();
-            for(usize i = 0; i != output_count; ++i) {
-                if(node->output_ptr(i) == ptr) {
-                    return {node.get(), i};
-                }
+            if(const usize pin = find_output_pin(*node, ptr); pin != usize(-1)) {
+                return {node.get(), pin};
             }
         }
     }
@@ -104,59 +113,44 @@ bool Blueprint::is_link_valid(const BlueprintNode* src, usize src_pin, const Blu
     if(src_pin >= src_outputs.size() || dst_pin >= dst_inputs.size()) {
         return false;
     }
+
     if(src_outputs[src_pin].type != dst_inputs[dst_pin].type) {
         return false;
     }
 
-    const auto src_it = std::find_if(_nodes.begin(), _nodes.end(), [=](const auto& n) { return n.get() == src; });
-    const auto dst_it = std::find_if(_nodes.begin(), _nodes.end(), [=](const auto& n) { return n.get() == dst; });
-    if(src_it == _nodes.end() || dst_it == _nodes.end()) {
+    const usize src_index = find_node_index(src);
+    if(src_index == usize(-1)) {
         return false;
     }
 
-    const usize src_index = src_it - _nodes.begin();
-    const usize dst_index = dst_it - _nodes.begin();
+    const usize dst_index = find_node_index(dst);
+    if(dst_index == usize(-1)) {
+        return false;
+    }
 
     if(src_index < dst_index) {
         return true;
     }
 
-    core::ScratchPad<bool> visited(src_index - dst_index + 1, false);
-    core::ScratchVector<usize> stack(src_index - dst_index + 1);
-    stack.push_back(dst_index);
-    while(!stack.is_empty()) {
-        const usize index = stack.pop();
-        if(index == src_index) {
-            return false;
-        }
+    core::ScratchPad<bool> reachable(src_index - dst_index + 1, false);
+    reachable[0] = true;
 
-        const usize visited_index = index - dst_index;
-        if(visited[visited_index]) {
-            continue;
-        }
-        visited[visited_index] = true;
-
-        const BlueprintNode* node = _nodes[index].get();
-        const usize output_count = node->output_pins().size();
-        for(usize y = index + 1; y <= src_index; ++y) {
-            if(visited[y - dst_index]) {
-                continue;
-            }
-            const usize input_count = _nodes[y]->input_pins().size();
-            for(usize i = 0; i != input_count; ++i) {
-                if(const void* in = _nodes[y]->input(i)) {
-                    for(usize k = 0; k != output_count; ++k) {
-                        if(node->output_ptr(k) == in) {
-                            stack.push_back(y);
-                            break;
-                        }
+    for(usize y = dst_index + 1; y <= src_index; ++y) {
+        const BlueprintNode* node = _nodes[y].get();
+        const usize input_count = node->input_pins().size();
+        for(usize i = 0; i != input_count && !reachable[y - dst_index]; ++i) {
+            if(const void* in = node->input(i)) {
+                for(usize x = dst_index; x != y; ++x) {
+                    if(reachable[x - dst_index] && find_output_pin(*_nodes[x], in) != usize(-1)) {
+                        reachable[y - dst_index] = true;
+                        break;
                     }
                 }
             }
         }
     }
 
-    return true;
+    return !reachable[src_index - dst_index];
 }
 
 void Blueprint::add_link(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin) {
@@ -164,11 +158,8 @@ void Blueprint::add_link(const BlueprintNode* src, usize src_pin, const Blueprin
 
     y_debug_assert(is_link_valid(src, src_pin, dst, dst_pin));
 
-    const auto src_it = std::find_if(_nodes.begin(), _nodes.end(), [=](const auto& n) { return n.get() == src; });
-    const auto dst_it = std::find_if(_nodes.begin(), _nodes.end(), [=](const auto& n) { return n.get() == dst; });
-
-    const usize src_index = src_it - _nodes.begin();
-    const usize dst_index = dst_it - _nodes.begin();
+    const usize src_index = find_node_index(src);
+    const usize dst_index = find_node_index(dst);
 
     const void* out_ptr = _nodes[src_index]->output_ptr(src_pin);
     _nodes[dst_index]->set_input(dst_pin, out_ptr);
@@ -184,10 +175,10 @@ void Blueprint::add_link(const BlueprintNode* src, usize src_pin, const Blueprin
 }
 
 void Blueprint::remove_link(const BlueprintNode* dst, usize dst_pin) {
-    const auto dst_it = std::find_if(_nodes.begin(), _nodes.end(), [=](const auto& n) { return n.get() == dst; });
-    y_debug_assert(dst_it != _nodes.end());
+    const usize dst_index = find_node_index(dst);
+    y_debug_assert(dst_index < _nodes.size());
     y_debug_assert(dst_pin < dst->input_pins().size());
-    (*dst_it)->set_input(dst_pin, nullptr);
+    _nodes[dst_index]->set_input(dst_pin, nullptr);
 }
 
 core::Result<void, BlueprintError> Blueprint::eval() noexcept {
