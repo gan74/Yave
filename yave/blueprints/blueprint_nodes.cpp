@@ -54,6 +54,13 @@ constexpr std::array<usize, N> bp_port_indices(const std::array<bool, P>& is_inp
     }
     return indices;
 }
+
+template<typename T>
+constexpr std::string_view bp_op_name() {
+    constexpr std::string_view full = ct_type_name<T>();
+    constexpr usize pos = full.rfind("::");
+    return pos == std::string_view::npos ? full : full.substr(pos + 2);
+}
 }
 
 
@@ -93,6 +100,10 @@ class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode 
         LambdaBlueprintNodeImpl() = default;
 
         LambdaBlueprintNodeImpl(core::String name) : BlueprintNode(std::move(name)) {
+        }
+
+        std::string_view node_type_name() const override {
+            return detail::bp_op_name<F>();
         }
 
         core::Span<BlueprintPin> input_pins() const override {
@@ -160,6 +171,10 @@ class ConstantBlueprintNode : public BlueprintNode {
         ConstantBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
         }
 
+        std::string_view node_type_name() const override {
+            return "Const";
+        }
+
         core::Span<BlueprintPin> output_pins() const override {
             return static_value_pin;
         }
@@ -197,6 +212,10 @@ class IfBlueprintNode : public BlueprintNode {
         IfBlueprintNode() = default;
 
         IfBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
+        }
+
+        std::string_view node_type_name() const override {
+            return "If";
         }
 
         core::Span<BlueprintPin> input_pins() const override {

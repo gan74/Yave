@@ -30,7 +30,11 @@ BlueprintNode::BlueprintNode(core::String name) : _name(std::move(name)) {
 BlueprintNode::~BlueprintNode() {
 }
 
-std::string_view BlueprintNode::name() const {
+const core::String& BlueprintNode::name() const {
+    return _name;
+}
+
+core::String& BlueprintNode::name() {
     return _name;
 }
 

@@ -70,7 +70,9 @@ void BlueprintNodeInspector::on_gui() {
         return;
     }
 
-    imgui::text_read_only("##name", node->name());
+    ImGui::TextUnformatted(node->node_type_name().data());
+
+    imgui::text_input("##name", node->name());
     ImGui::Separator();
 
     const core::Span<BlueprintPin> inputs = node->input_pins();
