@@ -42,6 +42,7 @@ class Blueprint : NonCopyable {
         const core::Span<std::unique_ptr<BlueprintNode>> all_nodes() const;
 
         const BlueprintNode* add_node(std::unique_ptr<BlueprintNode> node);
+        void remove_node(const BlueprintNode* node);
 
         std::pair<const BlueprintNode*, usize> find_output(const void* ptr) const;
 

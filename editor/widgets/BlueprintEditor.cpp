@@ -393,6 +393,17 @@ void BlueprintEditor::process_links() {
                 }
             }
         }
+
+        ed::NodeId node_id;
+        while(ed::QueryDeletedNode(&node_id)) {
+            if(ed::AcceptDeletedItem()) {
+                const BlueprintNode* node = reinterpret_cast<const BlueprintNode*>(node_id.Get());
+                if(workspace()->selected_node() == node) {
+                    workspace()->set_selected_node(nullptr);
+                }
+                blueprint.remove_node(node);
+            }
+        }
     }
     ed::EndDelete();
 }

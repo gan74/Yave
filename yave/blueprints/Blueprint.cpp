@@ -49,6 +49,27 @@ const BlueprintNode* Blueprint::add_node(std::unique_ptr<BlueprintNode> node) {
     return bp_node;
 }
 
+void Blueprint::remove_node(const BlueprintNode* node) {
+    const auto node_it = std::find_if(_nodes.begin(), _nodes.end(), [=](const auto& n) { return n.get() == node; });
+    y_debug_assert(node_it != _nodes.end());
+
+    const usize output_count = node->output_count();
+    for(auto it = node_it + 1; it != _nodes.end(); ++it) {
+        for(usize i = 0; i != (*it)->input_count(); ++i) {
+            if(const void* in = (*it)->input(i)) {
+                for(usize k = 0; k != output_count; ++k) {
+                    if(node->output_ptr(k) == in) {
+                        (*it)->set_input(i, nullptr);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    _nodes.erase(node_it);
+}
+
 std::pair<const BlueprintNode*, usize> Blueprint::find_output(const void* ptr) const {
     if(ptr) {
         for(const auto& node : _nodes) {
