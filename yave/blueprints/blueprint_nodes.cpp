@@ -54,16 +54,16 @@ constexpr std::array<usize, N> bp_port_indices(const std::array<bool, P>& is_inp
 }
 
 
-Y_TODO(if the node is instanciated before the factory, it gets no name)
+template<typename F, typename Func, FixedString... Names>
+class LambdaBlueprintNodeImpl;
 
-template<typename F, typename Func = typename function_traits<F>::func_type>
-class LambdaBlueprintNode;
-
-template<typename F, typename Ret, typename... Args>
-class LambdaBlueprintNode<F, Ret(Args...)> : public BlueprintNode {
+template<typename F, typename Ret, typename... Args, FixedString... Names>
+class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode {
     using values_t = std::tuple<std::remove_cvref_t<Args>...>;
 
     static constexpr usize port_count = sizeof...(Args);
+    static_assert(sizeof...(Names) == port_count);
+
     static constexpr std::array<bool, port_count> is_input = { detail::bp_is_input<Args>... };
     static constexpr usize in_count = (0 + ... + usize(detail::bp_is_input<Args>));
     static constexpr usize out_count = port_count - in_count;
@@ -71,30 +71,37 @@ class LambdaBlueprintNode<F, Ret(Args...)> : public BlueprintNode {
     static constexpr auto input_indices = detail::bp_port_indices<in_count>(is_input, true);
     static constexpr auto output_indices = detail::bp_port_indices<out_count>(is_input, false);
 
+    template<usize N>
+    static std::array<BlueprintPin, N> make_pins(const std::array<usize, N>& indices) {
+        const std::array<std::string_view, port_count> names = { std::string_view(Names)... };
+        const std::array<const BlueprintParamType*, port_count> types = { blueprint_param_type_index<std::remove_cvref_t<Args>>()... };
+
+        std::array<BlueprintPin, N> pins = {};
+        for(usize i = 0; i != N; ++i) {
+            pins[i] = { names[indices[i]], types[indices[i]] };
+        }
+        return pins;
+    }
+
+    static inline const std::array<BlueprintPin, in_count> static_input_pins = make_pins(input_indices);
+    static inline const std::array<BlueprintPin, out_count> static_output_pins = make_pins(output_indices);
+
     public:
-        static const std::shared_ptr<SharedBlueprintNodeData>& shared_data(core::String name = {}, core::Vector<core::String> names = {}) {
-            static const auto data = [&] {
-                auto d = std::make_shared<SharedBlueprintNodeData>();
-                d->name = std::move(name);
+        LambdaBlueprintNodeImpl() = default;
 
-                const std::array<const BlueprintParamType*, port_count> types = { blueprint_param_type_index<std::remove_cvref_t<Args>>()... };
-
-                d->inputs = core::FixedArray<SharedBlueprintNodeData::Pin>(in_count);
-                for(usize i = 0; i != in_count; ++i) {
-                    d->inputs[i] = { std::move(names[input_indices[i]]), types[input_indices[i]] };
-                }
-
-                d->outputs = core::FixedArray<SharedBlueprintNodeData::Pin>(out_count);
-                for(usize i = 0; i != out_count; ++i) {
-                    d->outputs[i] = { std::move(names[output_indices[i]]), types[output_indices[i]] };
-                }
-
-                return d;
-            }();
-            return data;
+        LambdaBlueprintNodeImpl(core::String name) : _name(std::move(name)) {
         }
 
-        LambdaBlueprintNode() : BlueprintNode(shared_data()) {
+        std::string_view name() const override {
+            return _name;
+        }
+
+        core::Span<BlueprintPin> input_pins() const override {
+            return static_input_pins;
+        }
+
+        core::Span<BlueprintPin> output_pins() const override {
+            return static_output_pins;
         }
 
         void eval() override {
@@ -111,10 +118,6 @@ class LambdaBlueprintNode<F, Ret(Args...)> : public BlueprintNode {
         }
 
 
-        usize input_count() const override {
-            return in_count;
-        }
-
         void set_input(usize index, const void* ptr) override {
             y_debug_assert(index < in_count);
             _inputs[index] = ptr;
@@ -130,59 +133,54 @@ class LambdaBlueprintNode<F, Ret(Args...)> : public BlueprintNode {
             return _value_ptrs[input_indices[index]];
         }
 
-        usize output_count() const override {
-            return out_count;
-        }
-
         const void* output_ptr(usize index) const override {
             y_debug_assert(index < out_count);
             return _value_ptrs[output_indices[index]];
         }
 
-        y_reflect(LambdaBlueprintNode, _values)
-        y_serde3_poly(LambdaBlueprintNode)
+        y_reflect(LambdaBlueprintNodeImpl, _name, _values)
+        y_serde3_poly(LambdaBlueprintNodeImpl)
 
     private:
+        core::String _name;
+
         std::array<const void*, in_count> _inputs = {};
 
         values_t _values = {};
         const std::array<void*, port_count> _value_ptrs = std::apply([](auto&... values) { return std::array<void*, port_count>{ &values... }; }, _values);
 };
 
+template<typename F, FixedString... Names>
+using LambdaBlueprintNode = LambdaBlueprintNodeImpl<F, typename function_traits<F>::func_type, Names...>;
+
 template<typename T>
 class ConstantBlueprintNode : public BlueprintNode {
+    static inline const BlueprintPin static_value_pin = { "value", blueprint_param_type_index<T>() };
+
     public:
-        // Initialized by the first call, which is made by the factory
-        static const std::shared_ptr<SharedBlueprintNodeData>& shared_data(core::String name = {}) {
-            static const auto data = [&] {
-                auto d = std::make_shared<SharedBlueprintNodeData>();
-                d->name = std::move(name);
-                d->outputs = core::FixedArray<SharedBlueprintNodeData::Pin>(1);
-                d->outputs[0] = { core::String("value"), blueprint_param_type_index<T>() };
-                d->params = core::FixedArray<SharedBlueprintNodeData::Pin>(1);
-                d->params[0] = { core::String("value"), blueprint_param_type_index<T>() };
-                return d;
-            }();
-            return data;
+        ConstantBlueprintNode() = default;
+
+        ConstantBlueprintNode(core::String name) : _name(std::move(name)) {
         }
 
-        ConstantBlueprintNode() : BlueprintNode(shared_data()) {
+        std::string_view name() const override {
+            return _name;
+        }
+
+        core::Span<BlueprintPin> output_pins() const override {
+            return static_value_pin;
+        }
+
+        core::Span<BlueprintPin> param_pins() const override {
+            return static_value_pin;
         }
 
         void eval() override {
         }
 
-        usize output_count() const override {
-            return 1;
-        }
-
         const void* output_ptr(usize index) const override {
             y_debug_assert(index == 0);
             return &_value;
-        }
-
-        usize param_count() const override {
-            return 1;
         }
 
         void* param_ptr(usize index) override {
@@ -190,37 +188,38 @@ class ConstantBlueprintNode : public BlueprintNode {
             return &_value;
         }
 
-        y_reflect(ConstantBlueprintNode, _value)
+        y_reflect(ConstantBlueprintNode, _name, _value)
         y_serde3_poly(ConstantBlueprintNode)
 
     private:
+        core::String _name;
+
         T _value = {};
 };
 
 
 
 
-template<typename F, typename... Names>
-static std::unique_ptr<BlueprintNodeFactory> make_blueprint_node_factory(core::String name, const Names&... names) {
+template<typename F, FixedString... Names>
+static std::unique_ptr<BlueprintNodeFactory> make_blueprint_node_factory(core::String name) {
     static_assert(sizeof...(Names) == function_traits<F>::arg_count);
-    using node_type = LambdaBlueprintNode<F>;
-    return std::make_unique<GenericBlueprintNodeFactory<node_type>>(node_type::shared_data(std::move(name), core::Vector<core::String>{core::String(names)...}));
+    return std::make_unique<GenericBlueprintNodeFactory<LambdaBlueprintNode<F, Names...>>>(std::move(name));
 }
 
 
 
 template<typename T>
 static void add_math_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories, std::string_view type_name) {
-    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<ConstantBlueprintNode<T>>>(ConstantBlueprintNode<T>::shared_data(fmt_to_owned("Const {}", type_name))));
+    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<ConstantBlueprintNode<T>>>(fmt_to_owned("Const {}", type_name)));
 
     struct Negate { void operator()(T in, T& out) const { out = -in; } };
-    factories.emplace_back(make_blueprint_node_factory<Negate>(fmt_to_owned("Negate {}", type_name), "in", "out"));
+    factories.emplace_back(make_blueprint_node_factory<Negate, "in", "out">(fmt_to_owned("Negate {}", type_name)));
 
     struct Add { void operator()(T a, T b, T& out) const { out = a + b; } };
-    factories.emplace_back(make_blueprint_node_factory<Add>(fmt_to_owned("Add {}", type_name), "a", "b", "out"));
+    factories.emplace_back(make_blueprint_node_factory<Add, "a", "b", "out">(fmt_to_owned("Add {}", type_name)));
 
     struct Multiply { void operator()(T a, T b, T& out) const { out = a * b; } };
-    factories.emplace_back(make_blueprint_node_factory<Multiply>(fmt_to_owned("Multiply {}", type_name), "a", "b", "out"));
+    factories.emplace_back(make_blueprint_node_factory<Multiply, "a", "b", "out">(fmt_to_owned("Multiply {}", type_name)));
 
     struct Divide {
         void operator()(T a, T b, T& out) const {
@@ -231,7 +230,7 @@ static void add_math_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& 
             }
         }
     };
-    factories.emplace_back(make_blueprint_node_factory<Divide>(fmt_to_owned("Divide {}", type_name), "a", "b", "out"));
+    factories.emplace_back(make_blueprint_node_factory<Divide, "a", "b", "out">(fmt_to_owned("Divide {}", type_name)));
 }
 
 template<typename V>
@@ -244,43 +243,43 @@ static void add_vec_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& f
     if constexpr(N == 1) {
         struct Create { void operator()(V& out, T x) const { out = V(x); } };
         struct Decompose { void operator()(V in, T& x) const { x = in[0]; } };
-        factories.emplace_back(make_blueprint_node_factory<Create>(create_name, "out", "x"));
-        factories.emplace_back(make_blueprint_node_factory<Decompose>(decomp_name, "in", "x"));
+        factories.emplace_back(make_blueprint_node_factory<Create, "out", "x">(create_name));
+        factories.emplace_back(make_blueprint_node_factory<Decompose, "in", "x">(decomp_name));
     } else if constexpr(N == 2) {
         struct Create { void operator()(V& out, T x, T y) const { out = V(x, y); } };
         struct Decompose { void operator()(V in, T& x, T& y) const { x = in[0]; y = in[1]; } };
-        factories.emplace_back(make_blueprint_node_factory<Create>(create_name, "out", "x", "y"));
-        factories.emplace_back(make_blueprint_node_factory<Decompose>(decomp_name, "in", "x", "y"));
+        factories.emplace_back(make_blueprint_node_factory<Create, "out", "x", "y">(create_name));
+        factories.emplace_back(make_blueprint_node_factory<Decompose, "in", "x", "y">(decomp_name));
     } else if constexpr(N == 3) {
         struct Create { void operator()(V& out, T x, T y, T z) const { out = V(x, y, z); } };
         struct Decompose { void operator()(V in, T& x, T& y, T& z) const { x = in[0]; y = in[1]; z = in[2]; } };
-        factories.emplace_back(make_blueprint_node_factory<Create>(create_name, "out", "x", "y", "z"));
-        factories.emplace_back(make_blueprint_node_factory<Decompose>(decomp_name, "in", "x", "y", "z"));
+        factories.emplace_back(make_blueprint_node_factory<Create, "out", "x", "y", "z">(create_name));
+        factories.emplace_back(make_blueprint_node_factory<Decompose, "in", "x", "y", "z">(decomp_name));
     } else {
         static_assert(N == 4);
         struct Create { void operator()(V& out, T x, T y, T z, T w) const { out = V(x, y, z, w); } };
         struct Decompose { void operator()(V in, T& x, T& y, T& z, T& w) const { x = in[0]; y = in[1]; z = in[2]; w = in[3]; } };
-        factories.emplace_back(make_blueprint_node_factory<Create>(create_name, "out", "x", "y", "z", "w"));
-        factories.emplace_back(make_blueprint_node_factory<Decompose>(decomp_name, "in", "x", "y", "z", "w"));
+        factories.emplace_back(make_blueprint_node_factory<Create, "out", "x", "y", "z", "w">(create_name));
+        factories.emplace_back(make_blueprint_node_factory<Decompose, "in", "x", "y", "z", "w">(decomp_name));
     }
 
     struct Dot { void operator()(V a, V b, T& out) const { out = a.dot(b); } };
-    factories.emplace_back(make_blueprint_node_factory<Dot>(fmt_to_owned("Dot {}", type_name), "a", "b", "out"));
+    factories.emplace_back(make_blueprint_node_factory<Dot, "a", "b", "out">(fmt_to_owned("Dot {}", type_name)));
 
     struct Cross { void operator()(V a, V b, V& out) const { out = a.cross(b); } };
-    factories.emplace_back(make_blueprint_node_factory<Cross>(fmt_to_owned("Cross {}", type_name), "a", "b", "out"));
+    factories.emplace_back(make_blueprint_node_factory<Cross, "a", "b", "out">(fmt_to_owned("Cross {}", type_name)));
 
     struct Normalize { void operator()(V in, V& out) const { out = in.normalized(); } };
-    factories.emplace_back(make_blueprint_node_factory<Normalize>(fmt_to_owned("Normalize {}", type_name), "in", "out"));
+    factories.emplace_back(make_blueprint_node_factory<Normalize, "in", "out">(fmt_to_owned("Normalize {}", type_name)));
 
     struct Length { void operator()(V in, T& out) const { out = T(in.length()); } };
-    factories.emplace_back(make_blueprint_node_factory<Length>(fmt_to_owned("Length {}", type_name), "in", "out"));
+    factories.emplace_back(make_blueprint_node_factory<Length, "in", "out">(fmt_to_owned("Length {}", type_name)));
 
     struct Abs { void operator()(V in, V& out) const { out = in.abs(); } };
-    factories.emplace_back(make_blueprint_node_factory<Abs>(fmt_to_owned("Abs {}", type_name), "in", "out"));
+    factories.emplace_back(make_blueprint_node_factory<Abs, "in", "out">(fmt_to_owned("Abs {}", type_name)));
 
     struct Saturate { void operator()(V in, V& out) const { out = in.saturated(); } };
-    factories.emplace_back(make_blueprint_node_factory<Saturate>(fmt_to_owned("Saturate {}", type_name), "in", "out"));
+    factories.emplace_back(make_blueprint_node_factory<Saturate, "in", "out">(fmt_to_owned("Saturate {}", type_name)));
 }
 
 void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {

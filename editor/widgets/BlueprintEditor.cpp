@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include <yave/utils/color.h>
 
+#include <y/core/FixedArray.h>
 #include <y/utils/format.h>
 #include <y/utils/hash.h>
 
@@ -77,15 +78,19 @@ static ImColor node_header_color(std::string_view name) {
     return ImColor(r, g, b);
 }
 
-static ed::PinId pin_id(const BlueprintNode& node, usize index, bool is_input) {
-    return ed::PinId(uintptr_t(&node) + 1 + (is_input ? 0 : node.input_count()) + index);
+static ed::PinId input_pin_id(const BlueprintNode& node, usize index) {
+    return ed::PinId(uintptr_t(&node) + 1 + index);
+}
+
+static ed::PinId output_pin_id(const BlueprintNode& node, usize input_count, usize index) {
+    return ed::PinId(uintptr_t(&node) + 1 + input_count + index);
 }
 
 static PinInfo find_pin(const Blueprint& blueprint, uintptr_t pin) {
     for(const auto& node : blueprint.all_nodes()) {
         const uintptr_t base = uintptr_t(node.get()) + 1;
-        const usize in_count = node->input_count();
-        if(pin >= base && pin < base + in_count + node->output_count()) {
+        const usize in_count = node->input_pins().size();
+        if(pin >= base && pin < base + in_count + node->output_pins().size()) {
             const usize index = usize(pin - base);
             return index < in_count ? PinInfo{node.get(), index, true} : PinInfo{node.get(), index - in_count, false};
         }
@@ -249,7 +254,8 @@ void BlueprintEditor::on_gui() {
 
         core::Vector<const void*> linked_outputs;
         for(const auto& node : blueprint.all_nodes()) {
-            for(usize i = 0; i != node->input_count(); ++i) {
+            const usize input_count = node->input_pins().size();
+            for(usize i = 0; i != input_count; ++i) {
                 if(const void* in = node->input(i)) {
                     linked_outputs << in;
                 }
@@ -280,12 +286,14 @@ void BlueprintEditor::on_gui() {
         {
             y_profile_zone("draw links");
             for(const auto& dst : blueprint.all_nodes()) {
-                for(usize i = 0; i != dst->input_count(); ++i) {
+                const usize input_count = dst->input_pins().size();
+                for(usize i = 0; i != input_count; ++i) {
                     if(const void* in = dst->input(i)) {
                         const auto [src_node, src_pin] = blueprint.find_output(in);
                         y_debug_assert(src_node);
-                        const ed::PinId end = pin_id(*dst, i, true);
-                        ed::Link(ed::LinkId(end.Get()),pin_id(*src_node, src_pin, false), end, pin_type_color(src_node->output_type(src_pin)), 2.0f);
+                        const ed::PinId start = output_pin_id(*src_node, src_node->input_pins().size(), src_pin);
+                        const ed::PinId end = input_pin_id(*dst, i);
+                        ed::Link(ed::LinkId(end.Get()), start, end, pin_type_color(src_node->output_pins()[src_pin].type), 2.0f);
                     }
                 }
             }
@@ -327,7 +335,8 @@ void BlueprintEditor::reset_node_layout() {
     core::FixedArray<usize> column_sizes(nodes.size());
     core::FixedArray<usize> depths(nodes.size());
     for(usize i = 0; i != nodes.size(); ++i) {
-        for(usize k = 0; k != nodes[i]->input_count(); ++k) {
+        const usize input_count = nodes[i]->input_pins().size();
+        for(usize k = 0; k != input_count; ++k) {
             if(const void* in = nodes[i]->input(k)) {
                 const BlueprintNode* src = blueprint.find_output(in).first;
                 const auto src_it = std::find_if(nodes.begin(), nodes.end(), [&](const auto& n) { return n.get() == src; });
@@ -439,8 +448,8 @@ void BlueprintEditor::draw_context_menu() {
         const BlueprintParamType* link_type = !link_pin.node
             ? nullptr
             : link_pin.is_input
-                ? link_pin.node->input_type(link_pin.index)
-                : link_pin.node->output_type(link_pin.index)
+                ? link_pin.node->input_pins()[link_pin.index].type
+                : link_pin.node->output_pins()[link_pin.index].type
         ;
 
         const core::Span factories = workspace()->node_factories();
@@ -454,9 +463,9 @@ void BlueprintEditor::draw_context_menu() {
 
             usize compatible_index = 0;
             if(link_pin.node) {
-                const SharedBlueprintNodeData& data = factory->shared_data();
-                const auto& pins = link_pin.is_input ? data.outputs : data.inputs;
-                const auto it = std::find_if(pins.begin(), pins.end(), [&](const auto& pin) { return pin.second == link_type; });
+                const std::unique_ptr<BlueprintNode> prototype = factory->create_node();
+                const core::Span<BlueprintPin> pins = link_pin.is_input ? prototype->output_pins() : prototype->input_pins();
+                const auto it = std::find_if(pins.begin(), pins.end(), [&](const BlueprintPin& pin) { return pin.type == link_type; });
                 if(it != pins.end()) {
                     compatible_index = usize(it - pins.begin());
                 } else {
@@ -562,18 +571,21 @@ void BlueprintEditor::draw_node(const BlueprintNode& node, core::Span<const void
     const float header_bottom = ImGui::GetItemRectMax().y;
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
+    const core::Span<BlueprintPin> inputs = node.input_pins();
+    const core::Span<BlueprintPin> outputs = node.output_pins();
+
     ImGui::BeginGroup();
-    for(usize i = 0; i != node.input_count(); ++i) {
-        draw_pin(pin_id(node, i, true), node.input_name(i), node.input_type(i), node.input(i) != nullptr, true);
+    for(usize i = 0; i != inputs.size(); ++i) {
+        draw_pin(input_pin_id(node, i), inputs[i].name, inputs[i].type, node.input(i) != nullptr, true);
     }
     ImGui::EndGroup();
 
     ImGui::SameLine(0.0f, pin_column_gap);
 
     ImGui::BeginGroup();
-    for(usize i = 0; i != node.output_count(); ++i) {
+    for(usize i = 0; i != outputs.size(); ++i) {
         const bool linked = std::binary_search(linked_outputs.begin(), linked_outputs.end(), node.output_ptr(i));
-        draw_pin(pin_id(node, i, false), node.output_name(i), node.output_type(i), linked, false);
+        draw_pin(output_pin_id(node, inputs.size(), i), outputs[i].name, outputs[i].type, linked, false);
     }
     ImGui::EndGroup();
 

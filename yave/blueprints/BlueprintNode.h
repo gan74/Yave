@@ -26,12 +26,10 @@ SOFTWARE.
 
 #include <y/core/String.h>
 #include <y/core/Vector.h>
-#include <y/core/FixedArray.h>
+#include <y/core/Span.h>
 #include <y/serde3/poly.h>
 
-#include <memory>
 #include <string_view>
-#include <utility>
 
 namespace yave {
 
@@ -56,14 +54,9 @@ const BlueprintParamType* blueprint_param_type_index() {
 
 struct GenericBlueprintParam {};
 
-class SharedBlueprintNodeData {
-    public:
-        using Pin = std::pair<core::String, const BlueprintParamType*>;
-
-        core::String name;
-        core::FixedArray<Pin> inputs;
-        core::FixedArray<Pin> outputs;
-        core::FixedArray<Pin> params;
+struct BlueprintPin {
+    std::string_view name;
+    const BlueprintParamType* type = nullptr;
 };
 
 class BlueprintNode : NonMovable {
@@ -72,13 +65,11 @@ class BlueprintNode : NonMovable {
 
         y_serde3_poly_abstract_base(BlueprintNode)
 
-        std::string_view name() const;
-        std::string_view input_name(usize index) const;
-        std::string_view output_name(usize index) const;
-        std::string_view param_name(usize index) const;
-        const BlueprintParamType* input_type(usize index) const;
-        const BlueprintParamType* output_type(usize index) const;
-        const BlueprintParamType* param_type(usize index) const;
+        virtual std::string_view name() const = 0;
+
+        virtual core::Span<BlueprintPin> input_pins() const;
+        virtual core::Span<BlueprintPin> output_pins() const;
+        virtual core::Span<BlueprintPin> param_pins() const;
 
 
         virtual void eval() = 0; // may throw std::runtime_error
@@ -86,23 +77,18 @@ class BlueprintNode : NonMovable {
         // inputs
         virtual void reset_inputs();
 
-        virtual usize input_count() const;
         virtual void set_input(usize index, const void* ptr);
         virtual const void* input(usize index) const;
         virtual void* default_input(usize index);
 
         // outputs
-        virtual usize output_count() const;
         virtual const void* output_ptr(usize index) const;
 
         // params
-        virtual usize param_count() const;
         virtual void* param_ptr(usize index);
 
     protected:
-        BlueprintNode(std::shared_ptr<SharedBlueprintNodeData> shared_data = nullptr);
-
-        std::shared_ptr<SharedBlueprintNodeData> _shared_data;
+        BlueprintNode() = default;
 };
 
 }

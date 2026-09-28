@@ -69,13 +69,13 @@ void BlueprintNodeInspector::on_gui() {
     imgui::text_read_only("##name", node->name());
     ImGui::Separator();
 
-    if(node->input_count() && ImGui::CollapsingHeader("Inputs", ImGuiTreeNodeFlags_DefaultOpen)) {
-        for(usize i = 0; i != node->input_count(); ++i) {
-            const std::string_view name = node->input_name(i);
+    const core::Span<BlueprintPin> inputs = node->input_pins();
+    if(!inputs.is_empty() && ImGui::CollapsingHeader("Inputs", ImGuiTreeNodeFlags_DefaultOpen)) {
+        for(usize i = 0; i != inputs.size(); ++i) {
             const void* linked = node->input(i);
-            const std::string_view label = fmt("{}{}", name, linked ? " (linked)" : "");
+            const std::string_view label = fmt("{}{}", inputs[i].name, linked ? " (linked)" : "");
 
-            if(const auto it = _drawers.find(node->input_type(i)); it != _drawers.end()) {
+            if(const auto it = _drawers.find(inputs[i].type); it != _drawers.end()) {
                 it->second.input(label, node->default_input(i));
                 if(linked) {
                     it->second.output("received", linked);
@@ -86,10 +86,11 @@ void BlueprintNodeInspector::on_gui() {
         }
     }
 
-    if(node->param_count() && ImGui::CollapsingHeader("Params", ImGuiTreeNodeFlags_DefaultOpen)) {
-        for(usize i = 0; i != node->param_count(); ++i) {
-            const std::string_view name = node->param_name(i);
-            if(const auto it = _drawers.find(node->param_type(i)); it != _drawers.end()) {
+    const core::Span<BlueprintPin> params = node->param_pins();
+    if(!params.is_empty() && ImGui::CollapsingHeader("Params", ImGuiTreeNodeFlags_DefaultOpen)) {
+        for(usize i = 0; i != params.size(); ++i) {
+            const std::string_view name = params[i].name;
+            if(const auto it = _drawers.find(params[i].type); it != _drawers.end()) {
                 it->second.input(fmt("{}##param", name), node->param_ptr(i));
             } else {
                 ImGui::TextUnformatted(name.data());
@@ -97,10 +98,11 @@ void BlueprintNodeInspector::on_gui() {
         }
     }
 
-    if(node->output_count() && ImGui::CollapsingHeader("Outputs", ImGuiTreeNodeFlags_DefaultOpen)) {
-        for(usize i = 0; i != node->output_count(); ++i) {
-            const std::string_view name = node->output_name(i);
-            if(const auto it = _drawers.find(node->output_type(i)); it != _drawers.end()) {
+    const core::Span<BlueprintPin> outputs = node->output_pins();
+    if(!outputs.is_empty() && ImGui::CollapsingHeader("Outputs", ImGuiTreeNodeFlags_DefaultOpen)) {
+        for(usize i = 0; i != outputs.size(); ++i) {
+            const std::string_view name = outputs[i].name;
+            if(const auto it = _drawers.find(outputs[i].type); it != _drawers.end()) {
                 it->second.output(name, node->output_ptr(i));
             } else {
                 ImGui::TextUnformatted(name.data());

@@ -30,7 +30,8 @@ BlueprintData BlueprintData::from_blueprint(Blueprint blueprint) {
     const core::Span nodes = blueprint.all_nodes();
     for(usize dst_index = 0; dst_index != nodes.size(); ++dst_index) {
         const BlueprintNode* dst = nodes[dst_index].get();
-        for(usize pin = 0; pin != dst->input_count(); ++pin) {
+        const usize input_count = dst->input_pins().size();
+        for(usize pin = 0; pin != input_count; ++pin) {
             if(const void* in = dst->input(pin)) {
                 const auto [src, src_pin] = blueprint.find_output(in);
                 y_debug_assert(src);

@@ -434,24 +434,26 @@ class BlueprintNodeDebug : public WorkspaceWidget<BlueprintWorkspace> {
                     continue;
                 }
 
-                if(node->input_count() && ImGui::TreeNode("Inputs")) {
-                    for(usize i = 0; i != node->input_count(); ++i) {
-                        const std::string_view name = node->input_name(i);
-                        ImGui::TextUnformatted(fmt_c_str("{}{}", name, node->input(i) ? " (linked)" : ""));
+                const core::Span<BlueprintPin> inputs = node->input_pins();
+                if(!inputs.is_empty() && ImGui::TreeNode("Inputs")) {
+                    for(usize i = 0; i != inputs.size(); ++i) {
+                        ImGui::TextUnformatted(fmt_c_str("{}{}", inputs[i].name, node->input(i) ? " (linked)" : ""));
                     }
                     ImGui::TreePop();
                 }
 
-                if(node->output_count() && ImGui::TreeNode("Outputs")) {
-                    for(usize i = 0; i != node->output_count(); ++i) {
-                        ImGui::TextUnformatted(node->output_name(i).data());
+                const core::Span<BlueprintPin> outputs = node->output_pins();
+                if(!outputs.is_empty() && ImGui::TreeNode("Outputs")) {
+                    for(const BlueprintPin& pin : outputs) {
+                        ImGui::TextUnformatted(pin.name.data());
                     }
                     ImGui::TreePop();
                 }
 
-                if(node->param_count() && ImGui::TreeNode("Params")) {
-                    for(usize i = 0; i != node->param_count(); ++i) {
-                        ImGui::TextUnformatted(node->param_name(i).data());
+                const core::Span<BlueprintPin> params = node->param_pins();
+                if(!params.is_empty() && ImGui::TreeNode("Params")) {
+                    for(const BlueprintPin& pin : params) {
+                        ImGui::TextUnformatted(pin.name.data());
                     }
                     ImGui::TreePop();
                 }

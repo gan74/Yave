@@ -24,49 +24,26 @@ SOFTWARE.
 
 namespace yave {
 
-BlueprintNode::BlueprintNode(std::shared_ptr<SharedBlueprintNodeData> shared_data) : _shared_data(std::move(shared_data)) {
-}
-
 BlueprintNode::~BlueprintNode() {
 }
 
-std::string_view BlueprintNode::name() const {
-    return _shared_data ? std::string_view(_shared_data->name) : std::string_view("Unnamed node");
+core::Span<BlueprintPin> BlueprintNode::input_pins() const {
+    return {};
 }
 
-std::string_view BlueprintNode::input_name(usize index) const {
-    return _shared_data ? std::string_view(_shared_data->inputs[index].first) : std::string_view("Unnamed input");
+core::Span<BlueprintPin> BlueprintNode::output_pins() const {
+    return {};
 }
 
-std::string_view BlueprintNode::output_name(usize index) const {
-    return _shared_data ? std::string_view(_shared_data->outputs[index].first) : std::string_view("Unnamed output");
-}
-
-std::string_view BlueprintNode::param_name(usize index) const {
-    return _shared_data ? std::string_view(_shared_data->params[index].first) : std::string_view("Unnamed param");
-}
-
-const BlueprintParamType* BlueprintNode::input_type(usize index) const {
-    return _shared_data ? _shared_data->inputs[index].second : nullptr;
-}
-
-const BlueprintParamType* BlueprintNode::output_type(usize index) const {
-    return _shared_data ? _shared_data->outputs[index].second : nullptr;
-}
-
-const BlueprintParamType* BlueprintNode::param_type(usize index) const {
-    return _shared_data ? _shared_data->params[index].second : nullptr;
+core::Span<BlueprintPin> BlueprintNode::param_pins() const {
+    return {};
 }
 
 void BlueprintNode::reset_inputs() {
-    const usize c = input_count();
+    const usize c = input_pins().size();
     for(usize i = 0; i != c; ++i) {
         set_input(i, nullptr);
     }
-}
-
-usize BlueprintNode::input_count() const {
-    return 0;
 }
 
 void BlueprintNode::set_input(usize, const void*) {
@@ -83,17 +60,9 @@ void* BlueprintNode::default_input(usize) {
     return nullptr;
 }
 
-usize BlueprintNode::output_count() const {
-    return 0;
-}
-
 const void* BlueprintNode::output_ptr(usize) const {
     y_debug_assert(false);
     return nullptr;
-}
-
-usize BlueprintNode::param_count() const {
-    return 0;
 }
 
 void* BlueprintNode::param_ptr(usize) {

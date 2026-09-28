@@ -53,9 +53,10 @@ void Blueprint::remove_node(const BlueprintNode* node) {
     const auto node_it = std::find_if(_nodes.begin(), _nodes.end(), [=](const auto& n) { return n.get() == node; });
     y_debug_assert(node_it != _nodes.end());
 
-    const usize output_count = node->output_count();
+    const usize output_count = node->output_pins().size();
     for(auto it = node_it + 1; it != _nodes.end(); ++it) {
-        for(usize i = 0; i != (*it)->input_count(); ++i) {
+        const usize input_count = (*it)->input_pins().size();
+        for(usize i = 0; i != input_count; ++i) {
             if(const void* in = (*it)->input(i)) {
                 for(usize k = 0; k != output_count; ++k) {
                     if(node->output_ptr(k) == in) {
@@ -73,7 +74,7 @@ void Blueprint::remove_node(const BlueprintNode* node) {
 std::pair<const BlueprintNode*, usize> Blueprint::find_output(const void* ptr) const {
     if(ptr) {
         for(const auto& node : _nodes) {
-            const usize output_count = node->output_count();
+            const usize output_count = node->output_pins().size();
             for(usize i = 0; i != output_count; ++i) {
                 if(node->output_ptr(i) == ptr) {
                     return {node.get(), i};
@@ -94,10 +95,16 @@ void Blueprint::clear_links() {
 bool Blueprint::is_link_valid(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin) const {
     y_profile();
 
-    if(!src || !dst || src == dst || src_pin >= src->output_count() || dst_pin >= dst->input_count()) {
+    if(!src || !dst || src == dst) {
         return false;
     }
-    if(src->output_type(src_pin) != dst->input_type(dst_pin)) {
+
+    const core::Span<BlueprintPin> src_outputs = src->output_pins();
+    const core::Span<BlueprintPin> dst_inputs = dst->input_pins();
+    if(src_pin >= src_outputs.size() || dst_pin >= dst_inputs.size()) {
+        return false;
+    }
+    if(src_outputs[src_pin].type != dst_inputs[dst_pin].type) {
         return false;
     }
 
@@ -130,13 +137,14 @@ bool Blueprint::is_link_valid(const BlueprintNode* src, usize src_pin, const Blu
         visited[visited_index] = true;
 
         const BlueprintNode* node = _nodes[index].get();
+        const usize output_count = node->output_pins().size();
         for(usize y = index + 1; y <= src_index; ++y) {
             if(visited[y - dst_index]) {
                 continue;
             }
-            for(usize i = 0; i != _nodes[y]->input_count(); ++i) {
+            const usize input_count = _nodes[y]->input_pins().size();
+            for(usize i = 0; i != input_count; ++i) {
                 if(const void* in = _nodes[y]->input(i)) {
-                    const usize output_count = node->output_count();
                     for(usize k = 0; k != output_count; ++k) {
                         if(node->output_ptr(k) == in) {
                             stack.push_back(y);
@@ -178,7 +186,7 @@ void Blueprint::add_link(const BlueprintNode* src, usize src_pin, const Blueprin
 void Blueprint::remove_link(const BlueprintNode* dst, usize dst_pin) {
     const auto dst_it = std::find_if(_nodes.begin(), _nodes.end(), [=](const auto& n) { return n.get() == dst; });
     y_debug_assert(dst_it != _nodes.end());
-    y_debug_assert(dst_pin < dst->input_count());
+    y_debug_assert(dst_pin < dst->input_pins().size());
     (*dst_it)->set_input(dst_pin, nullptr);
 }
 

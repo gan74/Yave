@@ -24,32 +24,34 @@ SOFTWARE.
 
 #include "BlueprintNode.h"
 
+#include <memory>
+
 namespace yave {
 
 class BlueprintNodeFactory : NonMovable {
     public:
         virtual ~BlueprintNodeFactory();
 
-        std::string_view name() const;
-        const SharedBlueprintNodeData& shared_data() const;
-
-        virtual std::unique_ptr<BlueprintNode> create_node() = 0;
-
-    protected:
-        BlueprintNodeFactory(std::shared_ptr<SharedBlueprintNodeData> shared_data);
-
-        std::shared_ptr<SharedBlueprintNodeData> _shared_data;
+        virtual std::string_view name() const = 0;
+        virtual std::unique_ptr<BlueprintNode> create_node() const = 0;
 };
 
 template<typename T>
 class GenericBlueprintNodeFactory : public BlueprintNodeFactory {
     public:
-        GenericBlueprintNodeFactory(std::shared_ptr<SharedBlueprintNodeData> shared_data) : BlueprintNodeFactory(std::move(shared_data)) {
+        GenericBlueprintNodeFactory(core::String name) : _name(std::move(name)) {
         }
 
-        std::unique_ptr<BlueprintNode> create_node() override {
-            return std::make_unique<T>();
+        std::string_view name() const override {
+            return _name;
         }
+
+        std::unique_ptr<BlueprintNode> create_node() const override {
+            return std::make_unique<T>(_name);
+        }
+
+    private:
+        core::String _name;
 };
 
 }
