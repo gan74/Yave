@@ -52,18 +52,18 @@ static constexpr ImColor error_color = ImColor(250, 20, 20, 255);
 static constexpr ImColor after_error_color = error_color; // ImColor(255, 100, 70, 255);
 static constexpr ImColor arrow_color = ImColor(255, 255, 255, 255);
 
-static ImColor pin_type_color(BlueprintParamTypeIndex type) {
+static ImColor pin_type_color(const BlueprintParamType* type) {
     if(type == blueprint_param_type_index<float>()) {
         return ImColor(147, 226, 74);
     }
     if(type == blueprint_param_type_index<bool>()) {
         return ImColor(220, 48, 48);
     }
-    if(type == blueprint_param_type_index<i32>() || type == blueprint_param_type_index<u32>()) {
-        return ImColor(68, 201, 156);
+    if(type == blueprint_param_type_index<GenericBlueprintParam>()) {
+        return ImColor(255, 255, 255);
     }
 
-    const float hue = float(hash(u32(type)) & 0xFFFF) / float(0xFFFF);
+    const float hue = float(type->type_hash & 0xFFFF) / float(0xFFFF);
     const math::Vec3 rgb = hsv_to_rgb(hue, 0.65f, 0.9f);
     return ImColor(rgb.x(), rgb.y(), rgb.z());
 }
@@ -121,7 +121,7 @@ static void draw_pin_icon(ImColor color, bool connected) {
     ImGui::Dummy(size);
 }
 
-static void draw_pin(ed::PinId id, std::string_view name, BlueprintParamTypeIndex type, bool connected, bool is_input) {
+static void draw_pin(ed::PinId id, std::string_view name, const BlueprintParamType* type, bool connected, bool is_input) {
     ed::BeginPin(id, is_input ? ed::PinKind::Input : ed::PinKind::Output);
     ed::PinPivotAlignment(ImVec2(is_input ? 0.0f : 1.0f, 0.5f));
     ed::PinPivotSize(ImVec2(0.0f, 0.0f));
@@ -436,8 +436,8 @@ void BlueprintEditor::draw_context_menu() {
 
         Blueprint& blueprint = workspace()->blueprint();
         const PinInfo link_pin = find_pin(blueprint, _new_node.link_pin);
-        const BlueprintParamTypeIndex link_type = !link_pin.node
-            ? BlueprintParamTypeIndex::invalid_index
+        const BlueprintParamType* link_type = !link_pin.node
+            ? nullptr
             : link_pin.is_input
                 ? link_pin.node->input_type(link_pin.index)
                 : link_pin.node->output_type(link_pin.index)

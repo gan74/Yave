@@ -24,14 +24,6 @@ SOFTWARE.
 
 namespace yave {
 
-namespace detail {
-BlueprintParamTypeIndex next_blueprint_param_type_index() {
-    static std::atomic<std::underlying_type_t<BlueprintParamTypeIndex>> global_type_index = 0;
-    return BlueprintParamTypeIndex(global_type_index++);
-}
-}
-
-
 BlueprintNode::BlueprintNode(std::shared_ptr<SharedBlueprintNodeData> shared_data) : _shared_data(std::move(shared_data)) {
 }
 
@@ -54,16 +46,16 @@ std::string_view BlueprintNode::param_name(usize index) const {
     return _shared_data ? std::string_view(_shared_data->params[index].first) : std::string_view("Unnamed param");
 }
 
-BlueprintParamTypeIndex BlueprintNode::input_type(usize index) const {
-    return _shared_data ? _shared_data->inputs[index].second : BlueprintParamTypeIndex::invalid_index;
+const BlueprintParamType* BlueprintNode::input_type(usize index) const {
+    return _shared_data ? _shared_data->inputs[index].second : nullptr;
 }
 
-BlueprintParamTypeIndex BlueprintNode::output_type(usize index) const {
-    return _shared_data ? _shared_data->outputs[index].second : BlueprintParamTypeIndex::invalid_index;
+const BlueprintParamType* BlueprintNode::output_type(usize index) const {
+    return _shared_data ? _shared_data->outputs[index].second : nullptr;
 }
 
-BlueprintParamTypeIndex BlueprintNode::param_type(usize index) const {
-    return _shared_data ? _shared_data->params[index].second : BlueprintParamTypeIndex::invalid_index;
+const BlueprintParamType* BlueprintNode::param_type(usize index) const {
+    return _shared_data ? _shared_data->params[index].second : nullptr;
 }
 
 void BlueprintNode::reset_inputs() {

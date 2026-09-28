@@ -48,7 +48,7 @@ class BlueprintNodeInspector final : public WorkspaceWidget<BlueprintWorkspace> 
             std::function<void(std::string_view, const void*)> output;
         };
 
-        core::FlatHashMap<BlueprintParamTypeIndex, ParamDrawer> _drawers;
+        core::FlatHashMap<const BlueprintParamType*, ParamDrawer> _drawers;
 };
 
 }

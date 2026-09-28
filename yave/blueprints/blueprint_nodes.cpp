@@ -77,7 +77,7 @@ class LambdaBlueprintNode<F, Ret(Args...)> : public BlueprintNode {
                 auto d = std::make_shared<SharedBlueprintNodeData>();
                 d->name = std::move(name);
 
-                const std::array<BlueprintParamTypeIndex, port_count> types = { blueprint_param_type_index<std::remove_cvref_t<Args>>()... };
+                const std::array<const BlueprintParamType*, port_count> types = { blueprint_param_type_index<std::remove_cvref_t<Args>>()... };
 
                 d->inputs = core::FixedArray<SharedBlueprintNodeData::Pin>(in_count);
                 for(usize i = 0; i != in_count; ++i) {

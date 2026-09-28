@@ -35,24 +35,30 @@ SOFTWARE.
 
 namespace yave {
 
-enum class BlueprintParamTypeIndex : u32 {
-    invalid_index = u32(-1),
+struct BlueprintParamType {
+    std::string_view name;
+    u64 type_hash = 0;
+    usize size = 0;
 };
 
-namespace detail {
-BlueprintParamTypeIndex next_blueprint_param_type_index();
+template<typename T>
+const BlueprintParamType* blueprint_param_type_index() {
+    static_assert(!std::is_const_v<T> && !std::is_reference_v<T>);
+    static_assert(std::is_trivially_copyable_v<T>);
+    static_assert(std::is_trivially_destructible_v<T>);
+    static const BlueprintParamType type = {
+        ct_type_name<T>(),
+        ct_type_hash<T>(),
+        sizeof(T),
+    };
+    return &type;
 }
 
-template<typename T>
-BlueprintParamTypeIndex blueprint_param_type_index() {
-    static_assert(!std::is_const_v<T> && !std::is_reference_v<T>);
-    static BlueprintParamTypeIndex type = detail::next_blueprint_param_type_index();
-    return type;
-}
+struct GenericBlueprintParam {};
 
 class SharedBlueprintNodeData {
     public:
-        using Pin = std::pair<core::String, BlueprintParamTypeIndex>;
+        using Pin = std::pair<core::String, const BlueprintParamType*>;
 
         core::String name;
         core::FixedArray<Pin> inputs;
@@ -70,9 +76,9 @@ class BlueprintNode : NonMovable {
         std::string_view input_name(usize index) const;
         std::string_view output_name(usize index) const;
         std::string_view param_name(usize index) const;
-        BlueprintParamTypeIndex input_type(usize index) const;
-        BlueprintParamTypeIndex output_type(usize index) const;
-        BlueprintParamTypeIndex param_type(usize index) const;
+        const BlueprintParamType* input_type(usize index) const;
+        const BlueprintParamType* output_type(usize index) const;
+        const BlueprintParamType* param_type(usize index) const;
 
 
         virtual void eval() = 0; // may throw std::runtime_error
