@@ -185,6 +185,46 @@ static void draw_error_label(const BlueprintNode& node, const core::String& erro
 }
 
 
+static void draw_node(const BlueprintNode& node, const BlueprintParamType* generic_type, core::Span<uintptr_t> linked_pins) {
+    const ed::NodeId node_id = ed::NodeId(uintptr_t(&node));
+    const std::string_view name = node.name();
+
+    const auto is_linked = [&](ed::PinId id) {
+        return std::binary_search(linked_pins.begin(), linked_pins.end(), uintptr_t(id.Get()));
+    };
+
+    ed::BeginNode(node_id);
+
+    ImGui::TextUnformatted(name.data());
+    const float header_bottom = ImGui::GetItemRectMax().y;
+    ImGui::Dummy(ImVec2(0.0f, 2.0f));
+
+    const core::Span<BlueprintPin> inputs = node.input_pins();
+    const core::Span<BlueprintPin> outputs = node.output_pins();
+
+    ImGui::BeginGroup();
+    for(usize i = 0; i != inputs.size(); ++i) {
+        draw_pin(input_pin_id(node, i), inputs[i].name, inputs[i].is_generic ? generic_type : inputs[i].type, is_linked(input_pin_id(node, i)), true);
+    }
+    ImGui::EndGroup();
+
+    ImGui::SameLine(0.0f, pin_column_gap);
+
+    ImGui::BeginGroup();
+    for(usize i = 0; i != outputs.size(); ++i) {
+        draw_pin(output_pin_id(node, i), outputs[i].name, outputs[i].is_generic ? generic_type : outputs[i].type, is_linked(output_pin_id(node, i)), false);
+    }
+    ImGui::EndGroup();
+
+    ed::EndNode();
+
+    draw_node_header(node_id, header_bottom, node_header_color(name));
+}
+
+
+
+
+
 BlueprintEditor::BlueprintEditor(BlueprintWorkspace* ws) :
         WorkspaceWidget(ICON_FA_PROJECT_DIAGRAM " Blueprint Editor", ws, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar) {
 
@@ -258,17 +298,19 @@ void BlueprintEditor::on_gui() {
     {
         ed::Begin("##blueprint", ImGui::GetContentRegionAvail());
 
+        core::FixedArray<const BlueprintParamType*> generic_types(nodes.size());
         core::Vector<uintptr_t> linked_pins;
         {
-            y_profile_zone("draw links");
+            for(usize i = 0; i != nodes.size(); ++i) {
+                generic_types[i] = blueprint.generic_type(i);
+            }
+
             for(const BlueprintLink& link : blueprint.links()) {
-                const BlueprintNode& src = *nodes[link.src_node];
-                const ed::PinId start = output_pin_id(src, link.src_pin);
-                const ed::PinId end = input_pin_id(*nodes[link.dst_node], link.dst_pin);
-                ed::Link(ed::LinkId(end.Get()), start, end, pin_type_color(src.output_pins()[link.src_pin].type), 2.0f);
-                linked_pins << start.Get() << end.Get();
+                linked_pins << output_pin_id(*nodes[link.src_node], link.src_pin).Get();
+                linked_pins << input_pin_id(*nodes[link.dst_node], link.dst_pin).Get();
             }
             std::sort(linked_pins.begin(), linked_pins.end());
+            linked_pins.shrink_to(usize(std::unique(linked_pins.begin(), linked_pins.end()) - linked_pins.begin()));
         }
 
         {
@@ -280,12 +322,23 @@ void BlueprintEditor::on_gui() {
                     ed::PushStyleVar(ed::StyleVar_NodeBorderWidth, is_error ? 6.0f : 1.5f);
                 }
 
-                draw_node(*nodes[i], linked_pins);
+                draw_node(*nodes[i], generic_types[i], linked_pins);
 
                 if(i >= error_node_index) {
                     ed::PopStyleVar();
                     ed::PopStyleColor();
                 }
+            }
+        }
+
+        {
+            y_profile_zone("draw links");
+            for(const BlueprintLink& link : blueprint.links()) {
+                const BlueprintNode& src = *nodes[link.src_node];
+                const BlueprintPin& src_pin = src.output_pins()[link.src_pin];
+                const ed::PinId start = output_pin_id(src, link.src_pin);
+                const ed::PinId end = input_pin_id(*nodes[link.dst_node], link.dst_pin);
+                ed::Link(ed::LinkId(end.Get()), start, end, pin_type_color(src_pin.is_generic ? generic_types[link.src_node] : src_pin.type), 2.0f);
             }
         }
 
@@ -566,42 +619,6 @@ void BlueprintEditor::draw_execution_order() {
             );
         }
     }
-}
-
-void BlueprintEditor::draw_node(const BlueprintNode& node, core::Span<uintptr_t> linked_pins) {
-    const ed::NodeId node_id = ed::NodeId(uintptr_t(&node));
-    const std::string_view name = node.name();
-
-    const auto is_linked = [&](ed::PinId id) {
-        return std::binary_search(linked_pins.begin(), linked_pins.end(), uintptr_t(id.Get()));
-    };
-
-    ed::BeginNode(node_id);
-
-    ImGui::TextUnformatted(name.data());
-    const float header_bottom = ImGui::GetItemRectMax().y;
-    ImGui::Dummy(ImVec2(0.0f, 2.0f));
-
-    const core::Span<BlueprintPin> inputs = node.input_pins();
-    const core::Span<BlueprintPin> outputs = node.output_pins();
-
-    ImGui::BeginGroup();
-    for(usize i = 0; i != inputs.size(); ++i) {
-        draw_pin(input_pin_id(node, i), inputs[i].name, inputs[i].type, is_linked(input_pin_id(node, i)), true);
-    }
-    ImGui::EndGroup();
-
-    ImGui::SameLine(0.0f, pin_column_gap);
-
-    ImGui::BeginGroup();
-    for(usize i = 0; i != outputs.size(); ++i) {
-        draw_pin(output_pin_id(node, i), outputs[i].name, outputs[i].type, is_linked(output_pin_id(node, i)), false);
-    }
-    ImGui::EndGroup();
-
-    ed::EndNode();
-
-    draw_node_header(node_id, header_bottom, node_header_color(name));
 }
 
 }

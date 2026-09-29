@@ -45,7 +45,6 @@ class BlueprintEditor final : public WorkspaceWidget<BlueprintWorkspace> {
         void on_gui() override;
 
     private:
-        void draw_node(const BlueprintNode& node, core::Span<uintptr_t> linked_pins);
         void draw_execution_order();
         void process_actions();
         void draw_context_menu();

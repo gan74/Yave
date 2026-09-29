@@ -95,7 +95,6 @@ static Blueprint create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactor
         srcs.emplace_back(node);
     };
 
-    // Divisor is always the type's Const (value 1) so we never divide by zero.
     auto add_divide = [&](core::Vector<const BlueprintNode*>& srcs, std::string_view name) {
         const BlueprintNode* node = blueprint.add_node(find_factory(factories, name)->create_node());
         blueprint.add_link(srcs.last(), 0, node, 0);
@@ -137,12 +136,22 @@ static Blueprint create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactor
         add_to_floats_binary(srcs, fmt("Dot {}", type_name));
     };
 
-    floats.emplace_back(blueprint.add_node(find_factory(factories, "Const float")->create_node()));
-    vec2s.emplace_back(blueprint.add_node(find_factory(factories, "Const Vec2")->create_node()));
-    vec3s.emplace_back(blueprint.add_node(find_factory(factories, "Const Vec3")->create_node()));
-    vec4s.emplace_back(blueprint.add_node(find_factory(factories, "Const Vec4")->create_node()));
+    float param_value = 0.0f;
+    auto set_params = [&](auto node) {
+        const core::Span params = node->param_pins();
+        for(usize i = 0; i != params.size(); ++i) {
+            if(const auto* type = params[i].type; type && type->size % sizeof(float) == 0) {
+                std::fill_n(static_cast<float*>(node->param_ptr(i)), type->size / sizeof(float), param_value += 1.0f);
+            }
+        }
+        return node;
+    };
 
-    // One of each math op per type (also connects the seed consts).
+    floats.emplace_back(blueprint.add_node(set_params(find_factory(factories, "Const float")->create_node())));
+    vec2s.emplace_back(blueprint.add_node(set_params(find_factory(factories, "Const Vec2")->create_node())));
+    vec3s.emplace_back(blueprint.add_node(set_params(find_factory(factories, "Const Vec3")->create_node())));
+    vec4s.emplace_back(blueprint.add_node(set_params(find_factory(factories, "Const Vec4")->create_node())));
+
     add_unary(floats, "Negate float");
     add_binary(floats, "Add float");
     add_binary(floats, "Multiply float");
@@ -163,7 +172,6 @@ static Blueprint create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactor
     add_binary(vec4s, "Multiply Vec4");
     add_divide(vec4s, "Divide Vec4");
 
-    // Create / decompose for each vector type.
     add_create_decompose(vec2s, 2, "Vec2");
     add_create_decompose(vec3s, 3, "Vec3");
     add_create_decompose(vec4s, 4, "Vec4");
@@ -172,7 +180,6 @@ static Blueprint create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactor
     add_vec_ops(vec3s, "Vec3");
     add_vec_ops(vec4s, "Vec4");
 
-    // Fill the rest with a rotating mix.
     for(usize i = 0; blueprint.all_nodes().size() < node_count; ++i) {
         const usize kind = i % 14;
         if(kind == 0) {

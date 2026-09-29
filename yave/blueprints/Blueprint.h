@@ -61,6 +61,8 @@ class Blueprint {
         void remove_link(const BlueprintNode* dst, usize dst_pin);
         void clear_links();
 
+        const BlueprintParamType* generic_type(usize node_index) const;
+
         core::Result<BlueprintInstance, BlueprintError> create_instance() const;
 
         y_reflect(Blueprint, _nodes, _links)

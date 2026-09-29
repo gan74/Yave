@@ -197,6 +197,46 @@ void Blueprint::clear_links() {
     _links.make_empty();
 }
 
+const BlueprintParamType* Blueprint::generic_type(usize node_index) const {
+    y_debug_assert(node_index < _nodes.size());
+
+    bool is_generic = [&] {
+        for(const BlueprintPin& pin : _nodes[node_index]->input_pins()) {
+            if(pin.is_generic) {
+                return true;
+            }
+        }
+        for(const BlueprintPin& pin : _nodes[node_index]->output_pins()) {
+            if(pin.is_generic) {
+                return true;
+            }
+        }
+        return false;
+    }();
+
+    if(!is_generic) {
+        return nullptr;
+    }
+
+    for(const BlueprintLink& link : _links) {
+        const BlueprintPin& src_pin = _nodes[link.src_node]->output_pins()[link.src_pin];
+        const BlueprintPin& dst_pin = _nodes[link.dst_node]->input_pins()[link.dst_pin];
+
+        const bool from_src = link.src_node == node_index && src_pin.is_generic;
+        const bool from_dst = link.dst_node == node_index && dst_pin.is_generic;
+        if(!from_src && !from_dst) {
+            continue;
+        }
+
+        const BlueprintPin& other_pin = from_src ? dst_pin : src_pin;
+        const usize other = from_src ? link.dst_node : link.src_node;
+        if(const BlueprintParamType* type = other_pin.is_generic ? generic_type(other) : other_pin.type) {
+            return type;
+        }
+    }
+
+    return nullptr;
+}
 core::Result<BlueprintInstance, BlueprintError> Blueprint::create_instance() const {
     y_profile();
 
