@@ -22,31 +22,55 @@ SOFTWARE.
 #ifndef YAVE_BLUEPRINTS_BLUEPRINT_H
 #define YAVE_BLUEPRINTS_BLUEPRINT_H
 
-#include "BlueprintNode.h"
+#include "BlueprintInstance.h"
+
+#include <yave/assets/AssetTraits.h>
+
+#include <y/reflect/reflect.h>
 
 #include <memory>
-#include <utility>
 
 namespace yave {
 
-struct BlueprintError {
-    usize node_index = 0;
-    core::String error;
+struct BlueprintLink {
+    u32 src_node = 0;
+    u32 src_pin = 0;
+    u32 dst_node = 0;
+    u32 dst_pin = 0;
+
+    y_reflect(BlueprintLink, src_node, src_pin, dst_node, dst_pin)
 };
 
-class Blueprint : NonCopyable {
+class Blueprint {
     public:
         Blueprint() = default;
 
         core::Span<std::unique_ptr<BlueprintNode>> all_nodes() const;
+        core::Span<BlueprintLink> links() const;
 
-        core::Result<void, BlueprintError> eval() noexcept;
+        usize find_node_index(const BlueprintNode* node) const;
+        const BlueprintLink* find_link(usize dst_node, usize dst_pin) const;
+
+        const BlueprintNode* add_node(std::unique_ptr<BlueprintNode> node);
+        void remove_node(const BlueprintNode* node);
+
+        void add_blueprint(Blueprint data);
+
+        bool is_link_valid(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin) const;
+        void add_link(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin);
+        void remove_link(const BlueprintNode* dst, usize dst_pin);
+        void clear_links();
+
+        core::Result<BlueprintInstance, BlueprintError> create_instance() const;
+
+        y_reflect(Blueprint, _nodes, _links)
 
     private:
-        friend class BlueprintData;
-
         core::Vector<std::unique_ptr<BlueprintNode>> _nodes;
+        core::Vector<BlueprintLink> _links;
 };
+
+YAVE_DECLARE_GENERIC_ASSET_TRAITS(Blueprint, AssetType::Blueprint);
 
 }
 

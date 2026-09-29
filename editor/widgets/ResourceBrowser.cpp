@@ -36,7 +36,7 @@ SOFTWARE.
 #include <editor/utils/ui.h>
 
 #include <yave/assets/AssetStore.h>
-#include <yave/blueprints/BlueprintData.h>
+#include <yave/blueprints/Blueprint.h>
 #include <yave/utils/FileSystemModel.h>
 #include <yave/material/MaterialData.h>
 
@@ -135,7 +135,7 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _files
 
     _filesystem_view.set_context_menu_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
         if(ImGui::MenuItem("New blueprint")) {
-            create_empty_asset<BlueprintData, BlueprintWorkspace, AssetType::Blueprint>(_filesystem_view.path());
+            create_empty_asset<Blueprint, BlueprintWorkspace, AssetType::Blueprint>(_filesystem_view.path());
         }
         if(ImGui::MenuItem("New material")) {
             create_empty_asset<MaterialData, MaterialWorkspace, AssetType::Material>(_filesystem_view.path());

@@ -426,7 +426,7 @@ class BlueprintNodeDebug : public WorkspaceWidget<BlueprintWorkspace> {
 
     protected:
         void on_gui() override {
-            const BlueprintData& blueprint = workspace()->data();
+            const Blueprint& blueprint = workspace()->blueprint();
             const core::Span nodes = blueprint.all_nodes();
             
             ImGui::TextUnformatted(fmt_c_str("{} nodes", nodes.size()));

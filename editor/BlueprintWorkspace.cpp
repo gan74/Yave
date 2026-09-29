@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <yave/assets/AssetLoader.h>
 #include <yave/assets/AssetStore.h>
-#include <yave/blueprints/BlueprintData.h>
+#include <yave/blueprints/Blueprint.h>
 #include <yave/blueprints/blueprint_nodes.h>
 #include <yave/utils/FileSystemModel.h>
 
@@ -49,7 +49,7 @@ static BlueprintNodeFactory* find_factory(core::Span<std::unique_ptr<BlueprintNo
     y_fatal("Unknown blueprint node factory '{}'", name);
 }
 
-static core::Result<BlueprintData> read_blueprint_data(AssetId id) {
+static core::Result<Blueprint> read_blueprint_data(AssetId id) {
     if(id == AssetId::invalid_id()) {
         log_msg("Unable to load blueprint: no asset id", Log::Error);
         return core::Err();
@@ -61,7 +61,7 @@ static core::Result<BlueprintData> read_blueprint_data(AssetId id) {
         return core::Err();
     }
 
-    BlueprintData data;
+    Blueprint data;
     serde3::ReadableArchive arc(*reader.unwrap());
     if(const auto res = arc.deserialize(data); res.is_error()) {
         log_msg("Unable to load blueprint", Log::Error);
@@ -73,10 +73,10 @@ static core::Result<BlueprintData> read_blueprint_data(AssetId id) {
     return core::Ok(std::move(data));
 }
 
-static BlueprintData create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactory>> factories, usize node_count = 20) {
+static Blueprint create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactory>> factories, usize node_count = 20) {
     y_profile();
 
-    BlueprintData blueprint;
+    Blueprint blueprint;
     core::Vector<const BlueprintNode*> floats;
     core::Vector<const BlueprintNode*> vec2s;
     core::Vector<const BlueprintNode*> vec3s;
@@ -216,7 +216,7 @@ BlueprintWorkspace::BlueprintWorkspace(AssetId id) : _id(id) {
     if(_id != AssetId::invalid_id()) {
         load();
     } else {
-        _data = create_blueprint(_node_factories);
+        _blueprint = create_blueprint(_node_factories);
     }
 }
 
@@ -228,8 +228,8 @@ std::string_view BlueprintWorkspace::name() const {
 }
 
 void BlueprintWorkspace::update() {
-    if(auto res = _data.create_instance()) {
-        _instance = std::make_unique<Blueprint>(std::move(res.unwrap()));
+    if(auto res = _blueprint.create_instance()) {
+        _instance = std::make_unique<BlueprintInstance>(std::move(res.unwrap()));
         _result = _instance->eval();
     } else {
         _instance = nullptr;
@@ -249,7 +249,7 @@ void BlueprintWorkspace::save() {
     io2::Buffer buffer;
     {
         serde3::WritableArchive arc(buffer);
-        if(const auto res = arc.serialize(_data); res.is_error()) {
+        if(const auto res = arc.serialize(_blueprint); res.is_error()) {
             log_msg("Unable to serialize blueprint", Log::Error);
             return;
         }
@@ -261,7 +261,7 @@ void BlueprintWorkspace::save() {
         return;
     }
 
-    asset_loader().reload<BlueprintData>(_id);
+    asset_loader().reload<Blueprint>(_id);
     for(const auto& workspace : ui().workspaces()) {
         workspace->grab_reloaded();
     }
@@ -274,7 +274,7 @@ void BlueprintWorkspace::load() {
 
     if(auto data = read_blueprint_data(_id)) {
         _selected_node = nullptr;
-        _data = std::move(data.unwrap());
+        _blueprint = std::move(data.unwrap());
         update_name();
 
         log_msg("Blueprint loaded");
@@ -285,8 +285,8 @@ bool BlueprintWorkspace::add_blueprint(AssetId id) {
     y_profile();
 
     if(auto data = read_blueprint_data(id)) {
-        BlueprintData new_data = std::move(data.unwrap());
-        _data.add_blueprint(std::move(new_data));
+        Blueprint new_data = std::move(data.unwrap());
+        _blueprint.add_blueprint(std::move(new_data));
         return true;
     }
 
@@ -297,15 +297,15 @@ AssetId BlueprintWorkspace::asset_id() const {
     return _id;
 }
 
-BlueprintData& BlueprintWorkspace::data() {
-    return _data;
+Blueprint& BlueprintWorkspace::blueprint() {
+    return _blueprint;
 }
 
-const BlueprintData& BlueprintWorkspace::data() const {
-    return _data;
+const Blueprint& BlueprintWorkspace::blueprint() const {
+    return _blueprint;
 }
 
-const Blueprint* BlueprintWorkspace::instance() const {
+const BlueprintInstance* BlueprintWorkspace::instance() const {
     return _instance.get();
 }
 

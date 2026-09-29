@@ -82,14 +82,14 @@ void BlueprintNodeInspector::on_gui() {
     imgui::text_input("##name", node->name());
     ImGui::Separator();
 
-    const BlueprintData& data = workspace()->data();
-    const usize node_index = data.find_node_index(node);
-    const Blueprint* instance = workspace()->instance();
+    const Blueprint& blueprint = workspace()->blueprint();
+    const usize node_index = blueprint.find_node_index(node);
+    const BlueprintInstance* instance = workspace()->instance();
 
     const core::Span<BlueprintPin> inputs = node->input_pins();
     if(!inputs.is_empty() && ImGui::CollapsingHeader("Inputs", ImGuiTreeNodeFlags_DefaultOpen)) {
         for(usize i = 0; i != inputs.size(); ++i) {
-            const BlueprintLink* link = data.find_link(node_index, i);
+            const BlueprintLink* link = blueprint.find_link(node_index, i);
             const std::string_view label = fmt("{}{}", inputs[i].name, link ? " (linked)" : "");
 
             if(const auto it = _drawers.find(inputs[i].type); it != _drawers.end()) {

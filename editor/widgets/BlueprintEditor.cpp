@@ -87,7 +87,7 @@ static ed::PinId output_pin_id(const BlueprintNode& node, usize index) {
     return ed::PinId(uintptr_t(&node) + 1 + node.input_pins().size() + index);
 }
 
-static PinInfo find_pin(const BlueprintData& blueprint, uintptr_t pin) {
+static PinInfo find_pin(const Blueprint& blueprint, uintptr_t pin) {
     for(const auto& node : blueprint.all_nodes()) {
         const uintptr_t base = uintptr_t(node.get()) + 1;
         const usize in_count = node->input_pins().size();
@@ -228,7 +228,7 @@ void BlueprintEditor::center_on_node(const BlueprintNode* node) {
 }
 
 void BlueprintEditor::on_gui() {
-    const BlueprintData& blueprint = workspace()->data();
+    const Blueprint& blueprint = workspace()->blueprint();
     const core::Span nodes = blueprint.all_nodes();
 
     const auto& result = workspace()->result();
@@ -323,7 +323,7 @@ void BlueprintEditor::layout_nodes(usize first_node, math::Vec2 origin) {
     ed::SetCurrentEditor(_context);
     y_defer(ed::SetCurrentEditor(nullptr));
 
-    const BlueprintData& blueprint = workspace()->data();
+    const Blueprint& blueprint = workspace()->blueprint();
     const core::Span nodes = blueprint.all_nodes().take(first_node);
 
     core::FixedArray<usize> column_sizes(nodes.size());
@@ -347,7 +347,7 @@ void BlueprintEditor::layout_nodes(usize first_node, math::Vec2 origin) {
 void BlueprintEditor::process_actions() {
     y_profile();
 
-    BlueprintData& blueprint = workspace()->data();
+    Blueprint& blueprint = workspace()->blueprint();
 
     if(ed::BeginCreate()) {
         ed::PinId start_id;
@@ -434,7 +434,7 @@ void BlueprintEditor::draw_context_menu() {
         imgui::text_input("##filter", _node_filter, ImGuiInputTextFlags_AutoSelectAll, ICON_FA_SEARCH " Search");
         const StringMatcher matcher(_node_filter);
 
-        BlueprintData& blueprint = workspace()->data();
+        Blueprint& blueprint = workspace()->blueprint();
         const PinInfo link_pin = find_pin(blueprint, _new_node.link_pin);
         const BlueprintParamType* link_type = !link_pin.node
             ? nullptr
@@ -491,7 +491,7 @@ void BlueprintEditor::draw_context_menu() {
                 const math::Vec2 pos = _new_node.pos;
                 add_top_level_widget<AssetSelector>(AssetType::Blueprint, "Add blueprint")->set_selected_callback(
                     [this, pos](AssetId id) {
-                        const usize first_node = workspace()->data().all_nodes().size();
+                        const usize first_node = workspace()->blueprint().all_nodes().size();
                         if(!workspace()->add_blueprint(id)) {
                             return false;
                         }
@@ -506,7 +506,7 @@ void BlueprintEditor::draw_context_menu() {
 }
 
 void BlueprintEditor::draw_execution_order() {
-    const core::Span nodes = workspace()->data().all_nodes();
+    const core::Span nodes = workspace()->blueprint().all_nodes();
     if(nodes.is_empty()) {
         return;
     }
