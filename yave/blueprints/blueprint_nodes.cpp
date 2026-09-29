@@ -102,6 +102,12 @@ class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode 
         LambdaBlueprintNodeImpl(core::String name) : BlueprintNode(std::move(name)) {
         }
 
+        std::unique_ptr<BlueprintNode> clone() const override {
+            auto node = std::make_unique<LambdaBlueprintNodeImpl>(_name);
+            node->_values = _values;
+            return node;
+        }
+
         std::string_view node_type_name() const override {
             return detail::bp_op_name<F>();
         }
@@ -171,6 +177,12 @@ class ConstantBlueprintNode : public BlueprintNode {
         ConstantBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
         }
 
+        std::unique_ptr<BlueprintNode> clone() const override {
+            auto node = std::make_unique<ConstantBlueprintNode>(_name);
+            node->_value = _value;
+            return node;
+        }
+
         std::string_view node_type_name() const override {
             return "Const";
         }
@@ -212,6 +224,17 @@ class IfBlueprintNode : public BlueprintNode {
         IfBlueprintNode() = default;
 
         IfBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
+        }
+
+        std::unique_ptr<BlueprintNode> clone() const override {
+            auto node = std::make_unique<IfBlueprintNode>(_name);
+            node->_default_cond = _default_cond;
+            node->_values_type = _values_type;
+            node->_values = core::FixedArray<u8>(_values);
+            if(const BlueprintParamType* type = generic_type()) {
+                node->set_generic_type(type);
+            }
+            return node;
         }
 
         std::string_view node_type_name() const override {

@@ -24,7 +24,7 @@ SOFTWARE.
 
 namespace yave {
 
-BlueprintData BlueprintData::from_blueprint(Blueprint blueprint) {
+BlueprintData BlueprintData::from_blueprint(const Blueprint& blueprint) {
     BlueprintData data;
 
     const core::Span nodes = blueprint.all_nodes();
@@ -49,7 +49,10 @@ BlueprintData BlueprintData::from_blueprint(Blueprint blueprint) {
         }
     }
 
-    data._nodes = std::move(blueprint._nodes);
+    data._nodes.set_min_capacity(nodes.size());
+    for(const auto& node : nodes) {
+        data._nodes.emplace_back(node->clone());
+    }
     return data;
 }
 

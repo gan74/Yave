@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "BlueprintNode.h"
 
+#include <memory>
+
 namespace yave {
 
 BlueprintNode::BlueprintNode(core::String name) : _name(std::move(name)) {
@@ -107,6 +109,17 @@ static void set_generic_pin_type(BlueprintPin& pin, const BlueprintParamType* ty
 ParamInBlueprintNode::ParamInBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
 }
 
+std::unique_ptr<BlueprintNode> ParamInBlueprintNode::clone() const {
+    auto node = std::make_unique<ParamInBlueprintNode>(_name);
+    node->_order = _order;
+    node->_value_type = _value_type;
+    node->_value = core::FixedArray<u8>(_value);
+    if(const BlueprintParamType* type = generic_type()) {
+        node->set_generic_type(type);
+    }
+    return node;
+}
+
 std::string_view ParamInBlueprintNode::node_type_name() const {
     return "ParamIn";
 }
@@ -156,6 +169,17 @@ u32& ParamInBlueprintNode::order() {
 
 
 ParamOutBlueprintNode::ParamOutBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
+}
+
+std::unique_ptr<BlueprintNode> ParamOutBlueprintNode::clone() const {
+    auto node = std::make_unique<ParamOutBlueprintNode>(_name);
+    node->_order = _order;
+    node->_value_type = _value_type;
+    node->_value = core::FixedArray<u8>(_value);
+    if(const BlueprintParamType* type = generic_type()) {
+        node->set_generic_type(type);
+    }
+    return node;
 }
 
 std::string_view ParamOutBlueprintNode::node_type_name() const {

@@ -239,21 +239,17 @@ void BlueprintWorkspace::save() {
         return;
     }
 
-    _selected_node = nullptr;
-    BlueprintData data = BlueprintData::from_blueprint(std::move(_blueprint));
+    BlueprintData data = BlueprintData::from_blueprint(_blueprint);
 
     io2::Buffer buffer;
     {
         serde3::WritableArchive arc(buffer);
         if(const auto res = arc.serialize(data); res.is_error()) {
-            _blueprint = Blueprint(std::move(data));
             log_msg("Unable to serialize blueprint", Log::Error);
             return;
         }
         buffer.reset();
     }
-
-    _blueprint = Blueprint(std::move(data));
 
     if(const auto res = asset_store().write(_id, buffer, {}); res.is_error()) {
         log_msg(fmt("Unable to write blueprint, error: {}", res.error()), Log::Error);

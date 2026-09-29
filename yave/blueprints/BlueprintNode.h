@@ -70,6 +70,8 @@ class BlueprintNode : NonMovable {
 
         y_serde3_poly_abstract_base(BlueprintNode)
 
+        virtual std::unique_ptr<BlueprintNode> clone() const = 0;
+
         const core::String& name() const;
         core::String& name();
 
@@ -110,6 +112,8 @@ class ParamInBlueprintNode final : public BlueprintNode {
         ParamInBlueprintNode() = default;
         ParamInBlueprintNode(core::String name);
 
+        std::unique_ptr<BlueprintNode> clone() const override;
+
         std::string_view node_type_name() const override;
 
         core::Span<BlueprintPin> output_pins() const override;
@@ -144,6 +148,8 @@ class ParamOutBlueprintNode final : public BlueprintNode {
     public:
         ParamOutBlueprintNode() = default;
         ParamOutBlueprintNode(core::String name);
+
+        std::unique_ptr<BlueprintNode> clone() const override;
 
         std::string_view node_type_name() const override;
 
