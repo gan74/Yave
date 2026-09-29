@@ -166,12 +166,12 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _files
         if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
             ImGui::Separator();
             if(asset_type(id) == AssetType::Material) {
-                if(ImGui::MenuItem("Edit")) {
+                if(ImGui::MenuItem(ICON_FA_PEN " Edit")) {
                     add_workspace(std::make_unique<MaterialWorkspace>(id));
                 }
             }
             if(asset_type(id) == AssetType::Blueprint) {
-                if(ImGui::MenuItem("Edit")) {
+                if(ImGui::MenuItem(ICON_FA_PEN " Edit")) {
                     add_workspace(std::make_unique<BlueprintWorkspace>(id));
                 }
             }

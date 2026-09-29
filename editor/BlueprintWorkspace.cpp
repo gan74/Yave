@@ -29,6 +29,7 @@ SOFTWARE.
 #include <yave/assets/AssetStore.h>
 #include <yave/blueprints/Blueprint.h>
 #include <yave/blueprints/blueprint_nodes.h>
+#include <yave/blueprints/NestedBlueprintNode.h>
 #include <yave/utils/FileSystemModel.h>
 
 #include <y/io2/Buffer.h>
@@ -298,6 +299,28 @@ bool BlueprintWorkspace::add_blueprint(AssetId id) {
     }
 
     return false;
+}
+
+const BlueprintNode* BlueprintWorkspace::add_nested_blueprint(AssetId id) {
+    y_profile();
+
+    if(id == _id) {
+        log_msg("A blueprint can not be nested in itself", Log::Error);
+        return nullptr;
+    }
+
+    const auto loaded = asset_loader().load_res<Blueprint>(id);
+    if(!loaded) {
+        log_msg("Unable to load nested blueprint", Log::Error);
+        return nullptr;
+    }
+
+    core::String name = "Blueprint";
+    if(auto full_name = asset_store().name(id)) {
+        name = asset_store().filesystem()->filename(full_name.unwrap());
+    }
+
+    return _blueprint.add_node(std::make_unique<NestedBlueprintNode>(std::move(name), loaded.unwrap()));
 }
 
 AssetId BlueprintWorkspace::asset_id() const {

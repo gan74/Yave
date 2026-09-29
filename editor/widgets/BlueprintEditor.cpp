@@ -49,6 +49,7 @@ struct PinInfo {
 static constexpr float pin_icon_size = 16.0f;
 static constexpr float pin_column_gap = 20.0f;
 static constexpr ImVec4 node_padding = ImVec4(6.0f, 2.0f, 6.0f, 4.0f);
+static constexpr ImVec2 node_min_size = ImVec2(60.0f, 40.0f);
 static constexpr ImVec2 layout_cell_size = ImVec2(260.0f, 300.0f);
 static constexpr ImColor error_color = ImColor(250, 20, 20, 255);
 static constexpr ImColor after_error_color = error_color; // ImColor(255, 100, 70, 255);
@@ -195,6 +196,8 @@ static void draw_node(const BlueprintNode& node, const BlueprintParamType* gener
 
     ed::BeginNode(node_id);
 
+    const ImVec2 content_min = ImGui::GetCursorScreenPos();
+
     ImGui::TextUnformatted(name.data());
     const float header_bottom = ImGui::GetItemRectMax().y;
     ImGui::Dummy(ImVec2(0.0f, 2.0f));
@@ -215,6 +218,11 @@ static void draw_node(const BlueprintNode& node, const BlueprintParamType* gener
         draw_pin(output_pin_id(node, i), outputs[i].name, outputs[i].is_generic ? generic_type : outputs[i].type, is_linked(output_pin_id(node, i)), false);
     }
     ImGui::EndGroup();
+
+    if(inputs.is_empty() && outputs.is_empty()) {
+        ImGui::SetCursorScreenPos(content_min);
+        ImGui::Dummy(node_min_size);
+    }
 
     ed::EndNode();
 
@@ -549,6 +557,22 @@ void BlueprintEditor::draw_context_menu() {
                             return false;
                         }
                         layout_nodes(first_node, pos);
+                        return true;
+                    }
+                );
+            }
+
+            if(ImGui::MenuItem("Add nested blueprint")) {
+                const math::Vec2 pos = _new_node.pos;
+                add_top_level_widget<AssetSelector>(AssetType::Blueprint, "Add nested blueprint")->set_selected_callback(
+                    [this, pos](AssetId id) {
+                        const BlueprintNode* node = workspace()->add_nested_blueprint(id);
+                        if(!node) {
+                            return false;
+                        }
+                        ed::SetCurrentEditor(_context);
+                        y_defer(ed::SetCurrentEditor(nullptr));
+                        ed::SetNodePosition(ed::NodeId(uintptr_t(node)), to_im(pos));
                         return true;
                     }
                 );
