@@ -45,13 +45,27 @@ class BlueprintData {
     public:
         BlueprintData() = default;
 
-        static BlueprintData from_blueprint(const Blueprint& blueprint);
+        core::Span<std::unique_ptr<BlueprintNode>> all_nodes() const;
+        core::Span<BlueprintLink> links() const;
+
+        usize find_node_index(const BlueprintNode* node) const;
+        const BlueprintLink* find_link(usize dst_node, usize dst_pin) const;
+
+        const BlueprintNode* add_node(std::unique_ptr<BlueprintNode> node);
+        void remove_node(const BlueprintNode* node);
+
+        void add_blueprint(BlueprintData data);
+
+        bool is_link_valid(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin) const;
+        void add_link(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin);
+        void remove_link(const BlueprintNode* dst, usize dst_pin);
+        void clear_links();
+
+        core::Result<Blueprint, BlueprintError> create_instance() const;
 
         y_reflect(BlueprintData, _nodes, _links)
 
     private:
-        friend class Blueprint;
-
         core::Vector<std::unique_ptr<BlueprintNode>> _nodes;
         core::Vector<BlueprintLink> _links;
 };

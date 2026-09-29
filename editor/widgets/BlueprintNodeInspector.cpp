@@ -41,6 +41,10 @@ static void add_drawer(M& drawers, I input, O output) {
     };
 }
 
+
+
+
+
 BlueprintNodeInspector::BlueprintNodeInspector(BlueprintWorkspace* ws) : WorkspaceWidget(ICON_FA_WRENCH " Blueprint Node Inspector", ws) {
     add_drawer<float>(_drawers, [](std::string_view label, float& value) {
         ImGui::DragFloat(fmt_c_str("{}", label), &value, 0.1f);
@@ -63,6 +67,9 @@ BlueprintNodeInspector::BlueprintNodeInspector(BlueprintWorkspace* ws) : Workspa
     }, draw_output<bool>);
 }
 
+
+
+
 void BlueprintNodeInspector::on_gui() {
     BlueprintNode* node = workspace()->selected_node();
     if(!node) {
@@ -75,16 +82,22 @@ void BlueprintNodeInspector::on_gui() {
     imgui::text_input("##name", node->name());
     ImGui::Separator();
 
+    const BlueprintData& data = workspace()->data();
+    const usize node_index = data.find_node_index(node);
+    const Blueprint* instance = workspace()->instance();
+
     const core::Span<BlueprintPin> inputs = node->input_pins();
     if(!inputs.is_empty() && ImGui::CollapsingHeader("Inputs", ImGuiTreeNodeFlags_DefaultOpen)) {
         for(usize i = 0; i != inputs.size(); ++i) {
-            const void* linked = node->input(i);
-            const std::string_view label = fmt("{}{}", inputs[i].name, linked ? " (linked)" : "");
+            const BlueprintLink* link = data.find_link(node_index, i);
+            const std::string_view label = fmt("{}{}", inputs[i].name, link ? " (linked)" : "");
 
             if(const auto it = _drawers.find(inputs[i].type); it != _drawers.end()) {
                 it->second.input(label, node->default_input(i));
-                if(linked) {
-                    it->second.output("received", linked);
+                if(link && instance) {
+                    if(const void* received = instance->all_nodes()[link->src_node]->output_ptr(link->src_pin)) {
+                        it->second.output("received", received);
+                    }
                 }
             } else {
                 ImGui::TextUnformatted(label.data());
@@ -92,7 +105,7 @@ void BlueprintNodeInspector::on_gui() {
         }
     }
 
-    const core::Span<BlueprintPin> params = node->param_pins();
+    const core::Span params = node->param_pins();
     if(!params.is_empty() && ImGui::CollapsingHeader("Params", ImGuiTreeNodeFlags_DefaultOpen)) {
         for(usize i = 0; i != params.size(); ++i) {
             const std::string_view name = params[i].name;
@@ -104,12 +117,13 @@ void BlueprintNodeInspector::on_gui() {
         }
     }
 
-    const core::Span<BlueprintPin> outputs = node->output_pins();
+    const core::Span outputs = node->output_pins();
     if(!outputs.is_empty() && ImGui::CollapsingHeader("Outputs", ImGuiTreeNodeFlags_DefaultOpen)) {
         for(usize i = 0; i != outputs.size(); ++i) {
             const std::string_view name = outputs[i].name;
-            if(const auto it = _drawers.find(outputs[i].type); it != _drawers.end()) {
-                it->second.output(name, node->output_ptr(i));
+            const void* output = instance ? instance->all_nodes()[node_index]->output_ptr(i) : nullptr;
+            if(const auto it = _drawers.find(outputs[i].type); it != _drawers.end() && output) {
+                it->second.output(name, output);
             } else {
                 ImGui::TextUnformatted(name.data());
             }

@@ -37,31 +37,13 @@ struct BlueprintError {
 class Blueprint : NonCopyable {
     public:
         Blueprint() = default;
-        explicit Blueprint(BlueprintData data);
 
         core::Span<std::unique_ptr<BlueprintNode>> all_nodes() const;
-
-        const BlueprintNode* add_node(std::unique_ptr<BlueprintNode> node);
-        void remove_node(const BlueprintNode* node);
-
-        void add_blueprint(Blueprint blueprint);
-
-        std::pair<const BlueprintNode*, usize> find_output(const void* ptr) const;
-
-        void clear_links();
-        bool is_link_valid(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin) const;
-        void add_link(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin);
-        void remove_link(const BlueprintNode* dst, usize dst_pin);
 
         core::Result<void, BlueprintError> eval() noexcept;
 
     private:
         friend class BlueprintData;
-
-        usize find_node_index(const BlueprintNode* node) const;
-        static usize find_output_pin(const BlueprintNode& node, const void* ptr);
-
-        void update_generic_types();
 
         core::Vector<std::unique_ptr<BlueprintNode>> _nodes;
 };

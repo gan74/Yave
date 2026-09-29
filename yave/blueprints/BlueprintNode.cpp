@@ -113,7 +113,7 @@ std::unique_ptr<BlueprintNode> ParamInBlueprintNode::clone() const {
     auto node = std::make_unique<ParamInBlueprintNode>(_name);
     node->_order = _order;
     node->_value_type = _value_type;
-    node->_value = core::FixedArray<u8>(_value);
+    node->_value = core::FixedArray<u8>(core::Span<u8>(_value));
     if(const BlueprintParamType* type = generic_type()) {
         node->set_generic_type(type);
     }
@@ -175,7 +175,7 @@ std::unique_ptr<BlueprintNode> ParamOutBlueprintNode::clone() const {
     auto node = std::make_unique<ParamOutBlueprintNode>(_name);
     node->_order = _order;
     node->_value_type = _value_type;
-    node->_value = core::FixedArray<u8>(_value);
+    node->_value = core::FixedArray<u8>(core::Span<u8>(_value));
     if(const BlueprintParamType* type = generic_type()) {
         node->set_generic_type(type);
     }

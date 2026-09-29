@@ -426,18 +426,21 @@ class BlueprintNodeDebug : public WorkspaceWidget<BlueprintWorkspace> {
 
     protected:
         void on_gui() override {
-            const Blueprint& blueprint = workspace()->blueprint();
-            ImGui::TextUnformatted(fmt_c_str("{} nodes", blueprint.all_nodes().size()));
+            const BlueprintData& blueprint = workspace()->data();
+            const core::Span nodes = blueprint.all_nodes();
+            
+            ImGui::TextUnformatted(fmt_c_str("{} nodes", nodes.size()));
 
-            for(const auto& node : blueprint.all_nodes()) {
+            for(usize i = 0; i != nodes.size(); ++i) {
+                const auto& node = nodes[i];
                 if(!ImGui::TreeNode(fmt_c_str("{}###{}", node->name(), static_cast<const void*>(node.get())))) {
                     continue;
                 }
 
                 const core::Span<BlueprintPin> inputs = node->input_pins();
                 if(!inputs.is_empty() && ImGui::TreeNode("Inputs")) {
-                    for(usize i = 0; i != inputs.size(); ++i) {
-                        ImGui::TextUnformatted(fmt_c_str("{}{}", inputs[i].name, node->input(i) ? " (linked)" : ""));
+                    for(usize k = 0; k != inputs.size(); ++k) {
+                        ImGui::TextUnformatted(fmt_c_str("{}{}", inputs[i].name, blueprint.find_link(i, k) ? " (linked)" : ""));
                     }
                     ImGui::TreePop();
                 }

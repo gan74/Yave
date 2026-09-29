@@ -1,4 +1,4 @@
-/*******************************
+﻿/*******************************
 Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,10 +26,14 @@ SOFTWARE.
 
 #include <yave/assets/AssetId.h>
 #include <yave/blueprints/Blueprint.h>
+#include <yave/blueprints/BlueprintData.h>
+#include <yave/blueprints/BlueprintData.h>
 #include <yave/blueprints/BlueprintNodeFactory.h>
 
 #include <y/core/String.h>
 #include <y/core/Vector.h>
+
+#include <memory>
 
 namespace editor {
 
@@ -47,8 +51,10 @@ class BlueprintWorkspace final : public Workspace {
 
         AssetId asset_id() const;
 
-        Blueprint& blueprint();
-        const Blueprint& blueprint() const;
+        BlueprintData& data();
+        const BlueprintData& data() const;
+
+        const Blueprint* instance() const;
 
         bool add_blueprint(AssetId id);
 
@@ -66,7 +72,8 @@ class BlueprintWorkspace final : public Workspace {
 
         core::Vector<std::unique_ptr<BlueprintNodeFactory>> _node_factories;
         
-        Blueprint _blueprint;
+        BlueprintData _data;
+        std::unique_ptr<Blueprint> _instance;
         BlueprintNode* _selected_node = nullptr;
         core::Result<void, BlueprintError> _error = core::Ok();
 

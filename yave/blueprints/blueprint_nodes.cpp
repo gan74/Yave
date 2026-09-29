@@ -230,7 +230,7 @@ class IfBlueprintNode : public BlueprintNode {
             auto node = std::make_unique<IfBlueprintNode>(_name);
             node->_default_cond = _default_cond;
             node->_values_type = _values_type;
-            node->_values = core::FixedArray<u8>(_values);
+            node->_values = core::FixedArray<u8>(core::Span<u8>(_values));
             if(const BlueprintParamType* type = generic_type()) {
                 node->set_generic_type(type);
             }

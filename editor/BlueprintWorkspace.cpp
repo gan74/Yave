@@ -1,4 +1,4 @@
-/*******************************
+﻿/*******************************
 Copyright (c) 2016-2026 Grégoire Angerand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -73,10 +73,10 @@ static core::Result<BlueprintData> read_blueprint_data(AssetId id) {
     return core::Ok(std::move(data));
 }
 
-static Blueprint create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactory>> factories, usize node_count = 20) {
+static BlueprintData create_blueprint(core::Span<std::unique_ptr<BlueprintNodeFactory>> factories, usize node_count = 20) {
     y_profile();
 
-    Blueprint blueprint;
+    BlueprintData blueprint;
     core::Vector<const BlueprintNode*> floats;
     core::Vector<const BlueprintNode*> vec2s;
     core::Vector<const BlueprintNode*> vec3s;
@@ -216,7 +216,7 @@ BlueprintWorkspace::BlueprintWorkspace(AssetId id) : _id(id) {
     if(_id != AssetId::invalid_id()) {
         load();
     } else {
-        _blueprint = create_blueprint(_node_factories);
+        _data = create_blueprint(_node_factories);
     }
 }
 
@@ -228,7 +228,14 @@ std::string_view BlueprintWorkspace::name() const {
 }
 
 void BlueprintWorkspace::update() {
-    _error = _blueprint.eval();
+    if(auto res = _data.create_instance()) {
+        _instance = std::make_unique<Blueprint>(std::move(res.unwrap()));
+        _error = _instance->eval();
+    } else {
+        _instance = nullptr;
+        _error = core::Err(std::move(res.error()));
+    }
+
 }
 
 void BlueprintWorkspace::save() {
@@ -239,12 +246,10 @@ void BlueprintWorkspace::save() {
         return;
     }
 
-    BlueprintData data = BlueprintData::from_blueprint(_blueprint);
-
     io2::Buffer buffer;
     {
         serde3::WritableArchive arc(buffer);
-        if(const auto res = arc.serialize(data); res.is_error()) {
+        if(const auto res = arc.serialize(_data); res.is_error()) {
             log_msg("Unable to serialize blueprint", Log::Error);
             return;
         }
@@ -269,7 +274,7 @@ void BlueprintWorkspace::load() {
 
     if(auto data = read_blueprint_data(_id)) {
         _selected_node = nullptr;
-        _blueprint = Blueprint(std::move(data.unwrap()));
+        _data = std::move(data.unwrap());
         update_name();
 
         log_msg("Blueprint loaded");
@@ -280,7 +285,8 @@ bool BlueprintWorkspace::add_blueprint(AssetId id) {
     y_profile();
 
     if(auto data = read_blueprint_data(id)) {
-        _blueprint.add_blueprint(Blueprint(std::move(data.unwrap())));
+        BlueprintData new_data = std::move(data.unwrap());
+        _data.add_blueprint(std::move(new_data));
         return true;
     }
 
@@ -291,12 +297,16 @@ AssetId BlueprintWorkspace::asset_id() const {
     return _id;
 }
 
-Blueprint& BlueprintWorkspace::blueprint() {
-    return _blueprint;
+BlueprintData& BlueprintWorkspace::data() {
+    return _data;
 }
 
-const Blueprint& BlueprintWorkspace::blueprint() const {
-    return _blueprint;
+const BlueprintData& BlueprintWorkspace::data() const {
+    return _data;
+}
+
+const Blueprint* BlueprintWorkspace::instance() const {
+    return _instance.get();
 }
 
 const core::Result<void, BlueprintError>& BlueprintWorkspace::error() const {
@@ -306,8 +316,8 @@ const core::Result<void, BlueprintError>& BlueprintWorkspace::error() const {
 const BlueprintNode* BlueprintWorkspace::error_node() const {
     if(_error.is_error()) {
         const usize node_index = _error.error().node_index;
-        if(node_index < _blueprint.all_nodes().size()) {
-            return _blueprint.all_nodes()[node_index].get();
+        if(node_index < _data.all_nodes().size()) {
+            return _data.all_nodes()[node_index].get();
         }
     }
     return nullptr;
