@@ -114,6 +114,22 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _files
         return {};
     });
 
+    _filesystem_view.set_icon_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+        switch(type) {
+            case FileSystemModel::EntryType::Directory:
+                return UiIcon{ICON_FA_FOLDER_OPEN, imgui::folder_icon_color};
+
+            case FileSystemModel::EntryType::File:
+                if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
+                    return UiIcon{asset_type_icon(asset_type(id)), 0xFFFFFFFF};
+                }
+                return UiIcon{ICON_FA_FILE_ALT, 0xFFFFFFFF};
+
+            default:
+                return UiIcon{ICON_FA_QUESTION, 0xFFFFFFFF};
+        }
+    });
+
     _filesystem_view.set_tooltip_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
         ImGui::TextUnformatted(full_name.data(), full_name.data() + full_name.size());
         if(type == FileSystemModel::EntryType::File) {
@@ -124,7 +140,9 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _files
 
                 if(const auto* thumb = thumbnail_renderer().thumbnail_data(id)) {
                     ImGui::Separator();
-                    ImGui::Image(imgui_platform()->to_ui(thumb->view), ImVec2(256.0f, 256.0f));
+                    if(!thumb->view.is_null()) {
+                        ImGui::Image(imgui_platform()->to_ui(thumb->view), ImVec2(256.0f, 256.0f));
+                    }
                     for(const core::String& info : thumb->infos) {
                         ImGui::TextUnformatted(info.data());
                     }

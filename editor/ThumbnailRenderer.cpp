@@ -24,10 +24,14 @@ SOFTWARE.
 #include "EditorResources.h"
 
 #include <yave/assets/AssetLoader.h>
+
 #include <yave/material/Material.h>
 #include <yave/material/MaterialData.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/meshes/MeshData.h>
+#include <yave/blueprints/Blueprint.h>
+
+
 #include <yave/graphics/images/ImageData.h>
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdQueue.h>
@@ -235,7 +239,7 @@ const ThumbnailRenderer::ThumbnailData* ThumbnailRenderer::thumbnail_data(AssetI
 
 const TextureView* ThumbnailRenderer::thumbnail_img(AssetId id) {
     const ThumbnailData* thumb = thumbnail_data(id);
-    return thumb ? &thumb->view : nullptr;
+    return (thumb && !thumb->view.is_null()) ? &thumb->view : nullptr;
 }
 
 usize ThumbnailRenderer::cached_thumbnails() {
@@ -251,7 +255,6 @@ std::unique_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_re
 
         const AssetType asset_type = _loader->store().asset_type(id).unwrap_or(AssetType::Unknown);
 
-
         if(const core::Span<AssetId> refs = _loader->store().references(id).unwrap_or(core::Span<AssetId>()); !refs.is_empty()) {
             data->infos.emplace_back(fmt("References {} assets", refs.size()));
         }
@@ -264,6 +267,7 @@ std::unique_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_re
             data->infos.emplace_back(fmt("Size on disk: {}",  byte_size_text(r.unwrap()->remaining())));
         }
 
+        bool ok = false;
         switch(asset_type) {
             case AssetType::Mesh:
                 if(const auto ptr = _loader->load<StaticMesh>(id)) {
@@ -272,6 +276,7 @@ std::unique_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_re
                     const MeshDrawData& draw_data = ptr->draw_data();
                     data->infos.emplace_back(fmt("Vertices: {}", draw_data.vertex_count()));
                     data->infos.emplace_back(fmt("Triangles: {}", draw_data.draw_command().index_count / 3));
+                    ok = true;
                 }
             break;
 
@@ -281,18 +286,28 @@ std::unique_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_re
 
                     data->infos.emplace_back(fmt("Size: {}x{}", ptr->size().x(), ptr->size().y()));
                     data->infos.emplace_back(fmt("Format: {}", ptr->format().name()));
+                    ok = true;
                 }
             break;
 
             case AssetType::Material:
                 if(const auto ptr = _loader->load<Material>(id)) {
                     data->texture = render_object(device_resources()[DeviceResources::SphereMesh], ptr);
+                    ok = true;
                 }
             break;
 
             case AssetType::Prefab:
                 if(const auto ptr = _loader->load<ecs::EntityPrefab>(id)) {
                     data->texture = render_prefab(ptr);
+                    ok = true;
+                }
+            break;
+
+            case AssetType::Blueprint:
+                if(const auto ptr = _loader->load<Blueprint>(id)) {
+                    data->infos.emplace_back(fmt("Nodes: {}", ptr->all_nodes().size()));
+                    ok = true;
                 }
             break;
 
@@ -301,11 +316,9 @@ std::unique_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_re
             break;
         }
 
+        data->status = ok ? ThumbnailStatus::Done : ThumbnailStatus::Failed;
         if(!data->texture.is_null()) {
             data->view = data->texture;
-            data->status = ThumbnailStatus::Done;
-        } else {
-            data->status = ThumbnailStatus::Failed;
         }
     });
 
