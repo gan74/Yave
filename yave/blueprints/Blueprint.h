@@ -68,6 +68,8 @@ class Blueprint {
         y_reflect(Blueprint, _nodes, _links)
 
     private:
+        void sort_nodes();
+        
         core::Vector<std::unique_ptr<BlueprintNode>> _nodes;
         core::Vector<BlueprintLink> _links;
 };

@@ -70,6 +70,8 @@ const BlueprintNode* Blueprint::add_node(std::unique_ptr<BlueprintNode> node) {
 }
 
 void Blueprint::remove_node(const BlueprintNode* node) {
+    y_profile();
+
     const usize node_index = find_node_index(node);
     y_debug_assert(node_index < _nodes.size());
 
@@ -88,6 +90,8 @@ void Blueprint::remove_node(const BlueprintNode* node) {
 }
 
 void Blueprint::add_blueprint(Blueprint data) {
+    y_profile();
+
     const u32 offset = u32(_nodes.size());
 
     for(auto& node : data._nodes) {
@@ -154,7 +158,7 @@ void Blueprint::add_link(const BlueprintNode* src, usize src_pin, const Blueprin
 
     y_debug_assert(is_link_valid(src, src_pin, dst, dst_pin));
 
-    usize src_index = find_node_index(src);
+    const usize src_index = find_node_index(src);
     const usize dst_index = find_node_index(dst);
 
     for(usize i = 0; i != _links.size(); ++i) {
@@ -166,19 +170,61 @@ void Blueprint::add_link(const BlueprintNode* src, usize src_pin, const Blueprin
 
     _links << BlueprintLink{u32(src_index), u32(src_pin), u32(dst_index), u32(dst_pin)};
 
-    while(src_index > dst_index) {
-        std::swap(_nodes[src_index - 1], _nodes[src_index]);
+    if(src_index > dst_index) {
+        sort_nodes();
+    }
+}
 
-        for(BlueprintLink& link : _links) {
-            for(u32* index : {&link.src_node, &link.dst_node}) {
-                if(*index == src_index) {
-                    --*index;
-                } else if(*index == src_index - 1) {
-                    ++*index;
-                }
+void Blueprint::sort_nodes() {
+    y_profile();
+
+    const usize node_count = _nodes.size();
+
+    // Kahn's algorithm
+    core::FixedArray<u32> first_edge(node_count + 1);
+    core::FixedArray<u32> in_degrees(node_count);
+    for(const BlueprintLink& link : _links) {
+        ++first_edge[link.src_node + 1];
+        ++in_degrees[link.dst_node];
+    }
+    for(usize i = 0; i != node_count; ++i) {
+        first_edge[i + 1] += first_edge[i];
+    }
+
+    core::FixedArray<u32> edges(_links.size());
+    core::FixedArray<u32> next_edge(node_count);
+    for(const BlueprintLink& link : _links) {
+        edges[first_edge[link.src_node] + next_edge[link.src_node]++] = link.dst_node;
+    }
+
+    core::ScratchVector<u32> order(node_count);
+    for(usize i = 0; i != node_count; ++i) {
+        if(!in_degrees[i]) {
+            order.push_back(u32(i));
+        }
+    }
+
+    for(usize i = 0; i != order.size(); ++i) {
+        for(u32 e = first_edge[order[i]]; e != first_edge[order[i] + 1]; ++e) {
+            if(!--in_degrees[edges[e]]) {
+                order.push_back(edges[e]);
             }
         }
-        --src_index;
+    }
+
+    y_debug_assert(order.size() == node_count); // return?
+
+    core::Vector<std::unique_ptr<BlueprintNode>> nodes;
+    nodes.set_min_capacity(node_count);
+    for(usize i = 0; i != node_count; ++i) {
+        nodes << std::move(_nodes[order[i]]);
+        next_edge[order[i]] = u32(i);
+    }
+    _nodes = std::move(nodes);
+
+    for(BlueprintLink& link : _links) {
+        link.src_node = next_edge[link.src_node];
+        link.dst_node = next_edge[link.dst_node];
     }
 }
 
@@ -199,7 +245,7 @@ void Blueprint::remove_link(const BlueprintNode* dst, usize dst_pin) {
 
 void Blueprint::clear_links() {
     y_profile();
-    
+
     _links.make_empty();
 }
 
