@@ -467,7 +467,8 @@ void BlueprintEditor::draw_context_menu() {
     ed::Suspend();
     y_defer(ed::Resume());
 
-    if(ed::ShowBackgroundContextMenu()) {
+    // The node editor doesn't know about other windows on top of it
+    if(ed::ShowBackgroundContextMenu() && ImGui::IsWindowHovered()) {
         _open_node_menu = true;
         _new_node.link_pin = 0;
     }
