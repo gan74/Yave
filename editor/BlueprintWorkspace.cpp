@@ -230,10 +230,10 @@ std::string_view BlueprintWorkspace::name() const {
 void BlueprintWorkspace::update() {
     if(auto res = _data.create_instance()) {
         _instance = std::make_unique<Blueprint>(std::move(res.unwrap()));
-        _error = _instance->eval();
+        _result = _instance->eval();
     } else {
         _instance = nullptr;
-        _error = core::Err(std::move(res.error()));
+        _result = core::Err(std::move(res.error()));
     }
 
 }
@@ -309,25 +309,8 @@ const Blueprint* BlueprintWorkspace::instance() const {
     return _instance.get();
 }
 
-const core::Result<void, BlueprintError>& BlueprintWorkspace::error() const {
-    return _error;
-}
-
-const BlueprintNode* BlueprintWorkspace::error_node() const {
-    if(_error.is_error()) {
-        const usize node_index = _error.error().node_index;
-        if(node_index < _data.all_nodes().size()) {
-            return _data.all_nodes()[node_index].get();
-        }
-    }
-    return nullptr;
-}
-
-usize BlueprintWorkspace::error_node_index() const {
-    if(_error.is_error()) {
-        return _error.error().node_index;
-    }
-    return usize(-1);
+const core::Result<void, BlueprintError>& BlueprintWorkspace::result() const {
+    return _result;
 }
 
 core::Span<std::unique_ptr<BlueprintNodeFactory>> BlueprintWorkspace::node_factories() const {

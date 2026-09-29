@@ -229,16 +229,21 @@ void BlueprintEditor::center_on_node(const BlueprintNode* node) {
 
 void BlueprintEditor::on_gui() {
     const BlueprintData& blueprint = workspace()->data();
+    const core::Span nodes = blueprint.all_nodes();
+
+    const auto& result = workspace()->result();
+    const usize error_node_index = result.is_error() ? result.error().node_index : usize(-1);
+    const BlueprintNode* error_node = error_node_index < nodes.size() ? nodes[error_node_index].get() : nullptr;
 
     if(ImGui::BeginMenuBar()) {
         ImGui::Checkbox("Show execution order", &_show_execution_order);
         ImGui::Separator();
-        ImGui::TextUnformatted(fmt_c_str("{} nodes", blueprint.all_nodes().size()));
+        ImGui::TextUnformatted(fmt_c_str("{} nodes", nodes.size()));
 
-        if(const BlueprintNode* error_node = workspace()->error_node()) {
+        if(error_node) {
             ImGui::Separator();
             ImGui::PushStyleColor(ImGuiCol_Text, imgui::error_text_color);
-            if(ImGui::Selectable(fmt_c_str("Node \"{}\": {}", error_node->name(), workspace()->error().error().error))) {
+            if(ImGui::Selectable(fmt_c_str("Node \"{}\": {}", error_node->name(), result.error().error))) {
                 center_on_node(error_node);
             }
             ImGui::PopStyleColor();
@@ -252,8 +257,6 @@ void BlueprintEditor::on_gui() {
 
     {
         ed::Begin("##blueprint", ImGui::GetContentRegionAvail());
-
-        const core::Span nodes = blueprint.all_nodes();
 
         core::Vector<uintptr_t> linked_pins;
         {
@@ -270,7 +273,6 @@ void BlueprintEditor::on_gui() {
 
         {
             y_profile_zone("draw nodes");
-            const usize error_node_index = workspace()->error_node_index();
             for(usize i = 0; i != nodes.size(); ++i) {
                 if(i >= error_node_index) {
                     const bool is_error = i == error_node_index;
@@ -287,8 +289,8 @@ void BlueprintEditor::on_gui() {
             }
         }
 
-        if(const BlueprintNode* error_node = workspace()->error_node()) {
-            draw_error_label(*error_node, workspace()->error().error().error);
+        if(error_node) {
+            draw_error_label(*error_node, result.error().error);
         }
 
         if(_show_execution_order) {

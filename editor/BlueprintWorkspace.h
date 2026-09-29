@@ -58,9 +58,7 @@ class BlueprintWorkspace final : public Workspace {
 
         bool add_blueprint(AssetId id);
 
-        const core::Result<void, BlueprintError>& error() const;
-        const BlueprintNode* error_node() const;
-        usize error_node_index() const;
+        const core::Result<void, BlueprintError>& result() const;
 
         core::Span<std::unique_ptr<BlueprintNodeFactory>> node_factories() const;
 
@@ -75,7 +73,7 @@ class BlueprintWorkspace final : public Workspace {
         BlueprintData _data;
         std::unique_ptr<Blueprint> _instance;
         BlueprintNode* _selected_node = nullptr;
-        core::Result<void, BlueprintError> _error = core::Ok();
+        core::Result<void, BlueprintError> _result = core::Ok();
 
         AssetId _id;
         core::String _name = "Blueprint";
