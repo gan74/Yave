@@ -75,12 +75,14 @@ class BlueprintNode : NonMovable {
         const core::String& name() const;
         core::String& name();
 
+
         virtual std::string_view node_type_name() const = 0;
 
         virtual core::Span<BlueprintPin> input_pins() const;
         virtual core::Span<BlueprintPin> output_pins() const;
         virtual core::Span<BlueprintPin> param_pins() const;
 
+        virtual bool has_generic_pin() const;
         virtual void set_generic_type(const BlueprintParamType* type);
         virtual const BlueprintParamType* generic_type() const;
 

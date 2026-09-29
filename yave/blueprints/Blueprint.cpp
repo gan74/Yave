@@ -114,10 +114,6 @@ bool Blueprint::is_link_valid(const BlueprintNode* src, usize src_pin, const Blu
         return false;
     }
 
-    if(!are_blueprint_types_compatible(src_outputs[src_pin].type, dst_inputs[dst_pin].type)) {
-        return false;
-    }
-
     const usize src_index = find_node_index(src);
     if(src_index == usize(-1)) {
         return false;
@@ -125,6 +121,12 @@ bool Blueprint::is_link_valid(const BlueprintNode* src, usize src_pin, const Blu
 
     const usize dst_index = find_node_index(dst);
     if(dst_index == usize(-1)) {
+        return false;
+    }
+
+    const BlueprintParamType* src_type = src_outputs[src_pin].is_generic ? generic_type(src_index) : src_outputs[src_pin].type;
+    const BlueprintParamType* dst_type = dst_inputs[dst_pin].is_generic ? generic_type(dst_index) : dst_inputs[dst_pin].type;
+    if(src_type && dst_type && src_type != dst_type) {
         return false;
     }
 
@@ -181,6 +183,8 @@ void Blueprint::add_link(const BlueprintNode* src, usize src_pin, const Blueprin
 }
 
 void Blueprint::remove_link(const BlueprintNode* dst, usize dst_pin) {
+    y_profile();
+
     const usize dst_index = find_node_index(dst);
     y_debug_assert(dst_index < _nodes.size());
     y_debug_assert(dst_pin < dst->input_pins().size());
@@ -194,44 +198,52 @@ void Blueprint::remove_link(const BlueprintNode* dst, usize dst_pin) {
 }
 
 void Blueprint::clear_links() {
+    y_profile();
+    
     _links.make_empty();
 }
 
 const BlueprintParamType* Blueprint::generic_type(usize node_index) const {
+    y_profile();
+
     y_debug_assert(node_index < _nodes.size());
 
-    bool is_generic = [&] {
-        for(const BlueprintPin& pin : _nodes[node_index]->input_pins()) {
-            if(pin.is_generic) {
-                return true;
-            }
-        }
-        for(const BlueprintPin& pin : _nodes[node_index]->output_pins()) {
-            if(pin.is_generic) {
-                return true;
-            }
-        }
-        return false;
-    }();
-
-    if(!is_generic) {
+    if(!_nodes[node_index]->has_generic_pin()) {
         return nullptr;
     }
 
-    for(const BlueprintLink& link : _links) {
-        const BlueprintPin& src_pin = _nodes[link.src_node]->output_pins()[link.src_pin];
-        const BlueprintPin& dst_pin = _nodes[link.dst_node]->input_pins()[link.dst_pin];
+    core::ScratchPad<bool> visited(_nodes.size(), false);
+    visited[node_index] = true;
 
-        const bool from_src = link.src_node == node_index && src_pin.is_generic;
-        const bool from_dst = link.dst_node == node_index && dst_pin.is_generic;
-        if(!from_src && !from_dst) {
-            continue;
+    core::ScratchVector<usize> stack(_nodes.size());
+    stack.push_back(node_index);
+
+    while(!stack.is_empty()) {
+        const usize index = stack.pop();
+        if(const BlueprintParamType* type = _nodes[index]->generic_type()) {
+            return type;
         }
 
-        const BlueprintPin& other_pin = from_src ? dst_pin : src_pin;
-        const usize other = from_src ? link.dst_node : link.src_node;
-        if(const BlueprintParamType* type = other_pin.is_generic ? generic_type(other) : other_pin.type) {
-            return type;
+        for(const BlueprintLink& link : _links) {
+            const BlueprintPin& src_pin = _nodes[link.src_node]->output_pins()[link.src_pin];
+            const BlueprintPin& dst_pin = _nodes[link.dst_node]->input_pins()[link.dst_pin];
+
+            const bool from_src = link.src_node == index && src_pin.is_generic;
+            const bool from_dst = link.dst_node == index && dst_pin.is_generic;
+            if(!from_src && !from_dst) {
+                continue;
+            }
+
+            const BlueprintPin& other_pin = from_src ? dst_pin : src_pin;
+            const usize other = from_src ? link.dst_node : link.src_node;
+            if(!other_pin.is_generic) {
+                return other_pin.type;
+            }
+
+            if(!visited[other]) {
+                visited[other] = true;
+                stack.push_back(other);
+            }
         }
     }
 
@@ -254,6 +266,7 @@ core::Result<BlueprintInstance, BlueprintError> Blueprint::create_instance() con
 
     BlueprintInstance instance;
     instance._nodes.set_min_capacity(_nodes.size());
+
     for(const auto& node : _nodes) {
         instance._nodes.emplace_back(node->clone());
     }
@@ -265,11 +278,18 @@ core::Result<BlueprintInstance, BlueprintError> Blueprint::create_instance() con
         }
     }
 
+    for(usize i = 0; i != instance._nodes.size(); ++i) {
+        const BlueprintNode* node = instance._nodes[i].get();
+        if(node->has_generic_pin() && !node->generic_type()) {
+            return core::Err(BlueprintError{i, core::String("Unresolved generic type")});
+        }
+    }
+
     for(const BlueprintLink& link : _links) {
         const BlueprintNode* src = instance._nodes[link.src_node].get();
         BlueprintNode* dst = instance._nodes[link.dst_node].get();
         if(!are_blueprint_types_compatible(src->output_pins()[link.src_pin].type, dst->input_pins()[link.dst_pin].type)) {
-            return core::Err(BlueprintError{link.dst_node, core::String("Link connects incompatible types (unresolved generic type)")});
+            return core::Err(BlueprintError{link.dst_node, core::String("Link connects incompatible types")});
         }
         dst->set_input(link.dst_pin, src->output_ptr(link.src_pin));
     }
