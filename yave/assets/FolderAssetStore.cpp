@@ -99,8 +99,6 @@ static bool is_valid_path(std::string_view name) {
 }
 
 
-
-
 FolderAssetStore::FolderFileSystemModel::FolderFileSystemModel(FolderAssetStore* parent) : _parent(parent) {
     y_debug_assert(core::String("a") < core::String("ab"));
     y_debug_assert(std::string_view("a") < std::string_view("ab"));
@@ -537,23 +535,34 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::str
     const AssetId id = generate_id();
     const core::String data_file_name = asset_data_file_name(id);
 
+    usize file_size = 0;
     {
         y_profile_zone("writing");
 
         lock.unlock();
-        if(!io2::File::copy(data, data_file_name)) {
+        if(auto written = io2::File::copy_atomic(data, data_file_name)) {
+            file_size = written.unwrap();
+        } else {
             return core::Err(ErrorType::FilesytemError);
         }
         lock.lock();
+    }
+
+    if(_assets.find(dst_name) != _assets.end()) {
+        FileSystemModel::local_filesystem()->remove(data_file_name).ignore();
+        return core::Err(ErrorType::NameAlreadyExists);
     }
 
     auto owned_refs = core::Vector<AssetId>::with_capacity(refs.size());
     std::copy_if(refs.begin(), refs.end(), std::back_inserter(owned_refs), [](AssetId id) { return id != AssetId::invalid_id(); });
 
     const AssetDesc desc = { dst_name, type, core::Vector<AssetId>(owned_refs) };
-    y_try(save_desc(id, desc));
+    if(const auto saved = save_desc(id, desc); !saved) {
+        FileSystemModel::local_filesystem()->remove(data_file_name).ignore();
+        return core::Err(saved.error());
+    }
 
-    const auto it = _assets.emplace(dst_name, AssetData{id, type, 0, std::move(owned_refs)}).first;
+    const auto it = _assets.emplace(dst_name, AssetData{id, type, file_size, std::move(owned_refs)}).first;
     if(_ids) {
         (*_ids)[id] = it;
     }
@@ -576,7 +585,8 @@ AssetStore::Result<> FolderAssetStore::write(AssetId id, io2::Reader& data, core
         return core::Err(ErrorType::UnknownID);
     }
 
-    if(!io2::File::copy(data, asset_data_file_name(id))) {
+    const auto written = io2::File::copy_atomic(data, asset_data_file_name(id));
+    if(!written) {
         return core::Err(ErrorType::FilesytemError);
     }
 
@@ -587,6 +597,7 @@ AssetStore::Result<> FolderAssetStore::write(AssetId id, io2::Reader& data, core
     const AssetDesc desc = { it->second->first, asset.type, core::Vector<AssetId>(owned_refs) };
     y_try(save_desc(id, desc));
     asset.refs = std::move(owned_refs);
+    asset.file_size = written.unwrap();
 
     return core::Ok();
 }

@@ -21,6 +21,9 @@ SOFTWARE.
 **********************************/
 #include "File.h"
 
+#include <filesystem>
+#include <system_error>
+
 namespace y {
 namespace io2 {
 
@@ -97,23 +100,46 @@ core::Result<core::String> File::read_text_file(const core::String& name) {
     return core::Ok(std::move(buffer));
 }
 
-core::Result<void> File::copy(Reader& src, const core::String& dst) {
+core::Result<usize> File::copy(Reader& src, const core::String& dst) {
     auto f = create(dst);
     if(!f) {
         return core::Err();
     }
 
     File dst_file = std::move(f.unwrap());
+
+    usize total = 0;
     u8 buffer[1024];
     while(!src.at_end()) {
         if(const auto r = src.read_up_to(buffer, sizeof(buffer))) {
             if(dst_file.write(buffer, r.unwrap())) {
+                total += r.unwrap();
                 continue;
             }
         }
         return core::Err();
     }
-    return core::Ok();
+
+    return core::Ok(total);
+}
+
+core::Result<usize> File::copy_atomic(Reader& src, const core::String& dst) {
+    const core::String tmp_name = dst + std::string_view(".tmp");
+
+    y_defer(std::remove(tmp_name.data()));
+
+    const auto written = copy(src, tmp_name);
+    if(!written) {
+        return core::Err();
+    }
+
+    std::error_code err;
+    std::filesystem::rename(tmp_name.data(), dst.data(), err);
+    if(err) {
+        return core::Err();
+    }
+
+    return core::Ok(written.unwrap());
 }
 
 usize File::size() const {
