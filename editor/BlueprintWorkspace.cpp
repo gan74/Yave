@@ -260,7 +260,15 @@ void BlueprintWorkspace::save() {
         buffer.reset();
     }
 
-    if(const auto res = asset_store().write(_id, buffer, {}); res.is_error()) {
+    const auto nested = _blueprint.nested_blueprints();
+    auto refs = core::Vector<AssetId>::with_capacity(nested.size());
+    for(const auto& blueprint : nested) {
+        if(blueprint.id() != AssetId::invalid_id()) {
+            refs << blueprint.id();
+        }
+    }
+
+    if(const auto res = asset_store().write(_id, buffer, refs); res.is_error()) {
         log_msg(fmt("Unable to write blueprint, error: {}", res.error()), Log::Error);
         return;
     }
