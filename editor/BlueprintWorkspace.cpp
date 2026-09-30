@@ -56,19 +56,15 @@ static core::Result<Blueprint> read_blueprint_data(AssetId id) {
         return core::Err();
     }
 
-    const auto reader = asset_store().data(id);
-    if(!reader) {
-        log_msg("Unable to find blueprint asset", Log::Error);
+    const auto loaded = asset_loader().load_res<Blueprint>(id);
+    if(!loaded) {
+        log_msg("Unable to load blueprint", Log::Error);
         return core::Err();
     }
 
-    Blueprint data;
-    serde3::ReadableArchive arc(*reader.unwrap());
-    if(const auto res = arc.deserialize(data); res.is_error()) {
-        log_msg("Unable to load blueprint", Log::Error);
-        return core::Err();
-    } else if(res.unwrap() == serde3::Success::Partial) {
-        log_msg("Blueprint was only partially loaded", Log::Warning);
+    Blueprint data = loaded.unwrap()->clone();
+    if(data.remove_invalid_links()) {
+        log_msg("Some links referenced invalid pins and were removed", Log::Warning);
     }
 
     return core::Ok(std::move(data));
@@ -294,6 +290,10 @@ bool BlueprintWorkspace::add_blueprint(AssetId id) {
 
     if(auto data = read_blueprint_data(id)) {
         Blueprint new_data = std::move(data.unwrap());
+        if(new_data.contains_nested(_id)) {
+            log_msg("A blueprint can not be nested in itself", Log::Error);
+            return false;
+        }
         _blueprint.add_blueprint(std::move(new_data));
         return true;
     }
@@ -312,6 +312,11 @@ const BlueprintNode* BlueprintWorkspace::add_nested_blueprint(AssetId id) {
     const auto loaded = asset_loader().load_res<Blueprint>(id);
     if(!loaded) {
         log_msg("Unable to load nested blueprint", Log::Error);
+        return nullptr;
+    }
+
+    if(loaded.unwrap()->contains_nested(_id)) {
+        log_msg("A blueprint can not be nested in itself", Log::Error);
         return nullptr;
     }
 

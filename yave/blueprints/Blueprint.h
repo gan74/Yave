@@ -25,6 +25,7 @@ SOFTWARE.
 #include "BlueprintInstance.h"
 
 #include <yave/assets/AssetTraits.h>
+#include <yave/assets/AssetPtr.h>
 
 #include <y/reflect/reflect.h>
 
@@ -47,6 +48,9 @@ class Blueprint {
 
         core::Span<std::unique_ptr<BlueprintNode>> all_nodes() const;
         core::Span<BlueprintLink> links() const;
+        core::Span<AssetPtr<Blueprint>> nested_blueprints() const;
+
+        bool contains_nested(AssetId id) const;
 
         usize find_node_index(const BlueprintNode* node) const;
         const BlueprintLink* find_link(usize dst_node, usize dst_pin) const;
@@ -65,14 +69,24 @@ class Blueprint {
 
         core::Result<BlueprintInstance, BlueprintError> create_instance() const;
 
-        y_reflect(Blueprint, _nodes, _links)
+        Blueprint clone() const;
+
+        bool remove_invalid_links();
+
+        y_reflect(Blueprint, _nodes, _links, _nested)
 
     private:
         void sort_nodes();
+        void register_nested(const BlueprintNode* node);
         
+        core::Vector<std::unique_ptr<BlueprintNode>> clone_nodes() const;
+
         core::Vector<std::unique_ptr<BlueprintNode>> _nodes;
         core::Vector<BlueprintLink> _links;
+
+        core::Vector<AssetPtr<Blueprint>> _nested;
 };
+
 
 YAVE_DECLARE_GENERIC_ASSET_TRAITS(Blueprint, AssetType::Blueprint);
 

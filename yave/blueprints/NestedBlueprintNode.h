@@ -51,20 +51,31 @@ class NestedBlueprintNode final : public BlueprintNode {
         const void* output_ptr(usize index) const override;
 
         const AssetPtr<Blueprint>& blueprint() const;
+        void set_blueprint(AssetPtr<Blueprint> blueprint);
 
-        y_reflect(NestedBlueprintNode, _name, _blueprint)
+        y_reflect(NestedBlueprintNode, _name, _blueprint, _input_values)
         y_serde3_poly(NestedBlueprintNode)
 
     private:
+        struct InputValue {
+            core::String name;
+            u64 type = 0;
+            core::Vector<u8> value;
+
+            y_reflect(InputValue, name, type, value)
+        };
+
         AssetPtr<Blueprint> _blueprint;
         BlueprintInstance _instance;
-        core::Result<void, BlueprintError> _result;
+        core::Result<void, BlueprintError> _result = core::Err(BlueprintError{0, core::String("Nested blueprint is not loaded")});
 
-        core::Vector<ParamInBlueprintNode*> _params_in;
-        core::Vector<ParamOutBlueprintNode*> _params_out;
+        core::FixedArray<InputValue> _input_values;
 
-        core::Vector<BlueprintPin> _input_pins;
-        core::Vector<BlueprintPin> _output_pins;
+        core::FixedArray<ParamInBlueprintNode*> _params_in;
+        core::FixedArray<ParamOutBlueprintNode*> _params_out;
+
+        core::FixedArray<BlueprintPin> _input_pins;
+        core::FixedArray<BlueprintPin> _output_pins;
         core::FixedArray<const void*> _inputs;
 };
 

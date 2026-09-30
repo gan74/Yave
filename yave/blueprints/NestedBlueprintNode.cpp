@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "NestedBlueprintNode.h"
 
+#include <y/core/ScratchPad.h>
+
 #include <y/serde3/archives.h>
 
 #include <algorithm>
@@ -31,47 +33,102 @@ SOFTWARE.
 namespace yave {
 
 template<typename T>
-static core::Vector<T*> find_params(const BlueprintInstance& instance) {
-    core::Vector<T*> params;
+static core::FixedArray<T*> find_params(const BlueprintInstance& instance) {
+    const core::Span nodes = instance.all_nodes();
+    core::ScratchVector<T*> params(nodes.size());
     for(const auto& node : instance.all_nodes()) {
         if(T* param = dynamic_cast<T*>(node.get())) {
-            params << param;
+            params.push_back(param);
         }
     }
-    std::stable_sort(params.begin(), params.end(), [](const T* a, const T* b) { return a->order() < b->order(); });
-    return params;
+
+    std::sort(params.begin(), params.end(), [](const T* a, const T* b) { 
+        if(a->order() != b->order()) {
+            return a->order() < b->order();
+        }
+        return a->name() < b->name();
+    });
+
+    return core::FixedArray<T*>(core::Span<T*>(params));
+}
+
+template<typename T>
+static bool has_duplicated_names(const core::FixedArray<T*>& params) {
+    for(usize i = 0; i != params.size(); ++i) {
+        for(usize j = 0; j != i; ++j) {
+            if(params[i]->name() == params[j]->name()) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 
-NestedBlueprintNode::NestedBlueprintNode(core::String name, AssetPtr<Blueprint> blueprint) : BlueprintNode(std::move(name)), _blueprint(std::move(blueprint)), _result(core::Ok()) {
-    y_debug_assert(_blueprint);
+NestedBlueprintNode::NestedBlueprintNode(core::String name, AssetPtr<Blueprint> blueprint) : BlueprintNode(std::move(name)) {
+    set_blueprint(std::move(blueprint));
+}
+
+std::unique_ptr<BlueprintNode> NestedBlueprintNode::clone() const {
+    auto node = std::make_unique<NestedBlueprintNode>();
+    node->_name = _name;
+    node->_input_values = core::FixedArray<InputValue>(core::Span<InputValue>(_input_values));
+    node->set_blueprint(_blueprint);
+    return node;
+}
+
+void NestedBlueprintNode::set_blueprint(AssetPtr<Blueprint> blueprint) {
+    _blueprint = std::move(blueprint);
+
+    _params_in.clear();
+    _params_out.clear();
+    _input_pins.clear();
+    _output_pins.clear();
+    _inputs.clear();
+    _instance = BlueprintInstance();
+
+    if(!_blueprint) {
+        _result = core::Err(BlueprintError{0, core::String("Nested blueprint is not loaded")});
+        return;
+    }
 
     if(auto res = _blueprint->create_instance()) {
         _instance = std::move(res.unwrap());
+        _result = core::Ok();
     } else {
         _result = core::Err(std::move(res.error()));
+        return;
     }
 
     _params_in = find_params<ParamInBlueprintNode>(_instance);
     _params_out = find_params<ParamOutBlueprintNode>(_instance);
 
-    for(const ParamInBlueprintNode* param : _params_in) {
-        _input_pins << BlueprintPin{param->name(), param->generic_type()};
-    }
-    for(const ParamOutBlueprintNode* param : _params_out) {
-        _output_pins << BlueprintPin{param->name(), param->generic_type()};
-    }
-
     _inputs = core::FixedArray<const void*>(_params_in.size());
-}
+    _input_pins = core::FixedArray<BlueprintPin>(_params_in.size());
+    _output_pins = core::FixedArray<BlueprintPin>(_params_out.size());
 
-std::unique_ptr<BlueprintNode> NestedBlueprintNode::clone() const {
-    auto node = std::make_unique<NestedBlueprintNode>(_name, _blueprint);
-
+    core::FixedArray<InputValue> values(_params_in.size());
     for(usize i = 0; i != _params_in.size(); ++i) {
-        std::memcpy(node->_params_in[i]->value(), _params_in[i]->value(), _input_pins[i].type->size);
+        ParamInBlueprintNode* param = _params_in[i];
+        const BlueprintParamType* type = param->generic_type();
+        _input_pins[i] = BlueprintPin{param->name(), type};
+
+        const auto it = std::find_if(_input_values.begin(), _input_values.end(), [&](const InputValue& value) {
+            return value.name == param->name() && value.type == type->type_hash && value.value.size() == type->size;
+        });
+
+        const u8* data = it != _input_values.end() ? it->value.data() : static_cast<const u8*>(param->value());
+        values[i] = InputValue{param->name(), type->type_hash, core::Vector<u8>(core::Span<u8>(data, type->size))};
     }
-    return node;
+    _input_values = std::move(values);
+
+    for(usize i = 0; i != _params_out.size(); ++i) {
+        _output_pins[i] = BlueprintPin{_params_out[i]->name(), _params_out[i]->generic_type()};
+    }
+
+    if(has_duplicated_names(_params_in) || has_duplicated_names(_params_out)) {
+        _result = core::Err(BlueprintError{0, core::String("Nested blueprint has several params with the same name")});
+    }
 }
 
 std::string_view NestedBlueprintNode::node_type_name() const {
@@ -92,9 +149,8 @@ void NestedBlueprintNode::eval() {
     }
 
     for(usize i = 0; i != _params_in.size(); ++i) {
-        if(_inputs[i]) {
-            std::memcpy(_params_in[i]->value(), _inputs[i], _input_pins[i].type->size);
-        }
+        const void* src = _inputs[i] ? _inputs[i] : _input_values[i].value.data();
+        std::memcpy(_params_in[i]->value(), src, _input_pins[i].type->size);
     }
 
     for(const auto& node : _instance.all_nodes()) {
@@ -113,8 +169,8 @@ const void* NestedBlueprintNode::input(usize index) const {
 }
 
 void* NestedBlueprintNode::default_input(usize index) {
-    y_debug_assert(index < _params_in.size());
-    return _params_in[index]->value();
+    y_debug_assert(index < _input_values.size());
+    return _input_values[index].value.data();
 }
 
 const void* NestedBlueprintNode::output_ptr(usize index) const {
