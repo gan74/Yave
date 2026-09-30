@@ -33,6 +33,11 @@ static void draw_output(std::string_view label, const T& value) {
     ImGui::TextUnformatted(fmt_c_str("{}: {}", label, value));
 }
 
+static void draw_unsupported(std::string_view label, const BlueprintParamType* type, const char* reason = nullptr) {
+    const std::string_view type_name = type ? type->name : "no type";
+    ImGui::TextDisabled("%s", fmt_c_str("{}: <{}{}{}>", label, type_name, reason ? ", " : "", reason ? reason : ""));
+}
+
 template<typename T, typename M, typename I, typename O>
 static void add_drawer(M& drawers, I input, O output) {
     drawers[blueprint_param_type_index<T>()] = {
@@ -61,6 +66,14 @@ BlueprintNodeInspector::BlueprintNodeInspector(BlueprintWorkspace* ws) : Workspa
     add_drawer<math::Vec4>(_drawers, [](std::string_view label, math::Vec4& value) {
         ImGui::DragFloat4(fmt_c_str("{}", label), value.data(), 0.1f);
     }, draw_output<math::Vec4>);
+
+    add_drawer<i32>(_drawers, [](std::string_view label, i32& value) {
+        ImGui::DragScalar(fmt_c_str("{}", label), ImGuiDataType_S32, &value, 0.1f);
+    }, draw_output<i32>);
+
+    add_drawer<u32>(_drawers, [](std::string_view label, u32& value) {
+        ImGui::DragScalar(fmt_c_str("{}", label), ImGuiDataType_U32, &value, 0.1f);
+    }, draw_output<u32>);
 
     add_drawer<bool>(_drawers, [](std::string_view label, bool& value) {
         ImGui::Checkbox(fmt_c_str("{}", label), &value);
@@ -100,7 +113,7 @@ void BlueprintNodeInspector::on_gui() {
                     }
                 }
             } else {
-                ImGui::TextUnformatted(label.data());
+                draw_unsupported(label, inputs[i].type, "no editor");
             }
         }
     }
@@ -112,7 +125,7 @@ void BlueprintNodeInspector::on_gui() {
             if(const auto it = _drawers.find(params[i].type); it != _drawers.end()) {
                 it->second.input(fmt("{}##param", name), node->param_ptr(i));
             } else {
-                ImGui::TextUnformatted(name.data());
+                draw_unsupported(name, params[i].type, "no editor");
             }
         }
     }
@@ -122,10 +135,13 @@ void BlueprintNodeInspector::on_gui() {
         for(usize i = 0; i != outputs.size(); ++i) {
             const std::string_view name = outputs[i].name;
             const void* output = instance ? instance->all_nodes()[node_index]->output_ptr(i) : nullptr;
-            if(const auto it = _drawers.find(outputs[i].type); it != _drawers.end() && output) {
+            const auto it = _drawers.find(outputs[i].type);
+            if(it != _drawers.end() && output) {
                 it->second.output(name, output);
+            } else if(it == _drawers.end()) {
+                draw_unsupported(name, outputs[i].type, "can't display");
             } else {
-                ImGui::TextUnformatted(name.data());
+                draw_unsupported(name, outputs[i].type, "not evaluated");
             }
         }
     }

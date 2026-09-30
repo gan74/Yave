@@ -65,8 +65,6 @@ class Blueprint {
         void remove_link(const BlueprintNode* dst, usize dst_pin);
         void clear_links();
 
-        const BlueprintParamType* generic_type(usize node_index) const;
-
         core::Result<BlueprintInstance, BlueprintError> create_instance() const;
 
         Blueprint clone() const;
@@ -78,6 +76,7 @@ class Blueprint {
     private:
         void sort_nodes();
         void register_nested(const BlueprintNode* node);
+        void resolve_generic_types();
         
         core::Vector<std::unique_ptr<BlueprintNode>> clone_nodes() const;
 

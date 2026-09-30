@@ -310,7 +310,7 @@ void BlueprintEditor::on_gui() {
         core::Vector<uintptr_t> linked_pins;
         {
             for(usize i = 0; i != nodes.size(); ++i) {
-                generic_types[i] = blueprint.generic_type(i);
+                generic_types[i] = nodes[i]->generic_type();
             }
 
             for(const BlueprintLink& link : blueprint.links()) {
@@ -501,7 +501,7 @@ void BlueprintEditor::draw_context_menu() {
         const BlueprintParamType* link_type = nullptr;
         if(link_pin.node) {
             const BlueprintPin& pin = link_pin.is_input ? link_pin.node->input_pins()[link_pin.index] : link_pin.node->output_pins()[link_pin.index];
-            link_type = pin.is_generic ? blueprint.generic_type(blueprint.find_node_index(link_pin.node)) : pin.type;
+            link_type = pin.type;
         }
 
         const core::Span factories = workspace()->node_factories();

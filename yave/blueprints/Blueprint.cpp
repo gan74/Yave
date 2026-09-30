@@ -124,6 +124,8 @@ void Blueprint::remove_node(const BlueprintNode* node) {
     for(const auto& n : _nodes) {
         register_nested(n.get());
     }
+
+    resolve_generic_types();
 }
 
 void Blueprint::add_blueprint(Blueprint data) {
@@ -141,6 +143,8 @@ void Blueprint::add_blueprint(Blueprint data) {
         link.dst_node += offset;
         _links << link;
     }
+
+    resolve_generic_types();
 }
 
 bool Blueprint::is_link_valid(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin) const {
@@ -166,8 +170,8 @@ bool Blueprint::is_link_valid(const BlueprintNode* src, usize src_pin, const Blu
         return false;
     }
 
-    const BlueprintParamType* src_type = src_outputs[src_pin].is_generic ? generic_type(src_index) : src_outputs[src_pin].type;
-    const BlueprintParamType* dst_type = dst_inputs[dst_pin].is_generic ? generic_type(dst_index) : dst_inputs[dst_pin].type;
+    const BlueprintParamType* src_type = src_outputs[src_pin].type;
+    const BlueprintParamType* dst_type = dst_inputs[dst_pin].type;
     if(src_type && dst_type && src_type != dst_type) {
         return false;
     }
@@ -211,6 +215,8 @@ void Blueprint::add_link(const BlueprintNode* src, usize src_pin, const Blueprin
     if(src_index > dst_index) {
         sort_nodes();
     }
+
+    resolve_generic_types();
 }
 
 void Blueprint::sort_nodes() {
@@ -279,60 +285,32 @@ void Blueprint::remove_link(const BlueprintNode* dst, usize dst_pin) {
             break;
         }
     }
+
+    resolve_generic_types();
 }
 
 void Blueprint::clear_links() {
     y_profile();
 
     _links.make_empty();
+    resolve_generic_types();
 }
 
-const BlueprintParamType* Blueprint::generic_type(usize node_index) const {
+void Blueprint::resolve_generic_types() {
     y_profile();
 
-    y_debug_assert(node_index < _nodes.size());
-
-    if(!_nodes[node_index]->has_generic_pin()) {
-        return nullptr;
+    for(const auto& node : _nodes) {
+        node->set_generic_type(nullptr);
     }
 
-    core::ScratchPad<bool> visited(_nodes.size(), false);
-    visited[node_index] = true;
-
-    core::ScratchVector<usize> stack(_nodes.size());
-    stack.push_back(node_index);
-
-    while(!stack.is_empty()) {
-        const usize index = stack.pop();
-        if(const BlueprintParamType* type = _nodes[index]->generic_type()) {
-            return type;
-        }
-
+    for(bool changed = true; changed;) {
+        changed = false;
         for(const BlueprintLink& link : _links) {
-            const BlueprintPin& src_pin = _nodes[link.src_node]->output_pins()[link.src_pin];
-            const BlueprintPin& dst_pin = _nodes[link.dst_node]->input_pins()[link.dst_pin];
-
-            const bool from_src = link.src_node == index && src_pin.is_generic;
-            const bool from_dst = link.dst_node == index && dst_pin.is_generic;
-            if(!from_src && !from_dst) {
-                continue;
-            }
-
-            const BlueprintPin& other_pin = from_src ? dst_pin : src_pin;
-            const usize other = from_src ? link.dst_node : link.src_node;
-            if(!other_pin.is_generic) {
-                return other_pin.type;
-            }
-
-            if(!visited[other]) {
-                visited[other] = true;
-                stack.push_back(other);
-            }
+            changed |= resolve_generic_link(_nodes[link.src_node].get(), link.src_pin, _nodes[link.dst_node].get(), link.dst_pin);
         }
     }
-
-    return nullptr;
 }
+
 core::Result<BlueprintInstance, BlueprintError> Blueprint::create_instance() const {
     y_profile();
 
@@ -408,6 +386,7 @@ Blueprint Blueprint::clone() const {
     blueprint._nodes = clone_nodes();
     blueprint._links = core::Vector<BlueprintLink>(_links);
     blueprint._nested = core::Vector<AssetPtr<Blueprint>>(_nested);
+    blueprint.resolve_generic_types();
     return blueprint;
 }
 

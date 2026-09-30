@@ -138,7 +138,7 @@ class ParamInBlueprintNode final : public BlueprintNode {
         y_serde3_poly(ParamInBlueprintNode)
 
     private:
-        BlueprintPin _pin = {"value", nullptr, true};
+        BlueprintPin _pin = {"out", nullptr, true};
 
         u32 _order = 0;
 
@@ -175,7 +175,7 @@ class ParamOutBlueprintNode final : public BlueprintNode {
         y_serde3_poly(ParamOutBlueprintNode)
 
     private:
-        BlueprintPin _pin = {"value", nullptr, true};
+        BlueprintPin _pin = {"in", nullptr, true};
         const void* _input = nullptr;
 
         u32 _order = 0;

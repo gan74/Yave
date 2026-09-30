@@ -109,10 +109,9 @@ void* BlueprintNode::param_ptr(usize) {
 
 
 static void set_generic_pin_type(BlueprintPin& pin, const BlueprintParamType* type, u64& value_type, core::FixedArray<u8>& value) {
-    y_debug_assert(!pin.type != !type);
+    y_debug_assert(!pin.type || !type);
     pin.type = type;
 
-    // Keep the value if the type didn't change (ie: after deserialization)
     if(type && type->type_hash != value_type) {
         value_type = type->type_hash;
         value = core::FixedArray<u8>(type->size);
@@ -128,9 +127,7 @@ std::unique_ptr<BlueprintNode> ParamInBlueprintNode::clone() const {
     node->_order = _order;
     node->_value_type = _value_type;
     node->_value = core::FixedArray<u8>(core::Span<u8>(_value));
-    if(const BlueprintParamType* type = generic_type()) {
-        node->set_generic_type(type);
-    }
+    node->set_generic_type(generic_type());
     return node;
 }
 
@@ -190,9 +187,7 @@ std::unique_ptr<BlueprintNode> ParamOutBlueprintNode::clone() const {
     node->_order = _order;
     node->_value_type = _value_type;
     node->_value = core::FixedArray<u8>(core::Span<u8>(_value));
-    if(const BlueprintParamType* type = generic_type()) {
-        node->set_generic_type(type);
-    }
+    node->set_generic_type(generic_type());
     return node;
 }
 
