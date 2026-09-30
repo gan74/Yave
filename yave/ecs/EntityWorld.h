@@ -212,7 +212,11 @@ class EntityWorld : NonMovable {
         template<typename... Ts>
         EntityGroup<Ts...> create_group(core::Span<std::string_view> tags = {}, core::Span<ComponentTypeIndex> filters = {}) {
             y_profile();
-            const EntityGroupProvider* base = get_or_create_group_provider<Ts...>(tags, filters);
+            return create_group<Ts...>(get_or_create_group_provider<Ts...>(tags, filters));
+        }
+
+        template<typename... Ts>
+        EntityGroup<Ts...> create_group(const EntityGroupProvider* base) {
             return EntityGroup<Ts...>(base, std::tuple{find_container<traits::component_raw_type_t<Ts>>()...});
         }
 

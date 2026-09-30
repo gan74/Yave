@@ -44,9 +44,11 @@ void create_or_replace_component(EntityWorld& world, EntityId id) {
 }
 
 template<typename... Ts>
-SystemScheduler::ArgumentResolver::operator EntityGroup<Ts...>() const {
-    y_debug_assert(_parent && _parent->_world);
-    return _parent->_world->create_group<Ts...>();
+auto SystemScheduler::prepare_argument(std::type_identity<EntityGroup<Ts...>>) const {
+    y_debug_assert(_world);
+    return [world = _world, provider = _world->get_or_create_group_provider<Ts...>()] {
+        return world->create_group<Ts...>(provider);
+    };
 }
 
 template<typename Component, typename SystemType, typename... Tail>

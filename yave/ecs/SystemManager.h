@@ -76,10 +76,12 @@ class SystemScheduler : NonMovable {
 
             const SystemJobHandle handle = create_job_handle();
 
-            s.tasks.emplace_back(std::move(name), handle, dep, [this, func]() {
-                std::array<ArgumentResolver, function_traits<Fn>::arg_count> args;
-                std::fill(args.begin(), args.end(), this);
-                std::apply(func, args);
+            auto args = [this]<usize... Is>(std::index_sequence<Is...>) {
+                return std::tuple{prepare_argument(std::type_identity<std::remove_cvref_t<typename function_traits<Fn>::template arg_type<Is>>>{})...};
+            }(std::make_index_sequence<function_traits<Fn>::arg_count>{});
+
+            s.tasks.emplace_back(std::move(name), handle, dep, [func, args]() {
+                std::apply([&](const auto&... arg) { func(arg()...); }, args);
             });
 
             return handle;
@@ -88,20 +90,19 @@ class SystemScheduler : NonMovable {
     private:
         friend class SystemManager;
 
-        class ArgumentResolver {
-            public:
-                ArgumentResolver() = default;
-                ArgumentResolver(SystemScheduler* parent);
+        auto prepare_argument(std::type_identity<EntityWorld>) const {
+            return [world = _world]() -> const EntityWorld& { return *world; };
+        }
 
-                operator const EntityWorld&() const;
-                operator FirstTime() const;
+        auto prepare_argument(std::type_identity<FirstTime>) const {
+            return [this] { return FirstTime{is_first_tick()}; };
+        }
 
-                template<typename... Ts>
-                operator EntityGroup<Ts...>() const;
+        // EntityWorld.inl
+        template<typename... Ts>
+        auto prepare_argument(std::type_identity<EntityGroup<Ts...>>) const;
 
-            private:
-                SystemScheduler* _parent = nullptr;
-        };
+        bool is_first_tick() const;
 
         struct Task {
             core::String name;

@@ -35,19 +35,11 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
-SystemScheduler::ArgumentResolver::ArgumentResolver(SystemScheduler* parent) : _parent(parent) {
-}
-
-SystemScheduler::ArgumentResolver::operator const EntityWorld&() const {
-    y_debug_assert(_parent);
-    return *_parent->_world;
-}
-
-SystemScheduler::ArgumentResolver::operator SystemScheduler::FirstTime() const {
-    return FirstTime { _parent->_world->tick_id() == _parent->_first_tick };
-}
-
 SystemScheduler::SystemScheduler(System* sys, SystemManager* manager, EntityWorld *world) : _system(sys), _manager(manager), _world(world), _first_tick(_world->tick_id().next()) {
+}
+
+bool SystemScheduler::is_first_tick() const {
+    return _world->tick_id() == _first_tick;
 }
 
 SystemJobHandle SystemScheduler::create_job_handle() {
