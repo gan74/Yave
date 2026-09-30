@@ -66,6 +66,18 @@ AssetLoadingFlags AssetLoader::loading_flags() const {
     return _loading_flags;
 }
 
+bool AssetLoader::reload_from_id(AssetId id) {
+    Y_TODO(this locks everything)
+    return _loaders.locked([id](const auto& loaders) {
+        for(auto& [type, loader] : loaders) {
+            if(loader->reload_from_id(id)) {
+                return true;
+            }
+        }
+        return false;
+    });
+}
+
 void AssetLoader::wait_until_loaded(const GenericAssetPtr& ptr) {
     _thread_pool.wait_until_loaded(ptr);
     y_debug_assert(!ptr.is_loading());

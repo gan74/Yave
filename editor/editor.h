@@ -59,6 +59,8 @@ AssetLoader& asset_loader();
 ThumbnailRenderer& thumbnail_renderer();
 concurrent::JobSystem& editor_job_system();
 
+void notify_asset_saved(AssetId id);
+
 const EditorResources& resources();
 
 

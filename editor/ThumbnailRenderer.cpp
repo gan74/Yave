@@ -246,11 +246,17 @@ usize ThumbnailRenderer::cached_thumbnails() {
     return _thumbnails.locked([&](auto&& thumbnails) { return thumbnails.size(); });
 }
 
-std::unique_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_render(AssetId id) {
+void ThumbnailRenderer::clear(AssetId id) {
+    _thumbnails.locked([&](auto&& thumbnails) {
+        thumbnails.erase(id);
+    });
+}
+
+std::shared_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_render(AssetId id) {
     y_profile_zone("schedule render");
 
-    auto data = std::make_unique<ThumbnailData>();
-    editor_job_system().schedule([this, data = data.get(), id]() {
+    auto data = std::make_shared<ThumbnailData>();
+    editor_job_system().schedule([this, data, id]() {
         y_debug_assert(data->status == ThumbnailStatus::Rendering);
 
         const AssetType asset_type = _loader->store().asset_type(id).unwrap_or(AssetType::Unknown);

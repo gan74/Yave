@@ -57,11 +57,13 @@ class ThumbnailRenderer : NonMovable {
 
         usize cached_thumbnails();
 
+        void clear(AssetId id);
+
     private:
 
-        std::unique_ptr<ThumbnailData> schedule_render(AssetId id);
+        std::shared_ptr<ThumbnailData> schedule_render(AssetId id);
 
-        ProfiledMutexed<core::FlatHashMap<AssetId, std::unique_ptr<ThumbnailData>>> _thumbnails;
+        ProfiledMutexed<core::FlatHashMap<AssetId, std::shared_ptr<ThumbnailData>>> _thumbnails;
         AssetLoader* _loader = nullptr;
 };
 

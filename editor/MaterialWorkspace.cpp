@@ -22,6 +22,7 @@ SOFTWARE.
 #include "MaterialWorkspace.h"
 
 #include "editor.h"
+#include "ThumbnailRenderer.h"
 #include "UiManager.h"
 
 #include <yave/assets/AssetLoader.h>
@@ -150,10 +151,7 @@ void MaterialWorkspace::save() {
         return;
     }
 
-    asset_loader().reload<Material>(_id);
-    for(const auto& workspace : ui().workspaces()) {
-        workspace->grab_reloaded();
-    }
+    notify_asset_saved(_id);
 
     log_msg("Material saved");
 }

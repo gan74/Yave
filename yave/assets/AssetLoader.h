@@ -55,6 +55,8 @@ class AssetLoader : NonMovable {
 
                 virtual AssetType type() const = 0;
 
+                virtual bool reload_from_id(AssetId id) = 0;
+
             protected:
                 LoaderBase(AssetLoader* parent);
 
@@ -84,6 +86,8 @@ class AssetLoader : NonMovable {
 
                 inline AssetPtr<T> reload(AssetId id);
 
+                bool reload_from_id(AssetId id) override;
+
                 AssetType type() const override {
                     return traits::type;
                 }
@@ -108,6 +112,9 @@ class AssetLoader : NonMovable {
         void set_loading_flags(AssetLoadingFlags flags);
         AssetLoadingFlags loading_flags() const;
 
+        // For convenience only. Very slow
+        bool reload_from_id(AssetId id);
+
         // This is dangerous: Do not call in loading threads!
         void wait_until_loaded(const GenericAssetPtr& ptr);
 
@@ -125,6 +132,7 @@ class AssetLoader : NonMovable {
 
         template<typename T>
         inline AssetPtr<T> reload(AssetId id);
+
 
    private:
         template<typename T>

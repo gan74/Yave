@@ -36,9 +36,6 @@ SOFTWARE.
 #include <yave/utils/DirectDraw.h>
 
 #include <y/utils/log.h>
-#include <y/test/test.h>
-
-#include <y/utils/log.h>
 #include <y/utils/format.h>
 
 
@@ -151,6 +148,17 @@ ThumbnailRenderer& thumbnail_renderer() {
 
 concurrent::JobSystem& editor_job_system() {
     return *application::editor_job_system;
+}
+
+void notify_asset_saved(AssetId id) {
+    y_profile();
+
+    thumbnail_renderer().clear(id);
+    asset_loader().reload_from_id(id);
+
+    for(const auto& workspace : ui().workspaces()) {
+        workspace->grab_reloaded();
+    }
 }
 
 const EditorResources& resources() {

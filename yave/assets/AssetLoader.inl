@@ -160,6 +160,23 @@ AssetPtr<T> AssetLoader::Loader<T>::reload(AssetId id) {
     return new_ptr;
 }
 
+template<typename T>
+bool AssetLoader::Loader<T>::reload_from_id(AssetId id) {
+    y_debug_assert(id != AssetId::invalid_id());
+
+    const bool is_live = _loaded.locked([&](auto&& loaded) {
+        const auto it = loaded.find(id);
+        return it != loaded.end() && !it->second.expired();
+    });
+
+    if(!is_live) {
+        return false;
+    }
+
+    reload(id);
+    return true;
+}
+
 
 namespace detail {
 template<typename T>

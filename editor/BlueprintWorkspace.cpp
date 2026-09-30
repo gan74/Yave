@@ -23,6 +23,7 @@ SOFTWARE.
 #include "BlueprintWorkspace.h"
 
 #include "editor.h"
+#include "ThumbnailRenderer.h"
 #include "UiManager.h"
 
 #include <yave/assets/AssetLoader.h>
@@ -273,10 +274,7 @@ void BlueprintWorkspace::save() {
         return;
     }
 
-    asset_loader().reload<Blueprint>(_id);
-    for(const auto& workspace : ui().workspaces()) {
-        workspace->grab_reloaded();
-    }
+    notify_asset_saved(_id);
 
     log_msg("Blueprint saved");
 }
