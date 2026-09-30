@@ -66,8 +66,7 @@ class NestedBlueprintNode final : public BlueprintNode {
         };
 
         AssetPtr<Blueprint> _blueprint;
-        BlueprintInstance _instance;
-        core::Result<void, BlueprintError> _result = core::Err(BlueprintError{0, core::String("Nested blueprint is not loaded")});
+        core::Result<BlueprintInstance, BlueprintError> _instance = core::Err(BlueprintError{0, core::String("Nested blueprint is not loaded")});
 
         core::FixedArray<InputValue> _input_values;
 

@@ -85,23 +85,19 @@ void NestedBlueprintNode::set_blueprint(AssetPtr<Blueprint> blueprint) {
     _input_pins.clear();
     _output_pins.clear();
     _inputs.clear();
-    _instance = BlueprintInstance();
 
     if(!_blueprint) {
-        _result = core::Err(BlueprintError{0, core::String("Nested blueprint is not loaded")});
+        _instance = core::Err(BlueprintError{0, core::String("Nested blueprint is not loaded")});
         return;
     }
 
-    if(auto res = _blueprint->create_instance()) {
-        _instance = std::move(res.unwrap());
-        _result = core::Ok();
-    } else {
-        _result = core::Err(std::move(res.error()));
+    _instance = _blueprint->create_instance();
+    if(_instance.is_error()) {
         return;
     }
 
-    _params_in = find_params<ParamInBlueprintNode>(_instance);
-    _params_out = find_params<ParamOutBlueprintNode>(_instance);
+    _params_in = find_params<ParamInBlueprintNode>(_instance.unwrap());
+    _params_out = find_params<ParamOutBlueprintNode>(_instance.unwrap());
 
     _inputs = core::FixedArray<const void*>(_params_in.size());
     _input_pins = core::FixedArray<BlueprintPin>(_params_in.size());
@@ -127,7 +123,10 @@ void NestedBlueprintNode::set_blueprint(AssetPtr<Blueprint> blueprint) {
     }
 
     if(has_duplicated_names(_params_in) || has_duplicated_names(_params_out)) {
-        _result = core::Err(BlueprintError{0, core::String("Nested blueprint has several params with the same name")});
+        // params point into the instance, don't keep them around once it's gone
+        _params_in.clear();
+        _params_out.clear();
+        _instance = core::Err(BlueprintError{0, core::String("Nested blueprint has several params with the same name")});
     }
 }
 
@@ -144,8 +143,8 @@ core::Span<BlueprintPin> NestedBlueprintNode::output_pins() const {
 }
 
 void NestedBlueprintNode::eval() {
-    if(_result.is_error()) {
-        throw std::runtime_error(_result.error().error.data());
+    if(_instance.is_error()) {
+        throw std::runtime_error(_instance.error().error.data());
     }
 
     for(usize i = 0; i != _params_in.size(); ++i) {
@@ -153,7 +152,7 @@ void NestedBlueprintNode::eval() {
         std::memcpy(_params_in[i]->value(), src, _input_pins[i].type->size);
     }
 
-    for(const auto& node : _instance.all_nodes()) {
+    for(const auto& node : _instance.unwrap().all_nodes()) {
         node->eval();
     }
 }
