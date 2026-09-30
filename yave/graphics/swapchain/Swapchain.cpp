@@ -79,13 +79,11 @@ static VkPresentModeKHR present_mode(VkSurfaceKHR surface) {
 
 static u32 compute_image_count(VkSurfaceCapabilitiesKHR capabilities) {
     const u32 ideal = 3;
-    if(capabilities.maxImageCount < ideal && capabilities.maxImageCount > capabilities.minImageCount) {
-        return capabilities.maxImageCount;
+    u32 count = std::max(ideal, capabilities.minImageCount);
+    if(capabilities.maxImageCount && count > capabilities.maxImageCount) {
+        count = capabilities.maxImageCount;
     }
-    if(capabilities.minImageCount > ideal) {
-        return capabilities.minImageCount;
-    }
-    return ideal;
+    return count;
 }
 
 static VkHandle<VkImageView> create_image_view(VkImage image, VkFormat format) {
