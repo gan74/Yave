@@ -341,6 +341,7 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
 
             if(body._body_id != RigidBodyComponent::invalid_index) {
                 _jolt->body_interface->RemoveBody(JPH::BodyID(body._body_id));
+                _jolt->body_interface->DestroyBody(JPH::BodyID(body._body_id));
                 body._body_id = RigidBodyComponent::invalid_index;
             }
 
@@ -371,6 +372,7 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
         for(auto&& [body] : group) {
             if(body._body_id != RigidBodyComponent::invalid_index) {
                 _jolt->body_interface->RemoveBody(JPH::BodyID(body._body_id));
+                _jolt->body_interface->DestroyBody(JPH::BodyID(body._body_id));
                 body._body_id = RigidBodyComponent::invalid_index;
             }
         }
