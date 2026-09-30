@@ -76,12 +76,17 @@ template<typename T, typename... Args>
 AssetPtr<T> make_asset_with_id(AssetId id, Args&&... args);
 
 
+enum class AssetTypeIndex : u32 {
+    invalid_index = u32(-1),
+};
+
 namespace detail {
-u32 next_asset_type_index();
+AssetTypeIndex next_asset_type_index();
 
 template<typename T>
-u32 asset_type_index() {
-    static u32 index = next_asset_type_index();
+AssetTypeIndex asset_type_index() {
+    static_assert(!std::is_const_v<T> && !std::is_reference_v<T>);
+    static AssetTypeIndex index(next_asset_type_index());
     return index;
 }
 
@@ -305,7 +310,7 @@ class GenericAssetPtr {
 
         std::shared_ptr<detail::AssetPtrDataBase> _data;
         AssetType _type = AssetType::Unknown;
-        u32 _type_index = u32(-1);
+        AssetTypeIndex _type_index = AssetTypeIndex::invalid_index;
         AssetId _id;
 };
 

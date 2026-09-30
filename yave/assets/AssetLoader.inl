@@ -323,7 +323,9 @@ AssetLoader::Result<T> AssetLoader::load(core::Result<AssetId, E> id) {
 template<typename T>
 AssetLoader::Loader<T>& AssetLoader::loader_for_type() {
     return _loaders.locked([&](auto&& loaders) -> Loader<T>& {
-        auto& loader = loaders[typeid(T)];
+        const usize index = usize(detail::asset_type_index<T>());
+        loaders.set_min_size(index + 1);
+        auto& loader = loaders[index];
         if(!loader) {
             loader = std::make_unique<Loader<T>>(this);
         }

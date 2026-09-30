@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_ASSETS_ASSETLOADER_H
 
 #include <y/core/HashMap.h>
+#include <y/core/Vector.h>
 
 #include <yave/graphics/graphics.h>
 
@@ -30,7 +31,6 @@ SOFTWARE.
 #include "AssetLoadingContext.h"
 #include "AssetLoadingThreadPool.h"
 
-#include <typeindex>
 #include <future>
 
 namespace yave {
@@ -146,7 +146,7 @@ class AssetLoader : NonMovable {
         template<typename T>
         inline Loader<T>& loader_for_type();
 
-        ProfiledMutexed<core::FlatHashMap<std::type_index, std::unique_ptr<LoaderBase>>, std::recursive_mutex> _loaders;
+        ProfiledMutexed<core::Vector<std::unique_ptr<LoaderBase>>, std::recursive_mutex> _loaders;
         std::shared_ptr<AssetStore> _store;
 
         AssetLoadingThreadPool _thread_pool;

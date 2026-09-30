@@ -69,8 +69,8 @@ AssetLoadingFlags AssetLoader::loading_flags() const {
 bool AssetLoader::reload_from_id(AssetId id) {
     Y_TODO(this locks everything)
     return _loaders.locked([id](const auto& loaders) {
-        for(auto& [type, loader] : loaders) {
-            if(loader->reload_from_id(id)) {
+        for(const auto& loader : loaders) {
+            if(loader && loader->reload_from_id(id)) {
                 return true;
             }
         }
