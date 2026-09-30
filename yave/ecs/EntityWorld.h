@@ -248,16 +248,14 @@ class EntityWorld : NonMovable {
         template<typename T>
         const ComponentContainer<T>* find_container() const {
             static_assert(std::is_same_v<traits::component_raw_type_t<T>, T>);
-            static const auto static_info = ComponentRuntimeInfo::create<T>();
-            unused(static_info);
+            unused(&ComponentRuntimeInfo::create<T>);
             return static_cast<const ComponentContainer<T>*>(find_container(type_index<T>()));
         }
 
         template<typename T>
         ComponentContainer<T>* find_container() {
             static_assert(std::is_same_v<traits::component_raw_type_t<T>, T>);
-            static const auto static_info = ComponentRuntimeInfo::create<T>();
-            unused(static_info);
+            unused(&ComponentRuntimeInfo::create<T>);
             return static_cast<ComponentContainer<T>*>(find_container(type_index<T>()));
         }
 

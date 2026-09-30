@@ -265,7 +265,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
 
         inline void erase_unordered(iterator it) {
             if(it != end() - 1) {
-                std::swap(*it, last());
+                *it = std::move(last());
             }
             pop();
         }

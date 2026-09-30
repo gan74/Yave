@@ -117,18 +117,23 @@ class ComponentContainer final : public ComponentContainerBase {
         }
 
         T* get_or_add(EntityId id) {
-            if(_components.contains(id)) {
-                return &_components[id];
+            if(T* comp = _components.try_get(id)) {
+                return comp;
             }
             return add(id);
         }
 
         template<typename... Args>
         T* add_or_replace(EntityId id, Args&&... args) {
-            if(_components.contains(id)) {
+            if(T* comp = _components.try_get(id)) {
                 _mutated.insert(id);
                 _to_delete.erase(id);
-                return &(_components[id] = T(y_fwd(args)...));
+                if constexpr(sizeof...(Args) == 1 && (std::is_same_v<std::remove_cvref_t<Args>, T> && ...)) {
+                    ((*comp = y_fwd(args)), ...);
+                } else {
+                    *comp = T(y_fwd(args)...);
+                }
+                return comp;
             }
             return add(id, y_fwd(args)...);
         }

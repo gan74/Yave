@@ -314,7 +314,7 @@ class SparseComponentSet : public SparseIdSetBase {
 
             const auto [a, b] = erase_id(id);
             if(a != b) {
-                std::swap(_values[a], _values[b]);
+                _values[a] = std::move(_values[b]);
             }
             _values.pop();
 
