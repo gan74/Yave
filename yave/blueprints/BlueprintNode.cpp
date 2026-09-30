@@ -136,19 +136,19 @@ std::string_view ParamInBlueprintNode::node_type_name() const {
 }
 
 core::Span<BlueprintPin> ParamInBlueprintNode::output_pins() const {
-    return _pin;
+    return core::Span<BlueprintPin>(_pins.data(), 1);
 }
 
 core::Span<BlueprintPin> ParamInBlueprintNode::param_pins() const {
-    return _pin;
+    return _pins;
 }
 
 void ParamInBlueprintNode::set_generic_type(const BlueprintParamType* type) {
-    set_generic_pin_type(_pin, type, _value_type, _value);
+    set_generic_pin_type(_pins[0], type, _value_type, _value);
 }
 
 const BlueprintParamType* ParamInBlueprintNode::generic_type() const {
-    return _pin.type;
+    return _pins[0].type;
 }
 
 void ParamInBlueprintNode::eval() {
@@ -157,24 +157,23 @@ void ParamInBlueprintNode::eval() {
 const void* ParamInBlueprintNode::output_ptr(usize index) const {
     unused(index);
     y_debug_assert(index == 0);
-    return _pin.type ? _value.data() : nullptr;
+    return _pins[0].type ? _value.data() : nullptr;
 }
 
 void* ParamInBlueprintNode::param_ptr(usize index) {
-    unused(index);
-    y_debug_assert(index == 0);
-    return value();
+    y_debug_assert(index < _pins.size());
+    return index ? static_cast<void*>(&_order) : value();
 }
 
 void* ParamInBlueprintNode::value() {
-    return _pin.type ? _value.data() : nullptr;
+    return _pins[0].type ? _value.data() : nullptr;
 }
 
-u32 ParamInBlueprintNode::order() const {
+i32 ParamInBlueprintNode::order() const {
     return _order;
 }
 
-u32& ParamInBlueprintNode::order() {
+i32& ParamInBlueprintNode::order() {
     return _order;
 }
 
@@ -197,6 +196,10 @@ std::string_view ParamOutBlueprintNode::node_type_name() const {
 
 core::Span<BlueprintPin> ParamOutBlueprintNode::input_pins() const {
     return _pin;
+}
+
+core::Span<BlueprintPin> ParamOutBlueprintNode::param_pins() const {
+    return _order_pin;
 }
 
 void ParamOutBlueprintNode::set_generic_type(const BlueprintParamType* type) {
@@ -235,11 +238,17 @@ const void* ParamOutBlueprintNode::value() const {
     return _pin.type ? _value.data() : nullptr;
 }
 
-u32 ParamOutBlueprintNode::order() const {
+void* ParamOutBlueprintNode::param_ptr(usize index) {
+    unused(index);
+    y_debug_assert(index == 0);
+    return &_order;
+}
+
+i32 ParamOutBlueprintNode::order() const {
     return _order;
 }
 
-u32& ParamOutBlueprintNode::order() {
+i32& ParamOutBlueprintNode::order() {
     return _order;
 }
 

@@ -31,6 +31,7 @@ SOFTWARE.
 #include <y/reflect/reflect.h>
 #include <y/serde3/poly.h>
 
+#include <array>
 #include <string_view>
 
 namespace yave {
@@ -131,16 +132,16 @@ class ParamInBlueprintNode final : public BlueprintNode {
 
         void* value();
 
-        u32 order() const;
-        u32& order();
+        i32 order() const;
+        i32& order();
 
         y_reflect(ParamInBlueprintNode, _name, _order, _value_type, _value)
         y_serde3_poly(ParamInBlueprintNode)
 
     private:
-        BlueprintPin _pin = {"out", nullptr, true};
+        std::array<BlueprintPin, 2> _pins = {{{"out", nullptr, true}, {"order", blueprint_param_type_index<i32>()}}};
 
-        u32 _order = 0;
+        i32 _order = 0;
 
         u64 _value_type = 0;
         core::FixedArray<u8> _value;
@@ -156,6 +157,7 @@ class ParamOutBlueprintNode final : public BlueprintNode {
         std::string_view node_type_name() const override;
 
         core::Span<BlueprintPin> input_pins() const override;
+        core::Span<BlueprintPin> param_pins() const override;
 
         void set_generic_type(const BlueprintParamType* type) override;
         const BlueprintParamType* generic_type() const override;
@@ -165,20 +167,22 @@ class ParamOutBlueprintNode final : public BlueprintNode {
         void set_input(usize index, const void* ptr) override;
         const void* input(usize index) const override;
         void* default_input(usize index) override;
+        void* param_ptr(usize index) override;
 
         const void* value() const;
 
-        u32 order() const;
-        u32& order();
+        i32 order() const;
+        i32& order();
 
         y_reflect(ParamOutBlueprintNode, _name, _order, _value_type, _value)
         y_serde3_poly(ParamOutBlueprintNode)
 
     private:
         BlueprintPin _pin = {"in", nullptr, true};
+        BlueprintPin _order_pin = {"order", blueprint_param_type_index<i32>()};
         const void* _input = nullptr;
 
-        u32 _order = 0;
+        i32 _order = 0;
 
         u64 _value_type = 0;
         core::FixedArray<u8> _value;
