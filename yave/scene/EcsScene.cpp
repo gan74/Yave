@@ -86,7 +86,12 @@ void EcsScene::process_component_visibility(IndexType type, S& storage) {
     y_profile();
 
     auto update_visibility = [&](ecs::EntityId id, u32 mask) {
-        const u32 index = _indices.try_get(id)->indices[type];
+        const ObjectIndices* object = _indices.try_get(id);
+        if(!object) {
+            return;
+        }
+
+        const u32 index = object->indices[type];
         if(index != u32(-1)) {
             storage[index].visibility_mask = mask;
         }
