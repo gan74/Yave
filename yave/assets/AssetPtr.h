@@ -124,7 +124,7 @@ class AssetPtrDataBase : NonMovable {
 
         std::atomic<AssetLoadingState> _state = AssetLoadingState::NotLoaded;
         AssetLoader* _loader = nullptr;
-        std::shared_ptr<AssetPtrDataBase> _reloaded;
+        std::atomic<std::shared_ptr<AssetPtrDataBase>> _reloaded;
 };
 
 template<typename T>

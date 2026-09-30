@@ -78,16 +78,16 @@ AssetLoader* AssetPtrDataBase::loader() const {
 
 void AssetPtrDataBase::set_reloaded(std::shared_ptr<AssetPtrDataBase> ptr) {
     y_debug_assert(ptr);
-    _reloaded = std::move(ptr);
+    _reloaded.store(std::move(ptr));
 }
 
 std::shared_ptr<AssetPtrDataBase> AssetPtrDataBase::grab_reloaded() const {
-    std::shared_ptr<AssetPtrDataBase> current = _reloaded;
+    std::shared_ptr<AssetPtrDataBase> current = _reloaded.load();
     if(!current) {
         return nullptr;
     }
-    while(current->_reloaded) {
-        current = current->_reloaded;
+    while(auto next = current->_reloaded.load()) {
+        current = std::move(next);
     }
     return current;
 }
