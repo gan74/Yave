@@ -329,6 +329,14 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::rename(std::s
         return core::Err();
     }
 
+    if(from == to) {
+        return core::Ok();
+    }
+
+    if(is_strict_indirect_parent(from, to)) {
+        return core::Err();
+    }
+
     const auto lock = std::unique_lock(_parent->_lock);
 
     std::map<core::String, AssetData> new_assets;
@@ -905,7 +913,7 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
                     const AssetId id = AssetId::from_id(uid);
                     if(auto r = load_desc(id)) {
                         AssetDesc desc = r.unwrap();
-                        AssetData data = { id, desc.type, 0, std::move(desc.refs) };
+                        AssetData data = { id, desc.type, 0, core::Vector<AssetId>(desc.refs) };
 
                         if(const auto it = asset_sizes.find(uid); it != asset_sizes.end()) {
                             data.file_size = it->second;
@@ -930,15 +938,18 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
         usize emergency_id = 1;
         for(auto& a : assets) {
             for(auto& [desc, data] : a) {
-                if(!_assets.emplace(desc.name, std::move(data)).second) {
+                if(_assets.find(desc.name) != _assets.end()) {
                     log_msg(fmt("\"{}\" already exists in asset database", desc.name), Log::Error);
 
-                    {
+                    const core::String base_name = desc.name;
+                    do {
+                        desc.name = base_name;
                         fmt_into(desc.name, "_({})", emergency_id++);
-                        _assets.emplace(desc.name, data);
-                        save_desc(data.id, desc).ignore();
-                    }
+                    } while(_assets.find(desc.name) != _assets.end());
+
+                    save_desc(data.id, desc).ignore();
                 }
+                _assets.emplace(desc.name, std::move(data));
 
                 if(auto parent = _filesystem.parent_path(desc.name); parent && !parent.unwrap().is_empty()) {
                     if(_folders.insert(parent.unwrap()).second) {
