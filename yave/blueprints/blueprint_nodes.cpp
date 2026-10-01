@@ -84,7 +84,7 @@ class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode 
     template<usize N>
     static std::array<BlueprintPin, N> make_pins(const std::array<usize, N>& indices) {
         const std::array<std::string_view, port_count> names = { std::string_view(Names)... };
-        const std::array<const BlueprintParamType*, port_count> types = { blueprint_param_type_index<std::remove_cvref_t<Args>>()... };
+        const std::array<const BlueprintParamType*, port_count> types = { blueprint_param_type<std::remove_cvref_t<Args>>()... };
 
         std::array<BlueprintPin, N> pins = {};
         for(usize i = 0; i != N; ++i) {
@@ -169,7 +169,7 @@ using LambdaBlueprintNode = LambdaBlueprintNodeImpl<F, typename function_traits<
 
 template<typename T>
 class ConstantBlueprintNode : public BlueprintNode {
-    static inline const BlueprintPin static_value_pin = { "value", blueprint_param_type_index<T>() };
+    static inline const BlueprintPin static_value_pin = { "value", blueprint_param_type<T>() };
 
     public:
         ConstantBlueprintNode() = default;
@@ -313,7 +313,7 @@ class IfBlueprintNode : public BlueprintNode {
             return const_cast<IfBlueprintNode*>(this)->value_ptr(index);
         }
 
-        std::array<BlueprintPin, in_count> _in_pins = {{{"condition", blueprint_param_type_index<bool>()}, {"true", nullptr, true}, {"false", nullptr, true}}};
+        std::array<BlueprintPin, in_count> _in_pins = {{{"condition", blueprint_param_type<bool>()}, {"true", nullptr, true}, {"false", nullptr, true}}};
         BlueprintPin _out_pin = {"out", nullptr, true};
 
         std::array<const void*, in_count> _inputs = {};

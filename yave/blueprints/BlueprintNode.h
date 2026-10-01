@@ -43,7 +43,7 @@ struct BlueprintParamType {
 };
 
 template<typename T>
-const BlueprintParamType* blueprint_param_type_index() {
+const BlueprintParamType* blueprint_param_type() {
     static_assert(!std::is_const_v<T> && !std::is_reference_v<T>);
     static_assert(std::is_trivially_copyable_v<T>);
     static_assert(std::is_trivially_destructible_v<T>);
@@ -139,7 +139,7 @@ class ParamInBlueprintNode final : public BlueprintNode {
         y_serde3_poly(ParamInBlueprintNode)
 
     private:
-        std::array<BlueprintPin, 2> _pins = {{{"out", nullptr, true}, {"order", blueprint_param_type_index<i32>()}}};
+        std::array<BlueprintPin, 2> _pins = {{{"out", nullptr, true}, {"order", blueprint_param_type<i32>()}}};
 
         i32 _order = 0;
 
@@ -179,7 +179,7 @@ class ParamOutBlueprintNode final : public BlueprintNode {
 
     private:
         BlueprintPin _pin = {"in", nullptr, true};
-        BlueprintPin _order_pin = {"order", blueprint_param_type_index<i32>()};
+        BlueprintPin _order_pin = {"order", blueprint_param_type<i32>()};
         const void* _input = nullptr;
 
         i32 _order = 0;

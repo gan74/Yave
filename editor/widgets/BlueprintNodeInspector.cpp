@@ -40,7 +40,7 @@ static void draw_unsupported(std::string_view label, const BlueprintParamType* t
 
 template<typename T, typename M, typename I, typename O>
 static void add_drawer(M& drawers, I input, O output) {
-    drawers[blueprint_param_type_index<T>()] = {
+    drawers[blueprint_param_type<T>()] = {
         [=](std::string_view label, void* value) { input(label, *static_cast<T*>(value)); },
         [=](std::string_view label, const void* value) { output(label, *static_cast<const T*>(value)); }
     };

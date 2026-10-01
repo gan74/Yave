@@ -56,10 +56,10 @@ static constexpr ImColor after_error_color = error_color; // ImColor(255, 100, 7
 static constexpr ImColor arrow_color = ImColor(255, 255, 255, 255);
 
 static ImColor pin_type_color(const BlueprintParamType* type) {
-    if(type == blueprint_param_type_index<float>()) {
+    if(type == blueprint_param_type<float>()) {
         return ImColor(147, 226, 74);
     }
-    if(type == blueprint_param_type_index<bool>()) {
+    if(type == blueprint_param_type<bool>()) {
         return ImColor(220, 48, 48);
     }
     if(!type) {
