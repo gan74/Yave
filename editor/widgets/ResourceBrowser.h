@@ -41,12 +41,12 @@ class ResourceBrowser : public Widget {
         AssetId asset_id(std::string_view name) const;
         AssetType asset_type(AssetId id) const;
 
-        template<typename F>
+        template<std::invocable<const core::String&, FileSystemModel::EntryType> F>
         void set_filter_delegate(F&& f) {
             _filesystem_view.set_filter_delegate(y_fwd(f));
         }
 
-        template<typename F>
+        template<std::invocable<AssetId> F>
         void set_selected_delegate(F&& f) {
             _selected_delegate = y_fwd(f);
         }

@@ -27,7 +27,7 @@ SOFTWARE.
 
 namespace yave {
 
-template<typename F>
+template<std::predicate<const Material&> F>
 static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Vector<StaticMeshBatch>& batches, PassType pass_type, F&& mat_filter) {
     y_profile();
 

@@ -35,7 +35,7 @@ class EntitySelector final : public WorkspaceWidget<WorldWorkspace> {
     public:
         EntitySelector(WorldWorkspace* ws, ecs::ComponentTypeIndex filter = ecs::ComponentTypeIndex::invalid_index);
 
-        template<typename F>
+        template<std::invocable<ecs::EntityId> F>
         void set_selected_callback(F&& func) {
             _selected = y_fwd(func);
         }

@@ -66,7 +66,7 @@ class Mutexed : NonMovable {
             return func(_obj);
         }
 
-        template<typename F>
+        template<std::invocable<const T&> F>
         inline decltype(auto) locked_shared(F&& func) const {
             const std::shared_lock lock(_lock);
             return func(_obj);

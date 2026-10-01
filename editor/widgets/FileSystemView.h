@@ -77,35 +77,35 @@ class FileSystemView : public Widget {
 
         void set_search(std::string_view pattern);
 
-        template<typename F>
+        template<std::invocable<const core::String&, EntryType> F>
         void set_filter_delegate(F&& f) {
             _delegates.filter = y_fwd(f);
             _need_update = true;
         }
 
-        template<typename F>
+        template<std::invocable<const core::String&, EntryType> F>
         void set_icon_delegate(F&& f) {
             _delegates.icon = y_fwd(f);
             _need_update = true;
         }
 
-        template<typename F>
+        template<std::invocable<const core::String&, EntryType> F>
         void set_preview_delegate(F&& f) {
             _delegates.preview = y_fwd(f);
             _need_update = true;
         }
 
-        template<typename F>
+        template<std::invocable<const core::String&, EntryType> F>
         void set_tooltip_delegate(F&& f) {
             _delegates.tooltip = y_fwd(f);
         }
 
-        template<typename F>
+        template<std::invocable<const core::String&, EntryType> F>
         void set_clicked_delegate(F&& f) {
             _delegates.clicked = y_fwd(f);
         }
 
-        template<typename F>
+        template<std::invocable<const core::String&, EntryType> F>
         void set_context_menu_delegate(F&& f) {
             _delegates.context_menu = y_fwd(f);
         }

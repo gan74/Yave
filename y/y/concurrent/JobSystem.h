@@ -85,12 +85,12 @@ class JobSystem : NonMovable {
 
         void wait(core::Span<JobHandle> jobs);
 
-        template<typename F>
+        template<std::invocable F>
         JobHandle schedule(F&& func, core::Span<JobHandle> deps = {}, std::source_location loc = std::source_location::current()) {
             return schedule_n([func](u32) { func(); }, 1, deps, loc);
         }
 
-        template<typename It, typename F>
+        template<typename It, std::invocable<It, It> F>
         JobHandle parallel_for_async(It begin, It end, F&& func, core::Span<JobHandle> deps = {}, std::source_location loc = std::source_location::current()) {
             const usize size = usize(end - begin);
             const u32 target_task_count = u32(_threads.size() * 4);
@@ -104,7 +104,7 @@ class JobSystem : NonMovable {
         }
 
 
-        template<typename It, typename F>
+        template<typename It, std::invocable<It, It> F>
         void parallel_for(It begin, It end, F&& func, core::Span<JobHandle> deps = {}, std::source_location loc = std::source_location::current()) {
             if(begin != end || !deps.is_empty()) {
                 parallel_for_async(begin, end, y_fwd(func), deps, loc).wait();

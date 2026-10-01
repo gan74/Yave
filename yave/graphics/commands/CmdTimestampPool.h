@@ -62,7 +62,7 @@ class CmdTimestampPool : NonMovable {
         bool is_ready(bool wait = false) const;
 
 
-        template<typename F>
+        template<std::invocable<const TimedZone&> F>
         bool for_each_zone(F&& func, bool wait = false) {
             if(!is_ready(wait)) {
                 return false;
