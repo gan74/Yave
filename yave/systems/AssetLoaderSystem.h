@@ -87,7 +87,7 @@ class AssetLoaderSystem : public ecs::System {
 
         template<typename T>
         static void grab_reloaded_components(ecs::EntityWorld& world) {
-            auto group = world.create_group<ecs::Mutate<T>>();
+            auto group = world.create_group<ecs::MutateUntracked<T>>();
             for(auto&& [id, comp] : group.id_components()) {
                 bool any_reloaded = false;
                 reflect::explore_recursive(comp, [&](auto& m) {
@@ -96,6 +96,7 @@ class AssetLoaderSystem : public ecs::System {
                     }
                 });
                 if(any_reloaded) {
+                    group.template mark_changed<T>(id);
                     world.get_or_add_component<LoadingTag<T>>(id);
                 }
             }

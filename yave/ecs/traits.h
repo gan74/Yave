@@ -34,6 +34,11 @@ template<typename T>
 struct Mutate {};
 
 template<typename T>
+struct MutateUntracked {};
+
+
+
+template<typename T>
 struct Changed {};
 
 template<typename T>
@@ -54,6 +59,7 @@ struct component_type {
     static constexpr bool changed = false;
     static constexpr bool any = false;
     static constexpr bool deleted = false;
+    static constexpr bool untracked = false;
 };
 
 template<typename T>
@@ -66,6 +72,20 @@ struct component_type<Mutate<T>> {
     static constexpr bool changed = component_type<T>::changed;
     static constexpr bool any = component_type<T>::any;
     static constexpr bool deleted = component_type<T>::deleted;
+    static constexpr bool untracked = component_type<T>::untracked;
+};
+
+template<typename T>
+struct component_type<MutateUntracked<T>> {
+    static_assert(!component_type<T>::deleted);
+
+    using raw_type = typename component_type<T>::raw_type;
+    using type = std::remove_const_t<typename component_type<T>::type>;
+
+    static constexpr bool changed = component_type<T>::changed;
+    static constexpr bool any = component_type<T>::any;
+    static constexpr bool deleted = component_type<T>::deleted;
+    static constexpr bool untracked = true;
 };
 
 template<typename T>
@@ -78,6 +98,7 @@ struct component_type<Changed<T>> {
     static constexpr bool changed = true;
     static constexpr bool any = false;
     static constexpr bool deleted = component_type<T>::deleted;
+    static constexpr bool untracked = component_type<T>::untracked;
 };
 
 template<typename T>
@@ -91,6 +112,7 @@ struct component_type<AnyChanged<T>> {
         static constexpr bool changed = true;
         static constexpr bool any = true;
         static constexpr bool deleted = component_type<T>::deleted;
+        static constexpr bool untracked = component_type<T>::untracked;
 };
 
 template<typename T>
@@ -104,6 +126,7 @@ struct component_type<Deleted<T>> {
     static constexpr bool changed = false;
     static constexpr bool any = false;
     static constexpr bool deleted = true;
+    static constexpr bool untracked = component_type<T>::untracked;
 };
 
 
@@ -131,6 +154,9 @@ concept is_component_mutable = !is_component_const<T>;
 
 template<typename T>
 concept is_component_deleted = component_type<T>::deleted;
+
+template<typename T>
+concept is_component_tracked = is_component_mutable<T> && !component_type<T>::untracked;
 
 }
 

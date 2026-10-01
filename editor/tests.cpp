@@ -1319,6 +1319,45 @@ y_test_func("EntityWorld Mutate groups") {
     }
 }
 
+y_test_func("EntityWorld MutateUntracked groups") {
+    EntityWorld world;
+
+    core::Vector<EntityId> ids;
+    for(usize i = 0; i != 10; ++i) {
+        const EntityId id = world.create_entity();
+        world.add_or_replace_component<Position>(id);
+        world.add_or_replace_component<Velocity>(id);
+        ids << id;
+    }
+    world.process_deferred_changes();
+
+    const ComponentContainerBase* positions = container_of<Position>(world);
+    const ComponentContainerBase* velocities = container_of<Velocity>(world);
+
+    {
+        auto group = world.create_group<MutateUntracked<Position>, Mutate<Velocity>>();
+        y_test_assert(group.size() == 10);
+        for(auto&& [id, pos, vel] : group.id_components()) {
+            if(id == ids[3]) {
+                pos.x = 1.0f;
+                group.mark_changed<Position>(id);
+            }
+        }
+    }
+
+    // Only the explicitly marked position is changed, Mutate still marks everything
+    y_test_assert(positions->mutated_ids().size() == 1);
+    y_test_assert(positions->mutated_ids().contains(ids[3]));
+    y_test_assert(velocities->mutated_ids().size() == 10);
+    y_test_assert(world.component<Position>(ids[3])->x == 1.0f);
+
+    {
+        auto group = world.create_group<Changed<Position>>();
+        y_test_assert(group.size() == 1);
+        y_test_assert(group.ids()[0] == ids[3]);
+    }
+}
+
 y_test_func("EntityWorld Changed groups") {
     EntityWorld world;
 
