@@ -42,7 +42,7 @@ void create_or_replace_component(EntityWorld& world, EntityId id);
 template<typename T>
 static core::Span<ComponentTypeIndex> required_component_types() {
     if constexpr(HasRequiredComponents<T>) {
-        return T::required_component_types;
+        return T::required_component_types();
     }
     return {};
 }

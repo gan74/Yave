@@ -90,7 +90,7 @@ class ComponentMatrix {
         template<typename T>
         bool has_all_required_components(EntityId id) const {
             if constexpr(HasRequiredComponents<T>) {
-                for(const ComponentTypeIndex r : T::required_component_types) {
+                for(const ComponentTypeIndex r : T::required_component_types()) {
                     if(!has_component(id, r)) {
                         return false;
                     }

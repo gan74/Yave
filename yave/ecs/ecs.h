@@ -25,6 +25,7 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include <y/utils/traits.h>
+#include <y/core/Span.h>
 
 #include <compare>
 
@@ -37,14 +38,16 @@ enum class ComponentTypeIndex : u32 {
 
 namespace detail {
 ComponentTypeIndex next_type_index();
+
+template<typename T>
+inline const ComponentTypeIndex type_index_v = next_type_index();
 }
 
 
 template<typename T>
 ComponentTypeIndex type_index() {
     static_assert(!std::is_const_v<T> && !std::is_reference_v<T>);
-    static ComponentTypeIndex type(detail::next_type_index());
-    return type;
+    return detail::type_index_v<T>;
 }
 
 class TickId {
@@ -128,7 +131,10 @@ struct RegisterComponent {
 
 template<typename... ComponentTypes>
 struct RequireComponent {
-    static inline const std::array<ComponentTypeIndex, sizeof...(ComponentTypes)> required_component_types = {type_index<ComponentTypes>()... };
+    static core::Span<ComponentTypeIndex> required_component_types() {
+        static const std::array<ComponentTypeIndex, sizeof...(ComponentTypes)> types = {type_index<ComponentTypes>()... };
+        return types;
+    }
 };
 
 
@@ -149,7 +155,7 @@ concept Registerable = requires(T comp) {
 
 template<typename T>
 concept HasRequiredComponents = requires(T comp) {
-    comp.required_component_types;
+    T::required_component_types();
 };
 
 }

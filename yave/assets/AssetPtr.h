@@ -84,10 +84,12 @@ namespace detail {
 AssetTypeIndex next_asset_type_index();
 
 template<typename T>
+inline const AssetTypeIndex asset_type_index_v = next_asset_type_index();
+
+template<typename T>
 AssetTypeIndex asset_type_index() {
     static_assert(!std::is_const_v<T> && !std::is_reference_v<T>);
-    static AssetTypeIndex index(next_asset_type_index());
-    return index;
+    return asset_type_index_v<T>;
 }
 
 
