@@ -623,6 +623,40 @@ void Inspector::on_gui() {
     InspectorPanelInspector inspector(id, component, workspace());
     world.inspect_components(id, &inspector);
 
+
+    if(ImGui::CollapsingHeader(ICON_FA_TAG " Tags")) {
+        ImGui::Indent();
+        y_defer(ImGui::Unindent());
+
+        for(const core::String& tag : world.tags()) {
+            if(!world.has_tag(id, tag)) {
+                continue;
+            }
+            
+            ImGui::PushID(tag.data());
+            y_defer(ImGui::PopID());
+
+            if(ImGui::SmallButton(ICON_FA_TIMES)) {
+                world.remove_tag(id, tag);
+                break;
+            }
+
+            ImGui::SameLine();
+            ImGui::TextUnformatted(tag.data());
+        }
+
+        const bool enter = imgui::text_input("##newtag", _new_tag, ImGuiInputTextFlags_EnterReturnsTrue, "New tag");
+        const bool valid = !_new_tag.is_empty() && !ecs::is_computed_tag(_new_tag);
+        ImGui::SameLine();
+        ImGui::BeginDisabled(!valid);
+        if((ImGui::Button(ICON_FA_PLUS " Add tag") || enter) && valid) {
+            world.add_tag(id, _new_tag);
+            _new_tag.clear();
+        }
+        ImGui::EndDisabled();
+    }
+
+
     ImGui::Separator();
 
     if(ImGui::Button(ICON_FA_PLUS " Add component")) {

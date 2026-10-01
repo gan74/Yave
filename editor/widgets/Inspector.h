@@ -41,6 +41,7 @@ class Inspector final : public WorkspaceWidget<WorldWorkspace> {
 
     private:
         ecs::EntityId _locked;
+        core::String _new_tag;
 };
 
 }
