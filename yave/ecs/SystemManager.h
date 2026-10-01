@@ -149,12 +149,24 @@ class SystemScheduler : NonMovable {
 
 class SystemManager : NonMovable {
     public:
+        struct TaskNode {
+            const System* system = nullptr;
+            const SystemScheduler::Task* task = nullptr;
+            SystemSchedule schedule = SystemSchedule::Max;
+
+            core::Vector<u32> conflicts;
+        };
+
         SystemManager(EntityWorld* world);
 
         void run_schedule_seq() const;
         void run_schedule_mt(concurrent::JobSystem& job_system) const;
 
         SystemJobHandle create_job_handle();
+
+        core::Span<TaskNode> task_graph() const {
+            return _task_graph;
+        }
 
         void reset() {
             _schedulers.make_empty();
@@ -209,14 +221,6 @@ class SystemManager : NonMovable {
         void build_task_graph();
 
         static void run_task(const SystemScheduler::Task& task);
-
-        struct TaskNode {
-            const SystemScheduler* scheduler = nullptr;
-            const SystemScheduler::Task* task = nullptr;
-            SystemSchedule schedule = SystemSchedule::Max;
-
-            core::Vector<u32> conflicts;
-        };
 
         core::Vector<TaskNode> _task_graph;
 

@@ -185,6 +185,10 @@ class EntityWorld : NonMovable {
             return _system_manager.find_system<S>();
         }
 
+        core::Span<SystemManager::TaskNode> task_graph() const {
+            return _system_manager.task_graph();
+        }
+
 
 
 

@@ -154,7 +154,7 @@ void SystemManager::run_schedule_mt(concurrent::JobSystem& job_system) const {
         }
 
         JobHandle job = job_system.schedule([&node, &completed]() {
-            y_profile_dyn_zone(fmt_c_str("{}: {}", node.scheduler->_system->name(), node.task->name));
+            y_profile_dyn_zone(fmt_c_str("{}: {}", node.system->name(), node.task->name));
             run_task(*node.task);
             ++completed;
         }, deps);
@@ -210,7 +210,7 @@ void SystemManager::build_task_graph() {
                 std::sort(conflicts.begin(), conflicts.end());
                 conflicts.shrink_to(std::unique(conflicts.begin(), conflicts.end()) - conflicts.begin());
 
-                _task_graph.emplace_back(scheduler.get(), &task, SystemSchedule(i), std::move(conflicts));
+                _task_graph.emplace_back(scheduler->_system, &task, SystemSchedule(i), std::move(conflicts));
             }
         }
     }

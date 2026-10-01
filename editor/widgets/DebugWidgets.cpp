@@ -182,7 +182,12 @@ class EcsDebug : public WorkspaceWidget<WorldWorkspace> {
                 world.add_system<TestSystem>();
             }
 
-            const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
+            const ImGuiTableFlags table_flags = 
+                ImGuiTableFlags_RowBg | 
+                ImGuiTableFlags_BordersInnerV |
+                ImGuiTableFlags_BordersInnerH |
+                ImGuiTableFlags_Resizable
+            ;
 
             if(ImGui::CollapsingHeader("Groups")) {
                 auto groups = world.group_providers();
@@ -211,6 +216,51 @@ class EcsDebug : public WorkspaceWidget<WorldWorkspace> {
 
                         ImGui::TreePop();
                     }
+                }
+            }
+
+            if(ImGui::CollapsingHeader("Task graph")) {
+                static constexpr std::array<const char*, usize(ecs::SystemSchedule::Max)> schedule_names = {"TickSequential", "Tick", "Update", "PostUpdate"};
+
+                if(ImGui::BeginTable("##taskgraph", 4, table_flags)) {
+                    ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed);
+                    ImGui::TableSetupColumn("Task", ImGuiTableColumnFlags_WidthStretch);
+                    ImGui::TableSetupColumn("Accesses", ImGuiTableColumnFlags_WidthStretch);
+                    ImGui::TableSetupColumn("Waits for", ImGuiTableColumnFlags_WidthFixed);
+                    ImGui::TableHeadersRow();
+
+                    const core::Span<ecs::SystemManager::TaskNode> graph = world.task_graph();
+                    for(usize i = 0; i != graph.size(); ++i) {
+                        const ecs::SystemManager::TaskNode& node = graph[i];
+
+                        imgui::table_begin_next_row();
+                        ImGui::TextUnformatted(fmt_c_str("{}", i));
+
+                        ImGui::TableNextColumn();
+                        ImGui::TextUnformatted(fmt_c_str("[{}] {}: {}", schedule_names[usize(node.schedule)], node.system->name(), node.task->name));
+
+                        ImGui::TableNextColumn();
+                        core::String accesses;
+                        for(const ecs::ComponentAccess& access : node.task->accesses) {
+                            const std::string_view type_name = world.component_type_name(access.type);
+                            if(!accesses.is_empty()) {
+                                accesses += ", ";
+                            }
+                            accesses += access.write ? fmt("Mutate<{}>", type_name) : type_name;
+                        }
+                        ImGui::TextUnformatted(accesses.begin(), accesses.end());
+
+                        ImGui::TableNextColumn();
+                        core::String conflicts;
+                        for(const u32 conflict : node.conflicts) {
+                            if(!conflicts.is_empty()) {
+                                conflicts += ", ";
+                            }
+                            conflicts += fmt("{}", conflict);
+                        }
+                        ImGui::TextUnformatted(conflicts.begin(), conflicts.end());
+                    }
+                    ImGui::EndTable();
                 }
             }
 
