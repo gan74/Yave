@@ -477,10 +477,9 @@ serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
 
     register_containers();
 
-    for(auto&& container : _containers) {
-        if(container) {
-            container->post_load();
-        }
+    // Required containers first
+    for(usize i = _ordered_containers.size(); i != 0; --i) {
+        _ordered_containers[i - 1]->post_load();
     }
 
     _system_manager.reset();
