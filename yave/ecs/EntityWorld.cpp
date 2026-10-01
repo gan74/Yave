@@ -212,6 +212,7 @@ EntityId EntityWorld::create_entity() {
 }
 
 EntityId EntityWorld::create_entity_with_id(EntityId id) {
+    y_debug_assert(id.is_valid());
     y_debug_assert(!exists(id));
     y_always_assert(_entities.create_with_id(id).is_valid(), "Entity ID already in use");
     _matrix.add_entity(id);

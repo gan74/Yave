@@ -119,6 +119,9 @@ file(GLOB_RECURSE EDITOR_FILES
     "editor/*.h"
 )
 
+set(EDITOR_TEST_FILES "${CMAKE_CURRENT_SOURCE_DIR}/editor/tests.cpp")
+list(REMOVE_ITEM EDITOR_FILES ${EDITOR_TEST_FILES})
+
 file(GLOB_RECURSE IMGUI_FILES
     "external/imgui/*.cpp"
     "external/imgui/*.h"
@@ -278,5 +281,9 @@ if(YAVE_BUILD_EDITOR)
     add_dependencies(editor shaders)
 
     target_link_libraries(editor yave imgui bc7enc)
+
+    add_executable(editor_tests ${EDITOR_TEST_FILES})
+    target_compile_definitions(editor_tests PRIVATE "-DY_BUILD_TESTS")
+    target_link_libraries(editor_tests yave)
 endif()
 

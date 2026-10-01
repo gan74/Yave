@@ -40,6 +40,7 @@ namespace ecs {
 class SparseIdSetBase : NonMovable {
     public:
         inline bool contains(EntityId id) const {
+            y_debug_assert(id.version() != u32(-1));
             if(id.index() >= _sparse.size()) {
                 return false;
             }
@@ -70,7 +71,7 @@ class SparseIdSetBase : NonMovable {
 
     protected:
         struct SparseElement {
-            u32 version = 0;
+            u32 version = u32(-1);
             u32 index = 0;
         };
 
@@ -335,6 +336,7 @@ class SparseComponentSet : public SparseIdSetBase {
         }
 
         pointer try_get(EntityId id) {
+            y_debug_assert(id.version() != u32(-1));
             const u32 index = id.index();
             if(index >= _sparse.size()) {
                 return nullptr;
@@ -347,6 +349,7 @@ class SparseComponentSet : public SparseIdSetBase {
         }
 
         const_pointer try_get(EntityId id) const {
+            y_debug_assert(id.version() != u32(-1));
             const u32 index = id.index();
             if(index >= _sparse.size()) {
                 return nullptr;
