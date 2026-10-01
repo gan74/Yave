@@ -2130,6 +2130,85 @@ y_test_func("EntityWorld systems") {
     }
 }
 
+struct ConflictTracker {
+    std::atomic<u32> order = 0;
+    std::atomic<u32> writing = 0;
+    std::atomic<u32> reading = 0;
+    std::atomic<bool> overlapped = false;
+
+    u32 enter(bool write) {
+        if(write) {
+            overlapped = overlapped || reading || writing++;
+        } else {
+            ++reading;
+            overlapped = overlapped || writing;
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+        if(write) {
+            --writing;
+        } else {
+            --reading;
+        }
+        return order++;
+    }
+};
+
+template<bool First>
+class ConflictingSystem : public System {
+    public:
+        ConflictingSystem(ConflictTracker* tracker) : System(First ? "ConflictingSystemA" : "ConflictingSystemB"), _tracker(tracker) {
+        }
+
+        void setup(SystemScheduler& sched) override {
+            if constexpr(First) {
+                sched.schedule(SystemSchedule::Update, "write", [this](EntityGroup<Mutate<Position>>&&) {
+                    write_order = _tracker->enter(true);
+                });
+                sched.schedule(SystemSchedule::Update, "read", [this](EntityGroup<Position, Velocity>&&) {
+                    read_order = _tracker->enter(false);
+                });
+            } else {
+                sched.schedule(SystemSchedule::Update, "write", [this](EntityGroup<Velocity, Mutate<Position>>&&) {
+                    write_order = _tracker->enter(true);
+                });
+            }
+        }
+
+        u32 write_order = u32(-1);
+        u32 read_order = u32(-1);
+
+    private:
+        ConflictTracker* _tracker = nullptr;
+};
+
+y_test_func("EntityWorld systems conflicting accesses") {
+    concurrent::JobSystem job_system(4);
+    EntityWorld world;
+
+    const EntityId id = world.create_entity();
+    world.add_or_replace_component<Position>(id);
+    world.add_or_replace_component<Velocity>(id, 1.0f);
+    world.process_deferred_changes();
+
+    ConflictTracker tracker;
+    const auto* a = world.add_system<ConflictingSystem<true>>(&tracker);
+    const auto* b = world.add_system<ConflictingSystem<false>>(&tracker);
+
+    for(usize i = 0; i != 4; ++i) {
+        tracker.order = 0;
+        world.tick(job_system);
+        world.process_deferred_changes();
+
+        // Conflicting tasks run one after the other, in registration order
+        y_test_assert(!tracker.overlapped);
+        y_test_assert(a->write_order == 0);
+        y_test_assert(a->read_order == 1);
+        y_test_assert(b->write_order == 2);
+    }
+}
+
 y_test_func("EntityWorld registered components") {
     EntityWorld world;
 

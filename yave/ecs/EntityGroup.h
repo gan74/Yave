@@ -32,6 +32,17 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
+struct ComponentAccess {
+    ComponentTypeIndex type = ComponentTypeIndex::invalid_index;
+    bool write = false;
+};
+
+#ifdef Y_DEBUG
+namespace detail {
+extern thread_local const core::Vector<ComponentAccess>* declared_accesses;
+}
+#endif
+
 class EntityGroupProvider final : NonMovable {
 
     template<typename... Ts>
@@ -299,6 +310,10 @@ class EntityGroup final : NonMovable {
 
         using const_iterator = Iterator<ComponentReturnPolicy>;
 
+        static void collect_accesses(core::Vector<ComponentAccess>& accesses) {
+            (accesses.emplace_back(type_index<traits::component_raw_type_t<Ts>>(), traits::is_component_mutable<Ts>), ...);
+        }
+
 
         ~EntityGroup() {
             if(_provider) {
@@ -359,6 +374,19 @@ class EntityGroup final : NonMovable {
 
         EntityGroup(const EntityGroupProvider* base, const ContainerTuple& containers) : _containers(containers), _provider(base) {
             fill_sets(containers, std::make_index_sequence<type_count>{});
+
+#ifdef Y_DEBUG
+            // The scheduler orders tasks using their declared accesses, an undeclared access could run concurrently with a conflicting task
+            if(const core::Vector<ComponentAccess>* declared = detail::declared_accesses) {
+                auto is_declared = [&]<typename T>() {
+                    const ComponentTypeIndex type = type_index<traits::component_raw_type_t<T>>();
+                    return std::any_of(declared->begin(), declared->end(), [&](const ComponentAccess& access) {
+                        return access.type == type && (access.write || !traits::is_component_mutable<T>);
+                    });
+                };
+                y_always_assert((is_declared.template operator()<Ts>() && ...), "EntityGroup accesses components not declared by the running system task");
+            }
+#endif
 
             lock_all();
 

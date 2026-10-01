@@ -80,7 +80,13 @@ class SystemScheduler : NonMovable {
                 return std::tuple{prepare_argument(std::type_identity<std::remove_cvref_t<typename function_traits<Fn>::template arg_type<Is>>>{})...};
             }(std::make_index_sequence<function_traits<Fn>::arg_count>{});
 
-            s.tasks.emplace_back(std::move(name), handle, dep, [func, args]() {
+            core::Vector<ComponentAccess> accesses;
+            [&]<usize... Is>(std::index_sequence<Is...>) {
+                (collect_accesses(std::type_identity<std::remove_cvref_t<typename function_traits<Fn>::template arg_type<Is>>>{}, accesses), ...);
+            }(std::make_index_sequence<function_traits<Fn>::arg_count>{});
+            normalize_accesses(accesses);
+
+            s.tasks.emplace_back(std::move(name), handle, dep, std::move(accesses), [func, args]() {
                 std::apply([&](const auto&... arg) { func(arg()...); }, args);
             });
 
@@ -89,6 +95,17 @@ class SystemScheduler : NonMovable {
 
     private:
         friend class SystemManager;
+
+        template<typename T>
+        static void collect_accesses(std::type_identity<T>, core::Vector<ComponentAccess>&) {
+        }
+
+        template<typename... Ts>
+        static void collect_accesses(std::type_identity<EntityGroup<Ts...>>, core::Vector<ComponentAccess>& accesses) {
+            EntityGroup<Ts...>::collect_accesses(accesses);
+        }
+
+        static void normalize_accesses(core::Vector<ComponentAccess>& accesses);
 
         auto prepare_argument(std::type_identity<EntityWorld>) const {
             return [world = _world]() -> const EntityWorld& { return *world; };
@@ -108,6 +125,7 @@ class SystemScheduler : NonMovable {
             core::String name;
             SystemJobHandle handle;
             SystemJobHandle wait_for;
+            core::Vector<ComponentAccess> accesses;
             std::function<void()> func;
         };
 
@@ -144,6 +162,7 @@ class SystemManager : NonMovable {
                 system->reset();
                 setup_system(system.get());
             }
+            build_task_graph();
         }
 
         template<typename S, typename... Args>
@@ -157,6 +176,7 @@ class SystemManager : NonMovable {
             _systems.emplace_back(std::move(s));
             system->register_world(_world);
             setup_system(system);
+            build_task_graph();
 
             return system;
         }
@@ -186,6 +206,19 @@ class SystemManager : NonMovable {
         void run_stage_seq(SystemSchedule schedule) const;
 
         void setup_system(System *system);
+        void build_task_graph();
+
+        static void run_task(const SystemScheduler::Task& task);
+
+        struct TaskNode {
+            const SystemScheduler* scheduler = nullptr;
+            const SystemScheduler::Task* task = nullptr;
+            SystemSchedule schedule = SystemSchedule::Max;
+
+            core::Vector<u32> conflicts;
+        };
+
+        core::Vector<TaskNode> _task_graph;
 
         core::Vector<std::unique_ptr<SystemScheduler>> _schedulers;
         core::Vector<std::unique_ptr<System>> _systems;

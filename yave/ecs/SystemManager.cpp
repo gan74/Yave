@@ -35,6 +35,27 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
+#ifdef Y_DEBUG
+namespace detail {
+thread_local const core::Vector<ComponentAccess>* declared_accesses = nullptr;
+}
+#endif
+
+
+
+void SystemManager::run_task(const SystemScheduler::Task& task) {
+#ifdef Y_DEBUG
+    const core::Vector<ComponentAccess>* prev = detail::declared_accesses;
+    detail::declared_accesses = task.accesses.is_empty() ? nullptr : &task.accesses;
+    task.func();
+    detail::declared_accesses = prev;
+#else
+    task.func();
+#endif
+}
+
+
+
 SystemScheduler::SystemScheduler(System* sys, SystemManager* manager, EntityWorld *world) : _system(sys), _manager(manager), _world(world), _first_tick(_world->tick_id().next()) {
 }
 
@@ -46,8 +67,19 @@ SystemJobHandle SystemScheduler::create_job_handle() {
     return _manager->create_job_handle();
 }
 
+void SystemScheduler::normalize_accesses(core::Vector<ComponentAccess>& accesses) {
+    std::sort(accesses.begin(), accesses.end(), [](const ComponentAccess& a, const ComponentAccess& b) { return a.type < b.type; });
 
-
+    usize count = 0;
+    for(const ComponentAccess& access : accesses) {
+        if(count && accesses[count - 1].type == access.type) {
+            accesses[count - 1].write |= access.write;
+        } else {
+            accesses[count++] = access;
+        }
+    }
+    accesses.shrink_to(count);
+}
 
 
 
@@ -65,7 +97,7 @@ void SystemManager::run_stage_seq(SystemSchedule schedule) const {
         for(usize i = 0; i != sched.tasks.size(); ++i) {
             const auto& task = sched.tasks[i];
             y_profile_dyn_zone(fmt_c_str("{}: {}", scheduler->_system->name(), task.name));
-            task.func();
+            run_task(task);
         }
     }
 }
@@ -83,64 +115,105 @@ void SystemManager::run_schedule_mt(concurrent::JobSystem& job_system) const {
 
     run_stage_seq(SystemSchedule::TickSequential);
 
-    usize task_count = 0;
-    usize max_tasks = 0;
-    {
-        for(usize i = usize(SystemSchedule::Tick); i != usize(SystemSchedule::Max); ++i) {
-            for(const auto& scheduler : _schedulers) {
-                SystemScheduler::Schedule& sched = scheduler->_schedules[i];
-                task_count += sched.tasks.size();
-                max_tasks = std::max(max_tasks, sched.tasks.size());
-            }
-        }
-    }
+    using JobHandle = concurrent::JobSystem::JobHandle;
 
+    auto handles = core::ScratchPad<JobHandle>(_next_handle);
+    auto jobs = core::ScratchPad<JobHandle>(_task_graph.size());
 
-    auto handles = core::ScratchPad<concurrent::JobSystem::JobHandle>(_next_handle);
-    auto prev = core::Vector<concurrent::JobSystem::JobHandle>::with_capacity(max_tasks + 1);
-    auto next = core::Vector<concurrent::JobSystem::JobHandle>::with_capacity(max_tasks);
+    core::Vector<JobHandle> prev;
+    core::Vector<JobHandle> current;
+    core::Vector<JobHandle> deps;
+
+    SystemSchedule current_schedule = SystemSchedule::Max;
 
     std::atomic<u32> completed = 0;
-    u32 submitted = 0;
+
+    for(usize i = 0; i != _task_graph.size(); ++i) {
+        const TaskNode& node = _task_graph[i];
+        const SystemScheduler::Task& task = *node.task;
+
+        if(node.schedule != current_schedule) {
+            if(!current.is_empty()) {
+                prev.swap(current);
+                current.make_empty();
+            }
+            current_schedule = node.schedule;
+        }
+
+        deps.make_empty();
+        deps.push_back(prev.begin(), prev.end());
+
+        if(task.wait_for.is_valid()) {
+            if(const JobHandle& h = handles[task.wait_for._handle]; !h.is_empty()) {
+                deps << h;
+            }
+        }
+
+        for(const u32 conflict : node.conflicts) {
+            deps << jobs[conflict];
+        }
+
+        JobHandle job = job_system.schedule([&node, &completed]() {
+            y_profile_dyn_zone(fmt_c_str("{}: {}", node.scheduler->_system->name(), node.task->name));
+            run_task(*node.task);
+            ++completed;
+        }, deps);
+
+        y_debug_assert(handles[task.handle._handle].is_empty());
+        handles[task.handle._handle] = job;
+        jobs[i] = job;
+
+        current.emplace_back(std::move(job));
+    }
+
+    job_system.wait(current);
+
+    y_debug_assert(completed == _task_graph.size());
+}
+
+void SystemManager::build_task_graph() {
+    y_profile();
+
+    _task_graph.make_empty();
+
+    struct LastAccess {
+        u32 writer = u32(-1);
+        core::Vector<u32> readers;
+    };
+
+    core::Vector<LastAccess> last_accesses;
 
     for(usize i = usize(SystemSchedule::Tick); i != usize(SystemSchedule::Max); ++i) {
-        for(const auto& scheduler : _schedulers) {
-            SystemScheduler::Schedule& sched = scheduler->_schedules[i];
-            for(const SystemScheduler::Task& task : sched.tasks) {
-                ++submitted;
+        last_accesses.make_empty();
 
-                if(task.wait_for.is_valid()) {
-                    if(const auto h = handles[task.wait_for._handle]; !h.is_empty()) {
-                        prev.emplace_back(handles[task.wait_for._handle]);
+        for(const auto& scheduler : _schedulers) {
+            for(const SystemScheduler::Task& task : scheduler->_schedules[i].tasks) {
+                const u32 index = u32(_task_graph.size());
+
+                core::Vector<u32> conflicts;
+                for(const ComponentAccess& access : task.accesses) {
+                    last_accesses.set_min_size(usize(access.type) + 1);
+                    LastAccess& last = last_accesses[usize(access.type)];
+                    if(last.writer != u32(-1)) {
+                        conflicts << last.writer;
+                    }
+
+                    if(access.write) {
+                        conflicts.push_back(last.readers.begin(), last.readers.end());
+                        last.readers.make_empty();
+                        last.writer = index;
+                    } else {
+                        last.readers << index;
                     }
                 }
 
-                auto job = job_system.schedule([&]() {
-                    y_profile_dyn_zone(fmt_c_str("{}: {}", scheduler->_system->name(), task.name));
-                    task.func();
-                    ++completed;
-                }, prev);
+                std::sort(conflicts.begin(), conflicts.end());
+                conflicts.shrink_to(std::unique(conflicts.begin(), conflicts.end()) - conflicts.begin());
 
-
-                if(task.wait_for.is_valid()) {
-                    prev.pop();
-                }
-
-                y_debug_assert(handles[task.handle._handle].is_empty());
-                handles[task.handle._handle] = job;
-
-                next.emplace_back(std::move(job));
+                _task_graph.emplace_back(scheduler.get(), &task, SystemSchedule(i), std::move(conflicts));
             }
         }
-        if(!next.is_empty()) {
-            prev.swap(next);
-            next.make_empty();
-        }
     }
-
-    job_system.wait(prev);
-
-    y_debug_assert(submitted == completed);
 }
 
 
