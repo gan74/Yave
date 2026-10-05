@@ -492,9 +492,12 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
             return it >= _data && it < _data_end;
         }
 
+
         inline void move_range(data_type* dst, data_type* src, usize n) {
-            if constexpr(std::is_trivial_v<data_type>) {
-                std::copy_n(src, n, dst);
+            if constexpr(std::is_trivially_copyable_v<data_type>) {
+                if(n) {
+                    std::memcpy(dst, src, n * sizeof(data_type));
+                }
             } else {
                 for(usize i = 0; i != n; ++i) {
                     ::new(&dst[i]) data_type{std::move(src[i])};
@@ -503,7 +506,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
         }
 
         inline void clear(data_type* beg, data_type* en) {
-            if(!std::is_trivial_v<data_type>) {
+            if constexpr(!std::is_trivially_destructible_v<data_type>) {
                 for(data_type* e = en; e != beg;) {
                     (--e)->~data_type();
                 }
