@@ -622,11 +622,12 @@ class FlatHashMap : Hasher, Equal {
             const usize len = bucket_count();
             for(usize i = 0; i != len && _size; ++i) {
                 if(is_state_full(_states[i])) {
-                    _states[i] = detail::empty_state;
                     _entries[i].clear();
                     --_size;
                 }
             }
+
+            std::fill_n(_states.get(), len, detail::empty_state);
             _max_probe_len = 0;
 
             y_debug_assert(_size == 0);
@@ -768,10 +769,25 @@ class FlatHashMap : Hasher, Equal {
 
         template<typename K, typename... Args>
         inline std::pair<iterator, bool> emplace(const K& key, Args&&... args) {
-            return insert(pair_type{key, mapped_type{y_fwd(args)...}});
+            if(should_expand()) [[unlikely]] {
+                expand();
+            }
+
+            y_debug_assert(!should_expand());
+
+            const usize h = hash(key);
+            const auto [index, exists] = find_bucket_for_insert(key, h);
+
+            if(!exists) {
+                _entries[index].set(pair_type{key, mapped_type{y_fwd(args)...}});
+                _states[index] = make_state(h);
+                ++_size;
+            }
+
+            return {iterator(this, index), !exists};
         }
 
-        inline std::pair<iterator, bool> insert(value_type p) {
+        inline std::pair<iterator, bool> insert(pair_type p) {
             if(should_expand()) [[unlikely]] {
                 expand();
             }

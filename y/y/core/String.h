@@ -70,17 +70,17 @@ class String {
         usize capacity;
         LongLenType length;
 
-        LongData();
-        LongData(LongData&& other);
-        LongData(const char* str, usize cap, usize len);
-        LongData(const char* str, usize len);
+        inline LongData();
+        inline LongData(LongData&& other);
+        inline LongData(const char* str, usize cap, usize len);
+        inline LongData(const char* str, usize len);
 
         ~LongData() = default;
 
-        LongData& operator=(LongData&& other);
+        inline LongData& operator=(LongData&& other);
         LongData& operator=(const LongData&) = delete;
 
-        void swap(LongData& other);
+        inline void swap(LongData& other);
     };
 
     struct ShortData
@@ -88,10 +88,10 @@ class String {
         char data[sizeof(LongData) - 1];
         ShortLenType length;
 
-        ShortData();
+        inline ShortData();
         ShortData(const ShortData&) = default;
 
-        ShortData(const char* str, usize len);
+        inline ShortData(const char* str, usize len);
 
         const ShortData& operator=(const ShortData &) = delete;
         ShortData& operator=(ShortData&& other) = default;
@@ -109,15 +109,15 @@ class String {
         using iterator = char*;
         using const_iterator = const char*;
 
-        String();
-        String(const String& str);
-        String(String&& str);
-        String(const std::string& str);
-        String(std::string_view str);
+        inline String();
+        inline String(const String& str);
+        inline String(String&& str);
+        inline String(const std::string& str);
+        inline String(std::string_view str);
 
-        String(const char* str);
-        String(const char* str, usize len);
-        String(const char* beg, const char* end);
+        inline String(const char* str);
+        inline String(const char* str, usize len);
+        inline String(const char* beg, const char* end);
 
 
         template<typename It>
@@ -129,70 +129,70 @@ class String {
         String(nullptr_t) = delete;
 
 
-        ~String();
+        inline ~String();
 
 
-        void set_min_capacity(usize cap);
+        inline void set_min_capacity(usize cap);
 
-        usize size() const;
-        usize capacity() const;
-        bool is_empty() const;
-        bool is_long() const;
+        inline usize size() const;
+        inline usize capacity() const;
+        inline bool is_empty() const;
+        inline bool is_long() const;
 
-        void clear();
-        void make_empty();
-        void shrink(usize new_size);
-        void grow(usize new_size, char c);
-        void resize(usize new_size, char c = ' ');
+        inline void clear();
+        inline void make_empty();
+        inline void shrink(usize new_size);
+        inline void grow(usize new_size, char c);
+        inline void resize(usize new_size, char c = ' ');
 
-        static String replaced(std::string_view str, std::string_view from, std::string_view to);
-        String replaced(std::string_view from, std::string_view to) const;
+        static inline String replaced(std::string_view str, std::string_view from, std::string_view to);
+        inline String replaced(std::string_view from, std::string_view to) const;
 
-        char* data();
-        const char* data() const;
+        inline char* data();
+        inline const char* data() const;
 
-        iterator find(std::string_view str);
-        const_iterator find(std::string_view str) const;
+        inline iterator find(std::string_view str);
+        inline const_iterator find(std::string_view str) const;
 
-        std::string_view sub_str(usize beg) const;
-        std::string_view sub_str(usize beg, usize len) const;
+        inline std::string_view sub_str(usize beg) const;
+        inline std::string_view sub_str(usize beg, usize len) const;
 
-        bool starts_with(std::string_view str) const;
-        bool ends_with(std::string_view str) const;
+        inline bool starts_with(std::string_view str) const;
+        inline bool ends_with(std::string_view str) const;
 
-        explicit operator const char*() const;
-        explicit operator char*();
+        inline explicit operator const char*() const;
+        inline explicit operator char*();
 
         // to prevent Strings converting to bool via operator char*
         explicit operator bool() = delete;
 
-        void swap(String& str);
+        inline void swap(String& str);
 
 
-        std::string_view view() const;
-        operator std::string_view() const;
+        inline std::string_view view() const;
+        inline operator std::string_view() const;
 
-        void push_back(char c);
+        inline void push_back(char c);
 
-        String& operator+=(const String& str);
-        String& operator+=(const char* str);
-        String& operator+=(const std::string& str);
-        String& operator+=(std::string_view str);
+        inline String& operator+=(const String& str);
+        inline String& operator+=(const char* str);
+        inline String& operator+=(const std::string& str);
+        inline String& operator+=(std::string_view str);
         // char deliberately excluded (causes problem when cat-ing numbers);
 
-        char& operator[](usize i);
-        char operator[](usize i) const;
+        inline char& operator[](usize i);
+        inline char operator[](usize i) const;
 
-        bool operator==(const char* str) const;
-        bool operator!=(const char* str) const;
+        inline bool operator==(const char* str) const;
+        inline bool operator!=(const char* str) const;
 
-        bool operator==(const String& str) const;
-        bool operator!=(const String& str) const;
-        bool operator<(const String& str) const;
+        inline bool operator==(const String& str) const;
+        inline bool operator!=(const String& str) const;
+        inline bool operator<(const String& str) const;
 
-        bool operator==(std::string_view str) const;
-        bool operator!=(std::string_view str) const;
-        bool operator<(std::string_view str) const;
+        inline bool operator==(std::string_view str) const;
+        inline bool operator!=(std::string_view str) const;
+        inline bool operator<(std::string_view str) const;
 
         // implemented in format.h
         template<typename T>
@@ -203,8 +203,8 @@ class String {
             return operator=(String(y_fwd(t)));
         }
 
-        String& operator=(const String& str);
-        String& operator=(String&& str);
+        inline String& operator=(const String& str);
+        inline String& operator=(String&& str);
 
         iterator begin() {
             return data();
@@ -245,27 +245,27 @@ class String {
             return this;
         }
 
-        String& append(const char* other_data, usize other_size);
+        inline String& append(const char* other_data, usize other_size);
 
-        static char* alloc_long(usize capacity);
-        static usize compute_capacity(usize len);
-        static void free_long(LongData& d);
-        static void free_short(ShortData& d);
-        void set(const char* str, usize len);
+        static inline char* alloc_long(usize capacity);
+        static inline usize compute_capacity(usize len);
+        static inline void free_long(LongData& d);
+        static inline void free_short(ShortData& d);
+        inline void set(const char* str, usize len);
 
-        void free_data();
+        inline void free_data();
 
 };
 
 
-std::string_view trim_left(std::string_view str);
-std::string_view trim_right(std::string_view str);
-std::string_view trim(std::string_view str);
+inline std::string_view trim_left(std::string_view str);
+inline std::string_view trim_right(std::string_view str);
+inline std::string_view trim(std::string_view str);
 
 
 } // core
 
-core::String operator+(std::string_view l, const core::String& r);
+inline core::String operator+(std::string_view l, const core::String& r);
 
 
 template<usize N>
@@ -303,6 +303,9 @@ struct std::hash<y::core::String> : private std::hash<std::string_view> {
         return std::hash<std::string_view>::operator()(str);
     }
 };
+
+
+#include "String.inl"
 
 #endif // Y_CORE_STRING_H
 
