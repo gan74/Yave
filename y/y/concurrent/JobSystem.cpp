@@ -140,10 +140,17 @@ void JobSystem::wait(core::Span<JobHandle> jobs) {
     for(const JobHandle& job : jobs) {
         y_debug_assert(job._parent == this);
 
-        while(!job.is_finished()) {
+        for(;;) {
+            const u32 finished = job._data->finished;
+            if(finished == job._data->count) {
+                break;
+            }
+
             auto lock = std::unique_lock(_lock);
-            Y_TODO(we deadlock if we wait here, so we have to spin)
-            process_one(lock);
+            if(!process_one(lock, false)) {
+                lock.unlock();
+                job._data->finished.wait(finished);
+            }
         }
     }
 
@@ -155,7 +162,7 @@ void JobSystem::worker() {
         auto lock = std::unique_lock(_lock);
         _condition.wait(lock, [this] { return !_jobs.is_empty() || (!_run && !_waiting); });
 
-        if(!process_one(lock)) {
+        if(!process_one(lock, true)) {
             y_debug_assert(lock.owns_lock());
             if(!_run && !_waiting) {
                 break;
@@ -166,47 +173,59 @@ void JobSystem::worker() {
     }
 }
 
-bool JobSystem::process_one(std::unique_lock<std::mutex>& lock) {
+bool JobSystem::process_one(std::unique_lock<std::mutex>& lock, bool run_next) {
     if(_jobs.is_empty()) {
         return false;
     }
 
-    const std::shared_ptr<JobData> job = _jobs.first();
-    const u32 index = job->started++;
+    std::shared_ptr<JobData> job = _jobs.first();
+    u32 index = job->started++;
     if(index + 1 == job->count) {
         _jobs.pop_front();
     }
 
     lock.unlock();
 
-    y_debug_assert(job);
-    y_debug_assert(!job->dependencies);
+    while(job) {
+        y_debug_assert(!job->dependencies);
 
-    job->func(index);
+        job->func(index);
 
-    {
-        u32 scheduled = 0;
-        lock.lock();
+        std::shared_ptr<JobData> next;
 
-        if(++job->finished == job->count) {
-            for(usize i = 0; i != job->outgoing_deps.size(); ++i) {
-                auto& out = job->outgoing_deps[i];
-                if(out->dependencies.fetch_sub(1) == 1) {
-                    scheduled += out->count;
-                    _jobs.emplace_back(std::move(out));
-                    --_waiting;
+        {
+            u32 scheduled = 0;
+            lock.lock();
+
+            if(++job->finished == job->count) {
+                job->finished.notify_all();
+                for(usize i = 0; i != job->outgoing_deps.size(); ++i) {
+                    auto& out = job->outgoing_deps[i];
+                    if(out->dependencies.fetch_sub(1) == 1) {
+                        --_waiting;
+                        if(run_next && !next && out->count == 1) {
+                            next = std::move(out);
+                            next->started = 1;
+                        } else {
+                            scheduled += out->count;
+                            _jobs.emplace_back(std::move(out));
+                        }
+                    }
                 }
             }
+
+            if(scheduled) {
+                scheduled == 1 ? _condition.notify_one() : _condition.notify_all();
+            }
+
+            lock.unlock();
         }
 
-        if(scheduled) {
-            scheduled == 1 ? _condition.notify_one() : _condition.notify_all();
-        }
+        --_total_jobs;
 
-        lock.unlock();
+        job = std::move(next);
+        index = 0;
     }
-
-    --_total_jobs;
 
     return true;
 }

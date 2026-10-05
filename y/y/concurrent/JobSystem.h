@@ -115,7 +115,7 @@ class JobSystem : NonMovable {
         JobHandle schedule_n(JobFunc&& func, u32 count, core::Span<JobHandle> deps, std::source_location loc);
 
         void worker();
-        bool process_one(std::unique_lock<std::mutex>& lock);
+        bool process_one(std::unique_lock<std::mutex>& lock, bool run_next);
 
         mutable std::mutex _lock;
         std::condition_variable _condition;
