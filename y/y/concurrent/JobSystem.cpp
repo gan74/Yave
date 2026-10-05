@@ -203,24 +203,23 @@ bool JobSystem::process_one(std::unique_lock<std::mutex>& lock, bool run_next) {
 
         std::shared_ptr<JobData> next;
 
-        {
+        if(job->finished.fetch_add(1) + 1 == job->count) {
+            job->finished.notify_all();
+
             u32 scheduled = 0;
             lock.lock();
 
-            if(++job->finished == job->count) {
-                job->finished.notify_all();
-                for(usize i = 0; i != job->outgoing_deps.size(); ++i) {
-                    auto& out = job->outgoing_deps[i];
-                    if(out->dependencies.fetch_sub(1) == 1) {
-                        --_waiting;
-                        if(run_next && !next && out->count == 1) {
-                            next = std::move(out);
-                            next->started = 1;
-                        } else {
-                            scheduled += out->count;
-                            _jobs.emplace_back(std::move(out));
-                            ++_queued;
-                        }
+            for(usize i = 0; i != job->outgoing_deps.size(); ++i) {
+                auto& out = job->outgoing_deps[i];
+                if(out->dependencies.fetch_sub(1) == 1) {
+                    --_waiting;
+                    if(run_next && !next && out->count == 1) {
+                        next = std::move(out);
+                        next->started = 1;
+                    } else {
+                        scheduled += out->count;
+                        _jobs.emplace_back(std::move(out));
+                        ++_queued;
                     }
                 }
             }
