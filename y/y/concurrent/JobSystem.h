@@ -87,7 +87,7 @@ class JobSystem : NonMovable {
 
         template<std::invocable F>
         JobHandle schedule(F&& func, core::Span<JobHandle> deps = {}, std::source_location loc = std::source_location::current()) {
-            return schedule_n([func](u32) { func(); }, 1, deps, loc);
+            return schedule_n([f = y_fwd(func)](u32) { f(); }, 1, deps, loc);
         }
 
         template<typename It, std::invocable<It, It> F>
@@ -96,10 +96,10 @@ class JobSystem : NonMovable {
             const u32 target_task_count = u32(_threads.size() * 4);
             const u32 granularity = size ? u32(size / target_task_count) + 1 : 0;
             const u32 task_count = size ? u32((size / granularity) + (size % granularity ? 1 : 0)) : 1;
-            return schedule_n([=](u32 index) {
+            return schedule_n([=, f = y_fwd(func)](u32 index) {
                 const It a = It(begin + usize(index * granularity));
                 const It b = It(begin + std::min(size, usize((index + 1) * granularity)));
-                func(a, b);
+                f(a, b);
             }, task_count, deps, loc); // Need min 1 task to handle deps
         }
 
