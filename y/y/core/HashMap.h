@@ -375,7 +375,6 @@ class FlatHashMap : Hasher, Equal {
                     if(matches != 0) {
                         do {
                             const Entry* group_start = _entries.get() + group_start_index;
-                            _mm_prefetch(reinterpret_cast<const char*>(group_start), _MM_HINT_T0);
                             const usize index_in_group = countr_zero(matches);
                             if(equal(group_start[index_in_group].key(), key)) {
                                 return {group_start_index + index_in_group, true};
@@ -459,7 +458,6 @@ class FlatHashMap : Hasher, Equal {
                 if(matches != 0) [[likely]] {
                     const usize group_start_index = group_index * simd_width;
                     const Entry* group_start = _entries.get() + group_start_index;
-                    _mm_prefetch(reinterpret_cast<const char*>(group_start), _MM_HINT_T0);
                     do {
                         const usize index_in_group = countr_zero(matches);
                         if(equal(group_start[index_in_group].key(), key)) [[likely]] {
