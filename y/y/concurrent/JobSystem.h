@@ -116,6 +116,7 @@ class JobSystem : NonMovable {
 
         void worker();
         bool process_one(std::unique_lock<std::mutex>& lock, bool run_next);
+        void wake(u32 count);
 
         mutable std::mutex _lock;
         std::condition_variable _condition;
@@ -125,6 +126,8 @@ class JobSystem : NonMovable {
         core::Vector<std::thread> _threads;
         std::atomic<u32> _waiting = 0;
         std::atomic<u32> _total_jobs = 0;
+        std::atomic<u32> _queued = 0;
+        u32 _sleeping = 0;
 
         bool _run = true;
 };

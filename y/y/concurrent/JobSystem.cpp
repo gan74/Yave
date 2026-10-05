@@ -126,12 +126,9 @@ JobSystem::JobHandle JobSystem::schedule_n(JobFunc&& func, u32 count, core::Span
     y_debug_assert(!handle._data->dependencies);
     _total_jobs += count;
     _jobs.emplace_back(handle._data);
+    ++_queued;
 
-    if(count == 1) {
-        _condition.notify_one();
-    } else {
-        _condition.notify_all();
-    }
+    wake(count);
 
     return handle;
 }
@@ -157,10 +154,22 @@ void JobSystem::wait(core::Span<JobHandle> jobs) {
     y_debug_assert(std::all_of(jobs.begin(), jobs.end(), [](const JobHandle& j) { return j.is_finished(); }));
 }
 
+void JobSystem::wake(u32 count) {
+    for(u32 i = 0; i < count && i < _sleeping; ++i) {
+        _condition.notify_one();
+    }
+}
+
 void JobSystem::worker() {
     for(;;) {
+        /*const core::StopWatch spin_timer;
+        while(_total_jobs && !_queued && spin_timer.elapsed() < core::Duration::microseconds(50)) {
+        }*/
+
         auto lock = std::unique_lock(_lock);
+        ++_sleeping;
         _condition.wait(lock, [this] { return !_jobs.is_empty() || (!_run && !_waiting); });
+        --_sleeping;
 
         if(!process_one(lock, true)) {
             y_debug_assert(lock.owns_lock());
@@ -182,6 +191,7 @@ bool JobSystem::process_one(std::unique_lock<std::mutex>& lock, bool run_next) {
     u32 index = job->started++;
     if(index + 1 == job->count) {
         _jobs.pop_front();
+        --_queued;
     }
 
     lock.unlock();
@@ -209,14 +219,13 @@ bool JobSystem::process_one(std::unique_lock<std::mutex>& lock, bool run_next) {
                         } else {
                             scheduled += out->count;
                             _jobs.emplace_back(std::move(out));
+                            ++_queued;
                         }
                     }
                 }
             }
 
-            if(scheduled) {
-                scheduled == 1 ? _condition.notify_one() : _condition.notify_all();
-            }
+            wake(scheduled);
 
             lock.unlock();
         }
