@@ -104,7 +104,7 @@ WriteResult Buffer::write(const void* data, usize bytes) {
         y_debug_assert(overwrite <= bytes);
         std::copy_n(data_bytes, overwrite, &_buffer[_cursor]);
         _buffer.push_back(data_bytes + overwrite, data_bytes + bytes);
-        _cursor += bytes - overwrite;
+        _cursor += bytes;
         y_debug_assert(_cursor <= _buffer.size());
     }
     return core::Ok();

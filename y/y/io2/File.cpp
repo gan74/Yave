@@ -109,18 +109,24 @@ core::Result<usize> File::copy(Reader& src, const core::String& dst) {
     File dst_file = std::move(f.unwrap());
 
     usize total = 0;
-    u8 buffer[1024];
-    while(!src.at_end()) {
-        if(const auto r = src.read_up_to(buffer, sizeof(buffer))) {
-            if(dst_file.write(buffer, r.unwrap())) {
-                total += r.unwrap();
-                continue;
-            }
+    std::array<u8, 4 * 1024> buffer;
+    for(;;) {
+        const auto r = src.read_up_to(buffer.data(), buffer.size());
+        if(!r) {
+            return core::Err();
         }
-        return core::Err();
-    }
 
-    return core::Ok(total);
+        const usize len = r.unwrap();
+        if(!len) {
+            return core::Ok(total);
+        }
+
+        if(!dst_file.write(buffer.data(), len)) {
+            return core::Err();
+        }
+
+        total += len;
+    }
 }
 
 core::Result<usize> File::copy_atomic(Reader& src, const core::String& dst) {
