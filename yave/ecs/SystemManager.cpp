@@ -120,7 +120,7 @@ void SystemManager::run_schedule_mt(concurrent::JobSystem& job_system) const {
     auto handles = core::ScratchPad<JobHandle>(_next_handle);
     auto jobs = core::ScratchPad<JobHandle>(_task_graph.size());
 
-    core::Vector<JobHandle> prev;
+    JobHandle stage_barrier;
     core::Vector<JobHandle> current;
     core::Vector<JobHandle> deps;
 
@@ -134,14 +134,16 @@ void SystemManager::run_schedule_mt(concurrent::JobSystem& job_system) const {
 
         if(node.schedule != current_schedule) {
             if(!current.is_empty()) {
-                prev.swap(current);
+                stage_barrier = job_system.schedule([] {}, current);
                 current.make_empty();
             }
             current_schedule = node.schedule;
         }
 
         deps.make_empty();
-        deps.push_back(prev.begin(), prev.end());
+        if(!stage_barrier.is_empty()) {
+            deps << stage_barrier;
+        }
 
         if(task.wait_for.is_valid()) {
             if(const JobHandle& h = handles[task.wait_for._handle]; !h.is_empty()) {
