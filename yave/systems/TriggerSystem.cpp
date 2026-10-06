@@ -26,14 +26,49 @@ SOFTWARE.
 
 namespace yave {
 
+
+void TriggerSystem::ComponentSubscriptionsBase::unsubscribe_all(ecs::TriggerManager& triggers) {
+    for(const ecs::EntityId id : _subscribed.ids()) {
+        for(const ecs::TriggerTypeIndex type : _subscribed[id]) {
+            triggers.unsubscribe(type, id, this);
+        }
+    }
+    _subscribed.make_empty();
+    _dirty.make_empty();
+}
+
+void TriggerSystem::ComponentSubscriptionsBase::unsubscribe(ecs::TriggerManager& triggers, ecs::EntityId id) {
+    if(const auto* types = _subscribed.try_get(id)) {
+        for(const ecs::TriggerTypeIndex type : *types) {
+            triggers.unsubscribe(type, id, this);
+        }
+        _subscribed.erase(id);
+    }
+}
+
+
+
 TriggerSystem::TriggerSystem() : ecs::System("TriggerSystem") {
 }
 
 void TriggerSystem::setup(ecs::SystemScheduler& sched) {
-    // TickSequential tasks run alone, so handlers have exclusive access to the world
+    for(const auto& components : _components) {
+        components->setup(sched);
+    }
+
+    // TickSequential tasks run alone, so subscriptions can change and handlers have exclusive access to the world
     sched.schedule(ecs::SystemSchedule::TickSequential, "Dispatch triggers", [this]() {
+        for(const auto& components : _components) {
+            components->apply(world());
+        }
         world().triggers().dispatch(world());
     });
+}
+
+void TriggerSystem::reset() {
+    for(const auto& components : _components) {
+        components->unsubscribe_all(world().triggers());
+    }
 }
 
 }

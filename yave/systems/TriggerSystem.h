@@ -24,14 +24,87 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 
+#include <y/utils/format.h>
+
 namespace yave {
 
-// Executes the triggers emitted during the previous tick, before any other task of the current tick runs
+template<typename T>
+concept TriggerListener = requires(const T& comp, ecs::TriggerSubscriber& subscriber, ecs::EntityWorld& world, ecs::EntityId id, ecs::TriggerTypeIndex type, const void* payload) {
+    comp.subscribe_triggers(subscriber);
+    comp.on_trigger(world, id, type, payload);
+};
+
+
 class TriggerSystem : public ecs::System {
+    class ComponentSubscriptionsBase : public ecs::TriggerHandler {
+        public:
+            virtual void setup(ecs::SystemScheduler& sched) = 0;
+            virtual void apply(ecs::EntityWorld& world) = 0;
+
+            void unsubscribe_all(ecs::TriggerManager& triggers);
+
+        protected:
+            void unsubscribe(ecs::TriggerManager& triggers, ecs::EntityId id);
+
+            ecs::SparseIdSet _dirty;
+            ecs::SparseComponentSet<ecs::TriggerSubscriber::TypeList> _subscribed;
+    };
+
+    template<typename T>
+    class ComponentSubscriptions final : public ComponentSubscriptionsBase {
+        public:
+            void on_trigger(ecs::EntityWorld& world, ecs::EntityId target, ecs::TriggerTypeIndex type, const void* payload) override {
+                if(const T* comp = world.component<T>(target)) {
+                    comp->on_trigger(world, target, type, payload);
+                }
+            }
+
+            void setup(ecs::SystemScheduler& sched) override {
+                sched.schedule(ecs::SystemSchedule::PostUpdate, fmt("Collect {} trigger subscriptions", ct_type_name<T>()), [this](
+                        ecs::EntityGroup<ecs::Changed<T>>&& changed,
+                        ecs::EntityGroup<ecs::Deleted<T>>&& deleted) {
+
+                    for(const ecs::EntityId id : changed.ids()) {
+                        _dirty.insert(id);
+                    }
+                    for(const ecs::EntityId id : deleted.ids()) {
+                        _dirty.insert(id);
+                    }
+                });
+            }
+
+            void apply(ecs::EntityWorld& world) override {
+                ecs::TriggerManager& triggers = world.triggers();
+                for(const ecs::EntityId id : _dirty) {
+                    unsubscribe(triggers, id);
+
+                    if(const T* comp = world.component<T>(id)) {
+                        ecs::TriggerSubscriber::TypeList& types = _subscribed.insert(id);
+                        ecs::TriggerSubscriber subscriber(triggers, id, this, types);
+                        comp->subscribe_triggers(subscriber);
+                        if(types.is_empty()) {
+                            _subscribed.erase(id);
+                        }
+                    }
+                }
+                _dirty.make_empty();
+            }
+    };
+
     public:
         TriggerSystem();
 
         void setup(ecs::SystemScheduler& sched) override;
+        void reset() override;
+
+        template<typename T>
+        void register_component_type() {
+            static_assert(TriggerListener<T>, "Components registered with TriggerSystem must implement subscribe_triggers and on_trigger");
+            _components << std::make_unique<ComponentSubscriptions<T>>();
+        }
+
+    private:
+        core::Vector<std::unique_ptr<ComponentSubscriptionsBase>> _components;
 };
 
 }

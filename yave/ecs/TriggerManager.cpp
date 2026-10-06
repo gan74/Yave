@@ -23,31 +23,22 @@ SOFTWARE.
 #include "TriggerManager.h"
 #include "EntityWorld.h"
 
-#include <atomic>
-#include <algorithm>
-
 namespace yave {
 namespace ecs {
 
-static std::atomic<std::underlying_type_t<TriggerTypeIndex>>& global_trigger_index() {
-    static std::atomic<std::underlying_type_t<TriggerTypeIndex>> index = 0;
-    return index;
-}
-
-namespace detail {
-
-TriggerTypeIndex next_trigger_index() {
-    return TriggerTypeIndex(global_trigger_index()++);
-}
-
-}
-
-usize registered_trigger_type_count() {
-    return usize(global_trigger_index().load());
-}
-
-
 TriggerManager::TriggerManager() : _queues(registered_trigger_type_count()) {
+}
+
+bool TriggerManager::is_listened(TriggerTypeIndex type, EntityId target) const {
+    const TriggerQueueBase* queue = _queues[usize(type)].get();
+    return queue && queue->is_listened(target);
+}
+
+
+void TriggerManager::unsubscribe(TriggerTypeIndex type, EntityId target, TriggerHandler* handler) {
+    if(const auto& queue = find_queue(type)) {
+        queue->unsubscribe(target, handler);
+    }
 }
 
 void TriggerManager::dispatch(EntityWorld& world) {
@@ -66,54 +57,8 @@ void TriggerManager::dispatch(EntityWorld& world) {
     }
 }
 
-
-
-bool TriggerQueueBase::has_handlers() const {
-    return !_global_handlers.is_empty() || !_handlers.is_empty();
-}
-
-void TriggerQueueBase::subscribe(EntityId target, TriggerHandler* handler) {
-    y_debug_assert(handler);
-    if(target.is_valid()) {
-        _handlers.get_or_insert(target) << handler;
-    } else {
-        _global_handlers << handler;
-    }
-}
-
-void TriggerQueueBase::unsubscribe(EntityId target, TriggerHandler* handler) {
-    const auto remove = [=](auto& handlers) {
-        if(const auto it = std::find(handlers.begin(), handlers.end(), handler); it != handlers.end()) {
-            handlers.erase_unordered(it);
-        }
-    };
-
-    if(target.is_valid()) {
-        if(auto* handlers = _handlers.try_get(target)) {
-            remove(*handlers);
-            if(handlers->is_empty()) {
-                _handlers.erase(target);
-            }
-        }
-    } else {
-        remove(_global_handlers);
-    }
-}
-
-void TriggerQueueBase::dispatch_one(EntityWorld& world, EntityId target, TriggerTypeIndex type, const void* payload) const {
-    if(target.is_valid() && !world.exists(target)) {
-        return;
-    }
-
-    for(TriggerHandler* handler : _global_handlers) {
-        handler->on_trigger(world, target, type, payload);
-    }
-
-    if(const auto* handlers = _handlers.try_get(target)) {
-        for(TriggerHandler* handler : *handlers) {
-            handler->on_trigger(world, target, type, payload);
-        }
-    }
+TriggerQueueBase* TriggerManager::find_queue(TriggerTypeIndex type) {
+    return _queues[usize(type)].get();
 }
 
 }

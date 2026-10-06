@@ -24,6 +24,7 @@ SOFTWARE.
 // Built as the "editor_tests" target, not part of the editor itself.
 
 #include <yave/ecs/EntityWorld.h>
+#include <yave/systems/TriggerSystem.h>
 
 #include <y/concurrent/JobSystem.h>
 #include <y/serde3/archives.h>
@@ -130,6 +131,42 @@ class RegisteringSystem : public System {
         }
 
         core::Vector<ComponentTypeIndex> registered;
+};
+
+
+struct TestTrigger {
+    u32 value = 0;
+};
+
+struct OtherTestTrigger {
+    u32 value = 0;
+};
+
+struct TriggerListening : RegisterComponent<TriggerListening, TriggerSystem> {
+    bool listen_test = true;
+    bool listen_other = false;
+
+    mutable core::Vector<u32> received;
+
+    void subscribe_triggers(TriggerSubscriber& subscriber) const {
+        if(listen_test) {
+            subscriber.subscribe<TestTrigger>();
+            subscriber.subscribe<TestTrigger>();
+        }
+        if(listen_other) {
+            subscriber.subscribe<OtherTestTrigger>();
+        }
+    }
+
+    void on_trigger(EntityWorld&, EntityId, TriggerTypeIndex type, const void* payload) const {
+        if(type == trigger_index<TestTrigger>()) {
+            received << static_cast<const TestTrigger*>(payload)->value;
+        } else {
+            received << static_cast<const OtherTestTrigger*>(payload)->value + 100;
+        }
+    }
+
+    y_reflect(TriggerListening, listen_test, listen_other)
 };
 
 
@@ -2223,6 +2260,73 @@ y_test_func("EntityWorld registered components") {
     TestSystem* test = world.add_system<TestSystem>();
     y_test_assert(test);
     y_test_assert(system->registered.size() == 1);
+}
+
+y_test_func("EntityWorld component trigger subscriptions") {
+    concurrent::JobSystem job_system(2);
+    EntityWorld world;
+    world.add_system<TriggerSystem>();
+
+    const auto tick = [&] {
+        world.tick(job_system);
+        world.process_deferred_changes();
+    };
+
+    const TriggerManager& triggers = world.triggers();
+
+    const EntityId a = world.create_entity();
+    const EntityId b = world.create_entity();
+    const EntityId c = world.create_entity();
+    world.add_or_replace_component<TriggerListening>(a);
+    world.add_or_replace_component<TriggerListening>(c);
+
+    // Collected during the first tick, subscribed at the start of the next one
+    tick();
+    y_test_assert(!triggers.is_listened<TestTrigger>(a));
+    tick();
+    y_test_assert(triggers.is_listened<TestTrigger>(a));
+    y_test_assert(triggers.is_listened<TestTrigger>(c));
+    y_test_assert(!triggers.is_listened<TestTrigger>(b));
+    y_test_assert(!triggers.is_listened<OtherTestTrigger>(a));
+
+    // Subscribing twice to the same type only calls the handler once
+    world.triggers().emit(a, TestTrigger{1});
+    world.triggers().emit(b, TestTrigger{2});
+    world.tick(job_system);
+    y_test_assert((world.component<TriggerListening>(a)->received == core::Vector<u32>{1}));
+    y_test_assert(world.component<TriggerListening>(c)->received.is_empty());
+
+    // Receiving a trigger does not mark the component as changed
+    y_test_assert(container_of<TriggerListening>(world)->mutated_ids().is_empty());
+    world.process_deferred_changes();
+
+    // Changing the component changes the subscriptions
+    world.component_mut<TriggerListening>(a)->listen_test = false;
+    world.component_mut<TriggerListening>(a)->listen_other = true;
+    tick();
+    tick();
+    y_test_assert(!triggers.is_listened<TestTrigger>(a));
+    y_test_assert(triggers.is_listened<OtherTestTrigger>(a));
+
+    world.triggers().emit(a, TestTrigger{3});
+    world.triggers().emit(a, OtherTestTrigger{4});
+    tick();
+    y_test_assert((world.component<TriggerListening>(a)->received == core::Vector<u32>{1, 104}));
+
+    y_test_assert(triggers.is_listened(trigger_index<OtherTestTrigger>(), a));
+    y_test_assert(!triggers.is_listened(trigger_index<TestTrigger>(), a));
+
+    // Removing the component unsubscribes
+    world.remove_component<TriggerListening>(a);
+    tick();
+    tick();
+    y_test_assert(!triggers.is_listened<OtherTestTrigger>(a));
+
+    // Deleting the entity unsubscribes
+    world.remove_entity(c);
+    tick();
+    tick();
+    y_test_assert(!triggers.is_listened<TestTrigger>(c));
 }
 
 y_test_func("EntityWorld load resets systems") {
