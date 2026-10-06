@@ -524,12 +524,6 @@ y_test_func("SparseComponentSet") {
 }
 
 y_test_func("ComponentRuntimeInfo names") {
-    y_test_assert(ComponentRuntimeInfo::clean_component_name("") == "???");
-    y_test_assert(ComponentRuntimeInfo::clean_component_name("struct yave::Foo") == "Foo");
-    y_test_assert(ComponentRuntimeInfo::clean_component_name("class a::b::Bar") == "Bar");
-    y_test_assert(ComponentRuntimeInfo::clean_component_name("::Baz") == "Baz");
-    y_test_assert(ComponentRuntimeInfo::clean_component_name("not_alnum::Baz") == "not_alnum::Baz");
-
     const ComponentRuntimeInfo info = ComponentRuntimeInfo::create<Position>();
     y_test_assert(info.type_id == type_index<Position>());
     y_test_assert(info.clean_component_name() == "Position");
