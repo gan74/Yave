@@ -63,6 +63,21 @@ constexpr std::string_view ct_type_name() {
     );
 }
 
+template<typename T>
+constexpr std::string_view clean_type_name() {
+    std::string_view name = ct_type_name<T>();
+    const std::array<std::string_view, 4> prefixes = {"class ", "struct ", "enum ", "union "};
+    for(const std::string_view prefix : prefixes) {
+        if(name.starts_with(prefix)) {
+            name = name.substr(prefix.size());
+            break;
+        }
+    }
+
+    const usize pos = name.rfind("::", name.find('<'));
+    return pos == std::string_view::npos ? name : name.substr(pos + 2);
+}
+
 static_assert(ct_type_name<int>() == "int");
 static_assert(ct_type_name<float>() == "float");
 

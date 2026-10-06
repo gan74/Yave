@@ -104,7 +104,7 @@ class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode 
         }
 
         std::string_view node_type_name() const override {
-            return detail::bp_type_name<F>();
+            return clean_type_name<F>();
         }
 
         core::Span<BlueprintPin> input_pins() const override {

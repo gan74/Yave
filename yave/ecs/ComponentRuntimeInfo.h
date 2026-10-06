@@ -28,7 +28,6 @@ SOFTWARE.
 #include <y/utils/name.h>
 
 #include <memory>
-#include <cctype>
 
 namespace yave {
 namespace ecs {
@@ -51,13 +50,14 @@ static core::Span<ComponentTypeIndex> required_component_types() {
 struct ComponentRuntimeInfo {
     ComponentTypeIndex type_id;
     std::string_view type_name;
+    std::string_view clean_name;
     core::Span<ComponentTypeIndex> required;
     std::unique_ptr<ComponentContainerBase> (*create_type_container)() = nullptr;
     void (*add_or_replace_component)(EntityWorld&, EntityId) = nullptr;
     bool is_inspectable;
 
     std::string_view clean_component_name() const {
-        return clean_component_name(type_name);
+        return clean_name;
     }
 
     template<typename T>
@@ -65,34 +65,12 @@ struct ComponentRuntimeInfo {
         return ComponentRuntimeInfo {
             type_index<T>(),
             ct_type_name<T>(),
+            clean_type_name<T>(),
             required_component_types<T>(),
             create_container<T>,
             create_or_replace_component<T>,
             Inspectable<T>,
         };
-    }
-
-    static std::string_view clean_component_name(std::string_view name) {
-        if(name.empty()) {
-            return "???";
-        }
-
-        if(name.starts_with("::")) {
-            return clean_component_name(name.substr(2));
-        }
-        if(name.starts_with("class ")) {
-            return clean_component_name(name.substr(6));
-        }
-        if(name.starts_with("struct ")) {
-            return clean_component_name(name.substr(7));
-        }
-        if(const usize n = name.find("::"); n != std::string_view::npos) {
-            if(std::all_of(name.data(), name.data() + n, [](char c) { return std::isalnum(int(c)); })) {
-                return clean_component_name(name.substr(n));
-            }
-        }
-
-        return name;
     }
 
     y_no_serde3()

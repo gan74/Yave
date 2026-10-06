@@ -51,21 +51,10 @@ class EntityGroupProvider final : NonMovable {
         return storage;
     }
 
-    template<typename T>
-    static core::String clean_component_name() {
-        return core::String(ct_type_name<traits::component_raw_type_t<T>>())
-            .replaced("class ", "")
-            .replaced("struct ", "")
-            .replaced("yave::", "")
-            .replaced("ecs::", "")
-            .replaced("> ", ">")
-        ;
-    }
-
     template<typename... Ts>
     static core::String create_group_name(core::Span<std::string_view> tags) {
         core::String name = "EntityGroupProvider<";
-        name += ((clean_component_name<Ts>() + ", ") + ...);
+        ((name += clean_type_name<traits::component_raw_type_t<Ts>>(), name += ", "), ...);
         name.resize(name.size() - 2);
         name += ">";
 

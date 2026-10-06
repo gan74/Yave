@@ -60,16 +60,6 @@ struct BlueprintPin {
     bool is_generic = false;
 };
 
-namespace detail {
-// Type name without namespaces or enclosing scopes
-template<typename T>
-constexpr std::string_view bp_type_name() {
-    constexpr std::string_view full = ct_type_name<T>();
-    constexpr usize pos = full.rfind("::");
-    return pos == std::string_view::npos ? full : full.substr(pos + 2);
-}
-}
-
 inline bool are_blueprint_types_compatible(const BlueprintParamType* a, const BlueprintParamType* b) {
     return a && b ? a == b : a != b;
 }

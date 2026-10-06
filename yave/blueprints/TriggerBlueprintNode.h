@@ -46,7 +46,7 @@ class TriggerBlueprintNode final : public BlueprintNode {
         }
 
         std::string_view node_type_name() const override {
-            return detail::bp_type_name<T>();
+            return clean_type_name<T>();
         }
 
         core::Span<BlueprintPin> output_pins() const override {
