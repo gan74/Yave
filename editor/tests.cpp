@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 #include <yave/systems/TriggerSystem.h>
+#include <yave/systems/TimeSystem.h>
 #include <yave/components/BlueprintComponent.h>
 #include <yave/blueprints/TriggerBlueprintNode.h>
 #include <yave/blueprints/blueprint_nodes.h>
@@ -39,6 +40,8 @@ SOFTWARE.
 #include <y/utils/log.h>
 
 #include <atomic>
+#include <cmath>
+#include <optional>
 #include <thread>
 
 
@@ -2578,6 +2581,993 @@ y_test_func("EntityWorld tick without systems") {
     world.tick(job_system);
     world.tick(job_system);
     y_test_assert(world.tick_id() == TickId().next().next());
+}
+
+
+
+// ---------------------------------------- Blueprint graph ----------------------------------------
+
+template<typename T>
+const BlueprintNode* add_constant(Blueprint& blueprint, std::string_view name, T value) {
+    auto node = create_blueprint_node(name);
+    y_debug_assert(node);
+    *static_cast<T*>(node->param_ptr(0)) = value;
+    return blueprint.add_node(std::move(node));
+}
+
+usize node_index(const Blueprint& blueprint, const BlueprintNode* node) {
+    const auto nodes = blueprint.all_nodes();
+    for(usize i = 0; i != nodes.size(); ++i) {
+        if(nodes[i].get() == node) {
+            return i;
+        }
+    }
+    return usize(-1);
+}
+
+const BlueprintNode* link_source(const Blueprint& blueprint, const BlueprintNode* dst, usize dst_pin) {
+    const BlueprintLink* link = blueprint.find_link(dst, dst_pin);
+    return link ? blueprint.all_nodes()[link->src_node].get() : nullptr;
+}
+
+bool links_are_ordered(const Blueprint& blueprint) {
+    for(const BlueprintLink& link : blueprint.links()) {
+        if(link.src_node >= link.dst_node) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Bypasses the Blueprint API to build broken graphs
+core::Vector<BlueprintLink>& raw_links(Blueprint& blueprint) {
+    return std::get<1>(y::reflect::list_members<Blueprint>()).get(blueprint);
+}
+
+// Runs the first entry point
+core::Result<void, BlueprintError> run_blueprint(const Blueprint& blueprint, float value = 0.0f) {
+    auto instance = blueprint.create_instance();
+    if(instance.is_error()) {
+        return core::Err(std::move(instance.error()));
+    }
+    const BlueprintTestTrigger trigger{value};
+    return instance.unwrap().trigger(instance.unwrap().entry_points()[0], &trigger);
+}
+
+// Builds constants -> op -> If(1, -1) -> output, returns nothing on error
+template<typename T>
+std::optional<bool> eval_predicate(std::string_view op_name, std::string_view const_name, std::initializer_list<T> inputs) {
+    TestOutputBlueprintNode::outputs = {};
+
+    Blueprint blueprint;
+    blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("trigger"));
+
+    core::Vector<const BlueprintNode*> constants;
+    for(const T& in : inputs) {
+        constants << add_constant(blueprint, const_name, in);
+    }
+    const BlueprintNode* if_true = add_constant(blueprint, "Const float", 1.0f);
+    const BlueprintNode* if_false = add_constant(blueprint, "Const float", -1.0f);
+    const BlueprintNode* op = blueprint.add_node(create_blueprint_node(op_name));
+    const BlueprintNode* select = blueprint.add_node(create_blueprint_node("If"));
+    const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(3));
+
+    for(usize i = 0; i != constants.size(); ++i) {
+        blueprint.add_link(constants[i], 0, op, i);
+    }
+    blueprint.add_link(op, 0, select, 0);
+    blueprint.add_link(if_true, 0, select, 1);
+    blueprint.add_link(if_false, 0, select, 2);
+    blueprint.add_link(select, 0, out, 0);
+
+    if(run_blueprint(blueprint).is_error()) {
+        return std::nullopt;
+    }
+
+    const float result = TestOutputBlueprintNode::outputs[3];
+    if(result == 0.0f) {
+        return std::nullopt;
+    }
+    return result > 0.0f;
+}
+
+template<typename T>
+Blueprint make_trigger_output_blueprint(u32 index) {
+    Blueprint blueprint;
+    const BlueprintNode* on = blueprint.add_node(std::make_unique<TriggerBlueprintNode<T>>("on"));
+    const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(index));
+    blueprint.add_link(on, 0, out, 0);
+    return blueprint;
+}
+
+y_test_func("Blueprint remove node") {
+    TestOutputBlueprintNode::outputs = {};
+
+    Blueprint blueprint;
+    const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+    const BlueprintNode* constant = add_constant(blueprint, "Const float", 5.0f);
+    const BlueprintNode* add = blueprint.add_node(create_blueprint_node("Add float"));
+    const BlueprintNode* select = blueprint.add_node(create_blueprint_node("If"));
+    const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
+
+    blueprint.add_link(on_a, 0, add, 0);
+    blueprint.add_link(constant, 0, add, 1);
+    blueprint.add_link(add, 0, out, 0);
+    blueprint.add_link(constant, 0, select, 1);
+    y_test_assert(select->generic_type() == blueprint_param_type<float>());
+    y_test_assert(blueprint.links().size() == 4);
+
+    y_test_assert(run_blueprint(blueprint, 3.0f).is_ok());
+    y_test_assert(TestOutputBlueprintNode::outputs[0] == 8.0f);
+
+    // Links touching the node are removed, the others are remapped
+    blueprint.remove_node(constant);
+    y_test_assert(blueprint.all_nodes().size() == 4);
+    y_test_assert(blueprint.links().size() == 2);
+    y_test_assert(node_index(blueprint, constant) == usize(-1));
+    y_test_assert(!blueprint.find_link(add, 1));
+    y_test_assert(!blueprint.find_link(select, 1));
+    y_test_assert(link_source(blueprint, add, 0) == on_a);
+    y_test_assert(link_source(blueprint, out, 0) == add);
+    y_test_assert(links_are_ordered(blueprint));
+
+    // The If node lost its type
+    y_test_assert(!select->generic_type());
+    {
+        const auto res = blueprint.create_instance();
+        y_test_assert(res.is_error());
+        y_test_assert(res.error().node == select);
+        y_test_assert(res.error().error == "Unresolved generic type");
+    }
+
+    blueprint.remove_node(select);
+    y_test_assert(blueprint.all_nodes().size() == 3);
+    y_test_assert(blueprint.links().size() == 2);
+    y_test_assert(link_source(blueprint, out, 0) == add);
+
+    y_test_assert(run_blueprint(blueprint, 3.0f).is_ok());
+    y_test_assert(TestOutputBlueprintNode::outputs[0] == 3.0f);
+}
+
+y_test_func("Blueprint remove and replace links") {
+    TestOutputBlueprintNode::outputs = {};
+
+    Blueprint blueprint;
+    blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+    const BlueprintNode* one = add_constant(blueprint, "Const float", 1.0f);
+    const BlueprintNode* two = add_constant(blueprint, "Const float", 2.0f);
+    const BlueprintNode* select = blueprint.add_node(create_blueprint_node("If"));
+    const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(1));
+
+    blueprint.add_link(one, 0, select, 1);
+    blueprint.add_link(two, 0, select, 2);
+    blueprint.add_link(select, 0, out, 0);
+    y_test_assert(blueprint.links().size() == 3);
+
+    // Linking into an already linked pin replaces the link
+    y_test_assert(blueprint.is_link_valid(two, 0, select, 1));
+    blueprint.add_link(two, 0, select, 1);
+    y_test_assert(blueprint.links().size() == 3);
+    y_test_assert(link_source(blueprint, select, 1) == two);
+    y_test_assert(link_source(blueprint, select, 2) == two);
+
+    y_test_assert(run_blueprint(blueprint).is_ok());
+    y_test_assert(TestOutputBlueprintNode::outputs[1] == 2.0f);
+
+    // Unlinked generic input uses its (zero) default value
+    blueprint.remove_link(select, 1);
+    y_test_assert(blueprint.links().size() == 2);
+    y_test_assert(!blueprint.find_link(select, 1));
+    y_test_assert(select->generic_type() == blueprint_param_type<float>());
+
+    TestOutputBlueprintNode::outputs[1] = 42.0f;
+    y_test_assert(run_blueprint(blueprint).is_ok());
+    y_test_assert(TestOutputBlueprintNode::outputs[1] == 0.0f);
+
+    // The output link alone is enough to resolve the type
+    blueprint.remove_link(select, 2);
+    y_test_assert(blueprint.links().size() == 1);
+    y_test_assert(select->generic_type() == blueprint_param_type<float>());
+
+    blueprint.remove_link(out, 0);
+    y_test_assert(blueprint.links().is_empty());
+    y_test_assert(!select->generic_type());
+
+    // Removing a link that doesn't exist is fine
+    blueprint.remove_link(out, 0);
+    blueprint.remove_link(select, 0);
+    y_test_assert(blueprint.links().is_empty());
+}
+
+y_test_func("Blueprint back links reorder nodes") {
+    TestOutputBlueprintNode::outputs = {};
+
+    {
+        Blueprint blueprint;
+        const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(2));
+        const BlueprintNode* add = blueprint.add_node(create_blueprint_node("Add float"));
+        const BlueprintNode* neg = blueprint.add_node(create_blueprint_node("Negate float"));
+        const BlueprintNode* constant = add_constant(blueprint, "Const float", 10.0f);
+        const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+
+        blueprint.add_link(add, 0, out, 0);
+        y_test_assert(links_are_ordered(blueprint));
+        blueprint.add_link(neg, 0, add, 0);
+        y_test_assert(links_are_ordered(blueprint));
+        blueprint.add_link(constant, 0, add, 1);
+        y_test_assert(links_are_ordered(blueprint));
+        blueprint.add_link(on_a, 0, neg, 0);
+        y_test_assert(links_are_ordered(blueprint));
+
+        // Nodes are reordered but not lost
+        y_test_assert(blueprint.all_nodes().size() == 5);
+        for(const BlueprintNode* node : {out, add, neg, constant, on_a}) {
+            y_test_assert(node_index(blueprint, node) != usize(-1));
+        }
+        y_test_assert(link_source(blueprint, out, 0) == add);
+        y_test_assert(link_source(blueprint, add, 0) == neg);
+        y_test_assert(link_source(blueprint, add, 1) == constant);
+        y_test_assert(link_source(blueprint, neg, 0) == on_a);
+
+        y_test_assert(blueprint.validate().is_ok());
+        y_test_assert(run_blueprint(blueprint, 3.0f).is_ok());
+        y_test_assert(TestOutputBlueprintNode::outputs[2] == 7.0f);
+
+        // Would create a cycle
+        y_test_assert(!blueprint.is_link_valid(add, 0, neg, 0));
+        y_test_assert(!blueprint.is_link_valid(neg, 0, on_a, 0));
+    }
+
+    {
+        // Unrelated nodes in between the source and destination
+        Blueprint blueprint;
+        const BlueprintNode* neg = blueprint.add_node(create_blueprint_node("Negate float"));
+        const BlueprintNode* constant = add_constant(blueprint, "Const float", 4.0f);
+        const BlueprintNode* add = blueprint.add_node(create_blueprint_node("Add float"));
+        const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(3));
+        const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+
+        blueprint.add_link(neg, 0, add, 0);
+        blueprint.add_link(constant, 0, add, 1);
+        blueprint.add_link(add, 0, out, 0);
+        blueprint.add_link(on_a, 0, neg, 0);
+        y_test_assert(links_are_ordered(blueprint));
+        y_test_assert(link_source(blueprint, add, 0) == neg);
+        y_test_assert(link_source(blueprint, add, 1) == constant);
+        y_test_assert(link_source(blueprint, out, 0) == add);
+        y_test_assert(link_source(blueprint, neg, 0) == on_a);
+
+        y_test_assert(run_blueprint(blueprint, 3.0f).is_ok());
+        y_test_assert(TestOutputBlueprintNode::outputs[3] == 1.0f);
+    }
+}
+
+y_test_func("Blueprint add blueprint") {
+    TestOutputBlueprintNode::outputs = {};
+
+    Blueprint blueprint;
+    {
+        const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+        const BlueprintNode* neg = blueprint.add_node(create_blueprint_node("Negate float"));
+        const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
+        blueprint.add_link(on_a, 0, neg, 0);
+        blueprint.add_link(neg, 0, out, 0);
+    }
+
+    const BlueprintNode* select = nullptr;
+    const BlueprintNode* out_b = nullptr;
+    {
+        Blueprint other;
+        const BlueprintNode* constant = add_constant(other, "Const float", 7.0f);
+        select = other.add_node(create_blueprint_node("If"));
+        out_b = other.add_node(std::make_unique<TestOutputBlueprintNode>(1));
+        other.add_link(constant, 0, select, 1);
+        other.add_link(select, 0, out_b, 0);
+
+        blueprint.add_blueprint(std::move(other));
+    }
+
+    y_test_assert(blueprint.all_nodes().size() == 6);
+    y_test_assert(blueprint.links().size() == 4);
+    y_test_assert(links_are_ordered(blueprint));
+    y_test_assert(node_index(blueprint, select) == 4);
+    y_test_assert(link_source(blueprint, out_b, 0) == select);
+    y_test_assert(select->generic_type() == blueprint_param_type<float>());
+    y_test_assert(blueprint.validate().is_ok());
+
+    y_test_assert(run_blueprint(blueprint, 2.0f).is_ok());
+    y_test_assert(TestOutputBlueprintNode::outputs[0] == -2.0f);
+    y_test_assert(TestOutputBlueprintNode::outputs[1] == 7.0f);
+
+    // Adding an empty blueprint does nothing
+    blueprint.add_blueprint(Blueprint());
+    y_test_assert(blueprint.all_nodes().size() == 6);
+    y_test_assert(blueprint.links().size() == 4);
+}
+
+y_test_func("Blueprint invalid links") {
+    Blueprint blueprint;
+    const BlueprintNode* flag = add_constant(blueprint, "Const bool", true);
+    const BlueprintNode* a = blueprint.add_node(create_blueprint_node("Negate float"));
+    const BlueprintNode* b = blueprint.add_node(create_blueprint_node("Negate float"));
+    const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
+
+    Blueprint other;
+    const BlueprintNode* foreign = other.add_node(create_blueprint_node("Negate float"));
+
+    y_test_assert(blueprint.is_link_valid(a, 0, b, 0));
+    y_test_assert(blueprint.is_link_valid(b, 0, a, 0));
+
+    y_test_assert(!blueprint.is_link_valid(a, 0, a, 0));
+    y_test_assert(!blueprint.is_link_valid(nullptr, 0, b, 0));
+    y_test_assert(!blueprint.is_link_valid(a, 0, nullptr, 0));
+    y_test_assert(!blueprint.is_link_valid(a, 1, b, 0));
+    y_test_assert(!blueprint.is_link_valid(a, 0, b, 1));
+    y_test_assert(!blueprint.is_link_valid(out, 0, a, 0));
+    y_test_assert(!blueprint.is_link_valid(foreign, 0, b, 0));
+    y_test_assert(!blueprint.is_link_valid(a, 0, foreign, 0));
+    y_test_assert(!blueprint.is_link_valid(flag, 0, b, 0));
+
+    blueprint.add_link(a, 0, b, 0);
+    y_test_assert(!blueprint.is_link_valid(b, 0, a, 0));
+    y_test_assert(blueprint.is_link_valid(b, 0, out, 0));
+}
+
+y_test_func("Blueprint downstream nodes") {
+    Blueprint blueprint;
+    const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+    const BlueprintNode* constant = add_constant(blueprint, "Const float", 1.0f);
+    const BlueprintNode* n1 = blueprint.add_node(create_blueprint_node("Negate float"));
+    const BlueprintNode* n2 = blueprint.add_node(create_blueprint_node("Negate float"));
+    const BlueprintNode* add = blueprint.add_node(create_blueprint_node("Add float"));
+    const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
+
+    blueprint.add_link(on_a, 0, n1, 0);
+    blueprint.add_link(on_a, 0, n2, 0);
+    blueprint.add_link(n1, 0, add, 0);
+    blueprint.add_link(n2, 0, add, 1);
+    blueprint.add_link(add, 0, out, 0);
+
+    const auto is_downstream = [&](const core::FixedArray<bool>& downstream, const BlueprintNode* node) {
+        return downstream[node_index(blueprint, node)];
+    };
+
+    {
+        const auto downstream = blueprint.downstream_nodes(on_a);
+        y_test_assert(downstream.size() == 6);
+        for(const BlueprintNode* node : {on_a, n1, n2, add, out}) {
+            y_test_assert(is_downstream(downstream, node));
+        }
+        y_test_assert(!is_downstream(downstream, constant));
+    }
+
+    {
+        const auto downstream = blueprint.downstream_nodes(n1);
+        y_test_assert(is_downstream(downstream, n1));
+        y_test_assert(is_downstream(downstream, add));
+        y_test_assert(is_downstream(downstream, out));
+        y_test_assert(!is_downstream(downstream, n2));
+        y_test_assert(!is_downstream(downstream, on_a));
+        y_test_assert(!is_downstream(downstream, constant));
+    }
+
+    {
+        const auto downstream = blueprint.downstream_nodes(constant);
+        for(const BlueprintNode* node : {on_a, n1, n2, add, out}) {
+            y_test_assert(!is_downstream(downstream, node));
+        }
+        y_test_assert(is_downstream(downstream, constant));
+    }
+}
+
+y_test_func("Blueprint validation errors") {
+    const auto check_error = [](const Blueprint& blueprint, const BlueprintNode* node, std::string_view message) {
+        const auto res = blueprint.validate();
+        if(!res.is_error() || res.error().node != node || res.error().error != message) {
+            return false;
+        }
+        const auto instance = blueprint.create_instance();
+        return instance.is_error() && instance.error().node == node && instance.error().error == message;
+    };
+
+    {
+        Blueprint blueprint;
+        const BlueprintNode* select = blueprint.add_node(create_blueprint_node("If"));
+        y_test_assert(check_error(blueprint, select, "Unresolved generic type"));
+    }
+
+    {
+        Blueprint blueprint;
+        blueprint.add_node(create_blueprint_node("Negate float"));
+        const BlueprintNode* b = blueprint.add_node(create_blueprint_node("Negate float"));
+        raw_links(blueprint) << BlueprintLink{99, 0, 1, 0};
+        y_test_assert(check_error(blueprint, b, "Link references an invalid node or pin"));
+    }
+
+    {
+        Blueprint blueprint;
+        blueprint.add_node(create_blueprint_node("Negate float"));
+        blueprint.add_node(create_blueprint_node("Negate float"));
+        raw_links(blueprint) << BlueprintLink{0, 0, 99, 0};
+        y_test_assert(check_error(blueprint, nullptr, "Link references an invalid node or pin"));
+    }
+
+    {
+        Blueprint blueprint;
+        blueprint.add_node(create_blueprint_node("Negate float"));
+        const BlueprintNode* b = blueprint.add_node(create_blueprint_node("Negate float"));
+        raw_links(blueprint) << BlueprintLink{0, 5, 1, 0};
+        y_test_assert(check_error(blueprint, b, "Link references an invalid node or pin"));
+    }
+
+    {
+        Blueprint blueprint;
+        const BlueprintNode* a = blueprint.add_node(create_blueprint_node("Negate float"));
+        blueprint.add_node(create_blueprint_node("Negate float"));
+        raw_links(blueprint) << BlueprintLink{1, 0, 0, 0};
+        y_test_assert(check_error(blueprint, a, "Link breaks execution order"));
+    }
+
+    {
+        Blueprint blueprint;
+        const BlueprintNode* a = blueprint.add_node(create_blueprint_node("Negate float"));
+        raw_links(blueprint) << BlueprintLink{0, 0, 0, 0};
+        y_test_assert(check_error(blueprint, a, "Link breaks execution order"));
+    }
+
+    {
+        Blueprint blueprint;
+        add_constant(blueprint, "Const bool", true);
+        const BlueprintNode* neg = blueprint.add_node(create_blueprint_node("Negate float"));
+        raw_links(blueprint) << BlueprintLink{0, 0, 1, 0};
+        y_test_assert(check_error(blueprint, neg, "Link connects incompatible types"));
+    }
+
+    {
+        Blueprint blueprint;
+        blueprint.add_node(create_blueprint_node("Negate float"));
+        blueprint.add_node(create_blueprint_node("Negate float"));
+        raw_links(blueprint) << BlueprintLink{0, 0, 1, 0};
+        y_test_assert(blueprint.validate().is_ok());
+        y_test_assert(blueprint.create_instance().is_ok());
+    }
+}
+
+
+
+// ---------------------------------------- Blueprint nodes ----------------------------------------
+
+y_test_func("Blueprint bool nodes") {
+    for(const bool a : {false, true}) {
+        y_test_assert(eval_predicate<bool>("Not", "Const bool", {a}) == !a);
+        for(const bool b : {false, true}) {
+            y_test_assert(eval_predicate<bool>("And", "Const bool", {a, b}) == (a && b));
+            y_test_assert(eval_predicate<bool>("Or", "Const bool", {a, b}) == (a || b));
+            y_test_assert(eval_predicate<bool>("Xor", "Const bool", {a, b}) == (a != b));
+        }
+    }
+}
+
+y_test_func("Blueprint comparison nodes") {
+    const std::array<std::pair<float, float>, 3> pairs = {{{1.0f, 2.0f}, {2.0f, 2.0f}, {3.0f, 2.0f}}};
+    for(const auto& [a, b] : pairs) {
+        y_test_assert(eval_predicate<float>("Equal float", "Const float", {a, b}) == (a == b));
+        y_test_assert(eval_predicate<float>("Not equal float", "Const float", {a, b}) == (a != b));
+        y_test_assert(eval_predicate<float>("Less float", "Const float", {a, b}) == (a < b));
+        y_test_assert(eval_predicate<float>("Greater float", "Const float", {a, b}) == (a > b));
+        y_test_assert(eval_predicate<float>("Less or equal float", "Const float", {a, b}) == (a <= b));
+        y_test_assert(eval_predicate<float>("Greater or equal float", "Const float", {a, b}) == (a >= b));
+    }
+
+    y_test_assert(eval_predicate<math::Vec3>("Equal Vec3", "Const Vec3", {math::Vec3(1.0f, 2.0f, 3.0f), math::Vec3(1.0f, 2.0f, 3.0f)}) == true);
+    y_test_assert(eval_predicate<math::Vec3>("Equal Vec3", "Const Vec3", {math::Vec3(1.0f, 2.0f, 3.0f), math::Vec3(1.0f, 2.0f, 4.0f)}) == false);
+    y_test_assert(eval_predicate<math::Vec3>("Not equal Vec3", "Const Vec3", {math::Vec3(1.0f, 2.0f, 3.0f), math::Vec3(1.0f, 2.0f, 4.0f)}) == true);
+}
+
+y_test_func("Blueprint vector nodes") {
+    // Create -> Decompose
+    {
+        TestOutputBlueprintNode::outputs = {};
+        Blueprint blueprint;
+        blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+        const BlueprintNode* x = add_constant(blueprint, "Const float", 1.0f);
+        const BlueprintNode* y = add_constant(blueprint, "Const float", 2.0f);
+        const BlueprintNode* z = add_constant(blueprint, "Const float", 3.0f);
+        const BlueprintNode* create = blueprint.add_node(create_blueprint_node("Create Vec3"));
+        const BlueprintNode* decompose = blueprint.add_node(create_blueprint_node("Decompose Vec3"));
+        blueprint.add_link(x, 0, create, 0);
+        blueprint.add_link(y, 0, create, 1);
+        blueprint.add_link(z, 0, create, 2);
+        blueprint.add_link(create, 0, decompose, 0);
+        for(u32 i = 0; i != 3; ++i) {
+            const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(i));
+            blueprint.add_link(decompose, i, out, 0);
+        }
+
+        y_test_assert(run_blueprint(blueprint).is_ok());
+        y_test_assert(TestOutputBlueprintNode::outputs[0] == 1.0f);
+        y_test_assert(TestOutputBlueprintNode::outputs[1] == 2.0f);
+        y_test_assert(TestOutputBlueprintNode::outputs[2] == 3.0f);
+    }
+
+    // Vector -> float ops
+    const auto eval_scalar = [](std::string_view op_name, std::string_view const_name, auto a, auto b) -> std::optional<float> {
+        TestOutputBlueprintNode::outputs = {};
+        Blueprint blueprint;
+        blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+        const BlueprintNode* op = nullptr;
+        const BlueprintNode* ca = add_constant(blueprint, const_name, a);
+        const BlueprintNode* cb = add_constant(blueprint, const_name, b);
+        op = blueprint.add_node(create_blueprint_node(op_name));
+        const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
+        blueprint.add_link(ca, 0, op, 0);
+        if(op->input_pins().size() > 1) {
+            blueprint.add_link(cb, 0, op, 1);
+        }
+        blueprint.add_link(op, 0, out, 0);
+        if(run_blueprint(blueprint).is_error()) {
+            return std::nullopt;
+        }
+        return TestOutputBlueprintNode::outputs[0];
+    };
+
+    y_test_assert(eval_scalar("Dot Vec3", "Const Vec3", math::Vec3(1.0f, 2.0f, 3.0f), math::Vec3(4.0f, 5.0f, 6.0f)) == 32.0f);
+    y_test_assert(eval_scalar("Length Vec2", "Const Vec2", math::Vec2(3.0f, 4.0f), math::Vec2()) == 5.0f);
+    y_test_assert(eval_scalar("Divide float", "Const float", 6.0f, 3.0f) == 2.0f);
+    y_test_assert(eval_scalar("Multiply float", "Const float", 6.0f, 3.0f) == 18.0f);
+    y_test_assert(!eval_scalar("Divide float", "Const float", 6.0f, 0.0f));
+
+    // Vector -> vector ops
+    const auto eval_vec = [](std::string_view op_name, std::string_view decompose_name, std::string_view const_name, auto a, auto b) -> std::optional<std::array<float, 4>> {
+        TestOutputBlueprintNode::outputs = {};
+        Blueprint blueprint;
+        blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+        const BlueprintNode* ca = add_constant(blueprint, const_name, a);
+        const BlueprintNode* cb = add_constant(blueprint, const_name, b);
+        const BlueprintNode* op = blueprint.add_node(create_blueprint_node(op_name));
+        const BlueprintNode* decompose = blueprint.add_node(create_blueprint_node(decompose_name));
+        blueprint.add_link(ca, 0, op, 0);
+        if(op->input_pins().size() > 1) {
+            blueprint.add_link(cb, 0, op, 1);
+        }
+        blueprint.add_link(op, 0, decompose, 0);
+        for(u32 i = 0; i != decompose->output_pins().size(); ++i) {
+            const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(i));
+            blueprint.add_link(decompose, i, out, 0);
+        }
+        if(run_blueprint(blueprint).is_error()) {
+            return std::nullopt;
+        }
+        return TestOutputBlueprintNode::outputs;
+    };
+
+    {
+        const auto res = eval_vec("Add Vec2", "Decompose Vec2", "Const Vec2", math::Vec2(1.0f, 2.0f), math::Vec2(3.0f, 4.0f));
+        y_test_assert(res && (*res)[0] == 4.0f && (*res)[1] == 6.0f);
+    }
+    {
+        const auto res = eval_vec("Cross Vec3", "Decompose Vec3", "Const Vec3", math::Vec3(1.0f, 0.0f, 0.0f), math::Vec3(0.0f, 1.0f, 0.0f));
+        y_test_assert(res && (*res)[0] == 0.0f && (*res)[1] == 0.0f && (*res)[2] == 1.0f);
+    }
+    {
+        const auto res = eval_vec("Negate Vec4", "Decompose Vec4", "Const Vec4", math::Vec4(1.0f, -2.0f, 3.0f, -4.0f), math::Vec4());
+        y_test_assert(res && (*res)[0] == -1.0f && (*res)[1] == 2.0f && (*res)[2] == -3.0f && (*res)[3] == 4.0f);
+    }
+    {
+        const auto res = eval_vec("Abs Vec2", "Decompose Vec2", "Const Vec2", math::Vec2(-1.0f, 2.0f), math::Vec2());
+        y_test_assert(res && (*res)[0] == 1.0f && (*res)[1] == 2.0f);
+    }
+    {
+        const auto res = eval_vec("Saturate Vec2", "Decompose Vec2", "Const Vec2", math::Vec2(-1.0f, 2.0f), math::Vec2());
+        y_test_assert(res && (*res)[0] == 0.0f && (*res)[1] == 1.0f);
+    }
+    {
+        const auto res = eval_vec("Normalize Vec2", "Decompose Vec2", "Const Vec2", math::Vec2(3.0f, 4.0f), math::Vec2());
+        y_test_assert(res && std::abs((*res)[0] - 0.6f) < 0.0001f && std::abs((*res)[1] - 0.8f) < 0.0001f);
+    }
+    {
+        const auto res = eval_vec("Divide Vec2", "Decompose Vec2", "Const Vec2", math::Vec2(4.0f, 9.0f), math::Vec2(2.0f, 3.0f));
+        y_test_assert(res && (*res)[0] == 2.0f && (*res)[1] == 3.0f);
+    }
+
+    // Any zero component is a division by zero
+    {
+        Blueprint blueprint;
+        blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+        const BlueprintNode* a = add_constant(blueprint, "Const Vec3", math::Vec3(1.0f, 1.0f, 1.0f));
+        const BlueprintNode* b = add_constant(blueprint, "Const Vec3", math::Vec3(1.0f, 0.0f, 1.0f));
+        const BlueprintNode* div = blueprint.add_node(create_blueprint_node("Divide Vec3"));
+        blueprint.add_link(a, 0, div, 0);
+        blueprint.add_link(b, 0, div, 1);
+
+        const auto res = run_blueprint(blueprint);
+        y_test_assert(res.is_error());
+        y_test_assert(res.error().node == div);
+        y_test_assert(res.error().error == "Division by zero");
+    }
+
+    // If on vectors with default condition
+    {
+        TestOutputBlueprintNode::outputs = {};
+        Blueprint blueprint;
+        blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+        const BlueprintNode* a = add_constant(blueprint, "Const Vec2", math::Vec2(1.0f, 2.0f));
+        const BlueprintNode* b = add_constant(blueprint, "Const Vec2", math::Vec2(3.0f, 4.0f));
+        const BlueprintNode* select = blueprint.add_node(create_blueprint_node("If"));
+        const BlueprintNode* decompose = blueprint.add_node(create_blueprint_node("Decompose Vec2"));
+        const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
+        blueprint.add_link(a, 0, select, 1);
+        blueprint.add_link(b, 0, select, 2);
+        blueprint.add_link(select, 0, decompose, 0);
+        blueprint.add_link(decompose, 1, out, 0);
+
+        y_test_assert(run_blueprint(blueprint).is_ok());
+        y_test_assert(TestOutputBlueprintNode::outputs[0] == 2.0f);
+    }
+}
+
+y_test_func("Blueprint node factories") {
+    core::Vector<std::unique_ptr<BlueprintNodeFactory>> factories;
+    add_all_nodes(factories);
+    y_test_assert(!factories.is_empty());
+
+    for(usize i = 0; i != factories.size(); ++i) {
+        for(usize j = i + 1; j != factories.size(); ++j) {
+            y_test_assert(factories[i]->name() != factories[j]->name());
+        }
+    }
+
+    for(const auto& factory : factories) {
+        std::unique_ptr<BlueprintNode> node = factory->create_node();
+        y_test_assert(node);
+        y_test_assert(node->name() == factory->name());
+        y_test_assert(!node->node_type_name().empty());
+        y_test_assert(!node->generic_type());
+
+        Blueprint blueprint;
+        const BlueprintNode* added = blueprint.add_node(std::move(node));
+
+        // Every node compiles with its default inputs, unless it needs a type
+        y_test_assert(blueprint.create_instance().is_ok() != added->has_generic_pin());
+
+        io2::Buffer buffer;
+        {
+            serde3::WritableArchive arc(buffer);
+            y_test_assert(arc.serialize(blueprint).is_ok());
+        }
+        buffer.reset();
+
+        Blueprint loaded;
+        y_test_assert(serde3::ReadableArchive(buffer).deserialize(loaded).is_ok());
+        y_test_assert(loaded.all_nodes().size() == 1);
+
+        const BlueprintNode* loaded_node = loaded.all_nodes()[0].get();
+        y_test_assert(loaded_node->name() == factory->name());
+        y_test_assert(loaded_node->node_type_name() == added->node_type_name());
+        y_test_assert(loaded_node->input_pins().size() == added->input_pins().size());
+        y_test_assert(loaded_node->output_pins().size() == added->output_pins().size());
+        y_test_assert(loaded_node->is_entry_point() == added->is_entry_point());
+    }
+}
+
+
+
+// ---------------------------------------- Blueprint instances ----------------------------------------
+
+y_test_func("Blueprint instance repeated triggers") {
+    TestOutputBlueprintNode::outputs = {};
+
+    Blueprint blueprint;
+    const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+    const BlueprintNode* neg = blueprint.add_node(create_blueprint_node("Negate float"));
+    const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
+    blueprint.add_link(on_a, 0, neg, 0);
+    blueprint.add_link(neg, 0, out, 0);
+
+    auto first = blueprint.create_instance();
+    y_test_assert(first.is_ok());
+    BlueprintInstance& instance = first.unwrap();
+
+    y_test_assert(instance.entry_points().size() == 1);
+    const BlueprintInstance::EntryPoint& entry = instance.entry_points()[0];
+    y_test_assert(entry.node_index == node_index(blueprint, on_a));
+    y_test_assert(entry.trigger_type == trigger_index<BlueprintTestTrigger>());
+    y_test_assert(entry.payload_size == sizeof(BlueprintTestTrigger));
+
+    for(const float value : {1.0f, 2.0f, -5.0f}) {
+        const BlueprintTestTrigger trigger{value};
+        y_test_assert(instance.trigger(entry, &trigger).is_ok());
+        y_test_assert(TestOutputBlueprintNode::outputs[0] == -value);
+    }
+
+    // Instances don't share state
+    auto second = blueprint.create_instance();
+    y_test_assert(second.is_ok());
+    {
+        const BlueprintTestTrigger trigger{10.0f};
+        y_test_assert(second.unwrap().trigger(second.unwrap().entry_points()[0], &trigger).is_ok());
+        y_test_assert(TestOutputBlueprintNode::outputs[0] == -10.0f);
+    }
+    {
+        const BlueprintTestTrigger trigger{1.0f};
+        y_test_assert(instance.trigger(entry, &trigger).is_ok());
+        y_test_assert(TestOutputBlueprintNode::outputs[0] == -1.0f);
+    }
+
+    // Runtime errors don't break the instance
+    {
+        Blueprint div_blueprint;
+        const BlueprintNode* on = div_blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+        const BlueprintNode* one = add_constant(div_blueprint, "Const float", 1.0f);
+        const BlueprintNode* div = div_blueprint.add_node(create_blueprint_node("Divide float"));
+        const BlueprintNode* div_out = div_blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(1));
+        div_blueprint.add_link(one, 0, div, 0);
+        div_blueprint.add_link(on, 0, div, 1);
+        div_blueprint.add_link(div, 0, div_out, 0);
+
+        auto div_instance = div_blueprint.create_instance();
+        y_test_assert(div_instance.is_ok());
+        const auto& div_entry = div_instance.unwrap().entry_points()[0];
+
+        const BlueprintTestTrigger zero{0.0f};
+        y_test_assert(div_instance.unwrap().trigger(div_entry, &zero).is_error());
+
+        const BlueprintTestTrigger four{4.0f};
+        y_test_assert(div_instance.unwrap().trigger(div_entry, &four).is_ok());
+        y_test_assert(TestOutputBlueprintNode::outputs[1] == 0.25f);
+    }
+}
+
+y_test_func("Blueprint unconnected nodes run for every entry point") {
+    Blueprint blueprint;
+    blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+    blueprint.add_node(std::make_unique<TriggerBlueprintNode<OtherBlueprintTestTrigger>>("on b"));
+    const BlueprintNode* constant = add_constant(blueprint, "Const float", 5.0f);
+    const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(2));
+    blueprint.add_link(constant, 0, out, 0);
+
+    auto instance = blueprint.create_instance();
+    y_test_assert(instance.is_ok());
+    y_test_assert(instance.unwrap().entry_points().size() == 2);
+
+    TestOutputBlueprintNode::outputs = {};
+    const BlueprintTestTrigger a{1.0f};
+    y_test_assert(instance.unwrap().trigger(instance.unwrap().entry_points()[0], &a).is_ok());
+    y_test_assert(TestOutputBlueprintNode::outputs[2] == 5.0f);
+
+    TestOutputBlueprintNode::outputs = {};
+    const OtherBlueprintTestTrigger b{1.0f};
+    y_test_assert(instance.unwrap().trigger(instance.unwrap().entry_points()[1], &b).is_ok());
+    y_test_assert(TestOutputBlueprintNode::outputs[2] == 5.0f);
+}
+
+
+
+// ---------------------------------------- Triggers ----------------------------------------
+
+y_test_func("TriggerManager subscriptions") {
+    EntityWorld world;
+    TriggerManager& triggers = world.triggers();
+
+    const EntityId a = world.create_entity();
+    const EntityId b = world.create_entity();
+    world.process_deferred_changes();
+
+    core::Vector<EntityId> ids;
+    core::Vector<u32> values;
+    TriggerCallback<TestTrigger> handler([&](EntityWorld&, EntityId id, const TestTrigger& t) {
+        ids << id;
+        values << t.value;
+    });
+
+    bool built = false;
+    const auto make = [&](u32 value) {
+        return [&built, value] {
+            built = true;
+            return TestTrigger{value};
+        };
+    };
+
+    // Nothing listens: emitting does nothing and doesn't build the payload
+    triggers.emit<TestTrigger>(a, make(0));
+    triggers.emit(a, TestTrigger{1});
+    triggers.dispatch(world);
+    y_test_assert(!built);
+    y_test_assert(values.is_empty());
+    y_test_assert(!triggers.is_listened<TestTrigger>(a));
+
+    triggers.subscribe<TestTrigger>(a, &handler);
+    y_test_assert(triggers.is_listened<TestTrigger>(a));
+    y_test_assert(!triggers.is_listened<TestTrigger>(b));
+    y_test_assert(!triggers.is_listened<OtherTestTrigger>(a));
+
+    triggers.emit<TestTrigger>(b, make(10));
+    y_test_assert(!built);
+    triggers.emit<TestTrigger>(a, make(2));
+    y_test_assert(built);
+    triggers.emit(b, TestTrigger{3});
+    triggers.emit(a, TestTrigger{4});
+
+    // Nothing is delivered before dispatch
+    y_test_assert(values.is_empty());
+    triggers.dispatch(world);
+    y_test_assert((values == core::Vector<u32>{2, 4}));
+    y_test_assert((ids == core::Vector<EntityId>{a, a}));
+
+    // Events are only delivered once
+    triggers.dispatch(world);
+    y_test_assert(values.size() == 2);
+
+    // Global handlers receive everything
+    core::Vector<u32> global_values;
+    TriggerCallback<TestTrigger> global([&](EntityWorld&, EntityId, const TestTrigger& t) {
+        global_values << t.value;
+    });
+    triggers.subscribe<TestTrigger>(EntityId(), &global);
+    y_test_assert(triggers.is_listened<TestTrigger>(b));
+
+    triggers.emit(b, TestTrigger{5});
+    triggers.emit(a, TestTrigger{6});
+    triggers.dispatch(world);
+    y_test_assert((global_values == core::Vector<u32>{5, 6}));
+    y_test_assert((values == core::Vector<u32>{2, 4, 6}));
+
+    triggers.unsubscribe<TestTrigger>(EntityId(), &global);
+    y_test_assert(!triggers.is_listened<TestTrigger>(b));
+    y_test_assert(triggers.is_listened<TestTrigger>(a));
+
+    // Events targeting deleted entities are dropped
+    triggers.emit(a, TestTrigger{7});
+    world.remove_entity(a);
+    world.process_deferred_changes();
+    triggers.dispatch(world);
+    y_test_assert(values.size() == 3);
+
+    triggers.unsubscribe<TestTrigger>(a, &handler);
+    y_test_assert(!triggers.is_listened<TestTrigger>(a));
+
+    // Unsubscribing twice, or from a type without queue is fine
+    triggers.unsubscribe<TestTrigger>(a, &handler);
+    triggers.unsubscribe<OtherTestTrigger>(a, &handler);
+}
+
+y_test_func("EntityWorld blueprint component changes") {
+    TestOutputBlueprintNode::outputs = {};
+
+    concurrent::JobSystem job_system(2);
+    EntityWorld world;
+    world.add_system<TriggerSystem>();
+
+    const auto tick = [&] {
+        world.tick(job_system);
+        world.process_deferred_changes();
+    };
+
+    const TriggerManager& triggers = world.triggers();
+
+    const EntityId id = world.create_entity();
+    world.add_or_replace_component<BlueprintComponent>(id, make_asset<Blueprint>(make_trigger_output_blueprint<BlueprintTestTrigger>(0)));
+    tick();
+    tick();
+    y_test_assert(triggers.is_listened<BlueprintTestTrigger>(id));
+    y_test_assert(!triggers.is_listened<OtherBlueprintTestTrigger>(id));
+
+    world.triggers().emit(id, BlueprintTestTrigger{1.0f});
+    tick();
+    y_test_assert(TestOutputBlueprintNode::outputs[0] == 1.0f);
+
+    // Replacing the blueprint replaces the subscriptions
+    world.add_or_replace_component<BlueprintComponent>(id, make_asset<Blueprint>(make_trigger_output_blueprint<OtherBlueprintTestTrigger>(1)));
+    tick();
+    tick();
+    y_test_assert(!triggers.is_listened<BlueprintTestTrigger>(id));
+    y_test_assert(triggers.is_listened<OtherBlueprintTestTrigger>(id));
+
+    world.triggers().emit(id, BlueprintTestTrigger{3.0f});
+    world.triggers().emit(id, OtherBlueprintTestTrigger{2.0f});
+    tick();
+    y_test_assert(TestOutputBlueprintNode::outputs[0] == 1.0f);
+    y_test_assert(TestOutputBlueprintNode::outputs[1] == 2.0f);
+
+    // Invalid blueprints have no instance and no subscriptions
+    {
+        Blueprint invalid;
+        invalid.add_node(create_blueprint_node("If"));
+        world.add_or_replace_component<BlueprintComponent>(id, make_asset<Blueprint>(std::move(invalid)));
+    }
+    tick();
+    tick();
+    y_test_assert(!world.component<BlueprintComponent>(id)->instance());
+    y_test_assert(!triggers.is_listened<BlueprintTestTrigger>(id));
+    y_test_assert(!triggers.is_listened<OtherBlueprintTestTrigger>(id));
+
+    // Empty component
+    world.add_or_replace_component<BlueprintComponent>(id);
+    tick();
+    tick();
+    y_test_assert(!world.component<BlueprintComponent>(id)->instance());
+    y_test_assert(!triggers.is_listened<BlueprintTestTrigger>(id));
+
+    // Runtime errors are reported but don't break the component
+    {
+        Blueprint blueprint;
+        const BlueprintNode* on = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+        const BlueprintNode* div = blueprint.add_node(create_blueprint_node("Divide float"));
+        const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(2));
+        blueprint.add_link(on, 0, div, 1);
+        blueprint.add_link(div, 0, out, 0);
+        world.add_or_replace_component<BlueprintComponent>(id, make_asset<Blueprint>(std::move(blueprint)));
+    }
+    tick();
+    tick();
+    y_test_assert(triggers.is_listened<BlueprintTestTrigger>(id));
+    world.triggers().emit(id, BlueprintTestTrigger{0.0f});
+    tick();
+    y_test_assert(world.component<BlueprintComponent>(id)->instance());
+    world.triggers().emit(id, BlueprintTestTrigger{-1.0f});
+    tick();
+    y_test_assert(TestOutputBlueprintNode::outputs[2] == 0.0f);
+
+    // Removing the component unsubscribes
+    world.remove_component<BlueprintComponent>(id);
+    tick();
+    tick();
+    y_test_assert(!triggers.is_listened<BlueprintTestTrigger>(id));
+}
+
+y_test_func("EntityWorld blueprint component save and load") {
+    const AssetId asset_id = AssetId::from_id(1234);
+
+    EntityWorld source;
+    const EntityId id = source.create_entity();
+    source.add_or_replace_component<BlueprintComponent>(id, make_asset_with_id<Blueprint>(asset_id, make_trigger_output_blueprint<BlueprintTestTrigger>(0)));
+    source.process_deferred_changes();
+
+    concurrent::JobSystem job_system(2);
+    EntityWorld world;
+    world.add_system<TriggerSystem>();
+    save_and_load(source, world);
+
+    const BlueprintComponent* component = world.component<BlueprintComponent>(id);
+    y_test_assert(component);
+    y_test_assert(component->blueprint().id() == asset_id);
+
+    // No loader: the asset is not loaded, nothing should be subscribed
+    world.tick(job_system);
+    world.process_deferred_changes();
+    world.tick(job_system);
+    world.process_deferred_changes();
+    y_test_assert(!component->instance());
+    y_test_assert(!world.triggers().is_listened<BlueprintTestTrigger>(id));
+}
+
+
+
+// ---------------------------------------- Time ----------------------------------------
+
+y_test_func("TimeSystem") {
+    concurrent::JobSystem job_system(2);
+    EntityWorld world;
+
+    y_test_assert(TimeSystem::dt(world) == 0.0f);
+
+    TimeSystem* time = world.add_system<TimeSystem>(2.0f);
+    y_test_assert(time->time_scale() == 2.0f);
+    time->set_time_scale(0.5f);
+    y_test_assert(time->time_scale() == 0.5f);
+
+    world.tick(job_system);
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    world.tick(job_system);
+
+    y_test_assert(time->dt() > 0.0f);
+    y_test_assert(TimeSystem::dt(world) == time->dt());
+
+    // Negative and null scales never produce negative time
+    time->set_time_scale(-1.0f);
+    y_test_assert(time->dt() == 0.0f);
+    time->set_time_scale(0.0f);
+    y_test_assert(time->dt() == 0.0f);
 }
 
 
