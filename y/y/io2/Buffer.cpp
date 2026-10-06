@@ -68,16 +68,22 @@ ReadResult Buffer::read(void* data, usize bytes) {
     if(remaining() < bytes) {
         return core::Err<usize>(0);
     }
+    if(!bytes) {
+        return core::Ok();
+    }
     y_debug_assert(_cursor < _buffer.size());
-    std::memcpy(data, &_buffer[_cursor], bytes);
+    std::memcpy(data, _buffer.data() + _cursor, bytes);
     _cursor += bytes;
     return core::Ok();
 }
 
 ReadUpToResult Buffer::read_up_to(void* data, usize max_bytes) {
     const usize max = std::min(max_bytes, remaining());
-    y_debug_assert(_cursor < _buffer.size() || !max);
-    std::memcpy(data, &_buffer[_cursor], max);
+    if(!max) {
+        return core::Ok(usize(0));
+    }
+    y_debug_assert(_cursor < _buffer.size());
+    std::memcpy(data, _buffer.data() + _cursor, max);
     _cursor += max;
     y_debug_assert(_cursor <= _buffer.size());
     return core::Ok(max);
