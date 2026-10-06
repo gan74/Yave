@@ -107,7 +107,7 @@ void UiManager::draw_dockspaces() {
         bool open = true;
         const bool visible = ImGui::Begin(fmt_c_str("{}##workspace_{}", workspace->name(), id), &open);
 
-        if(visible || ImGui::IsWindowFocused()) {
+        if(ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows | ImGuiFocusedFlags_DockHierarchy)) {
             set_current_workspace(workspace);
         }
 
