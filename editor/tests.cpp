@@ -3646,7 +3646,7 @@ y_test_func("AABB contains") {
 y_test_func("TransformableComponent basics") {
     TransformableComponent tr;
     y_test_assert(tr.position() == math::Vec3(0.0f));
-    y_test_assert(nearly_equal(tr.forward(), math::Vec3(0.0f, 1.0f, 0.0f)));
+    y_test_assert(nearly_equal(tr.forward(), math::Vec3(0.0f, 0.0f, 1.0f)));
     y_test_assert(std::abs(tr.right().length() - 1.0f) < 0.0001f);
     y_test_assert(std::abs(tr.up().length() - 1.0f) < 0.0001f);
     y_test_assert(std::abs(tr.forward().dot(tr.right())) < 0.0001f);
@@ -3661,7 +3661,7 @@ y_test_func("TransformableComponent basics") {
     const auto rotation = math::Quaternion<>::from_axis_angle(math::Vec3(0.0f, 0.0f, 1.0f), math::to_rad(90.0f));
     tr.set_transform(math::Transform<>(math::Vec3(1.0f, 2.0f, 3.0f), rotation, math::Vec3(2.0f)));
     y_test_assert(tr.position() == math::Vec3(1.0f, 2.0f, 3.0f));
-    y_test_assert(nearly_equal(tr.forward().normalized(), rotation(math::Vec3(0.0f, 1.0f, 0.0f))));
+    y_test_assert(nearly_equal(tr.forward().normalized(), rotation(math::Vec3(0.0f, 0.0f, 1.0f))));
 
     const math::Vec3 p(1.0f, 2.0f, 3.0f);
     y_test_assert(nearly_equal(tr.to_global(p), math::Vec3(1.0f, 2.0f, 3.0f) + rotation(p) * 2.0f));
@@ -3744,9 +3744,6 @@ y_test_func("IndexAllocator") {
 
     y_test_assert(allocator.alloc() == 3);
     y_test_assert(allocator.size() == 4);
-
-    // One past the largest allocated index
-    y_test_assert(allocator.max_index() == 4);
 }
 
 

@@ -171,8 +171,8 @@ class SpatialPartition : NonMovable {
         core::Vector<ObjectData> _datas;
 
         void reinsert(const AABB& aabb, usize index) {
-            const float size = std::max(min_obj_size, aabb.origin_radius());
-            const i32 level = i32(std::ceil(std::log2(size / cell_margin)));
+            const float size = std::max(min_obj_size, aabb.radius());
+            const i32 level = i32(std::ceil(std::log2(2.0f * size / cell_margin)));
             const float cell_spacing = std::pow(2.0f, float(level));
             const math::Vec3 cell_center = aabb.center() / cell_spacing;
             const math::Vec4i cell_id(

@@ -246,6 +246,10 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::create_direct
 
     const auto lock = std::unique_lock(_parent->_lock);
 
+    if(_parent->_assets.find(path) != _parent->_assets.end()) {
+        return core::Err();
+    }
+
     const auto parent = strict_parent_path(path);
     if(!is_directory(parent).unwrap_or(false)) {
         y_try(create_directory(parent));
@@ -337,6 +341,10 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::rename(std::s
 
     const auto lock = std::unique_lock(_parent->_lock);
 
+    if(exists(to).unwrap_or(true)) {
+        return core::Err();
+    }
+
     std::map<core::String, AssetData> new_assets;
     {
         for(const auto &[name, data] : _parent->_assets) {
@@ -378,6 +386,10 @@ FileSystemModel::Result<> FolderAssetStore::FolderFileSystemModel::rename(std::s
             }
 
             new_folders.insert(new_name);
+        }
+
+        for(std::string_view parent = strict_parent_path(to); !parent.empty(); parent = strict_parent_path(parent)) {
+            new_folders.emplace(parent);
         }
     }
 
@@ -518,7 +530,7 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::str
 
     dst_name = strict_path(dst_name);
 
-    if(!is_valid_path(dst_name)) {
+    if(dst_name.empty() || !is_valid_path(dst_name)) {
         return core::Err(ErrorType::InvalidName);
     }
 
@@ -528,7 +540,7 @@ AssetStore::Result<AssetId> FolderAssetStore::import(io2::Reader& data, std::str
         return core::Err(ErrorType::FilesytemError);
     }
 
-    if(_assets.find(dst_name) != _assets.end()) {
+    if(_filesystem.exists(dst_name).unwrap_or(true)) {
         return core::Err(ErrorType::NameAlreadyExists);
     }
 
