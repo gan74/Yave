@@ -22,34 +22,16 @@ SOFTWARE.
 #ifndef YAVE_BLUEPRINTS_TRIGGERBLUEPRINTNODE_H
 #define YAVE_BLUEPRINTS_TRIGGERBLUEPRINTNODE_H
 
-#include "BlueprintNode.h"
+#include "BlueprintCompiler.h"
 
 #include <yave/ecs/TriggerManager.h>
 
-#include <cstring>
 #include <tuple>
 
 namespace yave {
 
-class TriggerBlueprintNodeBase : public BlueprintNode {
-    public:
-        bool is_entry_point() const override {
-            return true;
-        }
-
-        virtual ecs::TriggerTypeIndex trigger_type() const = 0;
-        virtual void subscribe(ecs::TriggerSubscriber& subscriber) const = 0;
-        virtual void set_payload(const void* payload) = 0;
-
-    protected:
-        TriggerBlueprintNodeBase() = default;
-
-        TriggerBlueprintNodeBase(core::String name) : BlueprintNode(std::move(name)) {
-        }
-};
-
 template<typename T>
-class TriggerBlueprintNode final : public TriggerBlueprintNodeBase {
+class TriggerBlueprintNode final : public BlueprintNode {
     static inline const auto static_output_pins = std::apply([](const auto&... members) {
         return std::array<BlueprintPin, sizeof...(members)>{
             BlueprintPin{members.name, blueprint_param_type<std::remove_cvref_t<decltype(members.get(std::declval<const T&>()))>>()}...
@@ -59,7 +41,7 @@ class TriggerBlueprintNode final : public TriggerBlueprintNodeBase {
     public:
         TriggerBlueprintNode() = default;
 
-        TriggerBlueprintNode(core::String name) : TriggerBlueprintNodeBase(std::move(name)) {
+        TriggerBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
         }
 
         std::unique_ptr<BlueprintNode> clone() const override {
@@ -78,33 +60,23 @@ class TriggerBlueprintNode final : public TriggerBlueprintNodeBase {
             return static_output_pins;
         }
 
-        void eval() override {
+        bool is_entry_point() const override {
+            return true;
         }
 
-        const void* output_ptr(usize index) const override {
-            y_debug_assert(index < static_output_pins.size());
-            return std::apply([&](const auto&... members) {
-                return std::array<const void*, sizeof...(members)>{&members.get(_payload)...};
-            }, reflect::list_members<T>())[index];
-        }
+        void compile(BlueprintCompiler& compiler) const override {
+            T* payload = compiler.alloc<T>();
 
-        ecs::TriggerTypeIndex trigger_type() const override {
-            return ecs::trigger_index<T>();
-        }
+            std::apply([&](const auto&... members) {
+                usize index = 0;
+                (compiler.bind_output(index++, &members.get(*payload)), ...);
+            }, reflect::list_members<T>());
 
-        void subscribe(ecs::TriggerSubscriber& subscriber) const override {
-            subscriber.subscribe<T>();
-        }
-
-        void set_payload(const void* payload) override {
-            std::memcpy(&_payload, payload, sizeof(T));
+            compiler.set_entry_point(ecs::trigger_index<T>(), payload, sizeof(T), [](ecs::TriggerSubscriber& subscriber) { subscriber.subscribe<T>(); });
         }
 
         y_reflect(TriggerBlueprintNode, _name)
         y_serde3_poly(TriggerBlueprintNode)
-
-    private:
-        T _payload = {};
 };
 
 }

@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "blueprint_nodes.h"
+#include "BlueprintCompiler.h"
 #include "TriggerBlueprintNode.h"
 
 #include <yave/systems/JoltPhysicsSystem.h>
@@ -72,7 +73,7 @@ class LambdaBlueprintNodeImpl;
 
 template<typename F, typename Ret, typename... Args, FixedString... Names>
 class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode {
-    using values_t = std::tuple<std::remove_cvref_t<Args>...>;
+    using args_t = std::tuple<std::remove_cvref_t<Args>...>;
 
     static constexpr usize port_count = sizeof...(Args);
     static_assert(sizeof...(Names) == port_count);
@@ -83,6 +84,10 @@ class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode 
 
     static constexpr auto input_indices = detail::bp_port_indices<in_count>(is_input, true);
     static constexpr auto output_indices = detail::bp_port_indices<out_count>(is_input, false);
+
+    using inputs_t = decltype([]<usize... I>(std::index_sequence<I...>) {
+        return std::tuple<std::tuple_element_t<input_indices[I], args_t>...>{};
+    }(std::make_index_sequence<in_count>{}));
 
     template<usize N>
     static std::array<BlueprintPin, N> make_pins(const std::array<usize, N>& indices) {
@@ -123,48 +128,32 @@ class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode 
             return static_output_pins;
         }
 
-        void eval() override {
-            std::array<void*, port_count> ptrs = _value_ptrs;
-            for(usize i = 0; i != in_count; ++i) {
-                if(_inputs[i]) {
-                    ptrs[input_indices[i]] = const_cast<void*>(_inputs[i]);
-                }
-            }
-
-            [&]<usize... I>(std::index_sequence<I...>) {
-                F{}(*static_cast<std::tuple_element_t<I, values_t>*>(ptrs[I])...);
-            }(std::make_index_sequence<port_count>{});
-        }
-
-
-        void set_input(usize index, const void* ptr) override {
-            y_debug_assert(index < in_count);
-            _inputs[index] = ptr;
-        }
-
-        const void* input(usize index) const override {
-            y_debug_assert(index < in_count);
-            return _inputs[index];
-        }
-
         void* default_input(usize index) override {
             y_debug_assert(index < in_count);
-            return _value_ptrs[input_indices[index]];
+            return std::apply([&](auto&... values) { return std::array<void*, in_count>{&values...}[index]; }, _values);
         }
 
-        const void* output_ptr(usize index) const override {
-            y_debug_assert(index < out_count);
-            return _value_ptrs[output_indices[index]];
+        void compile(BlueprintCompiler& compiler) const override {
+            std::array<void*, port_count> ptrs = {};
+            for(usize i = 0; i != in_count; ++i) {
+                ptrs[input_indices[i]] = const_cast<void*>(compiler.input(i));
+            }
+            for(usize i = 0; i != out_count; ++i) {
+                ptrs[output_indices[i]] = compiler.output(i);
+            }
+
+            compiler.emit([ptrs] {
+                [&]<usize... I>(std::index_sequence<I...>) {
+                    F{}(*static_cast<std::tuple_element_t<I, args_t>*>(ptrs[I])...);
+                }(std::make_index_sequence<port_count>{});
+            });
         }
 
         y_reflect(LambdaBlueprintNodeImpl, _name, _values)
         y_serde3_poly(LambdaBlueprintNodeImpl)
 
     private:
-        std::array<const void*, in_count> _inputs = {};
-
-        values_t _values = {};
-        const std::array<void*, port_count> _value_ptrs = std::apply([](auto&... values) { return std::array<void*, port_count>{ &values... }; }, _values);
+        inputs_t _values = {};
 };
 
 template<typename F, FixedString... Names>
@@ -198,19 +187,14 @@ class ConstantBlueprintNode : public BlueprintNode {
             return static_value_pin;
         }
 
-        void eval() override {
-        }
-
-        const void* output_ptr(usize index) const override {
-            unused(index);
-            y_debug_assert(index == 0);
-            return &_value;
-        }
-
         void* param_ptr(usize index) override {
             unused(index);
             y_debug_assert(index == 0);
             return &_value;
+        }
+
+        void compile(BlueprintCompiler& compiler) const override {
+            compiler.bind_output(0, compiler.alloc<T>(_value));
         }
 
         y_reflect(ConstantBlueprintNode, _name, _value)
@@ -268,58 +252,36 @@ class IfBlueprintNode : public BlueprintNode {
             return _out_pin.type;
         }
 
-        void eval() override {
-            if(!_out_pin.type) {
-                throw std::runtime_error("Unresolved generic type");
-            }
-
-            const bool condition = _inputs[0] ? *static_cast<const bool*>(_inputs[0]) : _default_cond;
-            const usize index = condition ? 1 : 2;
-            const void* src = _inputs[index] ? _inputs[index] : default_input(index);
-            std::memcpy(value_ptr(output_index), src, _out_pin.type->size);
-        }
-
-        void set_input(usize index, const void* ptr) override {
-            y_debug_assert(index < in_count);
-            _inputs[index] = ptr;
-        }
-
-        const void* input(usize index) const override {
-            y_debug_assert(index < in_count);
-            return _inputs[index];
-        }
-
         void* default_input(usize index) override {
             y_debug_assert(index < in_count);
             return index ? value_ptr(index - 1) : &_default_cond;
         }
 
-        const void* output_ptr(usize index) const override {
-            unused(index);
-            y_debug_assert(index == 0);
-            return value_ptr(output_index);
+        void compile(BlueprintCompiler& compiler) const override {
+            const bool* condition = static_cast<const bool*>(compiler.input(0));
+            const void* if_true = compiler.input(1);
+            const void* if_false = compiler.input(2);
+            void* out = compiler.output(0);
+            const usize size = _out_pin.type->size;
+
+            compiler.emit([=] {
+                std::memcpy(out, *condition ? if_true : if_false, size);
+            });
         }
 
         y_reflect(IfBlueprintNode, _name, _default_cond, _values_type, _values)
         y_serde3_poly(IfBlueprintNode)
 
     private:
-        static constexpr usize output_index = 2;
-        static constexpr usize value_count = 3;
+        static constexpr usize value_count = 2;
 
         void* value_ptr(usize index) {
             y_debug_assert(index < value_count);
             return _out_pin.type ? _values.data() + index * _out_pin.type->size : nullptr;
         }
 
-        const void* value_ptr(usize index) const {
-            return const_cast<IfBlueprintNode*>(this)->value_ptr(index);
-        }
-
         std::array<BlueprintPin, in_count> _in_pins = {{{"condition", blueprint_param_type<bool>()}, {"true", nullptr, true}, {"false", nullptr, true}}};
         BlueprintPin _out_pin = {"out", nullptr, true};
-
-        std::array<const void*, in_count> _inputs = {};
 
         bool _default_cond = true;
         u64 _values_type = 0;

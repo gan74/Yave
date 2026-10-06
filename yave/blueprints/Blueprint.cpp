@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "Blueprint.h"
+#include "BlueprintCompiler.h"
 #include "NestedBlueprintNode.h"
 
 #include <y/core/ScratchPad.h>
@@ -283,15 +284,14 @@ void Blueprint::resolve_generic_types() {
     propagate_generic_types(_nodes, _links);
 }
 
-core::Result<BlueprintInstance, BlueprintError> Blueprint::create_instance() const {
+core::Result<void, BlueprintError> Blueprint::compile(BlueprintCompiler& compiler) const {
     y_profile();
 
-    BlueprintInstance instance;
-    instance._nodes = clone_nodes();
+    auto nodes = clone_nodes();
 
     // Check against the clones: cloning can load nested blueprints, which changes their pins
     for(const BlueprintLink& link : _links) {
-        if(!is_link_in_range(instance._nodes, link)) {
+        if(!is_link_in_range(nodes, link)) {
             return core::Err(BlueprintError{std::min<usize>(link.dst_node, _nodes.size()), core::String("Link references an invalid node or pin")});
         }
         if(link.src_node >= link.dst_node) {
@@ -299,50 +299,57 @@ core::Result<BlueprintInstance, BlueprintError> Blueprint::create_instance() con
         }
     }
 
-    propagate_generic_types(instance._nodes, _links);
+    propagate_generic_types(nodes, _links);
 
-    for(usize i = 0; i != instance._nodes.size(); ++i) {
-        const BlueprintNode* node = instance._nodes[i].get();
-        if(node->has_generic_pin() && !node->generic_type()) {
+    for(usize i = 0; i != nodes.size(); ++i) {
+        if(nodes[i]->has_generic_pin() && !nodes[i]->generic_type()) {
             return core::Err(BlueprintError{i, core::String("Unresolved generic type")});
         }
     }
 
     for(const BlueprintLink& link : _links) {
-        const BlueprintNode* src = instance._nodes[link.src_node].get();
-        BlueprintNode* dst = instance._nodes[link.dst_node].get();
-        if(!are_blueprint_types_compatible(src->output_pins()[link.src_pin].type, dst->input_pins()[link.dst_pin].type)) {
+        if(!are_blueprint_types_compatible(nodes[link.src_node]->output_pins()[link.src_pin].type, nodes[link.dst_node]->input_pins()[link.dst_pin].type)) {
             return core::Err(BlueprintError{link.dst_node, core::String("Link connects incompatible types")});
         }
-        dst->set_input(link.dst_pin, src->output_ptr(link.src_pin));
     }
 
-    const usize node_count = instance._nodes.size();
+    return compiler.compile(nodes, _links);
+}
 
-    core::FixedArray<core::FixedArray<bool>> downstream(node_count);
+core::Result<BlueprintInstance, BlueprintError> Blueprint::create_instance() const {
+    y_profile();
+
+    BlueprintInstance instance;
+    BlueprintCompiler compiler(instance._storage);
+    if(auto res = compile(compiler); res.is_error()) {
+        return core::Err(std::move(res.error()));
+    }
+
+    const usize node_count = _nodes.size();
+    const usize entry_count = compiler._entry_points.size();
+
+    core::FixedArray<core::FixedArray<bool>> downstream(entry_count);
     core::ScratchPad<bool> depends_on_any(node_count, false);
-    for(usize e = 0; e != node_count; ++e) {
-        if(_nodes[e]->is_entry_point()) {
-            downstream[e] = downstream_nodes(_nodes[e].get());
-            for(usize i = 0; i != node_count; ++i) {
-                depends_on_any[i] |= downstream[e][i];
-            }
+    for(usize e = 0; e != entry_count; ++e) {
+        downstream[e] = downstream_nodes(_nodes[compiler._entry_points[e].node_index].get());
+        for(usize i = 0; i != node_count; ++i) {
+            depends_on_any[i] |= downstream[e][i];
         }
     }
 
-    for(usize e = 0; e != node_count; ++e) {
-        if(!_nodes[e]->is_entry_point()) {
-            continue;
-        }
-
-        BlueprintInstance::EntryPoint& entry_point = instance._entry_points.emplace_back();
-        entry_point.node = instance._nodes[e].get();
+    for(usize e = 0; e != entry_count; ++e) {
+        BlueprintInstance::EntryPoint& entry_point = instance._entry_points.emplace_back(std::move(compiler._entry_points[e]));
         for(usize i = 0; i != node_count; ++i) {
             if(downstream[e][i] || !depends_on_any[i]) {
-                entry_point.nodes << instance._nodes[i].get();
+                for(const BlueprintInstruction& instruction : compiler._instructions[i]) {
+                    entry_point.instructions << instruction;
+                }
             }
         }
     }
+
+    instance._params_in = std::move(compiler._params_in);
+    instance._params_out = std::move(compiler._params_out);
 
     return core::Ok(std::move(instance));
 }

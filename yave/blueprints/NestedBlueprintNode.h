@@ -26,8 +26,6 @@ SOFTWARE.
 
 #include <yave/assets/AssetPtr.h>
 
-#include <y/core/Result.h>
-
 namespace yave {
 
 class NestedBlueprintNode final : public BlueprintNode {
@@ -42,13 +40,9 @@ class NestedBlueprintNode final : public BlueprintNode {
         core::Span<BlueprintPin> input_pins() const override;
         core::Span<BlueprintPin> output_pins() const override;
 
-        void eval() override;
-
-        void set_input(usize index, const void* ptr) override;
-        const void* input(usize index) const override;
         void* default_input(usize index) override;
 
-        const void* output_ptr(usize index) const override;
+        void compile(BlueprintCompiler& compiler) const override;
 
         const AssetPtr<Blueprint>& blueprint() const;
         void set_blueprint(AssetPtr<Blueprint> blueprint);
@@ -66,16 +60,12 @@ class NestedBlueprintNode final : public BlueprintNode {
         };
 
         AssetPtr<Blueprint> _blueprint;
-        core::Result<BlueprintInstance, BlueprintError> _instance = core::Err(BlueprintError{0, core::String("Nested blueprint is not loaded")});
 
         core::FixedArray<InputValue> _input_values;
-
-        core::FixedArray<ParamInBlueprintNode*> _params_in;
-        core::FixedArray<ParamOutBlueprintNode*> _params_out;
+        core::FixedArray<core::String> _output_names;
 
         core::FixedArray<BlueprintPin> _input_pins;
         core::FixedArray<BlueprintPin> _output_pins;
-        core::FixedArray<const void*> _inputs;
 };
 
 }

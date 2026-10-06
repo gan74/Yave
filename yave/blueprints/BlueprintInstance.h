@@ -24,8 +24,11 @@ SOFTWARE.
 
 #include "BlueprintNode.h"
 
-#include <memory>
-#include <utility>
+#include <yave/ecs/TriggerManager.h>
+
+#include <y/core/Result.h>
+
+#include <functional>
 
 namespace yave {
 
@@ -34,25 +37,57 @@ struct BlueprintError {
     core::String error;
 };
 
+struct BlueprintInstruction {
+    u32 node_index = 0;
+    std::function<void()> func; // may throw std::runtime_error
+};
+
+struct BlueprintParam {
+    core::String name;
+    i32 order = 0;
+    const BlueprintParamType* type = nullptr;
+    const void* ptr = nullptr;
+};
+
+class BlueprintStorage : NonCopyable {
+    public:
+        static inline constexpr usize storage_chunk_size = 4 * 1024;
+
+        BlueprintStorage() = default;
+
+        void* alloc(usize size, usize alignment);
+
+    private:
+        core::Vector<core::FixedArray<u8>> _chunks;
+        usize _offset = 0;
+};
+
 class BlueprintInstance : NonCopyable {
     public:
         struct EntryPoint {
-            BlueprintNode* node = nullptr;
-            core::Vector<BlueprintNode*> nodes;
+            u32 node_index = 0;
+            ecs::TriggerTypeIndex trigger_type = {};
+            void* payload = nullptr;
+            usize payload_size = 0;
+            void (*subscribe)(ecs::TriggerSubscriber&) = nullptr;
+            core::Vector<BlueprintInstruction> instructions;
         };
 
         BlueprintInstance() = default;
 
-        core::Span<std::unique_ptr<BlueprintNode>> all_nodes() const;
         core::Span<EntryPoint> entry_points() const;
+        core::Span<BlueprintParam> params_in() const;
+        core::Span<BlueprintParam> params_out() const;
 
-        core::Result<void, BlueprintError> eval(const EntryPoint& entry_point) noexcept;
+        core::Result<void, BlueprintError> trigger(const EntryPoint& entry_point, const void* payload) noexcept;
 
     private:
         friend class Blueprint;
 
-        core::Vector<std::unique_ptr<BlueprintNode>> _nodes;
+        BlueprintStorage _storage;
         core::Vector<EntryPoint> _entry_points;
+        core::Vector<BlueprintParam> _params_in;
+        core::Vector<BlueprintParam> _params_out;
 };
 
 }

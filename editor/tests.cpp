@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/systems/TriggerSystem.h>
 #include <yave/components/BlueprintComponent.h>
 #include <yave/blueprints/TriggerBlueprintNode.h>
+#include <yave/blueprints/NestedBlueprintNode.h>
 #include <yave/blueprints/blueprint_nodes.h>
 
 #include <y/concurrent/JobSystem.h>
@@ -2356,12 +2357,123 @@ std::unique_ptr<BlueprintNode> create_blueprint_node(std::string_view name) {
 }
 
 float blueprint_output(const BlueprintInstance* instance, std::string_view name) {
-    for(const auto& node : instance->all_nodes()) {
-        if(const auto* out = dynamic_cast<const ParamOutBlueprintNode*>(node.get()); out && out->name() == name) {
-            return *static_cast<const float*>(out->value());
+    for(const BlueprintParam& param : instance->params_out()) {
+        if(param.name == name) {
+            return *static_cast<const float*>(param.ptr);
         }
     }
     return -1.0f;
+}
+
+Blueprint create_negate_blueprint() {
+    Blueprint blueprint;
+    const BlueprintNode* in = blueprint.add_node(std::make_unique<ParamInBlueprintNode>("x"));
+    const BlueprintNode* op = blueprint.add_node(create_blueprint_node("Negate float"));
+    const BlueprintNode* out = blueprint.add_node(std::make_unique<ParamOutBlueprintNode>("y"));
+    blueprint.add_link(in, 0, op, 0);
+    blueprint.add_link(op, 0, out, 0);
+    return blueprint;
+}
+
+y_test_func("Blueprint shared nodes") {
+    Blueprint blueprint;
+    {
+        auto two = create_blueprint_node("Const float");
+        *static_cast<float*>(two->param_ptr(0)) = 2.0f;
+        const BlueprintNode* constant = blueprint.add_node(std::move(two));
+        const BlueprintNode* neg = blueprint.add_node(create_blueprint_node("Negate float"));
+        blueprint.add_link(constant, 0, neg, 0);
+
+        const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+        const BlueprintNode* add = blueprint.add_node(create_blueprint_node("Add float"));
+        const BlueprintNode* out_a = blueprint.add_node(std::make_unique<ParamOutBlueprintNode>("a"));
+        blueprint.add_link(on_a, 0, add, 0);
+        blueprint.add_link(neg, 0, add, 1);
+        blueprint.add_link(add, 0, out_a, 0);
+
+        const BlueprintNode* on_b = blueprint.add_node(std::make_unique<TriggerBlueprintNode<OtherBlueprintTestTrigger>>("on b"));
+        const BlueprintNode* mul = blueprint.add_node(create_blueprint_node("Multiply float"));
+        const BlueprintNode* out_b = blueprint.add_node(std::make_unique<ParamOutBlueprintNode>("b"));
+        blueprint.add_link(on_b, 0, mul, 0);
+        blueprint.add_link(neg, 0, mul, 1);
+        blueprint.add_link(mul, 0, out_b, 0);
+    }
+
+    auto instance = blueprint.create_instance();
+    y_test_assert(instance.is_ok());
+    y_test_assert(instance.unwrap().entry_points().size() == 2);
+
+    const BlueprintTestTrigger a{3.0f};
+    y_test_assert(instance.unwrap().trigger(instance.unwrap().entry_points()[0], &a).is_ok());
+    y_test_assert(blueprint_output(&instance.unwrap(), "a") == 1.0f);
+
+    const OtherBlueprintTestTrigger b{4.0f};
+    y_test_assert(instance.unwrap().trigger(instance.unwrap().entry_points()[1], &b).is_ok());
+    y_test_assert(blueprint_output(&instance.unwrap(), "b") == -8.0f);
+}
+
+y_test_func("Blueprint nested") {
+    AssetPtr<Blueprint> nested = make_asset<Blueprint>(create_negate_blueprint());
+
+    Blueprint blueprint;
+    {
+        const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+        const BlueprintNode* node = blueprint.add_node(std::make_unique<NestedBlueprintNode>("nested", nested));
+        const BlueprintNode* out_a = blueprint.add_node(std::make_unique<ParamOutBlueprintNode>("a"));
+        y_test_assert(node->input_pins().size() == 1);
+        y_test_assert(node->output_pins().size() == 1);
+        blueprint.add_link(on_a, 0, node, 0);
+        blueprint.add_link(node, 0, out_a, 0);
+    }
+
+    auto instance = blueprint.create_instance();
+    y_test_assert(instance.is_ok());
+
+    const BlueprintTestTrigger a{2.0f};
+    y_test_assert(instance.unwrap().trigger(instance.unwrap().entry_points()[0], &a).is_ok());
+    y_test_assert(blueprint_output(&instance.unwrap(), "a") == -2.0f);
+}
+
+y_test_func("Blueprint runtime errors") {
+    {
+        Blueprint blueprint;
+        const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+        const BlueprintNode* div = blueprint.add_node(create_blueprint_node("Divide float"));
+        blueprint.add_link(on_a, 0, div, 1);
+
+        auto instance = blueprint.create_instance();
+        y_test_assert(instance.is_ok());
+
+        const BlueprintTestTrigger zero{0.0f};
+        const auto res = instance.unwrap().trigger(instance.unwrap().entry_points()[0], &zero);
+        y_test_assert(res.is_error());
+        y_test_assert(res.error().node_index == 1);
+        y_test_assert(res.error().error == "Division by zero");
+    }
+
+    {
+        Blueprint inner;
+        {
+            const BlueprintNode* in = inner.add_node(std::make_unique<ParamInBlueprintNode>("x"));
+            const BlueprintNode* div = inner.add_node(create_blueprint_node("Divide float"));
+            const BlueprintNode* out = inner.add_node(std::make_unique<ParamOutBlueprintNode>("y"));
+            inner.add_link(in, 0, div, 1);
+            inner.add_link(div, 0, out, 0);
+        }
+
+        Blueprint blueprint;
+        const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+        const BlueprintNode* node = blueprint.add_node(std::make_unique<NestedBlueprintNode>("nested", make_asset<Blueprint>(std::move(inner))));
+        blueprint.add_link(on_a, 0, node, 0);
+
+        auto instance = blueprint.create_instance();
+        y_test_assert(instance.is_ok());
+
+        const BlueprintTestTrigger zero{0.0f};
+        const auto res = instance.unwrap().trigger(instance.unwrap().entry_points()[0], &zero);
+        y_test_assert(res.is_error());
+        y_test_assert(res.error().node_index == 1);
+    }
 }
 
 y_test_func("EntityWorld blueprint component triggers") {

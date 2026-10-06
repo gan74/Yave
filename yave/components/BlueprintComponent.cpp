@@ -22,7 +22,6 @@ SOFTWARE.
 
 #include "BlueprintComponent.h"
 
-#include <yave/blueprints/TriggerBlueprintNode.h>
 #include <yave/assets/AssetLoader.h>
 #include <yave/ecs/ComponentInspector.h>
 
@@ -66,9 +65,7 @@ void BlueprintComponent::subscribe_triggers(ecs::TriggerSubscriber& subscriber) 
     _instance = std::make_shared<BlueprintInstance>(std::move(instance.unwrap()));
 
     for(const BlueprintInstance::EntryPoint& entry_point : _instance->entry_points()) {
-        if(const auto* trigger = dynamic_cast<const TriggerBlueprintNodeBase*>(entry_point.node)) {
-            trigger->subscribe(subscriber);
-        }
+        entry_point.subscribe(subscriber);
     }
 }
 
@@ -78,13 +75,11 @@ void BlueprintComponent::on_trigger(ecs::EntityWorld&, ecs::EntityId, ecs::Trigg
     }
 
     for(const BlueprintInstance::EntryPoint& entry_point : _instance->entry_points()) {
-        auto* trigger = dynamic_cast<TriggerBlueprintNodeBase*>(entry_point.node);
-        if(!trigger || trigger->trigger_type() != type) {
+        if(entry_point.trigger_type != type) {
             continue;
         }
 
-        trigger->set_payload(payload);
-        if(const auto res = _instance->eval(entry_point); res.is_error()) {
+        if(const auto res = _instance->trigger(entry_point, payload); res.is_error()) {
             log_msg(fmt("Blueprint error: {} (node {})", res.error().error, res.error().node_index), Log::Error);
         }
     }

@@ -40,6 +40,7 @@ struct BlueprintParamType {
     std::string_view name;
     u64 type_hash = 0;
     usize size = 0;
+    usize alignment = 0;
 };
 
 template<typename T>
@@ -51,6 +52,7 @@ const BlueprintParamType* blueprint_param_type() {
         ct_type_name<T>(),
         ct_type_hash<T>(),
         sizeof(T),
+        alignof(T),
     };
     return &type;
 }
@@ -87,22 +89,12 @@ class BlueprintNode : NonMovable {
         virtual void set_generic_type(const BlueprintParamType* type);
         virtual const BlueprintParamType* generic_type() const;
 
-        virtual void eval() = 0; // may throw std::runtime_error
-
         virtual bool is_entry_point() const;
 
-        // inputs
-        virtual void reset_inputs();
-
-        virtual void set_input(usize index, const void* ptr);
-        virtual const void* input(usize index) const;
         virtual void* default_input(usize index);
-
-        // outputs
-        virtual const void* output_ptr(usize index) const;
-
-        // params
         virtual void* param_ptr(usize index);
+
+        virtual void compile(BlueprintCompiler& compiler) const = 0;
 
     protected:
         BlueprintNode() = default;
@@ -112,13 +104,10 @@ class BlueprintNode : NonMovable {
 };
 
 
-// Shared by ParamIn and ParamOut: a generic value pin, an order param and the value storage
 class ParamBlueprintNodeBase : public BlueprintNode {
     public:
         void set_generic_type(const BlueprintParamType* type) override;
         const BlueprintParamType* generic_type() const override;
-
-        void eval() override;
 
         i32 order() const;
         i32& order();
@@ -158,10 +147,9 @@ class ParamInBlueprintNode final : public ParamBlueprintNodeBase {
         core::Span<BlueprintPin> output_pins() const override;
         core::Span<BlueprintPin> param_pins() const override;
 
-        const void* output_ptr(usize index) const override;
         void* param_ptr(usize index) override;
 
-        void* value();
+        void compile(BlueprintCompiler& compiler) const override;
 
         y_reflect(ParamInBlueprintNode, _name, _order, _value_type, _value)
         y_serde3_poly(ParamInBlueprintNode)
@@ -178,18 +166,13 @@ class ParamOutBlueprintNode final : public ParamBlueprintNodeBase {
         core::Span<BlueprintPin> input_pins() const override;
         core::Span<BlueprintPin> param_pins() const override;
 
-        void set_input(usize index, const void* ptr) override;
-        const void* input(usize index) const override;
         void* default_input(usize index) override;
         void* param_ptr(usize index) override;
 
-        const void* value() const;
+        void compile(BlueprintCompiler& compiler) const override;
 
         y_reflect(ParamOutBlueprintNode, _name, _order, _value_type, _value)
         y_serde3_poly(ParamOutBlueprintNode)
-
-    private:
-        const void* _input = nullptr;
 };
 
 }

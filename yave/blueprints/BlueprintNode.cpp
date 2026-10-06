@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "BlueprintNode.h"
+#include "BlueprintCompiler.h"
 
 #include <y/serde3/archives.h>
 
@@ -75,28 +76,7 @@ const BlueprintParamType* BlueprintNode::generic_type() const {
     return nullptr;
 }
 
-void BlueprintNode::reset_inputs() {
-    const usize c = input_pins().size();
-    for(usize i = 0; i != c; ++i) {
-        set_input(i, nullptr);
-    }
-}
-
-void BlueprintNode::set_input(usize, const void*) {
-    y_debug_assert(false);
-}
-
-const void* BlueprintNode::input(usize) const {
-    y_debug_assert(false);
-    return nullptr;
-}
-
 void* BlueprintNode::default_input(usize) {
-    y_debug_assert(false);
-    return nullptr;
-}
-
-const void* BlueprintNode::output_ptr(usize) const {
     y_debug_assert(false);
     return nullptr;
 }
@@ -125,9 +105,6 @@ void ParamBlueprintNodeBase::set_generic_type(const BlueprintParamType* type) {
 
 const BlueprintParamType* ParamBlueprintNodeBase::generic_type() const {
     return _pins[0].type;
-}
-
-void ParamBlueprintNodeBase::eval() {
 }
 
 i32 ParamBlueprintNodeBase::order() const {
@@ -162,19 +139,13 @@ core::Span<BlueprintPin> ParamInBlueprintNode::param_pins() const {
     return _pins;
 }
 
-const void* ParamInBlueprintNode::output_ptr(usize index) const {
-    unused(index);
-    y_debug_assert(index == 0);
-    return _pins[0].type ? _value.data() : nullptr;
-}
-
 void* ParamInBlueprintNode::param_ptr(usize index) {
     y_debug_assert(index < _pins.size());
-    return index ? static_cast<void*>(&_order) : value();
+    return index ? static_cast<void*>(&_order) : default_value();
 }
 
-void* ParamInBlueprintNode::value() {
-    return default_value();
+void ParamInBlueprintNode::compile(BlueprintCompiler& compiler) const {
+    compiler.bind_output(0, compiler.param_in(_name, _order, generic_type(), _value.data()));
 }
 
 
@@ -197,35 +168,20 @@ core::Span<BlueprintPin> ParamOutBlueprintNode::param_pins() const {
     return core::Span<BlueprintPin>(_pins.data() + 1, 1);
 }
 
-void ParamOutBlueprintNode::set_input(usize index, const void* ptr) {
-    unused(index);
-    y_debug_assert(index == 0);
-    _input = ptr;
-}
-
-const void* ParamOutBlueprintNode::input(usize index) const {
-    unused(index);
-    y_debug_assert(index == 0);
-    return _input;
-}
-
 void* ParamOutBlueprintNode::default_input(usize index) {
     unused(index);
     y_debug_assert(index == 0);
     return default_value();
 }
 
-const void* ParamOutBlueprintNode::value() const {
-    if(_input) {
-        return _input;
-    }
-    return _pins[0].type ? _value.data() : nullptr;
-}
-
 void* ParamOutBlueprintNode::param_ptr(usize index) {
     unused(index);
     y_debug_assert(index == 0);
     return &_order;
+}
+
+void ParamOutBlueprintNode::compile(BlueprintCompiler& compiler) const {
+    compiler.param_out(_name, _order, generic_type(), compiler.input(0));
 }
 
 }

@@ -77,6 +77,10 @@ class Blueprint {
         y_reflect(Blueprint, _nodes, _links, _nested)
 
     private:
+        friend class BlueprintCompiler;
+
+        core::Result<void, BlueprintError> compile(BlueprintCompiler& compiler) const;
+
         usize find_node_index(const BlueprintNode* node) const;
 
         void move_downstream_after(const BlueprintNode* node, usize index);

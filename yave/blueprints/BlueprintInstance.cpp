@@ -21,29 +21,52 @@ SOFTWARE.
 **********************************/
 #include "BlueprintInstance.h"
 
+#include <y/utils/memory.h>
 #include <y/utils/log.h>
 
 #include <algorithm>
+#include <cstring>
 
 namespace yave {
 
-core::Span<std::unique_ptr<BlueprintNode>> BlueprintInstance::all_nodes() const {
-    return _nodes;
+
+void* BlueprintStorage::alloc(usize size, usize alignment) {
+    y_debug_assert(alignment && alignment <= alignof(std::max_align_t));
+
+    _offset = align_up_to(_offset, alignment);
+    if(_chunks.is_empty() || _offset + size > _chunks.last().size()) {
+        _chunks.emplace_back(std::max(size, storage_chunk_size));
+        _offset = 0;
+    }
+
+    void* ptr = _chunks.last().data() + _offset;
+    _offset += size;
+    return ptr;
 }
+
 
 core::Span<BlueprintInstance::EntryPoint> BlueprintInstance::entry_points() const {
     return _entry_points;
 }
 
-core::Result<void, BlueprintError> BlueprintInstance::eval(const EntryPoint& entry_point) noexcept {
+core::Span<BlueprintParam> BlueprintInstance::params_in() const {
+    return _params_in;
+}
+
+core::Span<BlueprintParam> BlueprintInstance::params_out() const {
+    return _params_out;
+}
+
+core::Result<void, BlueprintError> BlueprintInstance::trigger(const EntryPoint& entry_point, const void* payload) noexcept {
     y_profile();
 
-    for(BlueprintNode* node : entry_point.nodes) {
+    std::memcpy(entry_point.payload, payload, entry_point.payload_size);
+
+    for(const BlueprintInstruction& instruction : entry_point.instructions) {
         try {
-            node->eval();
+            instruction.func();
         } catch(const std::exception& e) {
-            const usize index = std::find_if(_nodes.begin(), _nodes.end(), [=](const auto& n) { return n.get() == node; }) - _nodes.begin();
-            return core::Err(BlueprintError{index, core::String(e.what())});
+            return core::Err(BlueprintError{instruction.node_index, core::String(e.what())});
         }
     }
 
