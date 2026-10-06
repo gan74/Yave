@@ -23,12 +23,13 @@ SOFTWARE.
 #include "Skeleton.h"
 
 #include <y/utils/log.h>
+#include <y/utils/format.h>
 
 namespace yave {
 
 [[maybe_unused]]
 static void debug_bone(usize index, core::Span<Bone> bones, const core::String& indent = "") {
-    log_msg(indent + bones[index].name + " (" + index + ")", Log::Debug);
+    log_msg(fmt("{}{} ({})", indent, bones[index].name, index), Log::Debug);
     /*log_msg(indent + "{" + bones[index].local_transform.rotation.x() + ", " +
                            bones[index].local_transform.rotation.y() + ", " +
                            bones[index].local_transform.rotation.z() + ", " +

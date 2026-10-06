@@ -96,14 +96,14 @@ y_test_func("String add") {
 
     a = "a string";
     a += "another string";
-    y_test_assert((a + 4) == "a stringanother string4");
+    y_test_assert((a + "4") == "a stringanother string4");
+    y_test_assert((a + std::string_view("4")) == "a stringanother string4");
+    y_test_assert((a + core::String("4")) == "a stringanother string4");
+    y_test_assert((a + std::string("4")) == "a stringanother string4");
+    y_test_assert(a == "a stringanother string");
 }
 
 y_test_func("String from") {
-    {
-        const auto s = core::String() + 125;
-        y_test_assert(!std::strcmp(s.data(), "125"));
-    }
     {
         const auto s = core::String() + "flubudu";
         y_test_assert(!std::strcmp(s.data(), "flubudu"));

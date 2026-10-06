@@ -127,12 +127,6 @@ concept has_make_empty = requires(T t) {
     t.make_empty();
 };
 
-template<typename T, typename U>
-concept has_append = requires(T t, U u) {
-    t.append(u);
-};
-
-
 template<typename T> requires(is_iterable<T>)
 using element_type_t = std::remove_cvref_t<decltype(*std::declval<T>().begin())>;
 

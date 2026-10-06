@@ -33,8 +33,7 @@ namespace core {
 // see: https://www.youtube.com/watch?v=kPR8h4-qZdk
 class String {
 
-    struct LongLenType
-    {
+    struct LongLenType {
         usize _len : 8 * sizeof(usize) - 1;
         usize _is_long : 1;
 
@@ -50,8 +49,7 @@ class String {
         }
     };
 
-    struct ShortLenType
-    {
+    struct ShortLenType {
         u8 _len : 7;
         u8 _is_long : 1;
 
@@ -64,8 +62,7 @@ class String {
         }
     };
 
-    struct LongData
-    {
+    struct LongData {
         Owner<char*> data;
         usize capacity;
         LongLenType length;
@@ -83,8 +80,7 @@ class String {
         inline void swap(LongData& other);
     };
 
-    struct ShortData
-    {
+    struct ShortData {
         char data[sizeof(LongData) - 1];
         ShortLenType length;
 
@@ -194,9 +190,12 @@ class String {
         inline bool operator!=(std::string_view str) const;
         inline bool operator<(std::string_view str) const;
 
-        // implemented in format.h
         template<typename T>
-        core::String operator+(const T& r) const;
+        String operator+(T&& t) const requires requires(String& s) { s += y_fwd(t); } {
+            String s(*this);
+            s += y_fwd(t);
+            return s;
+        }
 
         template<typename T>
         String& operator=(T&& t) {
