@@ -43,12 +43,7 @@ class BlueprintNodeInspector final : public WorkspaceWidget<BlueprintWorkspace> 
         void on_gui() override;
 
     private:
-        struct ParamDrawer {
-            std::function<void(std::string_view, void*)> input;
-            std::function<void(std::string_view, const void*)> output;
-        };
-
-        core::FlatHashMap<const BlueprintParamType*, ParamDrawer> _drawers;
+        core::FlatHashMap<const BlueprintParamType*, std::function<void(std::string_view, void*)>> _drawers;
 };
 
 }

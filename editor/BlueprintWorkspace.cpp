@@ -234,13 +234,10 @@ std::string_view BlueprintWorkspace::name() const {
 
 void BlueprintWorkspace::update() {
     if(auto res = _blueprint.create_instance()) {
-        _instance = std::make_unique<BlueprintInstance>(std::move(res.unwrap()));
-        _result = _instance->eval();
+        _result = core::Ok();
     } else {
-        _instance = nullptr;
         _result = core::Err(std::move(res.error()));
     }
-
 }
 
 void BlueprintWorkspace::save() {
@@ -344,10 +341,6 @@ Blueprint& BlueprintWorkspace::blueprint() {
 
 const Blueprint& BlueprintWorkspace::blueprint() const {
     return _blueprint;
-}
-
-const BlueprintInstance* BlueprintWorkspace::instance() const {
-    return _instance.get();
 }
 
 const core::Result<void, BlueprintError>& BlueprintWorkspace::result() const {

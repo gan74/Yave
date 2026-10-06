@@ -46,7 +46,6 @@ class BlueprintInstance : NonCopyable {
         core::Span<std::unique_ptr<BlueprintNode>> all_nodes() const;
         core::Span<EntryPoint> entry_points() const;
 
-        core::Result<void, BlueprintError> eval() noexcept;
         core::Result<void, BlueprintError> eval(const EntryPoint& entry_point) noexcept;
 
     private:

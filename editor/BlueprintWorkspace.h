@@ -25,7 +25,6 @@ SOFTWARE.
 #include "Workspace.h"
 
 #include <yave/assets/AssetId.h>
-#include <yave/blueprints/BlueprintInstance.h>
 #include <yave/blueprints/Blueprint.h>
 #include <yave/blueprints/BlueprintNodeFactory.h>
 
@@ -53,8 +52,6 @@ class BlueprintWorkspace final : public Workspace {
         Blueprint& blueprint();
         const Blueprint& blueprint() const;
 
-        const BlueprintInstance* instance() const;
-
         bool add_blueprint(AssetId id);
         const BlueprintNode* add_nested_blueprint(AssetId id);
 
@@ -71,7 +68,6 @@ class BlueprintWorkspace final : public Workspace {
         core::Vector<std::unique_ptr<BlueprintNodeFactory>> _node_factories;
         
         Blueprint _blueprint;
-        std::unique_ptr<BlueprintInstance> _instance;
         BlueprintNode* _selected_node = nullptr;
         core::Result<void, BlueprintError> _result = core::Ok();
 

@@ -35,20 +35,6 @@ core::Span<BlueprintInstance::EntryPoint> BlueprintInstance::entry_points() cons
     return _entry_points;
 }
 
-core::Result<void, BlueprintError> BlueprintInstance::eval() noexcept {
-    y_profile();
-
-    for(usize i = 0; i != _nodes.size(); ++i) {
-        try {
-            _nodes[i]->eval();
-        } catch(const std::exception& e) {
-            return core::Err(BlueprintError{i, core::String(e.what())});
-        }
-    }
-
-    return core::Ok();
-}
-
 core::Result<void, BlueprintError> BlueprintInstance::eval(const EntryPoint& entry_point) noexcept {
     y_profile();
 
