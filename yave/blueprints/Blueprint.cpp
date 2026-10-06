@@ -147,13 +147,30 @@ bool Blueprint::is_link_valid(const BlueprintNode* src, usize src_pin, const Blu
         return false;
     }
 
-    if(find_node_index(dst) == usize(-1)) {
+    const usize dst_index = find_node_index(dst);
+    if(dst_index == usize(-1)) {
         return false;
     }
 
+    const auto is_only_connected_generic_pin = [&] {
+        if(!dst_inputs[dst_pin].is_generic) {
+            return false;
+        }
+        const core::Span<BlueprintPin> dst_outputs = dst->output_pins();
+        for(const BlueprintLink& link : _links) {
+            if(link.dst_node == dst_index && link.dst_pin != dst_pin && dst_inputs[link.dst_pin].is_generic) {
+                return false;
+            }
+            if(link.src_node == dst_index && dst_outputs[link.src_pin].is_generic) {
+                return false;
+            }
+        }
+        return true;
+    };
+
     const BlueprintParamType* src_type = src_outputs[src_pin].type;
     const BlueprintParamType* dst_type = dst_inputs[dst_pin].type;
-    if(src_type && dst_type && src_type != dst_type) {
+    if(src_type && dst_type && src_type != dst_type && !is_only_connected_generic_pin()) {
         return false;
     }
 

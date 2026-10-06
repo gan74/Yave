@@ -2472,6 +2472,26 @@ y_test_func("Blueprint runtime errors") {
     y_test_assert(res.error().error == "Division by zero");
 }
 
+y_test_func("Blueprint generic link replacement") {
+    Blueprint blueprint;
+    const BlueprintNode* f = blueprint.add_node(create_blueprint_node("Const float"));
+    const BlueprintNode* v = blueprint.add_node(create_blueprint_node("Const Vec2"));
+    const BlueprintNode* select = blueprint.add_node(create_blueprint_node("If"));
+
+    blueprint.add_link(f, 0, select, 1);
+    y_test_assert(select->generic_type() == blueprint_param_type<float>());
+
+    // Only generic link: replacing it with another type is allowed
+    y_test_assert(blueprint.is_link_valid(v, 0, select, 1));
+    blueprint.add_link(v, 0, select, 1);
+    y_test_assert(select->generic_type() == blueprint_param_type<math::Vec2>());
+
+    // Other generic pin is connected: the type is constrained
+    y_test_assert(!blueprint.is_link_valid(f, 0, select, 2));
+    blueprint.add_link(v, 0, select, 2);
+    y_test_assert(!blueprint.is_link_valid(f, 0, select, 1));
+}
+
 y_test_func("EntityWorld blueprint component triggers") {
     TestOutputBlueprintNode::outputs = {};
 
