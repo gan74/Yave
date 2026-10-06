@@ -474,10 +474,8 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             auto row = begin_property_row(name);
 
             if(max >= u32(std::numeric_limits<int>::max())) {
-                int value = int(u);
-                if(ImGui::DragInt("##drag", &value, 1.0f, 0)) {
-                    u = u32(value);
-                }
+                const u32 min = 0;
+                ImGui::DragScalar("##drag", ImGuiDataType_U32, &u, 1.0f, &min, &max);
             } else {
                 int value = int(u);
                 if(ImGui::DragInt("##drag", &value, 1.0f / float(max), 0, int(max))) {
@@ -568,6 +566,10 @@ Inspector::Inspector(WorldWorkspace* ws) :
 
 void Inspector::on_gui() {
     EditorWorld& world = workspace()->world();
+
+    if(_locked.is_valid() && !world.exists(_locked)) {
+        _locked = {};
+    }
 
     const ecs::EntityId selected = world.selected_entity();
     const ecs::EntityId id = _locked.is_valid() ? _locked : selected;

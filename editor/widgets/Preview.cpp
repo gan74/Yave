@@ -103,7 +103,7 @@ void Preview::update_camera() {
 
     {
         const float cos_y = std::cos(_angle.y());
-        const math::Vec3 cam = math::Vec3(std::sin(_angle.x()) * cos_y, std::cos(_angle.x()) * cos_y, std::sin(_angle.y()));
+        const math::Vec3 cam = math::Vec3(std::sin(_angle.x()) * cos_y, std::sin(_angle.y()), std::cos(_angle.x()) * cos_y);
 
         _view.camera() = Camera(
             math::look_at(cam * _cam_distance, math::Vec3(), math::Vec3(0.0f, 1.0f, 0.0f)),
