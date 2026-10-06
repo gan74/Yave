@@ -22,6 +22,9 @@ SOFTWARE.
 
 #include "BlueprintNode.h"
 
+#include <y/serde3/archives.h>
+
+#include <algorithm>
 #include <memory>
 
 namespace yave {
@@ -57,17 +60,10 @@ bool BlueprintNode::is_entry_point() const {
 }
 
 bool BlueprintNode::has_generic_pin() const {
-    for(const BlueprintPin& pin : input_pins()) {
-        if(pin.is_generic) {
-            return true;
-        }
-    }
-    for(const BlueprintPin& pin : output_pins()) {
-        if(pin.is_generic) {
-            return true;
-        }
-    }
-    return false;
+    const auto is_generic = [](const BlueprintPin& pin) { return pin.is_generic; };
+    const core::Span<BlueprintPin> inputs = input_pins();
+    const core::Span<BlueprintPin> outputs = output_pins();
+    return std::any_of(inputs.begin(), inputs.end(), is_generic) || std::any_of(outputs.begin(), outputs.end(), is_generic);
 }
 
 void BlueprintNode::set_generic_type(const BlueprintParamType* type) {
@@ -112,27 +108,46 @@ void* BlueprintNode::param_ptr(usize) {
 
 
 
-static void set_generic_pin_type(BlueprintPin& pin, const BlueprintParamType* type, u64& value_type, core::FixedArray<u8>& value) {
-    y_debug_assert(!pin.type || !type);
-    pin.type = type;
+ParamBlueprintNodeBase::ParamBlueprintNodeBase(std::string_view pin_name, core::String name) :
+        BlueprintNode(std::move(name)),
+        _pins({{{pin_name, nullptr, true}, {"order", blueprint_param_type<i32>()}}}) {
+}
 
-    if(type && type->type_hash != value_type) {
-        value_type = type->type_hash;
-        value = core::FixedArray<u8>(type->size);
+void ParamBlueprintNodeBase::set_generic_type(const BlueprintParamType* type) {
+    y_debug_assert(!_pins[0].type || !type);
+    _pins[0].type = type;
+
+    if(type && type->type_hash != _value_type) {
+        _value_type = type->type_hash;
+        _value = core::FixedArray<u8>(type->size);
     }
 }
 
+const BlueprintParamType* ParamBlueprintNodeBase::generic_type() const {
+    return _pins[0].type;
+}
 
-ParamInBlueprintNode::ParamInBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
+void ParamBlueprintNodeBase::eval() {
+}
+
+i32 ParamBlueprintNodeBase::order() const {
+    return _order;
+}
+
+i32& ParamBlueprintNodeBase::order() {
+    return _order;
+}
+
+void* ParamBlueprintNodeBase::default_value() {
+    return _pins[0].type ? _value.data() : nullptr;
+}
+
+
+ParamInBlueprintNode::ParamInBlueprintNode(core::String name) : ParamBlueprintNodeBase("out", std::move(name)) {
 }
 
 std::unique_ptr<BlueprintNode> ParamInBlueprintNode::clone() const {
-    auto node = std::make_unique<ParamInBlueprintNode>(_name);
-    node->_order = _order;
-    node->_value_type = _value_type;
-    node->_value = core::FixedArray<u8>(core::Span<u8>(_value));
-    node->set_generic_type(generic_type());
-    return node;
+    return clone_as<ParamInBlueprintNode>();
 }
 
 std::string_view ParamInBlueprintNode::node_type_name() const {
@@ -147,17 +162,6 @@ core::Span<BlueprintPin> ParamInBlueprintNode::param_pins() const {
     return _pins;
 }
 
-void ParamInBlueprintNode::set_generic_type(const BlueprintParamType* type) {
-    set_generic_pin_type(_pins[0], type, _value_type, _value);
-}
-
-const BlueprintParamType* ParamInBlueprintNode::generic_type() const {
-    return _pins[0].type;
-}
-
-void ParamInBlueprintNode::eval() {
-}
-
 const void* ParamInBlueprintNode::output_ptr(usize index) const {
     unused(index);
     y_debug_assert(index == 0);
@@ -170,28 +174,15 @@ void* ParamInBlueprintNode::param_ptr(usize index) {
 }
 
 void* ParamInBlueprintNode::value() {
-    return _pins[0].type ? _value.data() : nullptr;
-}
-
-i32 ParamInBlueprintNode::order() const {
-    return _order;
-}
-
-i32& ParamInBlueprintNode::order() {
-    return _order;
+    return default_value();
 }
 
 
-ParamOutBlueprintNode::ParamOutBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
+ParamOutBlueprintNode::ParamOutBlueprintNode(core::String name) : ParamBlueprintNodeBase("in", std::move(name)) {
 }
 
 std::unique_ptr<BlueprintNode> ParamOutBlueprintNode::clone() const {
-    auto node = std::make_unique<ParamOutBlueprintNode>(_name);
-    node->_order = _order;
-    node->_value_type = _value_type;
-    node->_value = core::FixedArray<u8>(core::Span<u8>(_value));
-    node->set_generic_type(generic_type());
-    return node;
+    return clone_as<ParamOutBlueprintNode>();
 }
 
 std::string_view ParamOutBlueprintNode::node_type_name() const {
@@ -199,22 +190,11 @@ std::string_view ParamOutBlueprintNode::node_type_name() const {
 }
 
 core::Span<BlueprintPin> ParamOutBlueprintNode::input_pins() const {
-    return _pin;
+    return core::Span<BlueprintPin>(_pins.data(), 1);
 }
 
 core::Span<BlueprintPin> ParamOutBlueprintNode::param_pins() const {
-    return _order_pin;
-}
-
-void ParamOutBlueprintNode::set_generic_type(const BlueprintParamType* type) {
-    set_generic_pin_type(_pin, type, _value_type, _value);
-}
-
-const BlueprintParamType* ParamOutBlueprintNode::generic_type() const {
-    return _pin.type;
-}
-
-void ParamOutBlueprintNode::eval() {
+    return core::Span<BlueprintPin>(_pins.data() + 1, 1);
 }
 
 void ParamOutBlueprintNode::set_input(usize index, const void* ptr) {
@@ -232,28 +212,20 @@ const void* ParamOutBlueprintNode::input(usize index) const {
 void* ParamOutBlueprintNode::default_input(usize index) {
     unused(index);
     y_debug_assert(index == 0);
-    return _pin.type ? _value.data() : nullptr;
+    return default_value();
 }
 
 const void* ParamOutBlueprintNode::value() const {
     if(_input) {
         return _input;
     }
-    return _pin.type ? _value.data() : nullptr;
+    return _pins[0].type ? _value.data() : nullptr;
 }
 
 void* ParamOutBlueprintNode::param_ptr(usize index) {
     unused(index);
     y_debug_assert(index == 0);
     return &_order;
-}
-
-i32 ParamOutBlueprintNode::order() const {
-    return _order;
-}
-
-i32& ParamOutBlueprintNode::order() {
-    return _order;
 }
 
 }

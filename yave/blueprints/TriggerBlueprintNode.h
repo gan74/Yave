@@ -48,7 +48,6 @@ class TriggerBlueprintNodeBase : public BlueprintNode {
         }
 };
 
-// Outputs the reflected members of the trigger payload
 template<typename T>
 class TriggerBlueprintNode final : public TriggerBlueprintNodeBase {
     static inline const auto static_output_pins = std::apply([](const auto&... members) {
@@ -68,7 +67,11 @@ class TriggerBlueprintNode final : public TriggerBlueprintNodeBase {
         }
 
         std::string_view node_type_name() const override {
-            return ct_type_name<T>();
+            auto remove_prefix = [](std::string_view str, std::string_view pref) {
+                return str.starts_with(pref) ? std::string_view(str.data() + pref.size(), str.size() - pref.size()) : str;
+            };
+
+            return remove_prefix(remove_prefix(remove_prefix(ct_type_name<T>(), "class "), "struct "), "yave::");
         }
 
         core::Span<BlueprintPin> output_pins() const override {

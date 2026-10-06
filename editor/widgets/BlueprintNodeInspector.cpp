@@ -88,12 +88,11 @@ void BlueprintNodeInspector::on_gui() {
     ImGui::Separator();
 
     const Blueprint& blueprint = workspace()->blueprint();
-    const usize node_index = blueprint.find_node_index(node);
 
     const core::Span<BlueprintPin> inputs = node->input_pins();
     if(!inputs.is_empty() && ImGui::CollapsingHeader("Inputs", ImGuiTreeNodeFlags_DefaultOpen)) {
         for(usize i = 0; i != inputs.size(); ++i) {
-            const std::string_view label = fmt("{}{}", inputs[i].name, blueprint.find_link(node_index, i) ? " (linked)" : "");
+            const std::string_view label = fmt("{}{}", inputs[i].name, blueprint.find_link(node, i) ? " (linked)" : "");
             if(const auto it = _drawers.find(inputs[i].type); it != _drawers.end()) {
                 it->second(label, node->default_input(i));
             } else {

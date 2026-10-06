@@ -112,10 +112,44 @@ class BlueprintNode : NonMovable {
 };
 
 
-class ParamInBlueprintNode final : public BlueprintNode {
+// Shared by ParamIn and ParamOut: a generic value pin, an order param and the value storage
+class ParamBlueprintNodeBase : public BlueprintNode {
     public:
-        ParamInBlueprintNode() = default;
-        ParamInBlueprintNode(core::String name);
+        void set_generic_type(const BlueprintParamType* type) override;
+        const BlueprintParamType* generic_type() const override;
+
+        void eval() override;
+
+        i32 order() const;
+        i32& order();
+
+    protected:
+        ParamBlueprintNodeBase(std::string_view pin_name, core::String name);
+
+        template<typename T>
+        std::unique_ptr<BlueprintNode> clone_as() const {
+            auto node = std::make_unique<T>(_name);
+            node->_order = _order;
+            node->_value_type = _value_type;
+            node->_value = core::FixedArray<u8>(core::Span<u8>(_value));
+            node->set_generic_type(generic_type());
+            return node;
+        }
+
+        void* default_value();
+
+        // value pin, then order pin
+        std::array<BlueprintPin, 2> _pins;
+
+        i32 _order = 0;
+
+        u64 _value_type = 0;
+        core::FixedArray<u8> _value;
+};
+
+class ParamInBlueprintNode final : public ParamBlueprintNodeBase {
+    public:
+        ParamInBlueprintNode(core::String name = {});
 
         std::unique_ptr<BlueprintNode> clone() const override;
 
@@ -124,35 +158,18 @@ class ParamInBlueprintNode final : public BlueprintNode {
         core::Span<BlueprintPin> output_pins() const override;
         core::Span<BlueprintPin> param_pins() const override;
 
-        void set_generic_type(const BlueprintParamType* type) override;
-        const BlueprintParamType* generic_type() const override;
-
-        void eval() override;
-
         const void* output_ptr(usize index) const override;
         void* param_ptr(usize index) override;
 
         void* value();
 
-        i32 order() const;
-        i32& order();
-
         y_reflect(ParamInBlueprintNode, _name, _order, _value_type, _value)
         y_serde3_poly(ParamInBlueprintNode)
-
-    private:
-        std::array<BlueprintPin, 2> _pins = {{{"out", nullptr, true}, {"order", blueprint_param_type<i32>()}}};
-
-        i32 _order = 0;
-
-        u64 _value_type = 0;
-        core::FixedArray<u8> _value;
 };
 
-class ParamOutBlueprintNode final : public BlueprintNode {
+class ParamOutBlueprintNode final : public ParamBlueprintNodeBase {
     public:
-        ParamOutBlueprintNode() = default;
-        ParamOutBlueprintNode(core::String name);
+        ParamOutBlueprintNode(core::String name = {});
 
         std::unique_ptr<BlueprintNode> clone() const override;
 
@@ -161,11 +178,6 @@ class ParamOutBlueprintNode final : public BlueprintNode {
         core::Span<BlueprintPin> input_pins() const override;
         core::Span<BlueprintPin> param_pins() const override;
 
-        void set_generic_type(const BlueprintParamType* type) override;
-        const BlueprintParamType* generic_type() const override;
-
-        void eval() override;
-
         void set_input(usize index, const void* ptr) override;
         const void* input(usize index) const override;
         void* default_input(usize index) override;
@@ -173,21 +185,11 @@ class ParamOutBlueprintNode final : public BlueprintNode {
 
         const void* value() const;
 
-        i32 order() const;
-        i32& order();
-
         y_reflect(ParamOutBlueprintNode, _name, _order, _value_type, _value)
         y_serde3_poly(ParamOutBlueprintNode)
 
     private:
-        BlueprintPin _pin = {"in", nullptr, true};
-        BlueprintPin _order_pin = {"order", blueprint_param_type<i32>()};
         const void* _input = nullptr;
-
-        i32 _order = 0;
-
-        u64 _value_type = 0;
-        core::FixedArray<u8> _value;
 };
 
 }

@@ -28,6 +28,7 @@ SOFTWARE.
 #include <yave/assets/AssetPtr.h>
 
 #include <y/reflect/reflect.h>
+#include <y/core/FixedArray.h>
 
 #include <memory>
 
@@ -52,8 +53,7 @@ class Blueprint {
 
         bool contains_nested(AssetId id) const;
 
-        usize find_node_index(const BlueprintNode* node) const;
-        const BlueprintLink* find_link(usize dst_node, usize dst_pin) const;
+        const BlueprintLink* find_link(const BlueprintNode* dst, usize dst_pin) const;
 
         const BlueprintNode* add_node(std::unique_ptr<BlueprintNode> node);
         void remove_node(const BlueprintNode* node);
@@ -65,6 +65,9 @@ class Blueprint {
         void remove_link(const BlueprintNode* dst, usize dst_pin);
         void clear_links();
 
+        // For each node, whether it is node or depends on it
+        core::FixedArray<bool> downstream_nodes(const BlueprintNode* node) const;
+
         core::Result<BlueprintInstance, BlueprintError> create_instance() const;
 
         Blueprint clone() const;
@@ -74,7 +77,10 @@ class Blueprint {
         y_reflect(Blueprint, _nodes, _links, _nested)
 
     private:
-        void sort_nodes();
+        usize find_node_index(const BlueprintNode* node) const;
+
+        void move_downstream_after(const BlueprintNode* node, usize index);
+        void erase_link(const BlueprintNode* dst, usize dst_pin);
         void register_nested(const BlueprintNode* node);
         void resolve_generic_types();
         

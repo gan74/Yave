@@ -53,7 +53,6 @@ static constexpr ImVec2 node_min_size = ImVec2(60.0f, 40.0f);
 static constexpr ImVec2 layout_cell_size = ImVec2(260.0f, 300.0f);
 static constexpr ImColor error_color = ImColor(250, 20, 20, 255);
 static constexpr ImColor after_error_color = error_color; // ImColor(255, 100, 70, 255);
-static constexpr ImColor arrow_color = ImColor(255, 255, 255, 255);
 
 static ImColor pin_type_color(const BlueprintParamType* type) {
     if(type == blueprint_param_type<float>()) {
@@ -583,64 +582,81 @@ void BlueprintEditor::draw_context_menu() {
 }
 
 void BlueprintEditor::draw_execution_order() {
-    const core::Span nodes = workspace()->blueprint().all_nodes();
-    if(nodes.is_empty()) {
-        return;
-    }
+    const Blueprint& blueprint = workspace()->blueprint();
+    const core::Span nodes = blueprint.all_nodes();
 
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     const float thickness = 2.5f;
     const float arrow_size = 14.0f;
 
-    for(usize i = 0; i != nodes.size(); ++i) {
-        const ed::NodeId node_id(uintptr_t(nodes[i].get()));
-        const ImVec2 pos = ed::GetNodePosition(node_id);
-        const ImVec2 size = ed::GetNodeSize(node_id);
-        const char* label = fmt_c_str("{}", i);
-        const ImVec2 text_size = ImGui::CalcTextSize(label);
-        draw_list->AddText(ImVec2(pos.x + (size.x - text_size.x) * 0.5f, pos.y - text_size.y), arrow_color, label);
-    }
+    auto border_point = [](ed::NodeId id, ImVec2 toward) {
+        const ImVec2 pos = ed::GetNodePosition(id);
+        const ImVec2 half = ed::GetNodeSize(id) * 0.5f;
+        const ImVec2 center = pos + half;
+        const ImVec2 delta = toward - center;
 
-    for(usize i = 0; i + 1 < nodes.size(); ++i) {
-        const ed::NodeId from_id(uintptr_t(nodes[i].get()));
-        const ed::NodeId to_id(uintptr_t(nodes[i + 1].get()));
+        float t = std::numeric_limits<float>::max();
+        if(delta.x != 0.0f) {
+            t = std::min(t, half.x / std::abs(delta.x));
+        }
+        if(delta.y != 0.0f) {
+            t = std::min(t, half.y / std::abs(delta.y));
+        }
+        return center + delta * t;
+    };
 
-        const ImVec2 from_center = ed::GetNodePosition(from_id) + ed::GetNodeSize(from_id) * 0.5f;
-        const ImVec2 to_center = ed::GetNodePosition(to_id) + ed::GetNodeSize(to_id) * 0.5f;
+    core::FixedArray<usize> label_count(nodes.size());
+    usize entry_count = 0;
+    for(const auto& entry : nodes) {
+        if(!entry->is_entry_point()) {
+            continue;
+        }
 
-        auto border_point = [](ed::NodeId id, ImVec2 toward) {
-            const ImVec2 pos = ed::GetNodePosition(id);
-            const ImVec2 half = ed::GetNodeSize(id) * 0.5f;
-            const ImVec2 center = pos + half;
-            const ImVec2 delta = toward - center;
-
-            float t = std::numeric_limits<float>::max();
-            if(delta.x != 0.0f) {
-                t = std::min(t, half.x / std::abs(delta.x));
+        const core::FixedArray<bool> downstream = blueprint.downstream_nodes(entry.get());
+        core::Vector<usize> order;
+        for(usize i = 0; i != downstream.size(); ++i) {
+            if(downstream[i]) {
+                order << i;
             }
-            if(delta.y != 0.0f) {
-                t = std::min(t, half.y / std::abs(delta.y));
+        }
+
+        const ImColor color = ImColor::HSV(float(entry_count++) * 0.6f, 0.6f, 1.0f);
+
+        for(usize i = 0; i != order.size(); ++i) {
+            const ed::NodeId node_id(uintptr_t(nodes[order[i]].get()));
+            const ImVec2 pos = ed::GetNodePosition(node_id);
+            const ImVec2 size = ed::GetNodeSize(node_id);
+            const char* label = fmt_c_str("{}", i);
+            const ImVec2 text_size = ImGui::CalcTextSize(label);
+            const float y = pos.y - text_size.y * float(++label_count[order[i]]);
+            draw_list->AddText(ImVec2(pos.x + (size.x - text_size.x) * 0.5f, y), color, label);
+        }
+
+        for(usize i = 0; i + 1 < order.size(); ++i) {
+            const ed::NodeId from_id(uintptr_t(nodes[order[i]].get()));
+            const ed::NodeId to_id(uintptr_t(nodes[order[i + 1]].get()));
+
+            const ImVec2 from_center = ed::GetNodePosition(from_id) + ed::GetNodeSize(from_id) * 0.5f;
+            const ImVec2 to_center = ed::GetNodePosition(to_id) + ed::GetNodeSize(to_id) * 0.5f;
+
+            const ImVec2 from = border_point(from_id, to_center);
+            const ImVec2 to = border_point(to_id, from_center);
+
+            const ImVec2 delta = to - from;
+            const float len = to_y(delta).length();
+            if(len > 1.0f) {
+                const ImVec2 dir = delta / len;
+                const ImVec2 perp(-dir.y, dir.x);
+                const ImVec2 base = to - dir * arrow_size;
+
+                draw_list->AddLine(from, base, color, thickness);
+                draw_list->AddTriangleFilled(
+                    to,
+                    base + perp * (arrow_size * 0.45f),
+                    base - perp * (arrow_size * 0.45f),
+                    color
+                );
             }
-            return center + delta * t;
-        };
-
-        const ImVec2 from = border_point(from_id, to_center);
-        const ImVec2 to = border_point(to_id, from_center);
-
-        const ImVec2 delta = to - from;
-        const float len = to_y(delta).length();
-        if(len > 1.0f) {
-            const ImVec2 dir = delta / len;
-            const ImVec2 perp(-dir.y, dir.x);
-            const ImVec2 base = to - dir * arrow_size;
-
-            draw_list->AddLine(from, base, arrow_color, thickness);
-            draw_list->AddTriangleFilled(
-                to,
-                base + perp * (arrow_size * 0.45f),
-                base - perp * (arrow_size * 0.45f),
-                arrow_color
-            );
         }
     }
 }

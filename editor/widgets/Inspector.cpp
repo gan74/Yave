@@ -36,6 +36,7 @@ SOFTWARE.
 #include <yave/material/Material.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/meshes/MeshData.h>
+#include <yave/blueprints/Blueprint.h>
 
 #include <yave/utils/color.h>
 
@@ -521,6 +522,10 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
                 case AssetType::Material:
                     asset_ptr_selector<Material>(p, name, _id, _type, _workspace);
+                break;
+
+                case AssetType::Blueprint:
+                    asset_ptr_selector<Blueprint>(p, name, _id, _type, _workspace);
                 break;
 
                 default:
