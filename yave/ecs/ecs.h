@@ -126,11 +126,18 @@ class EntityId {
 struct RegisterComponentTag {};
 
 template<typename Component, typename... SystemTypes>
-struct RegisterComponent : RegisterComponentTag {
-    using registered_component_type = Component;
+class RegisterComponent : RegisterComponentTag {
+    public:
+        using registered_component_type = Component;
 
-    // EntityWorld.inl
-    static inline void register_component_type(System*);
+        // EntityWorld.inl
+        static inline void register_component_type(System*);
+
+    private:
+        // EntityWorld.inl
+        // Taking the address forces the definition to be instantiated
+        static const bool registered;
+        static_assert(force_ct<&registered>());
 };
 
 template<typename... ComponentTypes>

@@ -67,6 +67,9 @@ void RegisterComponent<Component, SystemTypes...>::register_component_type(Syste
     register_component_type_rec<Component, SystemTypes...>(system);
 }
 
+template<typename Component, typename... SystemTypes>
+const bool RegisterComponent<Component, SystemTypes...>::registered = (unused(&ComponentRuntimeInfo::create<Component>), true);
+
 
 template<typename T>
 ComponentBox<T>::ComponentBox(T t) : _component(std::move(t)) {
