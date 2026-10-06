@@ -100,7 +100,7 @@ void GpuProfiler::on_gui() {
                     const ImGuiTableColumnSortSpecs& spec = sort_specs->Specs[0];
                     if(spec.SortDirection != ImGuiSortDirection_None) {
                         as_tree = false;
-                        auto cmp = [=](auto a, auto b) { return spec.SortDirection == ImGuiSortDirection_Ascending ? (a > b) : (a < b); };
+                        auto cmp = [=](auto a, auto b) { return spec.SortDirection == ImGuiSortDirection_Ascending ? (a < b) : (a > b); };
                         switch(spec.ColumnIndex) {
                             case 1: // GPU
                                 std::sort(zones.begin(), zones.end(), [=](const auto& a, const auto& b) { return cmp(a.gpu_nanos, b.gpu_nanos); });
@@ -138,12 +138,22 @@ void GpuProfiler::on_gui() {
                 ImGui::GetWindowDrawList()->AddRectFilled(pos, pos + size, color_u32);
             };
 
-            core::SmallVector<u32, 16> indents;
+            core::SmallVector<usize, 16> open_parent_ends;
+            auto pop_parent = [&] {
+                ImGui::PopID();
+                ImGui::Unindent();
+                open_parent_ends.pop();
+            };
+
             for(usize i = 0; i < zones.size(); ++i) {
                 const auto& zone = zones[i];
 
                 const double gpu_ms = double(zone.gpu_nanos * ns_to_ms);
                 const double cpu_ms = double(zone.cpu_nanos * ns_to_ms);
+
+                while(!open_parent_ends.is_empty() && open_parent_ends.last() <= i) {
+                    pop_parent();
+                }
 
                 imgui::table_begin_next_row(0);
 
@@ -170,23 +180,15 @@ void GpuProfiler::on_gui() {
                     ImGui::Text("%.2f ms", cpu_ms);
                 }
 
-                if(as_tree) {
-                    if(!indents.is_empty() && --indents.last() == 0) {
-                        ImGui::PopID();
-                        indents.pop();
-                        ImGui::Unindent();
-                    }
-
-                    if(has_children && open) {
-                        ImGui::PushID(zone.name.data());
-                        indents.push_back(zone.contained_zones);
-                        ImGui::Indent();
-                    }
+                if(has_children && open) {
+                    ImGui::PushID(zone.name.data());
+                    ImGui::Indent();
+                    open_parent_ends.push_back(i + zone.contained_zones + 1);
                 }
             }
 
-            for(usize i = 0; i != indents.size(); ++i) {
-                ImGui::PopID();
+            while(!open_parent_ends.is_empty()) {
+                pop_parent();
             }
 
             ImGui::EndTable();
