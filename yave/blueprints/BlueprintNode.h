@@ -25,13 +25,10 @@ SOFTWARE.
 #include <yave/yave.h>
 
 #include <y/core/String.h>
-#include <y/core/Vector.h>
 #include <y/core/Span.h>
-#include <y/core/FixedArray.h>
 #include <y/reflect/reflect.h>
 #include <y/serde3/poly.h>
 
-#include <array>
 #include <string_view>
 
 namespace yave {
@@ -63,6 +60,16 @@ struct BlueprintPin {
     bool is_generic = false;
 };
 
+namespace detail {
+// Type name without namespaces or enclosing scopes
+template<typename T>
+constexpr std::string_view bp_type_name() {
+    constexpr std::string_view full = ct_type_name<T>();
+    constexpr usize pos = full.rfind("::");
+    return pos == std::string_view::npos ? full : full.substr(pos + 2);
+}
+}
+
 inline bool are_blueprint_types_compatible(const BlueprintParamType* a, const BlueprintParamType* b) {
     return a && b ? a == b : a != b;
 }
@@ -72,8 +79,6 @@ class BlueprintNode : NonMovable {
         virtual ~BlueprintNode();
 
         y_serde3_poly_abstract_base(BlueprintNode)
-
-        virtual std::unique_ptr<BlueprintNode> clone() const = 0;
 
         const core::String& name() const;
         core::String& name();
@@ -85,7 +90,8 @@ class BlueprintNode : NonMovable {
         virtual core::Span<BlueprintPin> output_pins() const;
         virtual core::Span<BlueprintPin> param_pins() const;
 
-        virtual bool has_generic_pin() const;
+        bool has_generic_pin() const;
+
         virtual void set_generic_type(const BlueprintParamType* type);
         virtual const BlueprintParamType* generic_type() const;
 
@@ -101,78 +107,6 @@ class BlueprintNode : NonMovable {
         BlueprintNode(core::String name);
 
         core::String _name;
-};
-
-
-class ParamBlueprintNodeBase : public BlueprintNode {
-    public:
-        void set_generic_type(const BlueprintParamType* type) override;
-        const BlueprintParamType* generic_type() const override;
-
-        i32 order() const;
-        i32& order();
-
-    protected:
-        ParamBlueprintNodeBase(std::string_view pin_name, core::String name);
-
-        template<typename T>
-        std::unique_ptr<BlueprintNode> clone_as() const {
-            auto node = std::make_unique<T>(_name);
-            node->_order = _order;
-            node->_value_type = _value_type;
-            node->_value = core::FixedArray<u8>(core::Span<u8>(_value));
-            node->set_generic_type(generic_type());
-            return node;
-        }
-
-        void* default_value();
-
-        // value pin, then order pin
-        std::array<BlueprintPin, 2> _pins;
-
-        i32 _order = 0;
-
-        u64 _value_type = 0;
-        core::FixedArray<u8> _value;
-};
-
-class ParamInBlueprintNode final : public ParamBlueprintNodeBase {
-    public:
-        ParamInBlueprintNode(core::String name = {});
-
-        std::unique_ptr<BlueprintNode> clone() const override;
-
-        std::string_view node_type_name() const override;
-
-        core::Span<BlueprintPin> output_pins() const override;
-        core::Span<BlueprintPin> param_pins() const override;
-
-        void* param_ptr(usize index) override;
-
-        void compile(BlueprintCompiler& compiler) const override;
-
-        y_reflect(ParamInBlueprintNode, _name, _order, _value_type, _value)
-        y_serde3_poly(ParamInBlueprintNode)
-};
-
-class ParamOutBlueprintNode final : public ParamBlueprintNodeBase {
-    public:
-        ParamOutBlueprintNode(core::String name = {});
-
-        std::unique_ptr<BlueprintNode> clone() const override;
-
-        std::string_view node_type_name() const override;
-
-        core::Span<BlueprintPin> input_pins() const override;
-        core::Span<BlueprintPin> param_pins() const override;
-
-        void* default_input(usize index) override;
-        void* param_ptr(usize index) override;
-
-        void compile(BlueprintCompiler& compiler) const override;
-
-        y_reflect(ParamOutBlueprintNode, _name, _order, _value_type, _value)
-        y_serde3_poly(ParamOutBlueprintNode)
 };
 
 }

@@ -22,7 +22,6 @@ SOFTWARE.
 #include "BlueprintInstance.h"
 
 #include <y/utils/memory.h>
-#include <y/utils/log.h>
 
 #include <algorithm>
 #include <cstring>
@@ -47,14 +46,6 @@ void* BlueprintStorage::alloc(usize size, usize alignment) {
 
 core::Span<BlueprintInstance::EntryPoint> BlueprintInstance::entry_points() const {
     return _entry_points;
-}
-
-core::Span<BlueprintParam> BlueprintInstance::params_in() const {
-    return _params_in;
-}
-
-core::Span<BlueprintParam> BlueprintInstance::params_out() const {
-    return _params_out;
 }
 
 core::Result<void, BlueprintError> BlueprintInstance::trigger(const EntryPoint& entry_point, const void* payload) noexcept {

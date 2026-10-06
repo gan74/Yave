@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <yave/ecs/TriggerManager.h>
 
+#include <array>
 #include <tuple>
 
 namespace yave {
@@ -44,16 +45,8 @@ class TriggerBlueprintNode final : public BlueprintNode {
         TriggerBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
         }
 
-        std::unique_ptr<BlueprintNode> clone() const override {
-            return std::make_unique<TriggerBlueprintNode>(_name);
-        }
-
         std::string_view node_type_name() const override {
-            auto remove_prefix = [](std::string_view str, std::string_view pref) {
-                return str.starts_with(pref) ? std::string_view(str.data() + pref.size(), str.size() - pref.size()) : str;
-            };
-
-            return remove_prefix(remove_prefix(remove_prefix(ct_type_name<T>(), "class "), "struct "), "yave::");
+            return detail::bp_type_name<T>();
         }
 
         core::Span<BlueprintPin> output_pins() const override {

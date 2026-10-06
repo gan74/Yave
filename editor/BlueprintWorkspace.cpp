@@ -26,11 +26,9 @@ SOFTWARE.
 #include "ThumbnailRenderer.h"
 #include "UiManager.h"
 
-#include <yave/assets/AssetLoader.h>
 #include <yave/assets/AssetStore.h>
 #include <yave/blueprints/Blueprint.h>
 #include <yave/blueprints/blueprint_nodes.h>
-#include <yave/blueprints/NestedBlueprintNode.h>
 #include <yave/utils/FileSystemModel.h>
 
 #include <y/io2/Buffer.h>
@@ -57,13 +55,19 @@ static core::Result<Blueprint> read_blueprint_data(AssetId id) {
         return core::Err();
     }
 
-    const auto loaded = asset_loader().load_res<Blueprint>(id);
-    if(!loaded) {
-        log_msg("Unable to load blueprint", Log::Error);
+    // Read from the store directly: loaded assets are shared and can't be edited
+    auto reader = asset_store().data(id);
+    if(!reader) {
+        log_msg("Unable to read blueprint", Log::Error);
         return core::Err();
     }
 
-    Blueprint data = loaded.unwrap()->clone();
+    Blueprint data;
+    if(const auto res = serde3::ReadableArchive(*reader.unwrap()).deserialize(data); res.is_error()) {
+        log_msg(fmt("Unable to deserialize blueprint: {}", serde3::error_msg(res)), Log::Error);
+        return core::Err();
+    }
+
     if(data.remove_invalid_links()) {
         log_msg("Some links referenced invalid pins and were removed", Log::Warning);
     }
@@ -258,15 +262,7 @@ void BlueprintWorkspace::save() {
         buffer.reset();
     }
 
-    const auto nested = _blueprint.nested_blueprints();
-    auto refs = core::Vector<AssetId>::with_capacity(nested.size());
-    for(const auto& blueprint : nested) {
-        if(blueprint.id() != AssetId::invalid_id()) {
-            refs << blueprint.id();
-        }
-    }
-
-    if(const auto res = asset_store().write(_id, buffer, refs); res.is_error()) {
+    if(const auto res = asset_store().write(_id, buffer, {}); res.is_error()) {
         log_msg(fmt("Unable to write blueprint, error: {}", res.error()), Log::Error);
         return;
     }
@@ -292,43 +288,11 @@ bool BlueprintWorkspace::add_blueprint(AssetId id) {
     y_profile();
 
     if(auto data = read_blueprint_data(id)) {
-        Blueprint new_data = std::move(data.unwrap());
-        if(new_data.contains_nested(_id)) {
-            log_msg("A blueprint can not be nested in itself", Log::Error);
-            return false;
-        }
-        _blueprint.add_blueprint(std::move(new_data));
+        _blueprint.add_blueprint(std::move(data.unwrap()));
         return true;
     }
 
     return false;
-}
-
-const BlueprintNode* BlueprintWorkspace::add_nested_blueprint(AssetId id) {
-    y_profile();
-
-    if(id == _id) {
-        log_msg("A blueprint can not be nested in itself", Log::Error);
-        return nullptr;
-    }
-
-    const auto loaded = asset_loader().load_res<Blueprint>(id);
-    if(!loaded) {
-        log_msg("Unable to load nested blueprint", Log::Error);
-        return nullptr;
-    }
-
-    if(loaded.unwrap()->contains_nested(_id)) {
-        log_msg("A blueprint can not be nested in itself", Log::Error);
-        return nullptr;
-    }
-
-    core::String name = "Blueprint";
-    if(auto full_name = asset_store().name(id)) {
-        name = asset_store().filesystem()->filename(full_name.unwrap());
-    }
-
-    return _blueprint.add_node(std::make_unique<NestedBlueprintNode>(std::move(name), loaded.unwrap()));
 }
 
 AssetId BlueprintWorkspace::asset_id() const {

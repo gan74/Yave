@@ -21,12 +21,8 @@ SOFTWARE.
 **********************************/
 
 #include "BlueprintNode.h"
-#include "BlueprintCompiler.h"
-
-#include <y/serde3/archives.h>
 
 #include <algorithm>
-#include <memory>
 
 namespace yave {
 
@@ -84,104 +80,6 @@ void* BlueprintNode::default_input(usize) {
 void* BlueprintNode::param_ptr(usize) {
     y_debug_assert(false);
     return nullptr;
-}
-
-
-
-ParamBlueprintNodeBase::ParamBlueprintNodeBase(std::string_view pin_name, core::String name) :
-        BlueprintNode(std::move(name)),
-        _pins({{{pin_name, nullptr, true}, {"order", blueprint_param_type<i32>()}}}) {
-}
-
-void ParamBlueprintNodeBase::set_generic_type(const BlueprintParamType* type) {
-    y_debug_assert(!_pins[0].type || !type);
-    _pins[0].type = type;
-
-    if(type && type->type_hash != _value_type) {
-        _value_type = type->type_hash;
-        _value = core::FixedArray<u8>(type->size);
-    }
-}
-
-const BlueprintParamType* ParamBlueprintNodeBase::generic_type() const {
-    return _pins[0].type;
-}
-
-i32 ParamBlueprintNodeBase::order() const {
-    return _order;
-}
-
-i32& ParamBlueprintNodeBase::order() {
-    return _order;
-}
-
-void* ParamBlueprintNodeBase::default_value() {
-    return _pins[0].type ? _value.data() : nullptr;
-}
-
-
-ParamInBlueprintNode::ParamInBlueprintNode(core::String name) : ParamBlueprintNodeBase("out", std::move(name)) {
-}
-
-std::unique_ptr<BlueprintNode> ParamInBlueprintNode::clone() const {
-    return clone_as<ParamInBlueprintNode>();
-}
-
-std::string_view ParamInBlueprintNode::node_type_name() const {
-    return "ParamIn";
-}
-
-core::Span<BlueprintPin> ParamInBlueprintNode::output_pins() const {
-    return core::Span<BlueprintPin>(_pins.data(), 1);
-}
-
-core::Span<BlueprintPin> ParamInBlueprintNode::param_pins() const {
-    return _pins;
-}
-
-void* ParamInBlueprintNode::param_ptr(usize index) {
-    y_debug_assert(index < _pins.size());
-    return index ? static_cast<void*>(&_order) : default_value();
-}
-
-void ParamInBlueprintNode::compile(BlueprintCompiler& compiler) const {
-    compiler.bind_output(0, compiler.param_in(_name, _order, generic_type(), _value.data()));
-}
-
-
-ParamOutBlueprintNode::ParamOutBlueprintNode(core::String name) : ParamBlueprintNodeBase("in", std::move(name)) {
-}
-
-std::unique_ptr<BlueprintNode> ParamOutBlueprintNode::clone() const {
-    return clone_as<ParamOutBlueprintNode>();
-}
-
-std::string_view ParamOutBlueprintNode::node_type_name() const {
-    return "ParamOut";
-}
-
-core::Span<BlueprintPin> ParamOutBlueprintNode::input_pins() const {
-    return core::Span<BlueprintPin>(_pins.data(), 1);
-}
-
-core::Span<BlueprintPin> ParamOutBlueprintNode::param_pins() const {
-    return core::Span<BlueprintPin>(_pins.data() + 1, 1);
-}
-
-void* ParamOutBlueprintNode::default_input(usize index) {
-    unused(index);
-    y_debug_assert(index == 0);
-    return default_value();
-}
-
-void* ParamOutBlueprintNode::param_ptr(usize index) {
-    unused(index);
-    y_debug_assert(index == 0);
-    return &_order;
-}
-
-void ParamOutBlueprintNode::compile(BlueprintCompiler& compiler) const {
-    compiler.param_out(_name, _order, generic_type(), compiler.input(0));
 }
 
 }

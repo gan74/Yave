@@ -53,7 +53,6 @@ class BlueprintWorkspace final : public Workspace {
         const Blueprint& blueprint() const;
 
         bool add_blueprint(AssetId id);
-        const BlueprintNode* add_nested_blueprint(AssetId id);
 
         const core::Result<void, BlueprintError>& result() const;
 

@@ -58,13 +58,6 @@ constexpr std::array<usize, N> bp_port_indices(const std::array<bool, P>& is_inp
     }
     return indices;
 }
-
-template<typename T>
-constexpr std::string_view bp_op_name() {
-    constexpr std::string_view full = ct_type_name<T>();
-    constexpr usize pos = full.rfind("::");
-    return pos == std::string_view::npos ? full : full.substr(pos + 2);
-}
 }
 
 
@@ -110,14 +103,8 @@ class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode 
         LambdaBlueprintNodeImpl(core::String name) : BlueprintNode(std::move(name)) {
         }
 
-        std::unique_ptr<BlueprintNode> clone() const override {
-            auto node = std::make_unique<LambdaBlueprintNodeImpl>(_name);
-            node->_values = _values;
-            return node;
-        }
-
         std::string_view node_type_name() const override {
-            return detail::bp_op_name<F>();
+            return detail::bp_type_name<F>();
         }
 
         core::Span<BlueprintPin> input_pins() const override {
@@ -169,12 +156,6 @@ class ConstantBlueprintNode : public BlueprintNode {
         ConstantBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
         }
 
-        std::unique_ptr<BlueprintNode> clone() const override {
-            auto node = std::make_unique<ConstantBlueprintNode>(_name);
-            node->_value = _value;
-            return node;
-        }
-
         std::string_view node_type_name() const override {
             return "Const";
         }
@@ -211,17 +192,6 @@ class IfBlueprintNode : public BlueprintNode {
         IfBlueprintNode() = default;
 
         IfBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
-        }
-
-        std::unique_ptr<BlueprintNode> clone() const override {
-            auto node = std::make_unique<IfBlueprintNode>(_name);
-            node->_default_cond = _default_cond;
-            node->_values_type = _values_type;
-            node->_values = core::FixedArray<u8>(core::Span<u8>(_values));
-            if(const BlueprintParamType* type = generic_type()) {
-                node->set_generic_type(type);
-            }
-            return node;
         }
 
         std::string_view node_type_name() const override {
@@ -421,8 +391,6 @@ static void add_bool_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& 
 }
 
 void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {
-    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<ParamInBlueprintNode>>("Param in"));
-    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<ParamOutBlueprintNode>>("Param out"));
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<IfBlueprintNode>>("If"));
 
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<TriggerBlueprintNode<OnCollide>>>("On collide"));

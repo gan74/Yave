@@ -25,7 +25,6 @@ SOFTWARE.
 #include "BlueprintInstance.h"
 
 #include <yave/assets/AssetTraits.h>
-#include <yave/assets/AssetPtr.h>
 
 #include <y/reflect/reflect.h>
 #include <y/core/FixedArray.h>
@@ -49,9 +48,6 @@ class Blueprint {
 
         core::Span<std::unique_ptr<BlueprintNode>> all_nodes() const;
         core::Span<BlueprintLink> links() const;
-        core::Span<AssetPtr<Blueprint>> nested_blueprints() const;
-
-        bool contains_nested(AssetId id) const;
 
         const BlueprintLink* find_link(const BlueprintNode* dst, usize dst_pin) const;
 
@@ -63,37 +59,28 @@ class Blueprint {
         bool is_link_valid(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin) const;
         void add_link(const BlueprintNode* src, usize src_pin, const BlueprintNode* dst, usize dst_pin);
         void remove_link(const BlueprintNode* dst, usize dst_pin);
-        void clear_links();
 
-        // For each node, whether it is node or depends on it
         core::FixedArray<bool> downstream_nodes(const BlueprintNode* node) const;
 
         core::Result<BlueprintInstance, BlueprintError> create_instance() const;
 
-        Blueprint clone() const;
-
         bool remove_invalid_links();
 
-        y_reflect(Blueprint, _nodes, _links, _nested)
+        void post_deserialize();
+
+        y_reflect(Blueprint, _nodes, _links)
 
     private:
-        friend class BlueprintCompiler;
-
-        core::Result<void, BlueprintError> compile(BlueprintCompiler& compiler) const;
+        core::Result<void, BlueprintError> validate() const;
 
         usize find_node_index(const BlueprintNode* node) const;
 
         void move_downstream_after(const BlueprintNode* node, usize index);
         void erase_link(const BlueprintNode* dst, usize dst_pin);
-        void register_nested(const BlueprintNode* node);
         void resolve_generic_types();
-        
-        core::Vector<std::unique_ptr<BlueprintNode>> clone_nodes() const;
 
         core::Vector<std::unique_ptr<BlueprintNode>> _nodes;
         core::Vector<BlueprintLink> _links;
-
-        core::Vector<AssetPtr<Blueprint>> _nested;
 };
 
 

@@ -560,22 +560,6 @@ void BlueprintEditor::draw_context_menu() {
                     }
                 );
             }
-
-            if(ImGui::MenuItem("Add nested blueprint")) {
-                const math::Vec2 pos = _new_node.pos;
-                add_top_level_widget<AssetSelector>(AssetType::Blueprint, "Add nested blueprint")->set_selected_callback(
-                    [this, pos](AssetId id) {
-                        const BlueprintNode* node = workspace()->add_nested_blueprint(id);
-                        if(!node) {
-                            return false;
-                        }
-                        ed::SetCurrentEditor(_context);
-                        y_defer(ed::SetCurrentEditor(nullptr));
-                        ed::SetNodePosition(ed::NodeId(uintptr_t(node)), to_im(pos));
-                        return true;
-                    }
-                );
-            }
         }
         ImGui::EndPopup();
     }

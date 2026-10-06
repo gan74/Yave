@@ -36,21 +36,11 @@ class BlueprintCompiler : NonMovable {
         void* output(usize index);
         void bind_output(usize index, const void* ptr);
 
-        void* alloc(usize size, usize alignment);
-        void* alloc_copy(const BlueprintParamType* type, const void* value);
-
-        const void* param_in(const core::String& name, i32 order, const BlueprintParamType* type, const void* default_value);
-        void param_out(const core::String& name, i32 order, const BlueprintParamType* type, const void* ptr);
-
-
         void emit(std::function<void()> func);
 
         void set_entry_point(ecs::TriggerTypeIndex type, void* payload, usize payload_size, void (*subscribe)(ecs::TriggerSubscriber&));
 
         void error(core::String error);
-
-        core::Result<core::Vector<BlueprintParam>, core::String> compile_nested(const Blueprint& blueprint, core::Span<BlueprintParam> inputs);
-
 
         template<typename T>
         T* alloc(const T& value = {}) {
@@ -61,14 +51,16 @@ class BlueprintCompiler : NonMovable {
     private:
         friend class Blueprint;
 
-        BlueprintCompiler(BlueprintStorage& storage, core::Span<BlueprintParam> inputs = {});
+        BlueprintCompiler(BlueprintStorage& storage);
 
         core::Result<void, BlueprintError> compile(core::Span<std::unique_ptr<BlueprintNode>> nodes, core::Span<BlueprintLink> links);
 
         BlueprintNode* current_node() const;
 
+        void* alloc(usize size, usize alignment);
+        void* alloc_copy(const BlueprintParamType* type, const void* value);
+
         BlueprintStorage& _storage;
-        core::Span<BlueprintParam> _inputs;
 
         core::Span<std::unique_ptr<BlueprintNode>> _nodes;
         core::Span<BlueprintLink> _links;
@@ -77,8 +69,6 @@ class BlueprintCompiler : NonMovable {
         core::FixedArray<core::FixedArray<const void*>> _outputs;
         core::FixedArray<core::Vector<BlueprintInstruction>> _instructions;
         core::Vector<BlueprintInstance::EntryPoint> _entry_points;
-        core::Vector<BlueprintParam> _params_in;
-        core::Vector<BlueprintParam> _params_out;
 
         core::String _error;
 };

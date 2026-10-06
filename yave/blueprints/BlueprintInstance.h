@@ -27,6 +27,8 @@ SOFTWARE.
 #include <yave/ecs/TriggerManager.h>
 
 #include <y/core/Result.h>
+#include <y/core/Vector.h>
+#include <y/core/FixedArray.h>
 
 #include <functional>
 
@@ -40,13 +42,6 @@ struct BlueprintError {
 struct BlueprintInstruction {
     u32 node_index = 0;
     std::function<void()> func; // may throw std::runtime_error
-};
-
-struct BlueprintParam {
-    core::String name;
-    i32 order = 0;
-    const BlueprintParamType* type = nullptr;
-    const void* ptr = nullptr;
 };
 
 class BlueprintStorage : NonCopyable {
@@ -76,8 +71,6 @@ class BlueprintInstance : NonCopyable {
         BlueprintInstance() = default;
 
         core::Span<EntryPoint> entry_points() const;
-        core::Span<BlueprintParam> params_in() const;
-        core::Span<BlueprintParam> params_out() const;
 
         core::Result<void, BlueprintError> trigger(const EntryPoint& entry_point, const void* payload) noexcept;
 
@@ -86,8 +79,6 @@ class BlueprintInstance : NonCopyable {
 
         BlueprintStorage _storage;
         core::Vector<EntryPoint> _entry_points;
-        core::Vector<BlueprintParam> _params_in;
-        core::Vector<BlueprintParam> _params_out;
 };
 
 }

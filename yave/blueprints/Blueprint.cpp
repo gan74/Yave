@@ -22,15 +22,13 @@ SOFTWARE.
 
 #include "Blueprint.h"
 #include "BlueprintCompiler.h"
-#include "NestedBlueprintNode.h"
 
 #include <y/core/ScratchPad.h>
-#include <y/utils/log.h>
 
 #include <algorithm>
 
 namespace yave {
-    
+
 static bool resolve_generic_link(BlueprintNode* src, usize src_pin, BlueprintNode* dst, usize dst_pin) {
     const BlueprintParamType* src_type = src->output_pins()[src_pin].type;
     const BlueprintParamType* dst_type = dst->input_pins()[dst_pin].type;
@@ -45,21 +43,23 @@ static bool resolve_generic_link(BlueprintNode* src, usize src_pin, BlueprintNod
     return false;
 }
 
-static void propagate_generic_types(core::Span<std::unique_ptr<BlueprintNode>> nodes, core::Span<BlueprintLink> links) {
-    for(bool changed = true; changed;) {
-        changed = false;
-        for(const BlueprintLink& link : links) {
-            changed |= resolve_generic_link(nodes[link.src_node].get(), link.src_pin, nodes[link.dst_node].get(), link.dst_pin);
-        }
-    }
-}
-
 static bool is_link_in_range(core::Span<std::unique_ptr<BlueprintNode>> nodes, const BlueprintLink& link) {
     return
         link.src_node < nodes.size() && link.dst_node < nodes.size() &&
         link.src_pin < nodes[link.src_node]->output_pins().size() &&
         link.dst_pin < nodes[link.dst_node]->input_pins().size()
     ;
+}
+
+static void propagate_generic_types(core::Span<std::unique_ptr<BlueprintNode>> nodes, core::Span<BlueprintLink> links) {
+    for(bool changed = true; changed;) {
+        changed = false;
+        for(const BlueprintLink& link : links) {
+            if(is_link_in_range(nodes, link)) {
+                changed |= resolve_generic_link(nodes[link.src_node].get(), link.src_pin, nodes[link.dst_node].get(), link.dst_pin);
+            }
+        }
+    }
 }
 
 
@@ -69,19 +69,6 @@ core::Span<std::unique_ptr<BlueprintNode>> Blueprint::all_nodes() const {
 
 core::Span<BlueprintLink> Blueprint::links() const {
     return _links;
-}
-
-core::Span<AssetPtr<Blueprint>> Blueprint::nested_blueprints() const {
-    return _nested;
-}
-
-bool Blueprint::contains_nested(AssetId id) const {
-    for(const AssetPtr<Blueprint>& nested : _nested) {
-        if(nested.id() == id || (nested && nested->contains_nested(id))) {
-            return true;
-        }
-    }
-    return false;
 }
 
 usize Blueprint::find_node_index(const BlueprintNode* node) const {
@@ -98,21 +85,7 @@ const BlueprintLink* Blueprint::find_link(const BlueprintNode* dst, usize dst_pi
     return nullptr;
 }
 
-void Blueprint::register_nested(const BlueprintNode* node) {
-    if(const auto* nested = dynamic_cast<const NestedBlueprintNode*>(node)) {
-        const AssetPtr<Blueprint>& blueprint = nested->blueprint();
-        if(blueprint.id() != AssetId::invalid_id()) {
-            if(const auto it = std::find(_nested.begin(), _nested.end(), blueprint); it == _nested.end()) {
-                _nested.emplace_back(blueprint);
-            } else if(!it->is_loaded()) {
-                *it = blueprint;
-            }
-        }
-    }
-}
-
 const BlueprintNode* Blueprint::add_node(std::unique_ptr<BlueprintNode> node) {
-    register_nested(node.get());
     return _nodes.emplace_back(std::move(node)).get();
 }
 
@@ -135,11 +108,6 @@ void Blueprint::remove_node(const BlueprintNode* node) {
 
     _nodes.erase(_nodes.begin() + node_index);
 
-    _nested.make_empty();
-    for(const auto& n : _nodes) {
-        register_nested(n.get());
-    }
-
     resolve_generic_types();
 }
 
@@ -149,7 +117,6 @@ void Blueprint::add_blueprint(Blueprint data) {
     const u32 offset = u32(_nodes.size());
 
     for(auto& node : data._nodes) {
-        register_nested(node.get());
         _nodes.emplace_back(std::move(node));
     }
 
@@ -190,7 +157,6 @@ bool Blueprint::is_link_valid(const BlueprintNode* src, usize src_pin, const Blu
         return false;
     }
 
-    // Linking a node downstream of dst back into dst would create a cycle
     return !downstream_nodes(dst)[src_index];
 }
 
@@ -212,8 +178,6 @@ void Blueprint::add_link(const BlueprintNode* src, usize src_pin, const Blueprin
     resolve_generic_types();
 }
 
-// Moves node and everything that depends on it after index, keeping their relative order.
-// Valid as long as nothing up to index depends on node (which is_link_valid ensures).
 void Blueprint::move_downstream_after(const BlueprintNode* node, usize index) {
     y_profile();
 
@@ -265,13 +229,6 @@ void Blueprint::erase_link(const BlueprintNode* dst, usize dst_pin) {
     }
 }
 
-void Blueprint::clear_links() {
-    y_profile();
-
-    _links.make_empty();
-    resolve_generic_types();
-}
-
 void Blueprint::resolve_generic_types() {
     y_profile();
 
@@ -284,14 +241,9 @@ void Blueprint::resolve_generic_types() {
     propagate_generic_types(_nodes, _links);
 }
 
-core::Result<void, BlueprintError> Blueprint::compile(BlueprintCompiler& compiler) const {
-    y_profile();
-
-    auto nodes = clone_nodes();
-
-    // Check against the clones: cloning can load nested blueprints, which changes their pins
+core::Result<void, BlueprintError> Blueprint::validate() const {
     for(const BlueprintLink& link : _links) {
-        if(!is_link_in_range(nodes, link)) {
+        if(!is_link_in_range(_nodes, link)) {
             return core::Err(BlueprintError{std::min<usize>(link.dst_node, _nodes.size()), core::String("Link references an invalid node or pin")});
         }
         if(link.src_node >= link.dst_node) {
@@ -299,29 +251,31 @@ core::Result<void, BlueprintError> Blueprint::compile(BlueprintCompiler& compile
         }
     }
 
-    propagate_generic_types(nodes, _links);
-
-    for(usize i = 0; i != nodes.size(); ++i) {
-        if(nodes[i]->has_generic_pin() && !nodes[i]->generic_type()) {
+    for(usize i = 0; i != _nodes.size(); ++i) {
+        if(_nodes[i]->has_generic_pin() && !_nodes[i]->generic_type()) {
             return core::Err(BlueprintError{i, core::String("Unresolved generic type")});
         }
     }
 
     for(const BlueprintLink& link : _links) {
-        if(!are_blueprint_types_compatible(nodes[link.src_node]->output_pins()[link.src_pin].type, nodes[link.dst_node]->input_pins()[link.dst_pin].type)) {
+        if(!are_blueprint_types_compatible(_nodes[link.src_node]->output_pins()[link.src_pin].type, _nodes[link.dst_node]->input_pins()[link.dst_pin].type)) {
             return core::Err(BlueprintError{link.dst_node, core::String("Link connects incompatible types")});
         }
     }
 
-    return compiler.compile(nodes, _links);
+    return core::Ok();
 }
 
 core::Result<BlueprintInstance, BlueprintError> Blueprint::create_instance() const {
     y_profile();
 
+    if(auto res = validate(); res.is_error()) {
+        return core::Err(std::move(res.error()));
+    }
+
     BlueprintInstance instance;
     BlueprintCompiler compiler(instance._storage);
-    if(auto res = compile(compiler); res.is_error()) {
+    if(auto res = compiler.compile(_nodes, _links); res.is_error()) {
         return core::Err(std::move(res.error()));
     }
 
@@ -348,9 +302,6 @@ core::Result<BlueprintInstance, BlueprintError> Blueprint::create_instance() con
         }
     }
 
-    instance._params_in = std::move(compiler._params_in);
-    instance._params_out = std::move(compiler._params_out);
-
     return core::Ok(std::move(instance));
 }
 
@@ -360,7 +311,6 @@ core::FixedArray<bool> Blueprint::downstream_nodes(const BlueprintNode* node) co
     const usize node_index = find_node_index(node);
     y_debug_assert(node_index < _nodes.size());
 
-    // Nodes are sorted, so anything downstream comes after node
     core::FixedArray<bool> downstream(_nodes.size());
     downstream[node_index] = true;
 
@@ -376,34 +326,8 @@ core::FixedArray<bool> Blueprint::downstream_nodes(const BlueprintNode* node) co
     return downstream;
 }
 
-core::Vector<std::unique_ptr<BlueprintNode>> Blueprint::clone_nodes() const {
-    core::Vector<std::unique_ptr<BlueprintNode>> nodes;
-    nodes.set_min_capacity(_nodes.size());
-
-    for(const auto& node : _nodes) {
-        nodes.emplace_back(node->clone());
-    }
-
-    for(const auto& node : nodes) {
-        if(auto* nested = dynamic_cast<NestedBlueprintNode*>(node.get()); nested && !nested->blueprint().is_loaded()) {
-            if(const auto it = std::find(_nested.begin(), _nested.end(), nested->blueprint()); it != _nested.end() && it->is_loaded()) {
-                nested->set_blueprint(*it);
-            }
-        }
-    }
-
-    return nodes;
-}
-
-Blueprint Blueprint::clone() const {
-    y_profile();
-
-    Blueprint blueprint;
-    blueprint._nodes = clone_nodes();
-    blueprint._links = core::Vector<BlueprintLink>(_links);
-    blueprint._nested = core::Vector<AssetPtr<Blueprint>>(_nested);
-    blueprint.resolve_generic_types();
-    return blueprint;
+void Blueprint::post_deserialize() {
+    resolve_generic_types();
 }
 
 bool Blueprint::remove_invalid_links() {
