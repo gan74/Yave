@@ -279,7 +279,11 @@ void BlueprintEditor::on_gui() {
     const core::Span nodes = blueprint.all_nodes();
 
     const auto& result = workspace()->result();
-    const usize error_node_index = result.is_error() ? result.error().node_index : usize(-1);
+    usize error_node_index = usize(-1);
+    if(result.is_error()) {
+        const auto it = std::find_if(nodes.begin(), nodes.end(), [&](const auto& n) { return n.get() == result.error().node; });
+        error_node_index = it == nodes.end() ? usize(-1) : usize(it - nodes.begin());
+    }
     const BlueprintNode* error_node = error_node_index < nodes.size() ? nodes[error_node_index].get() : nullptr;
 
     if(ImGui::BeginMenuBar()) {

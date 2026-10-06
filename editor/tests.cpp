@@ -2474,7 +2474,7 @@ y_test_func("Blueprint runtime errors") {
     const BlueprintTestTrigger zero{0.0f};
     const auto res = instance.unwrap().trigger(instance.unwrap().entry_points()[0], &zero);
     y_test_assert(res.is_error());
-    y_test_assert(res.error().node_index == 1);
+    y_test_assert(res.error().node == div);
     y_test_assert(res.error().error == "Division by zero");
 }
 

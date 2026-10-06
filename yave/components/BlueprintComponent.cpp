@@ -30,6 +30,10 @@ SOFTWARE.
 
 namespace yave {
 
+static std::string_view error_node_name(const BlueprintError& error) {
+    return error.node ? std::string_view(error.node->name()) : "unknown";
+}
+
 BlueprintComponent::BlueprintComponent(const AssetPtr<Blueprint>& blueprint) : _blueprint(blueprint) {
 }
 
@@ -58,7 +62,7 @@ void BlueprintComponent::subscribe_triggers(ecs::TriggerSubscriber& subscriber) 
 
     auto instance = _blueprint->create_instance();
     if(instance.is_error()) {
-        log_msg(fmt("Unable to create blueprint instance: {} (node {})", instance.error().error, instance.error().node_index), Log::Error);
+        log_msg(fmt("Unable to create blueprint instance: {} (node \"{}\")", instance.error().error, error_node_name(instance.error())), Log::Error);
         return;
     }
 
@@ -80,7 +84,7 @@ void BlueprintComponent::on_trigger(ecs::EntityWorld&, ecs::EntityId, ecs::Trigg
         }
 
         if(const auto res = _instance->trigger(entry_point, payload); res.is_error()) {
-            log_msg(fmt("Blueprint error: {} (node {})", res.error().error, res.error().node_index), Log::Error);
+            log_msg(fmt("Blueprint error: {} (node \"{}\")", res.error().error, error_node_name(res.error())), Log::Error);
         }
     }
 }

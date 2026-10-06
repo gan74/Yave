@@ -35,12 +35,12 @@ SOFTWARE.
 namespace yave {
 
 struct BlueprintError {
-    usize node_index = 0;
+    const BlueprintNode* node = nullptr;
     core::String error;
 };
 
 struct BlueprintInstruction {
-    u32 node_index = 0;
+    const BlueprintNode* node = nullptr;
     std::function<void()> func; // may throw std::runtime_error
 };
 

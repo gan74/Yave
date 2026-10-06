@@ -68,10 +68,6 @@ static core::Result<Blueprint> read_blueprint_data(AssetId id) {
         return core::Err();
     }
 
-    if(data.remove_invalid_links()) {
-        log_msg("Some links referenced invalid pins and were removed", Log::Warning);
-    }
-
     return core::Ok(std::move(data));
 }
 

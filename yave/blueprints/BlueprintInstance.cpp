@@ -57,7 +57,7 @@ core::Result<void, BlueprintError> BlueprintInstance::trigger(const EntryPoint& 
         try {
             instruction.func();
         } catch(const std::exception& e) {
-            return core::Err(BlueprintError{instruction.node_index, core::String(e.what())});
+            return core::Err(BlueprintError{instruction.node,core::String(e.what())});
         }
     }
 

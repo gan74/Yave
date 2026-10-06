@@ -244,22 +244,23 @@ void Blueprint::resolve_generic_types() {
 core::Result<void, BlueprintError> Blueprint::validate() const {
     for(const BlueprintLink& link : _links) {
         if(!is_link_in_range(_nodes, link)) {
-            return core::Err(BlueprintError{std::min<usize>(link.dst_node, _nodes.size()), core::String("Link references an invalid node or pin")});
+            const BlueprintNode* node = link.dst_node < _nodes.size() ? _nodes[link.dst_node].get() : nullptr;
+            return core::Err(BlueprintError{node, core::String("Link references an invalid node or pin")});
         }
         if(link.src_node >= link.dst_node) {
-            return core::Err(BlueprintError{link.dst_node, core::String("Link breaks execution order")});
+            return core::Err(BlueprintError{_nodes[link.dst_node].get(), core::String("Link breaks execution order")});
         }
     }
 
-    for(usize i = 0; i != _nodes.size(); ++i) {
-        if(_nodes[i]->has_generic_pin() && !_nodes[i]->generic_type()) {
-            return core::Err(BlueprintError{i, core::String("Unresolved generic type")});
+    for(const auto& node : _nodes) {
+        if(node->has_generic_pin() && !node->generic_type()) {
+            return core::Err(BlueprintError{node.get(), core::String("Unresolved generic type")});
         }
     }
 
     for(const BlueprintLink& link : _links) {
         if(!are_blueprint_types_compatible(_nodes[link.src_node]->output_pins()[link.src_pin].type, _nodes[link.dst_node]->input_pins()[link.dst_pin].type)) {
-            return core::Err(BlueprintError{link.dst_node, core::String("Link connects incompatible types")});
+            return core::Err(BlueprintError{_nodes[link.dst_node].get(), core::String("Link connects incompatible types")});
         }
     }
 
@@ -328,21 +329,6 @@ core::FixedArray<bool> Blueprint::downstream_nodes(const BlueprintNode* node) co
 
 void Blueprint::post_deserialize() {
     resolve_generic_types();
-}
-
-bool Blueprint::remove_invalid_links() {
-    y_profile();
-
-    bool removed = false;
-    for(usize i = 0; i != _links.size(); ++i) {
-        if(!is_link_in_range(_nodes, _links[i])) {
-            _links.erase_unordered(_links.begin() + i);
-            --i;
-            removed = true;
-        }
-    }
-
-    return removed;
 }
 
 }

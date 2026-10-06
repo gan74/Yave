@@ -42,7 +42,7 @@ core::Result<void, BlueprintError> BlueprintCompiler::compile(core::Span<std::un
         _outputs[_current] = core::FixedArray<const void*>(nodes[_current]->output_pins().size());
         nodes[_current]->compile(*this);
         if(!_error.is_empty()) {
-            return core::Err(BlueprintError{_current, std::move(_error)});
+            return core::Err(BlueprintError{current_node(), std::move(_error)});
         }
     }
 
@@ -89,7 +89,7 @@ void* BlueprintCompiler::alloc_copy(const BlueprintParamType* type, const void* 
 }
 
 void BlueprintCompiler::emit(std::function<void()> func) {
-    _instructions[_current].emplace_back(BlueprintInstruction{u32(_current), std::move(func)});
+    _instructions[_current].emplace_back(BlueprintInstruction{current_node(), std::move(func)});
 }
 
 void BlueprintCompiler::set_entry_point(ecs::TriggerTypeIndex type, void* payload, usize payload_size, void (*subscribe)(ecs::TriggerSubscriber&)) {

@@ -62,17 +62,15 @@ class Blueprint {
 
         core::FixedArray<bool> downstream_nodes(const BlueprintNode* node) const;
 
-        core::Result<BlueprintInstance, BlueprintError> create_instance() const;
+        core::Result<void, BlueprintError> validate() const;
 
-        bool remove_invalid_links();
+        core::Result<BlueprintInstance, BlueprintError> create_instance() const;
 
         void post_deserialize();
 
         y_reflect(Blueprint, _nodes, _links)
 
     private:
-        core::Result<void, BlueprintError> validate() const;
-
         usize find_node_index(const BlueprintNode* node) const;
 
         void move_downstream_after(const BlueprintNode* node, usize index);
