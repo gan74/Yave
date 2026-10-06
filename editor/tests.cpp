@@ -29,6 +29,12 @@ SOFTWARE.
 #include <yave/components/BlueprintComponent.h>
 #include <yave/blueprints/TriggerBlueprintNode.h>
 #include <yave/blueprints/blueprint_nodes.h>
+#include <yave/components/TransformableComponent.h>
+#include <yave/scene/SpatialPartition.h>
+#include <yave/utils/IndexAllocator.h>
+#include <yave/utils/FileSystemModel.h>
+#include <yave/assets/FolderAssetStore.h>
+#include <yave/meshes/AABB.h>
 
 #include <y/concurrent/JobSystem.h>
 #include <y/serde3/archives.h>
@@ -38,11 +44,18 @@ SOFTWARE.
 #include <y/math/random.h>
 #include <y/test/test.h>
 #include <y/utils/log.h>
+#include <y/utils/format.h>
 
 #include <atomic>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <limits>
 #include <optional>
+#include <random>
 #include <thread>
+#include <unordered_map>
+
 
 
 // Components live in a named namespace so that their clean names are predictable
@@ -3568,6 +3581,779 @@ y_test_func("TimeSystem") {
     y_test_assert(time->dt() == 0.0f);
     time->set_time_scale(0.0f);
     y_test_assert(time->dt() == 0.0f);
+}
+
+
+
+// ---------------------------------------- AABB ----------------------------------------
+
+bool nearly_equal(const math::Vec3& a, const math::Vec3& b, float eps = 0.0001f) {
+    return (a - b).length() <= eps;
+}
+
+bool same_aabb(const AABB& a, const AABB& b) {
+    return a.min() == b.min() && a.max() == b.max();
+}
+
+y_test_func("AABB basics") {
+    const AABB aabb(math::Vec3(1.0f, 2.0f, 3.0f), math::Vec3(-1.0f, 0.0f, 5.0f));
+    y_test_assert(aabb.min() == math::Vec3(-1.0f, 0.0f, 3.0f));
+    y_test_assert(aabb.max() == math::Vec3(1.0f, 2.0f, 5.0f));
+    y_test_assert(aabb.center() == math::Vec3(0.0f, 1.0f, 4.0f));
+    y_test_assert(aabb.extent() == math::Vec3(2.0f, 2.0f, 2.0f));
+    y_test_assert(aabb.half_extent() == math::Vec3(1.0f, 1.0f, 1.0f));
+    y_test_assert(std::abs(aabb.radius() - std::sqrt(3.0f)) < 0.0001f);
+    y_test_assert(std::abs(aabb.origin_radius() - std::sqrt(1.0f + 4.0f + 25.0f)) < 0.0001f);
+    y_test_assert(!aabb.is_empty());
+
+    const AABB centered = AABB::from_center_extent(math::Vec3(1.0f, 1.0f, 1.0f), math::Vec3(2.0f, 4.0f, 6.0f));
+    y_test_assert(centered.min() == math::Vec3(0.0f, -1.0f, -2.0f));
+    y_test_assert(centered.max() == math::Vec3(2.0f, 3.0f, 4.0f));
+    y_test_assert(centered.center() == math::Vec3(1.0f, 1.0f, 1.0f));
+
+    y_test_assert(AABB().is_empty());
+    y_test_assert(AABB(math::Vec3(4.0f), math::Vec3(4.0f)).is_empty());
+    y_test_assert(!AABB(math::Vec3(0.0f), math::Vec3(1.0f, 1.0f, 0.0f)).is_empty());
+
+    const AABB merged = aabb.merged(centered);
+    y_test_assert(merged.min() == math::Vec3(-1.0f, -1.0f, -2.0f));
+    y_test_assert(merged.max() == math::Vec3(2.0f, 3.0f, 5.0f));
+    y_test_assert(merged.contains(aabb));
+    y_test_assert(merged.contains(centered));
+}
+
+y_test_func("AABB contains") {
+    const AABB aabb(math::Vec3(0.0f), math::Vec3(1.0f));
+
+    y_test_assert(aabb.contains(math::Vec3(0.5f)));
+    y_test_assert(aabb.contains(math::Vec3(0.0f)));
+    y_test_assert(aabb.contains(math::Vec3(1.0f)));
+    y_test_assert(!aabb.contains(math::Vec3(1.5f, 0.5f, 0.5f)));
+    y_test_assert(!aabb.contains(math::Vec3(0.5f, -0.1f, 0.5f)));
+    y_test_assert(!aabb.contains(math::Vec3(0.5f, 0.5f, 2.0f)));
+
+    y_test_assert(aabb.contains(aabb));
+    y_test_assert(aabb.contains(AABB(math::Vec3(0.25f), math::Vec3(0.75f))));
+    y_test_assert(!aabb.contains(AABB(math::Vec3(0.5f), math::Vec3(1.5f))));
+    y_test_assert(!aabb.contains(AABB(math::Vec3(-1.0f), math::Vec3(2.0f))));
+    y_test_assert(!aabb.contains(AABB(math::Vec3(2.0f), math::Vec3(3.0f))));
+}
+
+
+
+// ---------------------------------------- TransformableComponent ----------------------------------------
+
+y_test_func("TransformableComponent basics") {
+    TransformableComponent tr;
+    y_test_assert(tr.position() == math::Vec3(0.0f));
+    y_test_assert(nearly_equal(tr.forward(), math::Vec3(0.0f, 1.0f, 0.0f)));
+    y_test_assert(std::abs(tr.right().length() - 1.0f) < 0.0001f);
+    y_test_assert(std::abs(tr.up().length() - 1.0f) < 0.0001f);
+    y_test_assert(std::abs(tr.forward().dot(tr.right())) < 0.0001f);
+    y_test_assert(std::abs(tr.forward().dot(tr.up())) < 0.0001f);
+    y_test_assert(std::abs(tr.right().dot(tr.up())) < 0.0001f);
+
+    tr.set_position(math::Vec3(1.0f, 2.0f, 3.0f));
+    y_test_assert(tr.position() == math::Vec3(1.0f, 2.0f, 3.0f));
+    y_test_assert(tr.to_global(math::Vec3(1.0f, 0.0f, 0.0f)) == math::Vec3(2.0f, 2.0f, 3.0f));
+
+    // Rotation and scale
+    const auto rotation = math::Quaternion<>::from_axis_angle(math::Vec3(0.0f, 0.0f, 1.0f), math::to_rad(90.0f));
+    tr.set_transform(math::Transform<>(math::Vec3(1.0f, 2.0f, 3.0f), rotation, math::Vec3(2.0f)));
+    y_test_assert(tr.position() == math::Vec3(1.0f, 2.0f, 3.0f));
+    y_test_assert(nearly_equal(tr.forward().normalized(), rotation(math::Vec3(0.0f, 1.0f, 0.0f))));
+
+    const math::Vec3 p(1.0f, 2.0f, 3.0f);
+    y_test_assert(nearly_equal(tr.to_global(p), math::Vec3(1.0f, 2.0f, 3.0f) + rotation(p) * 2.0f));
+
+    // Position change keeps rotation
+    tr.set_position(math::Vec3(0.0f));
+    y_test_assert(nearly_equal(tr.to_global(p), rotation(p) * 2.0f));
+}
+
+y_test_func("TransformableComponent global AABB") {
+    const auto check = [](const math::Transform<>& transform, const AABB& local) {
+        const TransformableComponent tr(transform);
+        const AABB global = tr.to_global(local);
+
+        math::Vec3 corner_min(std::numeric_limits<float>::max());
+        math::Vec3 corner_max(-std::numeric_limits<float>::max());
+        for(usize i = 0; i != 8; ++i) {
+            const math::Vec3 corner(
+                (i & 1) ? local.max().x() : local.min().x(),
+                (i & 2) ? local.max().y() : local.min().y(),
+                (i & 4) ? local.max().z() : local.min().z()
+            );
+            const math::Vec3 p = tr.to_global(corner);
+            corner_min = corner_min.min(p);
+            corner_max = corner_max.max(p);
+        }
+
+        // Must contain every transformed corner and be tight
+        return nearly_equal(global.min(), corner_min, 0.001f) && nearly_equal(global.max(), corner_max, 0.001f);
+    };
+
+    const AABB local(math::Vec3(-1.0f, 0.0f, 2.0f), math::Vec3(3.0f, 1.0f, 4.0f));
+
+    y_test_assert(check(math::Transform<>(), local));
+    y_test_assert(check(math::Transform<>(math::Vec3(5.0f, -3.0f, 2.0f)), local));
+    y_test_assert(check(math::Transform<>(math::Vec3(0.0f), math::Quaternion<>::from_axis_angle(math::Vec3(0.0f, 0.0f, 1.0f), math::to_rad(45.0f))), local));
+    y_test_assert(check(math::Transform<>(math::Vec3(1.0f, 2.0f, 3.0f), math::Quaternion<>::from_euler(math::to_rad(30.0f), math::to_rad(60.0f), math::to_rad(-20.0f)), math::Vec3(2.0f, 0.5f, 3.0f)), local));
+    y_test_assert(check(math::Transform<>(math::Vec3(0.0f), math::Quaternion<>(), math::Vec3(-1.0f, 1.0f, 1.0f)), local));
+}
+
+y_test_func("TransformableComponent save and load") {
+    EntityWorld world;
+    const EntityId id = world.create_entity();
+    const math::Transform<> transform(math::Vec3(1.0f, 2.0f, 3.0f), math::Quaternion<>::from_euler(0.1f, 0.2f, 0.3f), math::Vec3(4.0f));
+    world.add_or_replace_component<TransformableComponent>(id, transform);
+    world.process_deferred_changes();
+
+    EntityWorld loaded;
+    save_and_load(world, loaded);
+
+    const TransformableComponent* tr = loaded.component<TransformableComponent>(id);
+    y_test_assert(tr);
+    y_test_assert(tr->transform() == transform);
+}
+
+
+
+// ---------------------------------------- IndexAllocator ----------------------------------------
+
+y_test_func("IndexAllocator") {
+    IndexAllocator<u32> allocator;
+    y_test_assert(allocator.size() == 0);
+
+    y_test_assert(allocator.alloc() == 0);
+    y_test_assert(allocator.alloc() == 1);
+    y_test_assert(allocator.alloc() == 2);
+    y_test_assert(allocator.size() == 3);
+
+    allocator.free(1);
+    y_test_assert(allocator.size() == 2);
+    allocator.free(0);
+    y_test_assert(allocator.size() == 1);
+
+    // Freed indices are reused before new ones
+    const u32 a = allocator.alloc();
+    const u32 b = allocator.alloc();
+    y_test_assert(a != b);
+    y_test_assert(a <= 1 && b <= 1);
+    y_test_assert(allocator.size() == 3);
+
+    y_test_assert(allocator.alloc() == 3);
+    y_test_assert(allocator.size() == 4);
+
+    // One past the largest allocated index
+    y_test_assert(allocator.max_index() == 4);
+}
+
+
+
+// ---------------------------------------- SpatialPartition ----------------------------------------
+
+y_test_func("SpatialPartition random operations") {
+    SpatialPartition<u32> partition;
+    std::unordered_map<u32, AABB> expected;
+
+    std::mt19937 rng(42);
+    const auto rand_float = [&](float a, float b) {
+        return std::uniform_real_distribution<float>(a, b)(rng);
+    };
+    const auto random_aabb = [&] {
+        const float range = std::pow(10.0f, rand_float(-1.0f, 3.0f));
+        const math::Vec3 center(rand_float(-range, range), rand_float(-range, range), rand_float(-range, range));
+        const float size = std::pow(10.0f, rand_float(-2.0f, 1.5f));
+        const math::Vec3 extent(rand_float(0.0f, size), rand_float(0.0f, size), rand_float(0.0f, size));
+        return AABB::from_center_extent(center, extent);
+    };
+
+    u32 next_value = 0;
+    for(usize i = 0; i != 4000; ++i) {
+        const u32 op = u32(rng() % 5);
+        if(op < 2 || !partition.size()) {
+            const AABB aabb = random_aabb();
+            const u32* inserted = partition.insert(aabb, next_value);
+            y_test_assert(*inserted == next_value);
+            expected[next_value++] = aabb;
+        } else if(op == 2) {
+            // Small move
+            const usize index = rng() % partition.size();
+            const AABB old = partition.aabb(&partition[index]);
+            const AABB aabb = AABB::from_center_extent(old.center() + math::Vec3(rand_float(-0.1f, 0.1f), 0.0f, 0.0f), old.extent());
+            partition.update(&partition[index], aabb);
+            expected[partition[index]] = aabb;
+        } else if(op == 3) {
+            // Teleport
+            const usize index = rng() % partition.size();
+            const AABB aabb = random_aabb();
+            partition.update(&partition[index], aabb);
+            expected[partition[index]] = aabb;
+        } else {
+            const usize index = rng() % partition.size();
+            const u32 value = partition[index];
+            partition.erase_unordered(&partition[index]);
+            expected.erase(value);
+        }
+
+        if(i % 50 == 0) {
+            y_test_assert(partition.size() == expected.size());
+            y_test_assert(partition.values().size() == partition.size());
+            for(const u32& value : partition) {
+                const auto it = expected.find(value);
+                y_test_assert(it != expected.end());
+                y_test_assert(same_aabb(partition.aabb(&value), it->second));
+                y_test_assert(partition.cell_aabb(&value).contains(partition.aabb(&value)));
+            }
+        }
+    }
+
+    // Erase everything
+    while(partition.size()) {
+        const usize index = rng() % partition.size();
+        expected.erase(partition[index]);
+        partition.erase_unordered(&partition[index]);
+    }
+    y_test_assert(expected.empty());
+    y_test_assert(partition.begin() == partition.end());
+
+    // Still usable
+    partition.emplace_back(7u);
+    y_test_assert(partition.size() == 1);
+    y_test_assert(partition[0] == 7);
+    y_test_assert(partition.aabb(&partition[0]).is_empty());
+}
+
+y_test_func("SpatialPartition cells follow object size") {
+    SpatialPartition<u32> partition;
+
+    const math::Vec3 positions[] = {
+        math::Vec3(1.0f, 0.0f, 0.0f),
+        math::Vec3(1000.0f, 0.0f, 0.0f),
+        math::Vec3(-1000.0f, 0.0f, 0.0f),
+        math::Vec3(0.0f, 1000.0f, 1000.0f),
+    };
+    for(u32 i = 0; i != 4; ++i) {
+        partition.insert(AABB::from_center_extent(positions[i], math::Vec3(1.0f)), i);
+    }
+
+    // Cells should be sized after the object, not its distance to the origin
+    for(const u32& value : partition) {
+        const AABB cell = partition.cell_aabb(&value);
+        y_test_assert(cell.contains(partition.aabb(&value)));
+        y_test_assert(cell.extent().x() < 16.0f);
+    }
+
+    // Small objects far apart don't share a cell
+    for(usize i = 0; i != 4; ++i) {
+        for(usize j = i + 1; j != 4; ++j) {
+            y_test_assert(!nearly_equal(partition.cell_aabb(&partition[i]).center(), partition.cell_aabb(&partition[j]).center(), 1.0f));
+        }
+    }
+}
+
+
+
+// ---------------------------------------- File systems ----------------------------------------
+
+// Don't unwrap errors in asserts: it would abort all tests
+template<typename R, typename T>
+bool ok_eq(R&& res, const T& value) {
+    return res.is_ok() && res.unwrap() == value;
+}
+
+template<typename R>
+bool ok_size(R&& res, usize size) {
+    return res.is_ok() && res.unwrap().size() == size;
+}
+
+template<typename R, typename T>
+bool ok_first(R&& res, const T& value) {
+    return res.is_ok() && !res.unwrap().is_empty() && res.unwrap()[0] == value;
+}
+
+class TempDirectory : NonCopyable {
+    public:
+        TempDirectory(std::string_view name) {
+            std::random_device rd;
+            _path = std::filesystem::temp_directory_path() / (std::string("yave_tests_") + std::string(name) + "_" + std::to_string(rd()));
+            std::filesystem::create_directories(_path);
+        }
+
+        ~TempDirectory() {
+            std::error_code ec;
+            std::filesystem::remove_all(_path, ec);
+        }
+
+        core::String path() const {
+            return core::String(_path.generic_string());
+        }
+
+        core::String file(std::string_view name) const {
+            return core::String((_path / std::string(name)).generic_string());
+        }
+
+    private:
+        std::filesystem::path _path;
+};
+
+void write_file(const core::String& path, std::string_view content) {
+    std::ofstream file(std::string(std::string_view(path)), std::ios::binary);
+    file.write(content.data(), std::streamsize(content.size()));
+}
+
+core::Vector<core::String> list_entries(const FileSystemModel* fs, std::string_view path) {
+    core::Vector<core::String> names;
+    if(fs->for_each(path, [&](const FileSystemModel::EntryInfo& info) { names << info.name; }).is_error()) {
+        names << "<error>";
+    }
+    return names;
+}
+
+bool has_name(const core::Vector<core::String>& names, std::string_view name) {
+    return std::find_if(names.begin(), names.end(), [&](const core::String& n) { return std::string_view(n) == name; }) != names.end();
+}
+
+y_test_func("LocalFileSystemModel paths") {
+    const LocalFileSystemModel fs{};
+
+    y_test_assert(fs.join("a", "b") == "a/b");
+    y_test_assert(fs.join("a/", "b") == "a/b");
+    y_test_assert(fs.join("a\\", "b") == "a\\b");
+    y_test_assert(fs.join("", "b") == "b");
+
+    y_test_assert(fs.filename("a/b/c.txt") == "c.txt");
+    y_test_assert(fs.filename("c.txt") == "c.txt");
+
+    y_test_assert(fs.extension("a/b/c.txt") == ".txt");
+    y_test_assert(fs.extension("c.tar.gz") == ".gz");
+    y_test_assert(fs.extension("noext") == "");
+    y_test_assert(fs.extension("dir.d/file") == "");
+
+    y_test_assert(fs.is_delimiter('/'));
+    y_test_assert(fs.is_delimiter('\\'));
+    y_test_assert(!fs.is_delimiter('a'));
+
+    y_test_assert(fs.canonicalize("a\\b\\..\\c") == "a/c");
+    y_test_assert(fs.canonicalize("a/./b") == "a/b");
+    y_test_assert(fs.is_canonical("a/c"));
+    y_test_assert(!fs.is_canonical("a/b/../c"));
+
+    // Views that aren't null terminated
+    const std::string_view full = "a/b/../cXYZ";
+    y_test_assert(fs.canonicalize(full.substr(0, 8)) == "a/c");
+    y_test_assert(!fs.is_canonical(full.substr(0, 8)));
+
+    {
+        const auto abs = fs.absolute("some/rel/../path");
+        y_test_assert(abs.is_ok());
+        y_test_assert(std::find(abs.unwrap().begin(), abs.unwrap().end(), '\\') == abs.unwrap().end());
+        y_test_assert(abs.unwrap().ends_with("some/path"));
+    }
+
+    y_test_assert(fs.current_path().is_ok());
+    y_test_assert(FileSystemModel::local_filesystem());
+}
+
+y_test_func("LocalFileSystemModel operations") {
+    const TempDirectory temp("localfs");
+    const FileSystemModel* fs = FileSystemModel::local_filesystem();
+
+    const core::String dir = temp.file("dir");
+    const core::String sub = temp.file("dir/sub");
+    const core::String file = temp.file("dir/file.txt");
+
+    y_test_assert(!fs->exists(dir).unwrap_or(true));
+    y_test_assert(ok_eq(fs->entry_type(dir), FileSystemModel::EntryType::Unknown));
+
+    y_test_assert(fs->create_directory(dir).is_ok());
+    y_test_assert(fs->create_directory(sub).is_ok());
+    write_file(file, "hello");
+
+    y_test_assert(fs->exists(dir).unwrap_or(false));
+    y_test_assert(fs->is_directory(dir).unwrap_or(false));
+    y_test_assert(!fs->is_file(dir).unwrap_or(true));
+    y_test_assert(fs->is_file(file).unwrap_or(false));
+    y_test_assert(!fs->is_directory(file).unwrap_or(true));
+
+    {
+        usize count = 0;
+        bool found_file = false;
+        y_test_assert(fs->for_each(dir, [&](const FileSystemModel::EntryInfo& info) {
+            ++count;
+            if(info.name == "file.txt") {
+                found_file = info.type == FileSystemModel::EntryType::File && info.file_size == 5;
+            }
+        }).is_ok());
+        y_test_assert(count == 2);
+        y_test_assert(found_file);
+        y_test_assert(has_name(list_entries(fs, dir), "sub"));
+    }
+    y_test_assert(fs->for_each(temp.file("missing"), [](const auto&) {}).is_error());
+
+    // Parents
+    y_test_assert(fs->is_parent(dir, sub).unwrap_or(false));
+    y_test_assert(fs->is_parent(dir, file).unwrap_or(false));
+    y_test_assert(!fs->is_parent(sub, dir).unwrap_or(true));
+    y_test_assert(!fs->is_parent(dir, dir).unwrap_or(true));
+    y_test_assert(!fs->is_parent(temp.file("di"), dir).unwrap_or(true));
+    y_test_assert(ok_eq(fs->parent_path(sub), fs->absolute(dir).unwrap_or("")));
+
+    // Rename
+    const core::String renamed = temp.file("dir/renamed.txt");
+    y_test_assert(fs->rename(file, renamed).is_ok());
+    y_test_assert(!fs->exists(file).unwrap_or(true));
+    y_test_assert(fs->is_file(renamed).unwrap_or(false));
+
+    // Rename replaces
+    write_file(file, "other");
+    y_test_assert(fs->rename(file, renamed).is_ok());
+    y_test_assert(!fs->exists(file).unwrap_or(true));
+    y_test_assert(fs->exists(renamed).unwrap_or(false));
+
+    y_test_assert(fs->rename(temp.file("missing"), temp.file("missing2")).is_error());
+
+    // Recursive remove
+    y_test_assert(fs->remove(dir).is_ok());
+    y_test_assert(!fs->exists(dir).unwrap_or(true));
+    y_test_assert(!fs->exists(renamed).unwrap_or(true));
+}
+
+
+
+// ---------------------------------------- FolderAssetStore ----------------------------------------
+
+io2::Buffer make_buffer(std::string_view text) {
+    io2::Buffer buffer;
+    buffer.write_array(text.data(), text.size()).ignore();
+    buffer.reset();
+    return buffer;
+}
+
+core::Result<AssetId, AssetStore::ErrorType> import_text(AssetStore& store, std::string_view name, std::string_view text, AssetType type = AssetType::Mesh, core::Span<AssetId> refs = {}) {
+    io2::Buffer buffer = make_buffer(text);
+    return store.import(buffer, name, type, refs);
+}
+
+core::String read_asset(const AssetStore& store, AssetId id) {
+    auto data = store.data(id);
+    if(data.is_error()) {
+        return "<error>";
+    }
+    core::Vector<u8> bytes;
+    if(data.unwrap()->read_all(bytes).is_error()) {
+        return "<read error>";
+    }
+    return core::String(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+}
+
+template<typename T>
+bool is_store_error(const AssetStore::Result<T>& res, AssetStore::ErrorType error) {
+    return res.is_error() && res.error() == error;
+}
+
+y_test_func("AssetId strings") {
+    const AssetId id = AssetId::from_id(0x0123456789abcdef);
+    const core::String str = stringify_id(id);
+    y_test_assert(str.size() == 16);
+    y_test_assert(ok_eq(parse_id(str), id));
+    y_test_assert(stringify_id(AssetId::from_id(1)) == "0000000000000001");
+    y_test_assert(parse_id("zz").is_error());
+
+    const AssetId a = make_random_id();
+    const AssetId b = make_random_id();
+    y_test_assert(a != b);
+    y_test_assert(a != AssetId::invalid_id());
+}
+
+y_test_func("FolderAssetStore import and read") {
+    const TempDirectory temp("store_import");
+    FolderAssetStore store(temp.path());
+
+    const auto one = import_text(store, "folder/one", "hello");
+    y_test_assert(one.is_ok());
+    const AssetId id1 = one.unwrap();
+    y_test_assert(id1 != AssetId::invalid_id());
+
+    y_test_assert(ok_eq(store.id("folder/one"), id1));
+    y_test_assert(ok_eq(store.name(id1), "folder/one"));
+    y_test_assert(ok_eq(store.asset_type(id1), AssetType::Mesh));
+    y_test_assert(read_asset(store, id1) == "hello");
+    y_test_assert(ok_size(store.references(id1), 0));
+    y_test_assert(store.filesystem()->is_directory("folder").unwrap_or(false));
+
+    // Invalid references are dropped
+    const std::array<AssetId, 2> refs = {id1, AssetId::invalid_id()};
+    const auto two = import_text(store, "two", "world", AssetType::Image, refs);
+    y_test_assert(two.is_ok());
+    const AssetId id2 = two.unwrap();
+    y_test_assert(id2 != id1);
+    y_test_assert(ok_eq(store.asset_type(id2), AssetType::Image));
+    y_test_assert(ok_size(store.references(id2), 1));
+    y_test_assert(ok_first(store.references(id2), id1));
+    y_test_assert(ok_eq(store.reference_count(id1), 1));
+    y_test_assert(ok_eq(store.reference_count(id2), 0));
+    {
+        core::Vector<AssetId> found;
+        y_test_assert(store.search_references(id1, [&](AssetId id) { found << id; }).is_ok());
+        y_test_assert(found.size() == 1 && found[0] == id2);
+    }
+
+    // Errors
+    y_test_assert(is_store_error(import_text(store, "folder/one", "again"), AssetStore::ErrorType::NameAlreadyExists));
+    y_test_assert(read_asset(store, id1) == "hello");
+    y_test_assert(is_store_error(import_text(store, "bad\\name", "x"), AssetStore::ErrorType::InvalidName));
+    y_test_assert(is_store_error(import_text(store, "bad\nname", "x"), AssetStore::ErrorType::InvalidName));
+    y_test_assert(is_store_error(import_text(store, "", "x"), AssetStore::ErrorType::InvalidName));
+    y_test_assert(import_text(store, "folder", "x").is_error());
+    y_test_assert(import_text(store, "two/child", "x").is_error());
+
+    const AssetId unknown = AssetId::from_id(12345);
+    y_test_assert(is_store_error(store.name(unknown), AssetStore::ErrorType::UnknownID));
+    y_test_assert(is_store_error(store.id("missing"), AssetStore::ErrorType::UnknownID));
+    y_test_assert(is_store_error(store.data(unknown), AssetStore::ErrorType::UnknownID));
+    y_test_assert(is_store_error(store.asset_type(unknown), AssetStore::ErrorType::UnknownID));
+    y_test_assert(is_store_error(store.references(unknown), AssetStore::ErrorType::UnknownID));
+    y_test_assert(is_store_error(store.remove(unknown), AssetStore::ErrorType::UnknownID));
+    y_test_assert(is_store_error(store.rename(unknown, "x"), AssetStore::ErrorType::UnknownID));
+    y_test_assert(is_store_error(store.name(AssetId::invalid_id()), AssetStore::ErrorType::UnknownID));
+}
+
+y_test_func("FolderAssetStore write") {
+    const TempDirectory temp("store_write");
+    FolderAssetStore store(temp.path());
+
+    const AssetId id1 = import_text(store, "one", "hello").unwrap();
+    const AssetId id2 = import_text(store, "two", "world").unwrap();
+
+    {
+        io2::Buffer buffer = make_buffer("changed!");
+        const std::array<AssetId, 1> refs = {id2};
+        y_test_assert(store.write(id1, buffer, refs).is_ok());
+    }
+    y_test_assert(read_asset(store, id1) == "changed!");
+    y_test_assert(ok_size(store.references(id1), 1));
+    y_test_assert(ok_first(store.references(id1), id2));
+    y_test_assert(ok_eq(store.reference_count(id2), 1));
+    y_test_assert(ok_eq(store.name(id1), "one"));
+    y_test_assert(ok_eq(store.asset_type(id1), AssetType::Mesh));
+
+    // File size is reported by the filesystem
+    {
+        bool found = false;
+        store.filesystem()->for_each("", [&](const FileSystemModel::EntryInfo& info) {
+            if(info.name == "one") {
+                found = info.file_size == 8;
+            }
+        }).ignore();
+        y_test_assert(found);
+    }
+
+    {
+        io2::Buffer buffer = make_buffer("x");
+        y_test_assert(is_store_error(store.write(AssetId::from_id(12345), buffer, {}), AssetStore::ErrorType::UnknownID));
+        io2::Buffer buffer2 = make_buffer("x");
+        y_test_assert(is_store_error(store.write(AssetId::invalid_id(), buffer2, {}), AssetStore::ErrorType::UnknownID));
+    }
+}
+
+y_test_func("FolderAssetStore rename and remove") {
+    const TempDirectory temp("store_rename");
+    FolderAssetStore store(temp.path());
+
+    const AssetId id1 = import_text(store, "a/b/one", "1").unwrap();
+    const AssetId id2 = import_text(store, "a/two", "2").unwrap();
+    const AssetId id3 = import_text(store, "three", "3").unwrap();
+
+    // Rename asset
+    y_test_assert(store.rename(id3, "renamed").is_ok());
+    y_test_assert(ok_eq(store.name(id3), "renamed"));
+    y_test_assert(ok_eq(store.id("renamed"), id3));
+    y_test_assert(store.id("three").is_error());
+    y_test_assert(read_asset(store, id3) == "3");
+
+    // Rename onto existing names fails and changes nothing
+    y_test_assert(store.rename("renamed", "a/two").is_error());
+    y_test_assert(ok_eq(store.name(id3), "renamed"));
+    y_test_assert(ok_eq(store.name(id2), "a/two"));
+    y_test_assert(store.rename("renamed", "a").is_error());
+    y_test_assert(ok_eq(store.name(id3), "renamed"));
+
+    // Rename folder moves everything inside
+    y_test_assert(store.rename("a/b", "z").is_ok());
+    y_test_assert(ok_eq(store.name(id1), "z/one"));
+    y_test_assert(ok_eq(store.id("z/one"), id1));
+    y_test_assert(store.id("a/b/one").is_error());
+    y_test_assert(ok_eq(store.name(id2), "a/two"));
+    y_test_assert(store.filesystem()->is_directory("z").unwrap_or(false));
+    y_test_assert(!store.filesystem()->exists("a/b").unwrap_or(true));
+    y_test_assert(read_asset(store, id1) == "1");
+
+    // Can't move a folder inside itself
+    y_test_assert(store.rename("z", "z/inner").is_error());
+    y_test_assert(ok_eq(store.name(id1), "z/one"));
+
+    // Renaming into a folder that doesn't exist creates it
+    y_test_assert(store.rename("renamed", "new/dir/renamed").is_ok());
+    y_test_assert(ok_eq(store.name(id3), "new/dir/renamed"));
+    y_test_assert(store.filesystem()->is_directory("new/dir").unwrap_or(false));
+    y_test_assert(store.filesystem()->is_directory("new").unwrap_or(false));
+    y_test_assert(has_name(list_entries(store.filesystem(), "new/dir"), "renamed"));
+
+    // Remove by id
+    y_test_assert(store.remove(id2).is_ok());
+    y_test_assert(store.name(id2).is_error());
+    y_test_assert(store.id("a/two").is_error());
+    y_test_assert(store.data(id2).is_error());
+    y_test_assert(store.filesystem()->is_directory("a").unwrap_or(false));
+
+    // Remove by name
+    y_test_assert(store.remove("new/dir/renamed").is_ok());
+    y_test_assert(store.name(id3).is_error());
+
+    // Remove folder removes its content
+    const AssetId id4 = import_text(store, "z/deep/four", "4").unwrap();
+    y_test_assert(store.remove("z").is_ok());
+    y_test_assert(store.name(id1).is_error());
+    y_test_assert(store.name(id4).is_error());
+    y_test_assert(store.data(id1).is_error());
+    y_test_assert(!store.filesystem()->exists("z").unwrap_or(true));
+    y_test_assert(!store.filesystem()->exists("z/deep").unwrap_or(true));
+}
+
+y_test_func("FolderAssetStore reopen") {
+    const TempDirectory temp("store_reopen");
+
+    AssetId id1;
+    AssetId id2;
+    {
+        FolderAssetStore store(temp.path());
+        id1 = import_text(store, "folder/one", "hello", AssetType::Font).unwrap();
+        const std::array<AssetId, 1> refs = {id1};
+        id2 = import_text(store, "two", "world", AssetType::Material, refs).unwrap();
+        y_test_assert(store.filesystem()->create_directory("empty/nested").is_ok());
+    }
+
+    {
+        FolderAssetStore store(temp.path());
+        y_test_assert(ok_eq(store.id("folder/one"), id1));
+        y_test_assert(ok_eq(store.id("two"), id2));
+        y_test_assert(ok_eq(store.asset_type(id1), AssetType::Font));
+        y_test_assert(ok_eq(store.asset_type(id2), AssetType::Material));
+        y_test_assert(read_asset(store, id1) == "hello");
+        y_test_assert(ok_size(store.references(id2), 1));
+        y_test_assert(ok_first(store.references(id2), id1));
+        y_test_assert(store.filesystem()->is_directory("folder").unwrap_or(false));
+        y_test_assert(store.filesystem()->is_directory("empty").unwrap_or(false));
+        y_test_assert(store.filesystem()->is_directory("empty/nested").unwrap_or(false));
+
+        // Renames are persisted
+        // Note: renaming a folder into a non existing parent asserts in save_tree, so create it first
+        y_test_assert(store.filesystem()->create_directory("moved").is_ok());
+        y_test_assert(store.rename("folder", "moved/folder").is_ok());
+    }
+
+    {
+        FolderAssetStore store(temp.path());
+        y_test_assert(ok_eq(store.name(id1), "moved/folder/one"));
+        y_test_assert(store.filesystem()->is_directory("moved/folder").unwrap_or(false));
+        y_test_assert(store.filesystem()->is_directory("moved").unwrap_or(false));
+    }
+}
+
+y_test_func("FolderAssetStore filesystem") {
+    const TempDirectory temp("store_fs");
+    FolderAssetStore store(temp.path());
+    const FileSystemModel* fs = store.filesystem();
+
+    y_test_assert(ok_size(fs->current_path(), 0));
+    y_test_assert(fs->exists("").unwrap_or(false));
+    y_test_assert(fs->is_directory("").unwrap_or(false));
+
+    y_test_assert(fs->create_directory("a/b/c").is_ok());
+    y_test_assert(fs->is_directory("a").unwrap_or(false));
+    y_test_assert(fs->is_directory("a/b").unwrap_or(false));
+    y_test_assert(fs->is_directory("a/b/c").unwrap_or(false));
+    y_test_assert(fs->exists("a/b/").unwrap_or(false));
+    y_test_assert(!fs->exists("a/x").unwrap_or(true));
+
+    import_text(store, "a/b/mesh", "data").unwrap();
+    import_text(store, "a/b-other", "data").unwrap();
+    import_text(store, "root", "data").unwrap();
+
+    y_test_assert(fs->exists("a/b/mesh").unwrap_or(false));
+    y_test_assert(fs->is_file("a/b/mesh").unwrap_or(false));
+    y_test_assert(!fs->exists("a/b/mesh/").unwrap_or(true));
+
+    y_test_assert(fs->join("a", "b") == "a/b");
+    y_test_assert(fs->join("a/", "b") == "a/b");
+    y_test_assert(fs->join("", "b") == "b");
+    y_test_assert(fs->filename("a/b/mesh") == "mesh");
+    y_test_assert(fs->filename("mesh") == "mesh");
+    y_test_assert(ok_eq(fs->parent_path("a/b/mesh"), "a/b"));
+    y_test_assert(ok_eq(fs->parent_path("a"), ""));
+    y_test_assert(fs->is_parent("a", "a/b/mesh").unwrap_or(false));
+    y_test_assert(!fs->is_parent("a/b", "a/b-other").unwrap_or(true));
+
+    {
+        const auto entries = list_entries(fs, "a/b");
+        y_test_assert(entries.size() == 2);
+        y_test_assert(has_name(entries, "c"));
+        y_test_assert(has_name(entries, "mesh"));
+    }
+    {
+        const auto entries = list_entries(fs, "a/b/");
+        y_test_assert(entries.size() == 2);
+    }
+    {
+        const auto entries = list_entries(fs, "a");
+        y_test_assert(entries.size() == 2);
+        y_test_assert(has_name(entries, "b"));
+        y_test_assert(has_name(entries, "b-other"));
+    }
+    {
+        const auto entries = list_entries(fs, "");
+        y_test_assert(entries.size() == 2);
+        y_test_assert(has_name(entries, "a"));
+        y_test_assert(has_name(entries, "root"));
+    }
+    y_test_assert(list_entries(fs, "missing").is_empty());
+
+    const auto search = [&](std::string_view path, std::string_view pattern) {
+        core::Vector<core::String> found;
+        dynamic_cast<const SearchableFileSystemModel*>(fs)->search(path, pattern, [&](const FileSystemModel::EntryInfo& info) { found << info.name; }).ignore();
+        return found;
+    };
+
+    y_test_assert(dynamic_cast<const SearchableFileSystemModel*>(fs));
+    {
+        const auto found = search("", "mes");
+        y_test_assert(found.size() == 1 && found[0] == "a/b/mesh");
+    }
+    {
+        const auto found = search("a", "b");
+        y_test_assert(has_name(found, "a/b"));
+        y_test_assert(has_name(found, "a/b/c"));
+        y_test_assert(has_name(found, "a/b/mesh"));
+        y_test_assert(has_name(found, "a/b-other"));
+    }
+    {
+        const auto found = search("a/b", "o");
+        y_test_assert(found.is_empty());
+    }
+    y_test_assert(search("missing", "a").is_empty());
+
+    // Directory operations
+    y_test_assert(fs->rename("a/b/c", "a/d").is_ok());
+    y_test_assert(fs->is_directory("a/d").unwrap_or(false));
+    y_test_assert(!fs->exists("a/b/c").unwrap_or(true));
+    y_test_assert(fs->rename("a/d", "").is_error());
+    y_test_assert(fs->rename("a/d", "bad\\name").is_error());
+
+    y_test_assert(fs->remove("a/d").is_ok());
+    y_test_assert(!fs->exists("a/d").unwrap_or(true));
+    y_test_assert(fs->exists("a/b/mesh").unwrap_or(false));
 }
 
 
