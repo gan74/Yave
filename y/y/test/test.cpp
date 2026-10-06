@@ -77,10 +77,17 @@ usize test_count() {
 }
 
 bool run_tests() {
+    const auto prev_callback = log_callback();
+    void* prev_user_data = log_callback_user_data();
+    set_log_callback([](std::string_view, Log, void*) { return true; });
+
     bool all_ok = true;
     for(detail::TestItem* test = detail::first_test; test; test = test->next) {
         all_ok &= run_test(test);
     }
+
+    set_log_callback(prev_callback, prev_user_data);
+
     return all_ok;
 }
 

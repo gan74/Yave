@@ -81,5 +81,13 @@ void set_log_callback(detail::log_callback func, void* user_data) {
     callback_user_data = user_data;
 }
 
+detail::log_callback log_callback() {
+    return callback;
+}
+
+void* log_callback_user_data() {
+    return callback_user_data;
+}
+
 }
 
