@@ -394,15 +394,15 @@ class UndoRedoDebug : public WorkspaceWidget<WorldWorkspace> {
         void on_gui() override {
             EditorWorld& world = workspace()->world();
             UndoRedoSystem* system = world.find_system<UndoRedoSystem>();
-            const auto states = system->undo_states();
-
-            ImGui::Text("%u items in stack (current: %u)", u32(states.size()), u32(system->stack_top()));
+            ImGui::Text("%u items in stack (current: %u)", u32(system->undo_states().size()), u32(system->stack_top()));
 
             ImGui::SameLine();
 
             if(ImGui::Button("Clear")) {
                 system->reset();
             }
+
+            const auto states = system->undo_states();
 
             if(ImGui::BeginChild("##undostack")) {
                 for(usize i = 0; i != states.size(); ++i) {
