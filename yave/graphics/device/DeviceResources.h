@@ -31,6 +31,8 @@ SOFTWARE.
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/images/ImageView.h>
 
+#include <mutex>
+
 namespace yave {
 
 class SpirVData;
@@ -203,6 +205,10 @@ class DeviceResources final : NonMovable {
 
         StorageTexture _atmosphere_transmittance;
         StorageVolume _atmosphere_scattering;
+
+#ifdef YAVE_LAZY_DEVICE_RESOURCES
+        std::mutex _lazy_lock;
+#endif
 };
 }
 

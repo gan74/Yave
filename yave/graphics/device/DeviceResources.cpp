@@ -199,6 +199,10 @@ void DeviceResources::ensure_loaded(ComputePrograms prog) {
     const usize i = usize(prog);
     y_debug_assert(i < usize(MaxComputePrograms));
 
+#ifdef YAVE_LAZY_DEVICE_RESOURCES
+    const std::unique_lock lock(_lazy_lock);
+#endif
+
     if(!_computes[i].is_null()) {
         return;
     }
@@ -217,6 +221,10 @@ void DeviceResources::ensure_loaded(ComputePrograms prog) {
 void DeviceResources::ensure_loaded(MaterialTemplates mat) {
     const usize i = usize(mat);
     y_debug_assert(i < usize(MaxMaterialTemplates));
+
+#ifdef YAVE_LAZY_DEVICE_RESOURCES
+    const std::unique_lock lock(_lazy_lock);
+#endif
 
     if(_material_templates[i]) {
         return;

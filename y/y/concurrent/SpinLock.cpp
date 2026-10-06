@@ -44,6 +44,12 @@ SpinLock::~SpinLock() {
 }
 
 void SpinLock::lock() {
+#ifdef Y_DEBUG
+    const Type state = _spin;
+    unused(state);
+    y_debug_assert(state == Locked || state == Unlocked);
+#endif
+
     for(usize failed = 0; !try_lock(); ++failed) {
         wait_once();
     }
