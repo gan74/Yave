@@ -57,12 +57,17 @@ class TranslationGizmo final : public GizmoBase {
 
         void draw() override;
 
+        void set_snapping(float step);
+        float snapping() const;
+
     private:
         bool is_hovered(usize axis) const;
 
         u32 _hover_mask = 0;
         math::Vec2 _dragging_offset;
         math::Vec3 _base_pos;
+
+        float _snapping = 0.5f;
 
         bool _use_object_space = false;
 };
@@ -74,9 +79,16 @@ class RotationGizmo final : public GizmoBase {
 
         void draw() override;
 
+        void set_snapping(float step);
+        float snapping() const;
+
     private:
         usize _rotation_axis = usize(-1);
         float _angle_offset = 0.0f;
+        float _drag_angle = 0.0f;
+        float _applied_angle = 0.0f;
+
+        float _snapping = math::to_rad(15.0f);
 };
 
 

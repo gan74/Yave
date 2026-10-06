@@ -75,6 +75,13 @@ static void move_recursive(EditorWorld& world, ecs::EntityId id, math::Transform
 }
 
 
+static float snap(float value, float step) {
+    if(!ImGui::GetIO().KeyCtrl || step <= 0.0f) {
+        return value;
+    }
+    return std::round(value / step) * step;
+}
+
 static bool is_clicked() {
     return ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && !ImGui::IsAnyItemActive();
 }
@@ -213,6 +220,14 @@ math::Vec3 GizmoBase::to_world_pos(const math::Vec2& window) const {
 
 
 TranslationGizmo::TranslationGizmo(SceneView* view, WorldWorkspace* ws) : GizmoBase(view, ws) {
+}
+
+void TranslationGizmo::set_snapping(float step) {
+    _snapping = step;
+}
+
+float TranslationGizmo::snapping() const {
+    return _snapping;
 }
 
 bool TranslationGizmo::is_hovered(usize axis) const {
@@ -367,9 +382,8 @@ void TranslationGizmo::draw() {
                 math::Vec3 pos;
                 const math::Vec3 axis = basis[i];
                 if(intersect_lines(obj_pos, obj_pos + axis, cam_pos, to_world_pos(target_axis_screen_pos), pos)) {
-                    const math::Vec3 v = pos.dot(basis[i]) * axis;
-                    const float dot = _base_pos.dot(axis);
-                    offset += v - (axis * dot);
+                    const float dist = pos.dot(axis) - _base_pos.dot(axis);
+                    offset += axis * snap(dist, _snapping);
                     pos_changed = true;
                 }
             }
@@ -450,6 +464,14 @@ void TranslationGizmo::draw() {
 
 
 RotationGizmo::RotationGizmo(SceneView* view, WorldWorkspace* ws) : GizmoBase(view, ws) {
+}
+
+void RotationGizmo::set_snapping(float step) {
+    _snapping = step;
+}
+
+float RotationGizmo::snapping() const {
+    return _snapping;
 }
 
 void RotationGizmo::draw() {
@@ -612,10 +634,15 @@ void RotationGizmo::draw() {
             }
 
             const float angle = compute_angle(_rotation_axis);
-            if(std::abs(_angle_offset - angle) > 0.001f) {
-                set_rotation(math::Quaternion<>::from_axis_angle(basis[_rotation_axis], angle - _angle_offset));
-                _angle_offset = angle;
+            const float delta = std::remainder(angle - _angle_offset, 2.0f * math::pi<float>);
+            _drag_angle += delta;
+
+            const float target = snap(_drag_angle, _snapping);
+            if(std::abs(target - _applied_angle) > 0.001f) {
+                set_rotation(math::Quaternion<>::from_axis_angle(basis[_rotation_axis], target - _applied_angle));
+                _applied_angle = target;
             }
+            _angle_offset = angle;
         }
     } else {
         _rotation_axis = usize(-1);
@@ -637,6 +664,8 @@ void RotationGizmo::draw() {
 
                 _rotation_axis = ((axis + 2) % 3);
                 _angle_offset = compute_angle(_rotation_axis);
+                _drag_angle = 0.0f;
+                _applied_angle = 0.0f;
             });
         }
 

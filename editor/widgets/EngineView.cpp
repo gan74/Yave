@@ -512,6 +512,20 @@ void EngineView::draw_toolbar() {
 
             ImGui::PopStyleColor();
         }
+
+        if(ImGui::BeginMenu(ICON_FA_MAGNET)) {
+            float translation = _tr_gizmo.snapping();
+            if(ImGui::DragFloat("Translation", &translation, 0.05f, 0.0f, 100.0f, "%.2f")) {
+                _tr_gizmo.set_snapping(translation);
+            }
+
+            float rotation = math::to_deg(_rot_gizmo.snapping());
+            if(ImGui::DragFloat("Rotation", &rotation, 1.0f, 0.0f, 180.0f, "%.1f deg")) {
+                _rot_gizmo.set_snapping(math::to_rad(rotation));
+            }
+
+            ImGui::EndMenu();
+        }
     }
 
     ImGui::Separator();
