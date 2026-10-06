@@ -395,7 +395,14 @@ void FileSystemView::on_gui() {
                     imgui::table_begin_next_row();
 
                     const Entry& entry = _entries[i];
-                    if(imgui::selectable_icon(entry.icon, fmt_c_str("{}##{}", entry.name, i), _selected_index == i, ImGuiSelectableFlags_SpanAllColumns)) {
+                    const bool clicked = imgui::selectable_icon(entry.icon, fmt_c_str("{}##{}", entry.name, i), _selected_index == i, ImGuiSelectableFlags_SpanAllColumns);
+                    const bool is_right_clicked = ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right);
+
+                    if(clicked || is_right_clicked) {
+                        _selected_index = i;
+                    }
+
+                    if(clicked) {
                         entry_clicked(entry);
                         if(_need_update) {
                             break;
