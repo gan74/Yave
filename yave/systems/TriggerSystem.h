@@ -19,44 +19,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SYSTEMS_JOLTPHYSICSSYSTEM_H
-#define YAVE_SYSTEMS_JOLTPHYSICSSYSTEM_H
+#ifndef YAVE_SYSTEMS_TRIGGERSYSTEM_H
+#define YAVE_SYSTEMS_TRIGGERSYSTEM_H
 
 #include <yave/ecs/EntityWorld.h>
 
-#include <y/core/Chrono.h>
-
 namespace yave {
 
-struct JoltData;
-
-struct OnCollide {
-    ecs::EntityId other;
-    math::Vec3 position;
-
-    y_reflect(OnCollide, other, position)
-};
-
-class JoltPhysicsSystem : public ecs::System {
+// Executes the triggers emitted during the previous tick, before any other task of the current tick runs
+class TriggerSystem : public ecs::System {
     public:
-        JoltPhysicsSystem();
-        ~JoltPhysicsSystem();
-
-        void set_debug_drawer(DirectDraw* drawer);
-        void set_debug_draw_static(bool enable);
-        void set_debug_draw_movable(bool enable);
+        TriggerSystem();
 
         void setup(ecs::SystemScheduler& sched) override;
-
-    private:
-        std::unique_ptr<JoltData> _jolt;
-
-        DirectDraw* _drawer = nullptr;
-        bool _debug_draw_static = false;
-        bool _debug_draw_movable = false;
 };
 
 }
 
-#endif // YAVE_SYSTEMS_JOLTPHYSICSSYSTEM_H
+#endif // YAVE_SYSTEMS_TRIGGERSYSTEM_H
 

@@ -19,44 +19,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SYSTEMS_JOLTPHYSICSSYSTEM_H
-#define YAVE_SYSTEMS_JOLTPHYSICSSYSTEM_H
 
-#include <yave/ecs/EntityWorld.h>
+#include "TriggerSystem.h"
 
-#include <y/core/Chrono.h>
+#include <yave/ecs/SystemManager.h>
 
 namespace yave {
 
-struct JoltData;
-
-struct OnCollide {
-    ecs::EntityId other;
-    math::Vec3 position;
-
-    y_reflect(OnCollide, other, position)
-};
-
-class JoltPhysicsSystem : public ecs::System {
-    public:
-        JoltPhysicsSystem();
-        ~JoltPhysicsSystem();
-
-        void set_debug_drawer(DirectDraw* drawer);
-        void set_debug_draw_static(bool enable);
-        void set_debug_draw_movable(bool enable);
-
-        void setup(ecs::SystemScheduler& sched) override;
-
-    private:
-        std::unique_ptr<JoltData> _jolt;
-
-        DirectDraw* _drawer = nullptr;
-        bool _debug_draw_static = false;
-        bool _debug_draw_movable = false;
-};
-
+TriggerSystem::TriggerSystem() : ecs::System("TriggerSystem") {
 }
 
-#endif // YAVE_SYSTEMS_JOLTPHYSICSSYSTEM_H
+void TriggerSystem::setup(ecs::SystemScheduler& sched) {
+    // TickSequential tasks run alone, so handlers have exclusive access to the world
+    sched.schedule(ecs::SystemSchedule::TickSequential, "Dispatch triggers", [this]() {
+        world().triggers().dispatch(world());
+    });
+}
+
+}
 

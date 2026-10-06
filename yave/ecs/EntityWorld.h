@@ -28,6 +28,7 @@ SOFTWARE.
 #include "EntityGroup.h"
 #include "EntityPool.h"
 #include "EntityPrefab.h"
+#include "TriggerManager.h"
 #include "tags.h"
 #include "traits.h"
 
@@ -192,6 +193,19 @@ class EntityWorld : NonMovable {
 
 
 
+        // ---------------------------------------- Triggers ----------------------------------------
+
+        TriggerManager& triggers() {
+            return _triggers;
+        }
+
+        const TriggerManager& triggers() const {
+            return _triggers;
+        }
+
+
+
+
         // ---------------------------------------- Groups ----------------------------------------
 
         template<typename... Ts>
@@ -300,6 +314,7 @@ class EntityWorld : NonMovable {
         SparseIdSet _parent_changed;
 
         SystemManager _system_manager;
+        TriggerManager _triggers;
 
         TickId _tick_id;
 
