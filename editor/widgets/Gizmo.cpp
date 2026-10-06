@@ -193,7 +193,7 @@ math::Vec2 GizmoBase::to_window_pos(const math::Vec3& world) const {
     auto screen = to_screen_pos(world);
 
     if(screen.z() < 0.0f) {
-        (std::fabs(screen.x()) > std::fabs(screen.y()) ? screen.x() : screen.y()) = FP_INFINITE; // infs
+        (std::fabs(screen.x()) > std::fabs(screen.y()) ? screen.x() : screen.y()) = std::numeric_limits<float>::infinity();
     }
 
     return screen.to<2>() * viewport + offset;

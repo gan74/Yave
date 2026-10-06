@@ -349,7 +349,8 @@ bool id_selector(ecs::EntityId& id, const EditorWorld& world, ecs::ComponentType
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().FramePadding.x * 2.0f);
 
     bool has_component = true;
-    if(!world.exists(id)) {
+    const bool exists = world.exists(id);
+    if(!exists) {
         ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
     } else if(with_component != ecs::ComponentTypeIndex::invalid_index) {
         has_component = world.has_component(id, with_component);
@@ -371,7 +372,7 @@ bool id_selector(ecs::EntityId& id, const EditorWorld& world, ecs::ComponentType
         }
     }
 
-    if(!id.is_valid()) {
+    if(!exists) {
         ImGui::PopStyleColor();
     }
 

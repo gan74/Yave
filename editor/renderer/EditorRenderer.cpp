@@ -71,7 +71,7 @@ static SceneVisibilitySubPass filter_selected(const SceneVisibilitySubPass& visi
 static FrameGraphImageId render_selection_outline(FrameGraph& framegraph, const SceneView& view, FrameGraphImageId color, FrameGraphImageId depth, FrameGraphImageId selection_depth, FrameGraphImageId selection_id) {
     const EcsScene* scene = dynamic_cast<const EcsScene*>(view.scene());
     const EditorWorld* world = scene ? dynamic_cast<const EditorWorld*>(scene->world()) : nullptr;
-    if(!world || world->has_selected_entities()) {
+    if(!world || !world->has_selected_entities()) {
         return color;
     }
 
