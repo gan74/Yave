@@ -60,6 +60,9 @@ void EntitySelector::on_gui() {
         }
 
         for(const auto& [id, comp] : group.id_components()) {
+            ImGui::PushID(int(id.index()));
+            y_defer(ImGui::PopID());
+
             imgui::text_icon(world.entity_icon(id));
             ImGui::SameLine();
             if(ImGui::Selectable(comp.name().data())) {
