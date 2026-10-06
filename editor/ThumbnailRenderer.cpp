@@ -322,10 +322,10 @@ std::shared_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_re
             break;
         }
 
-        data->status = ok ? ThumbnailStatus::Done : ThumbnailStatus::Failed;
         if(!data->texture.is_null()) {
             data->view = data->texture;
         }
+        data->status = ok ? ThumbnailStatus::Done : ThumbnailStatus::Failed;
     });
 
     return data;

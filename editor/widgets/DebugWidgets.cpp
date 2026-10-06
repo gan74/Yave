@@ -490,7 +490,7 @@ class BlueprintNodeDebug : public WorkspaceWidget<BlueprintWorkspace> {
                 const core::Span<BlueprintPin> inputs = node->input_pins();
                 if(!inputs.is_empty() && ImGui::TreeNode("Inputs")) {
                     for(usize k = 0; k != inputs.size(); ++k) {
-                        ImGui::TextUnformatted(fmt_c_str("{}{}", inputs[i].name, blueprint.find_link(i, k) ? " (linked)" : ""));
+                        ImGui::TextUnformatted(fmt_c_str("{}{}", inputs[k].name, blueprint.find_link(i, k) ? " (linked)" : ""));
                     }
                     ImGui::TreePop();
                 }
