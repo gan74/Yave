@@ -317,11 +317,29 @@ static core::Result<MeshVertexStreams> import_vertices(const tinygltf::Model& mo
     return core::Ok(std::move(streams));
 }
 
-static core::Result<core::Vector<IndexedTriangle>> import_triangles(const tinygltf::Model& model, const tinygltf::Primitive& primitive) {
+static core::Result<core::Vector<IndexedTriangle>> import_triangles(const tinygltf::Model& model, const tinygltf::Primitive& primitive, usize vertex_count) {
+    if(primitive.indices < 0) {
+        // Non-indexed geometry: every 3 consecutive vertices form a triangle
+        if(vertex_count < 3) {
+            return core::Err();
+        }
+
+        core::Vector<IndexedTriangle> triangles;
+        triangles.set_min_size(vertex_count / 3);
+        for(usize i = 0; i != triangles.size(); ++i) {
+            triangles[i] = {u32(i * 3), u32(i * 3 + 1), u32(i * 3 + 2)};
+        }
+        return core::Ok(std::move(triangles));
+    }
+
     const tinygltf::Accessor accessor = model.accessors[primitive.indices];
 
-    if(!accessor.count || accessor.sparse.isSparse) {
+    if(accessor.count < 3 || accessor.sparse.isSparse) {
         return core::Err();
+    }
+
+    if(accessor.count % 3) {
+        log_msg("Index count is not a multiple of 3, extra indices will be ignored", Log::Warning);
     }
 
     core::Vector<IndexedTriangle> triangles;
@@ -332,7 +350,7 @@ static core::Result<core::Vector<IndexedTriangle>> import_triangles(const tinygl
         const u8* begin = model.buffers[buffer.buffer].data.data() + buffer.byteOffset + accessor.byteOffset;
         const usize stride = buffer.byteStride ? buffer.byteStride : elem_size;
 
-        for(usize i = 0; i != accessor.count; ++i) {
+        for(usize i = 0; i != triangles.size() * 3; ++i) {
             triangles[i / 3][i % 3] = convert_index(begin + (i * stride));
         }
     };
@@ -423,7 +441,7 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
         texture.name = gltf_image.name;
 
         if(texture.name.is_empty()) {
-            texture.name = fmt_to_owned("texture_{}", scene.materials.size());
+            texture.name = fmt_to_owned("texture_{}", scene.images.size());
         }
     }
 
@@ -449,7 +467,7 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
         if(const auto it = gltf_material.extensions.find("KHR_materials_specular"); it != gltf_material.extensions.end() && it->second.IsObject()) {
             if(const auto tex_info = it->second.Get("specularColorTexture"); tex_info.IsObject()) {
                 if(const auto value = tex_info.Get("index"); value.IsInt()) {
-                    if(const int image_index = value.GetNumberAsInt(); image_index >= 0) {
+                    if(const int image_index = compute_image_index(value.GetNumberAsInt()); image_index >= 0) {
                         scene.images[image_index].as_sRGB = true;
                     }
                 }
@@ -561,9 +579,12 @@ core::Result<MeshData> ParsedScene::create_mesh(int index) const {
         }
 
         auto vertex_streams = import_vertices(*gltf, primitive);
-        auto triangles = import_triangles(*gltf, primitive);
+        if(vertex_streams.is_error()) {
+            return core::Err();
+        }
 
-        if(vertex_streams.is_error() || triangles.is_error()) {
+        auto triangles = import_triangles(*gltf, primitive, vertex_streams.unwrap().vertex_count());
+        if(triangles.is_error()) {
             return core::Err();
         }
 

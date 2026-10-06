@@ -63,11 +63,11 @@ static void create_empty_asset(const core::String& import_path) {
             log_msg(fmt("Unable to serialize {}", type_name), Log::Error);
             return;
         }
-        buffer.reset();
     }
 
     core::String suffix;
     for(usize i = 0;; ++i) {
+        buffer.reset();
         const core::String name = asset_store().filesystem()->join(import_path, core::String(type_name) + suffix);
         if(const auto res = asset_store().import(buffer, name, Type, {}); res.is_ok()) {
             log_msg(fmt("Created {} \"{}\"", type_name, name));

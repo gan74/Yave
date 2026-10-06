@@ -56,7 +56,6 @@ static AssetId import_asset(const core::String& name, const T& asset, AssetType 
             log_msg(fmt("Unable to serialize {}", name), Log::Error);
             return AssetId::invalid_id();
         }
-        buffer.reset();
     }
 
     {
@@ -64,6 +63,7 @@ static AssetId import_asset(const core::String& name, const T& asset, AssetType 
 
         core::String suffix;
         for(usize i = 0;; ++i) {
+            buffer.reset();
             if(const auto res = asset_store().import(buffer, asset_store().filesystem()->join(import_path, name + suffix), type, refs); res.is_ok()) {
                 log_msg(fmt("Imported {} \"{}\" as {}", asset_type_name(type), name, stringify_id(res.unwrap())));
                 return res.unwrap();
