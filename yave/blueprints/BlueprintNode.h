@@ -89,6 +89,8 @@ class BlueprintNode : NonMovable {
 
         virtual void eval() = 0; // may throw std::runtime_error
 
+        virtual bool is_entry_point() const;
+
         // inputs
         virtual void reset_inputs();
 

@@ -21,6 +21,9 @@ SOFTWARE.
 **********************************/
 
 #include "blueprint_nodes.h"
+#include "TriggerBlueprintNode.h"
+
+#include <yave/systems/JoltPhysicsSystem.h>
 
 #include <y/utils/traits.h>
 #include <y/core/String.h>
@@ -459,6 +462,13 @@ void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factorie
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<ParamInBlueprintNode>>("Param in"));
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<ParamOutBlueprintNode>>("Param out"));
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<IfBlueprintNode>>("If"));
+
+    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<TriggerBlueprintNode<OnCollide>>>("On collide"));
+
+#ifdef Y_DEBUG
+    struct Debug { void operator()(float a) const { log_msg(fmt("Debug blueprint node: {}", a)); } };
+    factories.emplace_back(make_blueprint_node_factory<Debug, "in">("Debug"));
+#endif
 
     add_bool_nodes(factories);
 

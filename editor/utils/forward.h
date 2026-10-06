@@ -88,6 +88,8 @@ struct EditorSettings;
 struct EditorWidgetDesc;
 struct Entry;
 struct ImGuiImage;
+struct NewNode;
+struct ParamDrawer;
 struct PerfSettings;
 struct Picker;
 struct PickingRequest;

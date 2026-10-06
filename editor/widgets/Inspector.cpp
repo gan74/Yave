@@ -524,7 +524,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                 break;
 
                 default:
-                    ImGui::TextDisabled("Unknown asset type");
+                    ImGui::TextDisabled(fmt_c_str("{} assets are not supported", asset_type_name(p.type())));
                 break;
             }
         }

@@ -52,6 +52,10 @@ core::Span<BlueprintPin> BlueprintNode::param_pins() const {
     return {};
 }
 
+bool BlueprintNode::is_entry_point() const {
+    return false;
+}
+
 bool BlueprintNode::has_generic_pin() const {
     for(const BlueprintPin& pin : input_pins()) {
         if(pin.is_generic) {

@@ -39,6 +39,7 @@ SOFTWARE.
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/AtmosphereComponent.h>
+#include <yave/components/BlueprintComponent.h>
 
 #include <yave/systems/AssetLoaderSystem.h>
 #include <yave/systems/JoltPhysicsSystem.h>
@@ -124,6 +125,10 @@ UiIcon EditorWorld::entity_icon(ecs::EntityId id) const {
 
     if(has_component<AtmosphereComponent>(id)) {
         return { ICON_FA_CLOUD, base_color };
+    }
+
+    if(has_component<BlueprintComponent>(id)) {
+        return { ICON_FA_PROJECT_DIAGRAM, base_color };
     }
 
     if(has_children(id)) {

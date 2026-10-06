@@ -19,43 +19,44 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_BLUEPRINTS_BLUEPRINTINSTANCE_H
-#define YAVE_BLUEPRINTS_BLUEPRINTINSTANCE_H
+#ifndef YAVE_COMPONENTS_BLUEPRINTCOMPONENT_H
+#define YAVE_COMPONENTS_BLUEPRINTCOMPONENT_H
 
-#include "BlueprintNode.h"
+#include <yave/assets/AssetPtr.h>
+#include <yave/blueprints/Blueprint.h>
+#include <yave/systems/AssetLoaderSystem.h>
+#include <yave/systems/TriggerSystem.h>
 
 #include <memory>
-#include <utility>
 
 namespace yave {
 
-struct BlueprintError {
-    usize node_index = 0;
-    core::String error;
-};
-
-class BlueprintInstance : NonCopyable {
+class BlueprintComponent final : public ecs::RegisterComponent<BlueprintComponent, AssetLoaderSystem, TriggerSystem> {
     public:
-        struct EntryPoint {
-            BlueprintNode* node = nullptr;
-            core::Vector<BlueprintNode*> nodes;
-        };
+        BlueprintComponent() = default;
+        BlueprintComponent(const AssetPtr<Blueprint>& blueprint);
 
-        BlueprintInstance() = default;
+        const AssetPtr<Blueprint>& blueprint() const;
 
-        core::Span<std::unique_ptr<BlueprintNode>> all_nodes() const;
-        core::Span<EntryPoint> entry_points() const;
+        const BlueprintInstance* instance() const;
 
-        core::Result<void, BlueprintError> eval() noexcept;
-        core::Result<void, BlueprintError> eval(const EntryPoint& entry_point) noexcept;
+        bool update_asset_loading_status();
+        void load_assets(AssetLoadingContext& loading_ctx);
+
+        void subscribe_triggers(ecs::TriggerSubscriber& subscriber) const;
+        void on_trigger(ecs::EntityWorld& world, ecs::EntityId id, ecs::TriggerTypeIndex type, const void* payload) const;
+
+        void inspect(ecs::ComponentInspector* inspector);
+
+        y_reflect(BlueprintComponent, _blueprint)
 
     private:
-        friend class Blueprint;
+        AssetPtr<Blueprint> _blueprint;
 
-        core::Vector<std::unique_ptr<BlueprintNode>> _nodes;
-        core::Vector<EntryPoint> _entry_points;
+        mutable std::shared_ptr<BlueprintInstance> _instance;
 };
 
 }
 
-#endif // YAVE_BLUEPRINTS_BLUEPRINTINSTANCE_H
+#endif // YAVE_COMPONENTS_BLUEPRINTCOMPONENT_H
+

@@ -25,6 +25,9 @@ SOFTWARE.
 
 #include <yave/ecs/EntityWorld.h>
 #include <yave/systems/TriggerSystem.h>
+#include <yave/components/BlueprintComponent.h>
+#include <yave/blueprints/TriggerBlueprintNode.h>
+#include <yave/blueprints/blueprint_nodes.h>
 
 #include <y/concurrent/JobSystem.h>
 #include <y/serde3/archives.h>
@@ -167,6 +170,18 @@ struct TriggerListening : RegisterComponent<TriggerListening, TriggerSystem> {
     }
 
     y_reflect(TriggerListening, listen_test, listen_other)
+};
+
+struct BlueprintTestTrigger {
+    float value = 0.0f;
+
+    y_reflect(BlueprintTestTrigger, value)
+};
+
+struct OtherBlueprintTestTrigger {
+    float value = 0.0f;
+
+    y_reflect(OtherBlueprintTestTrigger, value)
 };
 
 
@@ -2327,6 +2342,74 @@ y_test_func("EntityWorld component trigger subscriptions") {
     tick();
     tick();
     y_test_assert(!triggers.is_listened<TestTrigger>(c));
+}
+
+std::unique_ptr<BlueprintNode> create_blueprint_node(std::string_view name) {
+    core::Vector<std::unique_ptr<BlueprintNodeFactory>> factories;
+    add_all_nodes(factories);
+    for(const auto& factory : factories) {
+        if(factory->name() == name) {
+            return factory->create_node();
+        }
+    }
+    return nullptr;
+}
+
+float blueprint_output(const BlueprintInstance* instance, std::string_view name) {
+    for(const auto& node : instance->all_nodes()) {
+        if(const auto* out = dynamic_cast<const ParamOutBlueprintNode*>(node.get()); out && out->name() == name) {
+            return *static_cast<const float*>(out->value());
+        }
+    }
+    return -1.0f;
+}
+
+y_test_func("EntityWorld blueprint component triggers") {
+    Blueprint blueprint;
+    {
+        const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+        const BlueprintNode* neg_a = blueprint.add_node(create_blueprint_node("Negate float"));
+        const BlueprintNode* out_a = blueprint.add_node(std::make_unique<ParamOutBlueprintNode>("a"));
+        blueprint.add_link(on_a, 0, neg_a, 0);
+        blueprint.add_link(neg_a, 0, out_a, 0);
+
+        const BlueprintNode* on_b = blueprint.add_node(std::make_unique<TriggerBlueprintNode<OtherBlueprintTestTrigger>>("on b"));
+        const BlueprintNode* neg_b = blueprint.add_node(create_blueprint_node("Negate float"));
+        const BlueprintNode* out_b = blueprint.add_node(std::make_unique<ParamOutBlueprintNode>("b"));
+        blueprint.add_link(on_b, 0, neg_b, 0);
+        blueprint.add_link(neg_b, 0, out_b, 0);
+    }
+
+    concurrent::JobSystem job_system(2);
+    EntityWorld world;
+    world.add_system<TriggerSystem>();
+
+    const auto tick = [&] {
+        world.tick(job_system);
+        world.process_deferred_changes();
+    };
+
+    const EntityId id = world.create_entity();
+    world.add_or_replace_component<BlueprintComponent>(id, make_asset<Blueprint>(std::move(blueprint)));
+
+    tick();
+    tick();
+    y_test_assert(world.triggers().is_listened<BlueprintTestTrigger>(id));
+    y_test_assert(world.triggers().is_listened<OtherBlueprintTestTrigger>(id));
+
+    const BlueprintInstance* instance = world.component<BlueprintComponent>(id)->instance();
+    y_test_assert(instance);
+
+    // Only the nodes that depend on the fired trigger are evaluated
+    world.triggers().emit(id, BlueprintTestTrigger{2.0f});
+    tick();
+    y_test_assert(blueprint_output(instance, "a") == -2.0f);
+    y_test_assert(blueprint_output(instance, "b") == 0.0f);
+
+    world.triggers().emit(id, OtherBlueprintTestTrigger{3.0f});
+    tick();
+    y_test_assert(blueprint_output(instance, "a") == -2.0f);
+    y_test_assert(blueprint_output(instance, "b") == -3.0f);
 }
 
 y_test_func("EntityWorld load resets systems") {

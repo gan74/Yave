@@ -355,6 +355,41 @@ core::Result<BlueprintInstance, BlueprintError> Blueprint::create_instance() con
         dst->set_input(link.dst_pin, src->output_ptr(link.src_pin));
     }
 
+    const usize node_count = instance._nodes.size();
+    const auto propagate = [&](core::ScratchPad<bool>& flags) {
+        for(usize i = 0; i != node_count; ++i) {
+            for(const BlueprintLink& link : _links) {
+                if(link.dst_node == i && flags[link.src_node]) {
+                    flags[i] = true;
+                }
+            }
+        }
+    };
+
+    core::ScratchPad<bool> depends_on_any(node_count, false);
+    for(usize i = 0; i != node_count; ++i) {
+        depends_on_any[i] = instance._nodes[i]->is_entry_point();
+    }
+    propagate(depends_on_any);
+
+    for(usize e = 0; e != node_count; ++e) {
+        if(!instance._nodes[e]->is_entry_point()) {
+            continue;
+        }
+
+        core::ScratchPad<bool> depends_on_entry(node_count, false);
+        depends_on_entry[e] = true;
+        propagate(depends_on_entry);
+
+        BlueprintInstance::EntryPoint& entry_point = instance._entry_points.emplace_back();
+        entry_point.node = instance._nodes[e].get();
+        for(usize i = 0; i != node_count; ++i) {
+            if(depends_on_entry[i] || !depends_on_any[i]) {
+                entry_point.nodes << instance._nodes[i].get();
+            }
+        }
+    }
+
     return core::Ok(std::move(instance));
 }
 

@@ -23,10 +23,16 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 
+#include <algorithm>
+
 namespace yave {
 
 core::Span<std::unique_ptr<BlueprintNode>> BlueprintInstance::all_nodes() const {
     return _nodes;
+}
+
+core::Span<BlueprintInstance::EntryPoint> BlueprintInstance::entry_points() const {
+    return _entry_points;
 }
 
 core::Result<void, BlueprintError> BlueprintInstance::eval() noexcept {
@@ -37,6 +43,21 @@ core::Result<void, BlueprintError> BlueprintInstance::eval() noexcept {
             _nodes[i]->eval();
         } catch(const std::exception& e) {
             return core::Err(BlueprintError{i, core::String(e.what())});
+        }
+    }
+
+    return core::Ok();
+}
+
+core::Result<void, BlueprintError> BlueprintInstance::eval(const EntryPoint& entry_point) noexcept {
+    y_profile();
+
+    for(BlueprintNode* node : entry_point.nodes) {
+        try {
+            node->eval();
+        } catch(const std::exception& e) {
+            const usize index = std::find_if(_nodes.begin(), _nodes.end(), [=](const auto& n) { return n.get() == node; }) - _nodes.begin();
+            return core::Err(BlueprintError{index, core::String(e.what())});
         }
     }
 
