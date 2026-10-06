@@ -140,22 +140,25 @@ core::FixedArray<float> compute_mipmaps_internal(core::FixedArray<float> input, 
                 std::max(1u, orig_size.y() / 2),
             };
 
-            const math::Vec2 factors = math::Vec2(orig_size) / math::Vec2(mip_size);
-            const float texel_width = factors.x() * 0.5f;
-            const usize row_size = mip_size.y() > 1
-                ? std::min(orig_size.x(), u32(orig_size.x() * texel_width))
-                : 0u;
-
             for(usize y = 0; y != mip_size.y(); ++y) {
+                const usize y0 = std::min<usize>(y * 2, orig_size.y() - 1);
+                const usize y1 = std::min<usize>(y0 + 1, orig_size.y() - 1);
+
                 for(usize x = 0; x != mip_size.x(); ++x) {
-                    const usize orig = (u32(x * factors.x()) + u32(y * factors.y()) * row_size);
-                    y_debug_assert(usize(orig + row_size + texel_width) <= orig_size.x() * orig_size.y());
+                    const usize x0 = std::min<usize>(x * 2, orig_size.x() - 1);
+                    const usize x1 = std::min<usize>(x0 + 1, orig_size.x() - 1);
+
+                    const usize ia = y0 * orig_size.x() + x0;
+                    const usize ib = y0 * orig_size.x() + x1;
+                    const usize ic = y1 * orig_size.x() + x0;
+                    const usize id = y1 * orig_size.x() + x1;
+                    y_debug_assert(id < orig_size.x() * orig_size.y());
 
                     for(usize cc = 0; cc != components; ++cc) {
-                        const float a = image_data[components * usize(orig) + cc];
-                        const float b = image_data[components * usize(orig + texel_width) + cc];
-                        const float c = image_data[components * usize(orig + row_size) + cc];
-                        const float d = image_data[components * usize(orig + row_size + texel_width) + cc];
+                        const float a = image_data[components * ia + cc];
+                        const float b = image_data[components * ib + cc];
+                        const float c = image_data[components * ic + cc];
+                        const float d = image_data[components * id + cc];
                         y_debug_assert((a + b + c + d) >= 0.0f);
                         out[cursor++] = std::min((a + b + c + d) * 0.25f, 1.0f);
                     }
