@@ -126,9 +126,15 @@ static void render_frame(ImDrawData* draw_data, RenderPassRecorder& recorder, co
                 setup_state(current_tex);
             }
 
-            const math::Vec2i offset = math::Vec2i(i32(cmd.ClipRect.x - viewport_offset.x()), i32(cmd.ClipRect.y - viewport_offset.y()));
-            const math::Vec2ui extent(u32(cmd.ClipRect.z - cmd.ClipRect.x), u32(cmd.ClipRect.w - cmd.ClipRect.y));
-            recorder.set_scissor(offset.max(math::Vec2(0.0f)), extent);
+            const math::Vec2 clip_min = (math::Vec2(cmd.ClipRect.x, cmd.ClipRect.y) - viewport_offset).max(math::Vec2(0.0f));
+            const math::Vec2 clip_max = (math::Vec2(cmd.ClipRect.z, cmd.ClipRect.w) - viewport_offset).min(viewport_size);
+            if(clip_max.x() <= clip_min.x() || clip_max.y() <= clip_min.y()) {
+                continue;
+            }
+
+            const math::Vec2i offset(i32(clip_min.x()), i32(clip_min.y()));
+            const math::Vec2ui extent(u32(clip_max.x() - clip_min.x()), u32(clip_max.y() - clip_min.y()));
+            recorder.set_scissor(offset, extent);
 
             y_debug_assert(!cmd.VtxOffset);
 
