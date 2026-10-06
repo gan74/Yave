@@ -53,6 +53,7 @@ endfunction(add_slang_shader)
 
 
 set(DEBUG_RENDERER_IN_DISTRIBUTION ON)
+set(CPP_EXCEPTIONS_ENABLED ON)  # Keep Jolt from forcing _HAS_EXCEPTIONS=0 on everything that links it
 set(PHYSICS_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/external/JoltPhysics")
 include("${CMAKE_CURRENT_SOURCE_DIR}/external/JoltPhysics/Jolt/Jolt.cmake")
 
