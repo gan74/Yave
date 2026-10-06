@@ -123,8 +123,12 @@ class EntityId {
 
 
 
+struct RegisterComponentTag {};
+
 template<typename Component, typename... SystemTypes>
-struct RegisterComponent {
+struct RegisterComponent : RegisterComponentTag {
+    using registered_component_type = Component;
+
     // EntityWorld.inl
     static inline void register_component_type(System*);
 };

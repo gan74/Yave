@@ -92,11 +92,8 @@ struct PolyType {
             []() -> std::unique_ptr<Base> {
                 // checking for size to trigger error on incomplete types
                 static_assert(sizeof(Derived) > 0);
-                if constexpr(std::is_default_constructible_v<Derived>) {
-                    return std::make_unique<Derived>();
-                }
-                y_breakpoint;
-                return nullptr;
+                static_assert(std::is_default_constructible_v<Derived>, "Polymorphic serde3 types must be default constructible to be deserialized");
+                return std::make_unique<Derived>();
             },
             ct_type_name<Derived>()
         };

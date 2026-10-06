@@ -32,6 +32,12 @@ SOFTWARE.
 
 namespace yave {
 
+template<typename T>
+concept AssetLoadable = requires(T& comp, AssetLoadingContext& loading_ctx) {
+    comp.load_assets(loading_ctx);
+    { comp.update_asset_loading_status() } -> std::convertible_to<bool>;
+};
+
 class AssetLoaderSystem : public ecs::System {
     public:
         AssetLoaderSystem(AssetLoader& loader, AssetLoadingFlags flags = AssetLoadingFlags::None);
@@ -42,6 +48,7 @@ class AssetLoaderSystem : public ecs::System {
 
         template<typename T>
         void register_component_type() {
+            static_assert(AssetLoadable<T>, "Components registered with AssetLoaderSystem must implement load_assets and update_asset_loading_status");
             _infos << LoadableComponentTypeInfo {
                 ct_type_name<T>(),
                 &load_components<T, false>,

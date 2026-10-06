@@ -195,7 +195,11 @@ class ComponentContainer final : public ComponentContainerBase {
 
         void register_component_type(System* system) const override {
             unused(system);
-            if constexpr(Registerable<T>) {
+            if constexpr(std::is_base_of_v<RegisterComponentTag, T>) {
+                static_assert(Registerable<T>, "Components must inherit from RegisterComponent only once, listing every system");
+                static_assert(std::is_same_v<typename T::registered_component_type, T>, "RegisterComponent must be given the component type itself");
+                T::register_component_type(system);
+            } else if constexpr(Registerable<T>) {
                 T::register_component_type(system);
             }
         }
