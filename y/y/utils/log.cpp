@@ -68,7 +68,7 @@ void log_msg(std::string_view msg, Log type) {
         return;
     }
 
-    FILE* out_channel = type == Log::Error || type == Log::Warning ? stdout : stderr;
+    FILE* out_channel = (type == Log::Error || type == Log::Warning) ? stderr : stdout;
     std::fprintf(out_channel, "%s %.*s\n", log_type_str[usize(type)], int(msg.size()), msg.data());
 
     if(out_channel == stderr) {
