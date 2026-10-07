@@ -52,7 +52,6 @@ static constexpr ImVec4 node_padding = ImVec4(6.0f, 2.0f, 6.0f, 4.0f);
 static constexpr ImVec2 node_min_size = ImVec2(60.0f, 40.0f);
 static constexpr ImVec2 layout_cell_size = ImVec2(260.0f, 300.0f);
 static constexpr ImColor error_color = ImColor(250, 20, 20, 255);
-static constexpr ImColor after_error_color = error_color; // ImColor(255, 100, 70, 255);
 
 static ImColor pin_type_color(const BlueprintParamType* type) {
     if(type == blueprint_param_type<float>()) {
@@ -102,7 +101,7 @@ static PinInfo find_pin(const Blueprint& blueprint, uintptr_t pin) {
     return {};
 }
 
-static void draw_pin_icon(ImColor color, bool connected) {
+static void draw_pin_icon(ImColor color, bool connected, bool is_exec) {
     const ImVec2 size(pin_icon_size, pin_icon_size);
     if(ImGui::IsRectVisible(size)) {
         const ImVec2 a = ImGui::GetCursorScreenPos();
@@ -119,7 +118,26 @@ static void draw_pin_icon(ImColor color, bool connected) {
         const float offset = -rect_w * 0.25f * 0.25f;
         const ImVec2 c = center + ImVec2(offset * 0.5f, 0.0f);
 
-        if(connected) {
+        if(is_exec) {
+            const float margin = 2.0f * outline_scale;
+            const float left = a.x + margin + rect_w * 0.15f;
+            const float right = b.x - margin - rect_w * 0.15f;
+            const float top = a.y + margin + rect_w * 0.1f;
+            const float bottom = b.y - margin - rect_w * 0.1f;
+            const float mid_x = (left + right) * 0.5f;
+
+            draw_list->PathLineTo(ImVec2(left, top));
+            draw_list->PathLineTo(ImVec2(mid_x, top));
+            draw_list->PathLineTo(ImVec2(right, center.y));
+            draw_list->PathLineTo(ImVec2(mid_x, bottom));
+            draw_list->PathLineTo(ImVec2(left, bottom));
+            if(connected) {
+                draw_list->PathFillConvex(outer);
+            } else {
+                draw_list->AddConvexPolyFilled(draw_list->_Path.Data, draw_list->_Path.Size, inner);
+                draw_list->PathStroke(outer, ImDrawFlags_Closed, 2.0f * outline_scale);
+            }
+        } else if(connected) {
             draw_list->AddCircleFilled(c, 0.5f * rect_w / 2.0f, outer, 12 + extra_segments);
         } else {
             const float r = 0.5f * rect_w / 2.0f - 0.5f;
@@ -135,14 +153,15 @@ static void draw_pin(ed::PinId id, std::string_view name, const BlueprintParamTy
     ed::PinPivotAlignment(ImVec2(is_input ? 0.0f : 1.0f, 0.5f));
     ed::PinPivotSize(ImVec2(0.0f, 0.0f));
 
+    const bool is_exec = type == blueprint_param_type<BlueprintExec>();
     if(is_input) {
-        draw_pin_icon(pin_type_color(type), connected);
+        draw_pin_icon(pin_type_color(type), connected, is_exec);
         ImGui::SameLine();
     }
     ImGui::TextUnformatted(name.data(), name.data() + name.size());
     if(!is_input) {
         ImGui::SameLine();
-        draw_pin_icon(pin_type_color(type), connected);
+        draw_pin_icon(pin_type_color(type), connected, is_exec);
     }
 
     ed::EndPin();
@@ -300,12 +319,7 @@ void BlueprintEditor::on_gui() {
     const core::Span nodes = blueprint.all_nodes();
 
     const auto& result = workspace()->result();
-    usize error_node_index = usize(-1);
-    if(result.is_error()) {
-        const auto it = std::find_if(nodes.begin(), nodes.end(), [&](const auto& n) { return n.get() == result.error().node; });
-        error_node_index = it == nodes.end() ? usize(-1) : usize(it - nodes.begin());
-    }
-    const BlueprintNode* error_node = error_node_index < nodes.size() ? nodes[error_node_index].get() : nullptr;
+    const BlueprintNode* error_node = result.is_error() ? result.error().node : nullptr;
 
     if(ImGui::BeginMenuBar()) {
         ImGui::Checkbox("Show execution order", &_show_execution_order);
@@ -348,15 +362,15 @@ void BlueprintEditor::on_gui() {
         {
             y_profile_zone("draw nodes");
             for(usize i = 0; i != nodes.size(); ++i) {
-                if(i >= error_node_index) {
-                    const bool is_error = i == error_node_index;
-                    ed::PushStyleColor(ed::StyleColor_NodeBorder, is_error ? error_color : after_error_color);
-                    ed::PushStyleVar(ed::StyleVar_NodeBorderWidth, is_error ? 6.0f : 1.5f);
+                const bool is_error = (nodes[i].get() == error_node);
+                if(is_error) {
+                    ed::PushStyleColor(ed::StyleColor_NodeBorder, error_color);
+                    ed::PushStyleVar(ed::StyleVar_NodeBorderWidth, 6.0f);
                 }
 
                 draw_node(*nodes[i], generic_types[i], linked_pins);
 
-                if(i >= error_node_index) {
+                if(is_error) {
                     ed::PopStyleVar();
                     ed::PopStyleColor();
                 }
