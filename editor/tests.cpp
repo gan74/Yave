@@ -202,6 +202,12 @@ struct OtherBlueprintTestTrigger {
     y_reflect(OtherBlueprintTestTrigger, value)
 };
 
+struct EntityBlueprintTestTrigger {
+    EntityId entity;
+
+    y_reflect(EntityBlueprintTestTrigger, entity)
+};
+
 // Writes its input to outputs[index] when executed
 class TestOutputBlueprintNode final : public BlueprintNode {
     static inline const BlueprintPin static_input_pin = { "in", blueprint_param_type<float>() };
@@ -226,7 +232,7 @@ class TestOutputBlueprintNode final : public BlueprintNode {
 
         void compile(BlueprintCompiler& compiler) const override {
             const float* in = static_cast<const float*>(compiler.input(0));
-            compiler.emit([in, index = _index] { outputs[index] = *in; });
+            compiler.emit([in, index = _index](const BlueprintContext&) { outputs[index] = *in; });
         }
 
         y_reflect(TestOutputBlueprintNode, _name, _index)
@@ -2439,6 +2445,55 @@ y_test_func("Blueprint shared nodes") {
     const OtherBlueprintTestTrigger b{4.0f};
     y_test_assert(instance.unwrap().trigger(instance.unwrap().entry_points()[1], &b).is_ok());
     y_test_assert(TestOutputBlueprintNode::outputs[1] == -8.0f);
+}
+
+y_test_func("Blueprint remove entity") {
+    Blueprint blueprint;
+    {
+        const BlueprintNode* on_trigger = blueprint.add_node(std::make_unique<TriggerBlueprintNode<EntityBlueprintTestTrigger>>("on trigger"));
+        const BlueprintNode* remove = blueprint.add_node(create_blueprint_node("Remove entity"));
+        blueprint.add_link(on_trigger, 0, remove, 0);
+    }
+
+    auto instance = blueprint.create_instance();
+    y_test_assert(instance.is_ok());
+    const auto& entry = instance.unwrap().entry_points()[0];
+
+    EntityWorld world;
+    const EntityId self = world.create_entity();
+    const EntityId other = world.create_entity();
+    world.process_deferred_changes();
+
+    const BlueprintContext context = {&world, self};
+    const EntityBlueprintTestTrigger invalid_trigger = {};
+    const EntityBlueprintTestTrigger other_trigger = {other};
+
+    // Invalid entities are ignored
+    y_test_assert(instance.unwrap().trigger(entry, &invalid_trigger, context).is_ok());
+    y_test_assert(world.pending_deletions().is_empty());
+
+    // Needs a world to remove anything
+    y_test_assert(instance.unwrap().trigger(entry, &other_trigger).is_error());
+
+    y_test_assert(instance.unwrap().trigger(entry, &other_trigger, context).is_ok());
+    y_test_assert(world.pending_deletions().contains(other));
+    world.process_deferred_changes();
+    y_test_assert(!world.exists(other));
+    y_test_assert(world.exists(self));
+
+    // Already removed
+    y_test_assert(instance.unwrap().trigger(entry, &other_trigger, context).is_ok());
+    y_test_assert(world.pending_deletions().is_empty());
+
+    // The same instance can run in another world
+    EntityWorld other_world;
+    const EntityId other_self = other_world.create_entity();
+    other_world.process_deferred_changes();
+
+    const EntityBlueprintTestTrigger other_self_trigger = {other_self};
+    y_test_assert(instance.unwrap().trigger(entry, &other_self_trigger, BlueprintContext{&other_world, other_self}).is_ok());
+    y_test_assert(other_world.pending_deletions().contains(other_self));
+    y_test_assert(world.pending_deletions().is_empty());
 }
 
 y_test_func("Blueprint serialization") {

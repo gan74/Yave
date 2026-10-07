@@ -25,6 +25,7 @@ SOFTWARE.
 #include "TriggerBlueprintNode.h"
 
 #include <yave/systems/JoltPhysicsSystem.h>
+#include <yave/ecs/EntityWorld.h>
 
 #include <y/utils/traits.h>
 #include <y/core/String.h>
@@ -129,7 +130,7 @@ class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode 
                 ptrs[output_indices[i]] = compiler.output(i);
             }
 
-            compiler.emit([ptrs] {
+            compiler.emit([ptrs](const BlueprintContext&) {
                 [&]<usize... I>(std::index_sequence<I...>) {
                     F{}(*static_cast<std::tuple_element_t<I, args_t>*>(ptrs[I])...);
                 }(std::make_index_sequence<port_count>{});
@@ -234,7 +235,7 @@ class IfBlueprintNode : public BlueprintNode {
             void* out = compiler.output(0);
             const usize size = _out_pin.type->size;
 
-            compiler.emit([=] {
+            compiler.emit([=](const BlueprintContext&) {
                 std::memcpy(out, *condition ? if_true : if_false, size);
             });
         }
@@ -256,6 +257,54 @@ class IfBlueprintNode : public BlueprintNode {
         bool _default_cond = true;
         u64 _values_type = 0;
         core::FixedArray<u8> _values;
+};
+
+class RemoveEntityBlueprintNode : public BlueprintNode {
+    static inline const BlueprintPin static_input_pin = { "entity", blueprint_param_type<ecs::EntityId>() };
+
+    public:
+        RemoveEntityBlueprintNode() = default;
+
+        RemoveEntityBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
+        }
+
+        std::string_view node_type_name() const override {
+            return "Remove entity";
+        }
+
+        core::Span<BlueprintPin> input_pins() const override {
+            return static_input_pin;
+        }
+
+        void* default_input(usize index) override {
+            unused(index);
+            y_debug_assert(index == 0);
+            return &_default_entity;
+        }
+
+        void compile(BlueprintCompiler& compiler) const override {
+            const ecs::EntityId* entity = static_cast<const ecs::EntityId*>(compiler.input(0));
+            compiler.emit([=](const BlueprintContext& context) {
+                if(!entity->is_valid()) {
+                    return;
+                }
+
+                if(!context.world) {
+                    throw std::runtime_error("No world");
+                }
+
+                // Removal is deferred, so this is safe even while the world is dispatching triggers
+                if(context.world->exists(*entity)) {
+                    context.world->remove_entity(*entity);
+                }
+            });
+        }
+
+        y_reflect(RemoveEntityBlueprintNode, _name, _default_entity)
+        y_serde3_poly(RemoveEntityBlueprintNode)
+
+    private:
+        ecs::EntityId _default_entity;
 };
 
 
@@ -394,6 +443,8 @@ void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factorie
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<IfBlueprintNode>>("If"));
 
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<TriggerBlueprintNode<OnCollide>>>("On collide"));
+
+    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<RemoveEntityBlueprintNode>>("Remove entity"));
 
 #ifdef Y_DEBUG
     struct Debug { void operator()(float a) const { log_msg(fmt("Debug blueprint node: {}", a)); } };

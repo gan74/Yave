@@ -73,17 +73,19 @@ void BlueprintComponent::subscribe_triggers(ecs::TriggerSubscriber& subscriber) 
     }
 }
 
-void BlueprintComponent::on_trigger(ecs::EntityWorld&, ecs::EntityId, ecs::TriggerTypeIndex type, const void* payload) const {
+void BlueprintComponent::on_trigger(ecs::EntityWorld& world, ecs::EntityId id, ecs::TriggerTypeIndex type, const void* payload) const {
     if(!_instance) {
         return;
     }
+
+    const BlueprintContext context = {&world, id};
 
     for(const BlueprintInstance::EntryPoint& entry_point : _instance->entry_points()) {
         if(entry_point.trigger_type != type) {
             continue;
         }
 
-        if(const auto res = _instance->trigger(entry_point, payload); res.is_error()) {
+        if(const auto res = _instance->trigger(entry_point, payload, context);res.is_error()) {
             log_msg(fmt("Blueprint error: {} (node \"{}\")", res.error().error, error_node_name(res.error())), Log::Error);
         }
     }

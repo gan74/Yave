@@ -36,7 +36,7 @@ class BlueprintCompiler : NonMovable {
         void* output(usize index);
         void bind_output(usize index, const void* ptr);
 
-        void emit(std::function<void()> func);
+        void emit(std::function<void(const BlueprintContext&)> func);
 
         void set_entry_point(ecs::TriggerTypeIndex type, void* payload, usize payload_size, void (*subscribe)(ecs::TriggerSubscriber&));
 

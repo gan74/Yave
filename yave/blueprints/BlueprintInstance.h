@@ -39,9 +39,14 @@ struct BlueprintError {
     core::String error;
 };
 
+struct BlueprintContext {
+    ecs::EntityWorld* world = nullptr;
+    ecs::EntityId self;
+};
+
 struct BlueprintInstruction {
     const BlueprintNode* node = nullptr;
-    std::function<void()> func; // may throw std::runtime_error
+    std::function<void(const BlueprintContext&)> func; // may throw std::runtime_error
 };
 
 class BlueprintStorage : NonCopyable {
@@ -72,7 +77,7 @@ class BlueprintInstance : NonCopyable {
 
         core::Span<EntryPoint> entry_points() const;
 
-        core::Result<void, BlueprintError> trigger(const EntryPoint& entry_point, const void* payload) noexcept;
+        core::Result<void, BlueprintError> trigger(const EntryPoint& entry_point, const void* payload, const BlueprintContext& context = {}) noexcept;
 
     private:
         friend class Blueprint;

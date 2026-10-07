@@ -88,7 +88,7 @@ void* BlueprintCompiler::alloc_copy(const BlueprintParamType* type, const void* 
     return ptr;
 }
 
-void BlueprintCompiler::emit(std::function<void()> func) {
+void BlueprintCompiler::emit(std::function<void(const BlueprintContext&)> func) {
     _instructions[_current].emplace_back(BlueprintInstruction{current_node(), std::move(func)});
 }
 

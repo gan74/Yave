@@ -48,14 +48,13 @@ core::Span<BlueprintInstance::EntryPoint> BlueprintInstance::entry_points() cons
     return _entry_points;
 }
 
-core::Result<void, BlueprintError> BlueprintInstance::trigger(const EntryPoint& entry_point, const void* payload) noexcept {
+core::Result<void, BlueprintError> BlueprintInstance::trigger(const EntryPoint& entry_point, const void* payload, const BlueprintContext& context) noexcept {
     y_profile();
 
     std::memcpy(entry_point.payload, payload, entry_point.payload_size);
-
     for(const BlueprintInstruction& instruction : entry_point.instructions) {
         try {
-            instruction.func();
+            instruction.func(context);
         } catch(const std::exception& e) {
             return core::Err(BlueprintError{instruction.node,core::String(e.what())});
         }
