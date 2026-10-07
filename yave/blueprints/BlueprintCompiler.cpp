@@ -63,7 +63,9 @@ const void* BlueprintCompiler::input(usize index) {
     }
 
     BlueprintNode* node = current_node();
-    return alloc_copy(node->input_pins()[index].type, node->default_input(index));
+    const void* default_value = node->default_input(index);
+    y_debug_assert(default_value); 
+    return alloc_copy(node->input_pins()[index].type, default_value);
 }
 
 void* BlueprintCompiler::output(usize index) {

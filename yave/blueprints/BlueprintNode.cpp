@@ -72,8 +72,9 @@ const BlueprintParamType* BlueprintNode::generic_type() const {
     return nullptr;
 }
 
-void* BlueprintNode::default_input(usize) {
-    y_debug_assert(false);
+void* BlueprintNode::default_input(usize index) {
+    unused(index);
+    y_debug_assert(index < input_pins().size());
     return nullptr;
 }
 

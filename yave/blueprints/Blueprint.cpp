@@ -24,6 +24,7 @@ SOFTWARE.
 #include "BlueprintCompiler.h"
 
 #include <y/core/ScratchPad.h>
+#include <y/utils/format.h>
 
 #include <algorithm>
 
@@ -272,6 +273,14 @@ core::Result<void, BlueprintError> Blueprint::validate() const {
     for(const auto& node : _nodes) {
         if(node->has_generic_pin() && !node->generic_type()) {
             return core::Err(BlueprintError{node.get(), core::String("Unresolved generic type")});
+        }
+    }
+
+    for(const auto& node : _nodes) {
+        for(usize i = 0; i != node->input_pins().size(); ++i) {
+            if(!node->default_input(i) && !find_link(node.get(), i)) {
+                return core::Err(BlueprintError{node.get(), fmt_to_owned("Input \"{}\" must be linked", node->input_pins()[i].name)});
+            }
         }
     }
 

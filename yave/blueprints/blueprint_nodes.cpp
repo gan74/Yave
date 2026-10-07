@@ -187,8 +187,6 @@ class ConstantBlueprintNode : public BlueprintNode {
 };
 
 class IfBlueprintNode : public BlueprintNode {
-    static constexpr usize in_count = 3;
-
     public:
         IfBlueprintNode() = default;
 
@@ -212,11 +210,6 @@ class IfBlueprintNode : public BlueprintNode {
             _in_pins[1].type = type;
             _in_pins[2].type = type;
             _out_pin.type = type;
-
-            if(type && type->type_hash != _values_type) {
-                _values_type = type->type_hash;
-                _values = core::FixedArray<u8>(type->size * value_count);
-            }
         }
 
         const BlueprintParamType* generic_type() const override {
@@ -224,8 +217,8 @@ class IfBlueprintNode : public BlueprintNode {
         }
 
         void* default_input(usize index) override {
-            y_debug_assert(index < in_count);
-            return index ? value_ptr(index - 1) : &_default_cond;
+            y_debug_assert(index < _in_pins.size());
+            return index ? nullptr : &_default_cond;
         }
 
         void compile(BlueprintCompiler& compiler) const override {
@@ -240,23 +233,14 @@ class IfBlueprintNode : public BlueprintNode {
             });
         }
 
-        y_reflect(IfBlueprintNode, _name, _default_cond, _values_type, _values)
+        y_reflect(IfBlueprintNode, _name, _default_cond)
         y_serde3_poly(IfBlueprintNode)
 
     private:
-        static constexpr usize value_count = 2;
-
-        void* value_ptr(usize index) {
-            y_debug_assert(index < value_count);
-            return _out_pin.type ? _values.data() + index * _out_pin.type->size : nullptr;
-        }
-
-        std::array<BlueprintPin, in_count> _in_pins = {{{"condition", blueprint_param_type<bool>()}, {"true", nullptr, true}, {"false", nullptr, true}}};
+        std::array<BlueprintPin, 3> _in_pins = {{{"condition", blueprint_param_type<bool>()}, {"true", nullptr, true}, {"false", nullptr, true}}};
         BlueprintPin _out_pin = {"out", nullptr, true};
 
         bool _default_cond = true;
-        u64 _values_type = 0;
-        core::FixedArray<u8> _values;
 };
 
 class RemoveEntityBlueprintNode : public BlueprintNode {
@@ -276,12 +260,6 @@ class RemoveEntityBlueprintNode : public BlueprintNode {
             return static_input_pin;
         }
 
-        void* default_input(usize index) override {
-            unused(index);
-            y_debug_assert(index == 0);
-            return &_default_entity;
-        }
-
         void compile(BlueprintCompiler& compiler) const override {
             const ecs::EntityId* entity = static_cast<const ecs::EntityId*>(compiler.input(0));
             compiler.emit([=](const BlueprintContext& context) {
@@ -293,18 +271,14 @@ class RemoveEntityBlueprintNode : public BlueprintNode {
                     throw std::runtime_error("No world");
                 }
 
-                // Removal is deferred, so this is safe even while the world is dispatching triggers
                 if(context.world->exists(*entity)) {
                     context.world->remove_entity(*entity);
                 }
             });
         }
 
-        y_reflect(RemoveEntityBlueprintNode, _name, _default_entity)
+        y_reflect(RemoveEntityBlueprintNode, _name)
         y_serde3_poly(RemoveEntityBlueprintNode)
-
-    private:
-        ecs::EntityId _default_entity;
 };
 
 

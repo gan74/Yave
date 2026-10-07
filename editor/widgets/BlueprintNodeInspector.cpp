@@ -93,8 +93,11 @@ void BlueprintNodeInspector::on_gui() {
     if(!inputs.is_empty() && ImGui::CollapsingHeader("Inputs", ImGuiTreeNodeFlags_DefaultOpen)) {
         for(usize i = 0; i != inputs.size(); ++i) {
             const std::string_view label = fmt("{}{}", inputs[i].name, blueprint.find_link(node, i) ? " (linked)" : "");
-            if(const auto it = _drawers.find(inputs[i].type); it != _drawers.end()) {
-                it->second(label, node->default_input(i));
+            void* default_value = node->default_input(i);
+            if(!default_value) {
+                ImGui::TextDisabled("%s", fmt_c_str("{}: <no default value>", label));
+            } else if(const auto it = _drawers.find(inputs[i].type); it != _drawers.end()) {
+                it->second(label, default_value);
             } else {
                 draw_unsupported(label, inputs[i].type);
             }

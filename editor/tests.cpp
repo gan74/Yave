@@ -2449,11 +2449,17 @@ y_test_func("Blueprint shared nodes") {
 
 y_test_func("Blueprint remove entity") {
     Blueprint blueprint;
+    const BlueprintNode* on_trigger = blueprint.add_node(std::make_unique<TriggerBlueprintNode<EntityBlueprintTestTrigger>>("on trigger"));
+    const BlueprintNode* remove = blueprint.add_node(create_blueprint_node("Remove entity"));
+
     {
-        const BlueprintNode* on_trigger = blueprint.add_node(std::make_unique<TriggerBlueprintNode<EntityBlueprintTestTrigger>>("on trigger"));
-        const BlueprintNode* remove = blueprint.add_node(create_blueprint_node("Remove entity"));
-        blueprint.add_link(on_trigger, 0, remove, 0);
+        const auto res = blueprint.validate();
+        y_test_assert(res.is_error());
+        y_test_assert(res.error().node == remove);
+        y_test_assert(blueprint.create_instance().is_error());
     }
+
+    blueprint.add_link(on_trigger, 0, remove, 0);
 
     auto instance = blueprint.create_instance();
     y_test_assert(instance.is_ok());
@@ -2505,6 +2511,7 @@ y_test_func("Blueprint serialization") {
         const BlueprintNode* select = blueprint.add_node(create_blueprint_node("If"));
         const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
         blueprint.add_link(on_a, 0, select, 1);
+        blueprint.add_link(on_a, 0, select, 2);
         blueprint.add_link(select, 0, out, 0);
     }
 
@@ -2764,8 +2771,9 @@ y_test_func("Blueprint remove node") {
     blueprint.add_link(constant, 0, add, 1);
     blueprint.add_link(add, 0, out, 0);
     blueprint.add_link(constant, 0, select, 1);
+    blueprint.add_link(constant, 0, select, 2);
     y_test_assert(select->generic_type() == blueprint_param_type<float>());
-    y_test_assert(blueprint.links().size() == 4);
+    y_test_assert(blueprint.links().size() == 5);
 
     y_test_assert(run_blueprint(blueprint, 3.0f).is_ok());
     y_test_assert(TestOutputBlueprintNode::outputs[0] == 8.0f);
@@ -2824,15 +2832,16 @@ y_test_func("Blueprint remove and replace links") {
     y_test_assert(run_blueprint(blueprint).is_ok());
     y_test_assert(TestOutputBlueprintNode::outputs[1] == 2.0f);
 
-    // Unlinked generic input uses its (zero) default value
+    // Generic inputs have no default value and must be linked
     blueprint.remove_link(select, 1);
     y_test_assert(blueprint.links().size() == 2);
     y_test_assert(!blueprint.find_link(select, 1));
     y_test_assert(select->generic_type() == blueprint_param_type<float>());
-
-    TestOutputBlueprintNode::outputs[1] = 42.0f;
-    y_test_assert(run_blueprint(blueprint).is_ok());
-    y_test_assert(TestOutputBlueprintNode::outputs[1] == 0.0f);
+    {
+        const auto res = run_blueprint(blueprint);
+        y_test_assert(res.is_error());
+        y_test_assert(res.error().node == select);
+    }
 
     // The output link alone is enough to resolve the type
     blueprint.remove_link(select, 2);
@@ -2932,13 +2941,14 @@ y_test_func("Blueprint add blueprint") {
         select = other.add_node(create_blueprint_node("If"));
         out_b = other.add_node(std::make_unique<TestOutputBlueprintNode>(1));
         other.add_link(constant, 0, select, 1);
+        other.add_link(constant, 0, select, 2);
         other.add_link(select, 0, out_b, 0);
 
         blueprint.add_blueprint(std::move(other));
     }
 
     y_test_assert(blueprint.all_nodes().size() == 6);
-    y_test_assert(blueprint.links().size() == 4);
+    y_test_assert(blueprint.links().size() == 5);
     y_test_assert(links_are_ordered(blueprint));
     y_test_assert(node_index(blueprint, select) == 4);
     y_test_assert(link_source(blueprint, out_b, 0) == select);
@@ -2952,7 +2962,7 @@ y_test_func("Blueprint add blueprint") {
     // Adding an empty blueprint does nothing
     blueprint.add_blueprint(Blueprint());
     y_test_assert(blueprint.all_nodes().size() == 6);
-    y_test_assert(blueprint.links().size() == 4);
+    y_test_assert(blueprint.links().size() == 5);
 }
 
 y_test_func("Blueprint invalid links") {
@@ -3297,8 +3307,12 @@ y_test_func("Blueprint node factories") {
         Blueprint blueprint;
         const BlueprintNode* added = blueprint.add_node(std::move(node));
 
-        // Every node compiles with its default inputs, unless it needs a type
-        y_test_assert(blueprint.create_instance().is_ok() != added->has_generic_pin());
+        // Every node compiles with its default inputs, unless it needs a type or has inputs without default
+        bool needs_links = false;
+        for(usize i = 0; i != added->input_pins().size(); ++i) {
+            needs_links |= !const_cast<BlueprintNode*>(added)->default_input(i);
+        }
+        y_test_assert(blueprint.create_instance().is_ok() != (added->has_generic_pin() || needs_links));
 
         io2::Buffer buffer;
         {
@@ -3326,25 +3340,39 @@ y_test_func("Blueprint If default values") {
     Blueprint blueprint;
     blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
 
+    const BlueprintNode* three = add_constant(blueprint, "Const float", 3.0f);
+    const BlueprintNode* four = add_constant(blueprint, "Const float", 4.0f);
+
     std::unique_ptr<BlueprintNode> select_node = create_blueprint_node("If");
     BlueprintNode* select = select_node.get();
     blueprint.add_node(std::move(select_node));
     const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
 
-    // No type, no storage for the values
+    // Generic inputs never have a default value, the condition does
+    y_test_assert(select->default_input(0));
     y_test_assert(!select->default_input(1));
     y_test_assert(!select->default_input(2));
 
     blueprint.add_link(select, 0, out, 0);
     y_test_assert(select->generic_type() == blueprint_param_type<float>());
+    y_test_assert(!select->default_input(1));
+    y_test_assert(!select->default_input(2));
+
+    // So they must be linked
+    {
+        const auto res = blueprint.validate();
+        y_test_assert(res.is_error());
+        y_test_assert(res.error().node == select);
+    }
+
+    blueprint.add_link(three, 0, select, 1);
+    blueprint.add_link(four, 0, select, 2);
     *static_cast<bool*>(select->default_input(0)) = false;
-    *static_cast<float*>(select->default_input(1)) = 3.0f;
-    *static_cast<float*>(select->default_input(2)) = 4.0f;
 
     y_test_assert(run_blueprint(blueprint).is_ok());
     y_test_assert(TestOutputBlueprintNode::outputs[0] == 4.0f);
 
-    // Default values survive serialization
+    // The condition default value survives serialization
     {
         io2::Buffer buffer;
         {
@@ -3356,31 +3384,14 @@ y_test_func("Blueprint If default values") {
         Blueprint loaded;
         y_test_assert(serde3::ReadableArchive(buffer).deserialize(loaded).is_ok());
 
-        BlueprintNode* loaded_select = loaded.all_nodes()[1].get();
+        BlueprintNode* loaded_select = loaded.all_nodes()[node_index(blueprint, select)].get();
         y_test_assert(loaded_select->generic_type() == blueprint_param_type<float>());
         y_test_assert(*static_cast<bool*>(loaded_select->default_input(0)) == false);
-        y_test_assert(*static_cast<float*>(loaded_select->default_input(1)) == 3.0f);
-        y_test_assert(*static_cast<float*>(loaded_select->default_input(2)) == 4.0f);
 
         TestOutputBlueprintNode::outputs = {};
         y_test_assert(run_blueprint(loaded).is_ok());
         y_test_assert(TestOutputBlueprintNode::outputs[0] == 4.0f);
     }
-
-    // Losing the type and getting it back keeps the values
-    blueprint.remove_link(out, 0);
-    y_test_assert(!select->generic_type());
-    blueprint.add_link(select, 0, out, 0);
-    y_test_assert(*static_cast<float*>(select->default_input(1)) == 3.0f);
-    y_test_assert(*static_cast<float*>(select->default_input(2)) == 4.0f);
-
-    // Changing the type resets them
-    blueprint.remove_link(out, 0);
-    const BlueprintNode* decompose = blueprint.add_node(create_blueprint_node("Decompose Vec2"));
-    blueprint.add_link(select, 0, decompose, 0);
-    y_test_assert(select->generic_type() == blueprint_param_type<math::Vec2>());
-    y_test_assert(*static_cast<math::Vec2*>(select->default_input(1)) == math::Vec2());
-    y_test_assert(*static_cast<math::Vec2*>(select->default_input(2)) == math::Vec2());
 }
 
 y_test_func("Blueprint more vector nodes") {
@@ -4950,9 +4961,9 @@ bool is_blueprint_consistent(const Blueprint& blueprint) {
         }
     }
 
-    // The only error the API can produce is an unresolved generic type
+    // The only errors the API can produce are an unresolved generic type or an unlinked input without default
     if(const auto res = blueprint.validate(); res.is_error()) {
-        return res.error().error == "Unresolved generic type";
+        return res.error().error == "Unresolved generic type" || std::string_view(res.error().error).ends_with("must be linked");
     }
     return blueprint.create_instance().is_ok();
 }
