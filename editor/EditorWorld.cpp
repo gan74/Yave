@@ -66,7 +66,26 @@ editor_action_enable(ICON_FA_PLAY " Play", [](WorldWorkspace* ws) { ws->world().
 editor_action_enable(ICON_FA_PAUSE " Pause", [](WorldWorkspace* ws) { ws->world().find_system<TimeSystem>()->set_time_scale(0.0f); }, [](WorldWorkspace* ws) { return !!ws->world().find_system<TimeSystem>(); })
 
 
+
+struct EditorSystem : ecs::System {
+    EditorSystem() : ecs::System("EditorSystem") {
+    }
+
+    void setup(ecs::SystemScheduler& sched) {
+        sched.schedule(ecs::SystemSchedule::TickSequential, "Set settings", [](const ecs::EntityWorld& world) {
+            const Settings& settings = app_settings();
+            if(JoltPhysicsSystem* physics = const_cast<JoltPhysicsSystem*>(world.find_system<JoltPhysicsSystem>())) {
+                physics->set_debug_drawer(&debug_drawer());
+                physics->set_debug_draw_static(settings.debug.display_static_colliders);
+                physics->set_debug_draw_movable(settings.debug.display_movable_colliders);
+            }
+        });
+    }
+};
+
+
 EditorWorld::EditorWorld(AssetLoader& loader) {
+    add_system<EditorSystem>();
     add_system<AssetLoaderSystem>(loader);
     add_system<DebugAnimateSystem>();
     add_system<UndoRedoSystem>();
