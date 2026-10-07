@@ -48,6 +48,8 @@ class JoltPhysicsSystem : public ecs::System {
 
         void setup(ecs::SystemScheduler& sched) override;
 
+        void add_impulse(ecs::EntityId id, const math::Vec3& impulse);
+
     private:
         std::unique_ptr<JoltData> _jolt;
 

@@ -328,6 +328,57 @@ class RemoveEntityBlueprintNode : public BlueprintNode {
         y_serde3_poly(RemoveEntityBlueprintNode)
 };
 
+class ApplyImpulseBlueprintNode : public BlueprintNode {
+    static inline const std::array<BlueprintPin, 3> static_input_pins = {{{"exec", blueprint_param_type<BlueprintExec>()}, {"entity", blueprint_param_type<ecs::EntityId>()}, {"impulse", blueprint_param_type<math::Vec3>()}}};
+
+    public:
+        ApplyImpulseBlueprintNode() = default;
+
+        ApplyImpulseBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
+        }
+
+        std::string_view node_type_name() const override {
+            return "Apply impulse";
+        }
+
+        core::Span<BlueprintPin> input_pins() const override {
+            return static_input_pins;
+        }
+
+        void* default_input(usize index) override {
+            y_debug_assert(index < static_input_pins.size());
+            return index == 2 ? &_default_impulse : nullptr;
+        }
+
+        void compile(BlueprintCompiler& compiler) const override {
+            const BlueprintExec* exec = static_cast<const BlueprintExec*>(compiler.input(0));
+            const ecs::EntityId* entity = static_cast<const ecs::EntityId*>(compiler.input(1));
+            const math::Vec3* impulse = static_cast<const math::Vec3*>(compiler.input(2));
+            compiler.emit([=](const BlueprintContext& context) {
+                if(!exec->active || !entity->is_valid()) {
+                    return;
+                }
+
+                if(!context.world) {
+                    throw std::runtime_error("No world");
+                }
+
+                JoltPhysicsSystem* physics = context.world->find_system<JoltPhysicsSystem>();
+                if(!physics) {
+                    throw std::runtime_error("No physics system");
+                }
+
+                physics->add_impulse(*entity, *impulse);
+            });
+        }
+
+        y_reflect(ApplyImpulseBlueprintNode, _name, _default_impulse)
+        y_serde3_poly(ApplyImpulseBlueprintNode)
+
+    private:
+        math::Vec3 _default_impulse;
+};
+
 class SelfBlueprintNode : public BlueprintNode {
     static inline const BlueprintPin static_output_pin = { "entity", blueprint_param_type<ecs::EntityId>() };
 
@@ -496,6 +547,7 @@ void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factorie
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<BranchBlueprintNode>>("Branch"));
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<SelfBlueprintNode>>("Self"));
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<RemoveEntityBlueprintNode>>("Remove entity"));
+    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<ApplyImpulseBlueprintNode>>("Apply impulse"));
 
 #ifdef Y_DEBUG
     struct Debug { void operator()(float a) const { log_msg(fmt("Debug blueprint node: {}", a)); } };

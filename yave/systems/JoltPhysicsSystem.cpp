@@ -437,6 +437,15 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
     });
 }
 
+void JoltPhysicsSystem::add_impulse(ecs::EntityId id, const math::Vec3& impulse) {
+    const RigidBodyComponent* body = world().component<RigidBodyComponent>(id);
+    if(!body || body->_body_id == RigidBodyComponent::invalid_index) {
+        return;
+    }
+
+    _jolt->body_interface->AddImpulse(JPH::BodyID(body->_body_id), to_jph(impulse));
+}
+
 
 }
 
