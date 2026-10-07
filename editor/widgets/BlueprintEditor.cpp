@@ -61,6 +61,9 @@ static ImColor pin_type_color(const BlueprintParamType* type) {
     if(type == blueprint_param_type<bool>()) {
         return ImColor(220, 48, 48);
     }
+    if(type == blueprint_param_type<BlueprintExec>()) {
+        return ImColor(230, 230, 230);
+    }
     if(!type) {
         return ImColor(255, 255, 255);
     }

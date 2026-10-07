@@ -243,8 +243,54 @@ class IfBlueprintNode : public BlueprintNode {
         bool _default_cond = true;
 };
 
+class BranchBlueprintNode : public BlueprintNode {
+    static inline const std::array<BlueprintPin, 2> static_input_pins = {{{"exec", blueprint_param_type<BlueprintExec>()}, {"condition", blueprint_param_type<bool>()}}};
+    static inline const std::array<BlueprintPin, 2> static_output_pins = {{{"true", blueprint_param_type<BlueprintExec>()}, {"false", blueprint_param_type<BlueprintExec>()}}};
+
+    public:
+        BranchBlueprintNode() = default;
+
+        BranchBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
+        }
+
+        std::string_view node_type_name() const override {
+            return "Branch";
+        }
+
+        core::Span<BlueprintPin> input_pins() const override {
+            return static_input_pins;
+        }
+
+        core::Span<BlueprintPin> output_pins() const override {
+            return static_output_pins;
+        }
+
+        void* default_input(usize index) override {
+            y_debug_assert(index < static_input_pins.size());
+            return index ? &_default_cond : nullptr;
+        }
+
+        void compile(BlueprintCompiler& compiler) const override {
+            const BlueprintExec* exec = static_cast<const BlueprintExec*>(compiler.input(0));
+            const bool* condition = static_cast<const bool*>(compiler.input(1));
+            BlueprintExec* if_true = static_cast<BlueprintExec*>(compiler.output(0));
+            BlueprintExec* if_false = static_cast<BlueprintExec*>(compiler.output(1));
+
+            compiler.emit([=](const BlueprintContext&) {
+                if_true->active = exec->active && *condition;
+                if_false->active = exec->active && !*condition;
+            });
+        }
+
+        y_reflect(BranchBlueprintNode, _name, _default_cond)
+        y_serde3_poly(BranchBlueprintNode)
+
+    private:
+        bool _default_cond = true;
+};
+
 class RemoveEntityBlueprintNode : public BlueprintNode {
-    static inline const BlueprintPin static_input_pin = { "entity", blueprint_param_type<ecs::EntityId>() };
+    static inline const std::array<BlueprintPin, 2> static_input_pins = {{{"exec", blueprint_param_type<BlueprintExec>()}, {"entity", blueprint_param_type<ecs::EntityId>()}}};
 
     public:
         RemoveEntityBlueprintNode() = default;
@@ -257,13 +303,14 @@ class RemoveEntityBlueprintNode : public BlueprintNode {
         }
 
         core::Span<BlueprintPin> input_pins() const override {
-            return static_input_pin;
+            return static_input_pins;
         }
 
         void compile(BlueprintCompiler& compiler) const override {
-            const ecs::EntityId* entity = static_cast<const ecs::EntityId*>(compiler.input(0));
+            const BlueprintExec* exec = static_cast<const BlueprintExec*>(compiler.input(0));
+            const ecs::EntityId* entity = static_cast<const ecs::EntityId*>(compiler.input(1));
             compiler.emit([=](const BlueprintContext& context) {
-                if(!entity->is_valid()) {
+                if(!exec->active || !entity->is_valid()) {
                     return;
                 }
 
@@ -446,6 +493,7 @@ void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factorie
 
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<TriggerBlueprintNode<OnCollide>>>("On collide"));
 
+    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<BranchBlueprintNode>>("Branch"));
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<SelfBlueprintNode>>("Self"));
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<RemoveEntityBlueprintNode>>("Remove entity"));
 

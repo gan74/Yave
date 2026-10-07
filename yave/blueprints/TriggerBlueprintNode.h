@@ -34,7 +34,8 @@ namespace yave {
 template<typename T>
 class TriggerBlueprintNode final : public BlueprintNode {
     static inline const auto static_output_pins = std::apply([](const auto&... members) {
-        return std::array<BlueprintPin, sizeof...(members)>{
+        return std::array<BlueprintPin, sizeof...(members) + 1>{
+            BlueprintPin{"exec", blueprint_param_type<BlueprintExec>()},
             BlueprintPin{members.name, blueprint_param_type<std::remove_cvref_t<decltype(members.get(std::declval<const T&>()))>>()}...
         };
     }, reflect::list_members<T>());
@@ -60,8 +61,10 @@ class TriggerBlueprintNode final : public BlueprintNode {
         void compile(BlueprintCompiler& compiler) const override {
             T* payload = compiler.alloc<T>();
 
+            compiler.bind_output(0, compiler.alloc<BlueprintExec>({true}));
+
             std::apply([&](const auto&... members) {
-                usize index = 0;
+                usize index = 1;
                 (compiler.bind_output(index++, &members.get(*payload)), ...);
             }, reflect::list_members<T>());
 

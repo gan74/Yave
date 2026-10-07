@@ -208,6 +208,13 @@ struct EntityBlueprintTestTrigger {
     y_reflect(EntityBlueprintTestTrigger, entity)
 };
 
+struct BranchBlueprintTestTrigger {
+    EntityId entity;
+    bool condition = false;
+
+    y_reflect(BranchBlueprintTestTrigger, entity, condition)
+};
+
 // Writes its input to outputs[index] when executed
 class TestOutputBlueprintNode final : public BlueprintNode {
     static inline const BlueprintPin static_input_pin = { "in", blueprint_param_type<float>() };
@@ -2422,14 +2429,14 @@ y_test_func("Blueprint shared nodes") {
         const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
         const BlueprintNode* add = blueprint.add_node(create_blueprint_node("Add float"));
         const BlueprintNode* out_a = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
-        blueprint.add_link(on_a, 0, add, 0);
+        blueprint.add_link(on_a, 1, add, 0);
         blueprint.add_link(neg, 0, add, 1);
         blueprint.add_link(add, 0, out_a, 0);
 
         const BlueprintNode* on_b = blueprint.add_node(std::make_unique<TriggerBlueprintNode<OtherBlueprintTestTrigger>>("on b"));
         const BlueprintNode* mul = blueprint.add_node(create_blueprint_node("Multiply float"));
         const BlueprintNode* out_b = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(1));
-        blueprint.add_link(on_b, 0, mul, 0);
+        blueprint.add_link(on_b, 1, mul, 0);
         blueprint.add_link(neg, 0, mul, 1);
         blueprint.add_link(mul, 0, out_b, 0);
     }
@@ -2459,6 +2466,9 @@ y_test_func("Blueprint remove entity") {
         y_test_assert(blueprint.create_instance().is_error());
     }
 
+    // Both exec and entity must be linked
+    blueprint.add_link(on_trigger, 1, remove, 1);
+    y_test_assert(blueprint.validate().is_error());
     blueprint.add_link(on_trigger, 0, remove, 0);
 
     auto instance = blueprint.create_instance();
@@ -2504,10 +2514,11 @@ y_test_func("Blueprint remove entity") {
 
 y_test_func("Blueprint self") {
     Blueprint blueprint;
-    blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on trigger"));
+    const BlueprintNode* on_trigger = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on trigger"));
     const BlueprintNode* self_node = blueprint.add_node(create_blueprint_node("Self"));
     const BlueprintNode* remove = blueprint.add_node(create_blueprint_node("Remove entity"));
-    blueprint.add_link(self_node, 0, remove, 0);
+    blueprint.add_link(on_trigger, 0, remove, 0);
+    blueprint.add_link(self_node, 0, remove, 1);
 
     auto instance = blueprint.create_instance();
     y_test_assert(instance.is_ok());
@@ -2529,6 +2540,75 @@ y_test_func("Blueprint self") {
     y_test_assert(!world.pending_deletions().contains(a));
 }
 
+y_test_func("Blueprint branch") {
+    // on trigger -> branch(condition) -> true: remove self, false: remove payload entity
+    Blueprint blueprint;
+    const BlueprintNode* on_trigger = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BranchBlueprintTestTrigger>>("on trigger"));
+    const BlueprintNode* self_node = blueprint.add_node(create_blueprint_node("Self"));
+    const BlueprintNode* branch = blueprint.add_node(create_blueprint_node("Branch"));
+    const BlueprintNode* remove_self = blueprint.add_node(create_blueprint_node("Remove entity"));
+    const BlueprintNode* remove_other = blueprint.add_node(create_blueprint_node("Remove entity"));
+
+    blueprint.add_link(on_trigger, 0, branch, 0);
+    blueprint.add_link(on_trigger, 2, branch, 1);
+    blueprint.add_link(branch, 0, remove_self, 0);
+    blueprint.add_link(self_node, 0, remove_self, 1);
+    blueprint.add_link(branch, 1, remove_other, 0);
+    blueprint.add_link(on_trigger, 1, remove_other, 1);
+
+    auto instance = blueprint.create_instance();
+    y_test_assert(instance.is_ok());
+    const auto& entry = instance.unwrap().entry_points()[0];
+
+    EntityWorld world;
+    const EntityId self = world.create_entity();
+    const EntityId other = world.create_entity();
+    world.process_deferred_changes();
+
+    const BlueprintContext context = {&world, self};
+
+    const BranchBlueprintTestTrigger if_false = {other, false};
+    y_test_assert(instance.unwrap().trigger(entry, &if_false, context).is_ok());
+    y_test_assert(world.pending_deletions().contains(other));
+    y_test_assert(!world.pending_deletions().contains(self));
+    world.process_deferred_changes();
+
+    const BranchBlueprintTestTrigger if_true = {other, true};
+    y_test_assert(instance.unwrap().trigger(entry, &if_true, context).is_ok());
+    y_test_assert(world.pending_deletions().contains(self));
+}
+
+y_test_func("Blueprint exec decides the entry point") {
+    // Remove entity gets its exec from a and its entity from b: only a runs it
+    Blueprint blueprint;
+    const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+    const BlueprintNode* on_b = blueprint.add_node(std::make_unique<TriggerBlueprintNode<EntityBlueprintTestTrigger>>("on b"));
+    const BlueprintNode* remove = blueprint.add_node(create_blueprint_node("Remove entity"));
+    blueprint.add_link(on_a, 0, remove, 0);
+    blueprint.add_link(on_b, 1, remove, 1);
+
+    auto instance = blueprint.create_instance();
+    y_test_assert(instance.is_ok());
+    y_test_assert(instance.unwrap().entry_points().size() == 2);
+    const auto& entry_a = instance.unwrap().entry_points()[0];
+    const auto& entry_b = instance.unwrap().entry_points()[1];
+
+    EntityWorld world;
+    const EntityId target = world.create_entity();
+    world.process_deferred_changes();
+
+    const BlueprintContext context = {&world, EntityId()};
+
+    const EntityBlueprintTestTrigger b = {target};
+    y_test_assert(instance.unwrap().trigger(entry_b, &b, context).is_ok());
+    y_test_assert(world.pending_deletions().is_empty());
+
+    // a uses the last entity received by b
+    const BlueprintTestTrigger a = {};
+    y_test_assert(instance.unwrap().trigger(entry_a, &a, context).is_ok());
+    y_test_assert(world.pending_deletions().contains(target));
+}
+
 y_test_func("Blueprint serialization") {
     TestOutputBlueprintNode::outputs = {};
 
@@ -2537,8 +2617,8 @@ y_test_func("Blueprint serialization") {
         const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
         const BlueprintNode* select = blueprint.add_node(create_blueprint_node("If"));
         const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
-        blueprint.add_link(on_a, 0, select, 1);
-        blueprint.add_link(on_a, 0, select, 2);
+        blueprint.add_link(on_a, 1, select, 1);
+        blueprint.add_link(on_a, 1, select, 2);
         blueprint.add_link(select, 0, out, 0);
     }
 
@@ -2567,7 +2647,7 @@ y_test_func("Blueprint runtime errors") {
     Blueprint blueprint;
     const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
     const BlueprintNode* div = blueprint.add_node(create_blueprint_node("Divide float"));
-    blueprint.add_link(on_a, 0, div, 1);
+    blueprint.add_link(on_a, 1, div, 1);
 
     auto instance = blueprint.create_instance();
     y_test_assert(instance.is_ok());
@@ -2607,13 +2687,13 @@ y_test_func("EntityWorld blueprint component triggers") {
         const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
         const BlueprintNode* neg_a = blueprint.add_node(create_blueprint_node("Negate float"));
         const BlueprintNode* out_a = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
-        blueprint.add_link(on_a, 0, neg_a, 0);
+        blueprint.add_link(on_a, 1, neg_a, 0);
         blueprint.add_link(neg_a, 0, out_a, 0);
 
         const BlueprintNode* on_b = blueprint.add_node(std::make_unique<TriggerBlueprintNode<OtherBlueprintTestTrigger>>("on b"));
         const BlueprintNode* neg_b = blueprint.add_node(create_blueprint_node("Negate float"));
         const BlueprintNode* out_b = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(1));
-        blueprint.add_link(on_b, 0, neg_b, 0);
+        blueprint.add_link(on_b, 1, neg_b, 0);
         blueprint.add_link(neg_b, 0, out_b, 0);
     }
 
@@ -2780,7 +2860,7 @@ Blueprint make_trigger_output_blueprint(u32 index) {
     Blueprint blueprint;
     const BlueprintNode* on = blueprint.add_node(std::make_unique<TriggerBlueprintNode<T>>("on"));
     const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(index));
-    blueprint.add_link(on, 0, out, 0);
+    blueprint.add_link(on, 1, out, 0);
     return blueprint;
 }
 
@@ -2794,7 +2874,7 @@ y_test_func("Blueprint remove node") {
     const BlueprintNode* select = blueprint.add_node(create_blueprint_node("If"));
     const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
 
-    blueprint.add_link(on_a, 0, add, 0);
+    blueprint.add_link(on_a, 1, add, 0);
     blueprint.add_link(constant, 0, add, 1);
     blueprint.add_link(add, 0, out, 0);
     blueprint.add_link(constant, 0, select, 1);
@@ -2902,7 +2982,7 @@ y_test_func("Blueprint back links reorder nodes") {
         y_test_assert(links_are_ordered(blueprint));
         blueprint.add_link(constant, 0, add, 1);
         y_test_assert(links_are_ordered(blueprint));
-        blueprint.add_link(on_a, 0, neg, 0);
+        blueprint.add_link(on_a, 1, neg, 0);
         y_test_assert(links_are_ordered(blueprint));
 
         // Nodes are reordered but not lost
@@ -2936,7 +3016,7 @@ y_test_func("Blueprint back links reorder nodes") {
         blueprint.add_link(neg, 0, add, 0);
         blueprint.add_link(constant, 0, add, 1);
         blueprint.add_link(add, 0, out, 0);
-        blueprint.add_link(on_a, 0, neg, 0);
+        blueprint.add_link(on_a, 1, neg, 0);
         y_test_assert(links_are_ordered(blueprint));
         y_test_assert(link_source(blueprint, add, 0) == neg);
         y_test_assert(link_source(blueprint, add, 1) == constant);
@@ -2956,7 +3036,7 @@ y_test_func("Blueprint add blueprint") {
         const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
         const BlueprintNode* neg = blueprint.add_node(create_blueprint_node("Negate float"));
         const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
-        blueprint.add_link(on_a, 0, neg, 0);
+        blueprint.add_link(on_a, 1, neg, 0);
         blueprint.add_link(neg, 0, out, 0);
     }
 
@@ -3029,8 +3109,8 @@ y_test_func("Blueprint downstream nodes") {
     const BlueprintNode* add = blueprint.add_node(create_blueprint_node("Add float"));
     const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
 
-    blueprint.add_link(on_a, 0, n1, 0);
-    blueprint.add_link(on_a, 0, n2, 0);
+    blueprint.add_link(on_a, 1, n1, 0);
+    blueprint.add_link(on_a, 1, n2, 0);
     blueprint.add_link(n1, 0, add, 0);
     blueprint.add_link(n2, 0, add, 1);
     blueprint.add_link(add, 0, out, 0);
@@ -3483,7 +3563,7 @@ y_test_func("Blueprint instance repeated triggers") {
     const BlueprintNode* on_a = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
     const BlueprintNode* neg = blueprint.add_node(create_blueprint_node("Negate float"));
     const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
-    blueprint.add_link(on_a, 0, neg, 0);
+    blueprint.add_link(on_a, 1, neg, 0);
     blueprint.add_link(neg, 0, out, 0);
 
     auto first = blueprint.create_instance();
@@ -3524,7 +3604,7 @@ y_test_func("Blueprint instance repeated triggers") {
         const BlueprintNode* div = div_blueprint.add_node(create_blueprint_node("Divide float"));
         const BlueprintNode* div_out = div_blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(1));
         div_blueprint.add_link(one, 0, div, 0);
-        div_blueprint.add_link(on, 0, div, 1);
+        div_blueprint.add_link(on, 1, div, 1);
         div_blueprint.add_link(div, 0, div_out, 0);
 
         auto div_instance = div_blueprint.create_instance();
@@ -3841,7 +3921,7 @@ y_test_func("EntityWorld blueprint component changes") {
         const BlueprintNode* on = blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
         const BlueprintNode* div = blueprint.add_node(create_blueprint_node("Divide float"));
         const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(2));
-        blueprint.add_link(on, 0, div, 1);
+        blueprint.add_link(on, 1, div, 1);
         blueprint.add_link(div, 0, out, 0);
         world.add_or_replace_component<BlueprintComponent>(id, make_asset<Blueprint>(std::move(blueprint)));
     }
@@ -3897,8 +3977,9 @@ y_test_func("EntityWorld blueprint component on collide") {
         const BlueprintNode* on_collide = blueprint.add_node(create_blueprint_node("On collide"));
         const BlueprintNode* decompose = blueprint.add_node(create_blueprint_node("Decompose Vec3"));
         const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
-        y_test_assert(on_collide->output_pins().size() == 2);
-        blueprint.add_link(on_collide, 1, decompose, 0);
+        y_test_assert(on_collide->output_pins().size() == 3);
+        y_test_assert(on_collide->output_pins()[0].is_exec());
+        blueprint.add_link(on_collide, 2, decompose, 0);
         blueprint.add_link(decompose, 1, out, 0);
     }
 

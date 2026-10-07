@@ -54,10 +54,18 @@ const BlueprintParamType* blueprint_param_type() {
     return &type;
 }
 
+struct BlueprintExec {
+    bool active = false;
+};
+
 struct BlueprintPin {
     std::string_view name;
     const BlueprintParamType* type = nullptr;
     bool is_generic = false;
+
+    bool is_exec() const {
+        return type == blueprint_param_type<BlueprintExec>();
+    }
 };
 
 inline bool are_blueprint_types_compatible(const BlueprintParamType* a, const BlueprintParamType* b) {

@@ -52,6 +52,28 @@ static bool is_link_in_range(core::Span<std::unique_ptr<BlueprintNode>> nodes, c
     ;
 }
 
+static bool has_exec_input(const BlueprintNode* node) {
+    const core::Span<BlueprintPin> inputs = node->input_pins();
+    return std::any_of(inputs.begin(), inputs.end(), [](const BlueprintPin& pin) { return pin.is_exec(); });
+}
+
+static core::FixedArray<bool> triggered_nodes(core::Span<std::unique_ptr<BlueprintNode>> nodes, core::Span<BlueprintLink> links, usize entry_index) {
+    core::FixedArray<bool> triggered(nodes.size());
+    triggered[entry_index] = true;
+
+    for(usize i = entry_index + 1; i != nodes.size(); ++i) {
+        const bool exec_only = has_exec_input(nodes[i].get());
+        for(const BlueprintLink& link : links) {
+            if(link.dst_node == i && triggered[link.src_node] && (!exec_only || nodes[i]->input_pins()[link.dst_pin].is_exec())) {
+                triggered[i] = true;
+                break;
+            }
+        }
+    }
+
+    return triggered;
+}
+
 static void propagate_generic_types(core::Span<std::unique_ptr<BlueprintNode>> nodes, core::Span<BlueprintLink> links) {
     for(bool changed = true; changed;) {
         changed = false;
@@ -312,7 +334,7 @@ core::Result<BlueprintInstance, BlueprintError> Blueprint::create_instance() con
     core::FixedArray<core::FixedArray<bool>> downstream(entry_count);
     core::ScratchPad<bool> depends_on_any(node_count, false);
     for(usize e = 0; e != entry_count; ++e) {
-        downstream[e] = downstream_nodes(_nodes[compiler._entry_points[e].node_index].get());
+        downstream[e] = triggered_nodes(_nodes, _links, compiler._entry_points[e].node_index);
         for(usize i = 0; i != node_count; ++i) {
             depends_on_any[i] |= downstream[e][i];
         }
