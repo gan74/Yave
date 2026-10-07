@@ -207,16 +207,34 @@ static void draw_node(const BlueprintNode& node, const BlueprintParamType* gener
     const core::Span<BlueprintPin> inputs = node.input_pins();
     const core::Span<BlueprintPin> outputs = node.output_pins();
 
+    const auto pin_width = [](const BlueprintPin& pin) {
+        return pin_icon_size + ImGui::GetStyle().ItemSpacing.x + ImGui::CalcTextSize(pin.name.data(), pin.name.data() + pin.name.size()).x;
+    };
+
+    float inputs_width = 0.0f;
+    for(const BlueprintPin& pin : inputs) {
+        inputs_width = std::max(inputs_width, pin_width(pin));
+    }
+    float outputs_width = 0.0f;
+    for(const BlueprintPin& pin : outputs) {
+        outputs_width = std::max(outputs_width, pin_width(pin));
+    }
+
+    const float column_gap = inputs.is_empty() || outputs.is_empty() ? 0.0f : pin_column_gap;
+    const float content_width = std::max(ImGui::CalcTextSize(name.data(), name.data() + name.size()).x, inputs_width + column_gap + outputs_width);
+    const float content_right = content_min.x + content_width;
+    const float pins_top = ImGui::GetCursorScreenPos().y;
+
     ImGui::BeginGroup();
     for(usize i = 0; i != inputs.size(); ++i) {
         draw_pin(input_pin_id(node, i), inputs[i].name, inputs[i].is_generic ? generic_type : inputs[i].type, is_linked(input_pin_id(node, i)), true);
     }
     ImGui::EndGroup();
 
-    ImGui::SameLine(0.0f, pin_column_gap);
-
+    ImGui::SetCursorScreenPos(ImVec2(content_right - outputs_width, pins_top));
     ImGui::BeginGroup();
     for(usize i = 0; i != outputs.size(); ++i) {
+        ImGui::SetCursorScreenPos(ImVec2(content_right - pin_width(outputs[i]), ImGui::GetCursorScreenPos().y));
         draw_pin(output_pin_id(node, i), outputs[i].name, outputs[i].is_generic ? generic_type : outputs[i].type, is_linked(output_pin_id(node, i)), false);
     }
     ImGui::EndGroup();
