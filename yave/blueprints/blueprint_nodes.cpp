@@ -45,9 +45,31 @@ SOFTWARE.
 
 namespace yave {
 
+template<usize N>
+struct BlueprintPinName {
+    FixedString<N> name;
+    bool has_default = true;
+
+    constexpr BlueprintPinName(const char (&str)[N]) : name(str) {
+    }
+
+    constexpr BlueprintPinName(FixedString<N> str, bool def) : name(str), has_default(def) {
+    }
+};
+
+template<usize N>
+BlueprintPinName(const char (&)[N]) -> BlueprintPinName<N>;
+
+// Input pin that requires a link
+template<FixedString Name>
+static constexpr auto NoDefault = BlueprintPinName(Name, false);
+
 namespace detail {
 template<typename T>
 static constexpr bool bp_is_input = !std::is_lvalue_reference_v<T> || std::is_const_v<std::remove_reference_t<T>>;
+
+template<typename T>
+static constexpr bool bp_is_exec = std::is_same_v<std::remove_cvref_t<T>, BlueprintExec>;
 
 template<usize N, usize P>
 constexpr std::array<usize, N> bp_port_indices(const std::array<bool, P>& is_input, bool input) {
@@ -59,33 +81,62 @@ constexpr std::array<usize, N> bp_port_indices(const std::array<bool, P>& is_inp
     }
     return indices;
 }
+
+// Strips a leading const BlueprintContext& parameter, which doesn't get a pin
+template<typename Func>
+struct bp_strip_context {
+    using type = Func;
+    static constexpr bool with_context = false;
+};
+
+template<typename Ret, typename... Args>
+struct bp_strip_context<Ret(const BlueprintContext&, Args...)> {
+    using type = Ret(Args...);
+    static constexpr bool with_context = true;
+};
 }
 
 
-template<typename F, typename Func, FixedString... Names>
+template<typename F, typename Func, BlueprintPinName... Names>
 class LambdaBlueprintNodeImpl;
 
-template<typename F, typename Ret, typename... Args, FixedString... Names>
+template<typename F, typename Ret, typename... Args, BlueprintPinName... Names>
 class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode {
     using args_t = std::tuple<std::remove_cvref_t<Args>...>;
 
+    static constexpr bool with_context = detail::bp_strip_context<typename function_traits<F>::func_type>::with_context;
+
     static constexpr usize port_count = sizeof...(Args);
     static_assert(sizeof...(Names) == port_count);
+    static_assert(((detail::bp_is_input<Args> || Names.has_default) && ...), "NoDefault can only be used on inputs");
 
     static constexpr std::array<bool, port_count> is_input = { detail::bp_is_input<Args>... };
     static constexpr usize in_count = (0 + ... + usize(detail::bp_is_input<Args>));
     static constexpr usize out_count = port_count - in_count;
 
+    static constexpr std::array<bool, port_count> has_default = { (detail::bp_is_input<Args> && !detail::bp_is_exec<Args> && Names.has_default)... };
+    static constexpr usize default_count = (0 + ... + usize(detail::bp_is_input<Args> && !detail::bp_is_exec<Args> && Names.has_default));
+
     static constexpr auto input_indices = detail::bp_port_indices<in_count>(is_input, true);
     static constexpr auto output_indices = detail::bp_port_indices<out_count>(is_input, false);
+    static constexpr auto default_indices = detail::bp_port_indices<default_count>(has_default, true);
 
-    using inputs_t = decltype([]<usize... I>(std::index_sequence<I...>) {
-        return std::tuple<std::tuple_element_t<input_indices[I], args_t>...>{};
-    }(std::make_index_sequence<in_count>{}));
+    // Index in _values for each input, or usize(-1) if the input has no default
+    static constexpr std::array<usize, in_count> default_slots = [] {
+        std::array<usize, in_count> slots = {};
+        for(usize i = 0, j = 0; i != in_count; ++i) {
+            slots[i] = has_default[input_indices[i]] ? j++ : usize(-1);
+        }
+        return slots;
+    }();
+
+    using defaults_t = decltype([]<usize... I>(std::index_sequence<I...>) {
+        return std::tuple<std::tuple_element_t<default_indices[I], args_t>...>{};
+    }(std::make_index_sequence<default_count>{}));
 
     template<usize N>
     static std::array<BlueprintPin, N> make_pins(const std::array<usize, N>& indices) {
-        const std::array<std::string_view, port_count> names = { std::string_view(Names)... };
+        const std::array<std::string_view, port_count> names = { std::string_view(Names.name)... };
         const std::array<const BlueprintParamType*, port_count> types = { blueprint_param_type<std::remove_cvref_t<Args>>()... };
 
         std::array<BlueprintPin, N> pins = {};
@@ -118,7 +169,11 @@ class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode 
 
         void* default_input(usize index) override {
             y_debug_assert(index < in_count);
-            return std::apply([&](auto&... values) { return std::array<void*, in_count>{&values...}[index]; }, _values);
+            const usize slot = default_slots[index];
+            if(slot == usize(-1)) {
+                return nullptr;
+            }
+            return std::apply([&](auto&... values) { return std::array<void*, default_count>{&values...}[slot]; }, _values);
         }
 
         void compile(BlueprintCompiler& compiler) const override {
@@ -130,9 +185,14 @@ class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode 
                 ptrs[output_indices[i]] = compiler.output(i);
             }
 
-            compiler.emit([ptrs](const BlueprintContext&) {
+            compiler.emit([ptrs](const BlueprintContext& context) {
+                unused(context);
                 [&]<usize... I>(std::index_sequence<I...>) {
-                    F{}(*static_cast<std::tuple_element_t<I, args_t>*>(ptrs[I])...);
+                    if constexpr(with_context) {
+                        F{}(context, *static_cast<std::tuple_element_t<I, args_t>*>(ptrs[I])...);
+                    } else {
+                        F{}(*static_cast<std::tuple_element_t<I, args_t>*>(ptrs[I])...);
+                    }
                 }(std::make_index_sequence<port_count>{});
             });
         }
@@ -141,11 +201,11 @@ class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode 
         y_serde3_poly(LambdaBlueprintNodeImpl)
 
     private:
-        inputs_t _values = {};
+        defaults_t _values = {};
 };
 
-template<typename F, FixedString... Names>
-using LambdaBlueprintNode = LambdaBlueprintNodeImpl<F, typename function_traits<F>::func_type, Names...>;
+template<typename F, BlueprintPinName... Names>
+using LambdaBlueprintNode = LambdaBlueprintNodeImpl<F, typename detail::bp_strip_context<typename function_traits<F>::func_type>::type, Names...>;
 
 template<typename T>
 class ConstantBlueprintNode : public BlueprintNode {
@@ -243,178 +303,22 @@ class IfBlueprintNode : public BlueprintNode {
         bool _default_cond = true;
 };
 
-class BranchBlueprintNode : public BlueprintNode {
-    static inline const std::array<BlueprintPin, 2> static_input_pins = {{{"exec", blueprint_param_type<BlueprintExec>()}, {"condition", blueprint_param_type<bool>()}}};
-    static inline const std::array<BlueprintPin, 2> static_output_pins = {{{"true", blueprint_param_type<BlueprintExec>()}, {"false", blueprint_param_type<BlueprintExec>()}}};
-
-    public:
-        BranchBlueprintNode() = default;
-
-        BranchBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
-        }
-
-        std::string_view node_type_name() const override {
-            return "Branch";
-        }
-
-        core::Span<BlueprintPin> input_pins() const override {
-            return static_input_pins;
-        }
-
-        core::Span<BlueprintPin> output_pins() const override {
-            return static_output_pins;
-        }
-
-        void* default_input(usize index) override {
-            y_debug_assert(index < static_input_pins.size());
-            return index ? &_default_cond : nullptr;
-        }
-
-        void compile(BlueprintCompiler& compiler) const override {
-            const BlueprintExec* exec = static_cast<const BlueprintExec*>(compiler.input(0));
-            const bool* condition = static_cast<const bool*>(compiler.input(1));
-            BlueprintExec* if_true = static_cast<BlueprintExec*>(compiler.output(0));
-            BlueprintExec* if_false = static_cast<BlueprintExec*>(compiler.output(1));
-
-            compiler.emit([=](const BlueprintContext&) {
-                if_true->active = exec->active && *condition;
-                if_false->active = exec->active && !*condition;
-            });
-        }
-
-        y_reflect(BranchBlueprintNode, _name, _default_cond)
-        y_serde3_poly(BranchBlueprintNode)
-
-    private:
-        bool _default_cond = true;
-};
-
-class RemoveEntityBlueprintNode : public BlueprintNode {
-    static inline const std::array<BlueprintPin, 2> static_input_pins = {{{"exec", blueprint_param_type<BlueprintExec>()}, {"entity", blueprint_param_type<ecs::EntityId>()}}};
-
-    public:
-        RemoveEntityBlueprintNode() = default;
-
-        RemoveEntityBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
-        }
-
-        std::string_view node_type_name() const override {
-            return "Remove entity";
-        }
-
-        core::Span<BlueprintPin> input_pins() const override {
-            return static_input_pins;
-        }
-
-        void compile(BlueprintCompiler& compiler) const override {
-            const BlueprintExec* exec = static_cast<const BlueprintExec*>(compiler.input(0));
-            const ecs::EntityId* entity = static_cast<const ecs::EntityId*>(compiler.input(1));
-            compiler.emit([=](const BlueprintContext& context) {
-                if(!exec->active || !entity->is_valid()) {
-                    return;
-                }
-
-                if(!context.world) {
-                    throw std::runtime_error("No world");
-                }
-
-                if(context.world->exists(*entity)) {
-                    context.world->remove_entity(*entity);
-                }
-            });
-        }
-
-        y_reflect(RemoveEntityBlueprintNode, _name)
-        y_serde3_poly(RemoveEntityBlueprintNode)
-};
-
-class ApplyImpulseBlueprintNode : public BlueprintNode {
-    static inline const std::array<BlueprintPin, 3> static_input_pins = {{{"exec", blueprint_param_type<BlueprintExec>()}, {"entity", blueprint_param_type<ecs::EntityId>()}, {"impulse", blueprint_param_type<math::Vec3>()}}};
-
-    public:
-        ApplyImpulseBlueprintNode() = default;
-
-        ApplyImpulseBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
-        }
-
-        std::string_view node_type_name() const override {
-            return "Apply impulse";
-        }
-
-        core::Span<BlueprintPin> input_pins() const override {
-            return static_input_pins;
-        }
-
-        void* default_input(usize index) override {
-            y_debug_assert(index < static_input_pins.size());
-            return index == 2 ? &_default_impulse : nullptr;
-        }
-
-        void compile(BlueprintCompiler& compiler) const override {
-            const BlueprintExec* exec = static_cast<const BlueprintExec*>(compiler.input(0));
-            const ecs::EntityId* entity = static_cast<const ecs::EntityId*>(compiler.input(1));
-            const math::Vec3* impulse = static_cast<const math::Vec3*>(compiler.input(2));
-            compiler.emit([=](const BlueprintContext& context) {
-                if(!exec->active || !entity->is_valid()) {
-                    return;
-                }
-
-                if(!context.world) {
-                    throw std::runtime_error("No world");
-                }
-
-                JoltPhysicsSystem* physics = context.world->find_system<JoltPhysicsSystem>();
-                if(!physics) {
-                    throw std::runtime_error("No physics system");
-                }
-
-                physics->add_impulse(*entity, *impulse);
-            });
-        }
-
-        y_reflect(ApplyImpulseBlueprintNode, _name, _default_impulse)
-        y_serde3_poly(ApplyImpulseBlueprintNode)
-
-    private:
-        math::Vec3 _default_impulse;
-};
-
-class SelfBlueprintNode : public BlueprintNode {
-    static inline const BlueprintPin static_output_pin = { "entity", blueprint_param_type<ecs::EntityId>() };
-
-    public:
-        SelfBlueprintNode() = default;
-
-        SelfBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
-        }
-
-        std::string_view node_type_name() const override {
-            return "Self";
-        }
-
-        core::Span<BlueprintPin> output_pins() const override {
-            return static_output_pin;
-        }
-
-        void compile(BlueprintCompiler& compiler) const override {
-            ecs::EntityId* out = static_cast<ecs::EntityId*>(compiler.output(0));
-            compiler.emit([=](const BlueprintContext& context) {
-                *out = context.self;
-            });
-        }
-
-        y_reflect(SelfBlueprintNode, _name)
-        y_serde3_poly(SelfBlueprintNode)
-};
 
 
 
-
-template<typename F, FixedString... Names>
+template<typename F, BlueprintPinName... Names>
 static std::unique_ptr<BlueprintNodeFactory> make_blueprint_node_factory(core::String name) {
-    static_assert(sizeof...(Names) == function_traits<F>::arg_count);
     return std::make_unique<GenericBlueprintNodeFactory<LambdaBlueprintNode<F, Names...>>>(std::move(name));
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -539,15 +443,75 @@ static void add_bool_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& 
     factories.emplace_back(make_blueprint_node_factory<Xor, "a", "b", "out">("Xor"));
 }
 
+static void add_flow_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {
+    struct Branch {
+        void operator()(const BlueprintExec& exec, bool condition, BlueprintExec& if_true, BlueprintExec& if_false) const {
+            if_true.active = exec.active && condition;
+            if_false.active = exec.active && !condition;
+        }
+    };
+    factories.emplace_back(make_blueprint_node_factory<Branch, "exec", "condition", "true", "false">("Branch"));
+}
+
+
+static void add_entity_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {
+    struct Self { void operator()(const BlueprintContext& context, ecs::EntityId& entity) const { entity = context.self; } };
+    factories.emplace_back(make_blueprint_node_factory<Self, "entity">("Self"));
+
+    struct RemoveEntity {
+        void operator()(const BlueprintContext& context, const BlueprintExec& exec, ecs::EntityId entity) const {
+            if(!exec.active || !entity.is_valid()) {
+                return;
+            }
+
+            if(!context.world) {
+                throw std::runtime_error("No world");
+            }
+
+            if(context.world->exists(entity)) {
+                context.world->remove_entity(entity);
+            }
+        }
+    };
+    factories.emplace_back(make_blueprint_node_factory<RemoveEntity, "exec", NoDefault<"entity">>("Remove entity"));
+
+    struct ApplyImpulse {
+        void operator()(const BlueprintContext& context, const BlueprintExec& exec, ecs::EntityId entity, math::Vec3 impulse) const {
+            if(!exec.active || !entity.is_valid()) {
+                return;
+            }
+
+            if(!context.world) {
+                throw std::runtime_error("No world");
+            }
+
+            JoltPhysicsSystem* physics = context.world->find_system<JoltPhysicsSystem>();
+            if(!physics) {
+                throw std::runtime_error("No physics system");
+            }
+
+            physics->add_impulse(entity, impulse);
+        }
+    };
+    factories.emplace_back(make_blueprint_node_factory<ApplyImpulse, "exec", NoDefault<"entity">, "impulse">("Apply impulse"));
+}
+
+
+
+
+
+
+
+
+
+
 void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<IfBlueprintNode>>("If"));
 
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<TriggerBlueprintNode<OnCollide>>>("On collide"));
 
-    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<BranchBlueprintNode>>("Branch"));
-    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<SelfBlueprintNode>>("Self"));
-    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<RemoveEntityBlueprintNode>>("Remove entity"));
-    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<ApplyImpulseBlueprintNode>>("Apply impulse"));
+    add_flow_nodes(factories);
+    add_entity_nodes(factories);
 
 #ifdef Y_DEBUG
     struct Debug { void operator()(float a) const { log_msg(fmt("Debug blueprint node: {}", a)); } };
