@@ -213,6 +213,10 @@ ThumbnailRenderer::ThumbnailRenderer(AssetLoader& loader) : _loader(&loader) {
 const ThumbnailRenderer::ThumbnailData* ThumbnailRenderer::thumbnail_data(AssetId id) {
     y_profile();
 
+    if(!app_settings().editor.render_thumbnails) {
+        return nullptr;
+    }
+
     if(id == AssetId::invalid_id()) {
         return nullptr;
     }

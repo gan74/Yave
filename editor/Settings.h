@@ -37,8 +37,9 @@ struct EditorSettings {
 
     bool open_world_workspace = true;
     bool open_blueprint_workspace = true;
+    bool render_thumbnails = true;
 
-    y_reflect(EditorSettings, world_file, asset_store, max_fps, open_world_workspace, open_blueprint_workspace)
+    y_reflect(EditorSettings, world_file, asset_store, max_fps, open_world_workspace, open_blueprint_workspace, render_thumbnails)
 };
 
 struct CameraSettings {
