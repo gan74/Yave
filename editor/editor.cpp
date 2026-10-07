@@ -95,10 +95,6 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     if(application::settings.editor.open_world_workspace) {
         add_workspace(std::make_unique<WorldWorkspace>());
     }
-
-    if(application::settings.editor.open_blueprint_workspace) {
-        add_workspace(std::make_unique<BlueprintWorkspace>());
-    }
 }
 
 
