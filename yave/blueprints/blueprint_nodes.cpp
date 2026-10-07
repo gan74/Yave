@@ -281,6 +281,34 @@ class RemoveEntityBlueprintNode : public BlueprintNode {
         y_serde3_poly(RemoveEntityBlueprintNode)
 };
 
+class SelfBlueprintNode : public BlueprintNode {
+    static inline const BlueprintPin static_output_pin = { "entity", blueprint_param_type<ecs::EntityId>() };
+
+    public:
+        SelfBlueprintNode() = default;
+
+        SelfBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
+        }
+
+        std::string_view node_type_name() const override {
+            return "Self";
+        }
+
+        core::Span<BlueprintPin> output_pins() const override {
+            return static_output_pin;
+        }
+
+        void compile(BlueprintCompiler& compiler) const override {
+            ecs::EntityId* out = static_cast<ecs::EntityId*>(compiler.output(0));
+            compiler.emit([=](const BlueprintContext& context) {
+                *out = context.self;
+            });
+        }
+
+        y_reflect(SelfBlueprintNode, _name)
+        y_serde3_poly(SelfBlueprintNode)
+};
+
 
 
 
@@ -418,6 +446,7 @@ void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factorie
 
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<TriggerBlueprintNode<OnCollide>>>("On collide"));
 
+    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<SelfBlueprintNode>>("Self"));
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<RemoveEntityBlueprintNode>>("Remove entity"));
 
 #ifdef Y_DEBUG

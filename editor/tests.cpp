@@ -2502,6 +2502,33 @@ y_test_func("Blueprint remove entity") {
     y_test_assert(world.pending_deletions().is_empty());
 }
 
+y_test_func("Blueprint self") {
+    Blueprint blueprint;
+    blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on trigger"));
+    const BlueprintNode* self_node = blueprint.add_node(create_blueprint_node("Self"));
+    const BlueprintNode* remove = blueprint.add_node(create_blueprint_node("Remove entity"));
+    blueprint.add_link(self_node, 0, remove, 0);
+
+    auto instance = blueprint.create_instance();
+    y_test_assert(instance.is_ok());
+    const auto& entry = instance.unwrap().entry_points()[0];
+
+    EntityWorld world;
+    const EntityId a = world.create_entity();
+    const EntityId b = world.create_entity();
+    world.process_deferred_changes();
+
+    const BlueprintTestTrigger trigger = {};
+
+    // No self: nothing to remove
+    y_test_assert(instance.unwrap().trigger(entry, &trigger, BlueprintContext{&world, EntityId()}).is_ok());
+    y_test_assert(world.pending_deletions().is_empty());
+
+    y_test_assert(instance.unwrap().trigger(entry, &trigger, BlueprintContext{&world, b}).is_ok());
+    y_test_assert(world.pending_deletions().contains(b));
+    y_test_assert(!world.pending_deletions().contains(a));
+}
+
 y_test_func("Blueprint serialization") {
     TestOutputBlueprintNode::outputs = {};
 
