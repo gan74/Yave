@@ -26,6 +26,7 @@ SOFTWARE.
 #include <yave/ecs/EntityWorld.h>
 #include <yave/systems/TriggerSystem.h>
 #include <yave/systems/TimeSystem.h>
+#include <yave/systems/JoltPhysicsSystem.h>
 #include <yave/components/BlueprintComponent.h>
 #include <yave/blueprints/TriggerBlueprintNode.h>
 #include <yave/blueprints/blueprint_nodes.h>
@@ -47,6 +48,7 @@ SOFTWARE.
 #include <y/utils/format.h>
 
 #include <atomic>
+#include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -3263,6 +3265,120 @@ y_test_func("Blueprint node factories") {
     }
 }
 
+y_test_func("Blueprint If default values") {
+    TestOutputBlueprintNode::outputs = {};
+
+    Blueprint blueprint;
+    blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+
+    std::unique_ptr<BlueprintNode> select_node = create_blueprint_node("If");
+    BlueprintNode* select = select_node.get();
+    blueprint.add_node(std::move(select_node));
+    const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
+
+    // No type, no storage for the values
+    y_test_assert(!select->default_input(1));
+    y_test_assert(!select->default_input(2));
+
+    blueprint.add_link(select, 0, out, 0);
+    y_test_assert(select->generic_type() == blueprint_param_type<float>());
+    *static_cast<bool*>(select->default_input(0)) = false;
+    *static_cast<float*>(select->default_input(1)) = 3.0f;
+    *static_cast<float*>(select->default_input(2)) = 4.0f;
+
+    y_test_assert(run_blueprint(blueprint).is_ok());
+    y_test_assert(TestOutputBlueprintNode::outputs[0] == 4.0f);
+
+    // Default values survive serialization
+    {
+        io2::Buffer buffer;
+        {
+            serde3::WritableArchive arc(buffer);
+            y_test_assert(arc.serialize(blueprint).is_ok());
+        }
+        buffer.reset();
+
+        Blueprint loaded;
+        y_test_assert(serde3::ReadableArchive(buffer).deserialize(loaded).is_ok());
+
+        BlueprintNode* loaded_select = loaded.all_nodes()[1].get();
+        y_test_assert(loaded_select->generic_type() == blueprint_param_type<float>());
+        y_test_assert(*static_cast<bool*>(loaded_select->default_input(0)) == false);
+        y_test_assert(*static_cast<float*>(loaded_select->default_input(1)) == 3.0f);
+        y_test_assert(*static_cast<float*>(loaded_select->default_input(2)) == 4.0f);
+
+        TestOutputBlueprintNode::outputs = {};
+        y_test_assert(run_blueprint(loaded).is_ok());
+        y_test_assert(TestOutputBlueprintNode::outputs[0] == 4.0f);
+    }
+
+    // Losing the type and getting it back keeps the values
+    blueprint.remove_link(out, 0);
+    y_test_assert(!select->generic_type());
+    blueprint.add_link(select, 0, out, 0);
+    y_test_assert(*static_cast<float*>(select->default_input(1)) == 3.0f);
+    y_test_assert(*static_cast<float*>(select->default_input(2)) == 4.0f);
+
+    // Changing the type resets them
+    blueprint.remove_link(out, 0);
+    const BlueprintNode* decompose = blueprint.add_node(create_blueprint_node("Decompose Vec2"));
+    blueprint.add_link(select, 0, decompose, 0);
+    y_test_assert(select->generic_type() == blueprint_param_type<math::Vec2>());
+    y_test_assert(*static_cast<math::Vec2*>(select->default_input(1)) == math::Vec2());
+    y_test_assert(*static_cast<math::Vec2*>(select->default_input(2)) == math::Vec2());
+}
+
+y_test_func("Blueprint more vector nodes") {
+    y_test_assert(eval_predicate<math::Vec2>("Equal Vec2", "Const Vec2", {math::Vec2(1.0f, 2.0f), math::Vec2(1.0f, 2.0f)}) == true);
+    y_test_assert(eval_predicate<math::Vec2>("Equal Vec2", "Const Vec2", {math::Vec2(1.0f, 2.0f), math::Vec2(2.0f, 1.0f)}) == false);
+    y_test_assert(eval_predicate<math::Vec2>("Not equal Vec2", "Const Vec2", {math::Vec2(1.0f, 2.0f), math::Vec2(1.0f, 2.0f)}) == false);
+
+    // Normalizing a zero vector gives a zero vector
+    {
+        TestOutputBlueprintNode::outputs = {1.0f, 1.0f, 1.0f, 1.0f};
+        Blueprint blueprint;
+        blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+        const BlueprintNode* zero = add_constant(blueprint, "Const Vec3", math::Vec3());
+        const BlueprintNode* normalize = blueprint.add_node(create_blueprint_node("Normalize Vec3"));
+        const BlueprintNode* decompose = blueprint.add_node(create_blueprint_node("Decompose Vec3"));
+        blueprint.add_link(zero, 0, normalize, 0);
+        blueprint.add_link(normalize, 0, decompose, 0);
+        for(u32 i = 0; i != 3; ++i) {
+            const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(i));
+            blueprint.add_link(decompose, i, out, 0);
+        }
+
+        y_test_assert(run_blueprint(blueprint).is_ok());
+        y_test_assert(TestOutputBlueprintNode::outputs[0] == 0.0f);
+        y_test_assert(TestOutputBlueprintNode::outputs[1] == 0.0f);
+        y_test_assert(TestOutputBlueprintNode::outputs[2] == 0.0f);
+    }
+
+    // Saturate and Abs on mixed sign input
+    {
+        TestOutputBlueprintNode::outputs = {};
+        Blueprint blueprint;
+        blueprint.add_node(std::make_unique<TriggerBlueprintNode<BlueprintTestTrigger>>("on a"));
+        const BlueprintNode* in = add_constant(blueprint, "Const Vec4", math::Vec4(-2.0f, -0.5f, 0.5f, 2.0f));
+        const BlueprintNode* abs = blueprint.add_node(create_blueprint_node("Abs Vec4"));
+        const BlueprintNode* saturate = blueprint.add_node(create_blueprint_node("Saturate Vec4"));
+        const BlueprintNode* decompose = blueprint.add_node(create_blueprint_node("Decompose Vec4"));
+        blueprint.add_link(in, 0, abs, 0);
+        blueprint.add_link(abs, 0, saturate, 0);
+        blueprint.add_link(saturate, 0, decompose, 0);
+        for(u32 i = 0; i != 4; ++i) {
+            const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(i));
+            blueprint.add_link(decompose, i, out, 0);
+        }
+
+        y_test_assert(run_blueprint(blueprint).is_ok());
+        y_test_assert(TestOutputBlueprintNode::outputs[0] == 1.0f);
+        y_test_assert(TestOutputBlueprintNode::outputs[1] == 0.5f);
+        y_test_assert(TestOutputBlueprintNode::outputs[2] == 0.5f);
+        y_test_assert(TestOutputBlueprintNode::outputs[3] == 1.0f);
+    }
+}
+
 
 
 // ---------------------------------------- Blueprint instances ----------------------------------------
@@ -3444,6 +3560,131 @@ y_test_func("TriggerManager subscriptions") {
     triggers.unsubscribe<OtherTestTrigger>(a, &handler);
 }
 
+y_test_func("TriggerManager emit during dispatch") {
+    EntityWorld world;
+    TriggerManager& triggers = world.triggers();
+
+    const EntityId a = world.create_entity();
+    world.process_deferred_changes();
+
+    core::Vector<u32> values;
+    core::Vector<u32> other_values;
+    TriggerCallback<TestTrigger> handler([&](EntityWorld& w, EntityId id, const TestTrigger& t) {
+        values << t.value;
+        if(t.value < 10) {
+            w.triggers().emit(id, TestTrigger{t.value + 10});
+            w.triggers().emit(id, OtherTestTrigger{t.value});
+        }
+    });
+    TriggerCallback<OtherTestTrigger> other_handler([&](EntityWorld&, EntityId, const OtherTestTrigger& t) {
+        other_values << t.value;
+    });
+    triggers.subscribe<TestTrigger>(a, &handler);
+    triggers.subscribe<OtherTestTrigger>(a, &other_handler);
+
+    for(u32 i = 0; i != 4; ++i) {
+        triggers.emit(a, TestTrigger{i});
+    }
+
+    // Delivered in emission order
+    triggers.dispatch(world);
+    y_test_assert((values == core::Vector<u32>{0, 1, 2, 3}));
+    y_test_assert(other_values.is_empty());
+
+    // Triggers emitted by handlers are delivered by the next dispatch, whatever their type
+    triggers.dispatch(world);
+    y_test_assert((values == core::Vector<u32>{0, 1, 2, 3, 10, 11, 12, 13}));
+    y_test_assert((other_values == core::Vector<u32>{0, 1, 2, 3}));
+
+    triggers.dispatch(world);
+    y_test_assert(values.size() == 8);
+    y_test_assert(other_values.size() == 4);
+}
+
+y_test_func("TriggerManager unsubscribe during dispatch") {
+    EntityWorld world;
+    TriggerManager& triggers = world.triggers();
+
+    const EntityId a = world.create_entity();
+    const EntityId b = world.create_entity();
+    world.process_deferred_changes();
+
+    // Handlers that unsubscribe themselves when called
+    usize first_calls = 0;
+    TriggerHandler* first_ptr = nullptr;
+    TriggerCallback<TestTrigger> first([&](EntityWorld& w, EntityId id, const TestTrigger&) {
+        ++first_calls;
+        w.triggers().unsubscribe<TestTrigger>(id, first_ptr);
+    });
+    first_ptr = &first;
+
+    core::Vector<u32> second_values;
+    TriggerCallback<TestTrigger> second([&](EntityWorld&, EntityId, const TestTrigger& t) {
+        second_values << t.value;
+    });
+
+    // Other handlers of the same target are still called
+    triggers.subscribe<TestTrigger>(a, &first);
+    triggers.subscribe<TestTrigger>(a, &second);
+
+    triggers.emit(a, TestTrigger{1});
+    triggers.dispatch(world);
+    y_test_assert(first_calls == 1);
+    y_test_assert((second_values == core::Vector<u32>{1}));
+
+    triggers.emit(a, TestTrigger{2});
+    triggers.dispatch(world);
+    y_test_assert(first_calls == 1);
+    y_test_assert((second_values == core::Vector<u32>{1, 2}));
+
+    // Last handler of a target, other targets are not affected
+    first_calls = 0;
+    triggers.subscribe<TestTrigger>(b, &first);
+    triggers.emit(b, TestTrigger{3});
+    triggers.emit(a, TestTrigger{4});
+    triggers.dispatch(world);
+    y_test_assert(first_calls == 1);
+    y_test_assert(!triggers.is_listened<TestTrigger>(b));
+    y_test_assert(triggers.is_listened<TestTrigger>(a));
+    y_test_assert((second_values == core::Vector<u32>{1, 2, 4}));
+}
+
+y_test_func("TriggerManager concurrent emit") {
+    EntityWorld world;
+    TriggerManager& triggers = world.triggers();
+
+    const EntityId a = world.create_entity();
+    world.process_deferred_changes();
+
+    usize count = 0;
+    u64 sum = 0;
+    TriggerCallback<TestTrigger> handler([&](EntityWorld&, EntityId, const TestTrigger& t) {
+        ++count;
+        sum += t.value;
+    });
+    triggers.subscribe<TestTrigger>(a, &handler);
+
+    const usize thread_count = 4;
+    const u32 per_thread = 2000;
+    {
+        core::Vector<std::thread> threads;
+        for(usize i = 0; i != thread_count; ++i) {
+            threads.emplace_back([&] {
+                for(u32 k = 0; k != per_thread; ++k) {
+                    triggers.emit(a, TestTrigger{k});
+                }
+            });
+        }
+        for(std::thread& thread : threads) {
+            thread.join();
+        }
+    }
+
+    triggers.dispatch(world);
+    y_test_assert(count == thread_count * per_thread);
+    y_test_assert(sum == u64(thread_count) * (u64(per_thread) * (per_thread - 1) / 2));
+}
+
 y_test_func("EntityWorld blueprint component changes") {
     TestOutputBlueprintNode::outputs = {};
 
@@ -3552,6 +3793,49 @@ y_test_func("EntityWorld blueprint component save and load") {
     world.process_deferred_changes();
     y_test_assert(!component->instance());
     y_test_assert(!world.triggers().is_listened<BlueprintTestTrigger>(id));
+}
+
+y_test_func("EntityWorld blueprint component on collide") {
+    TestOutputBlueprintNode::outputs = {};
+
+    // On collide -> Decompose Vec3 -> output(y)
+    Blueprint blueprint;
+    {
+        const BlueprintNode* on_collide = blueprint.add_node(create_blueprint_node("On collide"));
+        const BlueprintNode* decompose = blueprint.add_node(create_blueprint_node("Decompose Vec3"));
+        const BlueprintNode* out = blueprint.add_node(std::make_unique<TestOutputBlueprintNode>(0));
+        y_test_assert(on_collide->output_pins().size() == 2);
+        blueprint.add_link(on_collide, 1, decompose, 0);
+        blueprint.add_link(decompose, 1, out, 0);
+    }
+
+    concurrent::JobSystem job_system(2);
+    EntityWorld world;
+    world.add_system<TriggerSystem>();
+
+    const auto tick = [&] {
+        world.tick(job_system);
+        world.process_deferred_changes();
+    };
+
+    const EntityId id = world.create_entity();
+    const EntityId other = world.create_entity();
+    world.add_or_replace_component<BlueprintComponent>(id, make_asset<Blueprint>(std::move(blueprint)));
+    tick();
+    tick();
+    y_test_assert(world.triggers().is_listened<OnCollide>(id));
+    y_test_assert(!world.triggers().is_listened<OnCollide>(other));
+
+    world.triggers().emit(id, OnCollide{other, math::Vec3(1.0f, 2.0f, 3.0f)});
+    tick();
+    y_test_assert(TestOutputBlueprintNode::outputs[0] == 2.0f);
+
+    // Triggers pending on a removed entity are dropped
+    world.triggers().emit(id, OnCollide{other, math::Vec3(1.0f, 5.0f, 3.0f)});
+    world.remove_entity(id);
+    world.process_deferred_changes();
+    tick();
+    y_test_assert(TestOutputBlueprintNode::outputs[0] == 2.0f);
 }
 
 
@@ -4571,6 +4855,132 @@ y_test_func("EntityWorld randomized hierarchy") {
         for(const EntityId child : world.direct_children(id)) {
             y_test_assert(world.exists(child));
             y_test_assert(world.parent(child) == id);
+        }
+    }
+}
+
+bool is_blueprint_consistent(const Blueprint& blueprint) {
+    const auto nodes = blueprint.all_nodes();
+    const auto links = blueprint.links();
+
+    if(!links_are_ordered(blueprint)) {
+        return false;
+    }
+
+    for(usize i = 0; i != links.size(); ++i) {
+        const BlueprintLink& link = links[i];
+        if(link.dst_node >= nodes.size() || link.dst_pin >= nodes[link.dst_node]->input_pins().size()) {
+            return false;
+        }
+        if(link.src_pin >= nodes[link.src_node]->output_pins().size()) {
+            return false;
+        }
+
+        // At most one link per input pin
+        for(usize j = i + 1; j != links.size(); ++j) {
+            if(links[j].dst_node == link.dst_node && links[j].dst_pin == link.dst_pin) {
+                return false;
+            }
+        }
+
+        // Resolved types match
+        const BlueprintParamType* src_type = nodes[link.src_node]->output_pins()[link.src_pin].type;
+        const BlueprintParamType* dst_type = nodes[link.dst_node]->input_pins()[link.dst_pin].type;
+        if(src_type && dst_type && src_type != dst_type) {
+            return false;
+        }
+
+        if(!blueprint.downstream_nodes(nodes[link.src_node].get())[link.dst_node]) {
+            return false;
+        }
+    }
+
+    // The only error the API can produce is an unresolved generic type
+    if(const auto res = blueprint.validate(); res.is_error()) {
+        return res.error().error == "Unresolved generic type";
+    }
+    return blueprint.create_instance().is_ok();
+}
+
+bool same_blueprints(const Blueprint& a, const Blueprint& b) {
+    if(a.all_nodes().size() != b.all_nodes().size() || a.links().size() != b.links().size()) {
+        return false;
+    }
+    for(usize i = 0; i != a.all_nodes().size(); ++i) {
+        const BlueprintNode* na = a.all_nodes()[i].get();
+        const BlueprintNode* nb = b.all_nodes()[i].get();
+        if(na->name() != nb->name() || na->generic_type() != nb->generic_type()) {
+            return false;
+        }
+    }
+    for(usize i = 0; i != a.links().size(); ++i) {
+        const BlueprintLink& la = a.links()[i];
+        const BlueprintLink& lb = b.links()[i];
+        if(la.src_node != lb.src_node || la.src_pin != lb.src_pin || la.dst_node != lb.dst_node || la.dst_pin != lb.dst_pin) {
+            return false;
+        }
+    }
+    return true;
+}
+
+y_test_func("Blueprint randomized graph edits") {
+    core::Vector<std::unique_ptr<BlueprintNodeFactory>> factories;
+    add_all_nodes(factories);
+
+    math::FastRandom rng;
+    auto rand_index = [&](usize size) { return usize(rng() % size); };
+
+    Blueprint blueprint;
+    for(usize op = 0; op != 3000; ++op) {
+        const auto nodes = blueprint.all_nodes();
+        const u32 kind = rng() % 100;
+
+        if(nodes.size() < 2 || (kind < 20 && nodes.size() < 30)) {
+            blueprint.add_node(factories[rand_index(factories.size())]->create_node());
+        } else if(kind < 30) {
+            blueprint.remove_node(nodes[rand_index(nodes.size())].get());
+        } else if(kind < 85) {
+            // Most random links are invalid, try a few times
+            for(usize attempt = 0; attempt != 20; ++attempt) {
+                const BlueprintNode* src = nodes[rand_index(nodes.size())].get();
+                const BlueprintNode* dst = nodes[rand_index(nodes.size())].get();
+                if(src->output_pins().is_empty() || dst->input_pins().is_empty()) {
+                    continue;
+                }
+                const usize src_pin = rand_index(src->output_pins().size());
+                const usize dst_pin = rand_index(dst->input_pins().size());
+                if(blueprint.is_link_valid(src, src_pin, dst, dst_pin)) {
+                    blueprint.add_link(src, src_pin, dst, dst_pin);
+                    break;
+                }
+            }
+        } else if(!blueprint.links().is_empty()) {
+            const BlueprintLink link = blueprint.links()[rand_index(blueprint.links().size())];
+            blueprint.remove_link(nodes[link.dst_node].get(), link.dst_pin);
+        }
+
+        y_test_assert(is_blueprint_consistent(blueprint));
+
+        if(op % 50 == 0) {
+            io2::Buffer buffer;
+            {
+                serde3::WritableArchive arc(buffer);
+                y_test_assert(arc.serialize(blueprint).is_ok());
+            }
+            buffer.reset();
+
+            Blueprint loaded;
+            y_test_assert(serde3::ReadableArchive(buffer).deserialize(loaded).is_ok());
+            y_test_assert(same_blueprints(blueprint, loaded));
+
+            // Running every entry point with a zeroed payload may fail, but must not crash
+            if(auto instance = loaded.create_instance(); instance.is_ok()) {
+                alignas(16) std::array<u8, 64> payload = {};
+                for(const BlueprintInstance::EntryPoint& entry : instance.unwrap().entry_points()) {
+                    y_test_assert(entry.payload_size <= payload.size());
+                    unused(instance.unwrap().trigger(entry, payload.data()));
+                }
+            }
         }
     }
 }
