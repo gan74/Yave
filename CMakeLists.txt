@@ -227,6 +227,7 @@ function(build_editor_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "editor/imgui.slang" "")
     add_slang_shader(${SHADER_TARGET} "editor/selection.slang" "")
     add_slang_shader(${SHADER_TARGET} "editor/engine_view.slang" "")
+    add_slang_shader(${SHADER_TARGET} "editor/oetf.slang" "")
     add_slang_shader(${SHADER_TARGET} "editor/imgui_billboard.slang" "")
 endfunction(build_editor_shaders)
 

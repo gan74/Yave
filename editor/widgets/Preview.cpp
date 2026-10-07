@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include <editor/ImGuiPlatform.h>
 #include <editor/Settings.h>
+#include <editor/EditorResources.h>
 #include <editor/utils/ui.h>
 
 #include <yave/renderer/DefaultRenderer.h>
@@ -166,7 +167,7 @@ void Preview::on_gui() {
         RendererSettings settings;
         {
             settings.tone_mapping.auto_exposure = false;
-            settings.tone_mapping.exposure = 2.0f;
+            settings.tone_mapping.exposure = 1.5f;
             settings.taa.enable = false;
             settings.ao.method = AOSettings::AOMethod::RTAOFallback;
             settings.ambient_pipe = AmbientPipe::IBLOcclusion;
@@ -177,9 +178,16 @@ void Preview::on_gui() {
 
         FrameGraphComputePassBuilder builder = graph.add_compute_pass("ImGui texture pass");
 
-        const auto output_image = builder.declare_copy(renderer.tone_mapping.tone_mapped);
+        const auto output_image = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, content_size());
         builder.add_input_usage(output_image, ImageUsage::TransferSrcBit);
+        builder.add_color_output(output_image);
+        builder.add_uniform_input(renderer.final);
         builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
+            {
+                auto render_pass = recorder.bind_framebuffer(self->framebuffer());
+                render_pass.bind_material_template(resources()[EditorResources::OETFMaterialTemplate], self->descriptor_set());
+                render_pass.draw_array(3);
+            }
             const auto& src = self->resources().image_base(output_image);
             output = DstTexture(src.format(), src.image_size().to<2>());
             recorder.copy(src, output);
