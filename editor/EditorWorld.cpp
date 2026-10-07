@@ -44,7 +44,6 @@ SOFTWARE.
 #include <yave/systems/AssetLoaderSystem.h>
 #include <yave/systems/JoltPhysicsSystem.h>
 #include <yave/systems/SceneSystem.h>
-#include <yave/systems/TimeSystem.h>
 #include <yave/systems/TriggerSystem.h>
 
 #include <editor/systems/DebugAnimateSystem.h>
@@ -60,11 +59,6 @@ editor_action("Remove all entities", [](WorldWorkspace* ws) { ws->world().remove
 
 editor_action_shortcut(ICON_FA_UNDO " Undo", Key::Ctrl + Key::Z, [](WorldWorkspace* ws) { ws->world().undo(); })
 editor_action_shortcut(ICON_FA_REDO " Redo", Key::Ctrl + Key::Y, [](WorldWorkspace* ws) { ws->world().redo(); })
-
-
-editor_action_enable(ICON_FA_PLAY " Play", [](WorldWorkspace* ws) { ws->world().find_system<TimeSystem>()->set_time_scale(1.0f); }, [](WorldWorkspace* ws) { return !!ws->world().find_system<TimeSystem>(); })
-editor_action_enable(ICON_FA_PAUSE " Pause", [](WorldWorkspace* ws) { ws->world().find_system<TimeSystem>()->set_time_scale(0.0f); }, [](WorldWorkspace* ws) { return !!ws->world().find_system<TimeSystem>(); })
-
 
 
 struct EditorSystem : ecs::System {
@@ -91,7 +85,6 @@ EditorWorld::EditorWorld(AssetLoader& loader) {
     add_system<UndoRedoSystem>();
     add_system<JoltPhysicsSystem>();
     add_system<SceneSystem>();
-    add_system<TimeSystem>(0.0f);
     add_system<TriggerSystem>();
 }
 

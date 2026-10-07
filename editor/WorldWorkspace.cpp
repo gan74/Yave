@@ -24,10 +24,13 @@ SOFTWARE.
 
 #include "editor.h"
 
+#include <editor/widgets/RuntimeView.h>
+
 #include <yave/assets/AssetLoader.h>
 #include <yave/systems/AssetLoaderSystem.h>
 #include <yave/systems/SceneSystem.h>
 
+#include <y/core/Chrono.h>
 #include <y/io2/File.h>
 #include <y/serde3/archives.h>
 #include <y/utils/log.h>
@@ -36,6 +39,8 @@ SOFTWARE.
 namespace editor {
 
 editor_action("Refresh assets", [](WorldWorkspace* ws) { ws->grab_reloaded(); })
+
+editor_action(ICON_FA_PLAY " Run snapshot", [](WorldWorkspace* ws) { ws->run_snapshot(); })
 
 WorldWorkspace::WorldWorkspace() :
         _world(std::make_unique<EditorWorld>(asset_loader())),
@@ -92,6 +97,18 @@ void WorldWorkspace::load() {
     _deferred_actions |= Load;
 }
 
+void WorldWorkspace::run_snapshot() {
+    y_profile();
+
+    io2::Buffer buffer;
+    {
+        core::DebugTimer _("Serialize world");
+        serde3::WritableArchive arc(buffer);
+        _world->save_state(arc).expected("Unable to serialize world");
+    }
+    add_top_level_widget<RuntimeView>(std::move(buffer), scene_view().camera());
+}
+
 void WorldWorkspace::grab_reloaded() {
     if(AssetLoaderSystem* system = _world->find_system<AssetLoaderSystem>()) {
         system->grab_reloaded();
@@ -143,6 +160,8 @@ void WorldWorkspace::create_default_scene_view() {
 void WorldWorkspace::save_world_deferred() {
     y_profile();
 
+    core::DebugTimer _("Save world");
+
     auto file = io2::File::create(app_settings().editor.world_file);
     if(!file) {
         log_msg("Unable to open world file", Log::Error);
@@ -160,6 +179,8 @@ void WorldWorkspace::save_world_deferred() {
 
 void WorldWorkspace::load_world_deferred() {
     y_profile();
+
+    core::DebugTimer _("Load world");
 
     auto file = io2::File::open(app_settings().editor.world_file);
     if(!file) {

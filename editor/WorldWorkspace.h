@@ -49,6 +49,8 @@ class WorldWorkspace final : public Workspace {
 
         void grab_reloaded() override;
 
+        void run_snapshot();
+
         EditorWorld& world();
         const EditorWorld& world() const;
 

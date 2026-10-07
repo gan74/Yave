@@ -45,8 +45,6 @@ SOFTWARE.
 
 #include <yave/graphics/images/ImageData.h>
 
-#include <yave/systems/TimeSystem.h>
-
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 
@@ -530,11 +528,8 @@ void EngineView::draw_toolbar() {
 
     ImGui::Separator();
 
-    if(TimeSystem* time = workspace()->world().find_system<TimeSystem>()) {
-        const bool paused = time->time_scale() <= 0.0f;
-        if(ImGui::MenuItem(paused ? ICON_FA_PLAY : ICON_FA_PAUSE)) {
-            time->set_time_scale(paused ? 1.0f : 0.0f);
-        }
+    if(ImGui::MenuItem(ICON_FA_PLAY)) {
+        workspace()->run_snapshot();
     }
 }
 
