@@ -627,8 +627,10 @@ void Inspector::on_gui() {
         ImGui::EndGroup();
     }
 
-    InspectorPanelInspector inspector(id, component, workspace());
-    world.inspect_components(id, &inspector);
+    {
+        InspectorPanelInspector inspector(id, component, workspace());
+        world.inspect_components(id, &inspector);
+    }
 
 
     if(ImGui::CollapsingHeader(ICON_FA_TAG " Tags")) {
