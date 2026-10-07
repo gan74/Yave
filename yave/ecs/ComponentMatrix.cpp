@@ -26,6 +26,10 @@ SOFTWARE.
 
 #include <y/serde3/archives.h>
 
+#include <atomic>
+
+Y_TODO(get rid of atomic_ref and use deferred adds)
+
 namespace yave {
 namespace ecs {
 
@@ -119,7 +123,7 @@ void ComponentMatrix::add_component(EntityId id, ComponentTypeIndex type) {
     y_debug_assert(!has_component(id, type));
 
     const ComponentIndex index = component_index(id, type);
-    _bits[index.index] |= index.mask;
+    std::atomic_ref<u64>(_bits[index.index]).fetch_or(index.mask, std::memory_order_relaxed);
 
     {
         y_profile_zone("updating groups");
@@ -134,7 +138,7 @@ void ComponentMatrix::remove_component(EntityId id, ComponentTypeIndex type) {
     y_debug_assert(has_component(id, type));
 
     const ComponentIndex index = component_index(id, type);
-    _bits[index.index] &= ~index.mask;
+    std::atomic_ref<u64>(_bits[index.index]).fetch_and(~index.mask, std::memory_order_relaxed);
 
     {
         y_profile_zone("updating groups");
@@ -152,7 +156,7 @@ bool ComponentMatrix::contains(EntityId id) const {
 bool ComponentMatrix::has_component(EntityId id, ComponentTypeIndex type) const {
     y_debug_assert(contains(id));
     const ComponentIndex index = component_index(id, type);
-    return index.index < _bits.size() && (_bits[index.index] & index.mask) != 0;
+    return index.index < _bits.size() && (std::atomic_ref<u64>(const_cast<u64&>(_bits[index.index])).load(std::memory_order_relaxed) & index.mask) != 0;
 }
 
 void ComponentMatrix::add_tag(EntityId id, const core::String& tag) {
