@@ -23,7 +23,6 @@ SOFTWARE.
 #include "RuntimeView.h"
 
 #include <editor/Settings.h>
-#include <editor/EditorResources.h>
 #include <editor/ImGuiPlatform.h>
 #include <editor/utils/ui.h>
 
@@ -89,20 +88,18 @@ void RuntimeView::update_camera() {
 void RuntimeView::draw() {
     DstTexture output;
 
+    RendererSettings settings;
+    {
+        settings.tone_mapping.to_sRGB = true;
+    }
+
     FrameGraph framegraph(_resource_pool);
-    const DefaultRenderer renderer = DefaultRenderer::create(framegraph, _scene_view, content_size());
+    const DefaultRenderer renderer = DefaultRenderer::create(framegraph, _scene_view, content_size(), settings);
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("ImGui texture pass");
-    const auto output_image = builder.declare_image(VK_FORMAT_R8G8B8A8_UNORM, content_size());
+    const auto output_image = builder.declare_copy(renderer.final);
     builder.add_input_usage(output_image, ImageUsage::TransferSrcBit);
-    builder.add_color_output(output_image);
-    builder.add_uniform_input(renderer.final);
     builder.set_render_func([=, &output](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        {
-            auto render_pass = recorder.bind_framebuffer(self->framebuffer());
-            render_pass.bind_material_template(resources()[EditorResources::OETFMaterialTemplate], self->descriptor_set());
-            render_pass.draw_array(3);
-        }
         const auto& src = self->resources().image_base(output_image);
         output = DstTexture(src.format(), src.image_size().to<2>());
         recorder.copy(src, output);

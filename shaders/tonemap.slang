@@ -16,6 +16,7 @@ ConstantBuffer<ExposureParams> params;
 cbuffer Settings {
     float exposure;
     uint tone_mapper;
+    uint to_sRGB;
 };
 
 /*enum class ToneMapper {
@@ -48,6 +49,6 @@ float4 frag_main() {
     const float3 hdr = max(0.0, in_color[int2(semantics.frag_coord.xy)].rgb);
 
     const float3 tone_mapped = tone_map(hdr, params.exposure * exposure, tone_mapper);
-    return float4(tone_mapped, 1.0);
+    return float4((to_sRGB != 0) ? linear_to_sRGB(tone_mapped) : tone_mapped, 1.0);
 }
 
