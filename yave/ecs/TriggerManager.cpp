@@ -29,6 +29,10 @@ namespace ecs {
 TriggerManager::TriggerManager() : _queues(registered_trigger_type_count()) {
 }
 
+void TriggerManager::reset() {
+    std::fill_n(_queues.data(), _queues.size(), nullptr);
+}
+
 bool TriggerManager::is_listened(TriggerTypeIndex type, EntityId target) const {
     const TriggerQueueBase* queue = _queues[usize(type)].get();
     return queue && queue->is_listened(target);

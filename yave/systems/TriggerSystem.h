@@ -40,6 +40,7 @@ class TriggerSystem : public ecs::System {
         public:
             virtual void setup(ecs::SystemScheduler& sched) = 0;
             virtual void apply(ecs::EntityWorld& world) = 0;
+            virtual void collect_all(const ecs::EntityWorld& world) = 0;
 
             void unsubscribe_all(ecs::TriggerManager& triggers);
 
@@ -71,6 +72,12 @@ class TriggerSystem : public ecs::System {
                         _dirty.insert(id);
                     }
                 });
+            }
+
+            void collect_all(const ecs::EntityWorld& world) override {
+                for(const ecs::EntityId id : world.component_set<T>().ids()) {
+                    _dirty.insert(id);
+                }
             }
 
             void apply(ecs::EntityWorld& world) override {

@@ -37,6 +37,8 @@ class TriggerManager : NonMovable {
     public:
         TriggerManager();
 
+        void reset();
+
         void dispatch(EntityWorld& world);
 
         bool is_listened(TriggerTypeIndex type, EntityId target) const;

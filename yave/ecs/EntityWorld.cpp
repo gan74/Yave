@@ -482,6 +482,7 @@ serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
         _ordered_containers[i - 1]->post_load();
     }
 
+    _triggers.reset();
     _system_manager.reset();
 
     return core::Ok(serde3::Success::Full);

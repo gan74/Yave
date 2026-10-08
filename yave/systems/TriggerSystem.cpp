@@ -53,10 +53,10 @@ TriggerSystem::TriggerSystem() : ecs::System("TriggerSystem") {
 
 void TriggerSystem::setup(ecs::SystemScheduler& sched) {
     for(const auto& components : _components) {
+        components->collect_all(world());
         components->setup(sched);
     }
 
-    // TickSequential tasks run alone, so subscriptions can change and handlers have exclusive access to the world
     sched.schedule(ecs::SystemSchedule::TickSequential, "Dispatch triggers", [this]() {
         for(const auto& components : _components) {
             components->apply(world());
