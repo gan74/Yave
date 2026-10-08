@@ -111,9 +111,10 @@ class AssetLoaderSystem : public ecs::System {
 
         template<typename T>
         static void update_loading_status(ecs::EntityWorld& world) {
-            auto group = world.create_group<ecs::Mutate<T>, LoadingTag<T>>();
+            auto group = world.create_group<ecs::MutateUntracked<T>, LoadingTag<T>>();
             for(auto&& [id, comp, loading] : group.id_components()) {
                 if(comp.update_asset_loading_status()) {
+                    group.template mark_changed<T>(id);
                     world.remove_component<LoadingTag<T>>(id);
                 }
             }

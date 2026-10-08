@@ -54,8 +54,10 @@ void BlueprintComponent::load_assets(AssetLoadingContext& loading_ctx) {
 }
 
 void BlueprintComponent::subscribe_triggers(ecs::TriggerSubscriber& subscriber) const {
-    _instance = nullptr;
+    y_profile();
 
+    _instance = nullptr;
+    
     if(!_blueprint) {
         return;
     }
