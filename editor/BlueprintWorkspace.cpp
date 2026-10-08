@@ -121,6 +121,7 @@ void BlueprintWorkspace::load() {
 
     if(auto data = read_blueprint_data(_id)) {
         _selected_node = nullptr;
+        _result = core::Ok();
         _blueprint = std::move(data.unwrap());
         update_name();
 
