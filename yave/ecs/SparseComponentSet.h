@@ -140,7 +140,10 @@ class SparseIdSet final : public SparseIdSetBase {
         }
 
         SparseIdSet& operator=(SparseIdSet&& other) {
-            swap(other);
+            if(&other != this) {
+                clear();
+                swap(other);
+            }
             return *this;
         }
 

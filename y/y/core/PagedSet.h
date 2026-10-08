@@ -33,12 +33,10 @@ SOFTWARE.
 namespace y {
 namespace core {
 
-template<typename Elem, usize PageSize = 512, typename Allocator = std::allocator<Elem>>
-class PagedSet : Allocator, NonCopyable {
+template<typename Elem, usize PageSize = 512>
+class PagedSet : NonCopyable {
 
     static_assert(!std::is_const_v<Elem>);
-
-    using alloc_traits = std::allocator_traits<Allocator>;
 
     public:
         static constexpr usize page_size = PageSize;
@@ -130,7 +128,10 @@ class PagedSet : Allocator, NonCopyable {
         }
 
         PagedSet& operator=(PagedSet&& other) {
-            swap(other);
+            if(&other != this) {
+                clear();
+                swap(other);
+            }
             return *this;
         }
 
@@ -148,12 +149,6 @@ class PagedSet : Allocator, NonCopyable {
             _pages.swap(other._pages);
             _indices.swap(other._indices);
             std::swap(_size, other._size);
-
-            if constexpr(alloc_traits::propagate_on_container_swap::value) {
-                std::swap<Allocator>(*this, other);
-            } else {
-                y_debug_assert(static_cast<Allocator&>(*this) == static_cast<Allocator&>(other));
-            }
         }
 
 
@@ -182,7 +177,7 @@ class PagedSet : Allocator, NonCopyable {
             }
 
             Elem* addr = get(_indices[_size]);
-            ::new(addr) Elem(y_fwd(args)...);
+            std::construct_at(addr, y_fwd(args)...);
             ++_size;
 
             return *addr;
@@ -220,7 +215,7 @@ class PagedSet : Allocator, NonCopyable {
         void clear() {
             make_empty();
             for(Elem* page : _pages) {
-                alloc_traits::deallocate(*this, page, page_size);
+                std::allocator<Elem>().deallocate(page, page_size);
             }
             _pages.clear();
             _indices.clear();
@@ -246,7 +241,7 @@ class PagedSet : Allocator, NonCopyable {
         }
 
         inline void clear(Elem* elem) {
-            elem->~Elem();
+            std::destroy_at(elem);
 #ifdef Y_DEBUG
             std::memset(elem, 0xFE, sizeof(*elem));
 #endif
@@ -254,7 +249,7 @@ class PagedSet : Allocator, NonCopyable {
 
         void add_page() {
             const usize page_count = _pages.size();
-            _pages.emplace_back(alloc_traits::allocate(*this, page_size));
+            _pages.emplace_back(std::allocator<Elem>().allocate(page_size));
 
             _indices.set_min_capacity((page_count + 1) * page_size);
             for(usize i = 0; i != page_size; ++i) {

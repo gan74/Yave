@@ -31,8 +31,8 @@ SOFTWARE.
 namespace y {
 namespace core {
 
-template<typename Elem, typename Allocator = std::allocator<Elem>>
-class SlotVector : Allocator, NonCopyable {
+template<typename Elem>
+class SlotVector : NonCopyable {
 
     using data_type = typename std::remove_const<Elem>::type;
 
@@ -129,7 +129,10 @@ class SlotVector : Allocator, NonCopyable {
         }
 
         SlotVector& operator=(SlotVector&& other) {
-            swap(other);
+            if(other != this) {
+                clear();
+                swap(other);
+            }
             return *this;
         }
 
@@ -147,10 +150,6 @@ class SlotVector : Allocator, NonCopyable {
             std::swap(_data, other._data);
             std::swap(_size, other._size);
             _indices.swap(other._indices);
-
-            if constexpr(std::allocator_traits<Allocator>::propagate_on_container_move_assignment::value) {
-                std::swap<Allocator>(*this, other);
-            }
         }
 
 
@@ -179,7 +178,7 @@ class SlotVector : Allocator, NonCopyable {
             }
 
             const usize index = _indices[_size++];
-            ::new(&_data[index]) data_type(y_fwd(args)...);
+            std::construct_at(_data + index, y_fwd(args)...);
 
             return Slot(index);
         }
@@ -215,7 +214,7 @@ class SlotVector : Allocator, NonCopyable {
 
         void clear() {
             make_empty();
-            Allocator::deallocate(std::exchange(_data, nullptr), capacity());
+            std::allocator<data_type>().deallocate(std::exchange(_data, nullptr), capacity());
             _indices = {};
         }
 
@@ -251,7 +250,7 @@ class SlotVector : Allocator, NonCopyable {
 
     private:
         inline void clear(data_type& elem) {
-            elem.~data_type();
+            std::destroy_at(&elem);
 #ifdef Y_DEBUG
             std::memset(&elem, 0xFE, sizeof(elem));
 #endif
@@ -265,15 +264,15 @@ class SlotVector : Allocator, NonCopyable {
             const usize prev_capacity = capacity();
             y_debug_assert(prev_capacity < new_capacity);
 
-            data_type* new_data = Allocator::allocate(new_capacity);
+            data_type* new_data = std::allocator<data_type>().allocate(new_capacity);
             for(usize i = 0; i != _size; ++i) {
                 const usize index = _indices[i];
                 data_type& elem = _data[index];
-                ::new(new_data + index) data_type(std::move(elem));
+                std::construct_at(new_data + index, std::move(elem));
                 clear(elem);
             }
 
-            Allocator::deallocate(std::exchange(_data, new_data), prev_capacity);
+            std::allocator<data_type>().deallocate(std::exchange(_data, new_data), prev_capacity);
 
             FixedArray<usize> new_indices(new_capacity);
             std::copy_n(_indices.begin(), prev_capacity, new_indices.begin());

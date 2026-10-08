@@ -27,8 +27,8 @@ SOFTWARE.
 namespace y {
 namespace core {
 
-template<typename Elem, typename Allocator = std::allocator<Elem>>
-class RingQueue : NonCopyable, Allocator {
+template<typename Elem>
+class RingQueue : NonCopyable {
     using data_type = typename std::remove_const<Elem>::type;
 
     using ResizePolicy = DefaultVectorResizePolicy;
@@ -128,21 +128,27 @@ class RingQueue : NonCopyable, Allocator {
         }
 
         RingQueue& operator=(RingQueue&& other) {
-            swap(other);
+            if(&other != this) {
+                clear();
+                swap(other);
+            }
             return *this;
         }
 
         ~RingQueue() {
+            clear();
+        }
+
+        void clear() {
             make_empty();
             if(_data) {
-                Allocator::deallocate(_data, capacity());
+                std::allocator<data_type>().deallocate(_data, capacity());
             }
         }
 
-
         void make_empty() {
             for(usize i = 0; i != _size; ++i) {
-                operator[](i).~data_type();
+                std::destroy_at(&operator[](i));
             }
             _beg_index = 0;
             _size = 0;
@@ -150,9 +156,6 @@ class RingQueue : NonCopyable, Allocator {
 
         void swap(RingQueue& v) {
             if(&v != this) {
-                if constexpr(std::allocator_traits<Allocator>::propagate_on_container_move_assignment::value) {
-                    std::swap<Allocator>(*this, v);
-                }
                 std::swap(_data, v._data);
                 std::swap(_beg_index, v._beg_index);
                 std::swap(_size, v._size);
@@ -164,7 +167,7 @@ class RingQueue : NonCopyable, Allocator {
             if(is_full()) {
                 expand();
             }
-            ::new(_data + next_index()) data_type(elem);
+            std::construct_at(_data + next_index(), elem);
             ++_size;
         }
 
@@ -172,7 +175,7 @@ class RingQueue : NonCopyable, Allocator {
             if(is_full()) {
                 expand();
             }
-            ::new(_data + next_index()) data_type(std::move(elem));
+            std::construct_at(_data + next_index(), std::move(elem));
             ++_size;
         }
 
@@ -181,7 +184,7 @@ class RingQueue : NonCopyable, Allocator {
             if(is_full()) {
                 expand();
             }
-            auto& ref = *(::new(_data + next_index()) data_type(y_fwd(args)...));
+            auto& ref = *std::construct_at(_data + next_index(), y_fwd(args)...);
             ++_size;
             return ref;
         }
@@ -205,14 +208,16 @@ class RingQueue : NonCopyable, Allocator {
                  --i;
             }
 
-            operator[](index) = data_type{y_fwd(args)...};
+            data_type* slot = &operator[](index);
+            std::destroy_at(slot);
+            std::construct_at(slot, y_fwd(args)...);
         }
 
         inline value_type pop_back() {
             y_debug_assert(!is_empty());
             const usize index = last_index();
             data_type r = std::move(_data[index]);
-            _data[index].~data_type();
+            std::destroy_at(_data + index);
             --_size;
             return r;
         }
@@ -220,7 +225,7 @@ class RingQueue : NonCopyable, Allocator {
         inline value_type pop_front() {
             y_debug_assert(!is_empty());
             data_type r = std::move(_data[_beg_index]);
-            _data[_beg_index].~data_type();
+            std::destroy_at(_data + _beg_index);
             increment_begin();
             return r;
         }
@@ -335,16 +340,16 @@ class RingQueue : NonCopyable, Allocator {
             }
 
             y_debug_assert(new_cap > _size);
-            data_type* new_data = Allocator::allocate(new_cap);
+            data_type* new_data = std::allocator<data_type>().allocate(new_cap);
 
             if(_data) {
                 for(usize i = 0; i != _size; ++i) {
                     auto& elem = operator[](i);
-                    new(new_data + i) data_type(std::move(elem));
-                    elem.~data_type();
+                    std::construct_at(new_data + i, std::move(elem));
+                    std::destroy_at(&elem);
                 }
 
-                Allocator::deallocate(_data, capacity());
+                std::allocator<data_type>().deallocate(_data, capacity());
             }
 
             _data = new_data;

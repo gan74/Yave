@@ -27,6 +27,9 @@ SOFTWARE.
 
 #include <vector>
 #include <memory>
+#include <list>
+#include <sstream>
+#include <algorithm>
 
 namespace {
 using namespace y;
@@ -102,28 +105,6 @@ struct LogCopyMove {
     usize* copies = nullptr;
     usize* moves = nullptr;
 };
-
-template<typename T>
-struct FakeAllocator {
-    using value_type = T;
-    using size_type = usize;
-    using difference_type = std::ptrdiff_t;
-    using propagate_on_container_move_assignment = std::false_type;
-
-    template<typename... Args>
-    T* allocate(Args&&...) {
-        /*return*/ y_fatal("SmallVector allocated");
-    }
-
-    template<typename... Args>
-    void deallocate(Args&&...) {
-        y_fatal("SmallVector deallocated");
-    }
-};
-
-
-template<typename T, usize Size = 8>
-using SmallVec = SmallVector<T, Size, FakeAllocator<T>>;
 
 static_assert(std::is_same_v<std::common_type<MoreDerived, Derived>::type, Derived>, "std::common_type failure");
 static_assert(std::is_polymorphic_v<Polymorphic>, "std::is_polymorphic failure");
@@ -306,8 +287,12 @@ y_test_func("Vector dtors") {
 }
 
 y_test_func("SmallVector allocation") {
-    SmallVec<int, 4> vec = {1, 2, 3, 4};
+    SmallVector<int, 4> vec = {1, 2, 3, 4};
     y_test_assert(vec.capacity() == 4);
+
+    // Data should live inside the vector itself
+    const void* data = vec.data();
+    y_test_assert(data >= static_cast<const void*>(&vec) && data < static_cast<const void*>(&vec + 1));
     y_test_assert(vec == Vector({1, 2, 3, 4}));
 }
 
@@ -684,6 +669,111 @@ y_test_func("Vector of strings") {
 
     vec.erase_unordered(vec.begin());
     y_test_assert(vec.size() == 30);
+}
+
+y_test_func("Vector set min size rvalue") {
+    Vector<String> vec;
+    vec.set_min_size(4, String("filler"));
+    y_test_assert(vec.size() == 4);
+    for(const String& s : vec) {
+        y_test_assert(s == "filler");
+    }
+}
+
+y_test_func("Vector size value ctor") {
+    const Vector<int> ints(5, 3);
+    y_test_assert(ints.size() == 5);
+    y_test_assert(std::all_of(ints.begin(), ints.end(), [](int i) { return i == 3; }));
+
+    const Vector<usize> sizes(usize(4), usize(7));
+    y_test_assert(sizes.size() == 4);
+    y_test_assert(sizes[3] == 7);
+}
+
+y_test_func("Vector non pointer iterators") {
+    const std::list<int> list = {1, 2, 3, 4};
+
+    Vector<int> vec(list.begin(), list.end());
+    y_test_assert(vec == Vector<int>({1, 2, 3, 4}));
+
+    vec.push_back(list.begin(), list.end());
+    y_test_assert(vec.size() == 8);
+    y_test_assert(vec[4] == 1);
+
+    vec.assign(list.rbegin(), list.rend());
+    y_test_assert(vec == Vector<int>({4, 3, 2, 1}));
+
+    std::istringstream stream("5 6 7");
+    vec.assign(std::istream_iterator<int>(stream), std::istream_iterator<int>());
+    y_test_assert(vec == Vector<int>({5, 6, 7}));
+}
+
+static_assert(std::is_nothrow_move_constructible_v<Vector<String>>);
+static_assert(std::is_nothrow_move_assignable_v<Vector<String>>);
+static_assert(std::is_nothrow_move_constructible_v<SmallVector<String>>);
+static_assert(std::is_nothrow_move_assignable_v<SmallVector<String>>);
+
+y_test_func("Vector emplace uses parens") {
+    Vector<std::vector<int>> vec;
+    vec.emplace_back(3, 4);
+    y_test_assert(vec.last().size() == 3);
+    y_test_assert(vec.last()[2] == 4);
+
+    vec.insert(vec.begin(), 2, 7);
+    y_test_assert(vec.first().size() == 2);
+    y_test_assert(vec[1].size() == 3);
+}
+
+y_test_func("Vector move assign releases") {
+    usize counter = 0;
+    {
+        Vector<RaiiCounter> a;
+        a.emplace_back(&counter);
+        a.emplace_back(&counter);
+
+        Vector<RaiiCounter> b;
+        b.emplace_back(&counter);
+
+        a = std::move(b);
+        y_test_assert(counter == 2);
+        y_test_assert(a.size() == 1);
+        y_test_assert(b.is_empty());
+    }
+    y_test_assert(counter == 3);
+}
+
+y_test_func("SmallVector move assign releases") {
+    usize counter = 0;
+    {
+        SmallVector<RaiiCounter, 4> a;
+        a.emplace_back(&counter);
+        a.emplace_back(&counter);
+
+        SmallVector<RaiiCounter, 4> b;
+        b.emplace_back(&counter);
+
+        a = std::move(b);
+        y_test_assert(counter == 2);
+        y_test_assert(a.size() == 1);
+        y_test_assert(b.is_empty());
+    }
+    y_test_assert(counter == 3);
+}
+
+y_test_func("SmallVector sbo capacity") {
+    SmallVector<int, 8> vec;
+    vec.set_capacity(2);
+    y_test_assert(vec.capacity() == 8);
+
+    for(int i = 0; i != 20; ++i) {
+        vec.push_back(i);
+    }
+    y_test_assert(vec.capacity() > 8);
+
+    vec.set_capacity(3);
+    y_test_assert(vec.size() == 3);
+    y_test_assert(vec.capacity() == 8);
+    y_test_assert(vec[2] == 2);
 }
 
 }

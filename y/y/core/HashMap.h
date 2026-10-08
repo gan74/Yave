@@ -164,17 +164,17 @@ class FlatHashMap : Hasher, Equal {
             template<typename K>
             y_force_inline void set_empty(const K& k) {
                 checked_set_full();
-                ::new(&key_value) pair_type{k, mapped_type{}};
+                std::construct_at(&key_value, k, mapped_type{});
             }
 
             y_force_inline void set(pair_type&& kv) {
                 checked_set_full();
-                ::new(&key_value) pair_type{std::move(kv)};
+                std::construct_at(&key_value, std::move(kv));
             }
 
             y_force_inline void clear() {
                 checked_set_empty();
-                key_value.~pair_type();
+                std::destroy_at(&key_value);
             }
 
             y_force_inline const key_type& key() const {
@@ -598,7 +598,10 @@ class FlatHashMap : Hasher, Equal {
         }
 
         inline FlatHashMap& operator=(FlatHashMap&& other) {
-            swap(other);
+            if(&other != this) {
+                clear();
+                swap(other);
+            }
             return *this;
         }
 

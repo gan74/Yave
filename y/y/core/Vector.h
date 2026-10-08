@@ -27,6 +27,7 @@ SOFTWARE.
 #include <cstring>
 #include <algorithm>
 #include <iterator>
+#include <memory>
 
 
 namespace y {
@@ -89,12 +90,12 @@ struct SmallVectorResizePolicy {
 
 using DefaultVectorResizePolicy = SmallVectorResizePolicy<16>;
 
-template<typename Elem, typename Allocator = std::allocator<Elem>, typename SBOCapacity = std::integral_constant<usize, 0>>
-class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
+template<typename Elem, usize SBOCapacity = 0>
+class Vector : detail::SBOStorage<Elem, SBOCapacity> {
 
-    static constexpr bool has_sbo = SBOCapacity::value > 0;
+    static constexpr bool has_sbo = SBOCapacity > 0;
     using data_type = typename std::remove_const<Elem>::type;
-    using ResizePolicy = std::conditional_t<has_sbo, SmallVectorResizePolicy<SBOCapacity::value>, DefaultVectorResizePolicy>;
+    using ResizePolicy = std::conditional_t<has_sbo, SmallVectorResizePolicy<SBOCapacity>, DefaultVectorResizePolicy>;
 
     public:
         using value_type = Elem;
@@ -127,7 +128,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
             }
         }
 
-        template<typename It>
+        template<std::input_iterator It>
         inline Vector(It beg_it, It end_it) {
             assign(beg_it, end_it);
         }
@@ -138,16 +139,15 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
 
 
         inline Vector& operator=(Vector&& other) {
-            swap(other);
+            if(&other != this) {
+                clear();
+                swap(other);
+            }
             return *this;
         }
 
         inline Vector& operator=(const Vector& other) {
             if(&other != this) {
-                if constexpr(std::allocator_traits<Allocator>::propagate_on_container_copy_assignment::value) {
-                    clear();
-                    Allocator::operator=(other);
-                }
                 assign(other.begin(), other.end());
             }
             return *this;
@@ -172,22 +172,20 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
             return !operator==(other);
         }
 
-        template<typename... Args>
-        inline bool operator==(const Vector<Elem, Args...>& other) const {
+        template<usize OtherCapacity>
+        inline bool operator==(const Vector<Elem, OtherCapacity>& other) const {
             return operator==(Span<value_type>(other));
         }
 
-        template<typename... Args>
-        inline bool operator!=(const Vector<Elem, Args...>& other) const {
+        template<usize OtherCapacity>
+        inline bool operator!=(const Vector<Elem, OtherCapacity>& other) const {
             return operator!=(Span<value_type>(other));
         }
 
 
-        template<typename It>
+        template<std::input_iterator It>
         inline void assign(It beg_it, It end_it) {
-            if constexpr(std::is_pointer_v<It>) {
-                y_debug_assert(!contains_it(beg_it));
-            }
+            y_debug_assert(!contains_it(beg_it));
 
             make_empty();
             push_back(beg_it, end_it);
@@ -203,7 +201,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
                 expand();
             }
 
-            ::new(_data_end++) data_type{elem};
+            std::construct_at(_data_end++, elem);
         }
 
         inline reference push_back(value_type&& elem) {
@@ -212,7 +210,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
                 expand();
             }
 
-            return *(::new(_data_end++) data_type{std::move(elem)});
+            return *std::construct_at(_data_end++, std::move(elem));
         }
 
         template<typename... Args>
@@ -221,13 +219,15 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
                 expand();
             }
 
-            return *(::new(_data_end++) data_type{y_fwd(args)...});
+            return *std::construct_at(_data_end++, y_fwd(args)...);
         }
 
-        template<typename It>
+        template<std::input_iterator It>
         inline void push_back(It beg_it, It end_it) {
             y_debug_assert(!contains_it(beg_it));
-            set_min_capacity(size() + std::distance(beg_it, end_it));
+            if constexpr(std::sized_sentinel_for<It, It>) {
+                set_min_capacity(size() + usize(end_it - beg_it));
+            }
             std::copy(beg_it, end_it, std::back_inserter(*this));
         }
 
@@ -244,20 +244,21 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
             }
 
             usize i = size() - 1;
-            ::new(_data_end++) data_type{std::move(_data[i])};
+            std::construct_at(_data_end++, std::move(_data[i]));
             while(i > index) {
                  _data[i] = std::move(_data[i - 1]);
                  --i;
             }
 
-            _data[index] = data_type{y_fwd(args)...};
+            std::destroy_at(_data + index);
+            std::construct_at(_data + index, y_fwd(args)...);
         }
 
         inline value_type pop() {
             y_debug_assert(!is_empty());
             --_data_end;
             data_type r = std::move(*_data_end);
-            _data_end->~data_type();
+            std::destroy_at(_data_end);
 
             shrink();
             return r;
@@ -370,7 +371,8 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
             if(min_size > size()) {
                 set_min_capacity(min_size);
                 while(size() < min_size) {
-                    emplace_back(y_fwd(args)...);
+                    // Not forwarded: args are reused for every new element
+                    emplace_back(args...);
                 }
             }
         }
@@ -427,10 +429,6 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
                 std::swap(_data_end, other._data_end);
                 std::swap(_alloc_end, other._alloc_end);
             }
-
-            if constexpr(std::allocator_traits<Allocator>::propagate_on_container_move_assignment::value) {
-                std::swap<Allocator>(*this, other);
-            }
         }
 
     private:
@@ -448,8 +446,8 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
                         std::swap(_data[i], other._data[i]);
                     }
                     for(usize i = min_size; i != max_size; ++i) {
-                        ::new(&small->_data[i]) data_type(std::move(big->_data[i]));
-                        big->_data[i].~data_type();
+                        std::construct_at(small->_data + i, std::move(big->_data[i]));
+                        std::destroy_at(big->_data + i);
                     }
                     small->_data_end = small->_data + max_size;
                     big->_data_end = big->_data + min_size;
@@ -460,7 +458,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
                     const usize self_size = size();
                     data_type* data = std::exchange(other._data, other.sbo_buffer());
                     data_type* data_end = std::exchange(other._data_end, other._data + self_size);
-                    data_type* alloc_end = std::exchange(other._alloc_end, other._data + SBOCapacity::value);
+                    data_type* alloc_end = std::exchange(other._alloc_end, other._data + SBOCapacity);
                     move_range(other._data, _data, self_size);
                     clear(_data, _data_end);
                     _data = data;
@@ -468,7 +466,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
                     _alloc_end = alloc_end;
                 } else if(other.is_sbo_active()) {
                     y_debug_assert(!is_sbo_active());
-                    other.swap(*this);
+                    other.sbo_swap(*this);
                 } else {
                     return false;
                 }
@@ -488,8 +486,15 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
             return _data_end == _alloc_end;
         }
 
-        inline bool contains_it(const_iterator it) const {
-            return it >= _data && it < _data_end;
+        template<typename It>
+        inline bool contains_it(const It& it) const {
+            if constexpr(std::contiguous_iterator<It>) {
+                if constexpr(std::is_convertible_v<decltype(std::to_address(it)), const_iterator>) {
+                    const_iterator ptr = std::to_address(it);
+                    return ptr >= _data && ptr < _data_end;
+                }
+            }
+            return false;
         }
 
 
@@ -500,7 +505,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
                 }
             } else {
                 for(usize i = 0; i != n; ++i) {
-                    ::new(&dst[i]) data_type{std::move(src[i])};
+                    std::construct_at(dst + i, std::move(src[i]));
                 }
             }
         }
@@ -508,7 +513,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
         inline void clear(data_type* beg, data_type* en) {
             if constexpr(!std::is_trivially_destructible_v<data_type>) {
                 for(data_type* e = en; e != beg;) {
-                    (--e)->~data_type();
+                    std::destroy_at(--e);
                 }
             }
         }
@@ -525,7 +530,6 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
             }
         }
 
-        // uses data_end !!
         inline void unsafe_set_capacity(usize new_cap) {
             if(new_cap == capacity()) {
                 return;
@@ -534,11 +538,14 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
             const usize current_size = size();
             const usize num_to_keep = new_cap < current_size ? new_cap : current_size;
 
+            const bool use_sbo = has_sbo && new_cap && new_cap <= SBOCapacity;
+            const usize alloc_cap = use_sbo ? SBOCapacity : new_cap;
+
             data_type* new_data = nullptr;
             if(new_cap) {
-                new_data = (new_cap <= SBOCapacity::value)
+                new_data = use_sbo
                     ? this->sbo_buffer()
-                    : Allocator::allocate(new_cap);
+                    : std::allocator<data_type>().allocate(new_cap);
             }
 
             if(new_data != _data) {
@@ -546,7 +553,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
                 clear(_data, _data_end);
 
                 if(_data && _data != this->sbo_buffer()) {
-                    Allocator::deallocate(_data, capacity());
+                    std::allocator<data_type>().deallocate(_data, capacity());
                 }
             } else {
                 clear(_data + num_to_keep, _data + current_size);
@@ -555,7 +562,7 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
 
             _data = new_data;
             _data_end = _data + num_to_keep;
-            _alloc_end = _data + new_cap;
+            _alloc_end = _data + alloc_cap;
         }
 
         data_type* _data = nullptr;
@@ -564,28 +571,28 @@ class Vector : Allocator, detail::SBOStorage<Elem, SBOCapacity::value> {
 };
 
 
-template<typename... Args, typename T>
-inline Vector<Args...>& operator<<(Vector<Args...>& vec, T&& t) {
+template<typename Elem, usize Capacity, typename T>
+inline Vector<Elem, Capacity>& operator<<(Vector<Elem, Capacity>& vec, T&& t) {
     vec.push_back(y_fwd(t));
     return vec;
 }
 
-template<typename... Args, typename T>
-inline Vector<Args...>& operator+=(Vector<Args...>& vec, T&& t) {
+template<typename Elem, usize Capacity, typename T>
+inline Vector<Elem, Capacity>& operator+=(Vector<Elem, Capacity>& vec, T&& t) {
     vec.push_back(y_fwd(t));
     return vec;
 }
 
-template<typename... Args, typename T>
-inline Vector<Args...> operator+(Vector<Args...> vec, T&& t) {
+template<typename Elem, usize Capacity, typename T>
+inline Vector<Elem, Capacity> operator+(Vector<Elem, Capacity> vec, T&& t) {
     vec.push_back(y_fwd(t));
     return vec;
 }
 
 
 
-template<typename Elem, usize Capacity = 16, typename Allocator = std::allocator<Elem>>
-using SmallVector = Vector<Elem, Allocator, std::integral_constant<usize, Capacity>>;
+template<typename Elem, usize Capacity = 16>
+using SmallVector = Vector<Elem, Capacity>;
 
 }
 }
