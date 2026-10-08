@@ -66,6 +66,7 @@ class TriggerManager : NonMovable {
 
         template<typename T>
         void subscribe(EntityId target, TriggerHandler* handler) {
+            y_debug_assert(!_dispatching);
             auto& queue = _queues[usize(trigger_index<T>())];
             if(!queue) {
                 queue = std::make_unique<TriggerQueue<T>>();
@@ -88,6 +89,10 @@ class TriggerManager : NonMovable {
 
 
         core::FixedArray<std::unique_ptr<TriggerQueueBase>> _queues;
+
+#ifdef Y_DEBUG
+        bool _dispatching = false;
+#endif
 };
 
 

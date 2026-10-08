@@ -36,6 +36,7 @@ bool TriggerManager::is_listened(TriggerTypeIndex type, EntityId target) const {
 
 
 void TriggerManager::unsubscribe(TriggerTypeIndex type, EntityId target, TriggerHandler* handler) {
+    y_debug_assert(!_dispatching);
     if(const auto& queue = find_queue(type)) {
         queue->unsubscribe(target, handler);
     }
@@ -49,6 +50,13 @@ void TriggerManager::dispatch(EntityWorld& world) {
             queue->take_pending();
         }
     }
+
+    y_debug_assert(!_dispatching);
+    
+#ifdef Y_DEBUG
+    _dispatching = true;
+    y_defer(_dispatching = false);
+#endif
 
     for(auto& queue : _queues) {
         if(queue) {
