@@ -24,8 +24,16 @@ SOFTWARE.
 
 
 namespace y {
+namespace detail {
+using assert_handler = bool(*)(const char* cond, const char* file, int line);
+}
+
 [[noreturn]] void fatal(const char* msg, const char* file = nullptr, int line = 0);
 void break_in_debugger();
+
+void set_assert_handler(detail::assert_handler handler);
+detail::assert_handler assert_handler();
+bool handle_assert(const char* cond, const char* file, int line);
 }
 
 
@@ -43,7 +51,7 @@ void break_in_debugger();
 // keep the namespacing ?
 #define y_fatal(msg) y::fatal((msg), __FILE__, __LINE__)
 
-#define y_always_assert(cond, ...) do { if(!(cond)) [[unlikely]] { y_fatal(__VA_ARGS__); } } while(false)
+#define y_always_assert(cond, ...) do { if(!(cond)) [[unlikely]] { if(!y::handle_assert(#cond, __FILE__, __LINE__)) { y_fatal(__VA_ARGS__); } } } while(false)
 
 #ifdef Y_DEBUG
 #define y_debug_assert(cond) y_always_assert(cond, "Assert failed: " #cond)
@@ -138,7 +146,7 @@ static constexpr bool is_debug_defined = false;
 #define y_assume(cond) do { if(!(cond)) { __builtin_unreachable(); } } while(false)
 #else
 #define y_assume(cond) do {} while(false && (cond))
-#endif 
+#endif
 #endif //Y_DEBUG
 
 #if defined(Y_MSVC)

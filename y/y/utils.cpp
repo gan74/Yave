@@ -26,6 +26,7 @@ SOFTWARE.
 #include <y/concurrent/concurrent.h>
 
 #include <array>
+#include <atomic>
 #include <cstdio>
 #include <cstdlib>
 
@@ -40,6 +41,21 @@ namespace core::result {
 bool break_on_error = false;
 }
 #endif
+
+static std::atomic<detail::assert_handler> global_assert_handler = nullptr;
+
+void set_assert_handler(detail::assert_handler handler) {
+    global_assert_handler = handler;
+}
+
+detail::assert_handler assert_handler() {
+    return global_assert_handler;
+}
+
+bool handle_assert(const char* cond, const char* file, int line) {
+    const detail::assert_handler handler = global_assert_handler;
+    return handler && handler(cond, file, line);
+}
 
 
 void break_in_debugger() {
