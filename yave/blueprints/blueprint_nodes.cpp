@@ -304,6 +304,79 @@ class IfBlueprintNode : public BlueprintNode {
         bool _default_cond = true;
 };
 
+class DebugBlueprintNode : public BlueprintNode {
+    template<typename T>
+    static bool try_format(const BlueprintParamType* type, const void* value, core::String& out) {
+        if(type->type_hash != ct_type_hash<T>()) {
+            return false;
+        }
+
+        const T& v = *static_cast<const T*>(value);
+        if constexpr(std::is_same_v<T, ecs::EntityId>) {
+            out = v.is_valid() ? fmt_to_owned("Entity({}, v{})", v.index(), v.version()) : core::String("Entity(invalid)");
+        } else {
+            out = fmt_to_owned("{}", v);
+        }
+        return true;
+    }
+
+    static core::String format_value(const BlueprintParamType* type, const void* value) {
+        core::String out;
+        const bool formatted =
+            try_format<float>(type, value, out) ||
+            try_format<bool>(type, value, out) ||
+            try_format<i32>(type, value, out) ||
+            try_format<u32>(type, value, out) ||
+            try_format<math::Vec2>(type, value, out) ||
+            try_format<math::Vec3>(type, value, out) ||
+            try_format<math::Vec4>(type, value, out) ||
+            try_format<ecs::EntityId>(type, value, out);
+
+        return formatted ? out : fmt_to_owned("<{}>", type->name);
+    }
+
+    public:
+        DebugBlueprintNode() = default;
+
+        DebugBlueprintNode(core::String name) : BlueprintNode(std::move(name)) {
+        }
+
+        std::string_view node_type_name() const override {
+            return "Debug";
+        }
+
+        core::Span<BlueprintPin> input_pins() const override {
+            return _in_pins;
+        }
+
+        void set_generic_type(const BlueprintParamType* type) override {
+            y_debug_assert(!_in_pins[1].type != !type);
+            _in_pins[1].type = type;
+        }
+
+        const BlueprintParamType* generic_type() const override {
+            return _in_pins[1].type;
+        }
+
+        void compile(BlueprintCompiler& compiler) const override {
+            const BlueprintExec* exec = static_cast<const BlueprintExec*>(compiler.input(0));
+            const void* value = compiler.input(1);
+            const BlueprintParamType* type = _in_pins[1].type;
+
+            compiler.emit([=](const BlueprintContext&) {
+                if(exec->active) {
+                    log_msg(fmt("Debug blueprint node: {}", format_value(type, value)));
+                }
+            });
+        }
+
+        y_reflect(DebugBlueprintNode, _name)
+        y_serde3_poly(DebugBlueprintNode)
+
+    private:
+        std::array<BlueprintPin, 2> _in_pins = {{{"exec", blueprint_param_type<BlueprintExec>()}, {"in", nullptr, true}}};
+};
+
 
 
 
@@ -516,8 +589,7 @@ void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factorie
     add_entity_nodes(factories);
 
 #ifdef Y_DEBUG
-    struct Debug { void operator()(float a) const { log_msg(fmt("Debug blueprint node: {}", a)); } };
-    factories.emplace_back(make_blueprint_node_factory<Debug, "in">("Debug"));
+    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<DebugBlueprintNode>>("Debug"));
 #endif
 
     add_bool_nodes(factories);
