@@ -258,8 +258,11 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
 
     bool ret = false;
     if(is_valid) {
-        if(const TextureView* img = thumbnail_renderer().thumbnail_img(id)) {
-            ret = ImGui::ImageButton("##tex", imgui_platform()->to_ui(*img), button_size);
+        const auto* data = thumbnail_renderer().thumbnail_data(id);
+        if(data && !data->view.is_null()) {
+            ret = ImGui::ImageButton("##tex", imgui_platform()->to_ui(data->view), button_size);
+        } else if(data) {
+            ret = ImGui::Button(fmt_c_str("{}", asset_type_icon(type)), padded_button_size);
         } else {
             ret = ImGui::Button(ICON_FA_HOURGLASS_HALF, padded_button_size);
         }
