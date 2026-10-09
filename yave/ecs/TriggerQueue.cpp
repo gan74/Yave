@@ -64,6 +64,10 @@ bool TriggerQueueBase::has_handlers() const {
     return !_global_handlers.is_empty() || !_handlers.is_empty();
 }
 
+core::Span<ecs::EntityId> TriggerQueueBase::listened_ids() const {
+    return _handlers.ids();
+}
+
 void TriggerQueueBase::subscribe(EntityId target, TriggerHandler* handler) {
     y_debug_assert(handler);
     if(target.is_valid()) {

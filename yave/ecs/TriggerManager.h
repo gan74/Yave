@@ -67,6 +67,15 @@ class TriggerManager : NonMovable {
         }
 
         template<typename T>
+        void broadcast(const T& payload) {
+            if(TriggerQueue<T>* queue = find_queue<T>()) {
+                for(const EntityId id : queue->listened_ids()) {
+                    queue->push(id, payload);
+                }
+            }
+        }
+
+        template<typename T>
         void subscribe(EntityId target, TriggerHandler* handler) {
             y_debug_assert(!_dispatching);
             auto& queue = _queues[usize(trigger_index<T>())];

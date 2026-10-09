@@ -25,6 +25,7 @@ SOFTWARE.
 #include "TriggerBlueprintNode.h"
 
 #include <yave/systems/JoltPhysicsSystem.h>
+#include <yave/systems/TriggerSystem.h>
 #include <yave/ecs/EntityWorld.h>
 
 #include <y/utils/traits.h>
@@ -509,6 +510,7 @@ void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factorie
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<IfBlueprintNode>>("If"));
 
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<TriggerBlueprintNode<OnCollide>>>("On collide"));
+    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<TriggerBlueprintNode<OnTick>>>("On tick"));
 
     add_flow_nodes(factories);
     add_entity_nodes(factories);

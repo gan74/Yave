@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "TriggerSystem.h"
+#include "TimeSystem.h"
 
 #include <yave/ecs/SystemManager.h>
 
@@ -60,6 +61,10 @@ void TriggerSystem::setup(ecs::SystemScheduler& sched) {
     sched.schedule(ecs::SystemSchedule::TickSequential, "Dispatch triggers", [this]() {
         for(const auto& components : _components) {
             components->apply(world());
+        }
+
+        if(const float dt = TimeSystem::dt(world()); dt > 0.0f) {
+            world().triggers().broadcast(OnTick{dt});
         }
         world().triggers().dispatch(world());
     });

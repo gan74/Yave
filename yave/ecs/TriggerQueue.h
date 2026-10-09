@@ -96,6 +96,8 @@ class TriggerQueueBase : NonMovable {
 
         bool has_handlers() const;
 
+        core::Span<ecs::EntityId> listened_ids() const;
+
         void subscribe(EntityId target, TriggerHandler* handler);
         void unsubscribe(EntityId target, TriggerHandler* handler);
 

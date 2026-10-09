@@ -28,6 +28,12 @@ SOFTWARE.
 
 namespace yave {
 
+struct OnTick {
+    float dt;
+
+    y_reflect(OnTick, dt)
+};
+
 template<typename T>
 concept TriggerListener = requires(const T& comp, ecs::TriggerSubscriber& subscriber, ecs::EntityWorld& world, ecs::EntityId id, ecs::TriggerTypeIndex type, const void* payload) {
     comp.subscribe_triggers(subscriber);

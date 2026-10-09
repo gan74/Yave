@@ -65,6 +65,7 @@ class Preview;
 class Renamer;
 class ResourceBrowser;
 class RotationGizmo;
+class RuntimeView;
 class Settings;
 class StringMatcher;
 class ThumbnailRenderer;
