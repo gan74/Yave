@@ -596,8 +596,7 @@ static void add_transform_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactor
 
     struct ToAxisAngle {
         void operator()(math::Quaternion<> rotation, math::Vec3& axis, float& angle) const {
-            // Identity has no axis, pick one so that the result can be fed back to "Quat from axis angle"
-            axis = rotation.axis().is_zero() ? math::Vec3(0.0f, 0.0f, 1.0f) : rotation.axis();
+            axis = rotation.axis();
             angle = rotation.angle();
         }
     };
@@ -656,6 +655,8 @@ static void add_entity_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>
 
 
 void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {
+    y_profile();
+
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<IfBlueprintNode>>("If"));
 
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<TriggerBlueprintNode<OnCollide>>>("On collide"));

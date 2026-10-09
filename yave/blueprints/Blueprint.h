@@ -51,7 +51,7 @@ class Blueprint {
 
         const BlueprintLink* find_link(const BlueprintNode* dst, usize dst_pin) const;
 
-        const BlueprintNode* add_node(std::unique_ptr<BlueprintNode> node);
+        BlueprintNode* add_node(std::unique_ptr<BlueprintNode> node);
         void remove_node(const BlueprintNode* node);
 
         void add_blueprint(Blueprint data);

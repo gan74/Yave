@@ -33,9 +33,11 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/components/BlueprintComponent.h>
+#include <yave/blueprints/blueprint_nodes.h>
+#include <yave/blueprints/BlueprintNodeFactory.h>
 #include <yave/scene/SceneView.h>
 
-#include <editor/components/DebugAnimateComponent.h>
 #include <editor/utils/StringMatcher.h>
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
@@ -103,10 +105,46 @@ static void add_debug_lights(WorldWorkspace* ws) {
     }
 }
 
+static AssetPtr<Blueprint> create_rotate_blueprint() {
+    core::Vector<std::unique_ptr<BlueprintNodeFactory>> factories;
+    add_all_nodes(factories);
+
+    Blueprint blueprint;
+    const auto add_node = [&](std::string_view name) {
+        const auto it = std::find_if(factories.begin(), factories.end(), [&](const auto& f) { return f->name() == name; });
+        y_always_assert(it != factories.end(), "Blueprint node not found");
+        return blueprint.add_node((*it)->create_node());
+    };
+
+    BlueprintNode* on_tick = add_node("On tick");
+    BlueprintNode* self = add_node("Self");
+    BlueprintNode* get_rot = add_node("Get rotation");
+    BlueprintNode* to_axis_angle = add_node("Quat to axis angle");
+    BlueprintNode* add = add_node("Add float");
+    BlueprintNode* from_axis_angle = add_node("Quat from axis angle");
+    BlueprintNode* set_rot = add_node("Set rotation");
+
+    *static_cast<math::Vec3*>(from_axis_angle->default_input(0)) = math::Vec3(0.0f, 1.0f, 0.0f);
+
+    blueprint.add_link(self, 0, get_rot, 0);
+    blueprint.add_link(get_rot, 0, to_axis_angle, 0);
+    blueprint.add_link(to_axis_angle, 1, add, 0);
+    blueprint.add_link(on_tick, 1, add, 1);
+    //blueprint.add_link(to_axis_angle, 0, from_axis_angle, 0);
+    blueprint.add_link(add, 0, from_axis_angle, 1);
+    blueprint.add_link(on_tick, 0, set_rot, 0);
+    blueprint.add_link(self, 0, set_rot, 1);
+    blueprint.add_link(from_axis_angle, 0, set_rot, 2);
+
+    return make_asset<Blueprint>(std::move(blueprint));
+}
+
 static void add_debug_cubes(WorldWorkspace* ws, bool animate) {
     y_profile();
 
     EditorWorld& world = ws->world();
+
+    const AssetPtr<Blueprint> rotate = animate ? create_rotate_blueprint() : AssetPtr<Blueprint>();
 
     const float spacing =  app_settings().debug.entity_spacing;
     const usize entity_count = app_settings().debug.entity_count;
@@ -127,8 +165,8 @@ static void add_debug_cubes(WorldWorkspace* ws, bool animate) {
         world.add_or_replace_component<StaticMeshComponent>(entity, device_resources()[DeviceResources::CubeMesh], device_resources()[DeviceResources::EmptyMaterial]);
 
         if(animate) {
-            world.component_mut<EditorComponent>(entity)->set_ignore_undo(true);
-            world.get_or_add_component<DebugAnimateComponent>(entity);
+            // world.component_mut<EditorComponent>(entity)->set_ignore_undo(true);
+            world.add_or_replace_component<BlueprintComponent>(entity, rotate);
         }
     }
 }

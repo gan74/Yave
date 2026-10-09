@@ -46,7 +46,6 @@ SOFTWARE.
 #include <yave/systems/SceneSystem.h>
 #include <yave/systems/TriggerSystem.h>
 
-#include <editor/systems/DebugAnimateSystem.h>
 #include <editor/systems/UndoRedoSystem.h>
 
 #include <y/utils/format.h>
@@ -81,7 +80,6 @@ struct EditorSystem : ecs::System {
 EditorWorld::EditorWorld(AssetLoader& loader) {
     add_system<EditorSystem>();
     add_system<AssetLoaderSystem>(loader);
-    add_system<DebugAnimateSystem>();
     add_system<UndoRedoSystem>();
     add_system<JoltPhysicsSystem>();
     add_system<SceneSystem>();

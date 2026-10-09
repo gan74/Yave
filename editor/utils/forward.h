@@ -34,8 +34,6 @@ class BlueprintNodeInspector;
 class BlueprintWorkspace;
 class CVarConsole;
 class CameraController;
-class DebugAnimateComponent;
-class DebugAnimateSystem;
 class DebugValueEditor;
 class DeletionDialog;
 class EditorComponent;

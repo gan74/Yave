@@ -108,7 +108,7 @@ const BlueprintLink* Blueprint::find_link(const BlueprintNode* dst, usize dst_pi
     return nullptr;
 }
 
-const BlueprintNode* Blueprint::add_node(std::unique_ptr<BlueprintNode> node) {
+BlueprintNode* Blueprint::add_node(std::unique_ptr<BlueprintNode> node) {
     return _nodes.emplace_back(std::move(node)).get();
 }
 
