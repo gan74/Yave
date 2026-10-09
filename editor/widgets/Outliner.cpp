@@ -123,14 +123,28 @@ static AssetPtr<Blueprint> create_rotate_blueprint() {
     BlueprintNode* add = add_node("Add float");
     BlueprintNode* from_axis_angle = add_node("Quat from axis angle");
     BlueprintNode* set_rot = add_node("Set rotation");
+    BlueprintNode* entity_seed = add_node("Entity seed");
+    BlueprintNode* create_axis = add_node("Create Vec3");
+    BlueprintNode* center_axis = add_node("Add Vec3");
 
-    *static_cast<math::Vec3*>(from_axis_angle->default_input(0)) = math::Vec3(0.0f, 1.0f, 0.0f);
+    *static_cast<math::Vec3*>(center_axis->default_input(1)) = math::Vec3(-0.5f);
+    blueprint.add_link(self, 0, entity_seed, 0);
+    for(u32 i = 0; i != 3; ++i) {
+        BlueprintNode* offset_seed = add_node("Add u32");
+        *static_cast<u32*>(offset_seed->default_input(1)) = i;
+        blueprint.add_link(entity_seed, 0, offset_seed, 0);
 
+        BlueprintNode* random = add_node("Random float");
+        blueprint.add_link(offset_seed, 0, random, 0);
+        blueprint.add_link(random, 0, create_axis, i);
+    }
+
+    blueprint.add_link(create_axis, 0, center_axis, 0);
+    blueprint.add_link(center_axis, 0, from_axis_angle, 0);
     blueprint.add_link(self, 0, get_rot, 0);
     blueprint.add_link(get_rot, 0, to_axis_angle, 0);
     blueprint.add_link(to_axis_angle, 1, add, 0);
     blueprint.add_link(on_tick, 1, add, 1);
-    //blueprint.add_link(to_axis_angle, 0, from_axis_angle, 0);
     blueprint.add_link(add, 0, from_axis_angle, 1);
     blueprint.add_link(on_tick, 0, set_rot, 0);
     blueprint.add_link(self, 0, set_rot, 1);

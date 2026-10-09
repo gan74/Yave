@@ -34,6 +34,7 @@ SOFTWARE.
 #include <y/core/Vector.h>
 #include <y/core/FixedArray.h>
 #include <y/math/Vec.h>
+#include <y/math/random.h>
 #include <y/utils/format.h>
 #include <y/reflect/reflect.h>
 #include <y/serde3/archives.h>
@@ -44,6 +45,8 @@ SOFTWARE.
 #include <cstring>
 #include <stdexcept>
 #include <tuple>
+#include <optional>
+#include <random>
 
 namespace yave {
 
@@ -378,6 +381,76 @@ class DebugBlueprintNode : public BlueprintNode {
         std::array<BlueprintPin, 2> _in_pins = {{{"exec", blueprint_param_type<BlueprintExec>()}, {"in", nullptr, true}}};
 };
 
+class RandomFloatBlueprintNode : public BlueprintNode {
+    static inline const BlueprintPin static_input_pin = { "seed", blueprint_param_type<u32>() };
+    static inline const BlueprintPin static_output_pin = { "value", blueprint_param_type<float>() };
+    static inline const BlueprintPin static_param_pin = { "reroll every frame", blueprint_param_type<bool>() };
+
+    static u32 make_seed() {
+        static math::FastRandom rng(u32(std::time(nullptr)));
+        static concurrent::SpinLock rng_lock;
+        auto lock = std::unique_lock(rng_lock);
+        return rng();
+    }
+
+    static float next_float(math::FastRandom& rng) {
+        return float(rng() >> 8) * (1.0f / float(1 << 24));
+    }
+
+    public:
+        RandomFloatBlueprintNode() = default;
+
+        RandomFloatBlueprintNode(core::String name) : BlueprintNode(std::move(name)), _seed(make_seed()) {
+        }
+
+        std::string_view node_type_name() const override {
+            return "Random float";
+        }
+
+        core::Span<BlueprintPin> input_pins() const override {
+            return static_input_pin;
+        }
+
+        core::Span<BlueprintPin> output_pins() const override {
+            return static_output_pin;
+        }
+
+        core::Span<BlueprintPin> param_pins() const override {
+            return static_param_pin;
+        }
+
+        void* default_input(usize index) override {
+            unused(index);
+            y_debug_assert(index == 0);
+            return &_seed;
+        }
+
+        void* param_ptr(usize index) override {
+            unused(index);
+            y_debug_assert(index == 0);
+            return &_reroll;
+        }
+
+        void compile(BlueprintCompiler& compiler) const override {
+            const u32* seed = static_cast<const u32*>(compiler.input(0));
+            float* out = static_cast<float*>(compiler.output(0));
+
+            compiler.emit([seed, out, reroll = _reroll, rng = std::optional<math::FastRandom>()](const BlueprintContext&) mutable {
+                if(!rng || !reroll) {
+                    rng = math::FastRandom(hash_u64(*seed)); // Hash so that close seeds give unrelated values
+                }
+                *out = next_float(*rng);
+            });
+        }
+
+        y_reflect(RandomFloatBlueprintNode, _name, _seed, _reroll)
+        y_serde3_poly(RandomFloatBlueprintNode)
+
+    private:
+        u32 _seed = 0;
+        bool _reroll = false;
+};
+
 
 
 
@@ -401,8 +474,10 @@ template<typename T>
 static void add_arith_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories, std::string_view type_name) {
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<ConstantBlueprintNode<T>>>(fmt_to_owned("Const {}", type_name)));
 
-    struct Negate { void operator()(T in, T& out) const { out = -in; } };
-    factories.emplace_back(make_blueprint_node_factory<Negate, "in", "out">(fmt_to_owned("Negate {}", type_name)));
+    if constexpr(!std::is_integral_v<T> || std::is_signed_v<T>) {
+        struct Negate { void operator()(T in, T& out) const { out = -in; } };
+        factories.emplace_back(make_blueprint_node_factory<Negate, "in", "out">(fmt_to_owned("Negate {}", type_name)));
+    }
 
     struct Add { void operator()(T a, T b, T& out) const { out = a + b; } };
     factories.emplace_back(make_blueprint_node_factory<Add, "a", "b", "out">(fmt_to_owned("Add {}", type_name)));
@@ -607,6 +682,9 @@ static void add_entity_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>
     struct Self { void operator()(const BlueprintContext& context, ecs::EntityId& entity) const { entity = context.self; } };
     factories.emplace_back(make_blueprint_node_factory<Self, "entity">("Self"));
 
+    struct EntitySeed { void operator()(ecs::EntityId entity, u32& seed) const { seed = u32(hash_u64(entity.as_u64())); } };
+    factories.emplace_back(make_blueprint_node_factory<EntitySeed, NoDefault<"entity">, "seed">("Entity seed"));
+
     struct RemoveEntity {
         void operator()(const BlueprintContext& context, const BlueprintExec& exec, ecs::EntityId entity) const {
             if(!exec.active || !entity.is_valid()) {
@@ -658,6 +736,7 @@ void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factorie
     y_profile();
 
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<IfBlueprintNode>>("If"));
+    factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<RandomFloatBlueprintNode>>("Random float"));
 
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<TriggerBlueprintNode<OnCollide>>>("On collide"));
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<TriggerBlueprintNode<OnTick>>>("On tick"));
@@ -672,6 +751,7 @@ void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factorie
 
     add_bool_nodes(factories);
 
+    add_arith_nodes<u32>(factories, "u32");
     add_arith_nodes<float>(factories, "float");
     add_arith_nodes<math::Vec2>(factories, "Vec2");
     add_arith_nodes<math::Vec3>(factories, "Vec3");
