@@ -71,7 +71,7 @@ class TriggerBlueprintNode final : public BlueprintNode {
             compiler.set_entry_point(ecs::trigger_index<T>(), payload, sizeof(T), [](ecs::TriggerSubscriber& subscriber) { subscriber.subscribe<T>(); });
         }
 
-        y_reflect(TriggerBlueprintNode, _name)
+        y_reflect(TriggerBlueprintNode, _name, _position)
         y_serde3_poly(TriggerBlueprintNode)
 };
 

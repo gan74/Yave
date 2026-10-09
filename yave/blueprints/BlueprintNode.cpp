@@ -40,6 +40,14 @@ core::String& BlueprintNode::name() {
     return _name;
 }
 
+math::Vec2 BlueprintNode::position() const {
+    return _position;
+}
+
+void BlueprintNode::set_position(math::Vec2 pos) {
+    _position = pos;
+}
+
 core::Span<BlueprintPin> BlueprintNode::input_pins() const {
     return {};
 }

@@ -199,7 +199,7 @@ class LambdaBlueprintNodeImpl<F, Ret(Args...), Names...> : public BlueprintNode 
             });
         }
 
-        y_reflect(LambdaBlueprintNodeImpl, _name, _values)
+        y_reflect(LambdaBlueprintNodeImpl, _name, _position, _values)
         y_serde3_poly(LambdaBlueprintNodeImpl)
 
     private:
@@ -241,7 +241,7 @@ class ConstantBlueprintNode : public BlueprintNode {
             compiler.bind_output(0, compiler.alloc<T>(_value));
         }
 
-        y_reflect(ConstantBlueprintNode, _name, _value)
+        y_reflect(ConstantBlueprintNode, _name, _position, _value)
         y_serde3_poly(ConstantBlueprintNode)
 
     private:
@@ -295,7 +295,7 @@ class IfBlueprintNode : public BlueprintNode {
             });
         }
 
-        y_reflect(IfBlueprintNode, _name, _default_cond)
+        y_reflect(IfBlueprintNode, _name, _position, _default_cond)
         y_serde3_poly(IfBlueprintNode)
 
     private:
@@ -371,7 +371,7 @@ class DebugBlueprintNode : public BlueprintNode {
             });
         }
 
-        y_reflect(DebugBlueprintNode, _name)
+        y_reflect(DebugBlueprintNode, _name, _position)
         y_serde3_poly(DebugBlueprintNode)
 
     private:
@@ -577,7 +577,7 @@ static void add_transform_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactor
         void operator()(const BlueprintContext& context, const BlueprintExec& exec, ecs::EntityId entity, math::Quaternion<> rotation) const {
             if(exec.active) {
                 TransformableComponent* tr = find_transformable<true>(context, entity);
-                const auto [position, old_rotation, scale] = tr->transform().decompose();
+                const auto [position, _, scale] = tr->transform().decompose();
                 tr->set_transform(math::Transform<>(position, rotation, scale));
             }
         }

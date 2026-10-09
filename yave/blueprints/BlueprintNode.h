@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <y/core/String.h>
 #include <y/core/Span.h>
+#include <y/math/Vec.h>
 #include <y/reflect/reflect.h>
 #include <y/serde3/poly.h>
 
@@ -81,6 +82,8 @@ class BlueprintNode : NonMovable {
         const core::String& name() const;
         core::String& name();
 
+        math::Vec2 position() const;
+        void set_position(math::Vec2 pos);
 
         virtual std::string_view node_type_name() const = 0;
 
@@ -105,6 +108,7 @@ class BlueprintNode : NonMovable {
         BlueprintNode(core::String name);
 
         core::String _name;
+        math::Vec2 _position;
 };
 
 }

@@ -299,7 +299,10 @@ BlueprintEditor::BlueprintEditor(BlueprintWorkspace* ws) :
         ed::SetCurrentEditor(nullptr);
     }
 
-    reset_node_layout();
+    const core::Span nodes = workspace()->blueprint().all_nodes();
+    if(std::all_of(nodes.begin(), nodes.end(), [](const auto& node) { return node->position().is_zero(); })) {
+        reset_node_layout();
+    }
 }
 
 BlueprintEditor::~BlueprintEditor() {
@@ -368,6 +371,7 @@ void BlueprintEditor::on_gui() {
                     ed::PushStyleVar(ed::StyleVar_NodeBorderWidth, 6.0f);
                 }
 
+                ed::SetNodePosition(ed::NodeId(uintptr_t(nodes[i].get())), to_im(nodes[i]->position()));
                 draw_node(*nodes[i], generic_types[i], linked_pins);
 
                 if(is_error) {
@@ -402,6 +406,13 @@ void BlueprintEditor::on_gui() {
         ed::End();
     }
 
+    for(const auto& node : blueprint.all_nodes()) {
+        const ImVec2 pos = ed::GetNodePosition(ed::NodeId(uintptr_t(node.get())));
+        if(pos.x != std::numeric_limits<float>::max()) {
+            node->set_position(to_y(pos));
+        }
+    }
+
     if(ed::HasSelectionChanged()) {
         ed::NodeId id;
         if(ed::GetSelectedNodes(&id, 1) == 1) {
@@ -419,9 +430,6 @@ void BlueprintEditor::reset_node_layout() {
 void BlueprintEditor::layout_nodes(usize first_node, math::Vec2 origin) {
     y_profile();
 
-    ed::SetCurrentEditor(_context);
-    y_defer(ed::SetCurrentEditor(nullptr));
-
     const Blueprint& blueprint = workspace()->blueprint();
     const core::Span nodes = blueprint.all_nodes().take(first_node);
 
@@ -436,10 +444,7 @@ void BlueprintEditor::layout_nodes(usize first_node, math::Vec2 origin) {
 
         const usize col = depths[i];
         const usize row = column_sizes[col]++;
-        ed::SetNodePosition(
-            ed::NodeId(uintptr_t(nodes[i].get())),
-            ImVec2(origin.x() + float(col) * layout_cell_size.x, origin.y() + float(row) * layout_cell_size.y)
-        );
+        nodes[i]->set_position(origin + math::Vec2(float(col) * layout_cell_size.x, float(row) * layout_cell_size.y));
     }
 }
 
@@ -564,8 +569,9 @@ void BlueprintEditor::draw_context_menu() {
             }
 
             if(ImGui::MenuItem(fmt_c_str("{}##{}", name, i))) {
-                const BlueprintNode* node = blueprint.add_node(factory->create_node());
-                ed::SetNodePosition(ed::NodeId(uintptr_t(node)), to_im(_new_node.pos));
+                std::unique_ptr<BlueprintNode> new_node = factory->create_node();
+                new_node->set_position(_new_node.pos);
+                const BlueprintNode* node = blueprint.add_node(std::move(new_node));
                 if(link_pin.node) {
                     if(link_pin.is_input) {
                         blueprint.add_link(node, compatible_index, link_pin.node, link_pin.index);
