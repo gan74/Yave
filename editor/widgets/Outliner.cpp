@@ -119,8 +119,7 @@ static AssetPtr<Blueprint> create_rotate_blueprint() {
     BlueprintNode* on_tick = add_node("On tick");
     BlueprintNode* self = add_node("Self");
     BlueprintNode* get_rot = add_node("Get rotation");
-    BlueprintNode* to_axis_angle = add_node("Quat to axis angle");
-    BlueprintNode* add = add_node("Add float");
+    BlueprintNode* multiply = add_node("Multiply quat");
     BlueprintNode* from_axis_angle = add_node("Quat from axis angle");
     BlueprintNode* set_rot = add_node("Set rotation");
     BlueprintNode* entity_seed = add_node("Entity seed");
@@ -142,13 +141,12 @@ static AssetPtr<Blueprint> create_rotate_blueprint() {
     blueprint.add_link(create_axis, 0, center_axis, 0);
     blueprint.add_link(center_axis, 0, from_axis_angle, 0);
     blueprint.add_link(self, 0, get_rot, 0);
-    blueprint.add_link(get_rot, 0, to_axis_angle, 0);
-    blueprint.add_link(to_axis_angle, 1, add, 0);
-    blueprint.add_link(on_tick, 1, add, 1);
-    blueprint.add_link(add, 0, from_axis_angle, 1);
+    blueprint.add_link(on_tick, 1, from_axis_angle, 1);
+    blueprint.add_link(get_rot, 0, multiply, 0);
+    blueprint.add_link(from_axis_angle, 0, multiply, 1);
     blueprint.add_link(on_tick, 0, set_rot, 0);
     blueprint.add_link(self, 0, set_rot, 1);
-    blueprint.add_link(from_axis_angle, 0, set_rot, 2);
+    blueprint.add_link(multiply, 0, set_rot, 2);
 
     return make_asset<Blueprint>(std::move(blueprint));
 }

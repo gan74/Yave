@@ -676,6 +676,13 @@ static void add_transform_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactor
         }
     };
     factories.emplace_back(make_blueprint_node_factory<ToAxisAngle, NoDefault<"rotation">, "axis", "angle">("Quat to axis angle"));
+
+    struct MultiplyQuat {
+        void operator()(math::Quaternion<> a, math::Quaternion<> b, math::Quaternion<>& out) const {
+            out = (a * b);
+        }
+    };
+    factories.emplace_back(make_blueprint_node_factory<MultiplyQuat, NoDefault<"a">, NoDefault<"b">, "out">("Multiply quat"));
 }
 
 static void add_entity_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {
