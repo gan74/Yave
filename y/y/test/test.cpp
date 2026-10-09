@@ -27,6 +27,7 @@ SOFTWARE.
 #include <y/utils/format.h>
 
 #include <cstring>
+#include <exception>
 
 #include <iostream>
 
@@ -35,6 +36,17 @@ namespace test {
 namespace detail {
 
 static TestItem* first_test = nullptr;
+
+struct AssertFailed {
+    const char* cond;
+    const char* file;
+    int line;
+};
+
+static bool throw_on_assert(const char* cond, const char* file, int line) {
+    y_breakpoint;
+    throw AssertFailed{cond, file, line};
+}
 
 void register_test(TestItem* test) {
     test->next = first_test;
@@ -52,15 +64,24 @@ static bool run_test(const detail::TestItem* test) {
         std::cout << " ";
     }
 
-
     TestResult res{true, nullptr, 0};
-    (test->test_func)(res);
+    try {
+        (test->test_func)(res);
+    } catch(const AssertFailed& e) {
+        std::cerr << failure << "\n\tassert failed: " << e.cond << " in file: " << e.file << " at line: "<< e.line << std::endl;
+        return false;
+    } catch(const std::exception& e) {
+        std::cerr << failure << "\n\tunhandled exception: " << e.what() << std::endl;
+        return false;
+    } catch(...) {
+        std::cerr << failure << "\n\tunhandled unknown exception" << std::endl;
+        return false;
+    }
 
     if(res.result) {
         std::cout << ok << std::endl;
     } else {
-        std::cout << failure << std::endl;
-        std::cerr << "\ty_test_assert failed: in file: " << res.file << " at line: "<< res.line << std::endl;
+        std::cerr << failure << "\n\ty_test_assert failed: in file: " << res.file << " at line: "<< res.line << std::endl;
     }
     return res.result;
 }
@@ -79,14 +100,19 @@ usize test_count() {
 bool run_tests() {
     const auto prev_callback = log_callback();
     void* prev_user_data = log_callback_user_data();
+    const auto prev_assert_handler = assert_handler();
+
     set_log_callback([](std::string_view, Log, void*) { return true; });
+    set_assert_handler(detail::throw_on_assert);
+    y_defer({
+        set_assert_handler(prev_assert_handler);
+        set_log_callback(prev_callback, prev_user_data);
+    });
 
     bool all_ok = true;
     for(detail::TestItem* test = detail::first_test; test; test = test->next) {
         all_ok &= run_test(test);
     }
-
-    set_log_callback(prev_callback, prev_user_data);
 
     return all_ok;
 }
