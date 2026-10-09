@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <yave/systems/JoltPhysicsSystem.h>
 #include <yave/systems/TriggerSystem.h>
+#include <yave/components/TransformableComponent.h>
 #include <yave/ecs/EntityWorld.h>
 
 #include <y/utils/traits.h>
@@ -528,6 +529,81 @@ static void add_flow_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& 
 }
 
 
+template<bool Mut>
+static auto* find_transformable(const BlueprintContext& context, ecs::EntityId entity) {
+    if(!context.world) {
+        throw std::runtime_error("No world");
+    }
+
+    auto* tr = [&] {
+        if constexpr(Mut) {
+            return context.world->component_mut<TransformableComponent>(entity);
+        } else {
+            return context.world->component<TransformableComponent>(entity);
+        }
+    }();
+
+    if(!tr) {
+        throw std::runtime_error("Entity has no transformable component");
+    }
+    return tr;
+}
+
+static void add_transform_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {
+    struct GetPosition {
+        void operator()(const BlueprintContext& context, ecs::EntityId entity, math::Vec3& position) const {
+            position = find_transformable<false>(context, entity)->position();
+        }
+    };
+    factories.emplace_back(make_blueprint_node_factory<GetPosition, NoDefault<"entity">, "position">("Get position"));
+
+    struct SetPosition {
+        void operator()(const BlueprintContext& context, const BlueprintExec& exec, ecs::EntityId entity, math::Vec3 position) const {
+            if(exec.active) {
+                find_transformable<true>(context, entity)->set_position(position);
+            }
+        }
+    };
+    factories.emplace_back(make_blueprint_node_factory<SetPosition, "exec", NoDefault<"entity">, "position">("Set position"));
+
+    struct GetRotation {
+        void operator()(const BlueprintContext& context, ecs::EntityId entity, math::Quaternion<>& rotation) const {
+            rotation = std::get<1>(find_transformable<false>(context, entity)->transform().decompose());
+        }
+    };
+    factories.emplace_back(make_blueprint_node_factory<GetRotation, NoDefault<"entity">, "rotation">("Get rotation"));
+
+    struct SetRotation {
+        void operator()(const BlueprintContext& context, const BlueprintExec& exec, ecs::EntityId entity, math::Quaternion<> rotation) const {
+            if(exec.active) {
+                TransformableComponent* tr = find_transformable<true>(context, entity);
+                const auto [position, old_rotation, scale] = tr->transform().decompose();
+                tr->set_transform(math::Transform<>(position, rotation, scale));
+            }
+        }
+    };
+    factories.emplace_back(make_blueprint_node_factory<SetRotation,"exec", NoDefault<"entity">, NoDefault<"rotation">>("Set rotation"));
+
+    struct FromAxisAngle {
+        void operator()(math::Vec3 axis, float angle, math::Quaternion<>& rotation) const {
+            if(axis.is_zero()) {
+                throw std::runtime_error("Null rotation axis");
+            }
+            rotation = math::Quaternion<>::from_axis_angle(axis, angle);
+        }
+    };
+    factories.emplace_back(make_blueprint_node_factory<FromAxisAngle, "axis", "angle", "rotation">("Quat from axis angle"));
+
+    struct ToAxisAngle {
+        void operator()(math::Quaternion<> rotation, math::Vec3& axis, float& angle) const {
+            // Identity has no axis, pick one so that the result can be fed back to "Quat from axis angle"
+            axis = rotation.axis().is_zero() ? math::Vec3(0.0f, 0.0f, 1.0f) : rotation.axis();
+            angle = rotation.angle();
+        }
+    };
+    factories.emplace_back(make_blueprint_node_factory<ToAxisAngle, NoDefault<"rotation">, "axis", "angle">("Quat to axis angle"));
+}
+
 static void add_entity_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories) {
     struct Self { void operator()(const BlueprintContext& context, ecs::EntityId& entity) const { entity = context.self; } };
     factories.emplace_back(make_blueprint_node_factory<Self, "entity">("Self"));
@@ -587,6 +663,7 @@ void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factorie
 
     add_flow_nodes(factories);
     add_entity_nodes(factories);
+    add_transform_nodes(factories);
 
 #ifdef Y_DEBUG
     factories.emplace_back(std::make_unique<GenericBlueprintNodeFactory<DebugBlueprintNode>>("Debug"));
