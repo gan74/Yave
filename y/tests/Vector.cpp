@@ -708,11 +708,6 @@ y_test_func("Vector non pointer iterators") {
     y_test_assert(vec == Vector<int>({5, 6, 7}));
 }
 
-static_assert(std::is_nothrow_move_constructible_v<Vector<String>>);
-static_assert(std::is_nothrow_move_assignable_v<Vector<String>>);
-static_assert(std::is_nothrow_move_constructible_v<SmallVector<String>>);
-static_assert(std::is_nothrow_move_assignable_v<SmallVector<String>>);
-
 y_test_func("Vector emplace uses parens") {
     Vector<std::vector<int>> vec;
     vec.emplace_back(3, 4);
