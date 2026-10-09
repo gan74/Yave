@@ -45,6 +45,7 @@ SOFTWARE.
 #include <yave/systems/JoltPhysicsSystem.h>
 #include <yave/systems/SceneSystem.h>
 #include <yave/systems/TriggerSystem.h>
+#include <yave/systems/TimeSystem.h>
 
 #include <editor/systems/UndoRedoSystem.h>
 
@@ -84,6 +85,7 @@ EditorWorld::EditorWorld(AssetLoader& loader) {
     add_system<JoltPhysicsSystem>();
     add_system<SceneSystem>();
     add_system<TriggerSystem>();
+    add_system<TimeSystem>(0.0f);
 }
 
 bool EditorWorld::set_entity_name(ecs::EntityId id, std::string_view name) {

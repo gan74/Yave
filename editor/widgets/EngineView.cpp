@@ -48,6 +48,8 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 
+#include <yave/systems/TimeSystem.h>
+
 #include <yave/utils/color.h>
 #include <yave/utils/DirectDraw.h>
 
@@ -528,8 +530,16 @@ void EngineView::draw_toolbar() {
 
     ImGui::Separator();
 
-    if(ImGui::MenuItem(ICON_FA_PLAY)) {
+    if(ImGui::MenuItem(ICON_FA_PLAY "##runsnapshot")) {
         workspace()->run_snapshot();
+    }
+
+    if(TimeSystem* time = workspace()->world().find_system<TimeSystem>()) {
+        ImGui::Separator();
+        const bool running = time->time_scale() > 0.0f;
+        if(ImGui::MenuItem(running ? (ICON_FA_PAUSE "##runeditor") : (ICON_FA_PLAY "##runeditor"))) {
+            time->set_time_scale(running ? 0.0f : 1.0f);
+        }
     }
 }
 
