@@ -575,6 +575,10 @@ class FlatHashMap : Hasher, Equal {
             expand(2 * bucket_count());
         }
 
+        inline bool contains_ptr(const void* ptr) const {
+            return ptr >= _entries.get() && ptr < _entries.get() + _buckets;
+        }
+
         std::unique_ptr<State[]> _states;
         std::unique_ptr<Entry[]> _entries;
         usize _buckets = 0;
@@ -772,6 +776,7 @@ class FlatHashMap : Hasher, Equal {
 
         template<typename K, typename... Args>
         inline std::pair<iterator, bool> emplace(const K& key, Args&&... args) {
+            y_debug_assert(!contains_ptr(&key));
             if(should_expand()) [[unlikely]] {
                 expand();
             }
@@ -821,6 +826,7 @@ class FlatHashMap : Hasher, Equal {
 
         template<typename K>
         inline mapped_type& operator[](const K& key) {
+            y_debug_assert(!contains_ptr(&key));
             if(should_expand()) [[unlikely]] {
                 expand();
             }
@@ -1001,6 +1007,7 @@ class DenseHashMap : Hasher, Equal {
 
         template<typename K>
         inline mapped_type& operator[](const K& key) {
+            y_debug_assert(!contains_ptr(&key));
             if(should_expand()) {
                 expand();
             }
@@ -1088,6 +1095,10 @@ class DenseHashMap : Hasher, Equal {
 
         inline void expand() {
             expand(2 * _bucket_count);
+        }
+
+        inline bool contains_ptr(const void* ptr) const {
+            return ptr >= _key_values.begin() && ptr < _key_values.end();
         }
 
         void expand(usize cap) {

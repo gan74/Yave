@@ -215,6 +215,7 @@ class Vector : detail::SBOStorage<Elem, SBOCapacity> {
 
         template<typename... Args>
         inline reference emplace_back(Args&&... args) {
+            y_debug_assert((!contains_it(&args) && ...));
             if(is_full()) {
                 expand();
             }
@@ -233,6 +234,7 @@ class Vector : detail::SBOStorage<Elem, SBOCapacity> {
 
         template<typename... Args>
         inline void insert(const_iterator it, Args&&... args) {
+            y_debug_assert((!contains_it(&args) && ...));
             const usize index = it - _data;
             if(index == size()) {
                 emplace_back(y_fwd(args)...);

@@ -164,6 +164,7 @@ class RingQueue : NonCopyable {
         }
 
         inline void push_back(const_reference elem) {
+            y_debug_assert(!contains_ptr(&elem));
             if(is_full()) {
                 expand();
             }
@@ -172,6 +173,7 @@ class RingQueue : NonCopyable {
         }
 
         inline void push_back(value_type&& elem) {
+            y_debug_assert(!contains_ptr(&elem));
             if(is_full()) {
                 expand();
             }
@@ -181,6 +183,7 @@ class RingQueue : NonCopyable {
 
         template<typename... Args>
         inline reference emplace_back(Args&&... args) {
+            y_debug_assert((!contains_ptr(&args) && ...));
             if(is_full()) {
                 expand();
             }
@@ -191,6 +194,7 @@ class RingQueue : NonCopyable {
 
         template<typename... Args>
         inline void insert(const_iterator it, Args&&... args) {
+            y_debug_assert((!contains_ptr(&args) && ...));
             const usize index = it._index;
             if(index == size()) {
                 emplace_back(y_fwd(args)...);
@@ -202,7 +206,9 @@ class RingQueue : NonCopyable {
             }
 
             usize i = size() - 1;
-            emplace_back(std::move(operator[](i)));
+            std::construct_at(_data + next_index(), std::move(operator[](i)));
+            ++_size;
+
             while(i > index) {
                  operator[](i) = std::move(operator[](i - 1));
                  --i;
@@ -306,6 +312,15 @@ class RingQueue : NonCopyable {
     private:
         inline bool is_full() const {
             return _size == _capacity;
+        }
+
+        template<typename T>
+        inline bool contains_ptr(const T* ptr) const {
+            if constexpr(std::is_convertible_v<const T*, const data_type*>) {
+                const data_type* p = ptr;
+                return p >= _data && p < _data + _capacity;
+            }
+            return false;
         }
 
         inline usize wrap(usize i) const {
