@@ -173,7 +173,12 @@ void ComponentMatrix::add_tag(EntityId id, const core::String& tag) {
 void ComponentMatrix::remove_tag(EntityId id, const core::String& tag) {
     y_debug_assert(!is_computed_tag(tag));
     y_debug_assert(contains(id));
-    TagSet& set = _tags[tag];
+    const auto it = _tags.find(tag);
+    if(it == _tags.end()) {
+        return;
+    }
+
+    TagSet& set = it->second;
     if(set.ids.erase(id)) {
         for(EntityGroupProvider* group : set.groups) {
             group->remove_entity_component(id);
@@ -183,7 +188,12 @@ void ComponentMatrix::remove_tag(EntityId id, const core::String& tag) {
 
 void ComponentMatrix::clear_tag(const core::String& tag) {
     y_debug_assert(!is_computed_tag(tag));
-    TagSet& set = _tags[tag];
+    const auto it = _tags.find(tag);
+    if(it == _tags.end()) {
+        return;
+    }
+
+    TagSet& set = it->second;
     for(EntityGroupProvider* group : set.groups) {
         for(EntityId id : set.ids.ids()) {
             group->remove_entity_component(id);
