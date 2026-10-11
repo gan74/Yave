@@ -262,32 +262,10 @@ void main() {
         acc += radiance;
     }
 
-    {
-        float prev;
-        InterlockedAdd(sum_table[update.index].radiance.r, acc.r * constants.inv_pi, prev);
-        InterlockedAdd(sum_table[update.index].radiance.g, acc.g * constants.inv_pi, prev);
-        InterlockedAdd(sum_table[update.index].radiance.b, acc.b * constants.inv_pi, prev);
-        InterlockedAdd(sum_table[update.index].weight, float(ray_count), prev);
-
-
-        for(uint k = 0; k <= extra_lods; ++k) {
-            for(uint i = 0; i != apply_sample_count; ++i) {
-                const float3 pos_jitter = jitter_position(update.normal, rng) * pos_jitter_strength;
-                const float3 norm_jitter = rng.next_unit() * norm_jitter_strength;
-                const HashKey key = HashKey.make_key(update.position, update.normal, base_cell_size, update.lod + k, pos_jitter, norm_jitter);
-                const uint index = find_bucket_index(hash_table, key, hash_size);
-                if(index == constants.max_uint || index == update.index) {
-                    continue;
-                }
-
-                InterlockedAdd(sum_table[index].radiance.r, acc.r * constants.inv_pi, prev);
-                InterlockedAdd(sum_table[index].radiance.g, acc.g * constants.inv_pi, prev);
-                InterlockedAdd(sum_table[index].radiance.b, acc.b * constants.inv_pi, prev);
-                InterlockedAdd(sum_table[index].weight, float(ray_count), prev);
-
-            }
-        }
-    }
+    RTGICell cell = sum_table[update.index];
+    cell.radiance += acc * constants.inv_pi;
+    cell.weight += float(ray_count);
+    sum_table[update.index] = cell;
 }
 #endif
 
