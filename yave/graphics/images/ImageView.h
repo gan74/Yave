@@ -131,6 +131,9 @@ using ColorTextureAttachmentView = ImageView<ImageUsage::ColorBit | ImageUsage::
 using CubemapView = ImageView<ImageUsage::TextureBit, ImageType::Cube>;
 using CubemapStorageView = ImageView<ImageUsage::StorageBit, ImageType::Cube>;
 
+using VolumeView = ImageView<ImageUsage::TextureBit, ImageType::ThreeD>;
+using VolumeStorageView = ImageView<ImageUsage::StorageBit, ImageType::ThreeD>;
+
 
 }
 

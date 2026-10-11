@@ -19,7 +19,7 @@ Sampler2D<float> in_hi_depth;
 RWTexture2D<float> out_ao;
 
 [[vk::binding(5)]]
-cbuffer UpsampleData_Inline {
+cbuffer UpsampleData {
     float step_size;
     float noise_filter_weight;
     float blur_tolerance;

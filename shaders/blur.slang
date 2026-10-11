@@ -13,7 +13,7 @@
 Sampler2D in_color;
 
 [[vk::binding(1)]]
-cbuffer Weights_Inline {
+cbuffer Weights {
     float4 weights[2];
 };
 

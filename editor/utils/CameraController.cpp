@@ -40,7 +40,7 @@ namespace editor {
 CameraController::CameraController() {
 }
 
-void CameraController::process_generic_shortcuts(Camera& camera) {
+void CameraController::process_generic_shortcuts(EditorWorld& world, Camera& camera) {
     const ImGuiIO& io = ImGui::GetIO();
     if(io.WantCaptureKeyboard || !ImGui::IsWindowHovered()) {
         return;
@@ -52,18 +52,12 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
     const math::Vec3 cam_rht = camera.right();
 
     if(ImGui::IsKeyDown(to_imgui_key(settings.center_on_obj))) {
-        if(current_world().has_selected_entities()) {
-            core::Result<AABB> aabb = core::Err();
-            for(const ecs::EntityId id : current_world().selected_entities()) {
-                /*if(const TransformableComponent* tr = current_world().component<TransformableComponent>(id)) {
-                    // aabb = core::Ok(tr->global_aabb());
-                }*/
-            }
-
-            if(aabb) {
-                cam_pos = aabb.unwrap().center() - cam_fwd * (aabb.unwrap().radius() * 1.5f);
-            } else {
-                log_msg("No AABB found", Log::Error);
+        if(world.has_selected_entities()) {
+            if(const ecs::EntityId id = world.selected_entity(); id.is_valid()) {
+                if(const TransformableComponent* tr = world.component<TransformableComponent>(id)) {
+                    const math::Vec3 to_obj = tr->position() - cam_pos;
+                    cam_pos += to_obj - cam_fwd * to_obj.dot(cam_fwd);
+                }
             }
         }
     }
@@ -79,14 +73,11 @@ void CameraController::process_generic_shortcuts(Camera& camera) {
 HoudiniCameraController::HoudiniCameraController() {
 }
 
-static core::StopWatch timer;
-
 bool HoudiniCameraController::viewport_clicked(const PickingResult& point) {
     if(ImGui::IsKeyDown(ImGuiMod_Alt)) {
         _picked_pos = point.world_pos;
         _picking_uvs = point.uv;
         _picking_depth = point.depth;
-        timer.reset();
         _init = true;
 
         return true;
@@ -148,11 +139,6 @@ void HoudiniCameraController::update_camera(Camera& camera, const math::Vec2ui& 
 
     if(!fps && _mouse_button < 0) {
         return;
-    }
-
-    
-    if(timer.elapsed().to_secs() > 3.0) {
-        y_breakpoint;
     }
 
     math::Vec3 out_cam_pos = camera.position();

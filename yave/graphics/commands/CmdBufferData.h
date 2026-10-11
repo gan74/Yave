@@ -107,14 +107,11 @@ class CmdBufferData final : NonMovable {
         // These are owned by the command pool
         const VkCommandBuffer _cmd_buffer;
 
-        VkHandle<VkSemaphore> _semaphore;
-
         CmdBufferPool* _pool = nullptr;
 
         ResourceFence _resource_fence;
         TimelineFence _timeline_fence;
         CmdBufferFence _fence;
-
 
         core::Vector<CmdBufferData*> _secondaries;
 

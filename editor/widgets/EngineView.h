@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <editor/Widget.h>
 #include <editor/Picker.h>
+#include <editor/WorldWorkspace.h>
 #include <editor/renderer/EditorRenderer.h>
 #include <editor/utils/CameraController.h>
 
@@ -39,9 +40,9 @@ SOFTWARE.
 
 namespace editor {
 
-class EngineView final : public Widget {
+class EngineView final : public WorkspaceWidget<WorldWorkspace> {
 
-    editor_widget_open(EngineView, "View")
+    editor_widget_open(EngineView, Center, "View")
 
     enum class GizmoType : u32 {
         Translate,
@@ -68,7 +69,7 @@ class EngineView final : public Widget {
             Max,
         };
 
-        EngineView();
+        EngineView(WorldWorkspace* ws);
         ~EngineView() override;
 
         void reset_camera();
@@ -90,7 +91,6 @@ class EngineView final : public Widget {
 
         void draw_gizmos();
         void draw_toolbar();
-        void draw_menu();
         void draw_resolution_menu();
         void draw_settings_menu();
 

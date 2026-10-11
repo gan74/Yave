@@ -20,52 +20,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "DebugAnimateComponent.h"
+#include "Workspace.h"
 
-#include <yave/ecs/ComponentInspector.h>
+#include <editor/UiManager.h>
 
-#include <y/math/random.h>
-#include <random>
+#include <atomic>
 
 namespace editor {
 
-DebugAnimateComponent::DebugAnimateComponent() {
-    const core::Duration d = core::StopWatch::program();
-
-    math::FastRandom rng(d.to_nanos());
-    std::uniform_real_distribution<float> distrib(0.0f, 1.0f);
-
-    const float phi = distrib(rng) * math::pi<float> * 0.5f;
-    const float theta = distrib(rng) * math::pi<float> * 2.0f;
-    _axis = math::Vec3(
-        std::sin(phi) * std::cos(theta),
-        std::sin(phi) * std::sin(theta),
-        std::cos(phi)
-    );
+Workspace::Workspace() : _id(ui().generate_dock_id()) {
 }
 
-const math::Vec3& DebugAnimateComponent::axis() const {
-    return _axis;
+Workspace::~Workspace() {
 }
 
-float DebugAnimateComponent::speed() const {
-    return _speed;
+u32 Workspace::workspace_id() const {
+    return _id;
 }
 
-bool DebugAnimateComponent::rotate() const {
-    return _rotate;
+void Workspace::post_update() {
+    // nothing
 }
 
-bool DebugAnimateComponent::translate() const {
-    return _translate;
+void Workspace::grab_reloaded() {
+    // nothing
 }
 
-void DebugAnimateComponent::inspect(ecs::ComponentInspector* inspector) {
-    inspector->inspect("Speed", _speed);
-    inspector->inspect("Axis", _axis, ecs::ComponentInspector::Vec3Role::Direction);
-    inspector->inspect("Rotate", _rotate);
-    inspector->inspect("Translate", _translate);
-}
 
 }
-

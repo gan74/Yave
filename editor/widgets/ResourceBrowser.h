@@ -41,12 +41,12 @@ class ResourceBrowser : public Widget {
         AssetId asset_id(std::string_view name) const;
         AssetType asset_type(AssetId id) const;
 
-        template<typename F>
+        template<std::invocable<const core::String&, FileSystemModel::EntryType> F>
         void set_filter_delegate(F&& f) {
-            _fs_view.set_filter_delegate(y_fwd(f));
+            _filesystem_view.set_filter_delegate(y_fwd(f));
         }
 
-        template<typename F>
+        template<std::invocable<AssetId> F>
         void set_selected_delegate(F&& f) {
             _selected_delegate = y_fwd(f);
         }
@@ -59,7 +59,8 @@ class ResourceBrowser : public Widget {
         void draw_path_bar();
         core::Result<core::String> draw_path_bar_element(std::string_view path);
 
-        FileSystemView _fs_view;
+        FileSystemView _filesystem_view;
+        core::String _search_pattern;
 
         std::function<bool(AssetId)> _selected_delegate = [](AssetId) { return false; };
 };

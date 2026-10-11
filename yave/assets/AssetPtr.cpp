@@ -25,9 +25,9 @@ SOFTWARE.
 namespace yave {
 namespace detail {
 
-u32 next_asset_type_index() {
-    static std::atomic<u32> global_type_index = 0;
-    return global_type_index++;
+AssetTypeIndex next_asset_type_index() {
+    static std::atomic<std::underlying_type_t<AssetTypeIndex>> global_type_index = 0;
+    return AssetTypeIndex(global_type_index++);
 }
 
 

@@ -35,7 +35,10 @@ struct EditorSettings {
 
     float max_fps = 60.0f;
 
-    y_reflect(EditorSettings, world_file, asset_store, max_fps)
+    bool open_world_workspace = true;
+    bool render_thumbnails = true;
+
+    y_reflect(EditorSettings, world_file, asset_store, max_fps, open_world_workspace, render_thumbnails)
 };
 
 struct CameraSettings {

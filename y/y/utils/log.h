@@ -45,6 +45,8 @@ using log_callback = bool(*)(std::string_view msg, Log type, void* user_data);
 }
 
 void set_log_callback(detail::log_callback func, void* user_data = nullptr);
+detail::log_callback log_callback();
+void* log_callback_user_data();
 
 }
 

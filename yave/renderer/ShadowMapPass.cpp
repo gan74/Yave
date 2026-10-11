@@ -26,6 +26,7 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphPass.h>
 #include <yave/framegraph/FrameGraphFrameResources.h>
 
+#include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
@@ -132,6 +133,42 @@ static Camera spotlight_camera(const math::Transform<>& tr, const SpotLightCompo
     return camera;
 }
 
+static Camera pointlight_face_camera(const math::Transform<>& tr, const PointLightComponent& light, usize face, u32 size) {
+    y_debug_assert(face < 6);
+    y_debug_assert(size > 4);
+
+    static constexpr std::array<math::Vec3, 6> forwards = {
+        math::Vec3( 1.0f,  0.0f,  0.0f),
+        math::Vec3(-1.0f,  0.0f,  0.0f),
+        math::Vec3( 0.0f,  1.0f,  0.0f),
+        math::Vec3( 0.0f, -1.0f,  0.0f),
+        math::Vec3( 0.0f,  0.0f,  1.0f),
+        math::Vec3( 0.0f,  0.0f, -1.0f),
+    };
+    static constexpr std::array<math::Vec3, 6> ups = {
+        math::Vec3(0.0f, -1.0f,  0.0f),
+        math::Vec3(0.0f, -1.0f,  0.0f),
+        math::Vec3(0.0f,  0.0f,  1.0f),
+        math::Vec3(0.0f,  0.0f, -1.0f),
+        math::Vec3(0.0f, -1.0f,  0.0f),
+        math::Vec3(0.0f, -1.0f,  0.0f),
+    };
+
+    // Expand FoV to create a 1 texel border
+    const float half_fov = std::atan(float(size) / float(size - 4));
+
+    const math::Vec3 pos = tr.position();
+    const float z_near = light.min_radius();
+
+    Camera camera(
+        math::look_at(pos, pos + forwards[face], ups[face]),
+        flip_for_backfaces(math::perspective(half_fov * 2.0f, 1.0f, z_near))
+    );
+    camera.set_far(light.range() * tr.scale().max_component());
+    y_debug_assert(!camera.is_orthographic());
+    return camera;
+}
+
 static Camera directional_camera(const Camera& cam, const DirectionalLightComponent& light, u32 size, float near_dist, float far_dist) {
     y_debug_assert(near_dist < far_dist && near_dist >= 0.0f);
 
@@ -175,6 +212,7 @@ static Camera directional_camera(const Camera& cam, const DirectionalLightCompon
 struct ShadowCastingLights {
     core::Vector<const DirectionalLightComponent*> directionals;
     core::Vector<std::tuple<math::Transform<>, const SpotLightComponent*>> spots;
+    core::Vector<std::tuple<math::Transform<>, const PointLightComponent*>> points;
 };
 
 static ShadowCastingLights collect_shadow_casting_lights(const SceneVisibilitySubPass& visibility) {
@@ -197,6 +235,13 @@ static ShadowCastingLights collect_shadow_casting_lights(const SceneVisibilitySu
         }
     }
 
+    shadow_casters.points.set_min_capacity(visible.point_lights.size());
+    for(const PointLightObject* light : visible.point_lights) {
+        if(light->component.cast_shadow()) {
+            shadow_casters.points.emplace_back(scene->transform(*light), &light->component);
+        }
+    }
+
     return shadow_casters;
 }
 
@@ -213,6 +258,11 @@ static float total_occupancy(const ShadowCastingLights& lights) {
     for(const auto& [transform, light] : lights.spots) {
         unused(transform);
         total += occupancy(light->shadow_lod());
+    }
+
+    for(const auto& [transform, light] : lights.points) {
+        unused(transform);
+        total += occupancy(light->shadow_lod()) * 6.0f;
     }
     return total;
 }
@@ -287,6 +337,18 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneVisibilit
             indices[0] = u32(sub_passes.size());
             sub_passes.emplace_back(create_sub_pass(builder, offset, size, SceneView(scene_view.scene(), spotlight_camera(tr, *light)), uv_mul));
         }
+
+        for(const auto& [tr, light] : lights.points) {
+            auto& indices = (*pass.shadow_indices)[light];
+            indices = math::Vec4ui(u32(-1));
+
+            const u32 level = light->shadow_lod() + lod_offset;
+            indices[0] = u32(sub_passes.size());
+            for(usize face = 0; face != 6; ++face) {
+                const auto [offset, size] = allocator.alloc(level);
+                sub_passes.emplace_back(create_sub_pass(builder, offset, size, SceneView(scene_view.scene(), pointlight_face_camera(tr, *light, face, size)), uv_mul));
+            }
+        }
     }
 
     const auto shadow_buffer = builder.declare_typed_buffer<shader::ShadowMapInfo>(sub_passes.size());
@@ -301,7 +363,7 @@ ShadowMapPass ShadowMapPass::create(FrameGraph& framegraph, const SceneVisibilit
             const ShadowSubPass& pass = passes[i];
             shadow_infos[i] = pass.info;
             
-            const char* pass_name = pass.scene_pass.scene_view.camera().is_orthographic() ? "Directional cascade" : "Spot light";
+            const char* pass_name = pass.scene_pass.scene_view.camera().is_orthographic() ? "Directional cascade" : "Local light";
             y_profile_dyn_zone(pass_name);
 
             const auto region = render_pass.region(pass_name);

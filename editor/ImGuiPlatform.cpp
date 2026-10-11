@@ -126,9 +126,15 @@ static void render_frame(ImDrawData* draw_data, RenderPassRecorder& recorder, co
                 setup_state(current_tex);
             }
 
-            const math::Vec2i offset = math::Vec2i(i32(cmd.ClipRect.x - viewport_offset.x()), i32(cmd.ClipRect.y - viewport_offset.y()));
-            const math::Vec2ui extent(u32(cmd.ClipRect.z - cmd.ClipRect.x), u32(cmd.ClipRect.w - cmd.ClipRect.y));
-            recorder.set_scissor(offset.max(math::Vec2(0.0f)), extent);
+            const math::Vec2 clip_min = (math::Vec2(cmd.ClipRect.x, cmd.ClipRect.y) - viewport_offset).max(math::Vec2(0.0f));
+            const math::Vec2 clip_max = (math::Vec2(cmd.ClipRect.z, cmd.ClipRect.w) - viewport_offset).min(viewport_size);
+            if(clip_max.x() <= clip_min.x() || clip_max.y() <= clip_min.y()) {
+                continue;
+            }
+
+            const math::Vec2i offset(i32(clip_min.x()), i32(clip_min.y()));
+            const math::Vec2ui extent(u32(clip_max.x() - clip_min.x()), u32(clip_max.y() - clip_min.y()));
+            recorder.set_scissor(offset, extent);
 
             y_debug_assert(!cmd.VtxOffset);
 
@@ -194,8 +200,10 @@ static void setup_style() {
 
     colors[ImGuiCol_BorderShadow]           = none;
     colors[ImGuiCol_DockingEmptyBg]         = none;
-    colors[ImGuiCol_ModalWindowDimBg]       = none;
     colors[ImGuiCol_TableRowBg]             = none;
+    colors[ImGuiCol_DragDropTargetBg]       = none;
+
+    colors[ImGuiCol_ModalWindowDimBg]       = gr(12, 0.8f);
 
     colors[ImGuiCol_TableRowBgAlt]          = gr(26, 0.5f);
 
@@ -253,6 +261,8 @@ static void setup_style() {
     colors[ImGuiCol_SliderGrabActive]       = highlight;
     colors[ImGuiCol_ScrollbarGrabActive]    = highlight;
     colors[ImGuiCol_ResizeGripActive]       = highlight;
+    colors[ImGuiCol_DragDropTarget]         = highlight;
+
 
     colors[ImGuiCol_HeaderHovered]              = math::lerp(child, highlight, 0.25f);
     colors[ImGuiCol_SeparatorHovered]           = math::lerp(child, highlight, 0.25f);
@@ -563,9 +573,6 @@ void ImGuiPlatform::exec(OnGuiFunc func) {
                 y_profile_zone("imgui");
                 ImGui::NewFrame();
 
-                ImGuiViewport* viewport = ImGui::GetMainViewport();
-                ImGui::DockSpaceOverViewport(0, viewport);
-
                 if(_demo_window) {
                     ImGui::PushStyleColor(ImGuiCol_MenuBarBg, 0);
                     ImGui::ShowDemoWindow(&_demo_window);
@@ -675,6 +682,7 @@ void ImGuiPlatform::update_textures(ImDrawData* draw_data) {
                 if(tex_data->UnusedFrames > 0) {
                     y_debug_assert(tex_data->BackendUserData);
                     delete reinterpret_cast<ImGuiImage*>(std::exchange(tex_data->BackendUserData, nullptr));
+                    tex_data->SetTexID(ImTextureID_Invalid);
                     tex_data->SetStatus(ImTextureStatus_Destroyed);
                 }
             break;

@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "EditorWorld.h"
 
+#include <editor/WorldWorkspace.h>
+
 #include <yave/ecs/tags.h>
 #include <yave/ecs/ComponentRuntimeInfo.h>
 
@@ -37,13 +39,14 @@ SOFTWARE.
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/AtmosphereComponent.h>
+#include <yave/components/BlueprintComponent.h>
 
 #include <yave/systems/AssetLoaderSystem.h>
 #include <yave/systems/JoltPhysicsSystem.h>
 #include <yave/systems/SceneSystem.h>
+#include <yave/systems/TriggerSystem.h>
 #include <yave/systems/TimeSystem.h>
 
-#include <editor/systems/DebugAnimateSystem.h>
 #include <editor/systems/UndoRedoSystem.h>
 
 #include <y/utils/format.h>
@@ -52,22 +55,36 @@ SOFTWARE.
 
 namespace editor {
 
-editor_action("Remove all entities", [] { current_world().remove_all_entities(); })
+editor_action("Remove all entities", [](WorldWorkspace* ws) { ws->world().remove_all_entities(); })
 
-editor_action_shortcut(ICON_FA_UNDO " Undo", Key::Ctrl + Key::Z, [] { current_world().undo(); })
-editor_action_shortcut(ICON_FA_REDO " Redo", Key::Ctrl + Key::Y, [] { current_world().redo(); })
+editor_action_shortcut(ICON_FA_UNDO " Undo", Key::Ctrl + Key::Z, [](WorldWorkspace* ws) { ws->world().undo(); })
+editor_action_shortcut(ICON_FA_REDO " Redo", Key::Ctrl + Key::Y, [](WorldWorkspace* ws) { ws->world().redo(); })
 
 
-editor_action_enable(ICON_FA_PLAY " Play", [] { current_world().find_system<TimeSystem>()->set_time_scale(1.0f); }, [] { return !!current_world().find_system<TimeSystem>(); })
-editor_action_enable(ICON_FA_PAUSE " Pause", [] { current_world().find_system<TimeSystem>()->set_time_scale(0.0f); }, [] { return !!current_world().find_system<TimeSystem>(); })
+struct EditorSystem : ecs::System {
+    EditorSystem() : ecs::System("EditorSystem") {
+    }
+
+    void setup(ecs::SystemScheduler& sched) {
+        sched.schedule(ecs::SystemSchedule::TickSequential, "Set settings", [](const ecs::EntityWorld& world) {
+            const Settings& settings = app_settings();
+            if(JoltPhysicsSystem* physics = const_cast<JoltPhysicsSystem*>(world.find_system<JoltPhysicsSystem>())) {
+                physics->set_debug_drawer(&debug_drawer());
+                physics->set_debug_draw_static(settings.debug.display_static_colliders);
+                physics->set_debug_draw_movable(settings.debug.display_movable_colliders);
+            }
+        });
+    }
+};
 
 
 EditorWorld::EditorWorld(AssetLoader& loader) {
+    add_system<EditorSystem>();
     add_system<AssetLoaderSystem>(loader);
-    add_system<DebugAnimateSystem>();
     add_system<UndoRedoSystem>();
     add_system<JoltPhysicsSystem>();
     add_system<SceneSystem>();
+    add_system<TriggerSystem>();
     add_system<TimeSystem>(0.0f);
 }
 
@@ -120,6 +137,10 @@ UiIcon EditorWorld::entity_icon(ecs::EntityId id) const {
 
     if(has_component<AtmosphereComponent>(id)) {
         return { ICON_FA_CLOUD, base_color };
+    }
+
+    if(has_component<BlueprintComponent>(id)) {
+        return { ICON_FA_PROJECT_DIAGRAM, base_color };
     }
 
     if(has_children(id)) {
@@ -185,6 +206,9 @@ void EditorWorld::set_selected(ecs::EntityId id) {
 
 void EditorWorld::toggle_selected(ecs::EntityId id, bool reset_selection) {
     if(!id.is_valid()) {
+        if(reset_selection) {
+            clear_selection();
+        }
         return;
     }
 

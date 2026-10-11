@@ -38,6 +38,8 @@ struct ToneMappingSettings {
     float exposure = 1.0f;
     ToneMapper tone_mapper = ToneMapper::ACES;
 
+    bool to_sRGB = false;
+
     bool debug_exposure = false;
 };
 

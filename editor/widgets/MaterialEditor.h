@@ -7,7 +7,6 @@ in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
-
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
@@ -19,34 +18,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#ifndef EDITOR_WIDGETS_MATERIALEDITOR_H
+#define EDITOR_WIDGETS_MATERIALEDITOR_H
 
-#include "DebugAnimateSystem.h"
-
-#include <editor/components/DebugAnimateComponent.h>
-
-#include <yave/components/TransformableComponent.h>
-
-#include <yave/ecs/EntityWorld.h>
+#include <editor/Widget.h>
+#include <editor/MaterialWorkspace.h>
 
 namespace editor {
 
-DebugAnimateSystem::DebugAnimateSystem() : ecs::System("DebugAnimateSystem") {
-}
+class MaterialEditor final : public WorkspaceWidget<MaterialWorkspace> {
 
-void DebugAnimateSystem::setup(ecs::SystemScheduler& sched) {
-    sched.schedule(ecs::SystemSchedule::Update, "Update", [this](ecs::EntityGroup<ecs::Mutate<TransformableComponent>, DebugAnimateComponent>&& group) {
-        const float dt = float(_dt.reset().to_secs());
-        const double time = _timer.elapsed().to_secs();
-        for(auto&& [tr, dg] : group) {
-            if(dg.rotate()) {
-                tr.set_transform(tr.transform() * math::rotation(dg.axis(), dt * dg.speed()));
-            }
-            if(dg.translate()) {
-                tr.set_position(tr.position() + dg.axis() * float(std::sin(time * dg.speed())) * 0.1f);
-            }
-        }
-    });
-}
+    editor_widget_open(MaterialEditor, Right)
+
+    public:
+        MaterialEditor(MaterialWorkspace* ws);
+
+    protected:
+        void on_gui() override;
+};
 
 }
 
+#endif // EDITOR_WIDGETS_MATERIALEDITOR_H

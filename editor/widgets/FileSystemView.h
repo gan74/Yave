@@ -75,37 +75,39 @@ class FileSystemView : public Widget {
         void set_path(const core::String& path);
         const core::String& path() const;
 
-        template<typename F>
+        void set_search(std::string_view pattern);
+
+        template<std::invocable<const core::String&, EntryType> F>
         void set_filter_delegate(F&& f) {
-            _filter_delegate = y_fwd(f);
+            _delegates.filter = y_fwd(f);
             _need_update = true;
         }
 
-        template<typename F>
+        template<std::invocable<const core::String&, EntryType> F>
         void set_icon_delegate(F&& f) {
-            _icon_delegate = y_fwd(f);
+            _delegates.icon = y_fwd(f);
             _need_update = true;
         }
 
-        template<typename F>
+        template<std::invocable<const core::String&, EntryType> F>
         void set_preview_delegate(F&& f) {
-            _preview_delegate = y_fwd(f);
+            _delegates.preview = y_fwd(f);
             _need_update = true;
         }
 
-        template<typename F>
+        template<std::invocable<const core::String&, EntryType> F>
         void set_tooltip_delegate(F&& f) {
-            _tooltip_delegate = y_fwd(f);
+            _delegates.tooltip = y_fwd(f);
         }
 
-        template<typename F>
+        template<std::invocable<const core::String&, EntryType> F>
         void set_clicked_delegate(F&& f) {
-            _clicked_delegate = y_fwd(f);
+            _delegates.clicked = y_fwd(f);
         }
 
-        template<typename F>
-        void set_on_update(F&& f) {
-            _on_update = y_fwd(f);
+        template<std::invocable<const core::String&, EntryType> F>
+        void set_context_menu_delegate(F&& f) {
+            _delegates.context_menu = y_fwd(f);
         }
 
     protected:
@@ -129,15 +131,17 @@ class FileSystemView : public Widget {
 
         const FileSystemModel* _filesystem = nullptr;
         core::String _current_path;
+        core::String _search;
 
-        std::function<bool(const core::String&, EntryType)> _filter_delegate;
-        std::function<UiIcon(const core::String&, EntryType)> _icon_delegate;
-        std::function<void(const core::String&, EntryType)> _tooltip_delegate;
+        struct Delegates {
+            std::function<bool(const core::String&, EntryType)> filter;
+            std::function<UiIcon(const core::String&, EntryType)> icon;
+            std::function<void(const core::String&, EntryType)> tooltip;
 
-        std::function<UiTexture(const core::String&, EntryType)> _preview_delegate = [](const core::String&, EntryType) { return UiTexture{}; };
-        std::function<bool(const core::String&, EntryType)> _clicked_delegate   = [](const core::String&, EntryType) { return false; };
-
-        std::function<void()> _on_update = [] {};
+            std::function<UiTexture(const core::String&, EntryType)> preview = [](const core::String&, EntryType) { return UiTexture{}; };
+            std::function<bool(const core::String&, EntryType)> clicked   = [](const core::String&, EntryType) { return false; };
+            std::function<void(const core::String&, EntryType)> context_menu = [](const core::String&, EntryType) {};
+        } _delegates;
 
         usize _selected_index = usize(-1);
         core::Vector<Entry> _entries;

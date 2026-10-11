@@ -23,6 +23,7 @@ SOFTWARE.
 #define YAVE_ASSETS_ASSETLOADER_H
 
 #include <y/core/HashMap.h>
+#include <y/core/Vector.h>
 
 #include <yave/graphics/graphics.h>
 
@@ -30,7 +31,6 @@ SOFTWARE.
 #include "AssetLoadingContext.h"
 #include "AssetLoadingThreadPool.h"
 
-#include <typeindex>
 #include <future>
 
 namespace yave {
@@ -54,6 +54,8 @@ class AssetLoader : NonMovable {
                 AssetLoader* parent() const;
 
                 virtual AssetType type() const = 0;
+
+                virtual bool reload_from_id(AssetId id) = 0;
 
             protected:
                 LoaderBase(AssetLoader* parent);
@@ -82,7 +84,9 @@ class AssetLoader : NonMovable {
                 inline AssetPtr<T> load(AssetId id);
                 inline AssetPtr<T> load_async(AssetId id);
 
-                inline AssetPtr<T> reload(const AssetPtr<T>& ptr);
+                inline AssetPtr<T> reload(AssetId id);
+
+                bool reload_from_id(AssetId id) override;
 
                 AssetType type() const override {
                     return traits::type;
@@ -108,6 +112,9 @@ class AssetLoader : NonMovable {
         void set_loading_flags(AssetLoadingFlags flags);
         AssetLoadingFlags loading_flags() const;
 
+        // For convenience only. Very slow
+        bool reload_from_id(AssetId id);
+
         // This is dangerous: Do not call in loading threads!
         void wait_until_loaded(const GenericAssetPtr& ptr);
 
@@ -124,10 +131,8 @@ class AssetLoader : NonMovable {
         inline AssetPtr<T> load_async(AssetId id);
 
         template<typename T>
-        inline AssetPtr<T> reload(const AssetPtr<T>& ptr);
+        inline AssetPtr<T> reload(AssetId id);
 
-        template<typename T>
-        inline Result<T> import(std::string_view name, std::string_view import_from);
 
    private:
         template<typename T>
@@ -141,9 +146,7 @@ class AssetLoader : NonMovable {
         template<typename T>
         inline Loader<T>& loader_for_type();
 
-        core::Result<AssetId> load_or_import(std::string_view name, std::string_view import_from, AssetType type);
-
-        ProfiledMutexed<core::FlatHashMap<std::type_index, std::unique_ptr<LoaderBase>>, std::recursive_mutex> _loaders;
+        ProfiledMutexed<core::Vector<std::unique_ptr<LoaderBase>>, std::recursive_mutex> _loaders;
         std::shared_ptr<AssetStore> _store;
 
         AssetLoadingThreadPool _thread_pool;

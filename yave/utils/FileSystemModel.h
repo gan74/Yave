@@ -99,6 +99,15 @@ class LocalFileSystemModel : public FileSystemModel {
         bool is_canonical(std::string_view path) const;
 };
 
+
+class SearchableFileSystemModel {
+    public:
+        virtual ~SearchableFileSystemModel() {
+        }
+
+        virtual FileSystemModel::Result<> search(std::string_view path, std::string_view pattern, const FileSystemModel::for_each_f& found) const = 0;
+};
+
 }
 
 

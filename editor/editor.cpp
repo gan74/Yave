@@ -26,21 +26,14 @@ SOFTWARE.
 #include "UiManager.h"
 #include "ImGuiPlatform.h"
 #include "ThumbnailRenderer.h"
-#include "EditorWorld.h"
+
+#include <editor/WorldWorkspace.h>
+#include <editor/BlueprintWorkspace.h>
 
 #include <yave/assets/FolderAssetStore.h>
 #include <yave/assets/AssetLoader.h>
-#include <yave/utils/DirectDraw.h>
-#include <yave/scene/SceneView.h>
-#include <yave/scene/EcsScene.h>
 #include <yave/utils/DebugValues.h>
-#include <yave/systems/SceneSystem.h>
-#include <yave/systems/JoltPhysicsSystem.h>
-
-#include <y/io2/File.h>
-#include <y/serde3/archives.h>
-#include <y/utils/log.h>
-#include <y/test/test.h>
+#include <yave/utils/DirectDraw.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -54,13 +47,12 @@ editor_action_desc("Debug assert", "Calls assert(false) and crashes the program"
 
 editor_action("Quit", [] { imgui_platform()->main_window()->close(); })
 editor_action("Show ImGui demo", [] { imgui_platform()->show_demo(); })
-editor_action("Restore default layout", [] { ui().restore_default_layout(); })
+editor_action("Close all", [] { ui().close_all(); })
 
 editor_action_desc("Lag", "Pause execution for 1s to simulate load", [] { core::Duration::sleep(core::Duration::seconds(1)); })
 
-editor_action_shortcut(ICON_FA_SAVE " Save", Key::Ctrl + Key::S, [] { save_world(); }, "File")
-editor_action(ICON_FA_FOLDER " Load", [] { load_world(); }, "File")
-editor_action_shortcut("New", Key::Ctrl + Key::N, [] { new_world(); }, "File")
+editor_action_shortcut(ICON_FA_SAVE " Save", Key::Ctrl + Key::S, [](Workspace* ws) { ws->save(); }, "File")
+editor_action(ICON_FA_FOLDER " Load", [](Workspace* ws) { ws->load(); }, "File")
 
 
 
@@ -69,106 +61,15 @@ std::unique_ptr<EditorResources> resources;
 std::shared_ptr<AssetStore> asset_store;
 std::unique_ptr<AssetLoader> loader;
 std::unique_ptr<ThumbnailRenderer> thumbnail_renderer;
-std::unique_ptr<DirectDraw> debug_drawer;
 std::unique_ptr<UiManager> ui;
-std::unique_ptr<EditorWorld> world;
+std::unique_ptr<DirectDraw> debug_drawer;
 
-std::unique_ptr<concurrent::JobSystem> job_system;
+std::unique_ptr<concurrent::JobSystem> editor_job_system;
 
 ImGuiPlatform* imgui_platform = nullptr;
-
-SceneView default_scene_view;
-SceneView* scene_view = nullptr;
+Workspace* workspace = nullptr;
 
 Settings settings;
-core::StopWatch update_timer;
-
-enum DeferredActions : u32 {
-    None    = 0x00,
-    Save    = 0x01,
-    Load    = 0x02,
-    New     = 0x04,
-};
-
-u32 deferred_actions = None;
-}
-
-
-
-
-static void create_scene_view() {
-    application::default_scene_view = SceneView(&current_scene());
-    set_scene_view(nullptr);
-}
-
-static void save_world_deferred() {
-    y_profile();
-
-    auto file = io2::File::create(app_settings().editor.world_file);
-    if(!file) {
-        log_msg("Unable to open world file", Log::Error);
-        return;
-    }
-
-    serde3::WritableArchive arc(file.unwrap());
-    if(auto r = application::world->save_state(arc); !r) {
-        log_msg(fmt("Unable to save world: {}", serde3::error_msg(r.error())), Log::Error);
-        return;
-    }
-
-    log_msg("World saved");
-}
-
-static void load_world_deferred() {
-    y_profile();
-
-    auto file = io2::File::open(app_settings().editor.world_file);
-    if(!file) {
-        log_msg("Unable to open world file", Log::Error);
-        return;
-    }
-
-    auto world = std::make_unique<EditorWorld>(*application::loader);
-
-    serde3::ReadableArchive arc(file.unwrap(), serde3::DeserializationFlags::DontPropagatePolyFailure);
-    if(auto r = world->load_state(arc); !r) {
-        const char* member_name = r.error().member ? r.error().member : "unknown member";
-        log_msg(fmt("Unable to load world: {} (for {})", serde3::error_msg(r.error()), member_name), Log::Error);
-        return;
-    } else if(r.unwrap() == serde3::Success::Partial) {
-        log_msg("World was only partially loaded", Log::Warning);
-    }
-
-    application::world = std::move(world);
-    create_scene_view();
-
-    log_msg("World loaded");
-}
-
-void post_tick() {
-    y_profile();
-    {
-        if(application::deferred_actions & application::Save) {
-            save_world_deferred();
-        }
-
-        if(application::deferred_actions & application::Load) {
-            load_world_deferred();
-        }
-
-        if(application::deferred_actions & application::New) {
-            application::world = std::make_unique<EditorWorld>(*application::loader);
-            create_scene_view();
-        }
-
-        application::deferred_actions = application::None;
-    }
-
-    if(JoltPhysicsSystem* jolt = application::world->find_system<JoltPhysicsSystem>()) {
-        jolt->set_debug_drawer(&debug_drawer());
-        jolt->set_debug_draw_static(application::settings.debug.display_static_colliders);
-        jolt->set_debug_draw_movable(application::settings.debug.display_movable_colliders);
-    }
 }
 
 
@@ -180,7 +81,7 @@ void post_tick() {
 void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::settings = settings;
     application::imgui_platform = platform;
-    application::job_system = std::make_unique<concurrent::JobSystem>();
+    application::editor_job_system = std::make_unique<concurrent::JobSystem>();
 
     const auto& store_dir = app_settings().editor.asset_store;
 
@@ -189,36 +90,35 @@ void init_editor(ImGuiPlatform* platform, const Settings& settings) {
     application::asset_store = std::make_shared<FolderAssetStore>(store_dir);
     application::loader = std::make_unique<AssetLoader>(application::asset_store, AssetLoadingFlags::SkipFailedDependenciesBit, 4);
     application::thumbnail_renderer = std::make_unique<ThumbnailRenderer>(*application::loader);
-    application::world = std::make_unique<EditorWorld>(*application::loader);
     application::debug_drawer = std::make_unique<DirectDraw>();
 
-    create_scene_view();
-
-    application::deferred_actions = application::Load;
-
-    post_tick();
+    if(application::settings.editor.open_world_workspace) {
+        add_workspace(std::make_unique<WorldWorkspace>());
+    }
 }
 
 
 void destroy_editor() {
+    application::debug_drawer = nullptr;
+    application::ui = nullptr;
+    application::editor_job_system = nullptr; // finish thumbnail jobs before destroying their targets
     application::thumbnail_renderer = nullptr;
-    application::world = nullptr;
-    application::scene_view  = nullptr;
-    application::default_scene_view = {};
     application::loader = nullptr;
     application::asset_store = nullptr;
-    application::debug_drawer = nullptr;
     application::resources = nullptr;
-    application::ui = nullptr;
-    application::job_system = nullptr;
 }
 
 void run_editor() {
     application::imgui_platform->exec([] {
-        application::world->tick(*application::job_system);
-        application::world->process_deferred_changes();
+        for(const auto& workspace : application::ui->workspaces()) {
+            workspace->update();
+        }
+
         application::ui->on_gui();
-        post_tick();
+
+        for(const auto& workspace : application::ui->workspaces()) {
+            workspace->post_update();
+        }
     });
 }
 
@@ -242,59 +142,24 @@ ThumbnailRenderer& thumbnail_renderer() {
     return *application::thumbnail_renderer;
 }
 
-concurrent::JobSystem& job_system() {
-    return *application::job_system;
+concurrent::JobSystem& editor_job_system() {
+    return *application::editor_job_system;
+}
+
+void notify_asset_saved(AssetId id) {
+    y_profile();
+
+    thumbnail_renderer().clear(id);
+    asset_loader().reload_from_id(id);
+
+    for(const auto& workspace : ui().workspaces()) {
+        workspace->grab_reloaded();
+    }
 }
 
 const EditorResources& resources() {
     return *application::resources;
 }
-
-void save_world() {
-    application::deferred_actions |= application::Save;
-}
-
-void load_world() {
-    application::deferred_actions |= application::Load;
-}
-
-void new_world() {
-    application::deferred_actions |= application::New;
-}
-
-EditorWorld& current_world() {
-    return *application::world;
-}
-
-const Scene& current_scene() {
-    const Scene* sce = application::world->find_system<SceneSystem>()->scene();
-    y_debug_assert(sce);
-    return *sce;
-}
-
-void set_scene_view(SceneView* scene) {
-    if(!scene) {
-        application::scene_view = &application::default_scene_view;
-    } else {
-        application::scene_view = scene;
-    }
-}
-
-void unset_scene_view(SceneView* scene) {
-    if(application::scene_view == scene) {
-        set_scene_view(nullptr);
-    }
-}
-
-const SceneView& scene_view() {
-    return *application::scene_view;
-}
-
-
-
-
-
-
 
 DebugValues& debug_values() {
     static DebugValues values = {};
@@ -302,23 +167,41 @@ DebugValues& debug_values() {
 }
 
 DirectDraw& debug_drawer() {
-    return *application::debug_drawer;
+    WorldWorkspace* workspace = dynamic_cast<WorldWorkspace*>(application::workspace);
+    return workspace ? workspace->debug_drawer() : *application::debug_drawer.get();
 }
 
 
 
 
-
-Widget* focussed_widget() {
-    return ui().focussed_widget();
+Workspace* current_workspace() {
+    return application::workspace;
 }
+
+void set_current_workspace(Workspace* workspace) {
+    application::workspace = workspace;
+}
+
+void unset_current_workspace(Workspace* workspace) {
+    if(application::workspace == workspace) {
+        application::workspace = nullptr;
+    }
+}
+
+
+
+
 
 Widget* last_focussed_widget() {
     return ui().last_focussed_widget();
 }
 
-Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent) {
-    return ui().add_widget(std::move(widget), auto_parent);
+Widget* add_top_level_widget(std::unique_ptr<Widget> widget) {
+    return ui().add_widget(std::move(widget));
+}
+
+Workspace* add_workspace(std::unique_ptr<Workspace> workspace) {
+    return ui().add_workspace(std::move(workspace));
 }
 
 
@@ -337,4 +220,3 @@ const EditorAction* all_actions() {
 }
 
 }
-

@@ -41,14 +41,6 @@ math::Vec3& EditorComponent::euler() {
     return _euler;
 }
 
-void EditorComponent::set_hidden_in_editor(bool hide) {
-    _hide_in_editor = hide;
-}
-
-bool EditorComponent::is_hidden_in_editor() const {
-    return _hide_in_editor;
-}
-
 void EditorComponent::set_parent_prefab(AssetId id) {
     _prefab = id;
 }
@@ -59,6 +51,14 @@ AssetId EditorComponent::parent_prefab() const {
 
 bool EditorComponent::is_prefab() const {
     return _prefab != AssetId::invalid_id();
+}
+
+bool EditorComponent::ignore_undo() const {
+    return _ignore_undo;
+}
+
+void EditorComponent::set_ignore_undo(bool ignore) {
+    _ignore_undo = ignore;
 }
 
 void EditorComponent::inspect(ecs::ComponentInspector* inspector) {

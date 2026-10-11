@@ -26,7 +26,6 @@ SOFTWARE.
 #include "Renamer.h"
 
 #include <editor/Settings.h>
-#include <editor/EditorWorld.h>
 #include <editor/widgets/EngineView.h>
 #include <editor/components/EditorComponent.h>
 
@@ -34,9 +33,11 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/components/BlueprintComponent.h>
+#include <yave/blueprints/blueprint_nodes.h>
+#include <yave/blueprints/BlueprintNodeFactory.h>
 #include <yave/scene/SceneView.h>
 
-#include <editor/components/DebugAnimateComponent.h>
 #include <editor/utils/StringMatcher.h>
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
@@ -45,40 +46,41 @@ SOFTWARE.
 
 namespace editor {
 
-static math::Vec3 new_entity_pos(float size) {
-    const Camera& camera = scene_view().camera();
+static math::Vec3 new_entity_pos(WorldWorkspace* ws, float size) {
+    const Camera& camera = ws->scene_view().camera();
     return camera.position() + camera.forward() * size;
 }
 
-static void set_new_entity_pos(ecs::EntityId id, bool on_cursor) {
+static void set_new_entity_pos(WorldWorkspace* ws, ecs::EntityId id, bool on_cursor) {
     if(!id.is_valid()) {
         return;
     }
-    EditorWorld& world = current_world();
+    EditorWorld& world = ws->world();
     if(TransformableComponent* transformable = world.component_mut<TransformableComponent>(id)) {
         if(const EngineView* en = last_focussed_widget_typed<EngineView>(); en && on_cursor) {
             transformable->set_position(en->cursor_world_pos());
         } else {
-            transformable->set_position(new_entity_pos(10.0f));
+            transformable->set_position(new_entity_pos(ws, 10.0f));
         }
     }
 }
 
-static void add_prefab(bool on_cursor = false) {
-    add_detached_widget<AssetSelector>(AssetType::Prefab, "Add prefab")->set_selected_callback(
-        [on_cursor](AssetId asset) {
-            const ecs::EntityId id = current_world().add_prefab(asset);
-            current_world().set_selected(id);
-            set_new_entity_pos(id, on_cursor);
+static void add_prefab(WorldWorkspace* ws, bool on_cursor = false) {
+    add_top_level_widget<AssetSelector>(AssetType::Prefab, "Add prefab")->set_selected_callback(
+        [ws, on_cursor](AssetId asset) {
+            EditorWorld& world = ws->world();
+            const ecs::EntityId id = world.add_prefab(asset);
+            world.set_selected(id);
+            set_new_entity_pos(ws, id, on_cursor);
             return id.is_valid();
         }
     );
 }
 
-static void add_debug_lights() {
+static void add_debug_lights(WorldWorkspace* ws) {
     y_profile();
 
-    EditorWorld& world = current_world();
+    EditorWorld& world = ws->world();
 
     const float spacing =  app_settings().debug.entity_spacing;
     const usize entity_count = app_settings().debug.entity_count;
@@ -103,10 +105,58 @@ static void add_debug_lights() {
     }
 }
 
-static void add_debug_cubes(bool animate) {
+static AssetPtr<Blueprint> create_rotate_blueprint() {
+    core::Vector<std::unique_ptr<BlueprintNodeFactory>> factories;
+    add_all_nodes(factories);
+
+    Blueprint blueprint;
+    const auto add_node = [&](std::string_view name) {
+        const auto it = std::find_if(factories.begin(), factories.end(), [&](const auto& f) { return f->name() == name; });
+        y_always_assert(it != factories.end(), "Blueprint node not found");
+        return blueprint.add_node((*it)->create_node());
+    };
+
+    BlueprintNode* on_tick = add_node("On tick");
+    BlueprintNode* self = add_node("Self");
+    BlueprintNode* get_rot = add_node("Get rotation");
+    BlueprintNode* multiply = add_node("Multiply quat");
+    BlueprintNode* from_axis_angle = add_node("Quat from axis angle");
+    BlueprintNode* set_rot = add_node("Set rotation");
+    BlueprintNode* entity_seed = add_node("Entity seed");
+    BlueprintNode* create_axis = add_node("Create Vec3");
+    BlueprintNode* center_axis = add_node("Add Vec3");
+
+    *static_cast<math::Vec3*>(center_axis->default_input(1)) = math::Vec3(-0.5f);
+    blueprint.add_link(self, 0, entity_seed, 0);
+    for(u32 i = 0; i != 3; ++i) {
+        BlueprintNode* offset_seed = add_node("Add u32");
+        *static_cast<u32*>(offset_seed->default_input(1)) = i;
+        blueprint.add_link(entity_seed, 0, offset_seed, 0);
+
+        BlueprintNode* random = add_node("Random float");
+        blueprint.add_link(offset_seed, 0, random, 0);
+        blueprint.add_link(random, 0, create_axis, i);
+    }
+
+    blueprint.add_link(create_axis, 0, center_axis, 0);
+    blueprint.add_link(center_axis, 0, from_axis_angle, 0);
+    blueprint.add_link(self, 0, get_rot, 0);
+    blueprint.add_link(on_tick, 1, from_axis_angle, 1);
+    blueprint.add_link(get_rot, 0, multiply, 0);
+    blueprint.add_link(from_axis_angle, 0, multiply, 1);
+    blueprint.add_link(on_tick, 0, set_rot, 0);
+    blueprint.add_link(self, 0, set_rot, 1);
+    blueprint.add_link(multiply, 0, set_rot, 2);
+
+    return make_asset<Blueprint>(std::move(blueprint));
+}
+
+static void add_debug_cubes(WorldWorkspace* ws, bool animate) {
     y_profile();
 
-    EditorWorld& world = current_world();
+    EditorWorld& world = ws->world();
+
+    const AssetPtr<Blueprint> rotate = animate ? create_rotate_blueprint() : AssetPtr<Blueprint>();
 
     const float spacing =  app_settings().debug.entity_spacing;
     const usize entity_count = app_settings().debug.entity_count;
@@ -127,22 +177,23 @@ static void add_debug_cubes(bool animate) {
         world.add_or_replace_component<StaticMeshComponent>(entity, device_resources()[DeviceResources::CubeMesh], device_resources()[DeviceResources::EmptyMaterial]);
 
         if(animate) {
-            world.get_or_add_component<DebugAnimateComponent>(entity);
+            // world.component_mut<EditorComponent>(entity)->set_ignore_undo(true);
+            world.add_or_replace_component<BlueprintComponent>(entity, rotate);
         }
     }
 }
 
-static void create_empty_entity() {
-    auto& world = current_world();
+static void create_empty_entity(WorldWorkspace* ws) {
+    auto& world = ws->world();
     world.set_selected(world.create_named_entity("New entity"));
 }
 
 template<typename T>
-static void create_entity_with_component(std::string_view name, bool on_cursor = false) {
-    auto& world = current_world();
+static void create_entity_with_component(WorldWorkspace* ws, std::string_view name, bool on_cursor = false) {
+    auto& world = ws->world();
     const ecs::EntityId id = world.create_named_entity(name);
     world.add_or_replace_component<T>(id);
-    set_new_entity_pos(id, on_cursor);
+    set_new_entity_pos(ws, id, on_cursor);
     world.set_selected(id);
 }
 
@@ -152,33 +203,37 @@ static bool is_engine_view_focussed() {
 
 
 editor_action("Add debug lights", add_debug_lights)
-editor_action("Add debug cubes", [] { add_debug_cubes(false); })
-editor_action("Add animated debug cubes", [] { add_debug_cubes(true); })
+editor_action("Add debug cubes", [](WorldWorkspace* ws) { add_debug_cubes(ws, false); })
+editor_action("Add animated debug cubes", [](WorldWorkspace* ws) { add_debug_cubes(ws, true); })
 
 editor_action("Add empty entity", create_empty_entity)
-editor_action("Add point light", [] { create_entity_with_component<PointLightComponent>("Point light"); })
-editor_action("Add spot light", [] { create_entity_with_component<SpotLightComponent>("Spot light"); })
-editor_action("Add prefab", add_prefab)
+editor_action("Add point light", [](WorldWorkspace* ws) { create_entity_with_component<PointLightComponent>(ws, "Point light"); })
+editor_action("Add spot light", [](WorldWorkspace* ws) { create_entity_with_component<SpotLightComponent>(ws, "Spot light"); })
+editor_action("Add prefab", [](WorldWorkspace* ws) { add_prefab(ws); })
 
-editor_action_contextual("Add point light here", ([] { create_entity_with_component<PointLightComponent>("Point light", true); }), is_engine_view_focussed)
-editor_action_contextual("Add spot light here", ([] { create_entity_with_component<SpotLightComponent>("Spot light", true); }), is_engine_view_focussed)
-editor_action_contextual("Add prefab here", [] { add_prefab(true); }, is_engine_view_focussed)
+editor_action_contextual("Add point light here", ([](WorldWorkspace* ws) { create_entity_with_component<PointLightComponent>(ws, "Point light", true); }), [](WorldWorkspace*) { return is_engine_view_focussed(); })
+editor_action_contextual("Add spot light here", ([](WorldWorkspace* ws) { create_entity_with_component<SpotLightComponent>(ws, "Spot light", true); }), [](WorldWorkspace*) { return is_engine_view_focussed(); })
+editor_action_contextual("Add prefab here", [](WorldWorkspace* ws) { add_prefab(ws, true); }, [](WorldWorkspace*) { return is_engine_view_focussed(); })
 
 editor_action_contextual(ICON_FA_TRASH " Delete selected",
-    [] { add_child_widget<DeletionDialog>(current_world().selected_entities()); },
-    [] { return current_world().has_selected_entities(); }
+    [](WorldWorkspace* ws) {
+        add_top_level_widget<DeletionDialog>(ws, ws->world().selected_entities());
+    },
+    [](WorldWorkspace* ws) {
+        return ws->world().has_selected_entities();
+    }
 )
 
 
 
 
 
-Outliner::Outliner() : Widget(ICON_FA_SITEMAP " Outliner") {
+Outliner::Outliner(WorldWorkspace* ws) : WorkspaceWidget(ICON_FA_SITEMAP " Outliner", ws) {
     _tag_buttons.emplace_back(ICON_FA_EYE, ecs::tags::hidden, false);
 }
 
 void Outliner::on_gui() {
-    EditorWorld& world = current_world();
+    EditorWorld& world = workspace()->world();
 
     if(ImGui::Button(ICON_FA_PLUS)) {
         ImGui::OpenPopup("##plusmenu");
@@ -192,13 +247,13 @@ void Outliner::on_gui() {
 
     if(ImGui::BeginPopup("##plusmenu")) {
         if(ImGui::MenuItem("Empty entity")) {
-            current_world().set_selected(world.create_named_entity("New entity"));
+            world.set_selected(world.create_named_entity("New entity"));
         }
 
         ImGui::Separator();
 
         if(ImGui::MenuItem("Add Prefab")) {
-            add_prefab();
+            add_prefab(workspace());
         }
 
         ImGui::EndPopup();
@@ -327,8 +382,8 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id, bool recursive
         ImGui::Separator();
 
         if(ImGui::MenuItem("Rename")) {
-            add_child_widget<Renamer>(component->name(), [target_id = _context_menu_target](std::string_view name) {
-                if(EditorComponent* comp = current_world().component_mut<EditorComponent>(target_id)) {
+            add_top_level_widget<Renamer>(component->name(), [target_id = _context_menu_target, workspace = workspace()](std::string_view name) {
+                if(EditorComponent* comp = workspace->world().component_mut<EditorComponent>(target_id)) {
                     comp->set_name(name);
                 }
                 return true;
@@ -336,7 +391,7 @@ void Outliner::display_node(EditorWorld& world, ecs::EntityId id, bool recursive
         }
 
         if(ImGui::MenuItem(ICON_FA_TRASH " Delete")) {
-            add_child_widget<DeletionDialog>(_context_menu_target);
+            add_top_level_widget<DeletionDialog>(workspace(), _context_menu_target);
         }
 
         ImGui::EndPopup();
@@ -361,7 +416,7 @@ bool Outliner::make_drop_target(EditorWorld& world, ecs::EntityId id) {
     }
 
     if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_entity_id)) {
-        if(const ecs::EntityId dragged = *static_cast<const ecs::EntityId*>(payload->Data); world.exists(dragged) && !world.is_parent(id, dragged)) {
+        if(const ecs::EntityId dragged = *static_cast<const ecs::EntityId*>(payload->Data); world.exists(dragged) && dragged != id && !world.is_parent(id, dragged)) {
             world.set_parent(dragged, id);
         }
     }

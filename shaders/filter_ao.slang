@@ -23,7 +23,7 @@ ConstantBuffer<Camera> camera;
 RWTexture2D<float> out_ao;
 
 [[vk::binding(5)]]
-cbuffer Params_Inline {
+cbuffer Params {
     float4 weights[KERNEL_SIZE / 4];
     int2 offset;
 };

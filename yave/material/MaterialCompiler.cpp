@@ -35,6 +35,7 @@ SOFTWARE.
 
 namespace yave {
 
+[[maybe_unused]]
 static void keep_depth_only_stages(core::ScratchVector<VkPipelineShaderStageCreateInfo>& stages) {
     const auto is_frag_stage = [](const VkPipelineShaderStageCreateInfo& s) { return s.stage == VK_SHADER_STAGE_FRAGMENT_BIT; };
     if(const auto it = std::find_if(stages.begin(), stages.end(), is_frag_stage); it != stages.end()) {
@@ -111,9 +112,11 @@ GraphicPipeline MaterialCompiler::compile(const MaterialTemplate* material, cons
     const ShaderProgram program(frag, vert, geom);
 
     core::ScratchVector<VkPipelineShaderStageCreateInfo> pipeline_shader_stages(program.vk_pipeline_stage_info());
-    if(render_pass.is_depth_only()) {
+
+    // This breaks shadows for alpha tested stuff
+    /*if(render_pass.is_depth_only()) {
         keep_depth_only_stages(pipeline_shader_stages);
-    }
+    }*/
 
     const auto attribute_bindings = program.vk_attribute_bindings();
     const auto attribute_descriptions = program.vk_attributes_descriptions();

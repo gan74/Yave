@@ -24,32 +24,10 @@ SOFTWARE.
 
 #include <editor/Widget.h>
 
-#include <y/core/HashMap.h>
-
 namespace editor {
 
 class GpuProfiler final : public Widget {
     editor_widget(GpuProfiler, "View")
-
-    struct ZoneHistory {
-        usize sample_count = 0;
-
-        double gpu_ms_sum = 0.0;
-        double gpu_ms_max = 0.0;
-
-        double cpu_ms_sum = 0.0;
-        double cpu_ms_max = 0.0;
-
-        void update(double gpu_ms, double cpu_ms) {
-            ++sample_count;
-
-            gpu_ms_sum += gpu_ms;
-            gpu_ms_max = std::max(gpu_ms, gpu_ms_max);
-
-            cpu_ms_sum += cpu_ms;
-            cpu_ms_max = std::max(cpu_ms, cpu_ms_max);
-        }
-    };
 
     public:
         GpuProfiler();
@@ -58,7 +36,6 @@ class GpuProfiler final : public Widget {
         void on_gui() override;
 
     private:
-        core::FlatHashMap<i64, ZoneHistory> _history;
         bool _display_tree = true;
 };
 

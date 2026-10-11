@@ -22,16 +22,21 @@ SOFTWARE.
 
 #include "ResourceBrowser.h"
 
+#include "AssetReferenceWidget.h"
 #include "GltfImporter.h"
 #include "ImageImporter.h"
 
+#include <editor/editor.h>
 #include <editor/ImGuiPlatform.h>
 #include <editor/ThumbnailRenderer.h>
+#include <editor/BlueprintWorkspace.h>
+#include <editor/MaterialWorkspace.h>
 
 #include <editor/utils/assets.h>
 #include <editor/utils/ui.h>
 
 #include <yave/assets/AssetStore.h>
+#include <yave/blueprints/Blueprint.h>
 #include <yave/utils/FileSystemModel.h>
 #include <yave/material/MaterialData.h>
 
@@ -46,8 +51,39 @@ SOFTWARE.
 
 namespace editor {
 
-editor_action("Import glTF", add_detached_widget<GltfImporter>)
-editor_action("Import image", add_detached_widget<ImageImporter>)
+template<typename Data, typename Workspace, AssetType Type>
+static void create_empty_asset(const core::String& import_path) {
+    const Data data;
+    const std::string_view type_name = asset_type_name(Type);
+
+    io2::Buffer buffer;
+    {
+        serde3::WritableArchive arc(buffer);
+        if(const auto res = arc.serialize(data); res.is_error()) {
+            log_msg(fmt("Unable to serialize {}", type_name), Log::Error);
+            return;
+        }
+    }
+
+    core::String suffix;
+    for(usize i = 0;; ++i) {
+        buffer.reset();
+        const core::String name = asset_store().filesystem()->join(import_path, core::String(type_name) + suffix);
+        if(const auto res = asset_store().import(buffer, name, Type, {}); res.is_ok()) {
+            log_msg(fmt("Created {} \"{}\"", type_name, name));
+            add_workspace(std::make_unique<Workspace>(res.unwrap()));
+            break;
+        } else if(res.error() == AssetStore::ErrorType::NameAlreadyExists) {
+            suffix = fmt_to_owned(" ({})", i);
+        } else {
+            log_msg(fmt("Unable to create {}, error: {}", type_name, res.error()), Log::Error);
+            break;
+        }
+    }
+}
+
+editor_action("Import glTF", add_top_level_widget<GltfImporter>)
+editor_action("Import image", add_top_level_widget<ImageImporter>)
 
 
 
@@ -55,10 +91,10 @@ editor_action("Import image", add_detached_widget<ImageImporter>)
 ResourceBrowser::ResourceBrowser() : ResourceBrowser(ICON_FA_FOLDER_OPEN " Resource Browser") {
 }
 
-ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _fs_view(asset_store().filesystem()) {
-    _fs_view.set_split_mode_enabled(true);
+ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _filesystem_view(asset_store().filesystem()) {
+    _filesystem_view.set_split_mode_enabled(true);
 
-    _fs_view.set_clicked_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+    _filesystem_view.set_clicked_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
         if(type == FileSystemModel::EntryType::File) {
             if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
                 return _selected_delegate(id);
@@ -67,7 +103,7 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _fs_vi
         return false;
     });
 
-    _fs_view.set_preview_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) -> UiTexture {
+    _filesystem_view.set_preview_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) -> UiTexture {
         if(type == FileSystemModel::EntryType::File) {
             if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
                 if(const TextureView* tex = thumbnail_renderer().thumbnail_img(id)) {
@@ -78,7 +114,23 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _fs_vi
         return {};
     });
 
-    _fs_view.set_tooltip_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+    _filesystem_view.set_icon_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+        switch(type) {
+            case FileSystemModel::EntryType::Directory:
+                return UiIcon{ICON_FA_FOLDER_OPEN, imgui::folder_icon_color};
+
+            case FileSystemModel::EntryType::File:
+                if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
+                    return UiIcon{asset_type_icon(asset_type(id)), 0xFFFFFFFF};
+                }
+                return UiIcon{ICON_FA_FILE_ALT, 0xFFFFFFFF};
+
+            default:
+                return UiIcon{ICON_FA_QUESTION, 0xFFFFFFFF};
+        }
+    });
+
+    _filesystem_view.set_tooltip_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
         ImGui::TextUnformatted(full_name.data(), full_name.data() + full_name.size());
         if(type == FileSystemModel::EntryType::File) {
             if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
@@ -88,11 +140,43 @@ ResourceBrowser::ResourceBrowser(std::string_view title) : Widget(title), _fs_vi
 
                 if(const auto* thumb = thumbnail_renderer().thumbnail_data(id)) {
                     ImGui::Separator();
-                    ImGui::Image(imgui_platform()->to_ui(thumb->view), ImVec2(256.0f, 256.0f));
+                    if(!thumb->view.is_null()) {
+                        ImGui::Image(imgui_platform()->to_ui(thumb->view), ImVec2(256.0f, 256.0f));
+                    }
                     for(const core::String& info : thumb->infos) {
                         ImGui::TextUnformatted(info.data());
                     }
                 }
+            }
+        }
+    });
+
+    _filesystem_view.set_context_menu_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
+        if(ImGui::MenuItem("New blueprint")) {
+            create_empty_asset<Blueprint, BlueprintWorkspace, AssetType::Blueprint>(_filesystem_view.path());
+        }
+        if(ImGui::MenuItem("New material")) {
+            create_empty_asset<MaterialData, MaterialWorkspace, AssetType::Material>(_filesystem_view.path());
+        }
+
+        if(type != FileSystemModel::EntryType::File) {
+            return;
+        }
+
+        if(const AssetId id = asset_id(full_name); id != AssetId::invalid_id()) {
+            ImGui::Separator();
+            if(asset_type(id) == AssetType::Material) {
+                if(ImGui::MenuItem(ICON_FA_PEN " Edit")) {
+                    add_workspace(std::make_unique<MaterialWorkspace>(id));
+                }
+            }
+            if(asset_type(id) == AssetType::Blueprint) {
+                if(ImGui::MenuItem(ICON_FA_PEN " Edit")) {
+                    add_workspace(std::make_unique<BlueprintWorkspace>(id));
+                }
+            }
+            if(ImGui::MenuItem("Show references")) {
+                add_top_level_widget<AssetReferenceWidget>(id);
             }
         }
     });
@@ -109,10 +193,10 @@ AssetType ResourceBrowser::asset_type(AssetId id) const {
 
 void ResourceBrowser::draw_import_menu() {
     if(ImGui::Selectable("Import glTF")) {
-        add_detached_widget<GltfImporter>(_fs_view.path());
+        add_top_level_widget<GltfImporter>(_filesystem_view.path());
     }
     if(ImGui::Selectable("Import image")) {
-        add_detached_widget<ImageImporter>(_fs_view.path());
+        add_top_level_widget<ImageImporter>(_filesystem_view.path());
     }
 }
 
@@ -133,40 +217,50 @@ void ResourceBrowser::on_gui() {
 
         ImGui::SameLine();
         if(ImGui::Button(ICON_FA_ARROW_UP)) {
-            const FileSystemModel* fs = _fs_view.filesystem();
-            _fs_view.set_path(fs->parent_path(_fs_view.path()).unwrap_or(_fs_view.root_path()));
+            const FileSystemModel* fs = _filesystem_view.filesystem();
+            _filesystem_view.set_path(fs->parent_path(_filesystem_view.path()).unwrap_or(_filesystem_view.root_path()));
         }
 
         ImGui::SameLine();
-        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-
         draw_path_bar();
+
+        if(dynamic_cast<const SearchableFileSystemModel*>(_filesystem_view.filesystem())) {
+            const float search_bar_size = 180.0f;
+            const float max_x = ImGui::GetContentRegionAvail().x + ImGui::GetCursorScreenPos().x - ImGui::GetWindowPos().x;
+            const float offset = max_x - search_bar_size;
+            if(offset > 0.0f) {
+                ImGui::SameLine(offset);
+                ImGui::SetNextItemWidth(search_bar_size);
+                imgui::text_input("##search", _search_pattern, ImGuiInputTextFlags_AutoSelectAll, ICON_FA_SEARCH " Search");
+                _filesystem_view.set_search(_search_pattern);
+            }
+        }
     }
 
-    _fs_view.draw_gui_inside();
+    _filesystem_view.draw_gui_inside();
 }
 
 
 void ResourceBrowser::draw_path_bar() {
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{});
-    const auto res = draw_path_bar_element(_fs_view.path());
+    const auto res = draw_path_bar_element(_filesystem_view.path());
     ImGui::PopStyleColor();
     if(res) {
-        _fs_view.set_path(res.unwrap());
+        _filesystem_view.set_path(res.unwrap());
     }
 }
 
 core::Result<core::String> ResourceBrowser::draw_path_bar_element(std::string_view path) {
     if(path.empty()) {
         if(ImGui::Button("root")) {
-            return core::Ok(_fs_view.root_path());
+            return core::Ok(_filesystem_view.root_path());
         }
         ImGui::SameLine();
         ImGui::TextUnformatted(ICON_FA_CHEVRON_RIGHT);
         return core::Err();
     }
 
-    const FileSystemModel* fs = _fs_view.filesystem();
+    const FileSystemModel* fs = _filesystem_view.filesystem();
     if(const auto parent = fs->parent_path(path)) {
         if(auto res = draw_path_bar_element(parent.unwrap())) {
             return res;

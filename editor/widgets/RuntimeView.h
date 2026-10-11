@@ -19,33 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_WIDGETS_SCRIPTINGCONSOLE_H
-#define EDITOR_WIDGETS_SCRIPTINGCONSOLE_H
-
-#include <yave/script/ScriptVM.h>
+#ifndef EDITOR_WIDGETS_RUNTIMEVIEW_H
+#define EDITOR_WIDGETS_RUNTIMEVIEW_H
 
 #include <editor/Widget.h>
+#include <editor/utils/CameraController.h>
+
+#include <yave/ecs/EntityWorld.h>
+#include <yave/scene/SceneView.h>
+
+#include <y/io2/Buffer.h>
 
 namespace editor {
 
-class ScriptingConsole final : public Widget {
-
-    editor_widget(ScriptingConsole, "View")
-
+class RuntimeView final : public Widget {
     public:
-        ScriptingConsole();
+        RuntimeView(io2::Buffer snapshot, const Camera& camera);
+        ~RuntimeView() override;
 
     protected:
         void on_gui() override;
 
     private:
-        void run(const core::String& code);
+        void restart();
+        void update_camera();
+        void draw();
 
-        core::String _code;
-        ScriptVM _vm;
+        io2::Buffer _snapshot;
+        std::unique_ptr<ecs::EntityWorld> _world;
+
+        std::shared_ptr<FrameGraphResourcePool> _resource_pool;
+
+        SceneView _scene_view;
+        std::unique_ptr<CameraController> _camera_controller;
 };
 
 }
 
-#endif // EDITOR_WIDGETS_SCRIPTINGCONSOLE_H
-
+#endif // EDITOR_WIDGETS_RUNTIMEVIEW_H

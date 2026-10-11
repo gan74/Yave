@@ -27,45 +27,60 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphFrameResources.h>
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdBufferRecorder.h>
+#include <yave/graphics/shader_structs.h>
 
 #include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/AtmosphereComponent.h>
-#include <yave/meshes/StaticMesh.h>
-#include <yave/ecs/EntityWorld.h>
-
-#include <yave/graphics/shader_structs.h>
-
-#include <y/core/Chrono.h>
 
 namespace yave {
 
-AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit, const AtmosphereSettings&) {
+AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId lit) {
     const Scene* scene = gbuffer.scene_pass.scene_view.scene();
 
-    const AtmosphereObject* atmo_object = scene->atmosphere();
-    if(!atmo_object) {
+    const AtmosphereObject* obj = scene->atmosphere();
+    if(!obj) {
         AtmospherePass pass;
         pass.lit = lit;
         return pass;
     }
 
-    const AtmosphereComponent& atmosphere = atmo_object->component;
-    const DirectionalLightComponent& sun = atmo_object->sun;
+    const AtmosphereComponent& atmosphere = obj->component;
+    const DirectionalLightComponent& sun = obj->sun;
 
-    const math::Vec4 params(
-        sun.color() * sun.intensity(),
-        atmosphere.density_falloff() / 1000.0f
-    );
+    struct Params {
+        math::Vec3 sun_direction;
+        float sun_intensity;
+        math::Vec3 sun_color;
+        float sea_level;
+
+        u32 display_sky;
+        u32 padding_0;
+        u32 padding_1;
+        u32 padding_2;
+    } params {
+        -sun.direction().normalized(),
+        sun.intensity(),
+        sun.color(),
+        atmosphere.sea_level(),
+
+        atmosphere.display_sky() ? 1u : 0u,
+        0u, 0u, 0u,
+    };
 
     FrameGraphPassBuilder builder = framegraph.add_pass("Atmosphere pass");
 
     const auto atmo = builder.declare_copy(lit);
 
+    const DeviceResources& res = device_resources();
+
     builder.add_uniform_input(gbuffer.depth);
     builder.add_uniform_input(lit);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_color_output(atmo);
+    builder.add_external_input(Descriptor(res.atmosphere_transmittance_lut(), SamplerType::LinearClamp));
+    builder.add_external_input(Descriptor(res.atmosphere_scattering_lut(), SamplerType::LinearClamp));
+    builder.add_inline_input(shader::AtmosphereParams{});
     builder.add_inline_input(params);
+    builder.add_color_output(atmo);
     builder.set_render_func([=](RenderPassRecorder& render_pass, const FrameGraphPass* self) {
         const auto* material = device_resources()[DeviceResources::AtmosphereMaterialTemplate];
         render_pass.bind_material_template(material, self->descriptor_set());
@@ -78,4 +93,3 @@ AtmospherePass AtmospherePass::create(FrameGraph& framegraph, const GBufferPass&
 }
 
 }
-

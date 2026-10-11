@@ -164,17 +164,17 @@ class FlatHashMap : Hasher, Equal {
             template<typename K>
             y_force_inline void set_empty(const K& k) {
                 checked_set_full();
-                ::new(&key_value) pair_type{k, mapped_type{}};
+                std::construct_at(&key_value, k, mapped_type{});
             }
 
             y_force_inline void set(pair_type&& kv) {
                 checked_set_full();
-                ::new(&key_value) pair_type{std::move(kv)};
+                std::construct_at(&key_value, std::move(kv));
             }
 
             y_force_inline void clear() {
                 checked_set_empty();
-                key_value.~pair_type();
+                std::destroy_at(&key_value);
             }
 
             y_force_inline const key_type& key() const {
@@ -375,7 +375,6 @@ class FlatHashMap : Hasher, Equal {
                     if(matches != 0) {
                         do {
                             const Entry* group_start = _entries.get() + group_start_index;
-                            _mm_prefetch(reinterpret_cast<const char*>(group_start), _MM_HINT_T0);
                             const usize index_in_group = countr_zero(matches);
                             if(equal(group_start[index_in_group].key(), key)) {
                                 return {group_start_index + index_in_group, true};
@@ -459,7 +458,6 @@ class FlatHashMap : Hasher, Equal {
                 if(matches != 0) [[likely]] {
                     const usize group_start_index = group_index * simd_width;
                     const Entry* group_start = _entries.get() + group_start_index;
-                    _mm_prefetch(reinterpret_cast<const char*>(group_start), _MM_HINT_T0);
                     do {
                         const usize index_in_group = countr_zero(matches);
                         if(equal(group_start[index_in_group].key(), key)) [[likely]] {
@@ -495,7 +493,7 @@ class FlatHashMap : Hasher, Equal {
                         best_index = index;
                     }
                     if(state == detail::empty_state) {
-                        return {index, false};
+                        return {best_index != invalid_index ? best_index : index, false};
                     }
                 } else if(state == make_state(h) && equal(_entries[index].key(), key)) {
                     return {index, true};
@@ -577,6 +575,10 @@ class FlatHashMap : Hasher, Equal {
             expand(2 * bucket_count());
         }
 
+        inline bool contains_ptr(const void* ptr) const {
+            return ptr >= _entries.get() && ptr < _entries.get() + _buckets;
+        }
+
         std::unique_ptr<State[]> _states;
         std::unique_ptr<Entry[]> _entries;
         usize _buckets = 0;
@@ -600,7 +602,10 @@ class FlatHashMap : Hasher, Equal {
         }
 
         inline FlatHashMap& operator=(FlatHashMap&& other) {
-            swap(other);
+            if(&other != this) {
+                clear();
+                swap(other);
+            }
             return *this;
         }
 
@@ -624,11 +629,12 @@ class FlatHashMap : Hasher, Equal {
             const usize len = bucket_count();
             for(usize i = 0; i != len && _size; ++i) {
                 if(is_state_full(_states[i])) {
-                    _states[i] = detail::empty_state;
                     _entries[i].clear();
                     --_size;
                 }
             }
+
+            std::fill_n(_states.get(), len, detail::empty_state);
             _max_probe_len = 0;
 
             y_debug_assert(_size == 0);
@@ -770,10 +776,26 @@ class FlatHashMap : Hasher, Equal {
 
         template<typename K, typename... Args>
         inline std::pair<iterator, bool> emplace(const K& key, Args&&... args) {
-            return insert(pair_type{key, mapped_type{y_fwd(args)...}});
+            y_debug_assert(!contains_ptr(&key));
+            if(should_expand()) [[unlikely]] {
+                expand();
+            }
+
+            y_debug_assert(!should_expand());
+
+            const usize h = hash(key);
+            const auto [index, exists] = find_bucket_for_insert(key, h);
+
+            if(!exists) {
+                _entries[index].set(pair_type{key, mapped_type{y_fwd(args)...}});
+                _states[index] = make_state(h);
+                ++_size;
+            }
+
+            return {iterator(this, index), !exists};
         }
 
-        inline std::pair<iterator, bool> insert(value_type p) {
+        inline std::pair<iterator, bool> insert(pair_type p) {
             if(should_expand()) [[unlikely]] {
                 expand();
             }
@@ -804,6 +826,7 @@ class FlatHashMap : Hasher, Equal {
 
         template<typename K>
         inline mapped_type& operator[](const K& key) {
+            y_debug_assert(!contains_ptr(&key));
             if(should_expand()) [[unlikely]] {
                 expand();
             }
@@ -984,6 +1007,7 @@ class DenseHashMap : Hasher, Equal {
 
         template<typename K>
         inline mapped_type& operator[](const K& key) {
+            y_debug_assert(!contains_ptr(&key));
             if(should_expand()) {
                 expand();
             }
@@ -1071,6 +1095,10 @@ class DenseHashMap : Hasher, Equal {
 
         inline void expand() {
             expand(2 * _bucket_count);
+        }
+
+        inline bool contains_ptr(const void* ptr) const {
+            return ptr >= _key_values.begin() && ptr < _key_values.end();
         }
 
         void expand(usize cap) {

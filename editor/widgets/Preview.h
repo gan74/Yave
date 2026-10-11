@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <yave/graphics/images/ImageView.h>
 #include <yave/assets/AssetPtr.h>
-#include <yave/scene/Scene.h>
+#include <yave/scene/SimpleScene.h>
 #include <yave/scene/SceneView.h>
 
 namespace editor {
@@ -57,13 +57,13 @@ class Preview final : public Widget {
 
     private:
         void draw_mesh_menu();
-        void reset_world();
+        void reset_scene();
         void update_camera();
 
         AssetPtr<Material> _material;
         AssetPtr<StaticMesh> _mesh;
 
-        std::unique_ptr<EditorWorld> _world;
+        std::unique_ptr<SimpleScene> _scene;
         SceneView _view;
 
         AssetPtr<IBLProbe> _ibl_probe;
@@ -78,4 +78,3 @@ class Preview final : public Widget {
 
 
 #endif // EDITOR_PREVIEW_H
-

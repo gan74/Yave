@@ -31,6 +31,8 @@ SOFTWARE.
 #include <yave/graphics/images/Image.h>
 #include <yave/graphics/images/ImageView.h>
 
+#include <mutex>
+
 namespace yave {
 
 class SpirVData;
@@ -67,6 +69,9 @@ class DeviceResources final : NonMovable {
             BilateralVerticalProgram,
             BilateralHorizontalProgram,
             PickingProgram,
+
+            AtmosphereSingleProgram,
+            AtmosphereMultipleProgram,
 
             MaxNonRTComputePrograms,
 
@@ -166,6 +171,9 @@ class DeviceResources final : NonMovable {
         TextureView brdf_lut() const;
         TextureView white_noise() const;
 
+        TextureView atmosphere_transmittance_lut() const;
+        VolumeView atmosphere_scattering_lut() const;
+
         const AssetPtr<IBLProbe>& ibl_probe() const;
         const AssetPtr<IBLProbe>& empty_probe() const;
 
@@ -178,8 +186,11 @@ class DeviceResources final : NonMovable {
         const AssetPtr<StaticMesh>& operator[](Meshes i) const;
 
     private:
+        void ensure_loaded(ComputePrograms prog);
+        void ensure_loaded(MaterialTemplates mat);
+
         std::unique_ptr<ComputeProgram[]> _computes;
-        std::unique_ptr<MaterialTemplate[]> _material_templates;
+        std::unique_ptr<std::unique_ptr<MaterialTemplate>[]> _material_templates;
         std::unique_ptr<RaytracingProgram[]> _raytracing_programs;
 
         std::unique_ptr<AssetPtr<Texture>[]> _textures;
@@ -191,6 +202,13 @@ class DeviceResources final : NonMovable {
 
         Texture _brdf_lut;
         Texture _white_noise;
+
+        StorageTexture _atmosphere_transmittance;
+        StorageVolume _atmosphere_scattering;
+
+#ifdef YAVE_LAZY_DEVICE_RESOURCES
+        std::mutex _lazy_lock;
+#endif
 };
 }
 

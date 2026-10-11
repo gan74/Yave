@@ -76,6 +76,9 @@ class KeyCombination {
 
         KeyCombination& operator+=(Key key);
 
+        bool operator==(const KeyCombination& other) const;
+        bool operator!=(const KeyCombination& other) const;
+
     private:
         u64 _bits = 0;
 };

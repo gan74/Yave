@@ -19,36 +19,52 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_COMPONENTS_DEBUGANIMATECOMPONENT_H
-#define EDITOR_COMPONENTS_DEBUGANIMATECOMPONENT_H
+#ifndef EDITOR_WIDGETS_BLUEPRINTEDITOR_H
+#define EDITOR_WIDGETS_BLUEPRINTEDITOR_H
 
-#include <editor/editor.h>
+#include <editor/Widget.h>
+#include <editor/BlueprintWorkspace.h>
 
-#include <y/core/Chrono.h>
+namespace ax::NodeEditor {
+struct EditorContext;
+}
 
 namespace editor {
 
-class DebugAnimateComponent {
+class BlueprintEditor final : public WorkspaceWidget<BlueprintWorkspace> {
+
+    editor_widget_open(BlueprintEditor, Center)
+
     public:
-        DebugAnimateComponent();
+        BlueprintEditor(BlueprintWorkspace* ws);
+        ~BlueprintEditor() override;
 
-        const math::Vec3& axis() const;
-        float speed() const;
+        void center_on_node(const BlueprintNode* node);
 
-        bool rotate() const;
-        bool translate() const;
-
-        void inspect(ecs::ComponentInspector* inspector);
+    protected:
+        void on_gui() override;
 
     private:
-        math::Vec3 _axis;
-        float _speed = 1.0f;
+        void draw_execution_order();
+        void process_actions();
+        void draw_context_menu();
+        void reset_node_layout();
+        void layout_nodes(usize first_node, math::Vec2 origin);
 
-        bool _rotate = true;
-        bool _translate = false;
+        ax::NodeEditor::EditorContext* _context = nullptr;
+
+        bool _show_execution_order = false;
+
+        core::String _node_filter;
+        bool _open_node_menu = false;
+
+        struct NewNode {
+            math::Vec2 pos;
+            uintptr_t link_pin = 0;
+        } _new_node;
+
 };
 
 }
 
-#endif // EDITOR_COMPONENTS_DEBUGANIMATECOMPONENT_H
-
+#endif // EDITOR_WIDGETS_BLUEPRINTEDITOR_H

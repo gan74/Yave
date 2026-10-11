@@ -60,14 +60,33 @@ AssetStore::Result<> AssetStore::rename(std::string_view from, std::string_view 
     return core::Err(ErrorType::UnknownID);
 }
 
-AssetStore::Result<> AssetStore::write(AssetId id, io2::Reader& data) {
-    unused(id, data);
+AssetStore::Result<> AssetStore::write(AssetId id, io2::Reader& data, core::Span<AssetId> refs) {
+    unused(id, data, refs);
     return core::Err(ErrorType::UnsupportedOperation);
 }
 
 AssetStore::Result<AssetType> AssetStore::asset_type(AssetId id) const {
     unused(id);
     return core::Err(ErrorType::UnsupportedOperation);
+}
+
+AssetStore::Result<core::Span<AssetId>> AssetStore::references(AssetId id) const {
+    unused(id);
+    return core::Err(ErrorType::UnsupportedOperation);
+}
+
+AssetStore::Result<> AssetStore::search_references(AssetId id, const std::function<void(AssetId)>& found) const {
+    unused(id, found);
+    return core::Err(ErrorType::UnsupportedOperation);
+}
+
+AssetStore::Result<usize> AssetStore::reference_count(AssetId id) const {
+    usize count = 0;
+    if(auto res = search_references(id, [&](AssetId) { ++count; }); res.is_error()) {
+        return core::Err(res.error());
+    }
+
+    return core::Ok(count);
 }
 
 }

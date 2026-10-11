@@ -39,6 +39,14 @@ void AssetLoaderSystem::setup(ecs::SystemScheduler& sched) {
     }
 }
 
+void AssetLoaderSystem::grab_reloaded() {
+    y_profile();
+
+    for(const LoadableComponentTypeInfo& info : _infos) {
+        info.grab_reloaded(world());
+    }
+}
+
 
 }
 

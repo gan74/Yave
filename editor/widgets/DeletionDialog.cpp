@@ -22,9 +22,7 @@ SOFTWARE.
 
 #include "DeletionDialog.h"
 
-#include <editor/EditorWorld.h>
-#include <editor/components/EditorComponent.h>
-
+#include <editor/WorldWorkspace.h>
 #include <editor/utils/ui.h>
 
 namespace editor {
@@ -41,15 +39,15 @@ static void remove_children(EditorWorld& world, ecs::EntityId id) {
     }
 }
 
-DeletionDialog::DeletionDialog(core::Span<ecs::EntityId> ids) :
-        Widget("Confirm", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking),
+DeletionDialog::DeletionDialog(WorldWorkspace* ws, core::Span<ecs::EntityId> ids) :
+        WorkspaceWidget("Confirm", ws, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking),
         _ids(ids) {
 
    set_modal(true);
 }
 
 void DeletionDialog::on_gui() {
-    EditorWorld& world = current_world();
+    EditorWorld& world = workspace()->world();
 
     const bool exists = std::any_of(_ids.begin(), _ids.end(), [&](const ecs::EntityId id) { return world.exists(id); });
     if(!exists) {
@@ -57,9 +55,8 @@ void DeletionDialog::on_gui() {
     }
 
     if(_ids.size() == 1) {
-        const EditorComponent* component = world.component<EditorComponent>(_ids[0]);
-        y_debug_assert(component);
-        ImGui::Text("Delete \"%s\"?", component->name().data());
+        const std::string_view name = world.entity_name(_ids[0]);
+        ImGui::Text("Delete \"%s\"?", name.empty() ? "entity" : name.data());
     } else {
         ImGui::Text("Delete %u entities?", u32(_ids.size()));
     }
@@ -93,4 +90,3 @@ void DeletionDialog::on_gui() {
 }
 
 }
-

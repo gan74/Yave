@@ -68,7 +68,7 @@ void log_msg(std::string_view msg, Log type) {
         return;
     }
 
-    FILE* out_channel = type == Log::Error || type == Log::Warning ? stdout : stderr;
+    FILE* out_channel = (type == Log::Error || type == Log::Warning) ? stderr : stdout;
     std::fprintf(out_channel, "%s %.*s\n", log_type_str[usize(type)], int(msg.size()), msg.data());
 
     if(out_channel == stderr) {
@@ -79,6 +79,14 @@ void log_msg(std::string_view msg, Log type) {
 void set_log_callback(detail::log_callback func, void* user_data) {
     callback = func;
     callback_user_data = user_data;
+}
+
+detail::log_callback log_callback() {
+    return callback;
+}
+
+void* log_callback_user_data() {
+    return callback_user_data;
 }
 
 }

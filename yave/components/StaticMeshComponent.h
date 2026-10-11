@@ -66,7 +66,6 @@ class StaticMeshComponent final :
 
 
 static_assert(ecs::HasRequiredComponents<StaticMeshComponent>);
-static_assert(ecs::Registerable<StaticMeshComponent>);
 static_assert(ecs::Inspectable<StaticMeshComponent>);
 
 }

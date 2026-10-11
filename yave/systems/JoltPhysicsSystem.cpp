@@ -48,6 +48,7 @@ SOFTWARE.
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 #include <Jolt/Physics/Body/BodyFilter.h>
+#include <Jolt/Physics/Collision/ContactListener.h>
 #include <Jolt/Renderer/DebugRenderer.h>
 #include <Jolt/Renderer/DebugRendererSimple.h>
 
@@ -200,8 +201,25 @@ struct BodyActivationListener : JPH::BodyActivationListener, NonMovable {
     ecs::EntityWorld* world = nullptr;
 };
 
+struct ContactListener : JPH::ContactListener, NonMovable {
+    ContactListener(ecs::EntityWorld* w) : world(w) {
+    }
+
+    void OnContactAdded(const JPH::Body& body1, const JPH::Body& body2, const JPH::ContactManifold& manifold, JPH::ContactSettings&) override {
+        const ecs::EntityId id1 = ecs::EntityId::from_u64(body1.GetUserData());
+        const ecs::EntityId id2 = ecs::EntityId::from_u64(body2.GetUserData());
+
+        ecs::TriggerManager& triggers = world->triggers();
+        triggers.emit<OnCollide>(id1, [&] { return OnCollide{id2, to_y(manifold.GetWorldSpaceContactPointOn1(0))}; });
+        triggers.emit<OnCollide>(id2, [&] { return OnCollide{id1, to_y(manifold.GetWorldSpaceContactPointOn2(0))}; });
+    }
+
+    ecs::EntityWorld* world = nullptr;
+};
+
 struct JoltData : NonMovable {
     BodyActivationListener activation_listener;
+    ContactListener contact_listener;
     JPH::TempAllocatorImpl temp_allocator;
     JPH::JobSystemSingleThreaded job_system;
     BPLayerInterface bp_layer_interface;
@@ -215,10 +233,11 @@ struct JoltData : NonMovable {
     core::FlatHashMap<const StaticMesh*, JPH::Ref<JPH::Shape>> movable_shapes;
 
 
-    JoltData(ecs::EntityWorld* world) : activation_listener(world), temp_allocator(1024 * 1024 * 8), job_system(256) {
+    JoltData(ecs::EntityWorld* world) : activation_listener(world), contact_listener(world), temp_allocator(1024 * 1024 * 8), job_system(256) {
 
         physics_system.Init(16 * 1024, 0, 1024, 1024, bp_layer_interface, obj_vs_bp_layer_filter, obj_vs_obj_layer_filter);
         physics_system.SetBodyActivationListener(&activation_listener);
+        physics_system.SetContactListener(&contact_listener);
         body_interface = &physics_system.GetBodyInterface();
 
         physics_system.SetGravity(JPH::Vec3(0.0f, -9.81f, 0.0f));
@@ -341,6 +360,7 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
 
             if(body._body_id != RigidBodyComponent::invalid_index) {
                 _jolt->body_interface->RemoveBody(JPH::BodyID(body._body_id));
+                _jolt->body_interface->DestroyBody(JPH::BodyID(body._body_id));
                 body._body_id = RigidBodyComponent::invalid_index;
             }
 
@@ -371,6 +391,7 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
         for(auto&& [body] : group) {
             if(body._body_id != RigidBodyComponent::invalid_index) {
                 _jolt->body_interface->RemoveBody(JPH::BodyID(body._body_id));
+                _jolt->body_interface->DestroyBody(JPH::BodyID(body._body_id));
                 body._body_id = RigidBodyComponent::invalid_index;
             }
         }
@@ -414,6 +435,15 @@ void JoltPhysicsSystem::setup(ecs::SystemScheduler& sched) {
         DebugDrawFilter filter(_debug_draw_static, _debug_draw_movable);
         _jolt->physics_system.DrawBodies(JPH::BodyManager::DrawSettings{}, &renderer, &filter);
     });
+}
+
+void JoltPhysicsSystem::add_impulse(ecs::EntityId id, const math::Vec3& impulse) {
+    const RigidBodyComponent* body = world().component<RigidBodyComponent>(id);
+    if(!body || body->_body_id == RigidBodyComponent::invalid_index) {
+        return;
+    }
+
+    _jolt->body_interface->AddImpulse(JPH::BodyID(body->_body_id), to_jph(impulse));
 }
 
 

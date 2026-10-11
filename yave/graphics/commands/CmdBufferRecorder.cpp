@@ -124,6 +124,8 @@ void RenderPassRecorder::bind_material_template(const MaterialTemplate* material
     Y_VK_CMD
 
     const GraphicPipeline& pipeline = material_template->compile(*_cmd_buffer._render_pass);
+
+    y_debug_assert(pipeline.vk_pipeline());
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vk_pipeline());
 
     for(usize i = 0; i != descriptor_sets.size(); ++i) {
@@ -365,40 +367,8 @@ void CmdBufferRecorderBase::full_barrier() {
     Y_VK_CMD
 
     VkMemoryBarrier barrier = vk_struct();
-    barrier.srcAccessMask =
-        VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
-        VK_ACCESS_INDEX_READ_BIT |
-        VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
-        VK_ACCESS_UNIFORM_READ_BIT |
-        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
-        VK_ACCESS_SHADER_READ_BIT |
-        VK_ACCESS_SHADER_WRITE_BIT |
-        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_TRANSFER_READ_BIT |
-        VK_ACCESS_TRANSFER_WRITE_BIT |
-        VK_ACCESS_HOST_READ_BIT |
-        VK_ACCESS_HOST_WRITE_BIT
-    ;
-    barrier.dstAccessMask =
-        VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
-        VK_ACCESS_INDEX_READ_BIT |
-        VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
-        VK_ACCESS_UNIFORM_READ_BIT |
-        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
-        VK_ACCESS_SHADER_READ_BIT |
-        VK_ACCESS_SHADER_WRITE_BIT |
-        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
-        VK_ACCESS_TRANSFER_READ_BIT |
-        VK_ACCESS_TRANSFER_WRITE_BIT |
-        VK_ACCESS_HOST_READ_BIT |
-        VK_ACCESS_HOST_WRITE_BIT
-    ;
+    barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
     vkCmdPipelineBarrier(
         vk_cmd_buffer(),
         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
@@ -469,8 +439,13 @@ void CmdBufferRecorderBase::clear(const ImageBase& dst) {
             range.levelCount = 1;
         }
 
-        const VkClearColorValue value = {};
-        vkCmdClearColorImage(vk_cmd_buffer(), dst.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &value, 1, &range);
+        if(dst.format().is_depth_format()) {
+            const VkClearDepthStencilValue value = {0.0f, 0}; // reversed Z
+            vkCmdClearDepthStencilImage(vk_cmd_buffer(), dst.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &value, 1, &range);
+        } else {
+            const VkClearColorValue value = {};
+            vkCmdClearColorImage(vk_cmd_buffer(), dst.vk_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &value, 1, &range);
+        }
     }
 
     barriers(ImageBarrier::transition_from_barrier(dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL));
@@ -543,6 +518,7 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
 
     check_no_renderpass();
 
+    y_debug_assert(program.vk_pipeline());
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, program.vk_pipeline());
 
     for(usize i = 0; i != descriptor_sets.size(); ++i) {
@@ -580,6 +556,7 @@ void CmdBufferRecorderBase::dispatch(const ComputeProgram& program, const math::
 
     check_no_renderpass();
 
+    y_debug_assert(program.vk_pipeline());
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, program.vk_pipeline());
 
     if(!descriptors.is_empty()) {
@@ -624,6 +601,7 @@ void CmdBufferRecorderBase::raytrace(const RaytracingProgram& program, const mat
 
     check_no_renderpass();
 
+    y_debug_assert(program.vk_pipeline());
     vkCmdBindPipeline(vk_cmd_buffer(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, program.vk_pipeline());
 
     for(usize i = 0; i != descriptor_sets.size(); ++i) {
@@ -645,7 +623,7 @@ TimelineFence CmdBufferRecorderBase::submit() {
 }
 
 void CmdBufferRecorderBase::submit_async() {
-    _data->queue()->submit_async_start(std::exchange(_data, nullptr));
+    submit();
 }
 
 

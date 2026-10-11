@@ -26,6 +26,8 @@ SOFTWARE.
 
 #include <y/utils/types.h>
 
+#include <concepts>
+
 
 #define y_defer_named(expr, name)   auto y_create_name_with_prefix(defer_ ## name) = y::ScopeGuard([&] { expr; })
 #define y_defer(expr)               auto y_create_name_with_prefix(defer)          = y::ScopeGuard([&] { expr; })
@@ -96,7 +98,7 @@ class ScopeGuard : NonMovable {
         T _ex;
 };
 
-template<typename F>
+template<std::invocable F>
 inline void only_once(F&& f) {
     static bool done_once = false;
     if(!done_once) {

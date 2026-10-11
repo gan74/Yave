@@ -30,7 +30,7 @@ class AssetSelector final : public Widget {
     public:
         AssetSelector(AssetType filter, const char* name = nullptr);
 
-        template<typename F>
+        template<std::invocable<AssetId> F>
         void set_selected_callback(F&& func) {
             _selected = y_fwd(func);
         }

@@ -22,26 +22,28 @@ SOFTWARE.
 
 #include "EntitySelector.h"
 
-#include <editor/EditorWorld.h>
 #include <editor/components/EditorComponent.h>
 
+#include <editor/WorldWorkspace.h>
 #include <editor/utils/ui.h>
 
 #include <y/utils/format.h>
 
 namespace editor {
 
-EntitySelector::EntitySelector(ecs::ComponentTypeIndex filter) :
-        Widget(filter == ecs::ComponentTypeIndex::invalid_index
+EntitySelector::EntitySelector(WorldWorkspace* ws, ecs::ComponentTypeIndex filter) :
+        WorkspaceWidget(filter == ecs::ComponentTypeIndex::invalid_index
             ? "Select an entity"
-            : fmt("Select a {}", current_world().component_type_name(filter))),
+            : fmt("Select a {}", ws->world().component_type_name(filter)),
+            ws),
         _filter(filter) {
+
     set_modal(true);
 }
 
 
 void EntitySelector::on_gui() {
-    const EditorWorld& world = current_world();
+    const EditorWorld& world = workspace()->world();
 
     const bool has_filter = (_filter != ecs::ComponentTypeIndex::invalid_index);
 
@@ -58,6 +60,9 @@ void EntitySelector::on_gui() {
         }
 
         for(const auto& [id, comp] : group.id_components()) {
+            ImGui::PushID(int(id.index()));
+            y_defer(ImGui::PopID());
+
             imgui::text_icon(world.entity_icon(id));
             ImGui::SameLine();
             if(ImGui::Selectable(comp.name().data())) {
@@ -73,4 +78,3 @@ void EntitySelector::on_gui() {
 }
 
 }
-

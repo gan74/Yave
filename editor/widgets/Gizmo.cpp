@@ -21,6 +21,8 @@ SOFTWARE.
 **********************************/
 #include "Gizmo.h"
 
+#include <editor/WorldWorkspace.h>
+
 #include <editor/EditorWorld.h>
 
 #include <yave/scene/SceneView.h>
@@ -73,6 +75,13 @@ static void move_recursive(EditorWorld& world, ecs::EntityId id, math::Transform
 }
 
 
+static float snap(float value, float step) {
+    if(!ImGui::GetIO().KeyCtrl || step <= 0.0f) {
+        return value;
+    }
+    return std::round(value / step) * step;
+}
+
 static bool is_clicked() {
     return ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && !ImGui::IsAnyItemActive();
 }
@@ -95,10 +104,14 @@ static bool is_hovering_axis(math::Vec2 a, math::Vec2 b) {
     return d_2 < (gizmo_hover_width * gizmo_hover_width);
 }
 
-static math::Vec3 intersect_ray_plane(const math::Vec3& orig, const math::Vec3& dir, const math::Vec3& normal, float d) {
+static bool intersect_ray_plane(const math::Vec3& orig, const math::Vec3& dir, const math::Vec3& normal, float d, math::Vec3& hit) {
     const float denom = normal.dot(dir);
+    if(std::abs(denom) < math::epsilon<float>) {
+        return false;
+    }
     const float t = -(normal.dot(orig) + d) / denom;
-    return orig + dir * t;
+    hit = orig + dir * t;
+    return true;
 }
 
 [[nodiscard]] static bool intersect_lines(const math::Vec3& start_a, const math::Vec3& end_a, const math::Vec3& start_b, const math::Vec3& end_b, math::Vec3& closest) {
@@ -160,7 +173,8 @@ static bool is_inside(core::Span<math::Vec2> pts, const math::Vec2& p) {
 
 
 
-GizmoBase::GizmoBase(SceneView* view) : _scene_view(view) {
+GizmoBase::GizmoBase(SceneView* view, WorldWorkspace* ws) : _scene_view(view), _workspace(ws) {
+    y_debug_assert(_workspace);
 }
 
 GizmoBase::~GizmoBase() {
@@ -186,7 +200,7 @@ math::Vec2 GizmoBase::to_window_pos(const math::Vec3& world) const {
     auto screen = to_screen_pos(world);
 
     if(screen.z() < 0.0f) {
-        (std::fabs(screen.x()) > std::fabs(screen.y()) ? screen.x() : screen.y()) = FP_INFINITE; // infs
+        (std::fabs(screen.x()) > std::fabs(screen.y()) ? screen.x() : screen.y()) = std::numeric_limits<float>::infinity();
     }
 
     return screen.to<2>() * viewport + offset;
@@ -205,7 +219,15 @@ math::Vec3 GizmoBase::to_world_pos(const math::Vec2& window) const {
 
 
 
-TranslationGizmo::TranslationGizmo(SceneView* view) : GizmoBase(view) {
+TranslationGizmo::TranslationGizmo(SceneView* view, WorldWorkspace* ws) : GizmoBase(view, ws) {
+}
+
+void TranslationGizmo::set_snapping(float step) {
+    _snapping = step;
+}
+
+float TranslationGizmo::snapping() const {
+    return _snapping;
 }
 
 bool TranslationGizmo::is_hovered(usize axis) const {
@@ -217,29 +239,38 @@ void TranslationGizmo::draw() {
 
     _is_dragging &= ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
-    EditorWorld& world = current_world();
-    const ecs::EntityId selected = world.selected_entity();
-
-    if(!selected.is_valid()) {
+    EditorWorld& world = _workspace->world();
+    const auto selected = world.selected_entities();
+    if(selected.is_empty()) {
         return;
     }
 
-    const TransformableComponent* transformable = world.component<TransformableComponent>(selected);
+    math::Vec3 obj_pos;
+    math::Quaternion<> obj_rot;
+    usize transformable_count = 0;
+    for(const ecs::EntityId id : selected) {
+        if(const TransformableComponent* transformable = world.component<TransformableComponent>(id)) {
+            const auto [pos, rot, scale] = transformable->transform().decompose();
+            obj_pos += pos;
+            if(!transformable_count) {
+                obj_rot = rot;
+            }
+            ++transformable_count;
+        }
+    }
 
-    if(!transformable) {
+    if(!transformable_count) {
         return;
     }
 
-
-
+    obj_pos /= float(transformable_count);
+    
 
     const math::Vec2 mouse_pos = to_y(ImGui::GetIO().MousePos);
 
     const math::Vec3 cam_pos = _scene_view->camera().position();
     const math::Vec3 cam_fwd = _scene_view->camera().forward();
     const math::Matrix4<> view_proj = _scene_view->camera().view_proj_matrix();
-
-    const auto [obj_pos, obj_rot, obj_scale] = transformable->transform().decompose();
 
     if(cam_fwd.dot(obj_pos - cam_pos) <= 0.0f || (cam_pos - obj_pos).length() < math::epsilon<float>) {
         return;
@@ -248,8 +279,9 @@ void TranslationGizmo::draw() {
     const float perspective = (view_proj * math::Vec4(obj_pos, 1.0f)).w() * gizmo_size;
     const math::Vec2 gizmo_screen_center = to_window_pos(obj_pos);
 
+    const bool use_object_space = _use_object_space && transformable_count == 1;
     auto transform_to_local = [&](const math::Vec3& v) {
-        return _use_object_space ? obj_rot(v) : v;
+        return use_object_space ? obj_rot(v) : v;
     };
 
     const std::array basis = {
@@ -314,10 +346,26 @@ void TranslationGizmo::draw() {
     auto set_position = [&](const math::Vec3& pos) {
         y_profile_zone("set position");
 
-        const math::Transform<> old_transform = transformable->transform();
-        math::Transform<> new_transform = old_transform;
-        new_transform.position() = pos;
-        move_recursive(world, selected, old_transform, new_transform);
+        const math::Vec3 delta = pos - obj_pos;
+        for(const ecs::EntityId id : selected) {
+            bool has_selected_ancestor = false;
+            for(const ecs::EntityId parent : world.parents(id)) {
+                if(world.is_selected(parent)) {
+                    has_selected_ancestor = true;
+                    break;
+                }
+            }
+            if(has_selected_ancestor) {
+                continue;
+            }
+
+            if(TransformableComponent* transformable = world.component_mut<TransformableComponent>(id)) {
+                const math::Transform<> old_transform = transformable->transform();
+                math::Transform<> new_transform = old_transform;
+                new_transform.position() += delta;
+                move_recursive(world, id, old_transform, new_transform);
+            }
+        }
     };
 
 
@@ -334,9 +382,8 @@ void TranslationGizmo::draw() {
                 math::Vec3 pos;
                 const math::Vec3 axis = basis[i];
                 if(intersect_lines(obj_pos, obj_pos + axis, cam_pos, to_world_pos(target_axis_screen_pos), pos)) {
-                    const math::Vec3 v = pos.dot(basis[i]) * axis;
-                    const float dot = _base_pos.dot(axis);
-                    offset += v - (axis * dot);
+                    const float dist = pos.dot(axis) - _base_pos.dot(axis);
+                    offset += axis * snap(dist, _snapping);
                     pos_changed = true;
                 }
             }
@@ -416,7 +463,15 @@ void TranslationGizmo::draw() {
 
 
 
-RotationGizmo::RotationGizmo(SceneView* view) : GizmoBase(view) {
+RotationGizmo::RotationGizmo(SceneView* view, WorldWorkspace* ws) : GizmoBase(view, ws) {
+}
+
+void RotationGizmo::set_snapping(float step) {
+    _snapping = step;
+}
+
+float RotationGizmo::snapping() const {
+    return _snapping;
 }
 
 void RotationGizmo::draw() {
@@ -424,29 +479,32 @@ void RotationGizmo::draw() {
 
     _is_dragging &= ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
-    EditorWorld& world = current_world();
-    const ecs::EntityId selected = world.selected_entity();
-
-    if(!selected.is_valid()) {
+    EditorWorld& world = _workspace->world();
+    const auto selected = world.selected_entities();
+    if(selected.is_empty()) {
         return;
     }
 
-    const TransformableComponent* transformable = world.component<TransformableComponent>(selected);
+    math::Vec3 obj_pos;
+    usize transformable_count = 0;
+    for(const ecs::EntityId id : selected) {
+        if(const TransformableComponent* transformable = world.component<TransformableComponent>(id)) {
+            obj_pos += transformable->position();
+            ++transformable_count;
+        }
+    }
 
-    if(!transformable) {
+    if(!transformable_count) {
         return;
     }
 
-
-
+    obj_pos /= float(transformable_count);
 
     const math::Vec2 mouse_pos = to_y(ImGui::GetIO().MousePos);
 
     const math::Vec3 cam_pos = _scene_view->camera().position();
     const math::Vec3 cam_fwd = _scene_view->camera().forward();
     const math::Matrix4<> view_proj = _scene_view->camera().view_proj_matrix();
-
-    const auto [obj_pos, obj_rot, obj_scale] = transformable->transform().decompose();
 
     if(cam_fwd.dot(obj_pos - cam_pos) < 0.0f || (cam_pos - obj_pos).length() < math::epsilon<float>) {
         return;
@@ -491,7 +549,10 @@ void RotationGizmo::draw() {
         const math::Vec3 v_axis = basis[(axis_index + 2) % 3];
 
         const math::Vec3 projected_mouse = to_world_pos(mouse_pos);
-        const math::Vec3 pt = intersect_ray_plane(cam_pos, (projected_mouse - cam_pos).normalized(), axis, -obj_pos.dot(axis));
+        math::Vec3 pt;
+        if(!intersect_ray_plane(cam_pos, (projected_mouse - cam_pos).normalized(), axis, -obj_pos.dot(axis), pt)) {
+            return 0.0f;
+        }
         const math::Vec3 to_point = (pt - obj_pos).normalized();
         return std::acos(to_point.dot(u_axis)) * math::sign(to_point.dot(v_axis));
     };
@@ -534,13 +595,30 @@ void RotationGizmo::draw() {
 
 
 
-    auto set_rotation = [transformable, selected, &world](const math::Quaternion<>& quat) {
+    auto set_rotation = [&](const math::Quaternion<>& quat) {
         y_profile_zone("set set_rotation");
 
-        const math::Transform<> old_transform = transformable->transform();
-        const auto [obj_pos, obj_rot, obj_scale] = old_transform.decompose();
-        const math::Transform<> new_transform(obj_pos, quat * obj_rot, obj_scale);
-        move_recursive(world, selected, old_transform, new_transform);
+        const math::Transform<> pivot(obj_pos);
+        const math::Transform<> rotation(math::Vec3{}, quat);
+        const math::Transform<> world_delta = pivot * rotation * pivot.inverse();
+
+        for(const ecs::EntityId id : selected) {
+            bool has_selected_ancestor = false;
+            for(const ecs::EntityId parent : world.parents(id)) {
+                if(world.is_selected(parent)) {
+                    has_selected_ancestor = true;
+                    break;
+                }
+            }
+            if(has_selected_ancestor) {
+                continue;
+            }
+
+            if(TransformableComponent* transformable = world.component_mut<TransformableComponent>(id)) {
+                const math::Transform<> old_transform = transformable->transform();
+                move_recursive(world, id, old_transform, world_delta * old_transform);
+            }
+        }
     };
 
 
@@ -556,10 +634,15 @@ void RotationGizmo::draw() {
             }
 
             const float angle = compute_angle(_rotation_axis);
-            if(std::abs(_angle_offset - angle) > 0.001f) {
-                set_rotation(math::Quaternion<>::from_axis_angle(basis[_rotation_axis], angle - _angle_offset));
-                _angle_offset = angle;
+            const float delta = std::remainder(angle - _angle_offset, 2.0f * math::pi<float>);
+            _drag_angle += delta;
+
+            const float target = snap(_drag_angle, _snapping);
+            if(std::abs(target - _applied_angle) > 0.001f) {
+                set_rotation(math::Quaternion<>::from_axis_angle(basis[_rotation_axis], target - _applied_angle));
+                _applied_angle = target;
             }
+            _angle_offset = angle;
         }
     } else {
         _rotation_axis = usize(-1);
@@ -581,6 +664,8 @@ void RotationGizmo::draw() {
 
                 _rotation_axis = ((axis + 2) % 3);
                 _angle_offset = compute_angle(_rotation_axis);
+                _drag_angle = 0.0f;
+                _applied_angle = 0.0f;
             });
         }
 
@@ -603,7 +688,7 @@ void RotationGizmo::draw() {
 
 
 
-OrientationGizmo::OrientationGizmo(SceneView* view) : GizmoBase(view) {
+OrientationGizmo::OrientationGizmo(SceneView* view, WorldWorkspace* ws) : GizmoBase(view, ws) {
 }
 
 void OrientationGizmo::draw() {

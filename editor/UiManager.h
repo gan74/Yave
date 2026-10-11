@@ -23,13 +23,12 @@ SOFTWARE.
 #define EDITOR_UIMANAGER_H
 
 #include "Widget.h"
+#include "Workspace.h"
 
 #include <y/core/Vector.h>
-#include <y/core/HashMap.h>
 #include <y/core/FixedArray.h>
 #include <y/core/Chrono.h>
 
-#include <typeindex>
 #include <memory>
 
 #include <functional>
@@ -38,39 +37,47 @@ namespace editor {
 
 class UiManager : NonMovable {
 
-    struct WidgetIdStack {
-        core::Vector<u64> released;
-        u64 next = 0;
-    };
-
     public:
         UiManager();
         ~UiManager();
 
         void on_gui();
 
-        Widget* add_widget(std::unique_ptr<Widget> widget, bool auto_parent = true);
+        Widget* add_widget(std::unique_ptr<Widget> widget);
+        Workspace* add_workspace(std::unique_ptr<Workspace> workspace);
 
-        void restore_default_layout();
-        void open_default_widgets();
+        core::Span<std::unique_ptr<Widget>> top_level_widgets() const;
+        core::Span<std::unique_ptr<Workspace>> workspaces() const;
+
         void close_all();
 
-        core::Span<std::unique_ptr<Widget>> widgets() const;
-
-        Widget* focussed_widget();
         Widget* last_focussed_widget();
 
+        u32 generate_dock_id();
+        u32 main_dock_id() const;
+
     private:
+        friend class Widget;
+
         void update_fps_counter();
         void draw_fps_counter();
         void update_shortcuts();
         void draw_menu_bar();
-        void set_widget_id(Widget* widget);
+        void draw_dockspaces();
+        void process_new_widgets();
+        void process_deletions();
 
+        void create_workspace_widgets(Workspace* workspace);
+
+
+        core::Vector<std::unique_ptr<Workspace>> _workspaces;
+        core::Vector<std::unique_ptr<Workspace>> _to_destroy;
+        
         core::Vector<std::unique_ptr<Widget>> _widgets;
-        core::FlatHashMap<std::type_index, WidgetIdStack> _ids;
 
-        Widget* _auto_parent = nullptr;
+        core::Vector<std::unique_ptr<Widget>> _new_widgets;
+        core::Vector<std::unique_ptr<Workspace>> _new_workspaces;
+
         Widget* _focussed = nullptr;
         Widget* _last_focussed = nullptr;
 
@@ -81,11 +88,15 @@ class UiManager : NonMovable {
 
         core::StopWatch _timer;
         core::FixedArray<float> _frame_times = core::FixedArray<float>(60);
+
+
         float _total_time = 0.0f;
         u64 _frame_number = 0;
+
+        u32 _dock_id = 0;
+        u32 _main_dock_id = 0;
 };
 
 }
 
 #endif // EDITOR_UIMANAGER_H
-

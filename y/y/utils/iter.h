@@ -256,7 +256,7 @@ class FilterIterator : private Filter {
 
 
 
-template<typename Func>
+template<std::invocable Func>
 class FunctorIterator  {
     static_assert(std::is_copy_constructible_v<Func>);
     using result_type = decltype(std::declval<Func>()());

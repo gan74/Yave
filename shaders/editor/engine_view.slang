@@ -1,7 +1,7 @@
 #include "../lib/utils.slang"
 
 [[vk::binding(0)]]
-cbuffer Target_Inline {
+cbuffer Target {
     uint target_index;
 };
 

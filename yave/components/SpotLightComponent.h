@@ -71,7 +71,7 @@ class SpotLightComponent final : public LocalLightBase {
         float _half_inner_angle = math::to_rad(30.0f);
 
         bool _cast_shadow = false;
-        u32 _shadow_lod = 0;
+        u32 _shadow_lod = 1;
 };
 
 }

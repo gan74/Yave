@@ -97,18 +97,6 @@ core::String fmt_to_owned(std::format_string<Args...> fmt_str, Args&&... args) {
 
 
 template<typename T>
-core::String core::String::operator+(const T& r) const {
-    core::String l(*this);
-    if constexpr(has_append<core::String, T>) {
-        l += y_fwd(r);
-    } else {
-        fmt_into(l, "{}", r);
-    }
-    return l;
-}
-
-
-template<typename T>
 concept is_formattable = requires(T& v, std::format_context ctx) {
     std::formatter<std::remove_cvref_t<T>>().format(v, ctx);
 };

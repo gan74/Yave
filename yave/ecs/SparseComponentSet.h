@@ -40,6 +40,7 @@ namespace ecs {
 class SparseIdSetBase : NonMovable {
     public:
         inline bool contains(EntityId id) const {
+            y_debug_assert(id.version() != u32(-1));
             if(id.index() >= _sparse.size()) {
                 return false;
             }
@@ -70,7 +71,7 @@ class SparseIdSetBase : NonMovable {
 
     protected:
         struct SparseElement {
-            u32 version = 0;
+            u32 version = u32(-1);
             u32 index = 0;
         };
 
@@ -139,7 +140,10 @@ class SparseIdSet final : public SparseIdSetBase {
         }
 
         SparseIdSet& operator=(SparseIdSet&& other) {
-            swap(other);
+            if(&other != this) {
+                clear();
+                swap(other);
+            }
             return *this;
         }
 
@@ -314,7 +318,7 @@ class SparseComponentSet : public SparseIdSetBase {
 
             const auto [a, b] = erase_id(id);
             if(a != b) {
-                std::swap(_values[a], _values[b]);
+                _values[a] = std::move(_values[b]);
             }
             _values.pop();
 
@@ -335,6 +339,7 @@ class SparseComponentSet : public SparseIdSetBase {
         }
 
         pointer try_get(EntityId id) {
+            y_debug_assert(id.version() != u32(-1));
             const u32 index = id.index();
             if(index >= _sparse.size()) {
                 return nullptr;
@@ -347,6 +352,7 @@ class SparseComponentSet : public SparseIdSetBase {
         }
 
         const_pointer try_get(EntityId id) const {
+            y_debug_assert(id.version() != u32(-1));
             const u32 index = id.index();
             if(index >= _sparse.size()) {
                 return nullptr;

@@ -22,11 +22,34 @@ SOFTWARE.
 
 #include "PointLightComponent.h"
 
+#include <yave/ecs/ComponentInspector.h>
+
 namespace yave {
+
+bool& PointLightComponent::cast_shadow() {
+    return _cast_shadow;
+}
+
+bool PointLightComponent::cast_shadow() const {
+    return _cast_shadow;
+}
+
+u32& PointLightComponent::shadow_lod() {
+    return _shadow_lod;
+}
+
+u32 PointLightComponent::shadow_lod() const {
+    return _shadow_lod;
+}
 
 AABB PointLightComponent::aabb() const {
     return AABB::from_center_extent({}, math::Vec3(_range * 2.0f));
 }
 
+void PointLightComponent::inspect(ecs::ComponentInspector* inspector) {
+    LocalLightBase::inspect(inspector);
+    inspector->inspect("Cast shadow", _cast_shadow);
+    inspector->inspect("Shadow LoD", _shadow_lod, 8);
 }
 
+}

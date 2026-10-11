@@ -30,6 +30,13 @@ namespace yave {
 
 struct JoltData;
 
+struct OnCollide {
+    ecs::EntityId other;
+    math::Vec3 position;
+
+    y_reflect(OnCollide, other, position)
+};
+
 class JoltPhysicsSystem : public ecs::System {
     public:
         JoltPhysicsSystem();
@@ -40,6 +47,8 @@ class JoltPhysicsSystem : public ecs::System {
         void set_debug_draw_movable(bool enable);
 
         void setup(ecs::SystemScheduler& sched) override;
+
+        void add_impulse(ecs::EntityId id, const math::Vec3& impulse);
 
     private:
         std::unique_ptr<JoltData> _jolt;

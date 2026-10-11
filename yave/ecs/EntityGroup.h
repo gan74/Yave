@@ -32,6 +32,17 @@ SOFTWARE.
 namespace yave {
 namespace ecs {
 
+struct ComponentAccess {
+    ComponentTypeIndex type = ComponentTypeIndex::invalid_index;
+    bool write = false;
+};
+
+#ifdef Y_DEBUG
+namespace detail {
+extern thread_local const core::Vector<ComponentAccess>* declared_accesses;
+}
+#endif
+
 class EntityGroupProvider final : NonMovable {
 
     template<typename... Ts>
@@ -40,21 +51,10 @@ class EntityGroupProvider final : NonMovable {
         return storage;
     }
 
-    template<typename T>
-    static core::String clean_component_name() {
-        return core::String(ct_type_name<traits::component_raw_type_t<T>>())
-            .replaced("class ", "")
-            .replaced("struct ", "")
-            .replaced("yave::", "")
-            .replaced("ecs::", "")
-            .replaced("> ", ">")
-        ;
-    }
-
     template<typename... Ts>
     static core::String create_group_name(core::Span<std::string_view> tags) {
         core::String name = "EntityGroupProvider<";
-        name += ((clean_component_name<Ts>() + ", ") + ...);
+        ((name += clean_type_name<traits::component_raw_type_t<Ts>>(), name += ", "), ...);
         name.resize(name.size() - 2);
         name += ">";
 
@@ -168,6 +168,7 @@ template<typename... Ts>
 class EntityGroup final : NonMovable {
     static constexpr usize type_count = sizeof...(Ts);
     static constexpr usize mutate_count = ((traits::is_component_mutable<Ts> ? 1 : 0) + ...);
+    static constexpr usize tracked_count = ((traits::is_component_tracked<Ts> ? 1 : 0) + ...);
 
     static constexpr bool has_any = (traits::is_component_filter_any<Ts> || ...);
     static constexpr usize changed_count = ((traits::is_component_changed<Ts> ? 1 : 0) + ...);
@@ -179,7 +180,7 @@ class EntityGroup final : NonMovable {
     using ContainerTuple = std::tuple<ComponentContainer<traits::component_raw_type_t<Ts>>*...>;
     using ComponentTuple = std::tuple<traits::component_type_t<Ts>&...>;
 
-    using MutateContainers = std::array<SparseIdSet*, mutate_count>;
+    using MutateContainers = std::array<SparseIdSet*, tracked_count>;
     using FilterContainers = std::array<std::pair<const SparseIdSet*, bool>, filter_count>;
 
     template<typename T>
@@ -188,15 +189,16 @@ class EntityGroup final : NonMovable {
     }
 
     template<typename T, usize I>
-    void fill_one(const ContainerTuple& containers, usize& mut_index, usize& filter_index, usize& const_index) {
+    void fill_one(const ContainerTuple& containers, usize& mut_index, usize& tracked_index, usize& filter_index, usize& const_index) {
         y_debug_assert(std::get<I>(containers));
 
         std::get<I>(_sets) = &std::get<I>(containers)->_components;
 
         if constexpr(traits::is_component_mutable<T>) {
-            _write_locks[mut_index] = &std::get<I>(containers)->_lock;
-            _mutate[mut_index] = &std::get<I>(containers)->_mutated;
-            ++mut_index;
+            _write_locks[mut_index++] = &std::get<I>(containers)->_lock;
+            if constexpr(traits::is_component_tracked<T>) {
+                _mutate[tracked_index++] = &std::get<I>(containers)->_mutated;
+            }
         } else {
             _read_locks[const_index++] = &std::get<I>(containers)->_lock;
         }
@@ -218,9 +220,10 @@ class EntityGroup final : NonMovable {
     template<usize... Is>
     inline void fill_sets(const ContainerTuple& containers, std::index_sequence<Is...>) {
         usize mut_index = 0;
+        usize tracked_index = 0;
         usize filter_index = 0;
         usize const_index = 0;
-        (fill_one<Ts, Is>(containers, mut_index, filter_index, const_index), ...);
+        (fill_one<Ts, Is>(containers, mut_index, tracked_index, filter_index, const_index), ...);
 
         y_debug_assert(std::all_of(_mutate.begin(), _mutate.end(), [](const auto* s) { return s; }));
         y_debug_assert(std::all_of(_filter.begin(), _filter.end(), [](auto s) { return s.first; }));
@@ -296,6 +299,10 @@ class EntityGroup final : NonMovable {
 
         using const_iterator = Iterator<ComponentReturnPolicy>;
 
+        static void collect_accesses(core::Vector<ComponentAccess>& accesses) {
+            (accesses.emplace_back(type_index<traits::component_raw_type_t<Ts>>(), traits::is_component_mutable<Ts>), ...);
+        }
+
 
         ~EntityGroup() {
             if(_provider) {
@@ -335,6 +342,12 @@ class EntityGroup final : NonMovable {
             return _provider;
         }
 
+        template<typename T>
+        inline void mark_changed(EntityId id) {
+            static_assert(((std::is_same_v<traits::component_raw_type_t<Ts>, T> && traits::is_component_mutable<Ts>) || ...), "T is not mutable in this group");
+            std::get<ComponentContainer<T>*>(_containers)->_mutated.insert(id);
+        }
+
         /*void swap(EntityGroup& other) {
             _ids.swap(other.ids());
             std::swap(_sets, other._sets);
@@ -348,8 +361,21 @@ class EntityGroup final : NonMovable {
     private:
         friend class EntityWorld;
 
-        EntityGroup(const EntityGroupProvider* base, const ContainerTuple& containers) : _provider(base) {
+        EntityGroup(const EntityGroupProvider* base, const ContainerTuple& containers) : _containers(containers), _provider(base) {
             fill_sets(containers, std::make_index_sequence<type_count>{});
+
+#ifdef Y_DEBUG
+            // The scheduler orders tasks using their declared accesses, an undeclared access could run concurrently with a conflicting task
+            if(const core::Vector<ComponentAccess>* declared = detail::declared_accesses) {
+                auto is_declared = [&]<typename T>() {
+                    const ComponentTypeIndex type = type_index<traits::component_raw_type_t<T>>();
+                    return std::any_of(declared->begin(), declared->end(), [&](const ComponentAccess& access) {
+                        return access.type == type && (access.write || !traits::is_component_mutable<T>);
+                    });
+                };
+                y_always_assert((is_declared.template operator()<Ts>() && ...), "EntityGroup accesses components not declared by the running system task");
+            }
+#endif
 
             lock_all();
 
@@ -411,7 +437,7 @@ class EntityGroup final : NonMovable {
             }
 
 
-            if constexpr(mutate_count) {
+            if constexpr(tracked_count) {
                 y_profile_dyn_zone(fmt_c_str("propagating mutation for {} entities", _ids.size()));
                 for(SparseIdSet* mut_set : _mutate) {
                     for(const EntityId id : ids()) {
@@ -474,6 +500,7 @@ class EntityGroup final : NonMovable {
         core::Vector<EntityId> _ids;
 
         SetTuple _sets = {};
+        ContainerTuple _containers = {};
 
         MutateContainers _mutate = {};
         FilterContainers _filter = {};

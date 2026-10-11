@@ -18,7 +18,7 @@ Sampler2D<float> in_depth;
 RWTexture2D<float> out_ao;
 
 [[vk::binding(2)]]
-cbuffer Params_Inline {
+cbuffer Params {
     float4 inv_thickness[3];
     float4 weights[3];
 };

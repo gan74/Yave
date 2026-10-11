@@ -71,7 +71,7 @@ math::Vec2 from_client_pos(const math::Vec2& pos);
 
 usize text_line_count(std::string_view text);
 
-std::pair<math::Vec2, math::Vec2> compute_glyph_uv_size(const char* c);
+std::pair<math::Vec2, math::Vec2> compute_glyph_uv_size(const char* c, float size = 0.0f);
 
 void text_icon(const UiIcon& icon);
 
@@ -97,6 +97,9 @@ void table_begin_next_row(int col_index = 0);
 bool selectable_icon(const UiIcon& icon, const char* str_id, bool selected, ImGuiSelectableFlags flags = 0);
 bool icon_button(const UiIcon& icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags = 0);
 bool icon_button(UiTexture icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags = 0);
+
+bool thumbnail_button(const UiIcon& icon, const char* str_id, bool selected, float thumb_size, ImGuiSelectableFlags flags = 0);
+bool thumbnail_button(UiTexture icon, const char* str_id, bool selected, float thumb_size, ImGuiSelectableFlags flags = 0);
 
 bool selectable_input(const char* str_id, bool selected, char* buf, usize buf_size);
 

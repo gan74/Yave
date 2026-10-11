@@ -76,13 +76,20 @@ template<typename T, typename... Args>
 AssetPtr<T> make_asset_with_id(AssetId id, Args&&... args);
 
 
+enum class AssetTypeIndex : u32 {
+    invalid_index = u32(-1),
+};
+
 namespace detail {
-u32 next_asset_type_index();
+AssetTypeIndex next_asset_type_index();
 
 template<typename T>
-u32 asset_type_index() {
-    static u32 index = next_asset_type_index();
-    return index;
+inline const AssetTypeIndex asset_type_index_v = next_asset_type_index();
+
+template<typename T>
+AssetTypeIndex asset_type_index() {
+    static_assert(!std::is_const_v<T> && !std::is_reference_v<T>);
+    return asset_type_index_v<T>;
 }
 
 
@@ -111,11 +118,15 @@ class AssetPtrDataBase : NonMovable {
 
         inline AssetLoader* loader() const;
 
+        inline void set_reloaded(std::shared_ptr<AssetPtrDataBase> ptr);
+        inline std::shared_ptr<AssetPtrDataBase> grab_reloaded() const;
+
     protected:
         inline AssetPtrDataBase(AssetId i, AssetLoader* loader, AssetLoadingState s = AssetLoadingState::NotLoaded);
 
         std::atomic<AssetLoadingState> _state = AssetLoadingState::NotLoaded;
         AssetLoader* _loader = nullptr;
+        std::atomic<std::shared_ptr<AssetPtrDataBase>> _reloaded;
 };
 
 template<typename T>
@@ -175,6 +186,7 @@ class AssetPtr {
         void load_async(AssetLoadingContext& context);
 
         void unlink();
+        bool grab_reloaded();
 
         y_reflect(AssetPtr, _id)
 
@@ -273,6 +285,16 @@ class GenericAssetPtr {
             _data = nullptr;
         }
 
+        inline bool grab_reloaded() {
+            if(_data) {
+                if(auto reloaded = _data->grab_reloaded()) {
+                    _data = std::move(reloaded);
+                    return true;
+                }
+            }
+            return false;
+        }
+
         template<typename T>
         AssetPtr<T> to() const {
             if(_data) {
@@ -290,7 +312,7 @@ class GenericAssetPtr {
 
         std::shared_ptr<detail::AssetPtrDataBase> _data;
         AssetType _type = AssetType::Unknown;
-        u32 _type_index = u32(-1);
+        AssetTypeIndex _type_index = AssetTypeIndex::invalid_index;
         AssetId _id;
 };
 

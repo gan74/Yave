@@ -19,32 +19,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_SCRIPT_SCRIPTVM_H
-#define YAVE_SCRIPT_SCRIPTVM_H
+#ifndef YAVE_BLUEPRINTS_BLUEPRINT_NODES_H
+#define YAVE_BLUEPRINTS_BLUEPRINT_NODES_H
 
-#include <yave/yave.h>
+#include "BlueprintNodeFactory.h"
 
-#include <y/core/String.h>
+#include <y/core/Vector.h>
 
-struct lua_State;
+#include <memory>
 
 namespace yave {
 
-class ScriptVM : NonMovable {
-    public:
-        ScriptVM();
-        ~ScriptVM();
-
-        bool run(const core::String& script);
-
-        core::String output;
-
-    private:
-        lua_State* _state = nullptr;
-};
+void add_all_nodes(core::Vector<std::unique_ptr<BlueprintNodeFactory>>& factories);
 
 }
 
-
-#endif // YAVE_SCRIPT_SCRIPTVM_H
-
+#endif // YAVE_BLUEPRINTS_BLUEPRINT_NODES_H

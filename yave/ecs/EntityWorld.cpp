@@ -212,6 +212,7 @@ EntityId EntityWorld::create_entity() {
 }
 
 EntityId EntityWorld::create_entity_with_id(EntityId id) {
+    y_debug_assert(id.is_valid());
     y_debug_assert(!exists(id));
     y_always_assert(_entities.create_with_id(id).is_valid(), "Entity ID already in use");
     _matrix.add_entity(id);
@@ -476,12 +477,12 @@ serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
 
     register_containers();
 
-    for(auto&& container : _containers) {
-        if(container) {
-            container->post_load();
-        }
+    // Required containers first
+    for(usize i = _ordered_containers.size(); i != 0; --i) {
+        _ordered_containers[i - 1]->post_load();
     }
 
+    _triggers.reset();
     _system_manager.reset();
 
     return core::Ok(serde3::Success::Full);

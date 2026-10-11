@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "UndoRedoSystem.h"
 
+#include <editor/components/EditorComponent.h>
+
 #include <yave/ecs/EntityWorld.h>
 #include <yave/ecs/ComponentBox.h>
 
@@ -127,7 +129,9 @@ void UndoRedoSystem::UndoState::undo(ecs::EntityWorld& world) {
     }
 
     for(const auto& [id, prev, next] : parent_changed) {
-        world.set_parent(id, prev);
+        if(world.exists(id)) {
+            world.set_parent(id, prev);
+        }
     }
 }
 
@@ -158,7 +162,9 @@ void UndoRedoSystem::UndoState::redo(ecs::EntityWorld& world) {
     }
 
     for(const auto& [id, prev, next] : parent_changed) {
-        world.set_parent(id, next);
+        if(world.exists(id)) {
+            world.set_parent(id, next);
+        }
     }
 }
 
@@ -186,6 +192,11 @@ void UndoRedoSystem::setup(ecs::SystemScheduler& sched) {
     sched.schedule(ecs::SystemSchedule::TickSequential, "TickSeq", [this]() {
         y_debug_assert(_snapshot);
         if(!_do_undo && !_do_redo) {
+            const auto ignore_undo = [&](ecs::EntityId id) {
+                const EditorComponent* comp = world().component<EditorComponent>(id);
+                return comp && comp->ignore_undo();
+            };
+
             UndoState state;
             for(const ecs::EntityId id : world().pending_deletions()) {
                 state.removed_entities.emplace_back(id, world().parent(id));
@@ -207,12 +218,16 @@ void UndoRedoSystem::setup(ecs::SystemScheduler& sched) {
                 const ecs::ComponentTypeIndex type_id = container->type_id();
 
                 for(const ecs::EntityId id : container->mutated_ids()) {
+                    if(ignore_undo(id)) {
+                        continue;
+                    }
+
                     if(_snapshot->exists(id) && _snapshot->has_component(id, type_id)) {
                         const ComponentKey key{id, type_id};
                         GetterInspector inspector(state.redo_properties.emplace_back(key, core::Vector<Property>()).second);
                         world().inspect_components(id, &inspector, container->type_id());
                     } else {
-                        ComponentData& data = state.removed_components.emplace_back(id, ComponentData{}).second;
+                        ComponentData& data = state.added_components.emplace_back(id, ComponentData{}).second;
                         data.type_id = type_id;
                         serde3::WritableArchive arc(data.buffer);
                         arc.serialize(world().create_box_from_component(id, type_id)).unwrap();
@@ -297,7 +312,7 @@ void UndoRedoSystem::push_state(UndoState state) {
             if(tra && trb) {
                 const float epsilon = 0.0001f;
                 const auto [a_pos, a_rot, a_scale] = tra->decompose();
-                const auto [b_pos, b_rot, b_scale] = tra->decompose();
+                const auto [b_pos, b_rot, b_scale] = trb->decompose();
                 if((a_pos - b_pos).sq_length() > epsilon) {
                     return false;
                 }

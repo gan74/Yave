@@ -21,6 +21,7 @@ SOFTWARE.
 **********************************/
 
 #include "Widget.h"
+#include "Workspace.h"
 
 #include <editor/utils/ui.h>
 
@@ -29,21 +30,27 @@ SOFTWARE.
 namespace editor {
 
 namespace detail {
-EditorWidget* first_widget = nullptr;
-void register_widget(EditorWidget* widget) {
-    log_msg(fmt("Registering widget \"{}\"", widget->name), Log::Debug);
-    widget->next = first_widget;
-    first_widget = widget;
+EditorWidgetDesc* first_widget_desc = nullptr;
+void register_widget_desc(EditorWidgetDesc* desc) {
+    log_msg(fmt("Registering widget \"{}\"", desc->name), Log::Debug);
+    desc->next = first_widget_desc;
+    first_widget_desc = desc;
 }
 }
 
-const EditorWidget* all_widgets() {
-    return detail::first_widget;
+const EditorWidgetDesc* all_widget_descs() {
+    return detail::first_widget_desc;
 }
 
 
-Widget::Widget(std::string_view title, int flags) : _flags(flags) {
+static u64 next_widget_id() {
+    static u64 id = 0;
+    return ++id;
+}
+
+Widget::Widget(std::string_view title, int flags) : _id(next_widget_id()), _flags(flags) {
     set_title(title);
+    y_debug_assert(_title_with_id.data());
 }
 
 Widget::~Widget() {
@@ -53,29 +60,24 @@ void Widget::close() {
     _visible = false;
 }
 
-std::string_view Widget::title() const {
-    return _title;
-}
-
 bool Widget::is_visible() const {
     return _visible;
-}
-
-bool Widget::is_focussed() const {
-    return _focussed;
 }
 
 void Widget::set_visible(bool visible) {
     _visible = visible;
 }
 
-void Widget::set_parent(Widget* parent) {
-    y_debug_assert(!parent != !_parent);
-    _parent = parent;
-}
-
 void Widget::set_modal(bool modal) {
     _modal = modal;
+}
+
+bool Widget::is_modal() const {
+    return _modal;
+}
+
+u64 Widget::widget_id() const {
+    return _id;
 }
 
 void Widget::refresh() {
@@ -86,8 +88,15 @@ void Widget::refresh_all() {
     refresh();
 }
 
+bool Widget::belongs_to(const Workspace*) const {
+    return false;
+}
+
 void Widget::on_gui() {
     ImGui::TextUnformatted("Empty widget");
+}
+
+void Widget::on_inactive_gui() {
 }
 
 bool Widget::before_gui() {
@@ -108,12 +117,20 @@ bool Widget::should_keep_alive() const {
     return false;
 }
 
+bool Widget::is_focussed() const {
+    return _focussed;
+}
+
 void Widget::draw(bool inside) {
     if(!_visible || !before_gui()) {
         return;
     }
 
     ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
+
+    if(_dock_id) {
+        ImGui::SetNextWindowDockID(_dock_id, ImGuiCond_Once);
+    }
 
     const bool is_modal = _modal;
 
@@ -130,6 +147,7 @@ void Widget::draw(bool inside) {
             }
             opened = ImGui::BeginPopupModal(_title_with_id.data(), &_visible, _flags);
         } else {
+            ImGui::SetNextWindowClass(&_window_class);
             opened = ImGui::Begin(_title_with_id.data(), &_visible, _flags);
         }
         ImGui::PopStyleVar();
@@ -139,6 +157,8 @@ void Widget::draw(bool inside) {
     _focussed = opened && ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
     if(opened) {
         on_gui();
+    } else {
+        on_inactive_gui();
     }
 
     if(inside) {
@@ -159,19 +179,28 @@ math::Vec2ui Widget::content_size() const {
     return math::Vec2ui(to_y(ImGui::GetWindowSize())); //(math::Vec2(ImGui::GetWindowContentRegionMax()) - math::Vec2(ImGui::GetWindowContentRegionMin())).max(math::Vec2(1.0f));
 }
 
-void Widget::set_flags(int flags) {
-    _flags |= flags;
-}
-
-void Widget::set_id(u64 id) {
-    _id = id;
-    set_title(_title);
-}
-
 void Widget::set_title(std::string_view title) {
     _title_with_id = fmt("{}##{}", title, _id);
-    _title = std::string_view(_title_with_id.begin(), title.size());
+}
+
+
+
+
+
+WorkspaceWidgetBase::WorkspaceWidgetBase(std::string_view title, Workspace* workspace, int flags) : Widget(title, flags), _workspace(workspace) {
+    y_debug_assert(workspace);
+    _window_class.ClassId = workspace->workspace_id();
+}
+
+bool WorkspaceWidgetBase::belongs_to(const Workspace* workspace) const {
+    return workspace == _workspace;
+}
+
+void WorkspaceWidgetBase::after_gui() {
+    if(is_focussed()) {
+        set_current_workspace(_workspace);
+    }
+    Widget::after_gui();
 }
 
 }
-

@@ -21,11 +21,12 @@ SOFTWARE.
 **********************************/
 
 #include <editor/Widget.h>
-#include <editor/EditorWorld.h>
-#include <editor/utils/memory.h>
+#include <editor/WorldWorkspace.h>
+#include <editor/BlueprintWorkspace.h>
 #include <editor/ThumbnailRenderer.h>
 #include <editor/systems/UndoRedoSystem.h>
 #include <editor/components/EditorComponent.h>
+#include <editor/utils/memory.h>
 
 #include <yave/scene/SceneView.h>
 #include <yave/graphics/device/MeshAllocator.h>
@@ -46,16 +47,17 @@ SOFTWARE.
 
 namespace editor {
 
-class CameraDebug : public Widget {
+class CameraDebug : public WorkspaceWidget<WorldWorkspace> {
     editor_widget(CameraDebug, "View", "Debug")
 
     public:
-        CameraDebug() : Widget(ICON_FA_VIDEO " Camera debug", ImGuiWindowFlags_AlwaysAutoResize) {
+        CameraDebug(WorldWorkspace* ws) :
+                WorkspaceWidget(ICON_FA_VIDEO " Camera debug", ws, ImGuiWindowFlags_AlwaysAutoResize) {
         }
 
     protected:
         void on_gui() override {
-            const Camera& camera = scene_view().camera();
+            const Camera& camera = workspace()->scene_view().camera();
             const math::Vec3 pos = camera.position();
             const math::Vec3 fwd = camera.forward();
             const math::Vec3 rht = camera.right();
@@ -113,17 +115,18 @@ class MemoryDebug : public Widget {
 };
 
 
-class CullingDebug : public Widget {
+class CullingDebug : public WorkspaceWidget<WorldWorkspace> {
     editor_widget(CullingDebug, "View", "Debug")
 
     public:
-        CullingDebug() : Widget("Culling debug", ImGuiWindowFlags_AlwaysAutoResize) {
+        CullingDebug(WorldWorkspace* ws) :
+                WorkspaceWidget("Culling debug", ws, ImGuiWindowFlags_AlwaysAutoResize) {
         }
 
     protected:
         void on_gui() override {
             const core::StopWatch timer;
-            const SceneVisibilitySubPass visibility = SceneVisibilitySubPass::create(scene_view());
+            const SceneVisibilitySubPass visibility = SceneVisibilitySubPass::create(workspace()->scene_view());
             const core::Duration durr = timer.elapsed();
 
             ImGui::TextUnformatted("Visible for current camera:");
@@ -162,23 +165,29 @@ struct TestSystem : ecs::System {
     }
 };
 
-class EcsDebug : public Widget {
+class EcsDebug : public WorkspaceWidget<WorldWorkspace> {
     editor_widget(EcsDebug, "View", "Debug")
 
     public:
-        EcsDebug() : Widget("ECS debug") {
+        EcsDebug(WorldWorkspace* ws) :
+                WorkspaceWidget("ECS debug", ws) {
         }
 
     protected:
         void on_gui() override {
-            EditorWorld& world = current_world();
+            EditorWorld& world = workspace()->world();
 
 
             if(!world.find_system<TestSystem>()){
                 world.add_system<TestSystem>();
             }
 
-            const ImGuiTableFlags table_flags = ImGuiTableFlags_RowBg;
+            const ImGuiTableFlags table_flags = 
+                ImGuiTableFlags_RowBg | 
+                ImGuiTableFlags_BordersInnerV |
+                ImGuiTableFlags_BordersInnerH |
+                ImGuiTableFlags_Resizable
+            ;
 
             if(ImGui::CollapsingHeader("Groups")) {
                 auto groups = world.group_providers();
@@ -207,6 +216,51 @@ class EcsDebug : public Widget {
 
                         ImGui::TreePop();
                     }
+                }
+            }
+
+            if(ImGui::CollapsingHeader("Task graph")) {
+                static constexpr std::array<const char*, usize(ecs::SystemSchedule::Max)> schedule_names = {"TickSequential", "Tick", "Update", "PostUpdate"};
+
+                if(ImGui::BeginTable("##taskgraph", 4, table_flags)) {
+                    ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed);
+                    ImGui::TableSetupColumn("Task", ImGuiTableColumnFlags_WidthStretch);
+                    ImGui::TableSetupColumn("Accesses", ImGuiTableColumnFlags_WidthStretch);
+                    ImGui::TableSetupColumn("Waits for", ImGuiTableColumnFlags_WidthFixed);
+                    ImGui::TableHeadersRow();
+
+                    const core::Span<ecs::SystemManager::TaskNode> graph = world.task_graph();
+                    for(usize i = 0; i != graph.size(); ++i) {
+                        const ecs::SystemManager::TaskNode& node = graph[i];
+
+                        imgui::table_begin_next_row();
+                        ImGui::TextUnformatted(fmt_c_str("{}", i));
+
+                        ImGui::TableNextColumn();
+                        ImGui::TextUnformatted(fmt_c_str("[{}] {}: {}", schedule_names[usize(node.schedule)], node.system->name(), node.task->name));
+
+                        ImGui::TableNextColumn();
+                        core::String accesses;
+                        for(const ecs::ComponentAccess& access : node.task->accesses) {
+                            const std::string_view type_name = world.component_type_name(access.type);
+                            if(!accesses.is_empty()) {
+                                accesses += ", ";
+                            }
+                            accesses += access.write ? fmt("Mutate<{}>", type_name) : type_name;
+                        }
+                        ImGui::TextUnformatted(accesses.begin(), accesses.end());
+
+                        ImGui::TableNextColumn();
+                        core::String conflicts;
+                        for(const u32 conflict : node.conflicts) {
+                            if(!conflicts.is_empty()) {
+                                conflicts += ", ";
+                            }
+                            conflicts += fmt("{}", conflict);
+                        }
+                        ImGui::TextUnformatted(conflicts.begin(), conflicts.end());
+                    }
+                    ImGui::EndTable();
                 }
             }
 
@@ -267,20 +321,22 @@ class MeshAllocatorDebug : public Widget {
 };
 
 
-class SelectionDebug : public Widget {
+class SelectionDebug : public WorkspaceWidget<WorldWorkspace> {
     editor_widget(SelectionDebug, "View", "Debug")
 
     public:
-        SelectionDebug() : Widget("Selection debug") {
+        SelectionDebug(WorldWorkspace* ws) :
+                WorkspaceWidget("Selection debug", ws) {
         }
 
     protected:
         void on_gui() override {
-            if(ImGui::CollapsingHeader(fmt_c_str("{} entity selected###header", current_world().selected_entities().size()), ImGuiTreeNodeFlags_DefaultOpen)) {
-                for(const ecs::EntityId id : current_world().selected_entities()) {
+            EditorWorld& world = workspace()->world();
+            if(ImGui::CollapsingHeader(fmt_c_str("{} entity selected###header", world.selected_entities().size()), ImGuiTreeNodeFlags_DefaultOpen)) {
+                for(const ecs::EntityId id : world.selected_entities()) {
                     imgui::text_read_only(fmt_c_str("##{}", id.index()), fmt("{:#08x}", id.index()));
                     ImGui::SameLine();
-                    const auto name = current_world().entity_name(id);
+                    const auto name = world.entity_name(id);
                     ImGui::TextUnformatted(name.data(), name.data() + name.size());
                 }
             }
@@ -305,11 +361,12 @@ class UiDebug : public Widget {
         }
 };
 
-class RaytracingDebug : public Widget {
+class RaytracingDebug : public WorkspaceWidget<WorldWorkspace> {
     editor_widget(RaytracingDebug, "View", "Debug")
 
     public:
-        RaytracingDebug() : Widget("Raytracing debug") {
+        RaytracingDebug(WorldWorkspace* ws) :
+                WorkspaceWidget("Raytracing debug", ws) {
         }
 
     protected:
@@ -319,31 +376,33 @@ class RaytracingDebug : public Widget {
                 return;
             }
 
-            const TLAS& tlas = current_scene().tlas();
+            const TLAS& tlas = workspace()->scene().tlas();
             ImGui::Text("TLAS size = %uKB", u32(tlas.buffer().byte_size() / 1024));
         }
 };
 
 
-class UndoRedoDebug : public Widget {
+class UndoRedoDebug : public WorkspaceWidget<WorldWorkspace> {
 
     editor_widget(UndoRedoDebug)
 
     public:
-        UndoRedoDebug() : Widget("Undo Redo") {
+        UndoRedoDebug(WorldWorkspace* ws) :
+                WorkspaceWidget("Undo Redo", ws) {
         }
 
         void on_gui() override {
-            UndoRedoSystem* system = current_world().find_system<UndoRedoSystem>();
-            const auto states = system->undo_states();
-
-            ImGui::Text("%u items in stack (current: %u)", u32(states.size()), u32(system->stack_top()));
+            EditorWorld& world = workspace()->world();
+            UndoRedoSystem* system = world.find_system<UndoRedoSystem>();
+            ImGui::Text("%u items in stack (current: %u)", u32(system->undo_states().size()), u32(system->stack_top()));
 
             ImGui::SameLine();
 
             if(ImGui::Button("Clear")) {
                 system->reset();
             }
+
+            const auto states = system->undo_states();
 
             if(ImGui::BeginChild("##undostack")) {
                 for(usize i = 0; i != states.size(); ++i) {
@@ -352,17 +411,17 @@ class UndoRedoDebug : public Widget {
                         ImGui::Indent();
 
                         for(const auto& [id, data] : states[i].removed_components) {
-                            const auto type_name = current_world().component_type_name(data.type_id);
+                            const auto type_name = world.component_type_name(data.type_id);
                             ImGui::TextUnformatted(fmt_c_str("({:08x}:{:08x}).{} deleted", id.index(), id.version(), type_name));
                         }
 
                         for(const auto& [id, data] : states[i].added_components) {
-                            const auto type_name = current_world().component_type_name(data.type_id);
+                            const auto type_name = world.component_type_name(data.type_id);
                             ImGui::TextUnformatted(fmt_c_str("({:08x}:{:08x}).{} added", id.index(), id.version(), type_name));
                         }
 
                         for(const auto& [key, props] : states[i].undo_properties) {
-                            const auto type_name = current_world().component_type_name(key.second);
+                            const auto type_name = world.component_type_name(key.second);
                             for(const auto& prop : props) {
                                 ImGui::TextUnformatted(fmt_c_str("({:08x}:{:08x}).{}.{} changed", key.first.index(), key.first.version(), type_name, prop.name));
                             }
@@ -379,29 +438,80 @@ class UndoRedoDebug : public Widget {
 };
 
 
-class VisibilityDebug : public Widget {
+class VisibilityDebug : public WorkspaceWidget<WorldWorkspace> {
 
     editor_widget(VisibilityDebug)
 
     public:
-        VisibilityDebug() : Widget("Visibility debug") {
+        VisibilityDebug(WorldWorkspace* ws) :
+                WorkspaceWidget("Visibility debug", ws) {
         }
 
         void on_gui() override {
-            const std::shared_ptr<SceneVisibility> visible = SceneVisibilitySubPass::create(scene_view()).visible;
+            EditorWorld& world = workspace()->world();
+            const std::shared_ptr<SceneVisibility> visible = SceneVisibilitySubPass::create(workspace()->scene_view()).visible;
             ImGui::TextUnformatted(fmt_c_str("{} visible meshes", visible->meshes.size()));
             ImGui::TextUnformatted(fmt_c_str("{} visible point lights", visible->point_lights.size()));
             ImGui::TextUnformatted(fmt_c_str("{} visible spot lights", visible->spot_lights.size()));
 
             if(ImGui::CollapsingHeader("ECS")) {
-                auto row = []<typename T>(std::string_view name) {
-                    const usize total = current_world().create_group<T>().size();
-                    const usize hidden = current_world().create_group<T>(ecs::tags::hidden).size();
+                auto row = [&]<typename T>(std::string_view name) {
+                    const usize total = world.create_group<T>().size();
+                    const usize hidden = world.create_group<T>(ecs::tags::hidden).size();
                     ImGui::TextUnformatted(fmt_c_str("{} {} ({} hidden)", total, name, hidden));
                 };
                 row.template operator()<StaticMeshComponent>("meshes");
                 row.template operator()<PointLightComponent>("point lights");
                 row.template operator()<SpotLightComponent>("spot lights");
+            }
+        }
+};
+
+class BlueprintNodeDebug : public WorkspaceWidget<BlueprintWorkspace> {
+    editor_widget(BlueprintNodeDebug, "View", "Debug")
+
+    public:
+        BlueprintNodeDebug(BlueprintWorkspace* ws) : WorkspaceWidget("Blueprint node debug", ws) {
+        }
+
+    protected:
+        void on_gui() override {
+            const Blueprint& blueprint = workspace()->blueprint();
+            const core::Span nodes = blueprint.all_nodes();
+            
+            ImGui::TextUnformatted(fmt_c_str("{} nodes", nodes.size()));
+
+            for(usize i = 0; i != nodes.size(); ++i) {
+                const auto& node = nodes[i];
+                if(!ImGui::TreeNode(fmt_c_str("{}###{}", node->name(), static_cast<const void*>(node.get())))) {
+                    continue;
+                }
+
+                const core::Span<BlueprintPin> inputs = node->input_pins();
+                if(!inputs.is_empty() && ImGui::TreeNode("Inputs")) {
+                    for(usize k = 0; k != inputs.size(); ++k) {
+                        ImGui::TextUnformatted(fmt_c_str("{}{}", inputs[k].name, blueprint.find_link(node.get(), k) ? " (linked)" : ""));
+                    }
+                    ImGui::TreePop();
+                }
+
+                const core::Span<BlueprintPin> outputs = node->output_pins();
+                if(!outputs.is_empty() && ImGui::TreeNode("Outputs")) {
+                    for(const BlueprintPin& pin : outputs) {
+                        ImGui::TextUnformatted(pin.name.data());
+                    }
+                    ImGui::TreePop();
+                }
+
+                const core::Span<BlueprintPin> params = node->param_pins();
+                if(!params.is_empty() && ImGui::TreeNode("Params")) {
+                    for(const BlueprintPin& pin : params) {
+                        ImGui::TextUnformatted(pin.name.data());
+                    }
+                    ImGui::TreePop();
+                }
+
+                ImGui::TreePop();
             }
         }
 };

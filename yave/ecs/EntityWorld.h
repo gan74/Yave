@@ -28,6 +28,7 @@ SOFTWARE.
 #include "EntityGroup.h"
 #include "EntityPool.h"
 #include "EntityPrefab.h"
+#include "TriggerManager.h"
 #include "tags.h"
 #include "traits.h"
 
@@ -40,7 +41,7 @@ class EntityWorld : NonMovable {
 
     public:
         EntityWorld();
-        ~EntityWorld();
+        virtual ~EntityWorld();
 
         TickId tick_id() const;
 
@@ -185,6 +186,23 @@ class EntityWorld : NonMovable {
             return _system_manager.find_system<S>();
         }
 
+        core::Span<SystemManager::TaskNode> task_graph() const {
+            return _system_manager.task_graph();
+        }
+
+
+
+
+        // ---------------------------------------- Triggers ----------------------------------------
+
+        TriggerManager& triggers() {
+            return _triggers;
+        }
+
+        const TriggerManager& triggers() const {
+            return _triggers;
+        }
+
 
 
 
@@ -212,7 +230,11 @@ class EntityWorld : NonMovable {
         template<typename... Ts>
         EntityGroup<Ts...> create_group(core::Span<std::string_view> tags = {}, core::Span<ComponentTypeIndex> filters = {}) {
             y_profile();
-            const EntityGroupProvider* base = get_or_create_group_provider<Ts...>(tags, filters);
+            return create_group<Ts...>(get_or_create_group_provider<Ts...>(tags, filters));
+        }
+
+        template<typename... Ts>
+        EntityGroup<Ts...> create_group(const EntityGroupProvider* base) {
             return EntityGroup<Ts...>(base, std::tuple{find_container<traits::component_raw_type_t<Ts>>()...});
         }
 
@@ -248,16 +270,14 @@ class EntityWorld : NonMovable {
         template<typename T>
         const ComponentContainer<T>* find_container() const {
             static_assert(std::is_same_v<traits::component_raw_type_t<T>, T>);
-            static const auto static_info = ComponentRuntimeInfo::create<T>();
-            unused(static_info);
+            unused(&ComponentRuntimeInfo::create<T>);
             return static_cast<const ComponentContainer<T>*>(find_container(type_index<T>()));
         }
 
         template<typename T>
         ComponentContainer<T>* find_container() {
             static_assert(std::is_same_v<traits::component_raw_type_t<T>, T>);
-            static const auto static_info = ComponentRuntimeInfo::create<T>();
-            unused(static_info);
+            unused(&ComponentRuntimeInfo::create<T>);
             return static_cast<ComponentContainer<T>*>(find_container(type_index<T>()));
         }
 
@@ -294,6 +314,7 @@ class EntityWorld : NonMovable {
         SparseIdSet _parent_changed;
 
         SystemManager _system_manager;
+        TriggerManager _triggers;
 
         TickId _tick_id;
 

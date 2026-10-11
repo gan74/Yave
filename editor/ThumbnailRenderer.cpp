@@ -24,10 +24,14 @@ SOFTWARE.
 #include "EditorResources.h"
 
 #include <yave/assets/AssetLoader.h>
+
 #include <yave/material/Material.h>
 #include <yave/material/MaterialData.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/meshes/MeshData.h>
+#include <yave/blueprints/Blueprint.h>
+
+
 #include <yave/graphics/images/ImageData.h>
 #include <yave/graphics/device/DeviceResources.h>
 #include <yave/graphics/commands/CmdQueue.h>
@@ -70,7 +74,7 @@ static void fill_world(ecs::EntityWorld& world) {
     const ecs::EntityId sky_id = world.create_entity();
     SkyLightComponent* sky = world.get_or_add_component<SkyLightComponent>(sky_id);
     sky->probe() = device_resources().ibl_probe();
-    sky->intensity() = 0.5f;
+    sky->intensity() = 0.75f;
 }
 
 static AABB merge_empty_aabb(const AABB& a, const AABB& b) {
@@ -111,7 +115,7 @@ static Texture render_world(ecs::EntityWorld& world) {
 
     const EcsScene scene(&world);
 
-    const float camera_distance = std::max(math::epsilon<float>, aabb.radius()) * 2.0f;
+    const float camera_distance = std::max(math::epsilon<float>, aabb.radius()) * 1.6f;
     const Camera camera(
         math::look_at(aabb.center() + math::Vec3(0.0f, 1.0f, 1.0f) * camera_distance, aabb.center(), math::Vec3(0.0f, 1.0f, 0.0f)),
         math::perspective(math::to_rad(45.0f), 1.0f, 0.1f)
@@ -133,6 +137,7 @@ static Texture render_world(ecs::EntityWorld& world) {
             settings.tone_mapping.exposure = 10.0f;
             settings.taa.enable = false;
             settings.ao.method = AOSettings::AOMethod::RTAOFallback;
+            settings.ambient_pipe = AmbientPipe::IBLOcclusion;
         }
 
         const DefaultRenderer renderer = DefaultRenderer::create(graph, scene_view, out.size(), settings);
@@ -179,7 +184,7 @@ static Texture render_prefab(const AssetPtr<ecs::EntityPrefab>& prefab) {
         Y_TODO(we should not have to do this)
         y_profile_zone("world tick");
         world.add_system<AssetLoaderSystem>(asset_loader(), AssetLoadingFlags::SynchronousLoad);
-        world.tick(job_system());
+        world.tick(editor_job_system());
     }
 
     return render_world(world);
@@ -208,6 +213,10 @@ ThumbnailRenderer::ThumbnailRenderer(AssetLoader& loader) : _loader(&loader) {
 const ThumbnailRenderer::ThumbnailData* ThumbnailRenderer::thumbnail_data(AssetId id) {
     y_profile();
 
+    if(!app_settings().editor.render_thumbnails) {
+        return nullptr;
+    }
+
     if(id == AssetId::invalid_id()) {
         return nullptr;
     }
@@ -234,26 +243,41 @@ const ThumbnailRenderer::ThumbnailData* ThumbnailRenderer::thumbnail_data(AssetI
 
 const TextureView* ThumbnailRenderer::thumbnail_img(AssetId id) {
     const ThumbnailData* thumb = thumbnail_data(id);
-    return thumb ? &thumb->view : nullptr;
+    return (thumb && !thumb->view.is_null()) ? &thumb->view : nullptr;
 }
 
 usize ThumbnailRenderer::cached_thumbnails() {
     return _thumbnails.locked([&](auto&& thumbnails) { return thumbnails.size(); });
 }
 
-std::unique_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_render(AssetId id) {
+void ThumbnailRenderer::clear(AssetId id) {
+    _thumbnails.locked([&](auto&& thumbnails) {
+        thumbnails.erase(id);
+    });
+}
+
+std::shared_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_render(AssetId id) {
     y_profile_zone("schedule render");
 
-    auto data = std::make_unique<ThumbnailData>();
-    job_system().schedule([this, data = data.get(), id]() {
+    auto data = std::make_shared<ThumbnailData>();
+    editor_job_system().schedule([this, data, id]() {
         y_debug_assert(data->status == ThumbnailStatus::Rendering);
 
         const AssetType asset_type = _loader->store().asset_type(id).unwrap_or(AssetType::Unknown);
+
+        if(const core::Span<AssetId> refs = _loader->store().references(id).unwrap_or(core::Span<AssetId>()); !refs.is_empty()) {
+            data->infos.emplace_back(fmt("References {} assets", refs.size()));
+        }
+
+        if(const auto ref_count = _loader->store().reference_count(id)) {
+            data->infos.emplace_back(fmt("Referenced by {} assets", ref_count.unwrap()));
+        }
 
         if(const auto r = _loader->store().data(id); r.is_ok()) {
             data->infos.emplace_back(fmt("Size on disk: {}",  byte_size_text(r.unwrap()->remaining())));
         }
 
+        bool ok = false;
         switch(asset_type) {
             case AssetType::Mesh:
                 if(const auto ptr = _loader->load<StaticMesh>(id)) {
@@ -262,6 +286,7 @@ std::unique_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_re
                     const MeshDrawData& draw_data = ptr->draw_data();
                     data->infos.emplace_back(fmt("Vertices: {}", draw_data.vertex_count()));
                     data->infos.emplace_back(fmt("Triangles: {}", draw_data.draw_command().index_count / 3));
+                    ok = true;
                 }
             break;
 
@@ -271,18 +296,28 @@ std::unique_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_re
 
                     data->infos.emplace_back(fmt("Size: {}x{}", ptr->size().x(), ptr->size().y()));
                     data->infos.emplace_back(fmt("Format: {}", ptr->format().name()));
+                    ok = true;
                 }
             break;
 
             case AssetType::Material:
                 if(const auto ptr = _loader->load<Material>(id)) {
                     data->texture = render_object(device_resources()[DeviceResources::SphereMesh], ptr);
+                    ok = true;
                 }
             break;
 
             case AssetType::Prefab:
                 if(const auto ptr = _loader->load<ecs::EntityPrefab>(id)) {
                     data->texture = render_prefab(ptr);
+                    ok = true;
+                }
+            break;
+
+            case AssetType::Blueprint:
+                if(const auto ptr = _loader->load<Blueprint>(id)) {
+                    data->infos.emplace_back(fmt("Nodes: {}", ptr->all_nodes().size()));
+                    ok = true;
                 }
             break;
 
@@ -293,10 +328,8 @@ std::unique_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_re
 
         if(!data->texture.is_null()) {
             data->view = data->texture;
-            data->status = ThumbnailStatus::Done;
-        } else {
-            data->status = ThumbnailStatus::Failed;
         }
+        data->status = ok ? ThumbnailStatus::Done : ThumbnailStatus::Failed;
     });
 
     return data;

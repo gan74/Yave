@@ -170,7 +170,7 @@ Intersection Frustum::intersection(const AABB &aabb, float far_dist) const {
     const Intersection inter = intersection(aabb);
 
     // Not exactly efficient
-    if(inter != Intersection::Outside && far_dist > 0.0f) {
+    if(inter != Intersection::Outside) {
         const math::Vec3 bbox_min = aabb.min() - _pos;
         const math::Vec3 bbox_max = aabb.max() - _pos;
 
@@ -185,14 +185,13 @@ Intersection Frustum::intersection(const AABB &aabb, float far_dist) const {
             }
         }
 
-        if(normal.dot(p) > far_dist) {
+        if(far_dist > 0.0f && normal.dot(p) > far_dist) {
             return Intersection::Outside;
         }
-        if(normal.dot(n) > far_dist) {
+        if(far_dist > 0.0f && normal.dot(n) > far_dist) {
             return Intersection::Intersects;
         }
     }
-
 
     return inter;
 }

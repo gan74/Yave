@@ -117,18 +117,23 @@ class ComponentContainer final : public ComponentContainerBase {
         }
 
         T* get_or_add(EntityId id) {
-            if(_components.contains(id)) {
-                return &_components[id];
+            if(T* comp = _components.try_get(id)) {
+                return comp;
             }
             return add(id);
         }
 
         template<typename... Args>
-        T* add_or_replace(EntityId id, Args&... args) {
-            if(_components.contains(id)) {
+        T* add_or_replace(EntityId id, Args&&... args) {
+            if(T* comp = _components.try_get(id)) {
                 _mutated.insert(id);
                 _to_delete.erase(id);
-                return &(_components[id] = T(y_fwd(args)...));
+                if constexpr(sizeof...(Args) == 1 && (std::is_same_v<std::remove_cvref_t<Args>, T> && ...)) {
+                    ((*comp = y_fwd(args)), ...);
+                } else {
+                    *comp = T(y_fwd(args)...);
+                }
+                return comp;
             }
             return add(id, y_fwd(args)...);
         }
@@ -190,7 +195,11 @@ class ComponentContainer final : public ComponentContainerBase {
 
         void register_component_type(System* system) const override {
             unused(system);
-            if constexpr(Registerable<T>) {
+            if constexpr(std::is_base_of_v<RegisterComponentTag, T>) {
+                static_assert(Registerable<T>, "Components must inherit from RegisterComponent only once, listing every system");
+                static_assert(std::is_same_v<typename T::registered_component_type, T>, "RegisterComponent must be given the component type itself");
+                T::register_component_type(system);
+            } else if constexpr(Registerable<T>) {
                 T::register_component_type(system);
             }
         }
@@ -233,7 +242,7 @@ class ComponentContainer final : public ComponentContainerBase {
 
 
         template<typename... Args>
-        T* add(EntityId id, Args&... args) {
+        T* add(EntityId id, Args&&... args) {
             add_required_components(id);
             T* component =  &_components.insert(id, y_fwd(args)...);
             _matrix->add_component<T>(id);

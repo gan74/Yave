@@ -182,10 +182,6 @@ void DescriptorArray::alloc_set(u32 size) {
         vkUpdateDescriptorSets(vk_device(), 0, nullptr, 1, &copy);
     }
 
-    for(u32 i = _capacity; i < size; ++i) {
-        _free << i;
-    }
-
     _capacity = size;
     _set = new_set;
     destroy_graphic_resource(std::exchange(_pool, std::move(new_pool)));
@@ -196,20 +192,18 @@ u32 DescriptorArray::add_descriptor(const Descriptor& desc) {
 
     const auto lock = std::unique_lock(_set_lock);
 
-    if(_free.is_empty()) {
-        alloc_set(2 << log2ui(_capacity + 1));
+    const u32 index = _indices.alloc();
+    if(index >= _capacity) {
+        alloc_set(2 << log2ui(index));
     }
 
-    const u32 index = _free.pop();
     add_descriptor_to_set(desc, index);
     return index;
 }
 
 void DescriptorArray::remove_descriptor(u32 index) {
     const auto lock = std::unique_lock(_set_lock);
-
-    y_debug_assert(std::find(_free.begin(), _free.end(), index) == _free.end());
-    _free << index;
+    _indices.free(index);
 }
 
 void DescriptorArray::add_descriptor_to_set(const Descriptor& desc, u32 index) {

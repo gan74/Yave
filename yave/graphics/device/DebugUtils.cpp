@@ -40,6 +40,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_message_callback(
     {
         constexpr std::string_view filtered_names[] = {
             "VUID-vkCmdWriteTimestamp-None-00830",
+            "Undefined-Value-ShaderOutputNotConsumed",
         };
 
         const std::string_view callback_name = callback_data->pMessageIdName;

@@ -19,28 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef EDITOR_SYSTEMS_DEBUGANIMATESYSTEM_H
-#define EDITOR_SYSTEMS_DEBUGANIMATESYSTEM_H
+#ifndef EDITOR_WIDGETS_ASSETREFERENCEWIDGET_H
+#define EDITOR_WIDGETS_ASSETREFERENCEWIDGET_H
 
-#include <yave/ecs/System.h>
+#include <editor/Widget.h>
 
-#include <y/core/Chrono.h>
+#include <yave/assets/AssetId.h>
 
 namespace editor {
 
-class DebugAnimateSystem : public ecs::System {
-
+class AssetReferenceWidget final : public Widget {
     public:
-        DebugAnimateSystem();
+        AssetReferenceWidget(AssetId id);
 
-        void setup(ecs::SystemScheduler& sched) override;
+    protected:
+        void on_gui() override;
 
     private:
-        core::StopWatch _dt;
-        core::StopWatch _timer;
+        AssetId _id;
 };
 
 }
 
-#endif // EDITOR_SYSTEMS_DEBUGANIMATESYSTEM_H
-
+#endif // EDITOR_WIDGETS_ASSETREFERENCEWIDGET_H

@@ -26,17 +26,20 @@ SOFTWARE.
 // TODO: Nested classes will not be declared correctly
 
 namespace editor {
+class AssetReferenceWidget;
 class AssetSelector;
 class AssetStringifier;
+class BlueprintEditor;
+class BlueprintNodeInspector;
+class BlueprintWorkspace;
 class CVarConsole;
 class CameraController;
-class DebugAnimateComponent;
-class DebugAnimateSystem;
 class DebugValueEditor;
 class DeletionDialog;
 class EditorComponent;
 class EditorResources;
 class EditorWorld;
+class EmptyWorkspace;
 class EngineView;
 class EntitySelector;
 class FileBrowser;
@@ -49,6 +52,9 @@ class HoudiniCameraController;
 class ImGuiPlatform;
 class ImageImporter;
 class Inspector;
+class MaterialEditor;
+class MaterialPreview;
+class MaterialWorkspace;
 class OrientationGizmo;
 class Outliner;
 class PerformanceMetrics;
@@ -57,7 +63,7 @@ class Preview;
 class Renamer;
 class ResourceBrowser;
 class RotationGizmo;
-class ScriptingConsole;
+class RuntimeView;
 class Settings;
 class StringMatcher;
 class ThumbnailRenderer;
@@ -65,18 +71,23 @@ class TranslationGizmo;
 class UiManager;
 class UndoRedoSystem;
 class Widget;
+class Workspace;
+class WorkspaceWidgetBase;
+class WorldWorkspace;
 struct CVar;
 struct CameraSettings;
 struct ComponentData;
 struct DebugSettings;
+struct Delegates;
 struct EditorAction;
 struct EditorPass;
 struct EditorRenderer;
 struct EditorRendererSettings;
 struct EditorSettings;
-struct EditorWidget;
+struct EditorWidgetDesc;
 struct Entry;
 struct ImGuiImage;
+struct NewNode;
 struct PerfSettings;
 struct Picker;
 struct PickingRequest;
@@ -88,8 +99,6 @@ struct TreeNode;
 struct UiIcon;
 struct UiSettings;
 struct UndoState;
-struct WidgetIdStack;
-struct ZoneHistory;
 }
 
 

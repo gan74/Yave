@@ -61,7 +61,7 @@ class EditorResources final : NonMovable {
         void load_resources();
 
         std::unique_ptr<ComputeProgram[]> _computes;
-        std::unique_ptr<MaterialTemplate[]> _material_templates;
+        std::unique_ptr<std::unique_ptr<MaterialTemplate>[]> _material_templates;
 
 };
 

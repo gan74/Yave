@@ -95,7 +95,7 @@ class Signal {
         Signal() : _data(std::make_shared<Data>()) {
         }
 
-        template<typename F>
+        template<std::invocable<Args...> F>
         Subscription subscribe(F&& func) {
             const u32 index = ++_data->counter;
             _data->_receivers.locked([&](auto&& receivers) {

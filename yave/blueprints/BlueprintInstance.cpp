@@ -19,50 +19,48 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
+#include "BlueprintInstance.h"
 
-#include "ScriptingConsole.h"
-
-#include <editor/utils/ui.h>
-
-#include <y/io2/File.h>
-#include <y/utils/format.h>
+#include <y/utils/memory.h>
 
 #include <algorithm>
+#include <cstring>
 
-namespace editor {
+namespace yave {
 
-static const core::String script_file = "script.lua";
 
-ScriptingConsole::ScriptingConsole() : Widget(ICON_FA_CODE " Scripting Console", ImGuiWindowFlags_NoNavInputs) {
-    if(auto f = io2::File::open(script_file)) {
-        _code.resize(f.unwrap().size());
-        f.unwrap().read_array(_code.data(), _code.size()).ignore();
+void* BlueprintStorage::alloc(usize size, usize alignment) {
+    y_debug_assert(alignment && alignment <= alignof(std::max_align_t));
+
+    _offset = align_up_to(_offset, alignment);
+    if(_chunks.is_empty() || _offset + size > _chunks.last().size()) {
+        _chunks.emplace_back(std::max(size, storage_chunk_size));
+        _offset = 0;
     }
+
+    void* ptr = _chunks.last().data() + _offset;
+    _offset += size;
+    return ptr;
 }
 
-void ScriptingConsole::on_gui() {
-    const float height = ImGui::GetContentRegionAvail().y * 0.5f - ImGui::GetTextLineHeightWithSpacing();
 
-    ImGui::SetNextItemWidth(-1);
-    imgui::text_input_multiline("##code", _code, {0.0f, height});
+core::Span<BlueprintInstance::EntryPoint> BlueprintInstance::entry_points() const {
+    return _entry_points;
+}
 
-    ImGui::SetNextItemWidth(-1);
-    imgui::text_input_multiline("##log", _vm.output, {0.0f, height}, ImGuiInputTextFlags_ReadOnly);
+core::Result<void, BlueprintError> BlueprintInstance::trigger(const EntryPoint& entry_point, const void* payload, const BlueprintContext& context) noexcept {
+    y_profile();
 
-    ImGui::SetNextItemWidth(-1);
-    if(ImGui::Button(ICON_FA_PLAY " Run")) {
-        if(auto f = io2::File::create(script_file)) {
-            f.unwrap().write_array(_code.data(), _code.size()).ignore();
+    std::memcpy(entry_point.payload, payload, entry_point.payload_size);
+    for(const BlueprintInstruction& instruction : entry_point.instructions) {
+        try {
+            instruction.func(context);
+        } catch(const std::exception& e) {
+            return core::Err(BlueprintError{instruction.node,core::String(e.what())});
         }
-
-        run(_code);
     }
-}
 
-
-void ScriptingConsole::run(const core::String& code) {
-    _vm.run(code);
+    return core::Ok();
 }
 
 }
-

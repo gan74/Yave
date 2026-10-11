@@ -2,36 +2,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(yave)
 
-function(build_luajit LUAJIT_TARGET)
-    set(LUA_DIR ${CMAKE_SOURCE_DIR}/external/LuaJIT)
-    set(LUA_SOURCE_DIR ${LUA_DIR}/src)
-
-    if(WIN32)
-        set(LUA_SHARED_OBJECT ${LUA_SOURCE_DIR}/lua51.dll)
-    else()
-        set(LUA_SHARED_OBJECT ${LUA_SOURCE_DIR}/lua51.so)
-    endif()
-
-    if(MSVC)
-        set(LUA_LIB_FILE ${LUA_SOURCE_DIR}/lua51.lib)
-        add_custom_command(OUTPUT ${LUA_LIB_FILE} COMMAND cmd /c ${LUA_SOURCE_DIR}/msvcbuild.bat WORKING_DIRECTORY ${LUA_SOURCE_DIR})
-    else()
-        set(LUA_LIB_FILE ${LUA_SHARED_OBJECT})
-        set(MAKE_CMD make)
-        if(MINGW)
-            set(MAKE_CMD mingw32-make)
-        endif()
-        add_custom_command(OUTPUT ${LUA_LIB_FILE} COMMAND ${MAKE_CMD} WORKING_DIRECTORY ${LUA_DIR})
-    endif()
-
-    add_custom_target(copy-luajit DEPENDS ${LUA_LIB_FILE})
-    add_custom_command(TARGET copy-luajit POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${LUA_SHARED_OBJECT} ${CMAKE_CURRENT_BINARY_DIR})
-
-    add_library(${LUAJIT_TARGET} STATIC IMPORTED GLOBAL)
-    add_dependencies(${LUAJIT_TARGET} copy-luajit)
-    set_target_properties(${LUAJIT_TARGET} PROPERTIES IMPORTED_LOCATION ${LUA_LIB_FILE})
-endfunction(build_luajit)
-
 function(enable_unity_build UB_SUFFIX SOURCE_VARIABLE_NAME)
     message("Using unity build for target ${UB_SUFFIX}")
     set(FILES ${${SOURCE_VARIABLE_NAME}})
@@ -83,6 +53,7 @@ endfunction(add_slang_shader)
 
 
 set(DEBUG_RENDERER_IN_DISTRIBUTION ON)
+set(CPP_EXCEPTIONS_ENABLED ON)  # Keep Jolt from forcing _HAS_EXCEPTIONS=0 on everything that links it
 set(PHYSICS_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/external/JoltPhysics")
 include("${CMAKE_CURRENT_SOURCE_DIR}/external/JoltPhysics/Jolt/Jolt.cmake")
 
@@ -92,6 +63,7 @@ option(YAVE_BUILD_YAVE "Build yave" ON)
 option(YAVE_BUILD_EDITOR "Build editor" ON)
 option(YAVE_TRACY_PROFILING "Use Tracy profiling" ON)
 option(YAVE_UNITY_BUILD "Force unity build" OFF)
+option(YAVE_LAZY_DEVICE_RESOURCES "Lazy-load shaders on first use" OFF)
 
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -148,9 +120,14 @@ file(GLOB_RECURSE EDITOR_FILES
     "editor/*.h"
 )
 
+set(EDITOR_TEST_FILES "${CMAKE_CURRENT_SOURCE_DIR}/editor/tests.cpp")
+list(REMOVE_ITEM EDITOR_FILES ${EDITOR_TEST_FILES})
+
 file(GLOB_RECURSE IMGUI_FILES
     "external/imgui/*.cpp"
     "external/imgui/*.h"
+    "external/imgui-node-editor/*.h"
+    "external/imgui-node-editor/*.cpp"
 )
 
 file(GLOB_RECURSE EDITOR_EXTERNAL_FILES
@@ -182,6 +159,9 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "ssao_upsample.slang" "COMBINE_HIGH")
 
     add_slang_shader(${SHADER_TARGET} "atmosphere.slang" "")
+    add_slang_shader(${SHADER_TARGET} "atmosphere_precompute.slang" "SINGLE")
+    add_slang_shader(${SHADER_TARGET} "atmosphere_precompute.slang" "MULTIPLE")
+
 
     add_slang_shader(${SHADER_TARGET} "blur.slang" "HORIZONTAL")
     add_slang_shader(${SHADER_TARGET} "blur.slang" "VERTICAL")
@@ -252,8 +232,6 @@ endfunction(build_editor_shaders)
 
 
 
-build_luajit(luajit)
-
 if(YAVE_UNITY_BUILD)
     enable_unity_build(yave YAVE_FILES)
 endif()
@@ -273,12 +251,15 @@ if(YAVE_BUILD_YAVE)
         target_link_libraries(yave PUBLIC TracyClient)
     endif()
 
-    target_link_libraries(yave PUBLIC y luajit Jolt)
+    target_link_libraries(yave PUBLIC y Jolt)
     target_include_directories(yave PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/sol/include
         ${Vulkan_INCLUDE_DIRS}
     )
+
+    if(YAVE_LAZY_DEVICE_RESOURCES)
+        target_compile_definitions(yave PUBLIC YAVE_LAZY_DEVICE_RESOURCES)
+    endif()
 
     add_custom_target(shaders)
     add_custom_target(shaders_optim)
@@ -290,7 +271,7 @@ endif()
 
 if(YAVE_BUILD_EDITOR)
     add_library(imgui ${IMGUI_FILES})
-    target_include_directories(imgui PRIVATE external/imgui)
+    target_include_directories(imgui PUBLIC external/imgui)
 
     add_library(bc7enc ${BC7ENC_FILES})
     target_include_directories(bc7enc PRIVATE external/bc7enc_rdo)
@@ -301,5 +282,9 @@ if(YAVE_BUILD_EDITOR)
     add_dependencies(editor shaders)
 
     target_link_libraries(editor yave imgui bc7enc)
+
+    add_executable(editor_tests ${EDITOR_TEST_FILES})
+    target_compile_definitions(editor_tests PRIVATE "-DY_BUILD_TESTS")
+    target_link_libraries(editor_tests yave)
 endif()
 

@@ -117,21 +117,18 @@ JobSystem::JobHandle JobSystem::schedule_n(JobFunc&& func, u32 count, core::Span
 
         if(dep_count) {
             handle._data->dependencies = dep_count;
-            ++_total_jobs;
+            _total_jobs += count;
             ++_waiting;
             return handle;
         }
     }
 
     y_debug_assert(!handle._data->dependencies);
-    ++_total_jobs;
+    _total_jobs += count;
     _jobs.emplace_back(handle._data);
+    ++_queued;
 
-    if(count == 1) {
-        _condition.notify_one();
-    } else {
-        _condition.notify_all();
-    }
+    wake(count);
 
     return handle;
 }
@@ -140,22 +137,41 @@ void JobSystem::wait(core::Span<JobHandle> jobs) {
     for(const JobHandle& job : jobs) {
         y_debug_assert(job._parent == this);
 
-        while(!job.is_finished()) {
+        for(;;) {
+            const u32 finished = job._data->finished;
+            if(finished == job._data->count) {
+                break;
+            }
+
             auto lock = std::unique_lock(_lock);
-            Y_TODO(we deadlock if we wait here, so we have to spin)
-            process_one(lock);
+            if(!process_one(lock, false)) {
+                lock.unlock();
+                job._data->finished.wait(finished);
+            }
         }
     }
 
     y_debug_assert(std::all_of(jobs.begin(), jobs.end(), [](const JobHandle& j) { return j.is_finished(); }));
 }
 
+void JobSystem::wake(u32 count) {
+    for(u32 i = 0; i < count && i < _sleeping; ++i) {
+        _condition.notify_one();
+    }
+}
+
 void JobSystem::worker() {
     for(;;) {
-        auto lock = std::unique_lock(_lock);
-        _condition.wait(lock, [this] { return !_jobs.is_empty() || (!_run && !_waiting); });
+        /*const core::StopWatch spin_timer;
+        while(_total_jobs && !_queued && spin_timer.elapsed() < core::Duration::microseconds(50)) {
+        }*/
 
-        if(!process_one(lock)) {
+        auto lock = std::unique_lock(_lock);
+        ++_sleeping;
+        _condition.wait(lock, [this] { return !_jobs.is_empty() || (!_run && !_waiting); });
+        --_sleeping;
+
+        if(!process_one(lock, true)) {
             y_debug_assert(lock.owns_lock());
             if(!_run && !_waiting) {
                 break;
@@ -166,47 +182,58 @@ void JobSystem::worker() {
     }
 }
 
-bool JobSystem::process_one(std::unique_lock<std::mutex>& lock) {
+bool JobSystem::process_one(std::unique_lock<std::mutex>& lock, bool run_next) {
     if(_jobs.is_empty()) {
         return false;
     }
 
-    const std::shared_ptr<JobData> job = _jobs.first();
-    const u32 index = job->started++;
+    std::shared_ptr<JobData> job = _jobs.first();
+    u32 index = job->started++;
     if(index + 1 == job->count) {
         _jobs.pop_front();
+        --_queued;
     }
 
     lock.unlock();
 
-    y_debug_assert(job);
-    y_debug_assert(!job->dependencies);
+    while(job) {
+        y_debug_assert(!job->dependencies);
 
-    job->func(index);
+        job->func(index);
 
-    {
-        u32 scheduled = 0;
-        lock.lock();
+        std::shared_ptr<JobData> next;
 
-        if(++job->finished == job->count) {
+        if(job->finished.fetch_add(1) + 1 == job->count) {
+            job->finished.notify_all();
+
+            u32 scheduled = 0;
+            lock.lock();
+
             for(usize i = 0; i != job->outgoing_deps.size(); ++i) {
                 auto& out = job->outgoing_deps[i];
                 if(out->dependencies.fetch_sub(1) == 1) {
-                    scheduled += out->count;
-                    _jobs.emplace_back(std::move(out));
                     --_waiting;
+                    if(run_next && !next && out->count == 1) {
+                        next = std::move(out);
+                        next->started = 1;
+                    } else {
+                        scheduled += out->count;
+                        _jobs.emplace_back(std::move(out));
+                        ++_queued;
+                    }
                 }
             }
+
+            wake(scheduled);
+
+            lock.unlock();
         }
 
-        if(scheduled) {
-            scheduled == 1 ? _condition.notify_one() : _condition.notify_all();
-        }
+        --_total_jobs;
 
-        lock.unlock();
+        job = std::move(next);
+        index = 0;
     }
-
-    --_total_jobs;
 
     return true;
 }

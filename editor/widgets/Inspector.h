@@ -23,26 +23,27 @@ SOFTWARE.
 #define EDITOR_WIDGETS_INSPECTOR_H
 
 #include <editor/Widget.h>
+#include <editor/WorldWorkspace.h>
 
 #include <yave/ecs/ecs.h>
 
 namespace editor {
 
-class Inspector final : public Widget {
+class Inspector final : public WorkspaceWidget<WorldWorkspace> {
 
-    editor_widget_open(Inspector)
+    editor_widget_open(Inspector, Right)
 
     public:
-        Inspector();
+        Inspector(WorldWorkspace* ws);
 
     protected:
         void on_gui() override;
 
     private:
         ecs::EntityId _locked;
+        core::String _new_tag;
 };
 
 }
 
 #endif // EDITOR_WIDGETS_INSPECTOR_H
-

@@ -36,11 +36,21 @@ SOFTWARE.
 namespace yave {
 
 FileSystemModel::Result<core::String> FileSystemModel::parent_path(std::string_view path) const {
-    return absolute(join(path, ".."));
+    auto parent = absolute(join(path, ".."));
+    if(parent) {
+        core::String& p = parent.unwrap();
+        if(p.size() > 1 && p.ends_with("/") && p[p.size() - 2] != ':') {
+            p.shrink(p.size() - 1);
+        }
+    }
+    return parent;
 }
 
 core::String FileSystemModel::extension(std::string_view path) const {
     for(usize i = path.size(); i != 0; --i) {
+        if(path[i - 1] == '/' || path[i - 1] == '\\') {
+            break;
+        }
         if(path[i - 1] == '.') {
             return core::String(&path[i - 1], path.size() - i + 1);
         }
@@ -65,7 +75,12 @@ FileSystemModel::Result<bool> FileSystemModel::is_parent(std::string_view parent
     if(!f) {
         return core::Err();
     }
-    return core::Ok(f.unwrap().size() > par.unwrap().size() && f.unwrap().starts_with(par.unwrap()));
+    const std::string_view p = par.unwrap();
+    const std::string_view c = f.unwrap();
+    if(c.size() <= p.size() || !c.starts_with(p)) {
+        return core::Ok(false);
+    }
+    return core::Ok(p.empty() || p.back() == '/' || c[p.size()] == '/');
 }
 
 const FileSystemModel* FileSystemModel::local_filesystem() {
@@ -203,7 +218,7 @@ bool LocalFileSystemModel::is_delimiter(char c) const {
 }
 
 core::String LocalFileSystemModel::canonicalize(std::string_view path) const {
-    core::String canonical(fs::path(path.data()).lexically_normal().string());
+    core::String canonical(fs::path(path).lexically_normal().string());
     for(auto& c : canonical) {
         if(is_delimiter(c)) {
             c = '/';
@@ -213,7 +228,7 @@ core::String LocalFileSystemModel::canonicalize(std::string_view path) const {
 }
 
 bool LocalFileSystemModel::is_canonical(std::string_view path) const {
-    fs::path p(path.data());
+    fs::path p(path);
     return p == p.lexically_normal();
 }
 

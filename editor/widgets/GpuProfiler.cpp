@@ -37,15 +37,22 @@ namespace editor {
 static const double ns_to_ms = 1.0 / 1'000'000.0;
 
 static EngineView* current_view() {
-    for(const auto& widget : ui().widgets()) {
+    const Workspace* workspace = current_workspace();
+    if(!workspace) {
+        return nullptr;
+    }
+
+    for(const auto& widget : ui().top_level_widgets()) {
         if(EngineView* view = dynamic_cast<EngineView*>(widget.get())) {
-            return view;
+            if(view->workspace() == workspace) {
+                return view;
+            }
         }
     }
     return nullptr;
 }
 
-GpuProfiler::GpuProfiler() :Widget(ICON_FA_CLOCK " GPU Profiler") {
+GpuProfiler::GpuProfiler() : Widget(ICON_FA_CLOCK " GPU Profiler") {
 }
 
 void GpuProfiler::on_gui() {
@@ -61,18 +68,11 @@ void GpuProfiler::on_gui() {
         return;
     }
 
-    if(ImGui::Button("Clear history")) {
-        _history.clear();
-    }
-
     if(instance_params().validation_layers) {
-        ImGui::SameLine();
         ImGui::TextColored(imgui::error_text_color, "(Debug layers enabled)");
     }
 
-    if(ImGui::Checkbox("Display hierarchy", &_display_tree)) {
-        _history.clear();
-    }
+    ImGui::Checkbox("Display hierarchy", &_display_tree);
 
     if(ImGui::BeginChild("##hierarchy")) {
         const ImGuiTableFlags table_flags =
@@ -100,7 +100,7 @@ void GpuProfiler::on_gui() {
                     const ImGuiTableColumnSortSpecs& spec = sort_specs->Specs[0];
                     if(spec.SortDirection != ImGuiSortDirection_None) {
                         as_tree = false;
-                        auto cmp = [=](auto a, auto b) { return spec.SortDirection == ImGuiSortDirection_Ascending ? (a > b) : (a < b); };
+                        auto cmp = [=](auto a, auto b) { return spec.SortDirection == ImGuiSortDirection_Ascending ? (a < b) : (a > b); };
                         switch(spec.ColumnIndex) {
                             case 1: // GPU
                                 std::sort(zones.begin(), zones.end(), [=](const auto& a, const auto& b) { return cmp(a.gpu_nanos, b.gpu_nanos); });
@@ -127,17 +127,6 @@ void GpuProfiler::on_gui() {
                 i += zones[i].contained_zones;
             }
 
-
-            /*for(usize i = 0; i < zones.size(); ++i) {
-                const auto& zone = zones[i];
-                const double gpu_ms = double(zone.gpu_nanos * ns_to_ms);
-                const double cpu_ms = double(zone.cpu_nanos * ns_to_ms);
-
-                auto& zone_history = _history[i64(ImGui::GetID("zone"))];
-                zone_history.update(gpu_ms, cpu_ms);
-            }*/
-
-
             const u32 color_u32 = ImGui::GetColorU32(ImGuiCol_PlotHistogram, 0.4f);
             auto draw_bg = [=](float ratio) {
                 const float width = ImGui::GetContentRegionAvail().x * std::min(1.0f, ratio);
@@ -149,12 +138,22 @@ void GpuProfiler::on_gui() {
                 ImGui::GetWindowDrawList()->AddRectFilled(pos, pos + size, color_u32);
             };
 
-            core::SmallVector<u32, 16> indents;
+            core::SmallVector<usize, 16> open_parent_ends;
+            auto pop_parent = [&] {
+                ImGui::PopID();
+                ImGui::Unindent();
+                open_parent_ends.pop();
+            };
+
             for(usize i = 0; i < zones.size(); ++i) {
                 const auto& zone = zones[i];
 
                 const double gpu_ms = double(zone.gpu_nanos * ns_to_ms);
                 const double cpu_ms = double(zone.cpu_nanos * ns_to_ms);
+
+                while(!open_parent_ends.is_empty() && open_parent_ends.last() <= i) {
+                    pop_parent();
+                }
 
                 imgui::table_begin_next_row(0);
 
@@ -172,12 +171,6 @@ void GpuProfiler::on_gui() {
                 if(gpu_ms >= 0.0) {
                     draw_bg(float(gpu_ms / gpu_total_ms));
                     ImGui::Text("%.2f ms", gpu_ms);
-
-                    /*if(ImGui::BeginItemTooltip()) {
-                        ImGui::Text("avg: %.2f ms", zone_history.gpu_ms_sum / zone_history.sample_count);
-                        ImGui::Text("max: %.2f ms", zone_history.gpu_ms_max);
-                        ImGui::EndTooltip();
-                    }*/
                 }
 
                 ImGui::TableSetColumnIndex(2);
@@ -185,31 +178,17 @@ void GpuProfiler::on_gui() {
                 {
                     draw_bg(float(cpu_ms / cpu_total_ms));
                     ImGui::Text("%.2f ms", cpu_ms);
-
-                    /*if(ImGui::BeginItemTooltip()) {
-                        ImGui::Text("avg: %.2f ms", zone_history.cpu_ms_sum / zone_history.sample_count);
-                        ImGui::Text("max: %.2f ms", zone_history.cpu_ms_max);
-                        ImGui::EndTooltip();
-                    }*/
                 }
 
-                if(as_tree) {
-                    if(!indents.is_empty() && --indents.last() == 0) {
-                        ImGui::PopID();
-                        indents.pop();
-                        ImGui::Unindent();
-                    }
-
-                    if(has_children && open) {
-                        ImGui::PushID(zone.name.data());
-                        indents.push_back(zone.contained_zones);
-                        ImGui::Indent();
-                    }
+                if(has_children && open) {
+                    ImGui::PushID(zone.name.data());
+                    ImGui::Indent();
+                    open_parent_ends.push_back(i + zone.contained_zones + 1);
                 }
             }
 
-            for(usize i = 0; i != indents.size(); ++i) {
-                ImGui::PopID();
+            while(!open_parent_ends.is_empty()) {
+                pop_parent();
             }
 
             ImGui::EndTable();

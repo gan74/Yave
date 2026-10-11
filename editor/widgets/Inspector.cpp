@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "Inspector.h"
 
-#include <editor/EditorWorld.h>
+#include <editor/WorldWorkspace.h>
 #include <editor/widgets/AssetSelector.h>
 #include <editor/widgets/EntitySelector.h>
 #include <editor/components/EditorComponent.h>
@@ -36,6 +36,7 @@ SOFTWARE.
 #include <yave/material/Material.h>
 #include <yave/meshes/StaticMesh.h>
 #include <yave/meshes/MeshData.h>
+#include <yave/blueprints/Blueprint.h>
 
 #include <yave/utils/color.h>
 
@@ -93,14 +94,14 @@ class SetterInspector final : public ecs::TemplateComponentInspector<SetterInspe
         bool _value_set = false;
 };
 
-static void id_selector(ecs::EntityId& property_id, const core::String& name, ecs::EntityId entity_id, ecs::ComponentTypeIndex comp_type, ecs::ComponentTypeIndex target_type) {
+static void id_selector(ecs::EntityId& property_id, const core::String& name, ecs::EntityId entity_id, ecs::ComponentTypeIndex comp_type, ecs::ComponentTypeIndex target_type, WorldWorkspace* workspace) {
     bool browse = false;
-    imgui::id_selector(property_id, current_world(), target_type, &browse);
+    imgui::id_selector(property_id, workspace->world(), target_type, &browse);
     if(browse) {
-        add_child_widget<EntitySelector>(target_type)->set_selected_callback(
+        add_top_level_widget<EntitySelector>(workspace, target_type)->set_selected_callback(
             [=](ecs::EntityId new_id) {
                 SetterInspector<ecs::EntityId> setter(name, new_id);
-                current_world().inspect_components(entity_id, &setter, comp_type);
+                workspace->world().inspect_components(entity_id, &setter, comp_type);
                 return true;
             }
         );
@@ -108,17 +109,17 @@ static void id_selector(ecs::EntityId& property_id, const core::String& name, ec
 }
 
 template<typename T>
-static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, ecs::EntityId id, ecs::ComponentTypeIndex comp_type) {
+static void asset_ptr_selector(GenericAssetPtr& ptr, const core::String& name, ecs::EntityId id, ecs::ComponentTypeIndex comp_type, WorldWorkspace* workspace) {
     y_always_assert(ptr.matches<T>(), "AssetPtr doesn't match given type");
 
     bool clear = false;
     const AssetType type = ptr.type();
     if(imgui::asset_selector(ptr.id(), type, asset_type_name(type, false, false), &clear)) {
-        add_child_widget<AssetSelector>(type)->set_selected_callback(
+        add_top_level_widget<AssetSelector>(type)->set_selected_callback(
             [=](AssetId asset) {
                 if(const auto loaded = asset_loader().load_res<T>(asset)) {
                     SetterInspector<GenericAssetPtr> setter(name, loaded.unwrap());
-                    current_world().inspect_components(id, &setter, comp_type);
+                    workspace->world().inspect_components(id, &setter, comp_type);
                 }
                 return true;
             });
@@ -163,10 +164,10 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
     }
 
     public:
-        InspectorPanelInspector(ecs::EntityId id, EditorComponent* editor, EditorWorld* world) :
+        InspectorPanelInspector(ecs::EntityId id, EditorComponent* editor, WorldWorkspace* workspace) :
                 _id(id),
                 _editor(editor),
-                _world(world) {
+                _workspace(workspace) {
         }
 
         ~InspectorPanelInspector() {
@@ -205,7 +206,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                 const float button_size = ImGui::GetFrameHeight();
                 const ImVec2 button_pos = ImVec2(ImGui::GetContentRegionAvail().x - button_size, 0.0f) + ImGui::GetCursorScreenPos();
                 ImGui::SetCursorScreenPos(button_pos);
-                const bool can_remove = !_world->is_component_required(_id, info.type_id);
+                const bool can_remove = !_workspace->world().is_component_required(_id, info.type_id);
                 const bool remove_component = ImGui::InvisibleButton(ICON_FA_TRASH "###invisible", ImVec2(button_size, button_size));
 
                 ImGui::SameLine();
@@ -222,7 +223,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                     if(!can_remove) {
                         log_msg(fmt("{} can not be deleted as it is required by some other component", info.clean_component_name()), Log::Warning);
                     } else {
-                        _world->remove_component(_id, info.type_id);
+                        _workspace->world().remove_component(_id, info.type_id);
                     }
                 }
             }
@@ -247,7 +248,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
         void inspect(const core::String& name, usize& e, core::Span<std::string_view> values) override {
             auto row = begin_property_row(name);
-            if(ImGui::BeginCombo("###combo", fmt_c_str("{}", values[e]))) {
+            if(ImGui::BeginCombo("###combo", (e < values.size() ? fmt_c_str("{}", values[e]) : ""))) {
                 for(usize i = 0; i != values.size(); ++i) {
                     ImGui::PushID(int(i));
                     if(ImGui::Selectable(fmt_c_str("{}", values[i]))) {
@@ -374,8 +375,11 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
                 case Vec3Role::Direction: {
                     float elevation = -math::to_deg(std::asin(v.z()));
-                    const math::Vec2 dir_2d = v.to<2>().normalized();
-                    float azimuth = math::to_deg(std::copysign(std::acos(dir_2d.x()), std::asin(dir_2d.y())));
+                    float azimuth = 0.0f;
+                    if(v.to<2>().sq_length() > math::epsilon<float>) {
+                        const math::Vec2 dir_2d = v.to<2>().normalized();
+                        azimuth = math::to_deg(std::copysign(std::acos(dir_2d.x()), std::asin(dir_2d.y())));
+                    }
 
                     bool changed = false;
                     changed |= ImGui::DragFloat("Azimuth", &azimuth, 1.0, -180.0f, 180.0f, "%.2f°");
@@ -471,10 +475,8 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             auto row = begin_property_row(name);
 
             if(max >= u32(std::numeric_limits<int>::max())) {
-                int value = int(u);
-                if(ImGui::DragInt("##drag", &value, 1.0f, 0)) {
-                    u = u32(value);
-                }
+                const u32 min = 0;
+                ImGui::DragScalar("##drag", ImGuiDataType_U32, &u, 1.0f, &min, &max);
             } else {
                 int value = int(u);
                 if(ImGui::DragInt("##drag", &value, 1.0f / float(max), 0, int(max))) {
@@ -496,7 +498,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             y_defer(ImGui::PopID());
 
             auto row = begin_property_row(name);
-            id_selector(id, name, _id, _type, type);
+            id_selector(id, name, _id, _type, type, _workspace);
         }
 
         void inspect(const core::String& name, GenericAssetPtr& p) override {
@@ -507,23 +509,27 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
             switch(p.type()) {
                 case AssetType::Mesh:
-                    asset_ptr_selector<StaticMesh>(p, name, _id, _type);
+                    asset_ptr_selector<StaticMesh>(p, name, _id, _type, _workspace);
                 break;
 
                 case AssetType::Image:
                     if(p.matches<Texture>()) {
-                        asset_ptr_selector<Texture>(p, name, _id, _type);
+                        asset_ptr_selector<Texture>(p, name, _id, _type, _workspace);
                     } else if(p.matches<IBLProbe>()) {
-                        asset_ptr_selector<IBLProbe>(p, name, _id, _type);
+                        asset_ptr_selector<IBLProbe>(p, name, _id, _type, _workspace);
                     }
                 break;
 
                 case AssetType::Material:
-                    asset_ptr_selector<Material>(p, name, _id, _type);
+                    asset_ptr_selector<Material>(p, name, _id, _type, _workspace);
+                break;
+
+                case AssetType::Blueprint:
+                    asset_ptr_selector<Blueprint>(p, name, _id, _type, _workspace);
                 break;
 
                 default:
-                    ImGui::TextDisabled("Unknown asset type");
+                    ImGui::TextDisabled(fmt_c_str("{} assets are not supported", asset_type_name(p.type())));
                 break;
             }
         }
@@ -549,7 +555,7 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
         ecs::EntityId _id;
         EditorComponent* _editor = nullptr;
-        EditorWorld* _world = nullptr;
+        WorldWorkspace* _workspace = nullptr;
         ecs::ComponentTypeIndex _type = {};
 
 
@@ -559,18 +565,23 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
 
 
 
-Inspector::Inspector() : Widget(ICON_FA_WRENCH " Inspector") {
+Inspector::Inspector(WorldWorkspace* ws) :
+        WorkspaceWidget(ICON_FA_WRENCH " Inspector", ws) {
 }
 
 void Inspector::on_gui() {
-    EditorWorld& world = current_world();
+    EditorWorld& world = workspace()->world();
 
-    const ecs::EntityId selected = current_world().selected_entity();
+    if(_locked.is_valid() && !world.exists(_locked)) {
+        _locked = {};
+    }
+
+    const ecs::EntityId selected = world.selected_entity();
     const ecs::EntityId id = _locked.is_valid() ? _locked : selected;
     EditorComponent* component = world.component_mut<EditorComponent>(id);
 
     if(!id.is_valid() || !component) {
-        if(const usize selected_count = current_world().selected_entity_count(); selected_count > 1) {
+        if(const usize selected_count = world.selected_entity_count(); selected_count > 1) {
             ImGui::Text("%u selected entities", u32(selected_count));
         } else {
             ImGui::TextUnformatted("No entity selected");
@@ -616,8 +627,44 @@ void Inspector::on_gui() {
         ImGui::EndGroup();
     }
 
-    InspectorPanelInspector inspector(id, component, &world);
-    world.inspect_components(id, &inspector);
+    {
+        InspectorPanelInspector inspector(id, component, workspace());
+        world.inspect_components(id, &inspector);
+    }
+
+
+    if(ImGui::CollapsingHeader(ICON_FA_TAG " Tags")) {
+        ImGui::Indent();
+        y_defer(ImGui::Unindent());
+
+        for(const core::String& tag : world.tags()) {
+            if(!world.has_tag(id, tag)) {
+                continue;
+            }
+            
+            ImGui::PushID(tag.data());
+            y_defer(ImGui::PopID());
+
+            if(ImGui::SmallButton(ICON_FA_TIMES)) {
+                world.remove_tag(id, tag);
+                break;
+            }
+
+            ImGui::SameLine();
+            ImGui::TextUnformatted(tag.data());
+        }
+
+        const bool enter = imgui::text_input("##newtag", _new_tag, ImGuiInputTextFlags_EnterReturnsTrue, "New tag");
+        const bool valid = !_new_tag.is_empty() && !ecs::is_computed_tag(_new_tag);
+        ImGui::SameLine();
+        ImGui::BeginDisabled(!valid);
+        if((ImGui::Button(ICON_FA_PLUS " Add tag") || enter) && valid) {
+            world.add_tag(id, _new_tag);
+            _new_tag.clear();
+        }
+        ImGui::EndDisabled();
+    }
+
 
     ImGui::Separator();
 

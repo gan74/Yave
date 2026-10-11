@@ -138,7 +138,7 @@ class FrameGraphPassBuilderBase {
 
 class FrameGraphPassBuilder : public FrameGraphPassBuilderBase {
     public:
-        template<typename F>
+        template<std::invocable<RenderPassRecorder&, const FrameGraphPass*> F>
         void set_render_func(F&& func) {
             FrameGraphPassBuilderBase::set_render_func(render_func(std::move(func)));
         }
@@ -152,7 +152,7 @@ class FrameGraphPassBuilder : public FrameGraphPassBuilderBase {
 
 class FrameGraphComputePassBuilder : public FrameGraphPassBuilderBase {
     public:
-        template<typename F>
+        template<std::invocable<CmdBufferRecorder&, const FrameGraphPass*> F>
         void set_render_func(F&& func) {
             FrameGraphPassBuilderBase::set_compute_render_func(compute_render_func(std::move(func)));
         }

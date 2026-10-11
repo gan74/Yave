@@ -35,6 +35,8 @@ SOFTWARE.
 namespace editor {
 
 FileBrowser::FileBrowser(const FileSystemModel* fs) : Widget("File Browser"), _filesystem_view(fs) {
+    set_modal(true);
+
     _filesystem_view.set_filter_delegate([this](const core::String& full_name, FileSystemModel::EntryType type) {
         if(type == FileSystemModel::EntryType::Directory) {
             return true;

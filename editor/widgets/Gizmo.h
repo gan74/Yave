@@ -30,7 +30,7 @@ namespace editor {
 
 class GizmoBase {
     public:
-        GizmoBase(SceneView* view);
+        GizmoBase(SceneView* view, WorldWorkspace* ws);
         virtual ~GizmoBase();
 
         void set_allow_dragging(bool allow);
@@ -44,6 +44,7 @@ class GizmoBase {
         math::Vec3 to_world_pos(const math::Vec2& window) const;
 
         SceneView* _scene_view = nullptr;
+        WorldWorkspace* _workspace = nullptr;
 
         bool _is_dragging = false;
         bool _allow_dragging = true;
@@ -52,9 +53,12 @@ class GizmoBase {
 
 class TranslationGizmo final : public GizmoBase {
     public:
-        TranslationGizmo(SceneView* view);
+        TranslationGizmo(SceneView* view, WorldWorkspace* ws);
 
         void draw() override;
+
+        void set_snapping(float step);
+        float snapping() const;
 
     private:
         bool is_hovered(usize axis) const;
@@ -63,25 +67,34 @@ class TranslationGizmo final : public GizmoBase {
         math::Vec2 _dragging_offset;
         math::Vec3 _base_pos;
 
+        float _snapping = 0.5f;
+
         bool _use_object_space = false;
 };
 
 
 class RotationGizmo final : public GizmoBase {
     public:
-        RotationGizmo(SceneView* view);
+        RotationGizmo(SceneView* view, WorldWorkspace* ws);
 
         void draw() override;
+
+        void set_snapping(float step);
+        float snapping() const;
 
     private:
         usize _rotation_axis = usize(-1);
         float _angle_offset = 0.0f;
+        float _drag_angle = 0.0f;
+        float _applied_angle = 0.0f;
+
+        float _snapping = math::to_rad(15.0f);
 };
 
 
 class OrientationGizmo final : public GizmoBase {
     public:
-        OrientationGizmo(SceneView* view);
+        OrientationGizmo(SceneView* view, WorldWorkspace* ws);
 
         void draw() override;
 };
@@ -89,4 +102,3 @@ class OrientationGizmo final : public GizmoBase {
 }
 
 #endif // EDITOR_WIDGETS_GIZMO_H
-

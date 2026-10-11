@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include <yave/graphics/shader_structs.h>
 
-#include <y/core/Vector.h>
+#include <yave/utils/IndexAllocator.h>
 
 
 namespace yave {
@@ -53,7 +53,7 @@ class MaterialAllocator : NonMovable {
         void recycle(MaterialDrawData* data);
 
         TypedBuffer<shader::MaterialData, BufferUsage::StorageBit, MemoryType::CpuVisible> _materials;
-        ProfiledMutexed<core::Vector<u32>> _free;
+        ProfiledMutexed<IndexAllocator<u32>> _indices;
 
 };
 

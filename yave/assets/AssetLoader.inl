@@ -138,6 +138,45 @@ AssetPtr<T> AssetLoader::Loader<T>::load_async(AssetId id) {
     return ptr;
 }
 
+template<typename T>
+AssetPtr<T> AssetLoader::Loader<T>::reload(AssetId id) {
+    y_profile();
+
+    y_debug_assert(id != AssetId::invalid_id());
+
+    AssetPtr<T> new_ptr;
+    _loaded.locked([&](auto&& loaded) {
+        new_ptr = std::make_shared<Data>(id, parent());
+
+        if(const auto cached = loaded[id].lock()) {
+            cached->set_reloaded(new_ptr._data);
+        }
+
+        loaded[id] = new_ptr._data;
+    });
+
+    y_debug_assert(new_ptr.is_loading());
+    parent()->_thread_pool.add_loading_job(create_loading_job(new_ptr));
+    return new_ptr;
+}
+
+template<typename T>
+bool AssetLoader::Loader<T>::reload_from_id(AssetId id) {
+    y_debug_assert(id != AssetId::invalid_id());
+
+    const bool is_live = _loaded.locked([&](auto&& loaded) {
+        const auto it = loaded.find(id);
+        return it != loaded.end() && !it->second.expired();
+    });
+
+    if(!is_live) {
+        return false;
+    }
+
+    reload(id);
+    return true;
+}
+
 
 namespace detail {
 template<typename T>
@@ -268,14 +307,10 @@ AssetPtr<T> AssetLoader::load_async(AssetId id) {
 
 
 template<typename T>
-AssetPtr<T> AssetLoader::reload(const AssetPtr<T>& ptr) {
-    return loader_for_type<T>().reload(ptr);
+AssetPtr<T> AssetLoader::reload(AssetId id) {
+    return loader_for_type<T>().reload(id);
 }
 
-template<typename T>
-AssetLoader::Result<T> AssetLoader::import(std::string_view name, std::string_view import_from) {
-    return load<T>(load_or_import(name, import_from, AssetTraits<T>::type));
-}
 
 template<typename T, typename E>
 AssetLoader::Result<T> AssetLoader::load(core::Result<AssetId, E> id) {
@@ -288,7 +323,9 @@ AssetLoader::Result<T> AssetLoader::load(core::Result<AssetId, E> id) {
 template<typename T>
 AssetLoader::Loader<T>& AssetLoader::loader_for_type() {
     return _loaders.locked([&](auto&& loaders) -> Loader<T>& {
-        auto& loader = loaders[typeid(T)];
+        const usize index = usize(detail::asset_type_index<T>());
+        loaders.set_min_size(index + 1);
+        auto& loader = loaders[index];
         if(!loader) {
             loader = std::make_unique<Loader<T>>(this);
         }

@@ -2,7 +2,7 @@
 Sampler2D in_color;
 
 [[vk::binding(1)]]
-cbuffer BloomParams_Inline {
+cbuffer BloomParams {
     float2 filter_size;
     float alpha;
 };

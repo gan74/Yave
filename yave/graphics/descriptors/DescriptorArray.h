@@ -24,8 +24,9 @@ SOFTWARE.
 
 #include <yave/graphics/descriptors/DescriptorSetProxy.h>
 
+#include <yave/utils/IndexAllocator.h>
+
 #include <y/core/HashMap.h>
-#include <y/core/Vector.h>
 
 namespace yave {
 
@@ -58,7 +59,7 @@ class DescriptorArray : NonMovable {
         std::atomic<VkDescriptorSet> _set = {};
         u32 _capacity = 0;
 
-        core::Vector<u32> _free;
+        IndexAllocator<u32> _indices;
 
         VkHandle<VkDescriptorSetLayout> _layout;
         VkHandle<VkDescriptorPool> _pool;

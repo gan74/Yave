@@ -37,7 +37,7 @@ namespace yave {
 
 class FolderAssetStore final : NonMovable, public AssetStore {
 
-    class FolderFileSystemModel final : public FileSystemModel {
+    class FolderFileSystemModel final : public FileSystemModel, public SearchableFileSystemModel {
         public:
 
             core::String filename(std::string_view path) const override;
@@ -55,7 +55,7 @@ class FolderAssetStore final : NonMovable, public AssetStore {
             Result<> remove(std::string_view path) const override;
             Result<> rename(std::string_view from, std::string_view to) const override;
 
-            //Result<core::Vector<core::String>> search(std::string_view pattern) const override;
+            Result<> search(std::string_view path, std::string_view pattern, const for_each_f& found) const override;
 
         private:
             friend class FolderAssetStore;
@@ -69,11 +69,13 @@ class FolderAssetStore final : NonMovable, public AssetStore {
         AssetId id;
         AssetType type;
         usize file_size;
+        core::Vector<AssetId> refs;
     };
 
     struct AssetDesc {
         core::String name;
         AssetType type;
+        core::Vector<AssetId> refs;
     };
 
     public:
@@ -82,8 +84,8 @@ class FolderAssetStore final : NonMovable, public AssetStore {
 
         const FileSystemModel* filesystem() const override;
 
-        Result<AssetId> import(io2::Reader& data, std::string_view dst_name, AssetType type) override;
-        Result<> write(AssetId id, io2::Reader& data) override;
+        Result<AssetId> import(io2::Reader& data, std::string_view dst_name, AssetType type, core::Span<AssetId> refs) override;
+        Result<> write(AssetId id, io2::Reader& data, core::Span<AssetId> refs) override;
 
         Result<AssetId> id(std::string_view name) const override;
         Result<core::String> name(AssetId id) const override;
@@ -96,6 +98,9 @@ class FolderAssetStore final : NonMovable, public AssetStore {
         Result<> rename(std::string_view from, std::string_view to) override;
 
         Result<AssetType> asset_type(AssetId id) const override;
+        Result<core::Span<AssetId>> references(AssetId id) const override;
+
+        Result<> search_references(AssetId id, const std::function<void(AssetId)>& found) const override;
 
     private:
         AssetId generate_id();

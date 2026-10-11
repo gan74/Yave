@@ -41,12 +41,12 @@ class FileBrowser final : public Widget {
 
         const FileSystemModel* filesystem() const;
 
-        template<typename F>
+        template<std::invocable<const core::String&> F>
         void set_selected_callback(F&& func) {
             _callbacks.selected = y_fwd(func);
         }
 
-        template<typename F>
+        template<std::invocable F>
         void set_canceled_callback(F&& func) {
             _callbacks.canceled = y_fwd(func);
         }

@@ -25,16 +25,17 @@ SOFTWARE.
 #include <yave/ecs/ecs.h>
 
 #include <editor/Widget.h>
+#include <editor/WorldWorkspace.h>
 
 #include <functional>
 
 namespace editor {
 
-class EntitySelector final : public Widget {
+class EntitySelector final : public WorkspaceWidget<WorldWorkspace> {
     public:
-        EntitySelector(ecs::ComponentTypeIndex filter = ecs::ComponentTypeIndex::invalid_index);
+        EntitySelector(WorldWorkspace* ws, ecs::ComponentTypeIndex filter = ecs::ComponentTypeIndex::invalid_index);
 
-        template<typename F>
+        template<std::invocable<ecs::EntityId> F>
         void set_selected_callback(F&& func) {
             _selected = y_fwd(func);
         }
@@ -52,4 +53,3 @@ class EntitySelector final : public Widget {
 }
 
 #endif // EDITOR_WIDGETS_ENTITYSELECTOR_H
-

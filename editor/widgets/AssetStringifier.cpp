@@ -159,7 +159,7 @@ void AssetStringifier::on_gui() {
     if(_mesh) {
         ImGui::Separator();
         if(ImGui::Button("Export to OBJ")) {
-            FileBrowser* browser = add_detached_widget<FileBrowser>();
+            FileBrowser* browser = add_top_level_widget<FileBrowser>();
             browser->set_selection_filter("*.obj", FileBrowser::FilterFlags::AllowNewFiles);
             browser->set_selected_callback([mesh = _mesh](const auto& filename) {
                 if(auto res = io2::File::create(filename)) {

@@ -81,25 +81,14 @@ class CmdQueue final : NonMovable {
     private:
         friend class CmdBufferRecorderBase;
 
-        struct AsyncSubmitData {
-            TimelineFence current_fence;
-            TimelineFence next_fence;
-            core::Vector<VkSemaphore> semaphores;
-        };
-
-
-        // Does not wait for the completion of previous commands before starting
-        void submit_async_start(CmdBufferData* data);
         TimelineFence submit(CmdBufferData* data);
 
-        TimelineFence submit_internal(CmdBufferData* data, VkSemaphore wait = {}, VkSemaphore signal = {}, VkFence fence = {}, bool async_start = false);
+        TimelineFence submit_internal(CmdBufferData* data, VkSemaphore wait, VkSemaphore signal, VkFence fence);
 
         void clear_thread(u32 thread_id);
 
 
         ProfiledMutexed<VkQueue> _queue = {};
-        ProfiledMutexed<AsyncSubmitData> _async_submit_data;
-
         Timeline _timeline;
 
         ProfiledMutexed<core::Vector<std::pair<u32, std::unique_ptr<CmdBufferPool>>>> _cmd_pools;

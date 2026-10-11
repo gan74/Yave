@@ -32,6 +32,7 @@ SOFTWARE.
 #include <yave/assets/AssetStore.h>
 #include <yave/utils/FileSystemModel.h>
 
+#include <y/utils/log.h>
 #include <y/utils/format.h>
 
 #include <external/imgui/imgui.h>
@@ -157,17 +158,16 @@ usize text_line_count(std::string_view text) {
 }
 
 
-std::pair<math::Vec2, math::Vec2> compute_glyph_uv_size(const char* c) {
-    math::Vec2 uv;
-    math::Vec2 size(1.0f);
-
+std::pair<math::Vec2, math::Vec2> compute_glyph_uv_size(const char* c, float size) {
     unsigned u = 0;
     ImTextCharFromUtf8(&u, c, c + std::strlen(c));
-    if(const ImFontGlyph* glyph = ImGui::GetFontBaked()->FindGlyph(ImWchar(u))) {
-        uv = math::Vec2{glyph->U0, glyph->V0};
-        size = math::Vec2{glyph->U1, glyph->V1} - uv;
+
+    const float font_size = size > 0.0f ? size : ImGui::GetFontSize();
+    if(const ImFontGlyph* glyph = ImGui::GetFont()->GetFontBaked(font_size)->FindGlyph(ImWchar(u))) {
+        const math::Vec2 uv{glyph->U0, glyph->V0};
+        return {uv, math::Vec2{glyph->U1, glyph->V1} - uv};
     }
-    return {uv, size};
+    return {{}, math::Vec2(1.0f)};
 }
 
 void text_icon(const UiIcon& icon) {
@@ -198,7 +198,7 @@ bool text_input(const char* name, core::String& str, ImGuiInputTextFlags flags, 
 }
 
 bool text_input_multiline(const char* name, core::String& str, const math::Vec2& size, ImGuiInputTextFlags flags) {
-    return ImGui::InputTextMultiline(name, str.data(), str.capacity() + 1, to_im(size), ImGuiInputTextFlags_CallbackResize | flags, str_resize_callback, &str);
+    return ImGui::InputTextMultiline(name, str.data(), str.size() + 1, to_im(size), ImGuiInputTextFlags_CallbackResize | flags, str_resize_callback, &str);
 }
 
 void text_read_only(const char* name, std::string_view str) {
@@ -258,8 +258,11 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
 
     bool ret = false;
     if(is_valid) {
-        if(const TextureView* img = thumbnail_renderer().thumbnail_img(id)) {
-            ret = ImGui::ImageButton("##tex", imgui_platform()->to_ui(*img), button_size);
+        const auto* data = thumbnail_renderer().thumbnail_data(id);
+        if(data && !data->view.is_null()) {
+            ret = ImGui::ImageButton("##tex", imgui_platform()->to_ui(data->view), button_size);
+        } else if(data) {
+            ret = ImGui::Button(fmt_c_str("{}", asset_type_icon(type)), padded_button_size);
         } else {
             ret = ImGui::Button(ICON_FA_HOURGLASS_HALF, padded_button_size);
         }
@@ -349,7 +352,8 @@ bool id_selector(ecs::EntityId& id, const EditorWorld& world, ecs::ComponentType
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().FramePadding.x * 2.0f);
 
     bool has_component = true;
-    if(!world.exists(id)) {
+    const bool exists = world.exists(id);
+    if(!exists) {
         ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
     } else if(with_component != ecs::ComponentTypeIndex::invalid_index) {
         has_component = world.has_component(id, with_component);
@@ -371,7 +375,7 @@ bool id_selector(ecs::EntityId& id, const EditorWorld& world, ecs::ComponentType
         }
     }
 
-    if(!id.is_valid()) {
+    if(!exists) {
         ImGui::PopStyleColor();
     }
 
@@ -608,7 +612,7 @@ static bool icon_button(const UiIcon& icon, UiTexture tex_icon, const char* str_
     if(tex_icon) {
         ImGui::Image(tex_icon, padded_size);
     } else {
-        const auto [uv, uv_size] = imgui::compute_glyph_uv_size(icon.icon.data());
+        const auto [uv, uv_size] = imgui::compute_glyph_uv_size(icon.icon.data(), std::max(padded_size.x, padded_size.y));
         const ImVec4 color = ImGui::ColorConvertU32ToFloat4(icon.color);
         ImGui::ImageWithBg({}, padded_size, to_im(uv), to_im(uv + uv_size), {}, color);
     }
@@ -624,6 +628,93 @@ bool icon_button(const UiIcon& icon, const char* str_id, bool selected, float ic
 
 bool icon_button(editor::UiTexture icon, const char* str_id, bool selected, float icon_size, ImGuiSelectableFlags flags) {
     return icon_button({}, icon, str_id, selected, icon_size, flags);
+}
+
+static bool thumbnail_button(const UiIcon& icon, UiTexture tex_icon, const char* str_id, bool selected, float thumb_size, ImGuiSelectableFlags) {
+    const char* display_end = std::strstr(str_id, "##");
+    const char* display_start = str_id;
+    const usize display_len = display_end ? usize(display_end - display_start) : std::strlen(str_id);
+
+    const ImVec2 padding = ImGui::GetStyle().FramePadding;
+    const float text_width = thumb_size - padding.x * 4.0f;
+
+    ImFont* font = ImGui::GetFont();
+    const float base_font_size = ImGui::GetFontSize();
+    const float min_font_size = base_font_size * 0.7f;
+    const float max_text_height = base_font_size * 3.0f + ImGui::GetStyle().ItemSpacing.y;
+
+    float font_size = base_font_size;
+    ImVec2 text_size = font->CalcTextSizeA(font_size, std::numeric_limits<float>::max(), text_width, display_start, display_start + display_len);
+    while(text_size.y > max_text_height && font_size > min_font_size) {
+        font_size = std::max(min_font_size, font_size - 1.0f);
+        text_size = font->CalcTextSizeA(font_size, std::numeric_limits<float>::max(), text_width, display_start, display_start + display_len);
+    }
+
+    const ImVec2 padded_img_size = ImVec2(thumb_size, thumb_size) - padding * 4.0f;
+    const float img_bottom = padding.y * 2.0f + padded_img_size.y;
+    const ImVec2 cell_size(thumb_size, img_bottom + max_text_height + padding.y);
+
+    ImGui::PushID(str_id);
+    ImGui::BeginGroup();
+
+    const ImVec2 cursor = ImGui::GetCursorPos();
+    const ImVec2 screen_pos = ImGui::GetCursorScreenPos();
+
+    const bool activated = ImGui::Selectable("###thumbnailbutton", selected, ImGuiSelectableFlags_AllowDoubleClick, cell_size);
+
+    /*if(selected || ImGui::IsItemHovered()) {
+        const ImGuiCol col = (selected && hovered) ? ImGuiCol_HeaderActive : (selected ? ImGuiCol_Header : ImGuiCol_HeaderHovered);
+        ImGui::GetWindowDrawList()->AddRectFilled(screen_pos, screen_pos + cell_size, ImGui::GetColorU32(col));
+    }*/
+
+    {
+        const ImU32 bg_color = ImGui::GetColorU32(ImGuiCol_Button, 0.5f);
+
+        const bool bg_image_only = false;
+        if(bg_image_only) {
+            const ImVec2 img_screen_pos = screen_pos + padding;
+            ImGui::GetWindowDrawList()->AddRectFilled(img_screen_pos, img_screen_pos + padded_img_size + padding * 2.0f, bg_color, ImGui::GetStyle().FrameRounding);
+        } else {
+            const ImVec2 bg_min = screen_pos + padding;
+            const ImVec2 bg_max = ImVec2(screen_pos.x + thumb_size - padding.x, screen_pos.y + cell_size.y - padding.y);
+            ImGui::GetWindowDrawList()->AddRectFilled(bg_min, bg_max, bg_color, ImGui::GetStyle().FrameRounding);
+        }
+    }
+
+    ImGui::SetCursorPos(cursor + padding * 2.0f);
+    if(tex_icon) {
+        ImGui::Image(tex_icon, padded_img_size);
+    } else {
+        const auto [uv, uv_size] = imgui::compute_glyph_uv_size(icon.icon.data(), std::max(padded_img_size.x, padded_img_size.y));
+        const ImVec4 color = ImGui::ColorConvertU32ToFloat4(icon.color);
+        ImGui::ImageWithBg({}, padded_img_size, to_im(uv), to_im(uv + uv_size), {}, color);
+    }
+
+    {
+        const ImVec2 text_pos(screen_pos.x + padding.x * 2.0f, screen_pos.y + img_bottom);
+        const ImVec4 clip_rect(text_pos.x, text_pos.y, text_pos.x + text_width, text_pos.y + max_text_height);
+        const float text_x_offset = std::max(0.0f, (text_width - std::min(text_size.x, text_width)) * 0.5f);
+        ImGui::GetWindowDrawList()->AddText(
+            font, font_size,
+            ImVec2(text_pos.x + text_x_offset, text_pos.y),
+            ImGui::GetColorU32(ImGuiCol_Text),
+            display_start, display_start + display_len,
+            text_width, &clip_rect
+        );
+    }
+
+    ImGui::EndGroup();
+    ImGui::PopID();
+
+    return activated;
+}
+
+bool thumbnail_button(const UiIcon& icon, const char* str_id, bool selected, float thumb_size, ImGuiSelectableFlags flags) {
+    return thumbnail_button(icon, {}, str_id, selected, thumb_size, flags);
+}
+
+bool thumbnail_button(editor::UiTexture icon, const char* str_id, bool selected, float thumb_size, ImGuiSelectableFlags flags) {
+    return thumbnail_button({}, icon, str_id, selected, thumb_size, flags);
 }
 
 // https://github.com/ocornut/imgui/issues/2718

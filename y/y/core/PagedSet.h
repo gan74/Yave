@@ -25,14 +25,18 @@ SOFTWARE.
 #include "Vector.h"
 
 #include <algorithm>
+#include <compare>
+#include <concepts>
+#include <cstring>
+#include <memory>
 
 namespace y {
 namespace core {
 
-template<typename Elem, usize PageSize = 512, typename Allocator = std::allocator<Elem>>
-class PagedSet : Allocator, NonCopyable {
+template<typename Elem, usize PageSize = 512>
+class PagedSet : NonCopyable {
 
-    using data_type = typename std::remove_const<Elem>::type;
+    static_assert(!std::is_const_v<Elem>);
 
     public:
         static constexpr usize page_size = PageSize;
@@ -56,6 +60,8 @@ class PagedSet : Allocator, NonCopyable {
 
                 using iterator_category = std::bidirectional_iterator_tag;
                 using difference_type = std::ptrdiff_t;
+
+                Iterator() = default;
 
                 inline Iterator& operator++() {
                     ++_it;
@@ -104,10 +110,10 @@ class PagedSet : Allocator, NonCopyable {
                 friend class PagedSet;
                 friend class Iterator<!Const>;
 
-                Iterator(data_type* const* pages, const usize* it) : _pages(pages), _it(it) {
+                Iterator(Elem* const* pages, const usize* it) : _pages(pages), _it(it) {
                 }
 
-                data_type* const* _pages = nullptr;
+                Elem* const* _pages = nullptr;
                 const usize* _it = nullptr;
         };
 
@@ -122,7 +128,10 @@ class PagedSet : Allocator, NonCopyable {
         }
 
         PagedSet& operator=(PagedSet&& other) {
-            swap(other);
+            if(&other != this) {
+                clear();
+                swap(other);
+            }
             return *this;
         }
 
@@ -140,10 +149,6 @@ class PagedSet : Allocator, NonCopyable {
             _pages.swap(other._pages);
             _indices.swap(other._indices);
             std::swap(_size, other._size);
-
-            if constexpr(std::allocator_traits<Allocator>::propagate_on_container_move_assignment::value) {
-                std::swap<Allocator>(*this, other);
-            }
         }
 
 
@@ -171,8 +176,9 @@ class PagedSet : Allocator, NonCopyable {
                 add_page();
             }
 
-            data_type* addr = get(_indices[_size++]);
-            ::new(addr) data_type(y_fwd(args)...);
+            Elem* addr = get(_indices[_size]);
+            std::construct_at(addr, y_fwd(args)...);
+            ++_size;
 
             return *addr;
         }
@@ -187,7 +193,7 @@ class PagedSet : Allocator, NonCopyable {
 
 
 
-        template<typename F>
+        template<std::predicate<const Elem&, const Elem&> F>
         void sort(F&& compare) {
             std::sort(_indices.data(), _indices.data() + _size, [&](usize a, usize b) {
                 return compare(*get(a), *get(b));
@@ -208,8 +214,8 @@ class PagedSet : Allocator, NonCopyable {
 
         void clear() {
             make_empty();
-            for(data_type* page : _pages) {
-                Allocator::deallocate(page, page_size);
+            for(Elem* page : _pages) {
+                std::allocator<Elem>().deallocate(page, page_size);
             }
             _pages.clear();
             _indices.clear();
@@ -226,16 +232,16 @@ class PagedSet : Allocator, NonCopyable {
         }
 
     private:
-        inline data_type* get(usize index) {
+        inline Elem* get(usize index) {
             return _pages[index / page_size] + (index % page_size);
         }
 
-        inline const data_type* get(usize index) const {
+        inline const Elem* get(usize index) const {
             return _pages[index / page_size] + (index % page_size);
         }
 
-        inline void clear(data_type* elem) {
-            elem->~data_type();
+        inline void clear(Elem* elem) {
+            std::destroy_at(elem);
 #ifdef Y_DEBUG
             std::memset(elem, 0xFE, sizeof(*elem));
 #endif
@@ -243,7 +249,7 @@ class PagedSet : Allocator, NonCopyable {
 
         void add_page() {
             const usize page_count = _pages.size();
-            _pages.emplace_back(Allocator::allocate(page_size));
+            _pages.emplace_back(std::allocator<Elem>().allocate(page_size));
 
             _indices.set_min_capacity((page_count + 1) * page_size);
             for(usize i = 0; i != page_size; ++i) {
@@ -253,7 +259,7 @@ class PagedSet : Allocator, NonCopyable {
             y_debug_assert(_indices.size() == _pages.size() * page_size);
         }
 
-        Vector<data_type*> _pages;
+        Vector<Elem*> _pages;
         Vector<usize> _indices;
         usize _size = 0;
 

@@ -76,10 +76,18 @@ class SystemScheduler : NonMovable {
 
             const SystemJobHandle handle = create_job_handle();
 
-            s.tasks.emplace_back(std::move(name), handle, dep, [this, func]() {
-                std::array<ArgumentResolver, function_traits<Fn>::arg_count> args;
-                std::fill(args.begin(), args.end(), this);
-                std::apply(func, args);
+            auto args = [this]<usize... Is>(std::index_sequence<Is...>) {
+                return std::tuple{prepare_argument(std::type_identity<std::remove_cvref_t<typename function_traits<Fn>::template arg_type<Is>>>{})...};
+            }(std::make_index_sequence<function_traits<Fn>::arg_count>{});
+
+            core::Vector<ComponentAccess> accesses;
+            [&]<usize... Is>(std::index_sequence<Is...>) {
+                (collect_accesses(std::type_identity<std::remove_cvref_t<typename function_traits<Fn>::template arg_type<Is>>>{}, accesses), ...);
+            }(std::make_index_sequence<function_traits<Fn>::arg_count>{});
+            normalize_accesses(accesses);
+
+            s.tasks.emplace_back(std::move(name), handle, dep, std::move(accesses), [func, args]() {
+                std::apply([&](const auto&... arg) { func(arg()...); }, args);
             });
 
             return handle;
@@ -88,25 +96,36 @@ class SystemScheduler : NonMovable {
     private:
         friend class SystemManager;
 
-        class ArgumentResolver {
-            public:
-                ArgumentResolver() = default;
-                ArgumentResolver(SystemScheduler* parent);
+        template<typename T>
+        static void collect_accesses(std::type_identity<T>, core::Vector<ComponentAccess>&) {
+        }
 
-                operator const EntityWorld&() const;
-                operator FirstTime() const;
+        template<typename... Ts>
+        static void collect_accesses(std::type_identity<EntityGroup<Ts...>>, core::Vector<ComponentAccess>& accesses) {
+            EntityGroup<Ts...>::collect_accesses(accesses);
+        }
 
-                template<typename... Ts>
-                operator EntityGroup<Ts...>() const;
+        static void normalize_accesses(core::Vector<ComponentAccess>& accesses);
 
-            private:
-                SystemScheduler* _parent = nullptr;
-        };
+        auto prepare_argument(std::type_identity<EntityWorld>) const {
+            return [world = _world]() -> const EntityWorld& { return *world; };
+        }
+
+        auto prepare_argument(std::type_identity<FirstTime>) const {
+            return [this] { return FirstTime{is_first_tick()}; };
+        }
+
+        // EntityWorld.inl
+        template<typename... Ts>
+        auto prepare_argument(std::type_identity<EntityGroup<Ts...>>) const;
+
+        bool is_first_tick() const;
 
         struct Task {
             core::String name;
             SystemJobHandle handle;
             SystemJobHandle wait_for;
+            core::Vector<ComponentAccess> accesses;
             std::function<void()> func;
         };
 
@@ -130,6 +149,14 @@ class SystemScheduler : NonMovable {
 
 class SystemManager : NonMovable {
     public:
+        struct TaskNode {
+            const System* system = nullptr;
+            const SystemScheduler::Task* task = nullptr;
+            SystemSchedule schedule = SystemSchedule::Max;
+
+            core::Vector<u32> conflicts;
+        };
+
         SystemManager(EntityWorld* world);
 
         void run_schedule_seq() const;
@@ -137,12 +164,17 @@ class SystemManager : NonMovable {
 
         SystemJobHandle create_job_handle();
 
+        core::Span<TaskNode> task_graph() const {
+            return _task_graph;
+        }
+
         void reset() {
             _schedulers.make_empty();
             for(const auto& system : _systems) {
                 system->reset();
                 setup_system(system.get());
             }
+            build_task_graph();
         }
 
         template<typename S, typename... Args>
@@ -156,6 +188,7 @@ class SystemManager : NonMovable {
             _systems.emplace_back(std::move(s));
             system->register_world(_world);
             setup_system(system);
+            build_task_graph();
 
             return system;
         }
@@ -185,6 +218,11 @@ class SystemManager : NonMovable {
         void run_stage_seq(SystemSchedule schedule) const;
 
         void setup_system(System *system);
+        void build_task_graph();
+
+        static void run_task(const SystemScheduler::Task& task);
+
+        core::Vector<TaskNode> _task_graph;
 
         core::Vector<std::unique_ptr<SystemScheduler>> _schedulers;
         core::Vector<std::unique_ptr<System>> _systems;

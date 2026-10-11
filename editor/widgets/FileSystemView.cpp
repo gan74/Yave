@@ -38,7 +38,7 @@ FileSystemView::FileSystemView(const FileSystemModel* fs, std::string_view name)
     set_icon_delegate([](const core::String&, EntryType type) {
         switch(type) {
             case EntryType::Directory:
-                return UiIcon{ICON_FA_FOLDER, imgui::folder_icon_color};
+                return UiIcon{ICON_FA_FOLDER_OPEN, imgui::folder_icon_color};
 
             case EntryType::File:
                 return UiIcon{ICON_FA_FILE_ALT, 0xFFFFFFFF};
@@ -112,6 +112,13 @@ const core::String& FileSystemView::path() const {
     return _current_path;
 }
 
+void FileSystemView::set_search(std::string_view pattern) {
+    if(_search != pattern) {
+        _search = pattern;
+        _need_update = true;
+    }
+}
+
 const FileSystemView::Entry* FileSystemView::entry(usize index) const {
     if(index < _entries.size()) {
         return &_entries[index];
@@ -120,7 +127,7 @@ const FileSystemView::Entry* FileSystemView::entry(usize index) const {
 }
 
 void FileSystemView::entry_clicked(const Entry& entry) {
-    if(!_clicked_delegate(entry.full_name, entry.type)) {
+    if(!_delegates.clicked(entry.full_name, entry.type)) {
         if(entry.type == EntryType::Directory) {
             set_path(entry.full_name);
         }
@@ -185,18 +192,31 @@ void FileSystemView::update() {
 
     const std::string_view path = _current_path;
     if(filesystem()->exists(path).unwrap_or(false)) {
-        filesystem()->for_each(path, [this, path](const auto& info) {
-            core::String full_name = filesystem()->join(path, info.name);
-            if(_filter_delegate(full_name, info.type)) {
-                const UiIcon icon = _icon_delegate(full_name, info.type);
+        auto add_entry = [&](core::String full_name, core::String name, EntryType type) {
+            if(_delegates.filter(full_name, type)) {
+                const UiIcon icon = _delegates.icon(full_name, type);
                 _entries.emplace_back(Entry {
                     std::move(full_name),
-                    info.name,
-                    info.type,
+                    std::move(name),
+                    type,
                     icon,
                 });
             }
-        }).ignore();
+        };
+
+        const auto* searchable = !_search.is_empty() ? dynamic_cast<const SearchableFileSystemModel*>(filesystem()) : nullptr;
+        if(searchable) {
+            searchable->search(path, _search, [&](const auto& info) {
+                core::String name = path.empty() || info.name.size() <= path.size()
+                    ? info.name
+                    : core::String(info.name.sub_str(path.size() + 1));
+                add_entry(info.name, std::move(name), info.type);
+            }).ignore();
+        } else {
+            filesystem()->for_each(path, [&](const auto& info) {
+                add_entry(filesystem()->join(path, info.name), info.name, info.type);
+            }).ignore();
+        }
         std::sort(_entries.begin(), _entries.end());
     } else {
         if(const auto p = filesystem()->parent_path(path)) {
@@ -218,8 +238,6 @@ void FileSystemView::update() {
 
     _update_timer.reset();
     _need_update = false;
-
-    _on_update();
 }
 
 
@@ -237,6 +255,8 @@ void FileSystemView::on_gui() {
             const core::String target_name = fs->join(drop_path, fs->filename(original_name));
             if(!fs->rename(original_name, target_name)) {
                 log_msg(fmt("Unable to move \"{}\" to \"{}\"", original_name, drop_path), Log::Error);
+            } else {
+                log_msg(fmt("Move \"{}\" to \"{}\"", original_name, drop_path));
             }
             refresh_all();
         }
@@ -245,10 +265,10 @@ void FileSystemView::on_gui() {
     auto post_draw_entry = [&](usize index) {
         const Entry& entry = _entries[index];
         if(_allow_modify) {
-            if(ImGui::BeginDragDropTarget()) {
+            if(entry.type == EntryType::Directory && ImGui::BeginDragDropTarget()) {
                 make_drop_target(entry.full_name);
                 ImGui::EndDragDropTarget();
-            } else if(ImGui::BeginDragDropSource()) {
+            } else if(ImGui::GetItemID() && ImGui::BeginDragDropSource()) {
                 ImGui::SetDragDropPayload(imgui::drag_drop_path_id, entry.full_name.data(), entry.full_name.size() + 1);
                 ImGui::EndDragDropSource();
             }
@@ -291,7 +311,7 @@ void FileSystemView::on_gui() {
         ImGui::SameLine();
 
         if(ImGui::BeginChild("##fileentriespanel")) {
-            const float icon_size = 60.0f;
+            const float icon_size = 100.0f;
             const usize entry_per_row = std::max(1_uu, usize(ImGui::GetContentRegionAvail().x / icon_size));
 
 
@@ -313,10 +333,10 @@ void FileSystemView::on_gui() {
 
                         bool clicked = false;
                         bool double_clicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
-                        if(UiTexture preview = _preview_delegate(entry.full_name, entry.type)) {
-                            clicked = imgui::icon_button(preview, fmt_c_str("{}##{}", entry.name, index), selected, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
+                        if(UiTexture preview = _delegates.preview(entry.full_name, entry.type)) {
+                            clicked = imgui::thumbnail_button(preview, fmt_c_str("{}##{}", entry.name, index), selected, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
                         } else {
-                            clicked = imgui::icon_button(entry.icon, fmt_c_str("{}##{}", entry.name, index), selected, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
+                            clicked = imgui::thumbnail_button(entry.icon, fmt_c_str("{}##{}", entry.name, index), selected, icon_size, ImGuiSelectableFlags_AllowDoubleClick);
                         }
                         double_clicked &= clicked;
                         const bool is_right_clicked = ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right);
@@ -325,10 +345,12 @@ void FileSystemView::on_gui() {
                             _selected_index = index;
                         }
 
-                        if(ImGui::BeginItemTooltip()) {
-                            _tooltip_delegate(entry.full_name, entry.type);
+                        if(!ImGui::GetDragDropPayload() && ImGui::BeginItemTooltip()) {
+                            _delegates.tooltip(entry.full_name, entry.type);
                             ImGui::EndTooltip();
                         }
+
+                        post_draw_entry(index);
 
                         if(i + 1 < entry_per_row) {
                             ImGui::SameLine();
@@ -373,7 +395,14 @@ void FileSystemView::on_gui() {
                     imgui::table_begin_next_row();
 
                     const Entry& entry = _entries[i];
-                    if(imgui::selectable_icon(entry.icon, fmt_c_str("{}##{}", entry.name, i), _selected_index == i, ImGuiSelectableFlags_SpanAllColumns)) {
+                    const bool clicked = imgui::selectable_icon(entry.icon, fmt_c_str("{}##{}", entry.name, i), _selected_index == i, ImGuiSelectableFlags_SpanAllColumns);
+                    const bool is_right_clicked = ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right);
+
+                    if(clicked || is_right_clicked) {
+                        _selected_index = i;
+                    }
+
+                    if(clicked) {
                         entry_clicked(entry);
                         if(_need_update) {
                             break;
@@ -424,22 +453,27 @@ void FileSystemView::draw_context_menu() {
         refresh_all();
     }
 
-    if(_allow_modify && _selected_index < _entries.size()) {
-        ImGui::Separator();
+    if(_selected_index < _entries.size()) {
+        const Entry& entry = _entries[_selected_index];
 
-        const auto& entry = _entries[_selected_index];
-        const core::String full_name = filesystem()->join(_current_path, entry.name);
+        _delegates.context_menu(entry.full_name, entry.type);
 
-        if(ImGui::MenuItem("Rename")) {
-            add_detached_widget<FileRenamer>(filesystem(), full_name);
-        }
+        if(_allow_modify) {
+            ImGui::Separator();
 
-        if(ImGui::MenuItem("Delete")) {
-            if(!filesystem()->remove(full_name)) {
-                log_msg(fmt("Unable to delete {}", full_name), Log::Error);
+            if(ImGui::MenuItem("Rename")) {
+                add_top_level_widget<FileRenamer>(filesystem(), entry.full_name);
             }
-            refresh_all();
+
+            if(ImGui::MenuItem("Delete")) {
+                if(!filesystem()->remove(entry.full_name)) {
+                    log_msg(fmt("Unable to delete {}", entry.full_name), Log::Error);
+                }
+                refresh_all();
+            }
         }
+    } else {
+        _delegates.context_menu(path(), EntryType::Directory);
     }
 }
 

@@ -100,7 +100,7 @@ class ImGuiPlatform : NonMovable {
 
         core::StopWatch _frame_timer;
 
-        bool _demo_window = is_debug_defined;
+        bool _demo_window = false;
 
         std::deque<ImGuiImage> _temp_images;
 };

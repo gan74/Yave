@@ -44,7 +44,8 @@ class File final : public Reader, public Writer {
         static core::Result<File> open(const core::String& name);
         static core::Result<core::String> read_text_file(const core::String& name);
 
-        static  core::Result<void> copy(Reader& src, const core::String& dst);
+        static  core::Result<usize> copy(Reader& src, const core::String& dst);
+        static  core::Result<usize> copy_atomic(Reader& src, const core::String& dst);
 
         usize size() const;
         usize remaining() const override;

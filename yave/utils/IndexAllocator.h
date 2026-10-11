@@ -39,10 +39,6 @@ class IndexAllocator {
             return _max - _free.size();
         }
 
-        inline usize max_index() const {
-            return _max + 1;
-        }
-
         inline index_type alloc() {
             if(_free.is_empty()) {
                 return index_type(_max++);
