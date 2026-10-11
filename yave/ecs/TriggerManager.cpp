@@ -40,7 +40,6 @@ bool TriggerManager::is_listened(TriggerTypeIndex type, EntityId target) const {
 
 
 void TriggerManager::unsubscribe(TriggerTypeIndex type, EntityId target, TriggerHandler* handler) {
-    y_debug_assert(!_dispatching);
     if(const auto& queue = find_queue(type)) {
         queue->unsubscribe(target, handler);
     }

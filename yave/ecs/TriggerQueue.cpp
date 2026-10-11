@@ -78,9 +78,17 @@ void TriggerQueueBase::subscribe(EntityId target, TriggerHandler* handler) {
 }
 
 void TriggerQueueBase::unsubscribe(EntityId target, TriggerHandler* handler) {
-    const auto remove = [=](auto& handlers) {
-        if(const auto it = std::find(handlers.begin(), handlers.end(), handler); it != handlers.end()) {
-            handlers.erase_unordered(it);
+    const auto remove = [&](auto& handlers) {
+        const auto find = [&] { return std::find(handlers.begin(), handlers.end(), handler); };
+        if(_removed) {
+            if(const auto it = find(); it != handlers.end()) {
+                *it = nullptr;
+                *_removed << target;
+            }
+        } else {
+            for(auto it = find(); it != handlers.end(); it = find()) {
+                handlers.erase_unordered(it);
+            }
         }
     };
 
@@ -102,12 +110,16 @@ void TriggerQueueBase::dispatch_one(EntityWorld& world, EntityId target, const v
     }
 
     for(TriggerHandler* handler : _global_handlers) {
-        handler->on_trigger(world, target, _type, payload);
+        if(handler) {
+            handler->on_trigger(world, target, _type, payload);
+        }
     }
 
     if(const auto* handlers = _handlers.try_get(target)) {
         for(TriggerHandler* handler : *handlers) {
-            handler->on_trigger(world, target, _type, payload);
+            if(handler) {
+                handler->on_trigger(world, target, _type, payload);
+            }
         }
     }
 }

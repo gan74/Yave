@@ -106,6 +106,8 @@ class TriggerQueueBase : NonMovable {
 
         void dispatch_one(EntityWorld& world, EntityId target, const void* payload) const;
 
+        core::Vector<EntityId>* _removed = nullptr;
+
     private:
         TriggerTypeIndex _type;
 
@@ -134,8 +136,17 @@ class TriggerQueue final : public TriggerQueueBase {
         }
 
         void dispatch(EntityWorld& world) override {
+            y_debug_assert(!_removed);
+
+            core::Vector<EntityId> removed;
+            _removed = &removed;
             for(const Event& event : _ready) {
                 dispatch_one(world, event.target, &event.payload);
+            }
+            _removed = nullptr;
+
+            for(const EntityId target : removed) {
+                unsubscribe(target, nullptr);
             }
             _ready.make_empty();
         }
