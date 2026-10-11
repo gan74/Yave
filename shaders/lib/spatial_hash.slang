@@ -33,7 +33,7 @@ struct HashKey {
     static HashKey make_key(float3 world_pos, float3 normal, float base_cell_size, uint lod, float3 pos_jitter = float3(0.0), float3 norm_jitter = float3(0.0)) {
         const float cell_size = base_cell_size * exp2(float(lod));
         const int3 p_i = int3(floor(world_pos / cell_size + pos_jitter));
-        const int3 n_i = int3(normal * 3.0 + norm_jitter);
+        const int3 n_i = int3(floor(normal * 3.0 + norm_jitter));
 
         HashKey k;
         {
