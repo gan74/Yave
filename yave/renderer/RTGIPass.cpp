@@ -44,7 +44,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         return {};
     }
 
-    const u32 max_updates = u32(1) << 18;
+    const u32 max_updates = u32(1) << 20;
     const u32 hash_size = u32(1) << std::min(settings.hash_size, 30u);
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
