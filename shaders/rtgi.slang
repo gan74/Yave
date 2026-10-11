@@ -347,8 +347,10 @@ void main() {
     float total_weight = 0.0;
     for(uint k = 0; k <= extra_lods; ++k) {
         for(uint i = 0; i != apply_sample_count; ++i) {
-            const float3 pos_jitter = jitter_position(normal, rng) * pos_jitter_strength;
-            const float3 norm_jitter = rng.next_unit() * norm_jitter_strength;
+            // First sample uses the unjittered key that UPDATE inserted for this pixel, so at least one lookup always hits
+            const bool jitter = i != 0;
+            const float3 pos_jitter = jitter ? jitter_position(normal, rng) * pos_jitter_strength : float3(0.0);
+            const float3 norm_jitter = jitter ? rng.next_unit() * norm_jitter_strength : float3(0.0);
             const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level + k, pos_jitter, norm_jitter);
             const uint index = find_bucket_index(hash_table, key, hash_size);
             if(index == constants.max_uint) {
