@@ -20,8 +20,6 @@
 
 static const uint extra_lods = 1;
 static const uint apply_sample_count = 8;
-static const float apply_lum_sigma = 1.0; // log2
-static const float apply_lum_epsilon = 1e-4;
 static const float emissive_scale = 1.0;
 
 
@@ -325,7 +323,6 @@ void main() {
     float3 acc = float3(0.0);
 
     float total_weight = 0.0;
-    float own_lum = -1.0;
     for(uint k = 0; k <= extra_lods; ++k) {
         for(uint i = 0; i != apply_sample_count; ++i) {
             // First sample uses the unjittered key that UPDATE inserted for this pixel, so at least one lookup always hits
@@ -342,18 +339,14 @@ void main() {
                 continue;
             }
 
-            const float cell_lum = luminance(cell.radiance / cell.weight);
-            if(own_lum < 0.0) {
-                own_lum = cell_lum;
-            }
-            const float ratio = log2((cell_lum + apply_lum_epsilon) / (own_lum + apply_lum_epsilon));
-            const float w = cell.weight * exp(-ratio * ratio / (2.0 * sqr(apply_lum_sigma)));
-            total_weight += w;
-            acc += cell.radiance * (w / cell.weight);
+            total_weight += cell.weight;
+            acc += cell.radiance;
         }
     }
 
-    out_image[coord] = float4(total_weight > 0.0 ? max(0.0, acc / total_weight) : float3(0.0), 1.0);
+    total_weight = max(1.0, total_weight);
+
+    out_image[coord] = float4(max(0.0, acc / total_weight), 1.0);
 
 #ifdef DEBUG_CELLS
     {
