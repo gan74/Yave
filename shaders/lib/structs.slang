@@ -231,21 +231,9 @@ struct AtmosphereParams {
     }
 };
 
-// #define RTGI_SH
 struct RTGICell {
-#ifdef RTGI_SH
-    uint4 packed_r;
-    uint4 packed_g;
-    uint4 packed_b;
-
-    float weight;
-    uint padding_0;
-    uint padding_1;
-    uint padding_2;
-#else
     float3 radiance;
     float weight;
-#endif
 };
 
 #endif
