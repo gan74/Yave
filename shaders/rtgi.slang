@@ -14,6 +14,7 @@
 
 // #define DEBUG_CELLS
 // #define DEBUG_LOD
+// #define DEBUG_RAYS
 
 // #define EMISSIVE
 
@@ -297,6 +298,9 @@ void main() {
         InterlockedAdd(update_count[2], wave_ray_count, prev);
     }
 
+#ifdef DEBUG_RAYS
+    hash_table[roulette_index(index)] = ray_count;
+#endif
     float3 acc = float3(0.0);
     for(uint r = 0; r != ray_count; ++r) {
         const float tmin = 0.001;
@@ -419,6 +423,16 @@ void main() {
     {
         out_image[coord] = float4(frac(float_lod_level).xxx, 1.0);
         // out_image[coord] = float4(lerp(identifying_color(lod_level), identifying_color(lod_level + 1), frac(float_lod_level)) * 0.33, 1.0);
+    }
+#endif
+
+#ifdef DEBUG_RAYS
+    {
+        const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level);
+        const uint index = find_bucket_index(hash_table, key, hash_size);
+        const float rays = index == constants.max_uint ? 0.0 : float(hash_table[roulette_index(index)]);
+        const float t = saturate(rays / float(max_cell_rays));
+        out_image[coord] = float4(heat_spectrum(sqrt(t)), 1.0);
     }
 #endif
 }
