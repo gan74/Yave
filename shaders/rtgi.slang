@@ -26,8 +26,8 @@ static const float static_ray_budget = (256 * 1024);
 static const float dynamic_ray_budget = (1024 * 1024) - static_ray_budget;
 
 static const float young_cell_samples = 512.0;
+static const float old_cell_samples = young_cell_samples * 2.0;
 static const float need_fixed_point = 256.0;
-static const uint max_cell_rays = 256;
 
 
 [[vk::binding(0)]]
@@ -81,15 +81,10 @@ cbuffer Params {
     float pos_jitter_strength;
     float norm_jitter_strength;
 
-    float target_samples;
-    float min_ray_count;
-    float max_ray_count;
-    uint light_count;
-
     uint max_updates;
-    uint padding_0;
-    uint padding_1;
-    uint padding_2;
+    uint min_cell_rays;
+    uint max_cell_rays;
+    uint light_count;
 };
 
 
@@ -191,10 +186,10 @@ void main() {
         sum_table[h].weight = 0.0;
     } else {
         const float weight = sum_table[h].weight;
-        if(weight > 2.0 * target_samples) {
-            const float norm_factor = target_samples / weight;
+        if(weight > 2.0 * old_cell_samples) {
+            const float norm_factor = old_cell_samples / weight;
             sum_table[h].radiance *= norm_factor;
-            sum_table[h].weight = target_samples;
+            sum_table[h].weight = old_cell_samples;
         }
     }
 }
@@ -282,15 +277,13 @@ void main() {
     const uint seed = hash.xorshift(i + hash.xorshift(frame_id));
     HashRng rng = HashRng(seed);
 
-    const float base_rays = clamp(static_ray_budget / float(update_count[0]), min_ray_count, max_ray_count);
-
-    const float pixels = float(hash_table[pixel_count_index(index)]);
+    const float base_rays = static_ray_budget / float(update_count[0]);
     const float total_need = float(update_count[1]) / need_fixed_point;
-    const float cell_pixel_need = pixels * cell_need(index);
+    const float cell_pixel_need = float(hash_table[pixel_count_index(index)]) * cell_need(index);
     const float extra_rays = total_need > 0.0 ? cell_pixel_need * (dynamic_ray_budget / total_need) : 0.0;
 
     const float rays = base_rays + extra_rays;
-    const uint ray_count = min(max_cell_rays, uint(rays) + (rng.next_unorm() < frac(rays) ? 1 : 0));
+    const uint ray_count = clamp(uint(rays) + (rng.next_unorm() < frac(rays) ? 1 : 0), min_cell_rays, max_cell_rays);
 
     const uint wave_ray_count = WaveActiveSum(ray_count);
     if(WaveIsFirstLane()) {
@@ -301,6 +294,7 @@ void main() {
 #ifdef DEBUG_RAYS
     hash_table[roulette_index(index)] = ray_count;
 #endif
+
     float3 acc = float3(0.0);
     for(uint r = 0; r != ray_count; ++r) {
         const float tmin = 0.001;

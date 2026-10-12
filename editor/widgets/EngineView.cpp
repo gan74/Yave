@@ -611,8 +611,14 @@ void EngineView::draw_settings_menu() {
     if(ImGui::BeginMenu("RTGI")) {
         RTGISettings& settings = _settings.renderer_settings.rtgi;
 
-        ImGui::SliderFloat("Min ray count", &settings.min_ray_count, 0.0f, 16.0f);
-        ImGui::SliderFloat("Max ray count", &settings.max_ray_count, 1.0f, 16.0f);
+        {
+            int ray_min = int(settings.min_cell_rays);
+            int ray_max = int(settings.max_cell_rays);
+            ImGui::SliderInt("Min rays per cell", &ray_min, 1, 64);
+            ImGui::SliderInt("Max rays per cell", &ray_max, 1, 256);
+            settings.min_cell_rays = u32(std::min(ray_min, ray_max));
+            settings.max_cell_rays = u32(std::max(ray_min, ray_max));
+        }
 
         ImGui::Separator();
 
