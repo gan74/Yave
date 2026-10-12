@@ -21,12 +21,12 @@ static const uint extra_lods = 1;
 static const uint apply_sample_count = 8;
 static const float emissive_scale = 1.0;
 
-static const float extra_ray_budget = 512.0 * 1024.0;
+static const float static_ray_budget = (256 * 1024);
+static const float dynamic_ray_budget = (1024 * 1024) - static_ray_budget;
+
 static const float young_cell_samples = 512.0;
-static const float max_rays_per_pixel = 4.0;
-static const uint max_cell_rays = 64;
 static const float need_fixed_point = 256.0;
-static const float total_rays = 1024.0 * 1024.0;
+static const uint max_cell_rays = 256;
 
 
 [[vk::binding(0)]]
@@ -258,7 +258,7 @@ void main() {
     const float wave_need = WaveActiveSum(need);
     if(WaveIsFirstLane()) {
         uint prev;
-        InterlockedAdd(update_count[1], uint(wave_need * need_fixed_point + 0.5), prev);
+        InterlockedAdd(update_count[1], uint(round(wave_need * need_fixed_point)), prev);
     }
 }
 #endif
@@ -281,14 +281,15 @@ void main() {
     const uint seed = hash.xorshift(i + hash.xorshift(frame_id));
     HashRng rng = HashRng(seed);
 
-    const uint base_ray_count = uint(clamp(round(total_rays / update_count[0]), min_ray_count, max_ray_count));
+    const float base_rays = clamp(static_ray_budget / float(update_count[0]), min_ray_count, max_ray_count);
 
     const float pixels = float(hash_table[pixel_count_index(index)]);
     const float total_need = float(update_count[1]) / need_fixed_point;
     const float cell_pixel_need = pixels * cell_need(index);
-    const float extra_rays = total_need > 0.0 ? min(extra_ray_budget * cell_pixel_need / total_need, pixels * max_rays_per_pixel) : 0.0;
-    const uint stochastic_extra = uint(extra_rays) + (rng.next_unorm() < frac(extra_rays) ? 1 : 0);
-    const uint ray_count = min(max_cell_rays, base_ray_count + stochastic_extra);
+    const float extra_rays = total_need > 0.0 ? cell_pixel_need * (dynamic_ray_budget / total_need) : 0.0;
+
+    const float rays = base_rays + extra_rays;
+    const uint ray_count = min(max_cell_rays, uint(rays) + (rng.next_unorm() < frac(rays) ? 1 : 0));
 
     const uint wave_ray_count = WaveActiveSum(ray_count);
     if(WaveIsFirstLane()) {
