@@ -267,25 +267,28 @@ void main() {
 [numthreads(64)]
 void main() {
     const uint i = semantics.global_index;
-    if(i >= max_updates || i >= update_count[0]) {
-        return;
-    }
 
-    const uint index = update_indices[i];
-    const float4 data = update_data[index];
+    const bool is_valid = i < max_updates && i < update_count[0];
+
+    const uint index = is_valid ? update_indices[i] : 0;
+    const float4 data = is_valid ? update_data[index] : float4(0.0);
+
     const float3 position = data.xyz;
     const float3 normal = unpack_update_normal(asuint(data.w));
 
     const uint seed = hash.xorshift(i + hash.xorshift(frame_id));
     HashRng rng = HashRng(seed);
 
-    const float base_rays = static_ray_budget / float(update_count[0]);
-    const float total_need = float(update_count[1]) / need_fixed_point;
-    const float cell_pixel_need = float(hash_table[pixel_count_index(index)]) * cell_need(index);
-    const float extra_rays = total_need > 0.0 ? cell_pixel_need * (dynamic_ray_budget / total_need) : 0.0;
+    uint ray_count = 0;
+    if(is_valid) {
+        const float base_rays = static_ray_budget / float(update_count[0]);
+        const float total_need = float(update_count[1]) / need_fixed_point;
+        const float cell_pixel_need = float(hash_table[pixel_count_index(index)]) * cell_need(index);
+        const float extra_rays = total_need > 0.0 ? cell_pixel_need * (dynamic_ray_budget / total_need) : 0.0;
 
-    const float rays = base_rays + extra_rays;
-    const uint ray_count = clamp(uint(rays) + (rng.next_unorm() < frac(rays) ? 1 : 0), min_cell_rays, max_cell_rays);
+        const float rays = base_rays + extra_rays;
+        ray_count = clamp(uint(rays) + (rng.next_unorm() < frac(rays) ? 1 : 0), min_cell_rays, max_cell_rays);
+    }
 
     const uint wave_ray_count = WaveActiveSum(ray_count);
     if(WaveIsFirstLane()) {
@@ -294,46 +297,85 @@ void main() {
     }
 
 #ifdef DEBUG_RAYS
-    hash_table[roulette_index(index)] = ray_count;
+    if(is_valid) {
+        hash_table[roulette_index(index)] = ray_count;
+    }
 #endif
+
+    // Pool all ray inside a wave.
+    // Each lane will trace rays from other cells and we use a segmented sum to resolve the result
+
+    const uint lane_count = WaveGetLaneCount();
+    const uint lane_index = WaveGetLaneIndex();
+    const uint first_ray = WavePrefixSum(ray_count);
+    const uint end_ray = first_ray + ray_count;
 
     float3 acc = float3(0.0);
-    for(uint r = 0; r != ray_count; ++r) {
-        const float tmin = 0.001;
-        const float tmax = 10000.0;
+    for(uint batch_start = 0; batch_start < wave_ray_count; batch_start += lane_count) {
+        const uint ray = batch_start + lane_index;
 
-        const float3 trace_dir = cosine_sample_hemisphere(normal, rng);
-        const HitInfo hit = trace_inline(tlas, position, trace_dir, tmin, tmax);
+        // binary search for the owning lane
+        uint owner = 0;
+        for(uint step = lane_count / 2; step > 0; step /= 2) {
+            const uint candidate = owner + step;
+            if(WaveReadLaneAt(first_ray, candidate) <= ray) {
+                owner = candidate;
+            }
+        }
+
+        const float3 ray_position = WaveReadLaneAt(position, owner);
+        const float3 ray_normal = WaveReadLaneAt(normal, owner);
 
         float3 radiance = float3(0.0);
-        if(hit.hit) {
-            const float3 hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
-            const RTGIMaterial material = eval_material(hit.instance_id);
+        if(ray < wave_ray_count) {
+            const float tmin = 0.001;
+            const float tmax = 10000.0;
+
+            const float3 trace_dir = cosine_sample_hemisphere(ray_normal, rng);
+            const HitInfo hit = trace_inline(tlas, ray_position, trace_dir, tmin, tmax);
+
+            if(hit.hit) {
+                const float3 hit_normal = normalize(mul(float3x3(hit.model_to_world), hit.ms_normal));
+                const RTGIMaterial material = eval_material(hit.instance_id);
 
 #ifdef EMISSIVE
-            radiance += material.emissive;
+                radiance += material.emissive;
 #endif
 
-            radiance += material.albedo * in_envmap.SampleLevel(hit_normal, 999.0).rgb;
-            for(uint k = 0; k != light_count; ++k) {
-                const DirectionalLight light = lights[k];
-                const float n_l = dot(light.direction, hit_normal);
-                if(n_l > 0.0) {
-                    if(light.cast_shadow == 0 || !trace_hit(tlas, hit.position, light.direction, tmin, tmax)) {
-                        radiance += (material.albedo * light.color * n_l);
+                radiance += material.albedo * in_envmap.SampleLevel(hit_normal, 999.0).rgb;
+                for(uint k = 0; k != light_count; ++k) {
+                    const DirectionalLight light = lights[k];
+                    const float n_l = dot(light.direction, hit_normal);
+                    if(n_l > 0.0) {
+                        if(light.cast_shadow == 0 || !trace_hit(tlas, hit.position, light.direction, tmin, tmax)) {
+                            radiance += (material.albedo * light.color * n_l);
+                        }
                     }
                 }
+            } else {
+                radiance += in_envmap.SampleLevel(trace_dir, 0.0).rgb;
             }
-        } else {
-            radiance += in_envmap.SampleLevel(trace_dir, 0.0).rgb;
         }
-        acc += radiance;
+
+        {
+            const float3 prefix = WavePrefixSum(radiance);
+            const float3 total = WaveActiveSum(radiance);
+            const uint begin = uint(clamp(int(first_ray) - int(batch_start), 0, int(lane_count)));
+            const uint end = uint(clamp(int(end_ray) - int(batch_start), 0, int(lane_count)));
+            const float3 prefix_begin = WaveReadLaneAt(prefix, min(begin, lane_count - 1));
+            const float3 prefix_end = WaveReadLaneAt(prefix, min(end, lane_count - 1));
+            if(end > begin) {
+                acc += (end == lane_count ? total : prefix_end) - (begin == lane_count ? total : prefix_begin);
+            }
+        }
     }
 
-    RTGICell cell = sum_table[index];
-    cell.radiance += acc * constants.inv_pi;
-    cell.weight += float(ray_count);
-    sum_table[index] = cell;
+    if(is_valid) {
+        RTGICell cell = sum_table[index];
+        cell.radiance += acc * constants.inv_pi;
+        cell.weight += float(ray_count);
+        sum_table[index] = cell;
+    }
 }
 #endif
 
