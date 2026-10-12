@@ -69,7 +69,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     const auto [hash, hash_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size * 4);
     const auto [sum, sum_reset] = framegraph.create_scratch_buffer<shader::RTGICell, BufferUsage::StorageBit>(persistent_sum_id, hash_size);
     const auto [update_indices, update_indices_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_update_indices_id, max_updates);
-    const auto [update_count, update_count_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_update_count_id, 2);
+    const auto [update_count, update_count_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_update_count_id, 4);
     const auto [update_data, update_data_reset] = framegraph.create_scratch_buffer<math::Vec4, BufferUsage::StorageBit>(persistent_update_data_id, hash_size);
 
     const bool reset = false; // editor::debug_values().command("Reset RTGI");

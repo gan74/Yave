@@ -178,6 +178,7 @@ void main() {
     if(h == 0) {
         update_count[0] = 0;
         update_count[1] = 0;
+        update_count[2] = 0;
     }
 
     hash_table[pixel_count_index(h)] = 0;
@@ -289,6 +290,12 @@ void main() {
     const uint stochastic_extra = uint(extra_rays) + (rng.next_unorm() < frac(extra_rays) ? 1 : 0);
     const uint ray_count = min(max_cell_rays, base_ray_count + stochastic_extra);
 
+    const uint wave_ray_count = WaveActiveSum(ray_count);
+    if(WaveIsFirstLane()) {
+        uint prev;
+        InterlockedAdd(update_count[2], wave_ray_count, prev);
+    }
+
     float3 acc = float3(0.0);
     for(uint r = 0; r != ray_count; ++r) {
         const float tmin = 0.001;
@@ -362,8 +369,11 @@ void main() {
 
     {
         DebugPrinter dbg = DebugPrinter(coord);
-        dbg.puts(CHAR_U, CHAR_P, CHAR_D, CHAR_COLON, CHAR_SPACE, CHAR_SPACE);
+        dbg.puts(CHAR_U, CHAR_P, CHAR_D, CHAR_A, CHAR_T, CHAR_E, CHAR_S, CHAR_COLON, CHAR_SPACE);
         dbg.putf(min(update_count[0], max_updates), 6.0, 0.0);
+        dbg.next_line();
+        dbg.puts(CHAR_R, CHAR_A, CHAR_Y, CHAR_S, CHAR_COLON, CHAR_SPACE, CHAR_SPACE, CHAR_SPACE);
+        dbg.putf(update_count[2], 7.0, 0.0);
         if(dbg.value > 0.0) {
             out_image[coord] = float4(1.0);
             return;
