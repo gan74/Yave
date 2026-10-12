@@ -167,13 +167,6 @@ struct PickingData {
     uint entity_index;
 };
 
-struct RTGIUpdate {
-    float3 position;
-    uint index;
-
-    float3 normal;
-    uint lod;
-};
 
 struct MeshObject {
     uint transform_index;

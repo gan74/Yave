@@ -62,14 +62,18 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     static const FrameGraphPersistentResourceId persistent_hash_id = FrameGraphPersistentResourceId::create();
     static const FrameGraphPersistentResourceId persistent_sum_id = FrameGraphPersistentResourceId::create();
-    static const FrameGraphPersistentResourceId persistent_updates_id = FrameGraphPersistentResourceId::create();
+    static const FrameGraphPersistentResourceId persistent_update_indices_id = FrameGraphPersistentResourceId::create();
     static const FrameGraphPersistentResourceId persistent_update_count_id = FrameGraphPersistentResourceId::create();
-    const auto [hash, hash_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size * 2);
+    static const FrameGraphPersistentResourceId persistent_update_data_id = FrameGraphPersistentResourceId::create();
+
+    const auto [hash, hash_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size * 4);
     const auto [sum, sum_reset] = framegraph.create_scratch_buffer<shader::RTGICell, BufferUsage::StorageBit>(persistent_sum_id, hash_size);
-    const auto [updates, updates_reset] = framegraph.create_scratch_buffer<shader::RTGIUpdate, BufferUsage::StorageBit>(persistent_updates_id, max_updates);
-    const auto [update_count, update_count_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_update_count_id);
+    const auto [update_indices, update_indices_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_update_indices_id, max_updates);
+    const auto [update_count, update_count_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_update_count_id, 2);
+    const auto [update_data, update_data_reset] = framegraph.create_scratch_buffer<math::Vec4, BufferUsage::StorageBit>(persistent_update_data_id, hash_size);
 
     const bool reset = false; // editor::debug_values().command("Reset RTGI");
+    unused(update_indices_reset, update_data_reset);
 
     const struct Params {
         u32 hash_size;
@@ -94,7 +98,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     } params {
         hash_size,
         u32(framegraph.frame_id()),
-        u32(hash_reset || sum_reset || updates_reset || update_count_reset || reset ? 1 : 0),
+        u32(hash_reset || sum_reset || update_count_reset || reset ? 1 : 0),
         settings.lod_jitter,
 
         settings.lod_dist,
@@ -125,8 +129,9 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     builder.add_external_input(ibl_probe ? *ibl_probe : *device_resources().empty_probe());
     builder.add_external_input(Descriptor(material_allocator().material_buffer()));
     builder.add_storage_input(directional_buffer);
-    builder.add_descriptor_binding(Descriptor(updates));
+    builder.add_descriptor_binding(Descriptor(update_indices));
     builder.add_descriptor_binding(Descriptor(update_count));
+    builder.add_descriptor_binding(Descriptor(update_data));
     builder.add_inline_input(params);
 
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
@@ -153,11 +158,12 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
             texture_library().descriptor_set()
         };
 
-        const std::array<BufferBarrier, 4> barriers = {
+        const std::array<BufferBarrier, 5> barriers = {
             BufferBarrier(hash, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
             BufferBarrier(sum, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
-            BufferBarrier(updates, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
+            BufferBarrier(update_indices, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
             BufferBarrier(update_count, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
+            BufferBarrier(update_data, PipelineStage::ComputeBit, PipelineStage::ComputeBit),
         };
 
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGITrimProgram], math::Vec2ui(hash_size, 1), desc_sets);

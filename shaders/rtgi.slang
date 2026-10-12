@@ -3,7 +3,6 @@
 #include "lib/utils.slang"
 #include "lib/rt.slang"
 #include "lib/spatial_hash.slang"
-#include "lib/sh.slang"
 #include "lib/debug.slang"
 
 #ifdef __cplusplus
@@ -16,11 +15,18 @@
 // #define DEBUG_CELLS
 // #define DEBUG_LOD
 
-#define EMISSIVE
+// #define EMISSIVE
 
 static const uint extra_lods = 1;
 static const uint apply_sample_count = 8;
 static const float emissive_scale = 1.0;
+
+static const float extra_ray_budget = 512.0 * 1024.0;
+static const float young_cell_samples = 512.0;
+static const float max_rays_per_pixel = 4.0;
+static const uint max_cell_rays = 64;
+static const float need_fixed_point = 256.0;
+static const float total_rays = 1024.0 * 1024.0;
 
 
 [[vk::binding(0)]]
@@ -54,12 +60,15 @@ StructuredBuffer<MaterialData> materials;
 StructuredBuffer<DirectionalLight> lights;
 
 [[vk::binding(10)]]
-RWStructuredBuffer<RTGIUpdate> updates;
+RWStructuredBuffer<uint> update_indices;
 
 [[vk::binding(11)]]
 RWStructuredBuffer<uint> update_count;
 
 [[vk::binding(12)]]
+RWStructuredBuffer<float4> update_data;
+
+[[vk::binding(13)]]
 cbuffer Params {
     uint hash_size;
     uint frame_id;
@@ -92,8 +101,6 @@ Sampler2D all_textures[];
 
 
 
-
-
 struct RTGIMaterial {
     float3 albedo;
     float3 emissive;
@@ -113,12 +120,33 @@ uint timestamp_index(uint h) {
     return hash_size + h;
 }
 
+uint pixel_count_index(uint h) {
+    return hash_size * 2 + h;
+}
+
+uint roulette_index(uint h) {
+    return hash_size * 3 + h;
+}
+
+float cell_need(uint index) {
+    return saturate(1.0 - sum_table[index].weight / young_cell_samples);
+}
+
 float3 jitter_position<T: Rng>(float3 normal, inout T rng) {
     const float3 v = rng.next_unit();
     return (v - normal * dot(v, normal));
 }
 
-void push_update(uint index, float3 position, float3 normal, uint lod) {
+uint pack_update_normal(float3 n) {
+    const uint2 p = uint2(saturate(octahedron_encode(n)) * 0xFFFF + 0.5);
+    return p.x | (p.y << 16);
+}
+
+float3 unpack_update_normal(uint p) {
+    return octahedron_decode(float2(p & 0xFFFF, p >> 16) / float(0xFFFF));
+}
+
+void push_update(uint index) {
     uint prev;
     InterlockedExchange(hash_table[timestamp_index(index)], frame_id, prev);
     if(prev == frame_id) {
@@ -128,7 +156,7 @@ void push_update(uint index, float3 position, float3 normal, uint lod) {
     uint slot;
     InterlockedAdd(update_count[0], 1, slot);
     if(slot < max_updates) {
-        updates[slot] = { position, index, normal, lod };
+        update_indices[slot] = index;
     }
 }
 
@@ -141,7 +169,7 @@ void push_update(uint index, float3 position, float3 normal, uint lod) {
 
 
 
-#if  defined(TRIM)
+#if defined(TRIM)
 [shader("compute")]
 [numthreads(256)]
 void main() {
@@ -149,7 +177,11 @@ void main() {
 
     if(h == 0) {
         update_count[0] = 0;
+        update_count[1] = 0;
     }
+
+    hash_table[pixel_count_index(h)] = 0;
+    hash_table[roulette_index(h)] = 0;
 
     if(reset_hash > 0 || hash_table[timestamp_index(h)] == (frame_id - 4)) {
         hash_table[h] = 0;
@@ -200,13 +232,32 @@ void main() {
     const float float_lod_level = HashKey.float_lod_level(view_dist, lod_dist) + rng.next_unorm() * lod_jitter_strength;
     const uint lod_level = uint(float_lod_level);
 
+    float need = 0.0;
     for(uint k = 0; k <= extra_lods; ++k) {
         const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level + k);
         bool inserted;
         const uint index = find_update_bucket_index(hash_table, key, hash_size, inserted);
-        if(index != constants.max_uint) {
-            push_update(index, world_pos, normal, lod_level + k);
+        if(index == constants.max_uint) {
+            continue;
         }
+
+        uint prev;
+        InterlockedAdd(hash_table[pixel_count_index(index)], 1, prev);
+
+        const uint roulette_key = max(1u, rng.next());
+        InterlockedMax(hash_table[roulette_index(index)], roulette_key, prev);
+        if(roulette_key > prev) {
+            update_data[index] = float4(world_pos, asfloat(pack_update_normal(normal)));
+        }
+
+        need += cell_need(index);
+        push_update(index);
+    }
+
+    const float wave_need = WaveActiveSum(need);
+    if(WaveIsFirstLane()) {
+        uint prev;
+        InterlockedAdd(update_count[1], uint(wave_need * need_fixed_point + 0.5), prev);
     }
 }
 #endif
@@ -221,21 +272,30 @@ void main() {
         return;
     }
 
-    const RTGIUpdate update = updates[i];
+    const uint index = update_indices[i];
+    const float4 data = update_data[index];
+    const float3 position = data.xyz;
+    const float3 normal = unpack_update_normal(asuint(data.w));
 
     const uint seed = hash.xorshift(i + hash.xorshift(frame_id));
     HashRng rng = HashRng(seed);
 
-    const float total_rays = 1024.0 * 1024.0;
-    const uint ray_count = uint(clamp(round(total_rays / update_count[0]), min_ray_count, max_ray_count));
+    const uint base_ray_count = uint(clamp(round(total_rays / update_count[0]), min_ray_count, max_ray_count));
+
+    const float pixels = float(hash_table[pixel_count_index(index)]);
+    const float total_need = float(update_count[1]) / need_fixed_point;
+    const float cell_pixel_need = pixels * cell_need(index);
+    const float extra_rays = total_need > 0.0 ? min(extra_ray_budget * cell_pixel_need / total_need, pixels * max_rays_per_pixel) : 0.0;
+    const uint stochastic_extra = uint(extra_rays) + (rng.next_unorm() < frac(extra_rays) ? 1 : 0);
+    const uint ray_count = min(max_cell_rays, base_ray_count + stochastic_extra);
 
     float3 acc = float3(0.0);
     for(uint r = 0; r != ray_count; ++r) {
         const float tmin = 0.001;
         const float tmax = 10000.0;
 
-        const float3 trace_dir = cosine_sample_hemisphere(update.normal, rng);
-        const HitInfo hit = trace_inline(tlas, update.position, trace_dir, tmin, tmax);
+        const float3 trace_dir = cosine_sample_hemisphere(normal, rng);
+        const HitInfo hit = trace_inline(tlas, position, trace_dir, tmin, tmax);
 
         float3 radiance = float3(0.0);
         if(hit.hit) {
@@ -262,22 +322,12 @@ void main() {
         acc += radiance;
     }
 
-    RTGICell cell = sum_table[update.index];
+    RTGICell cell = sum_table[index];
     cell.radiance += acc * constants.inv_pi;
     cell.weight += float(ray_count);
-    sum_table[update.index] = cell;
+    sum_table[index] = cell;
 }
 #endif
-
-
-
-
-
-
-
-
-
-
 
 
 
