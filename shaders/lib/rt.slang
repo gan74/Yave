@@ -69,6 +69,10 @@ HitInfo trace_inline(RaytracingAccelerationStructure accel, float3 origin, float
     return trace_inline_flags<RAY_FLAG_FORCE_OPAQUE>(accel, origin, dir, min_dist, max_dist);
 }
 
+bool trace_hit(RaytracingAccelerationStructure accel, float3 origin, float3 dir, float min_dist, float max_dist) {
+    return trace_inline_flags<RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH>(accel, origin, dir, min_dist, max_dist).hit;
+}
+
 
 
 
