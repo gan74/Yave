@@ -612,10 +612,18 @@ void EngineView::draw_settings_menu() {
         RTGISettings& settings = _settings.renderer_settings.rtgi;
 
         {
+            int ray_budget = int(settings.ray_budget >> 10);
+            ImGui::SliderInt("Ray budget", &ray_budget, 256, 8 * 1024, "%dk");
+            settings.ray_budget = u32(ray_budget) << 10;
+        }
+
+        ImGui::Separator();
+
+        {
             int ray_min = int(settings.min_cell_rays);
             int ray_max = int(settings.max_cell_rays);
             ImGui::SliderInt("Min rays per cell", &ray_min, 1, 64);
-            ImGui::SliderInt("Max rays per cell", &ray_max, 1, 256);
+            ImGui::SliderInt("Max rays per cell", &ray_max, 64, 4096);
             settings.min_cell_rays = u32(std::min(ray_min, ray_max));
             settings.max_cell_rays = u32(std::max(ray_min, ray_max));
         }

@@ -46,6 +46,9 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
     const u32 max_updates = u32(1) << 20;
     const u32 hash_size = u32(1) << std::min(settings.hash_size, 30u);
+    const u32 static_ray_budget = settings.ray_budget / 4;
+    const u32 dynamic_ray_budget = settings.ray_budget - static_ray_budget;
+
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
     const SceneView& scene_view = gbuffer.scene_pass.scene_view;
@@ -54,6 +57,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
     const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
     const u32 gi_light_count = u32(std::count_if(visibility.directional_lights.begin(), visibility.directional_lights.end(), [](const auto& l) { return l->component.cast_gi(); }));
+
 
 
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("RTGI pass");
@@ -75,6 +79,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     const bool reset = false; // editor::debug_values().command("Reset RTGI");
     unused(update_indices_reset, update_data_reset);
 
+
     const struct Params {
         u32 hash_size;
         u32 frame_id;
@@ -90,6 +95,11 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         u32 min_cell_rays;
         u32 max_cell_rays;
         u32 light_count;
+
+        float static_ray_budget;
+        float dynamic_ray_budget;
+        u32 padding_0;
+        u32 padding_1;
     } params {
         hash_size,
         u32(framegraph.frame_id()),
@@ -105,6 +115,10 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         settings.min_cell_rays,
         settings.max_cell_rays,
         gi_light_count,
+
+        std::max(1024.0f, float(static_ray_budget)),
+        std::max(1024.0f, float(dynamic_ray_budget)),
+        0u, 0u
     };
 
     const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
@@ -162,7 +176,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         recorder.barriers(barriers);
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGIUpdateProgram], size, desc_sets);
         recorder.barriers(barriers);
-        recorder.dispatch_threads(device_resources()[DeviceResources::RTGITraceProgram], math::Vec2ui(hash_size, 1), desc_sets);
+        recorder.dispatch_threads(device_resources()[DeviceResources::RTGITraceProgram], math::Vec2ui(max_updates, 1), desc_sets);
         recorder.barriers(barriers);
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGIApplyProgram], size, desc_sets);
     });

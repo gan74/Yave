@@ -22,9 +22,6 @@ static const uint extra_lods = 1;
 static const uint apply_sample_count = 8;
 static const float emissive_scale = 1.0;
 
-static const float static_ray_budget = (256 * 1024);
-static const float dynamic_ray_budget = (1024 * 1024) - static_ray_budget;
-
 static const float young_cell_samples = 512.0;
 static const float old_cell_samples = young_cell_samples * 2.0;
 static const float need_fixed_point = 256.0;
@@ -85,6 +82,11 @@ cbuffer Params {
     uint min_cell_rays;
     uint max_cell_rays;
     uint light_count;
+
+    float static_ray_budget;
+    float dynamic_ray_budget;
+    uint padding_0;
+    uint padding_1;
 };
 
 
@@ -367,12 +369,12 @@ void main() {
     const uint lod_level = uint(float_lod_level);
 
     {
-        DebugPrinter dbg = DebugPrinter(coord);
+        DebugPrinter dbg = DebugPrinter(coord, uint2(16, 16));
         dbg.puts(CHAR_U, CHAR_P, CHAR_D, CHAR_A, CHAR_T, CHAR_E, CHAR_S, CHAR_COLON, CHAR_SPACE);
         dbg.putf(min(update_count[0], max_updates), 6.0, 0.0);
         dbg.next_line();
-        dbg.puts(CHAR_R, CHAR_A, CHAR_Y, CHAR_S, CHAR_COLON, CHAR_SPACE, CHAR_SPACE, CHAR_SPACE);
-        dbg.putf(update_count[2], 7.0, 0.0);
+        dbg.puts(CHAR_K, CHAR_R, CHAR_A, CHAR_Y, CHAR_S, CHAR_COLON, CHAR_SPACE, CHAR_SPACE);
+        dbg.putf(update_count[2] / 1024, 7.0, 0.0);
         if(dbg.value > 0.0) {
             out_image[coord] = float4(1.0);
             return;
