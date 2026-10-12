@@ -77,17 +77,22 @@ float3 compute_lighting(SurfaceInfo surface,
         const DirectionalLight light = cluster_info.directional_lights[i];
         const float3 light_dir = light.direction; // assume normalized
 
+        if(dot(surface.normal, light_dir) <= 0.0) {
+            continue;
+        }
+
         float att = 1.0;
         const uint shadow_map_index = shadow_cascade_index(shadow_infos, light.shadow_map_indices, world_pos);
         if(shadow_map_index < 0xFFFFFFFF) {
             const ShadowMapInfo sm_info = shadow_infos[shadow_map_index];
             att = compute_shadow_pcf(in_shadows, sm_info, world_pos);
+            if(att <= 0.0) {
+                continue;
+            }
         }
-
-        if(att > 0.0) {
-            const float3 radiance = light.color * att;
-            irradiance += radiance * eval_brdf(surface, view_dir, light_dir);
-        }
+        
+        const float3 radiance = light.color * att;
+        irradiance += radiance * eval_brdf(surface, view_dir, light_dir);
     }
 
     /*if(tile.point_count + tile.spot_count > max_light_per_tile) {
@@ -104,16 +109,21 @@ float3 compute_lighting(SurfaceInfo surface,
         const AreaLightInfo area = karis_area_light(surface, light, world_pos, view_dir);
         float att = attenuation(area.orig_light_dist * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
 
-        if(att > 0.0 && light.shadow_map_index < 0xFFFFFFFF) {
+        if(!(att > 0.0) || !(dot(surface.normal, area.light_dir) > 0.0)) {
+            continue;
+        }
+
+        if(light.shadow_map_index < 0xFFFFFFFF) {
             const uint face = point_shadow_face(world_pos - light.position);
             const ShadowMapInfo info = shadow_infos[light.shadow_map_index + face];
             att *= compute_shadow_pcf(in_shadows, info, world_pos);
+            if(att <= 0.0) {
+                continue;
+            }
         }
 
-        if(att > 0.0) {
-            const float3 radiance = light.color * att;
-            irradiance += radiance * eval_brdf(alpha_corrected_surface(surface, area), view_dir, area.light_dir);
-        }
+        const float3 radiance = light.color * att;
+        irradiance += radiance * eval_brdf(alpha_corrected_surface(surface, area), view_dir, area.light_dir);
     }
 
     // -------------------------------- SPOTS --------------------------------
@@ -126,20 +136,27 @@ float3 compute_lighting(SurfaceInfo surface,
         const AreaLightInfo area = karis_area_light(surface, light, world_pos, view_dir);
         float att = attenuation(area.orig_light_dist * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
 
-        if(att > 0.0) {
-            const float spot_cos_alpha = max(0.0, -dot(area.light_dir, light.forward));
-            att *= spot_attenuation(spot_cos_alpha, light.att_scale_offset);
+        if(!(att > 0.0) || !(dot(surface.normal, area.light_dir) > 0.0)) {
+            continue;
         }
 
-        if(att > 0.0 && light.shadow_map_index < 0xFFFFFFFF) {
+        const float spot_cos_alpha = max(0.0, -dot(area.light_dir, light.forward));
+        att *= spot_attenuation(spot_cos_alpha, light.att_scale_offset);
+
+        if(att <= 0.0) {
+            continue;
+        }
+
+        if(light.shadow_map_index < 0xFFFFFFFF) {
             const ShadowMapInfo info = shadow_infos[light.shadow_map_index];
             att *= compute_shadow_pcf(in_shadows, info, world_pos);
+            if(att <= 0.0) {
+                continue;
+            }
         }
 
-        if(att > 0.0) {
-            const float3 radiance = light.color * att;
-            irradiance += radiance * eval_brdf(alpha_corrected_surface(surface, area), view_dir, area.light_dir);
-        }
+        const float3 radiance = light.color * att;
+        irradiance += radiance * eval_brdf(alpha_corrected_surface(surface, area), view_dir, area.light_dir);
     }
 
     return irradiance;
