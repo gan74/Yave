@@ -22,7 +22,7 @@ struct HashKey {
     }
 
     static float float_lod_level(float view_dist, float lod_dist) {
-        return log2(1.0 + (view_dist / lod_dist)) - log2(1.0);
+        return log2(1.0 + (view_dist / lod_dist));
     }
 
     static uint lod_level(float view_dist, float lod_dist) {
