@@ -25,6 +25,8 @@ static const float young_cell_samples = 512.0;
 static const float old_cell_samples = young_cell_samples * 2.0;
 static const float need_fixed_point = 256.0;
 
+static const uint max_cell_age = 16;
+
 
 [[vk::binding(0)]]
 RWTexture2D out_image;
@@ -181,7 +183,7 @@ void main() {
     hash_table[pixel_count_index(h)] = 0;
     hash_table[roulette_index(h)] = 0;
 
-    if(reset_hash > 0 || hash_table[timestamp_index(h)] == (frame_id - 4)) {
+    if(reset_hash > 0 || hash_table[timestamp_index(h)] == (frame_id - max_cell_age)) {
         evict_bucket_unsynchronized(hash_table, h, reset_hash > 0);
         sum_table[h].radiance = float3(0.0);
         sum_table[h].weight = 0.0;
@@ -206,7 +208,7 @@ void main() {
 [shader("compute")]
 [numthreads(8, 8)]
 void main() {
-    const uint2 coord = semantics.global_id.xy;
+    const uint2 coord = semantics.global_id.xy * 2 + (uint2(frame_id, frame_id >> 1) & 0x01);
     const uint2 size = image_size(in_depth);
 
     if(any(coord >= size)) {

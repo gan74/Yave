@@ -50,6 +50,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     const u32 dynamic_ray_budget = settings.ray_budget - static_ray_budget;
 
     const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
+    const math::Vec2ui update_size = (size + 1) / 2;
 
     const SceneView& scene_view = gbuffer.scene_pass.scene_view;
     const TLAS& tlas = scene_view.scene()->tlas();
@@ -174,7 +175,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGITrimProgram], math::Vec2ui(hash_size, 1), desc_sets);
         recorder.barriers(barriers);
-        recorder.dispatch_threads(device_resources()[DeviceResources::RTGIUpdateProgram], size, desc_sets);
+        recorder.dispatch_threads(device_resources()[DeviceResources::RTGIUpdateProgram], update_size, desc_sets);
         recorder.barriers(barriers);
         recorder.dispatch_threads(device_resources()[DeviceResources::RTGITraceProgram], math::Vec2ui(max_updates, 1), desc_sets);
         recorder.barriers(barriers);
