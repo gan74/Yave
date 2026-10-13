@@ -80,11 +80,11 @@ void comp_main() {
     ));
 
 #ifdef GI
-    const float3 irradiance = eval_ibl(RTGIProbe(in_envmap, in_gi_or_ao[coord].rgb), brdf_lut, view_dir, surface) * ibl_intensity;
+    const float3 irradiance = eval_ibl(RTGIProbe(in_envmap, in_gi_or_ao[coord].rgb), brdf_lut, view_dir, surface);
 #endif
 
 #ifdef AO
-    const float3 irradiance = eval_ibl(IBLProbe(in_envmap), brdf_lut, view_dir, surface) * ibl_intensity * in_gi_or_ao[coord].r;
+    const float3 irradiance = eval_ibl(IBLProbe(in_envmap), brdf_lut, view_dir, surface, in_gi_or_ao[coord].r) * ibl_intensity;
 #endif
 
     out_color[coord] += float4(irradiance, 1.0);

@@ -86,7 +86,7 @@ cbuffer Params {
     float static_ray_budget;
     float dynamic_ray_budget;
     uint gather_samples;
-    uint padding_0;
+    float ibl_intensity;
 };
 
 
@@ -342,18 +342,19 @@ void main() {
                 radiance += material.emissive;
 #endif
 
-                radiance += material.albedo * in_envmap.SampleLevel(hit_normal, 999.0).rgb;
+                float3 irradiance_over_pi = in_envmap.SampleLevel(hit_normal, 999.0).rgb * ibl_intensity;
                 for(uint k = 0; k != light_count; ++k) {
                     const DirectionalLight light = lights[k];
                     const float n_l = dot(light.direction, hit_normal);
                     if(n_l > 0.0) {
                         if(light.cast_shadow == 0 || !trace_hit(tlas, hit.position, light.direction, tmin, tmax)) {
-                            radiance += (material.albedo * light.color * n_l);
+                            irradiance_over_pi += light.color * (n_l * constants.inv_pi);
                         }
                     }
                 }
+                radiance += material.albedo * irradiance_over_pi;
             } else {
-                radiance += in_envmap.SampleLevel(trace_dir, 0.0).rgb;
+                radiance += in_envmap.SampleLevel(trace_dir, 0.0).rgb * ibl_intensity;
             }
         }
 
@@ -372,7 +373,7 @@ void main() {
 
     if(is_valid) {
         RTGICell cell = sum_table[index];
-        cell.radiance += acc * constants.inv_pi;
+        cell.radiance += acc;
         cell.weight += float(ray_count);
         sum_table[index] = cell;
     }

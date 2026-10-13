@@ -19,7 +19,7 @@ struct IBLProbe : GISource {
 
     __init(SamplerCube p) {
         probe = p;
-        last_mip = image_mips(p);
+        last_mip = image_mips(p) - 1;
     }
 
     float3 diffuse(float3 normal) {
@@ -190,21 +190,24 @@ float2 integrate_brdf(float n_v, float roughness) {
     return float2(a, b) / sample_count;
 }
 
-float3 eval_ibl<T: GISource>(T probe, Sampler2D<float2> brdf_lut, float3 v, SurfaceInfo info) {
+// https://seblagarde.wordpress.com/wp-content/uploads/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf (listing 26)
+float specular_occlusion(float n_v, float ao, float alpha) {
+    return saturate(pow(n_v + ao, exp2(-16.0 * alpha - 1.0)) - 1.0 + ao);
+}
+
+float3 eval_ibl<T: GISource>(T probe, Sampler2D<float2> brdf_lut, float3 v, SurfaceInfo info, float ao = 1.0) {
     const float3 n = info.normal;
     const float3 r = reflect(-v, n);
 
     const float n_v = max(0.0, dot(n, v));
 
-    const float3 f = f_schlick_roughness(n_v, info.f0(), info.perceptual_roughness);
-
-    const float3 k_s = f;
+    const float3 k_s = f_schlick_roughness(n_v, info.f0(), info.perceptual_roughness);
     const float3 k_d = (1.0 - k_s) * (1.0 - info.metallic);
 
-    const float3 diffuse = k_d * probe.diffuse(n) * info.albedo;
+    const float3 diffuse = k_d * probe.diffuse(n) * info.albedo * ao;
 
     const float2 brdf = brdf_lut.SampleLevel(float2(n_v, info.perceptual_roughness), 0.0).xy;
-    const float3 specular = probe.specular(r, info.perceptual_roughness) * (k_s * brdf.x + brdf.y);
+    const float3 specular = probe.specular(r, info.perceptual_roughness) * (info.f0() * brdf.x + brdf.y) * specular_occlusion(n_v, ao, sqr(info.perceptual_roughness));
 
     return diffuse + specular;
 }

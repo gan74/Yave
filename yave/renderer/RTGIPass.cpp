@@ -56,7 +56,8 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     const TLAS& tlas = scene_view.scene()->tlas();
 
     const SceneVisibility& visibility = *gbuffer.scene_pass.visibility.visible;
-    const IBLProbe* ibl_probe = visibility.sky_light ? visibility.sky_light->component.probe().get() : nullptr;
+    const auto [ibl_probe, ibl_intensity, display_sky] = visibility.ibl_probe();
+    unused(display_sky);
     const u32 gi_light_count = u32(std::count_if(visibility.directional_lights.begin(), visibility.directional_lights.end(), [](const auto& l) { return l->component.cast_gi(); }));
 
 
@@ -100,7 +101,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         float static_ray_budget;
         float dynamic_ray_budget;
         u32 gather_samples;
-        u32 padding_0;
+        float ibl_intensity;
     } params {
         hash_size,
         u32(framegraph.frame_id()),
@@ -120,7 +121,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
         std::max(1024.0f, float(static_ray_budget)),
         std::max(1024.0f, float(dynamic_ray_budget)),
         std::max(1u, settings.gather_samples),
-        0u
+        ibl_intensity
     };
 
     const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());
@@ -134,7 +135,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.scene_pass.camera);
-    builder.add_external_input(ibl_probe ? *ibl_probe : *device_resources().empty_probe());
+    builder.add_external_input(*ibl_probe);
     builder.add_external_input(Descriptor(material_allocator().material_buffer()));
     builder.add_storage_input(directional_buffer);
     builder.add_descriptor_binding(Descriptor(update_indices));
