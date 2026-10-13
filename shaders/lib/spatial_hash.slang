@@ -33,16 +33,15 @@ struct HashKey {
         const float cell_size = base_cell_size * exp2(float(lod));
         const int3 p_i = int3(floor(world_pos / cell_size + pos_jitter));
         const int3 n_i = int3(floor(normal * 3.0 + norm_jitter));
+        const uint3 n_u = uint3(n_i + 4) & 0x7;
+        const uint packed_normal_lod = n_u.x | (n_u.y << 3) | (n_u.z << 6) | (lod << 9);
 
         HashKey k;
         {
-            k.append(n_i.z);
-            k.append(n_i.y);
-            k.append(n_i.x);
+            k.append(packed_normal_lod);
             k.append(p_i.z);
             k.append(p_i.y);
             k.append(p_i.x);
-            k.append(lod);
         }
         return k;
     }
