@@ -99,8 +99,8 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
         float static_ray_budget;
         float dynamic_ray_budget;
+        u32 gather_samples;
         u32 padding_0;
-        u32 padding_1;
     } params {
         hash_size,
         u32(framegraph.frame_id()),
@@ -119,7 +119,8 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
 
         std::max(1024.0f, float(static_ray_budget)),
         std::max(1024.0f, float(dynamic_ray_budget)),
-        0u, 0u
+        std::max(1u, settings.gather_samples),
+        0u
     };
 
     const auto directional_buffer = builder.declare_typed_buffer<shader::DirectionalLight>(visibility.directional_lights.size());

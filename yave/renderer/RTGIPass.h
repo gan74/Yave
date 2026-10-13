@@ -33,6 +33,8 @@ struct RTGISettings {
     u32 min_cell_rays = 1;
     u32 max_cell_rays = 1024;
 
+    u32 gather_samples = 6;
+
     u32 hash_size = 22;
 
     float lod_dist = 5.0f;
@@ -41,7 +43,6 @@ struct RTGISettings {
     float pos_jitter = 1.0f;
     float norm_jitter = 0.5f;
     float lod_jitter = 0.5f;
-
 };
 
 struct RTGIPass {

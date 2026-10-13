@@ -18,7 +18,6 @@
 // #define EMISSIVE
 
 static const uint extra_lods = 1;
-static const uint apply_sample_count = 8;
 static const float emissive_scale = 1.0;
 
 static const float young_cell_samples = 512.0;
@@ -86,8 +85,8 @@ cbuffer Params {
 
     float static_ray_budget;
     float dynamic_ray_budget;
+    uint gather_samples;
     uint padding_0;
-    uint padding_1;
 };
 
 
@@ -428,7 +427,7 @@ void main() {
 
     float total_weight = 0.0;
     for(uint k = 0; k <= extra_lods; ++k) {
-        for(uint i = 0; i != apply_sample_count; ++i) {
+        for(uint i = 0; i != gather_samples; ++i) {
             const float3 pos_jitter =  jitter_position(normal, rng) * pos_jitter_strength;
             const float3 norm_jitter = rng.next_unit() * norm_jitter_strength;
             const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level + k, pos_jitter, norm_jitter);

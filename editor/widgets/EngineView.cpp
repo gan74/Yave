@@ -620,6 +620,14 @@ void EngineView::draw_settings_menu() {
         ImGui::Separator();
 
         {
+            int gather_samples = int(settings.gather_samples);
+            ImGui::SliderInt("Gather samples", &gather_samples, 1, 16);
+            settings.gather_samples = u32(gather_samples);
+        }
+
+        ImGui::Separator();
+
+        {
             int ray_min = int(settings.min_cell_rays);
             int ray_max = int(settings.max_cell_rays);
             ImGui::SliderInt("Min rays per cell", &ray_min, 1, 64);
