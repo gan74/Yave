@@ -98,7 +98,8 @@ u32 CmdTimestampPool::begin_zone(core::String name) {
     {
         zone.name = std::move(name);
         zone.cpu_nanos = _chrono.elapsed().to_nanos();
-        zone.start_query = alloc_query(PipelineStage::BeginOfPipe);
+        // EndOfPipe waits for previous work to complete, otherwise zones also include the tail of the previous pass
+        zone.start_query = alloc_query(PipelineStage::EndOfPipe);
     }
 
     return index;
