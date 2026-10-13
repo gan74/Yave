@@ -61,7 +61,7 @@ void main() {
     const uint h = semantics.global_index;
 
     if(reset_hash > 0 || hash_table[timestamp_index(h)] == (frame_id - 4)) {
-        hash_table[h] = 0;
+        evict_bucket_unsynchronized(hash_table, h, reset_hash > 0);
         hash_table[payload_index(h)] = 0;
     } else {
         const uint payload = hash_table[payload_index(h)];

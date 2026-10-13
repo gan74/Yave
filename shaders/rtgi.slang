@@ -183,7 +183,7 @@ void main() {
     hash_table[roulette_index(h)] = 0;
 
     if(reset_hash > 0 || hash_table[timestamp_index(h)] == (frame_id - 4)) {
-        hash_table[h] = 0;
+        evict_bucket_unsynchronized(hash_table, h, reset_hash > 0);
         sum_table[h].radiance = float3(0.0);
         sum_table[h].weight = 0.0;
     } else {

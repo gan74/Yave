@@ -5,7 +5,6 @@
 #include "hash.slang"
 
 
-static const uint max_probe_len = 8;
 
 struct HashKey {
     uint prim;
@@ -70,27 +69,56 @@ bool operator!=(HashKey a, HashKey b) {
 }
 
 
+
+
+
+static const uint max_probe_len = 8;
+static const uint hash_empty = 0;
+static const uint hash_tombstone = 1;
+
+uint bucket_check(HashKey key) {
+    return max(hash_tombstone + 1, key.sec);
+}
+
+void evict_bucket_unsynchronized(RWStructuredBuffer<uint> hash_table, uint index, bool reset) {
+    hash_table[index] = (reset || hash_table[index] == hash_empty) ? hash_empty : hash_tombstone;
+}
+
 uint find_update_bucket_index(RWStructuredBuffer<uint> hash_table, HashKey key, uint hash_size, out bool inserted) {
-    const uint check = max(1, key.sec);
+    const uint check = bucket_check(key);
     const uint hash_mask = hash_size - 1;
 
+    inserted = false;
+
+    uint free_index = constants.max_uint;
+    uint free_value = hash_empty;
     for(uint i = 0; i != max_probe_len; ++i) {
         const uint index = (key.prim + i) & hash_mask;
-
-        uint prev = 0;
-        InterlockedCompareExchange(hash_table[index], 0, check, prev);
-
-        inserted = (prev == 0);
-        if(prev == 0 || prev == check) {
+        const uint prev = hash_table[index];
+        if(prev == check) {
             return index;
+        }
+        if(prev <= hash_tombstone && free_index == constants.max_uint) {
+            free_index = index;
+            free_value = prev;
+        }
+        if(prev == hash_empty) {
+            break;
         }
     }
 
-    return constants.max_uint;
+    if(free_index == constants.max_uint) {
+        return constants.max_uint;
+    }
+
+    uint prev = 0;
+    InterlockedCompareExchange(hash_table[free_index], free_value, check, prev);
+    inserted = (prev == free_value);
+    return (inserted || prev == check) ? free_index : constants.max_uint;
 }
 
 uint find_bucket_index(RWStructuredBuffer<uint> hash_table, HashKey key, uint hash_size) {
-    const uint check = max(1, key.sec);
+    const uint check = bucket_check(key);
     const uint hash_mask = hash_size - 1;
 
     for(uint i = 0; i != max_probe_len; ++i) {
@@ -100,6 +128,9 @@ uint find_bucket_index(RWStructuredBuffer<uint> hash_table, HashKey key, uint ha
 
         if(prev == check) {
             return index;
+        }
+        if(prev == hash_empty) {
+            break;
         }
     }
 
