@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
 
-#include "BilateralPass.h"
+#include "BilateralUpsamplePass.h"
 
 #include <yave/framegraph/FrameGraph.h>
 #include <yave/framegraph/FrameGraphPass.h>
@@ -32,44 +32,37 @@ SOFTWARE.
 
 namespace yave {
 
-static FrameGraphImageId bilateral(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in, bool horizontal, const BilateralSettings& settings) {
-    const auto weights = math::compute_gaussian_weights<float, 64>(settings.sigma);
+BilateralUpsamplePass BilateralUpsamplePass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in, const BilateralUpsampleSettings& settings) {
+    const math::Vec2ui size = framegraph.image_size(gbuffer.depth);
 
-    const math::Vec2ui orig_size = framegraph.image_size(in);
-    const math::Vec2ui target_size = framegraph.image_size(gbuffer.depth);
-    const math::Vec2ui size(horizontal ? target_size.x() : orig_size.x(), horizontal ? orig_size.y() : target_size.y());
-    const ImageFormat format = framegraph.image_format(in);
+    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("Bilateral upsample pass");
 
-    FrameGraphComputePassBuilder builder = framegraph.add_compute_pass(horizontal ? "Bilateral horizontal pass" : "Bilateral vertical pass");
+    const auto upsampled = builder.declare_image(framegraph.image_format(in), size);
 
-    const auto filtered = builder.declare_image(format, size);
-
-    struct Params {
+    const struct Params {
+        float spatial_sigma;
         float depth_phi;
         float normal_phi;
-        float padding[2];
+        float padding;
     } params {
+        settings.spatial_sigma,
         settings.depth_phi,
         settings.normal_phi,
-        {}
+        0.0f
     };
 
-    builder.add_uniform_input(in, SamplerType::LinearClamp);
+    builder.add_uniform_input(in, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.depth, SamplerType::PointClamp);
     builder.add_uniform_input(gbuffer.normal, SamplerType::PointClamp);
-    builder.add_storage_output(filtered);
-    builder.add_inline_input(weights);
+    builder.add_uniform_input(gbuffer.scene_pass.camera);
+    builder.add_storage_output(upsampled);
     builder.add_inline_input(params);
     builder.set_render_func([=](CmdBufferRecorder& recorder, const FrameGraphPass* self) {
-        recorder.dispatch_threads(device_resources()[horizontal ? DeviceResources::BilateralHorizontalProgram : DeviceResources::BilateralVerticalProgram], size, self->descriptor_set());
+        recorder.dispatch_threads(device_resources()[DeviceResources::BilateralUpsampleProgram], size, self->descriptor_set());
     });
 
-    return filtered;
-}
-
-BilateralPass BilateralPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in, const BilateralSettings& settings) {
-    BilateralPass pass;
-    pass.filtered = bilateral(framegraph, gbuffer, bilateral(framegraph, gbuffer, in, false, settings), true, settings);
+    BilateralUpsamplePass pass;
+    pass.upsampled = upsampled;
     return pass;
 }
 

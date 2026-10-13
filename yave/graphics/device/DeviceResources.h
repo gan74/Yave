@@ -66,8 +66,7 @@ class DeviceResources final : NonMovable {
             TAAResolveProgram,
             UpdateTransformsProgram,
             FilterAOProgram,
-            BilateralVerticalProgram,
-            BilateralHorizontalProgram,
+            BilateralUpsampleProgram,
             PickingProgram,
 
             AtmosphereSingleProgram,

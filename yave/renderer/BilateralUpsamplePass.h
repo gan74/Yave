@@ -19,26 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 **********************************/
-#ifndef YAVE_RENDERER_BILATERALPASS_H
-#define YAVE_RENDERER_BILATERALPASS_H
+#ifndef YAVE_RENDERER_BILATERALUPSAMPLEPASS_H
+#define YAVE_RENDERER_BILATERALUPSAMPLEPASS_H
 
 #include "GBufferPass.h"
 
 namespace yave {
 
-struct BilateralSettings {
-    float sigma = 8.0f;
-    float depth_phi = 1.0f;
-    float normal_phi = 32.0f;
+struct BilateralUpsampleSettings {
+    float spatial_sigma = 1.5f;
+    float depth_phi = 0.05f;
+    float normal_phi = 16.0f;
 };
 
-struct BilateralPass {
-    FrameGraphImageId filtered;
+struct BilateralUpsamplePass {
+    FrameGraphImageId upsampled;
 
-    static BilateralPass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in, const BilateralSettings& settings = {});
+    static BilateralUpsamplePass create(FrameGraph& framegraph, const GBufferPass& gbuffer, FrameGraphImageId in, const BilateralUpsampleSettings& settings = {});
 };
 
 }
 
-#endif // YAVE_RENDERER_BILATERALPASS_H
+#endif // YAVE_RENDERER_BILATERALUPSAMPLEPASS_H
 

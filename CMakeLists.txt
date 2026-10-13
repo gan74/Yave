@@ -207,8 +207,7 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "denoise.slang" "")
     add_slang_shader(${SHADER_TARGET} "picking.slang" "")
 
-    add_slang_shader(${SHADER_TARGET} "bilateral.slang" "")
-    add_slang_shader(${SHADER_TARGET} "bilateral.slang" "HORIZONTAL")
+    add_slang_shader(${SHADER_TARGET} "bilateral_upsample.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "rtao.slang" "UPDATE")
     add_slang_shader(${SHADER_TARGET} "rtao.slang" "APPLY")
