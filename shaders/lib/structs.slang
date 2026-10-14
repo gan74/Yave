@@ -227,6 +227,11 @@ struct AtmosphereParams {
 struct RTGICell {
     float3 radiance;
     float weight;
+
+    float fast_lum;
+    float fast_lum_sq;
+    float fast_weight;
+    uint last_change_frame;
 };
 
 #endif

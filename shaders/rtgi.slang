@@ -12,8 +12,10 @@
 #define APPLY
 #endif
 
+#define DEBUG_STATS
 // #define DEBUG_LOD
 // #define DEBUG_RAYS
+// #define DEBUG_CHANGES
 
 // #define EMISSIVE
 
@@ -23,6 +25,10 @@ static const float emissive_scale = 1.0;
 static const float young_cell_samples = 512.0;
 static const float old_cell_samples = young_cell_samples * 2.0;
 static const float need_fixed_point = 256.0;
+
+static const float fast_cell_samples = 32.0;
+static const float change_sigmas = 4.0;
+static const float change_tolerance = 0.05;
 
 static const uint max_cell_age = 16;
 
@@ -158,6 +164,44 @@ void push_update(uint index) {
     }
 }
 
+RTGICell accumulate_cell(RTGICell cell, float4 acc, uint ray_count) {
+    cell.fast_lum += luminance(acc.rgb);
+    cell.fast_lum_sq += acc.a;
+    cell.fast_weight += float(ray_count);
+
+    if(cell.fast_weight > fast_cell_samples) {
+        const float norm_factor = fast_cell_samples / cell.fast_weight;
+        cell.fast_lum *= norm_factor;
+        cell.fast_lum_sq *= norm_factor;
+        cell.fast_weight = fast_cell_samples;
+    }
+
+    if(cell.weight > cell.fast_weight) {
+        const float slow_mean = luminance(cell.radiance) / cell.weight;
+        const float fast_mean = cell.fast_lum / cell.fast_weight;
+        const float fast_variance = max(0.0, cell.fast_lum_sq / cell.fast_weight - fast_mean * fast_mean);
+        const float rel_tolerance = change_tolerance * max(fast_mean, slow_mean);
+        const float tolerance = change_sigmas * change_sigmas * fast_variance / cell.fast_weight + rel_tolerance * rel_tolerance;
+        const float diff = fast_mean - slow_mean;
+        if(diff * diff > tolerance) {
+            cell.radiance *= cell.fast_weight / cell.weight;
+            cell.weight = cell.fast_weight;
+            cell.last_change_frame = frame_id;
+        }
+    }
+
+    cell.radiance += acc.rgb;
+    cell.weight += float(ray_count);
+
+    if(cell.weight > 2.0 * old_cell_samples) {
+        const float norm_factor = old_cell_samples / cell.weight;
+        cell.radiance *= norm_factor;
+        cell.weight = old_cell_samples;
+    }
+
+    return cell;
+}
+
 
 
 
@@ -186,8 +230,7 @@ void main() {
 
     if(reset_hash > 0 || hash_table[timestamp_index(h)] == (frame_id - max_cell_age)) {
         evict_bucket_unsynchronized(hash_table, h, reset_hash > 0);
-        sum_table[h].radiance = float3(0.0);
-        sum_table[h].weight = 0.0;
+        sum_table[h] = RTGICell(float3(0.0), 0.0, 0.0, 0.0, 0.0, 0);
     }
 }
 #endif
@@ -299,13 +342,13 @@ void main() {
 
     // Pool all rays inside a wave.
     // Each lane will trace rays from other cells and we use a segmented sum to resolve the result
-
     const uint lane_count = WaveGetLaneCount();
     const uint lane_index = WaveGetLaneIndex();
     const uint first_ray = WavePrefixSum(ray_count);
     const uint end_ray = first_ray + ray_count;
 
-    float3 acc = float3(0.0);
+    // rgb: radiance sum, a: luminance squared sum
+    float4 acc = float4(0.0);
     for(uint batch_start = 0; batch_start < wave_ray_count; batch_start += lane_count) {
         const uint ray = batch_start + lane_index;
 
@@ -354,12 +397,14 @@ void main() {
         }
 
         {
-            const float3 prefix = WavePrefixSum(radiance);
-            const float3 total = WaveActiveSum(radiance);
+            const float lum = luminance(radiance);
+            const float4 sample = float4(radiance, lum * lum);
+            const float4 prefix = WavePrefixSum(sample);
+            const float4 total = WaveActiveSum(sample);
             const uint begin = uint(clamp(int(first_ray) - int(batch_start), 0, int(lane_count)));
             const uint end = uint(clamp(int(end_ray) - int(batch_start), 0, int(lane_count)));
-            const float3 prefix_begin = WaveReadLaneAt(prefix, min(begin, lane_count - 1));
-            const float3 prefix_end = WaveReadLaneAt(prefix, min(end, lane_count - 1));
+            const float4 prefix_begin = WaveReadLaneAt(prefix, min(begin, lane_count - 1));
+            const float4 prefix_end = WaveReadLaneAt(prefix, min(end, lane_count - 1));
             if(end > begin) {
                 acc += (end == lane_count ? total : prefix_end) - (begin == lane_count ? total : prefix_begin);
             }
@@ -367,17 +412,7 @@ void main() {
     }
 
     if(is_valid) {
-        RTGICell cell = sum_table[index];
-        cell.radiance += acc;
-        cell.weight += float(ray_count);
-        
-        if(cell.weight > 2.0 * old_cell_samples) {
-            const float norm_factor = old_cell_samples / cell.weight;
-            cell.radiance *= norm_factor;
-            cell.weight = old_cell_samples;
-        }
-
-        sum_table[index] = cell;
+        sum_table[index] = accumulate_cell(sum_table[index], acc, ray_count);
 
         hash_table[pixel_count_index(index)] = 0;
         hash_table[roulette_index(index)] = 0;
@@ -416,6 +451,7 @@ void main() {
     const float float_lod_level = HashKey.float_lod_level(view_dist, lod_dist) + rng.next_unorm() * lod_jitter_strength;
     const uint lod_level = uint(float_lod_level);
 
+#ifdef DEBUG_STATS
     {
         DebugPrinter dbg = DebugPrinter(coord, uint2(16, 16));
         dbg.puts(CHAR_U, CHAR_P, CHAR_D, CHAR_A, CHAR_T, CHAR_E, CHAR_S, CHAR_COLON, CHAR_SPACE);
@@ -428,6 +464,7 @@ void main() {
             return;
         }
     }
+#endif
 
     float3 acc = float3(0.0);
     float total_weight = 0.0;
@@ -477,6 +514,16 @@ void main() {
         const float rays = index == constants.max_uint ? 0.0 : float(hash_table[roulette_index(index)]);
         const float t = saturate(rays / float(max_cell_rays));
         out_image[coord] = float4(heat_spectrum(sqrt(t)), 1.0);
+    }
+#endif
+
+#ifdef DEBUG_CHANGES
+    {
+        const uint index = find_bucket_index(hash_table, HashKey.make_key(world_pos, normal, base_cell_size, lod_level), hash_size);
+        const uint age = (index == constants.max_uint) ? constants.max_uint : frame_id - sum_table[index].last_change_frame;
+        const float t = (age < 32) ? (1.0 - age / 32.0) : 0.0;
+        const float3 gi = max(0.0, acc / max(1.0, total_weight));
+        out_image[coord] = float4(lerp(gi * 0.25, float3(1.0, 0.0, 0.0), t), 1.0);
     }
 #endif
 }
