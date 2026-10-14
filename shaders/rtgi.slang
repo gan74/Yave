@@ -12,7 +12,7 @@
 #define APPLY
 #endif
 
-#define DEBUG_STATS
+// #define DEBUG_STATS
 // #define DEBUG_LOD
 // #define DEBUG_RAYS
 // #define DEBUG_CHANGES
