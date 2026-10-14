@@ -33,7 +33,7 @@ struct RTGISettings {
     u32 min_cell_rays = 1;
     u32 max_cell_rays = 1024;
 
-    u32 gather_samples = 6;
+    u32 gather_samples = 4;
 
     u32 hash_size = 22;
 

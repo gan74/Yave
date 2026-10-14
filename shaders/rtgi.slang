@@ -425,30 +425,38 @@ void main() {
     }
 
     float3 acc = float3(0.0);
-
     float total_weight = 0.0;
-    for(uint k = 0; k <= extra_lods; ++k) {
-        for(uint i = 0; i != gather_samples; ++i) {
-            const float3 pos_jitter =  jitter_position(normal, rng) * pos_jitter_strength;
-            const float3 norm_jitter = rng.next_unit() * norm_jitter_strength;
-            const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level + k, pos_jitter, norm_jitter);
-            const uint index = find_bucket_index(hash_table, key, hash_size);
-            if(index == constants.max_uint) {
-                continue;
-            }
-            const RTGICell cell = sum_table[index];
-            if(cell.weight < 1.0) {
-                continue;
-            }
 
-            total_weight += cell.weight;
-            acc += cell.radiance;
+    {
+        for(uint k = 0; k <= extra_lods; ++k) {
+            for(uint i = 0; i != gather_samples; ++i) {
+                const float3 pos_jitter = jitter_position(normal, rng) * pos_jitter_strength;
+                const float3 norm_jitter = rng.next_unit() * norm_jitter_strength;
+                const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level + k, pos_jitter, norm_jitter);
+                const uint index = find_bucket_index(hash_table, key, hash_size);
+                if(index != constants.max_uint) {
+                    const RTGICell cell = sum_table[index];
+                    if(cell.weight > 0.0) {
+                        total_weight += cell.weight;
+                        acc += cell.radiance;
+                    }
+                }
+            }
+        }
+
+        if(total_weight < 1.0) {
+            const uint index = find_bucket_index(hash_table, HashKey.make_key(world_pos, normal, base_cell_size, lod_level), hash_size);
+            if(index != constants.max_uint) {
+                const RTGICell cell = sum_table[index];
+                if(cell.weight > 0.0) {
+                    total_weight += cell.weight;
+                    acc += cell.radiance;
+                }
+            }
         }
     }
-
-    total_weight = max(1.0, total_weight);
-
-    out_image[coord] = float4(max(0.0, acc / total_weight), 1.0);
+    
+    out_image[coord] = float4(max(0.0, acc / max(1.0, total_weight)), 1.0);
 
 #ifdef DEBUG_LOD
     {
