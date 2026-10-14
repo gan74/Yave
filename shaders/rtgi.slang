@@ -17,7 +17,7 @@
 
 // #define EMISSIVE
 
-static const uint extra_lods = 1;
+static const uint extra_lods = 0;
 static const float emissive_scale = 1.0;
 
 static const float young_cell_samples = 512.0;
