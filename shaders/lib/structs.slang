@@ -229,9 +229,10 @@ struct RTGICell {
     float weight;
 
     float fast_lum;
-    float fast_lum_sq;
-    float fast_weight;
-    uint last_change_frame;
+    float frame_lum;
+    float frame_lum_sq;
+    uint packed_frame_counts;
+
 };
 
 #endif

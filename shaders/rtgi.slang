@@ -27,7 +27,9 @@ static const float old_cell_samples = young_cell_samples * 2.0;
 static const float need_fixed_point = 256.0;
 
 static const float fast_cell_samples = 32.0;
-static const float change_sigmas = 4.0;
+static const float max_fast_frames = 32.0;
+static const float long_cell_frames = 128.0;
+static const float change_sigmas = 3.0;
 static const float change_tolerance = 0.05;
 
 static const uint max_cell_age = 16;
@@ -164,35 +166,68 @@ void push_update(uint index) {
     }
 }
 
-RTGICell accumulate_cell(RTGICell cell, float4 acc, uint ray_count) {
-    cell.fast_lum += luminance(acc.rgb);
-    cell.fast_lum_sq += acc.a;
-    cell.fast_weight += float(ray_count);
 
-    if(cell.fast_weight > fast_cell_samples) {
-        const float norm_factor = fast_cell_samples / cell.fast_weight;
-        cell.fast_lum *= norm_factor;
-        cell.fast_lum_sq *= norm_factor;
-        cell.fast_weight = fast_cell_samples;
+
+RTGICell accumulate_cell(RTGICell cell, float3 acc, uint ray_count) {
+    const float safe_rays = float(max(1u, ray_count));
+    const float frame_mean = luminance(acc) / safe_rays;
+    const float fast_cap = clamp(round(fast_cell_samples / safe_rays), 2.0, max_fast_frames);
+
+    float frames = float(cell.packed_frame_counts & 0xFFFF);
+    float fast_frames = float(cell.packed_frame_counts >> 16) + 1.0;
+
+    cell.fast_lum += frame_mean;
+
+    // Cap the short history to about fast_cell_samples rays
+    if(fast_frames > fast_cap) {
+        cell.fast_lum *= fast_cap / fast_frames;
+        fast_frames = fast_cap;
     }
 
-    if(cell.weight > cell.fast_weight) {
-        const float slow_mean = luminance(cell.radiance) / cell.weight;
-        const float fast_mean = cell.fast_lum / cell.fast_weight;
-        const float fast_variance = max(0.0, cell.fast_lum_sq / cell.fast_weight - fast_mean * fast_mean);
-        const float rel_tolerance = change_tolerance * max(fast_mean, slow_mean);
-        const float tolerance = change_sigmas * change_sigmas * fast_variance / cell.fast_weight + rel_tolerance * rel_tolerance;
-        const float diff = fast_mean - slow_mean;
+    // When the long history has twice as many frames as the short one
+    if(frames >= 2.0 * fast_frames) {
+        const float long_mean = cell.frame_lum / frames;
+        const float fast_mean = cell.fast_lum / fast_frames;
+        const float var_frames = frames + 1.0;
+        const float var_mean = (cell.frame_lum + frame_mean) / var_frames;
+        const float frame_variance = max(0.0, (cell.frame_lum_sq + frame_mean * frame_mean) / var_frames - var_mean * var_mean);
+        const float rel_tolerance = change_tolerance * max(fast_mean, long_mean);
+        const float tolerance = change_sigmas * change_sigmas * frame_variance / fast_frames + rel_tolerance * rel_tolerance;
+        const float diff = fast_mean - long_mean;
+
+        // Things have changed: short mean is more than change_sigmas std from long
         if(diff * diff > tolerance) {
-            cell.radiance *= cell.fast_weight / cell.weight;
-            cell.weight = cell.fast_weight;
-            cell.last_change_frame = frame_id;
+            const float fast_rays = fast_frames * float(ray_count);
+            if(cell.weight > fast_rays) {
+                cell.radiance *= fast_rays / cell.weight;
+                cell.weight = fast_rays;
+            }
+
+            const float norm_factor = (fast_frames - 1.0) / frames;
+            cell.frame_lum *= norm_factor;
+            cell.frame_lum_sq *= norm_factor;
+            frames = fast_frames - 1.0;
         }
     }
 
-    cell.radiance += acc.rgb;
+    cell.frame_lum += frame_mean;
+    cell.frame_lum_sq += frame_mean * frame_mean;
+    frames += 1.0;
+
+    // Cap the long frame history to long_cell_frames frames
+    if(frames > long_cell_frames) {
+        const float norm_factor = long_cell_frames / (long_cell_frames + 1.0);
+        cell.frame_lum *= norm_factor;
+        cell.frame_lum_sq *= norm_factor;
+        frames = long_cell_frames;
+    }
+
+    cell.packed_frame_counts = uint(frames) | (uint(fast_frames) << 16);
+
+    cell.radiance += acc;
     cell.weight += float(ray_count);
 
+    // Cap the radiance history
     if(cell.weight > 2.0 * old_cell_samples) {
         const float norm_factor = old_cell_samples / cell.weight;
         cell.radiance *= norm_factor;
@@ -347,8 +382,7 @@ void main() {
     const uint first_ray = WavePrefixSum(ray_count);
     const uint end_ray = first_ray + ray_count;
 
-    // rgb: radiance sum, a: luminance squared sum
-    float4 acc = float4(0.0);
+    float3 acc = float3(0.0);
     for(uint batch_start = 0; batch_start < wave_ray_count; batch_start += lane_count) {
         const uint ray = batch_start + lane_index;
 
@@ -397,14 +431,12 @@ void main() {
         }
 
         {
-            const float lum = luminance(radiance);
-            const float4 sample = float4(radiance, lum * lum);
-            const float4 prefix = WavePrefixSum(sample);
-            const float4 total = WaveActiveSum(sample);
+            const float3 prefix = WavePrefixSum(radiance);
+            const float3 total = WaveActiveSum(radiance);
             const uint begin = uint(clamp(int(first_ray) - int(batch_start), 0, int(lane_count)));
             const uint end = uint(clamp(int(end_ray) - int(batch_start), 0, int(lane_count)));
-            const float4 prefix_begin = WaveReadLaneAt(prefix, min(begin, lane_count - 1));
-            const float4 prefix_end = WaveReadLaneAt(prefix, min(end, lane_count - 1));
+            const float3 prefix_begin = WaveReadLaneAt(prefix, min(begin, lane_count - 1));
+            const float3 prefix_end = WaveReadLaneAt(prefix, min(end, lane_count - 1));
             if(end > begin) {
                 acc += (end == lane_count ? total : prefix_end) - (begin == lane_count ? total : prefix_begin);
             }
@@ -498,20 +530,21 @@ void main() {
         }
     }
     
-    out_image[coord] = float4(max(0.0, acc / max(1.0, total_weight)), 1.0);
+    const float3 gi = max(0.0, acc / max(1.0, total_weight));
+    out_image[coord] = float4(gi, 1.0);
+
+
 
 #ifdef DEBUG_LOD
     {
         out_image[coord] = float4(frac(float_lod_level).xxx, 1.0);
-        // out_image[coord] = float4(lerp(identifying_color(lod_level), identifying_color(lod_level + 1), frac(float_lod_level)) * 0.33, 1.0);
     }
 #endif
 
 #ifdef DEBUG_RAYS
     {
-        const HashKey key = HashKey.make_key(world_pos, normal, base_cell_size, lod_level);
-        const uint index = find_bucket_index(hash_table, key, hash_size);
-        const float rays = index == constants.max_uint ? 0.0 : float(hash_table[roulette_index(index)]);
+        const uint index = find_bucket_index(hash_table, HashKey.make_key(world_pos, normal, base_cell_size, lod_level), hash_size);
+        const float rays = (index == constants.max_uint) ? 0.0 : float(hash_table[roulette_index(index)]);
         const float t = saturate(rays / float(max_cell_rays));
         out_image[coord] = float4(heat_spectrum(sqrt(t)), 1.0);
     }
@@ -520,9 +553,7 @@ void main() {
 #ifdef DEBUG_CHANGES
     {
         const uint index = find_bucket_index(hash_table, HashKey.make_key(world_pos, normal, base_cell_size, lod_level), hash_size);
-        const uint age = (index == constants.max_uint) ? constants.max_uint : frame_id - sum_table[index].last_change_frame;
-        const float t = (age < 32) ? (1.0 - age / 32.0) : 0.0;
-        const float3 gi = max(0.0, acc / max(1.0, total_weight));
+        const float t = (index == constants.max_uint) ? 0.0 : saturate(1.0 - sum_table[index].weight / young_cell_samples);
         out_image[coord] = float4(lerp(gi * 0.25, float3(1.0, 0.0, 0.0), t), 1.0);
     }
 #endif
