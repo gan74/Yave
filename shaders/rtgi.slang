@@ -115,15 +115,15 @@ RTGIMaterial eval_material(uint instance_id) {
 }
 
 uint timestamp_index(uint h) {
-    return hash_size + h;
+    return (hash_size + h * 3) + 0;
 }
 
 uint pixel_count_index(uint h) {
-    return hash_size * 2 + h;
+    return (hash_size + h * 3) + 1;
 }
 
 uint roulette_index(uint h) {
-    return hash_size * 3 + h;
+    return (hash_size + h * 3) + 2;
 }
 
 float cell_need(uint index) {
@@ -179,20 +179,15 @@ void main() {
         update_count[2] = 0;
     }
 
-    hash_table[pixel_count_index(h)] = 0;
-    hash_table[roulette_index(h)] = 0;
+    if(reset_hash > 0) {
+        hash_table[pixel_count_index(h)] = 0;
+        hash_table[roulette_index(h)] = 0;
+    }
 
     if(reset_hash > 0 || hash_table[timestamp_index(h)] == (frame_id - max_cell_age)) {
         evict_bucket_unsynchronized(hash_table, h, reset_hash > 0);
         sum_table[h].radiance = float3(0.0);
         sum_table[h].weight = 0.0;
-    } else {
-        const float weight = sum_table[h].weight;
-        if(weight > 2.0 * old_cell_samples) {
-            const float norm_factor = old_cell_samples / weight;
-            sum_table[h].radiance *= norm_factor;
-            sum_table[h].weight = old_cell_samples;
-        }
     }
 }
 #endif
@@ -302,7 +297,7 @@ void main() {
     }
 #endif
 
-    // Pool all ray inside a wave.
+    // Pool all rays inside a wave.
     // Each lane will trace rays from other cells and we use a segmented sum to resolve the result
 
     const uint lane_count = WaveGetLaneCount();
@@ -375,7 +370,17 @@ void main() {
         RTGICell cell = sum_table[index];
         cell.radiance += acc;
         cell.weight += float(ray_count);
+        
+        if(cell.weight > 2.0 * old_cell_samples) {
+            const float norm_factor = old_cell_samples / cell.weight;
+            cell.radiance *= norm_factor;
+            cell.weight = old_cell_samples;
+        }
+
         sum_table[index] = cell;
+
+        hash_table[pixel_count_index(index)] = 0;
+        hash_table[roulette_index(index)] = 0;
     }
 }
 #endif
