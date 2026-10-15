@@ -265,6 +265,10 @@ i32 FrameGraphPassBuilderBase::next_descriptor_set_index() const {
 
 template<typename T>
 void set_stage(const FrameGraphPass* pass, T& info, PipelineStage stage) {
+    if(stage == PipelineStage::None) {
+        return;
+    }
+
     if(info.stage != PipelineStage::None) {
         Y_TODO(This should be either one write or many reads)
         y_fatal("Resource can only be used once per pass (used twice by \"{}\", previous stage was {})", pass->name(), usize(info.stage));
