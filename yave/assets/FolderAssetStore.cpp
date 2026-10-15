@@ -143,8 +143,8 @@ FileSystemModel::Result<bool> FolderAssetStore::FolderFileSystemModel::exists(st
         return core::Ok(true);
     }
 
-    const bool has_delim = !path.empty() && is_delimiter(path.back());
-    const std::string_view no_delim(path.data(), path.size() - has_delim);
+    const bool has_delim = is_delimiter(path.back());
+    const std::string_view no_delim = strict_path(path);
 
     const auto lock = std::unique_lock(_parent->_lock);
     return core::Ok(_parent->_folders.find(no_delim) != _parent->_folders.end() || (!has_delim && _parent->_assets.find(no_delim) != _parent->_assets.end()));
@@ -771,10 +771,12 @@ AssetStore::Result<> FolderAssetStore::search_references(AssetId id, const std::
 AssetId FolderAssetStore::generate_id() {
     const auto lock = std::unique_lock(_lock);
 
+    rebuild_id_map();
+
     AssetId id;
     do {
         id = make_random_id();
-    } while(_ids && _ids->contains(id));
+    } while(_ids->contains(id));
     return id;
 }
 
