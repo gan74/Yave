@@ -72,8 +72,11 @@ static VkAccessFlags vk_dst_access_flags(PipelineStage dst) {
         case PipelineStage::HostBit:
             return VK_ACCESS_HOST_READ_BIT;
 
-        /*case PipelineStage::VertexInputBit:
-            return VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;*/
+        case PipelineStage::VertexInputBit:
+            return VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT;
+
+        case PipelineStage::IndirectBit:
+            return VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
 
         case PipelineStage::BeginOfPipe:
         case PipelineStage::EndOfPipe:
@@ -188,7 +191,6 @@ static VkImageMemoryBarrier create_barrier(VkImage image, ImageFormat format, us
 static VkBufferMemoryBarrier create_barrier(VkBuffer buffer, usize size, usize offset, PipelineStage src, PipelineStage dst) {
     VkBufferMemoryBarrier barrier = vk_struct();
     {
-        Y_TODO(uniform buffers need to use VK_ACCESS_UNIFORM_READ_BIT)
         barrier.srcAccessMask = vk_src_access_flags(src);
         barrier.dstAccessMask = vk_dst_access_flags(dst);
         barrier.buffer = buffer;

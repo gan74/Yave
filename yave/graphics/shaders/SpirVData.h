@@ -42,7 +42,6 @@ class SpirVData {
 
         core::Span<u32> data() const;
 
-        Y_TODO(what is this?)
         static SpirVData deserialized(io2::Reader& reader);
 
     private:

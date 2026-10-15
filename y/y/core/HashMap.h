@@ -818,7 +818,9 @@ class FlatHashMap : Hasher, Equal {
 
         template<typename It>
         inline void insert(It beg, It en) {
-            Y_TODO(Reserve if possible)
+            if constexpr(std::sized_sentinel_for<It, It>) {
+                set_min_capacity(_size + usize(en - beg));
+            }
             for(; beg != en; ++beg) {
                 insert(*beg);
             }
