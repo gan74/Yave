@@ -385,6 +385,7 @@ void CmdBufferRecorderBase::copy(const ImageBase& src,  const ImageBase& dst) {
 
     y_always_assert((src.usage() & ImageUsage::TransferSrcBit) == ImageUsage::TransferSrcBit, "src should have TransferSrcBit usage");
     y_always_assert((dst.usage() & ImageUsage::TransferDstBit) == ImageUsage::TransferDstBit, "dst should have TransferDstBit usage");
+    y_always_assert(src.mipmaps() == 1 && dst.mipmaps() == 1, "src should only have 1 mip");
 
     {
         const std::array image_barriers = {
@@ -435,8 +436,8 @@ void CmdBufferRecorderBase::clear(const ImageBase& dst) {
         VkImageSubresourceRange range = {};
         {
             range.aspectMask = dst.format().is_depth_format() ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
-            range.layerCount = 1;
-            range.levelCount = 1;
+            range.layerCount = VK_REMAINING_ARRAY_LAYERS;
+            range.levelCount = VK_REMAINING_MIP_LEVELS;
         }
 
         if(dst.format().is_depth_format()) {
