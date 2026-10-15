@@ -84,10 +84,15 @@ void compute_tile_infos(float2 image_size, float view_dist, bool is_oob) {
 
 // -------------------------------- CULLING --------------------------------
 
-bool is_inside(PointLight light) {
-    const float3 to_light = light.position - camera.position;
-    const float cos_alpha = max(0.0, dot(to_light, tile_dir));
+bool is_sphere_inside(float3 center, float radius, float cos_alpha) {
+    const float3 closest = camera.position + tile_dir * cos_alpha;
+    const float tile_radius = cos_alpha * tile_sin_alpha;
+    const float3 to_closest = closest - center;
+    return dot(to_closest, to_closest) <= sqr(radius + tile_radius);
+}
 
+bool is_inside(PointLight light) {
+    const float cos_alpha = max(0.0, dot(light.position - camera.position, tile_dir));
 
 #ifdef DEPTH_CULL
     if(cos_alpha + light.range < asfloat(tile_dist_bounds.x) ||
@@ -96,10 +101,7 @@ bool is_inside(PointLight light) {
     }
 #endif
 
-    const float3 closest = camera.position + tile_dir * cos_alpha;
-    const float tile_radius = cos_alpha * tile_sin_alpha;
-    const float3 to_closest = closest - light.position;
-    return dot(to_closest, to_closest) <= sqr(light.range + tile_radius);
+    return is_sphere_inside(light.position, light.range, cos_alpha);
 }
 
 bool is_inside(SpotLight light) {
@@ -112,15 +114,16 @@ bool is_inside(SpotLight light) {
     }
 #endif
 
-    // https://iquilezles.org/articles/intersectors/
-    // return iRoundedCone(camera.position, tile_dir, light.position, light.position + light.forward * light.range, tile_radius, light.sin_angle * light.range + tile_radius);
-
-    // Doesn't cull "behind" the cone
-    // We still run the bound test on the enclosing sphere, but it's not great
+    // https://iquilezles.org/articles/intersectors/ (rounded cone)
+    // Wide cones:the apex is inside the end sphere, so the rounded cone degenerates into the enclosing sphere.
+    const float cos_angle = sqrt(saturate(1.0 - sqr(light.sin_angle)));
+    if(light.sin_angle > cos_angle * 0.9) {
+        return is_sphere_inside(light.encl_sphere_center, light.encl_sphere_radius, cos_alpha);
+    }
 
     const float tile_radius = (cos_alpha + light.encl_sphere_radius) * tile_sin_alpha;
     const float3 begin = light.position;
-    const float3 end = light.position + light.forward * light.range;
+    const float3 end = light.position + light.forward * (light.range * cos_angle);
     const float begin_radius = tile_radius;
     const float end_radius = light.sin_angle * light.range + tile_radius;
     const float3 cone_vec = end - begin;
