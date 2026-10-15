@@ -90,7 +90,7 @@ static void fill_point_light_buffer(shader::PointLight* points, const SceneVisib
             light.color() * light.intensity(),
             std::max(math::epsilon<float>, light.falloff()),
 
-            light.min_radius(),
+            std::max(math::epsilon<float>, light.min_radius() * scale),
             shadow_indices[0],
             0u, 0u,
         };
@@ -134,7 +134,7 @@ static void fill_spot_light_buffer(shader::SpotLight* spots, const SceneVisibili
             std::max(math::epsilon<float>, light.falloff()),
 
             forward,
-            light.min_radius(),
+            std::max(math::epsilon<float>, light.min_radius() * scale),
 
             light.attenuation_scale_offset(),
             std::sin(light.half_angle()),

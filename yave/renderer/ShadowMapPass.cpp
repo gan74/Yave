@@ -122,7 +122,7 @@ static math::Matrix4<> flip_for_backfaces(math::Matrix4<> proj) {
 
 
 static Camera spotlight_camera(const math::Transform<>& tr, const SpotLightComponent& light) {
-    const float z_near = light.min_radius();
+    const float z_near = light.min_radius() * tr.scale().max_component();
 
     Camera camera(
         math::look_at(tr.position(), tr.position() + tr.forward(), tr.up()),
@@ -158,7 +158,7 @@ static Camera pointlight_face_camera(const math::Transform<>& tr, const PointLig
     const float half_fov = std::atan(float(size) / float(size - 4));
 
     const math::Vec3 pos = tr.position();
-    const float z_near = light.min_radius();
+    const float z_near = light.min_radius() * tr.scale().max_component();
 
     Camera camera(
         math::look_at(pos, pos + forwards[face], ups[face]),
