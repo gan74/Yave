@@ -129,8 +129,8 @@ float4 pack_gbuffer_color(float3 color, float metallic) {
 }
 
 uint pack_gbuffer_normal(float3 normal, float roughness) {
-    const uint2 packed_normal = uint2(saturate(octahedron_encode(normal)) * 0xFFF);
-    return (packed_normal.x << 20) | (packed_normal.y << 8) | uint(saturate(roughness) * 0xFF);
+    const uint2 packed_normal = uint2(round(saturate(octahedron_encode(normal)) * 0xFFF));
+    return (packed_normal.x << 20) | (packed_normal.y << 8) | uint(round(saturate(roughness) * 0xFF));
 }
 
 

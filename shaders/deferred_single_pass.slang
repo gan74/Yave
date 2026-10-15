@@ -44,6 +44,10 @@ RWTexture2D out_color;
 void comp_main() {
     const uint2 coord = semantics.global_id.xy;
     const float2 image_size = float2(image_size(out_color).xy);
+    if(any(float2(coord) >= image_size)) {
+        return;
+    }
+
     const float2 uv = (semantics.global_id.xy + 0.5) / image_size;
 
     const float depth = in_depth[coord];

@@ -48,37 +48,23 @@ groupshared uint2 tile_dist_bounds;
 // -------------------------------- TILE INFOS --------------------------------
 
 void compute_tile_culling_info(float2 image_size) {
-    const float2 corner_uv = (semantics.work_group_id.xy * semantics.work_group_size.xy) / image_size;
-    const float3 corner_unproj = unproject_ndc(float3(corner_uv * 2.0 - 1.0, 1.0), camera.curr.inv_view_proj);
+    const float2 center_uv = ((semantics.work_group_id.xy + 0.5) * semantics.work_group_size.xy) / image_size;
+    const float2 center_ndc = center_uv * 2.0 - 1.0;
+    const float3 center_dir = normalize(unproject_ndc(float3(center_ndc, 1.0), camera.curr.inv_view_proj) - camera.position);
+
+    const uint corner_index = semantics.local_index;
+    const float2 corner_sign = float2((corner_index & 0x01) != 0 ? 1.0 : -1.0, (corner_index & 0x02) != 0 ? 1.0 : -1.0);
+    const float2 half_tile_ndc = semantics.work_group_size.xy / image_size;
+    const float3 corner_unproj = unproject_ndc(float3(center_ndc + corner_sign * half_tile_ndc, 1.0), camera.curr.inv_view_proj);
     const float3 corner_dir = normalize(corner_unproj - camera.position);
 
+    const float tile_cos_alpha = WaveActiveMin(dot(center_dir, corner_dir));
 
-    const float2 center_uv = ((semantics.work_group_id.xy + 0.5) * semantics.work_group_size.xy) / image_size;
-    const float3 unproj = unproject_ndc(float3(center_uv * 2.0 - 1.0, 1.0), camera.curr.inv_view_proj);
-    tile_dir = normalize(unproj - camera.position);
-
-    const float tile_cos_alpha = dot(tile_dir, corner_dir);
-    tile_sin_alpha = sqrt(1.0 - sqr(tile_cos_alpha));
-}
-
-void compute_tile_infos(float2 image_size, float view_dist, bool is_oob) {
-    if(semantics.local_index == 0) {
-        compute_tile_culling_info(image_size);
-        tile_point_count = 0;
-        tile_spot_count = 0;
-        tile_dist_bounds =  uint2(asuint(constants.max_float), 0);
-    }
-
-    GroupMemoryBarrierWithGroupSync();
-
-    if(!is_oob) {
-        const uint ui_dist = asuint(view_dist);
-        InterlockedMin(tile_dist_bounds.x, ui_dist);
-        InterlockedMax(tile_dist_bounds.y, ui_dist);
+    if(corner_index == 0) {
+        tile_dir = center_dir;
+        tile_sin_alpha = sqrt(1.0 - sqr(tile_cos_alpha));
     }
 }
-
-
 
 
 
@@ -201,12 +187,28 @@ void comp_main() {
     const float2 image_size = float2(image_size(in_depth).xy);
     const float2 uv = (semantics.global_id.xy + 0.5) / image_size;
 
-    const float depth = in_depth[coord];
+    if(semantics.local_index < 4) {
+        compute_tile_culling_info(image_size);
+    }
 
-    const float3 world_pos = unproject(uv, depth, camera.curr.inv_view_proj);
-    const float view_dist = length(camera.position - world_pos);
+    if(semantics.local_index == 0) {
+        tile_point_count = 0;
+        tile_spot_count = 0;
+        tile_dist_bounds =  uint2(asuint(constants.max_float), 0);
+    }
 
-    compute_tile_infos(image_size, view_dist, is_depth_far(depth) || is_depth_near(depth));
+    GroupMemoryBarrierWithGroupSync();
+
+    if(all(float2(coord) < image_size)) {
+        const float depth = in_depth[coord];
+        if(!is_depth_far(depth)) {
+            const float view_dist = is_depth_near(depth) ? 0.0 : length(camera.position - unproject(uv, depth, camera.curr.inv_view_proj));
+            const uint ui_dist = asuint(view_dist);
+            InterlockedMin(tile_dist_bounds.x, ui_dist);
+            InterlockedMax(tile_dist_bounds.y, ui_dist);
+        }
+
+    }
 
     GroupMemoryBarrierWithGroupSync();
 
