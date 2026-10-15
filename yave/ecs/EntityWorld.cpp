@@ -169,7 +169,10 @@ void EntityWorld::process_deferred_changes() {
 }
 
 std::string_view EntityWorld::component_type_name(ComponentTypeIndex type_id) const {
-    return find_container(type_id)->runtime_info().clean_component_name();
+    if(const auto* container = find_container(type_id)) {
+        return container->runtime_info().clean_component_name();
+    }
+    return "Unknown component type";
 }
 
 core::Vector<const EntityGroupProvider*> EntityWorld::group_providers() {
@@ -359,11 +362,16 @@ bool EntityWorld::has_component(EntityId id, ComponentTypeIndex type) const {
 }
 
 bool EntityWorld::is_component_required(EntityId id, ComponentTypeIndex type) const {
-    return find_container(type)->is_component_required(id);
+    if(const auto* container = find_container(type)) {
+        return container->is_component_required(id);
+    }
+    return false;
 }
 
 void EntityWorld::remove_component(EntityId id, ComponentTypeIndex type) {
-    return find_container(type)->remove_later(id);
+    if(auto* container = find_container(type)) {
+        container->remove_later(id);
+    }
 }
 
 const ComponentContainerBase* EntityWorld::find_container(ComponentTypeIndex type_id) const {
