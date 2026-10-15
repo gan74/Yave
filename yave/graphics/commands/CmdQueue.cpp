@@ -234,15 +234,13 @@ TimelineFence CmdQueue::submit_internal(CmdBufferData* data, VkSemaphore wait, V
     vk_check(vkEndCommandBuffer(cmd_buffer));
 
     const TimelineFence next_fence = _queue.locked([&](auto&& queue) {
-        core::Vector<VkSemaphore> wait_semaphores;
         const TimelineFence current_fence = _timeline.current_timeline();
         const TimelineFence next_fence = _timeline.advance_timeline();
 
-        core::SmallVector<u64> wait_values;
-        wait_values.set_min_size(wait_semaphores.size(), u64(0));
-
         const VkSemaphore timeline_semaphore = _timeline.vk_semaphore();
-
+        
+        core::ScratchVector<VkSemaphore> wait_semaphores(2);
+        core::ScratchVector<u64> wait_values(2);
         {
             if(wait) {
                 wait_semaphores.push_back(wait);
