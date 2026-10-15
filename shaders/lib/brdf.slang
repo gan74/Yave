@@ -32,31 +32,31 @@ struct IBLProbe : GISource {
 };
 
 struct RTGIProbe : GISource {
-        IBLProbe ibl;
-        float3 diffuse_gi;
+    IBLProbe ibl;
+    float3 diffuse_gi;
 
-        __init(SamplerCube p, float3 d) {
-            ibl = IBLProbe(p);
-            diffuse_gi = d;
-        }
+    __init(SamplerCube p, float3 d) {
+        ibl = IBLProbe(p);
+        diffuse_gi = d;
+    }
 
-        float3 diffuse(float3 normal) {
-            return diffuse_gi;
-        }
+    float3 diffuse(float3 normal) {
+        return diffuse_gi;
+    }
 
-        float3 specular(float3 dir, float roughness) {
-            // TODO TODO TODO
-            // Giant filthy hack:
-            // Since the specular contrib from IBL doesn't incorporate any kind of occlusion,
-            // it overpowers everything that does.
-            // We set its luminance to match that of the diffuse GI to fix
-            const float3 spec = ibl.specular(dir, roughness);
-            const float ibl_diff_lum = luminance(ibl.diffuse(dir));
-            if(ibl_diff_lum < constants.epsilon) {
-                return spec;
-            }
-            return spec * (luminance(diffuse_gi) / ibl_diff_lum);
+    float3 specular(float3 dir, float roughness) {
+        // TODO TODO TODO
+        // Giant filthy hack:
+        // Since the specular contrib from IBL doesn't incorporate any kind of occlusion,
+        // it overpowers everything that does.
+        // We set its luminance to match that of the diffuse GI to fix
+        const float3 spec = ibl.specular(dir, roughness);
+        const float ibl_diff_lum = luminance(ibl.diffuse(dir));
+        if(ibl_diff_lum < constants.epsilon) {
+            return spec;
         }
+        return spec * (luminance(diffuse_gi) / ibl_diff_lum);
+    }
 };
 
 
@@ -261,6 +261,28 @@ float3 eval_brdf(SurfaceInfo info, float3 v, float3 l) {
     const float3 kd = saturate(1.0 - specular.ks);
 
     return (diffuse_contrib * kd + specular.contrib * specular.ks) * n_l;
+}
+
+float3 eval_brdf(SurfaceInfo info, AreaLightInfo area, float3 v) {
+    const float3 n = info.normal;
+
+    float3 result = float3(0.0);
+    
+    const float diffuse_n_l = dot(n, area.center_dir);
+    if(diffuse_n_l > 0.0) {
+        const float3 h = normalize(area.center_dir + v);
+        const float3 kd = saturate(1.0 - f_shlick(dot(area.center_dir, h), info.f0()));
+        result += eval_lambert_diffuse(info, v, n, area.center_dir, h) * kd * diffuse_n_l;
+    }
+
+    const float specular_n_l = dot(n, area.light_dir);
+    if(specular_n_l > 0.0) {
+        const float3 h = normalize(area.light_dir + v);
+        const SpecularContrib specular = eval_ggx_specular(alpha_corrected_surface(info, area), v, n, area.light_dir, h);
+        result += specular.contrib * specular.ks * specular_n_l;
+    }
+
+    return result;
 }
 
 

@@ -563,9 +563,14 @@ float compute_shadow_pcf(Sampler2DShadow shadow_map, ShadowMapInfo info, float3 
 
 struct AreaLightInfo {
     float3 light_dir;
+    float3 center_dir;
     float orig_light_dist;
     float light_dist;
     float sqr_alpha;
+
+    bool is_back_facing(float3 normal) {
+        return max(dot(normal, center_dir), dot(normal, light_dir)) <= 0.0;
+    }
 };
 
 // https://alextardif.com/arealights.html
@@ -578,6 +583,7 @@ AreaLightInfo karis_area_light(SurfaceInfo surface, float3 light_pos, float sour
     AreaLightInfo info;
     info.light_dir = normalize(closest_point);
     info.orig_light_dist = length(to_light);
+    info.center_dir = to_light / info.orig_light_dist;
     info.light_dist = length(closest_point);
     info.sqr_alpha = saturate(source_radius / (info.light_dist * 2.0) + surface.alpha()) * surface.alpha();
     return info;

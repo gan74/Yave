@@ -107,9 +107,12 @@ float3 compute_lighting(SurfaceInfo surface,
         const uint index = tile.indices[i];
         const PointLight light = cluster_info.point_lights[index];
         const AreaLightInfo area = karis_area_light(surface, light, world_pos, view_dir);
-        float att = attenuation(area.orig_light_dist * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
+        if(area.is_back_facing(surface.normal)) {
+            continue;
+        }
 
-        if(!(att > 0.0) || !(dot(surface.normal, area.light_dir) > 0.0)) {
+        float att = attenuation(area.orig_light_dist * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
+        if(!(att > 0.0)) {
             continue;
         }
 
@@ -123,7 +126,7 @@ float3 compute_lighting(SurfaceInfo surface,
         }
 
         const float3 radiance = light.color * att;
-        irradiance += radiance * eval_brdf(alpha_corrected_surface(surface, area), view_dir, area.light_dir);
+        irradiance += radiance * eval_brdf(surface, area, view_dir);
     }
 
     // -------------------------------- SPOTS --------------------------------
@@ -134,13 +137,16 @@ float3 compute_lighting(SurfaceInfo surface,
         const uint index = tile.indices[i];
         const SpotLight light = cluster_info.spot_lights[index];
         const AreaLightInfo area = karis_area_light(surface, light, world_pos, view_dir);
-        float att = attenuation(area.orig_light_dist * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
-
-        if(!(att > 0.0) || !(dot(surface.normal, area.light_dir) > 0.0)) {
+        if(area.is_back_facing(surface.normal)) {
             continue;
         }
 
-        const float spot_cos_alpha = max(0.0, -dot(area.light_dir, light.forward));
+        float att = attenuation(area.orig_light_dist * light.falloff, light.range * light.falloff, light.min_radius * light.falloff);
+        if(!(att > 0.0)) {
+            continue;
+        }
+
+        const float spot_cos_alpha = max(0.0, -dot(area.center_dir, light.forward));
         att *= spot_attenuation(spot_cos_alpha, light.att_scale_offset);
 
         if(att <= 0.0) {
@@ -156,7 +162,7 @@ float3 compute_lighting(SurfaceInfo surface,
         }
 
         const float3 radiance = light.color * att;
-        irradiance += radiance * eval_brdf(alpha_corrected_surface(surface, area), view_dir, area.light_dir);
+        irradiance += radiance * eval_brdf(surface, area, view_dir);
     }
 
     return irradiance;
