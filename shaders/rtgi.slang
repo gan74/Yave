@@ -95,6 +95,11 @@ cbuffer Params {
     float dynamic_ray_budget;
     uint gather_samples;
     float ibl_intensity;
+
+    float max_ray_length;
+    uint padding_0;
+    uint padding_1;
+    uint padding_2;
 };
 
 
@@ -401,7 +406,7 @@ void main() {
         float3 radiance = float3(0.0);
         if(ray < wave_ray_count) {
             const float tmin = 0.001;
-            const float tmax = 10000.0;
+            const float tmax = max_ray_length;
 
             const float3 trace_dir = cosine_sample_hemisphere(ray_normal, rng);
             const HitInfo hit = trace_inline(tlas, ray_position, trace_dir, tmin, tmax);
@@ -529,7 +534,7 @@ void main() {
             }
         }
     }
-    
+
     const float3 gi = max(0.0, acc / max(1.0, total_weight));
     out_image[coord] = float4(gi, 1.0);
 
