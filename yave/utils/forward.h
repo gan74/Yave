@@ -138,6 +138,7 @@ class ShaderProgramBase;
 class SimpleScene;
 class Skeleton;
 class SkeletonInstance;
+class SkinnedMeshComponent;
 class SkyLightComponent;
 class SpirVData;
 class SpotLightComponent;

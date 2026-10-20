@@ -71,6 +71,11 @@ struct ParsedScene : NonCopyable {
 
     struct Mesh : Asset {
         core::Vector<int> materials;
+        int skin_index = -1;
+        int skin_node_index = -1;
+    };
+
+    struct Animation : Asset {
     };
 
     struct Node : Asset {
@@ -97,6 +102,7 @@ struct ParsedScene : NonCopyable {
     core::Vector<Material> materials;
     core::Vector<Image> images;
     core::Vector<Light> lights;
+    core::Vector<Animation> animations;
 
     core::Vector<Node> nodes;
     int root_node = -1;
@@ -106,6 +112,7 @@ struct ParsedScene : NonCopyable {
     core::Result<MeshData> create_mesh(int index) const;
     core::Result<MaterialData> create_material(int index) const;
     core::Result<ImageData> create_image(int index, bool compress = false) const;
+    core::Result<yave::Animation> create_animation(int index) const;
 };
 
 

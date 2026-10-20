@@ -50,6 +50,8 @@ class MeshData {
         MeshData(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles);
         MeshData(MeshVertexStreams streams, core::Span<IndexedTriangle> triangles);
 
+        MeshData(MeshData&& mesh, core::Vector<Bone> bones, core::Vector<SkinWeights> skin);
+
         void add_sub_mesh(const MeshVertexStreams& streams, core::Span<IndexedTriangle> triangles);
         void add_sub_mesh(core::Span<FullVertex> vertices, core::Span<IndexedTriangle> triangles);
         void add_sub_mesh(core::Span<PackedVertex> vertices, core::Span<IndexedTriangle> triangles);
@@ -69,18 +71,18 @@ class MeshData {
 
         MeshTriangleData triangle_data() const;
 
-        bool has_skeleton() const;
+        bool has_skinning_data() const;
 
         bool is_empty() const;
 
-        y_reflect(MeshData, _aabb, _vertex_streams, _triangles, _sub_meshes, _skeleton)
+        y_reflect(MeshData, _aabb, _vertex_streams, _triangles, _sub_meshes, _skinning)
 
     private:
-        struct SkeletonData {
+        struct SkinningData {
             core::Vector<SkinWeights> skin;
             core::Vector<Bone> bones;
 
-            y_reflect(SkeletonData, skin, bones)
+            y_reflect(SkinningData, skin, bones)
         };
 
         AABB _aabb;
@@ -89,7 +91,7 @@ class MeshData {
         core::Vector<IndexedTriangle> _triangles;
         core::Vector<SubMesh> _sub_meshes;
 
-        std::unique_ptr<SkeletonData> _skeleton;
+        std::unique_ptr<SkinningData> _skinning;
 };
 
 }

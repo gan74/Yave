@@ -46,6 +46,26 @@ MeshData::MeshData(MeshVertexStreams streams, core::Span<IndexedTriangle> triang
     add_sub_mesh(streams, triangles);
 }
 
+MeshData::MeshData(MeshData&& mesh, core::Vector<Bone> bones, core::Vector<SkinWeights> skin) : MeshData(std::move(mesh)) {
+    y_always_assert(skin.size() == _vertex_streams.vertex_count(), "Skin weight count doesn't match vertex count");
+    y_always_assert(!bones.is_empty() && bones.size() <= Skeleton::max_bones, "Invalid bone count");
+
+#ifdef Y_DEBUG
+    for(usize i = 0; i != bones.size(); ++i) {
+        y_debug_assert(!bones[i].has_parent() || bones[i].parent < i);
+    }
+    for(const SkinWeights& w : skin) {
+        for(usize i = 0; i != SkinWeights::size; ++i) {
+            y_debug_assert(w.indices[i] < bones.size());
+        }
+    }
+#endif
+
+    _skinning = std::make_unique<SkinningData>();
+    _skinning->skin = std::move(skin);
+    _skinning->bones = std::move(bones);
+}
+
 void MeshData::add_sub_mesh(const MeshVertexStreams& streams, core::Span<IndexedTriangle> triangles) {
     add_sub_mesh(triangles, add_vertices_from_streams(streams));
 }
@@ -124,17 +144,17 @@ core::Span<MeshData::SubMesh> MeshData::sub_meshes() const {
 }
 
 core::Span<Bone> MeshData::bones() const {
-    if(!_skeleton) {
+    if(!_skinning) {
         return {};
     }
-    return _skeleton->bones;
+    return _skinning->bones;
 }
 
 core::Span<SkinWeights> MeshData::skin() const {
-    if(!_skeleton) {
+    if(!_skinning) {
         return {};
     }
-    return _skeleton->skin;
+    return _skinning->skin;
 }
 
 MeshTriangleData MeshData::triangle_data() const {
@@ -146,8 +166,8 @@ MeshTriangleData MeshData::triangle_data() const {
     };
 }
 
-bool MeshData::has_skeleton() const {
-    return bool(_skeleton);
+bool MeshData::has_skinning_data() const {
+    return !!_skinning;
 }
 
 bool MeshData::is_empty() const {

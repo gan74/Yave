@@ -37,8 +37,7 @@ class SkeletonInstance {
     public:
         SkeletonInstance() = default;
 
-        // this seems unsafe...
-        SkeletonInstance(const Skeleton* skeleton);
+        SkeletonInstance(std::shared_ptr<const Skeleton> skeleton);
 
         void animate(const AssetPtr<Animation>& anim);
 
@@ -47,7 +46,7 @@ class SkeletonInstance {
     private:
         void flush_data();
 
-        const Skeleton* _skeleton = nullptr;
+        std::shared_ptr<const Skeleton> _skeleton;
         std::unique_ptr<std::array<math::Transform<>, Skeleton::max_bones>> _bone_transforms;
 
         TypedUniformBuffer<math::Transform<>, MemoryType::CpuVisible> _bone_transform_buffer;

@@ -34,6 +34,7 @@ SOFTWARE.
 #include <y/utils/log.h>
 #include <y/utils/format.h>
 
+#include <map>
 
 // -------------- TINYGLTF --------------
 #ifdef Y_GNU
@@ -177,20 +178,6 @@ core::String supported_image_extensions() {
 
 
 
-static core::Result<usize> component_count(int type) {
-    switch(type) {
-        case TINYGLTF_TYPE_SCALAR:  return core::Ok(1_uu);
-        case TINYGLTF_TYPE_VEC2:    return core::Ok(2_uu);
-        case TINYGLTF_TYPE_VEC3:    return core::Ok(3_uu);
-        case TINYGLTF_TYPE_VEC4:    return core::Ok(4_uu);
-        case TINYGLTF_TYPE_MAT2:    return core::Ok(4_uu);
-        case TINYGLTF_TYPE_MAT3:    return core::Ok(9_uu);
-        case TINYGLTF_TYPE_MAT4:    return core::Ok(16_uu);
-        default:
-            return core::Err();
-    }
-}
-
 static math::Transform<> parse_node_transform_matrix(const tinygltf::Node& node) {
     y_debug_assert(node.matrix.size() == 16);
 
@@ -205,6 +192,28 @@ static math::Transform<> parse_node_transform_matrix(const tinygltf::Node& node)
     return mat;
 }
 
+static BoneTransform parse_bone_transform(const tinygltf::Node& node) {
+    if(node.matrix.size() == 16) {
+        const auto [position, rotation, scale] = parse_node_transform_matrix(node).decompose();
+        return BoneTransform{position, scale, rotation};
+    }
+
+    BoneTransform transform;
+    for(usize k = 0; k != node.translation.size(); ++k) {
+        transform.position[k] = float(node.translation[k]);
+    }
+
+    for(usize k = 0; k != node.scale.size(); ++k) {
+        transform.scale[k] = float(node.scale[k]);
+    }
+
+    if(node.rotation.size() == 4) {
+        transform.rotation = math::Quaternion<>(math::Vec4(float(node.rotation[0]), float(node.rotation[1]), float(node.rotation[2]), float(node.rotation[3])));
+    }
+
+    return transform;
+}
+
 static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
     if(node.matrix.size() == 16) {
         return parse_node_transform_matrix(node);
@@ -212,22 +221,7 @@ static math::Transform<> parse_node_transform(const tinygltf::Node& node) {
 
     y_debug_assert(node.matrix.empty());
 
-    math::Vec3 translation;
-    for(usize k = 0; k != node.translation.size(); ++k) {
-        translation[k] = float(node.translation[k]);
-    }
-
-    math::Vec3 scale(1.0f, 1.0f, 1.0f);
-    for(usize k = 0; k != node.scale.size(); ++k) {
-        scale[k] = float(node.scale[k]);
-    }
-
-    math::Vec4 rotation(0.0f, 0.0f, 0.0f, 1.0f);
-    for(usize k = 0; k != node.rotation.size(); ++k) {
-        rotation[k] = float(node.rotation[k]);
-    }
-
-    const math::Transform<> tr = math::Transform<>(translation, rotation, scale);
+    const math::Transform<> tr = parse_bone_transform(node).to_transform();
     y_debug_assert(math::all_finite(tr));
     y_debug_assert(tr[3][3] == 1.0f);
     return tr;
@@ -244,30 +238,85 @@ void propagate_transforms(T& nodes, int index, math::Transform<> parent) {
 }
 
 template<typename T>
-static void read_attrib(T& v, core::Span<typename T::value_type> s) {
-    std::copy_n(s.begin(), std::min(v.size(), s.size()), v.begin());
-}
-
-template<usize I>
-static void read_packed_unit_vec(math::Vec2ui& packed, core::Span<float> s) {
-    math::Vec4 v;
-    read_attrib(v, s);
-    packed[I] = pack_2_10_10_10(v.to<3>().normalized(), v.w() < 0.0f);
-}
-
-
-template<typename T, typename F>
-static void import_stream(const tinygltf::Model& model, const tinygltf::Accessor& accessor, core::MutableSpan<T> stream, F&& packer) {
-    const usize components = component_count(accessor.type).unwrap();
-    const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
-
-    const u8* begin = model.buffers[buffer.buffer].data.data() + buffer.byteOffset + accessor.byteOffset;
-    const usize stride = buffer.byteStride ? buffer.byteStride : (components * sizeof(float));
-
-    for(usize i = 0; i != stream.size(); ++i) {
-        const float* attrib_begin = reinterpret_cast<const float*>(begin + (stride * i));
-        packer(stream[i], core::Span<float>(attrib_begin, components));
+static float read_component(const u8* data, bool normalized) {
+    const float v = float(*reinterpret_cast<const T*>(data));
+    if constexpr(std::is_integral_v<T> && sizeof(T) < sizeof(u32)) {
+        if(normalized) {
+            return std::max(v / float((1 << (sizeof(T) * 8 - std::is_signed_v<T>)) - 1), -1.0f);
+        }
     }
+    return v;
+}
+
+using ComponentReader = float (*)(const u8*, bool);
+
+static ComponentReader component_reader(int component_type) {
+    switch(component_type) {
+        case TINYGLTF_COMPONENT_TYPE_BYTE:              return read_component<i8>;
+        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:     return read_component<u8>;
+        case TINYGLTF_COMPONENT_TYPE_SHORT:             return read_component<i16>;
+        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:    return read_component<u16>;
+        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:      return read_component<u32>;
+        case TINYGLTF_COMPONENT_TYPE_FLOAT:             return read_component<float>;
+        default:
+            return nullptr;
+    }
+}
+
+static core::Result<core::Vector<float>> read_accessor(const tinygltf::Model& model, int accessor_index, int expected_type) {
+    if(accessor_index < 0 || usize(accessor_index) >= model.accessors.size()) {
+        return core::Err();
+    }
+
+    const tinygltf::Accessor& accessor = model.accessors[accessor_index];
+    const ComponentReader read = component_reader(accessor.componentType);
+    if(accessor.type != expected_type || !read || accessor.sparse.isSparse) {
+        log_msg("Unsupported accessor type", Log::Error);
+        return core::Err();
+    }
+
+    const usize components = usize(tinygltf::GetNumComponentsInType(accessor.type));
+    const usize elem_size = usize(tinygltf::GetComponentSizeInBytes(accessor.componentType));
+
+    core::Vector<float> values;
+    values.set_min_size(accessor.count * components);
+
+    if(accessor.bufferView < 0) {
+        return core::Ok(std::move(values));
+    }
+
+    const tinygltf::BufferView& view = model.bufferViews[accessor.bufferView];
+    const tinygltf::Buffer& buffer = model.buffers[view.buffer];
+    const int stride = accessor.ByteStride(view);
+    const usize offset = view.byteOffset + accessor.byteOffset;
+
+    if(stride <= 0 || (accessor.count && offset + usize(stride) * (accessor.count - 1) + components * elem_size > buffer.data.size())) {
+        log_msg("Accessor is out of bounds", Log::Error);
+        return core::Err();
+    }
+
+    const u8* begin = buffer.data.data() + offset;
+    for(usize i = 0; i != accessor.count; ++i) {
+        for(usize c = 0; c != components; ++c) {
+            values[i * components + c] = read(begin + i * usize(stride) + c * elem_size, accessor.normalized);
+        }
+    }
+
+    return core::Ok(std::move(values));
+}
+
+template<typename F>
+static bool import_stream(const tinygltf::Model& model, int accessor_index, int type, F&& store) {
+    const auto values = read_accessor(model, accessor_index, type);
+    if(values.is_error()) {
+        return false;
+    }
+
+    const usize components = usize(tinygltf::GetNumComponentsInType(type));
+    for(usize i = 0; i * components != values.unwrap().size(); ++i) {
+        store(i, values.unwrap().data() + i * components);
+    }
+    return true;
 }
 
 static core::Result<MeshVertexStreams> import_vertices(const tinygltf::Model& model, const tinygltf::Primitive& primitive) {
@@ -284,29 +333,36 @@ static core::Result<MeshVertexStreams> import_vertices(const tinygltf::Model& mo
     bool has_tangents = false;
 
     MeshVertexStreams streams(size);
+    const auto positions = streams.stream<VertexStreamType::Position>();
+    const auto normal_tangents = streams.stream<VertexStreamType::NormalTangent>();
+    const auto uvs = streams.stream<VertexStreamType::Uv>();
+
     for(const auto& [name, id] : primitive.attributes) {
-        const tinygltf::Accessor accessor = model.accessors[id];
-
-        if(!accessor.count) {
-            continue;
-        }
-
-        if(accessor.sparse.isSparse || accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT || component_count(accessor.type).is_error()) {
-            log_msg("Unsupported component type", Log::Error);
-            return core::Err();
-        }
-
+        bool ok = true;
         if(name == "POSITION") {
-            import_stream(model, accessor, streams.stream<VertexStreamType::Position>(), read_attrib<math::Vec3>);
+            ok = import_stream(model, id, TINYGLTF_TYPE_VEC3, [&](usize i, const float* v) {
+                positions[i] = math::Vec3(v[0], v[1], v[2]);
+            });
         } else if(name == "NORMAL") {
-            import_stream(model, accessor, streams.stream<VertexStreamType::NormalTangent>(), read_packed_unit_vec<0>);
+            ok = import_stream(model, id, TINYGLTF_TYPE_VEC3, [&](usize i, const float* v) {
+                normal_tangents[i][0] = pack_2_10_10_10(math::Vec3(v[0], v[1], v[2]).normalized());
+            });
         } else if(name == "TANGENT") {
             has_tangents = true;
-            import_stream(model, accessor, streams.stream<VertexStreamType::NormalTangent>(), read_packed_unit_vec<1>);
+            ok = import_stream(model, id, TINYGLTF_TYPE_VEC4, [&](usize i, const float* v) {
+                normal_tangents[i][1] = pack_2_10_10_10(math::Vec3(v[0], v[1], v[2]).normalized(), v[3] < 0.0f);
+            });
         } else if(name == "TEXCOORD_0") {
-            import_stream(model, accessor, streams.stream<VertexStreamType::Uv>(), read_attrib<math::Vec2>);
-        } else {
+            ok = import_stream(model, id, TINYGLTF_TYPE_VEC2, [&](usize i, const float* v) {
+                uvs[i] = math::Vec2(v[0], v[1]);
+            });
+        } else if(!name.starts_with("JOINTS_") && !name.starts_with("WEIGHTS_")) {
             log_msg(fmt("Attribute \"{}\" is not supported", name), Log::Warning);
+        }
+
+        if(!ok) {
+            log_msg(fmt("Unable to import attribute \"{}\"", name), Log::Error);
+            return core::Err();
         }
     }
 
@@ -345,30 +401,33 @@ static core::Result<core::Vector<IndexedTriangle>> import_triangles(const tinygl
     core::Vector<IndexedTriangle> triangles;
     triangles.set_min_size(accessor.count / 3);
 
-    auto decode_indices = [&](u32 elem_size, auto convert_index) {
-        const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
-        const u8* begin = model.buffers[buffer.buffer].data.data() + buffer.byteOffset + accessor.byteOffset;
-        const usize stride = buffer.byteStride ? buffer.byteStride : elem_size;
+    const tinygltf::BufferView& buffer = model.bufferViews[accessor.bufferView];
+    const int stride = accessor.ByteStride(buffer);
+    if(stride <= 0) {
+        return core::Err();
+    }
 
+    auto decode_indices = [&](auto convert_index) {
+        const u8* begin = model.buffers[buffer.buffer].data.data() + buffer.byteOffset + accessor.byteOffset;
         for(usize i = 0; i != triangles.size() * 3; ++i) {
-            triangles[i / 3][i % 3] = convert_index(begin + (i * stride));
+            triangles[i / 3][i % 3] = convert_index(begin + (i * usize(stride)));
         }
     };
 
     switch(accessor.componentType) {
         case TINYGLTF_PARAMETER_TYPE_BYTE:
         case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE:
-            decode_indices(1, [](const u8* data) -> u32 { return *data; });
+            decode_indices([](const u8* data) -> u32 { return *data; });
         break;
 
         case TINYGLTF_PARAMETER_TYPE_SHORT:
         case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT:
-            decode_indices(2, [](const u8* data) -> u32 { return *reinterpret_cast<const u16*>(data); });
+            decode_indices([](const u8* data) -> u32 { return *reinterpret_cast<const u16*>(data); });
         break;
 
         case TINYGLTF_PARAMETER_TYPE_INT:
         case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT:
-            decode_indices(4, [](const u8* data) -> u32 { return *reinterpret_cast<const u32*>(data); });
+            decode_indices([](const u8* data) -> u32 { return *reinterpret_cast<const u32*>(data); });
         break;
 
         default:
@@ -376,6 +435,210 @@ static core::Result<core::Vector<IndexedTriangle>> import_triangles(const tinygl
     }
 
     return core::Ok(std::move(triangles));
+}
+
+
+
+struct ImportedSkeleton {
+    core::Vector<Bone> bones;
+    core::Vector<u32> joint_to_bone;
+};
+
+static void add_skeleton_bones(const ParsedScene& scene, int node_index, u32 parent, core::Span<u8> in_skeleton, core::MutableSpan<u32> node_to_bone, core::Vector<Bone>& bones) {
+    const u32 bone_index = u32(bones.size());
+    node_to_bone[node_index] = bone_index;
+    bones << Bone {
+        scene.nodes[node_index].name,
+        parent,
+        parse_bone_transform(scene.gltf->nodes[node_index]),
+    };
+
+    for(const int child : scene.gltf->nodes[node_index].children) {
+        if(in_skeleton[child]) {
+            add_skeleton_bones(scene, child, bone_index, in_skeleton, node_to_bone, bones);
+        }
+    }
+}
+
+static core::Result<ImportedSkeleton> import_skeleton(const ParsedScene& scene, int skin_index, int mesh_node_index) {
+    const tinygltf::Model& model = *scene.gltf;
+    const tinygltf::Skin& skin = model.skins[skin_index];
+    const usize node_count = model.nodes.size();
+
+    if(skin.joints.empty()) {
+        log_msg(fmt("Skin \"{}\" has no joints", skin.name), Log::Error);
+        return core::Err();
+    }
+
+    auto parent_of = [&](int index) {
+        const int parent = scene.nodes[index].parent_index;
+        return (parent >= 0 && usize(parent) < node_count) ? parent : -1;
+    };
+
+    core::Vector<u8> in_skeleton;
+    in_skeleton.set_min_size(node_count);
+    for(const int joint : skin.joints) {
+        if(joint < 0 || usize(joint) >= node_count) {
+            log_msg(fmt("Skin \"{}\" has an invalid joint", skin.name), Log::Error);
+            return core::Err();
+        }
+        for(int node = joint; node >= 0 && !in_skeleton[node]; node = parent_of(node)) {
+            in_skeleton[node] = 1;
+        }
+    }
+
+    ImportedSkeleton skeleton;
+
+    {
+        const math::Transform<> mesh_to_world = scene.nodes[mesh_node_index].transform;
+        const auto [position, rotation, scale] = math::Transform<>(mesh_to_world.inverse()).decompose();
+        skeleton.bones << Bone {
+            "__mesh_root",
+            u32(-1),
+            BoneTransform{position, scale, rotation},
+        };
+    }
+
+    core::Vector<u32> node_to_bone;
+    node_to_bone.set_min_size(node_count, u32(-1));
+    for(usize i = 0; i != node_count; ++i) {
+        if(in_skeleton[i] && parent_of(int(i)) < 0) {
+            add_skeleton_bones(scene, int(i), 0, in_skeleton, node_to_bone, skeleton.bones);
+        }
+    }
+
+    if(skeleton.bones.size() > Skeleton::max_bones) {
+        log_msg(fmt("Skin \"{}\" has too many bones ({}, max is {})", skin.name, skeleton.bones.size(), Skeleton::max_bones), Log::Error);
+        return core::Err();
+    }
+
+    for(const int joint : skin.joints) {
+        y_debug_assert(node_to_bone[joint] != u32(-1));
+        skeleton.joint_to_bone << node_to_bone[joint];
+    }
+
+    {
+        core::Vector<core::String> names;
+        for(const Bone& bone : skeleton.bones) {
+            names << bone.name;
+        }
+        std::sort(names.begin(), names.end());
+        if(std::adjacent_find(names.begin(), names.end()) != names.end()) {
+            log_msg(fmt("Skin \"{}\" has several bones with the same name, animations might not work", skin.name), Log::Warning);
+        }
+    }
+
+    if(skin.inverseBindMatrices >= 0) {
+        const auto inverse_binds = read_accessor(model, skin.inverseBindMatrices, TINYGLTF_TYPE_MAT4);
+        if(inverse_binds.is_error() || inverse_binds.unwrap().size() != skin.joints.size() * 16) {
+            log_msg(fmt("Skin \"{}\" has invalid inverse bind matrices", skin.name), Log::Error);
+            return core::Err();
+        }
+
+        core::Vector<math::Transform<>> absolute;
+        for(const Bone& bone : skeleton.bones) {
+            absolute << (bone.has_parent() ? absolute[bone.parent] * bone.transform() : bone.transform());
+        }
+
+        bool matches = true;
+        for(usize j = 0; j != skin.joints.size() && matches; ++j) {
+            const math::Transform<> expected = absolute[skeleton.joint_to_bone[j]].inverse();
+            const float* inverse_bind = inverse_binds.unwrap().data() + j * 16;
+            matches = std::equal(expected.begin(), expected.end(), inverse_bind, [](float a, float b) {
+                return std::abs(a - b) <= 1.0e-3f * std::max(1.0f, std::abs(b));
+            });
+        }
+
+        if(!matches) {
+            log_msg(fmt("Skin \"{}\" bind pose doesn't match the rest pose, skinning will be wrong", skin.name), Log::Warning);
+        }
+    }
+
+    return core::Ok(std::move(skeleton));
+}
+
+static core::Result<void> import_skin_weights(const tinygltf::Model& model, const tinygltf::Primitive& primitive, usize vertex_count, core::Span<u32> joint_to_bone, core::Vector<SkinWeights>& skin) {
+    struct Influences {
+        std::array<float, SkinWeights::size> weights = {};
+        std::array<u32, SkinWeights::size> bones = {};
+
+        void add(u32 bone, float weight) {
+            usize i = SkinWeights::size;
+            while(i && weights[i - 1] < weight) {
+                --i;
+            }
+            if(i == SkinWeights::size) {
+                return;
+            }
+            for(usize k = SkinWeights::size - 1; k > i; --k) {
+                weights[k] = weights[k - 1];
+                bones[k] = bones[k - 1];
+            }
+            weights[i] = weight;
+            bones[i] = bone;
+        }
+    };
+
+    core::Vector<Influences> influences;
+    influences.set_min_size(vertex_count);
+
+    for(usize set = 0;; ++set) {
+        const auto joints_it = primitive.attributes.find(fmt_to_owned("JOINTS_{}", set).data());
+        const auto weights_it = primitive.attributes.find(fmt_to_owned("WEIGHTS_{}", set).data());
+        if(joints_it == primitive.attributes.end() || weights_it == primitive.attributes.end()) {
+            break;
+        }
+
+        const auto joints = read_accessor(model, joints_it->second, TINYGLTF_TYPE_VEC4);
+        const auto weights = read_accessor(model, weights_it->second, TINYGLTF_TYPE_VEC4);
+        if(joints.is_error() || weights.is_error() || joints.unwrap().size() != vertex_count * 4 || weights.unwrap().size() != vertex_count * 4) {
+            log_msg("Invalid skin attributes", Log::Error);
+            return core::Err();
+        }
+
+        for(usize v = 0; v != vertex_count; ++v) {
+            for(usize k = 0; k != 4; ++k) {
+                const float weight = weights.unwrap()[v * 4 + k];
+                if(weight <= 0.0f) {
+                    continue;
+                }
+
+                const usize joint = usize(joints.unwrap()[v * 4 + k]);
+                if(joint >= joint_to_bone.size()) {
+                    log_msg("Invalid skin joint index", Log::Error);
+                    return core::Err();
+                }
+
+                influences[v].add(joint_to_bone[joint], weight);
+            }
+        }
+    }
+
+    skin.set_min_capacity(skin.size() + vertex_count);
+    for(const Influences& inf : influences) {
+        SkinWeights w = {};
+
+        float total = 0.0f;
+        for(const float weight : inf.weights) {
+            total += weight;
+        }
+
+        if(total <= 0.0f) {
+            w.weights[0] = u16(0xFFFF);
+        } else {
+            u32 sum = 0;
+            for(usize k = 0; k != SkinWeights::size; ++k) {
+                w.indices[k] = u16(inf.bones[k]);
+                w.weights[k] = u16(std::round(inf.weights[k] / total * float(0xFFFF)));
+                sum += w.weights[k];
+            }
+            w.weights[0] = u16(i32(w.weights[0]) + (i32(0xFFFF) - i32(sum)));
+        }
+
+        skin << w;
+    }
+
+    return core::Ok();
 }
 
 
@@ -498,6 +761,31 @@ core::Result<ParsedScene> parse_scene(const core::String& filename) {
         }
     }
 
+    for(usize i = 0; i != scene.gltf->nodes.size(); ++i) {
+        const tinygltf::Node& gltf_node = scene.gltf->nodes[i];
+        if(gltf_node.mesh < 0 || gltf_node.skin < 0) {
+            continue;
+        }
+
+        auto& mesh = scene.meshes[gltf_node.mesh];
+        if(mesh.skin_index < 0) {
+            mesh.skin_index = gltf_node.skin;
+            mesh.skin_node_index = int(i);
+        } else if(mesh.skin_index != gltf_node.skin) {
+            log_msg(fmt("Mesh \"{}\" is used with several skins, only the first one will be imported", mesh.name), Log::Warning);
+        }
+    }
+
+    for(const tinygltf::Animation& gltf_animation : scene.gltf->animations) {
+        auto& animation = scene.animations.emplace_back();
+
+        animation.name = gltf_animation.name;
+
+        if(animation.name.is_empty()) {
+            animation.name = fmt_to_owned("animation_{}", scene.animations.size());
+        }
+    }
+
 
     for(const tinygltf::Light& gltf_light : scene.gltf->lights) {
         auto& light = scene.lights.emplace_back();
@@ -570,6 +858,15 @@ core::Result<MeshData> ParsedScene::create_mesh(int index) const {
 
     const tinygltf::Mesh& mesh = gltf->meshes[index];
 
+    core::Result<ImportedSkeleton> skeleton = core::Err();
+    core::Vector<SkinWeights> skin;
+    if(meshes[index].skin_index >= 0) {
+        skeleton = import_skeleton(*this, meshes[index].skin_index, meshes[index].skin_node_index);
+        if(skeleton.is_error()) {
+            log_msg(fmt("Unable to import skeleton of \"{}\", mesh will be imported as static", meshes[index].name), Log::Error);
+        }
+    }
+
     MeshData mesh_data;
     for(usize i = 0; i != mesh.primitives.size(); ++i) {
         const tinygltf::Primitive& primitive = mesh.primitives[i];
@@ -588,7 +885,18 @@ core::Result<MeshData> ParsedScene::create_mesh(int index) const {
             return core::Err();
         }
 
+        if(skeleton.is_ok()) {
+            if(import_skin_weights(*gltf, primitive, vertex_streams.unwrap().vertex_count(), skeleton.unwrap().joint_to_bone, skin).is_error()) {
+                log_msg(fmt("Unable to import skin of \"{}\", mesh will be imported as static", meshes[index].name), Log::Error);
+                skeleton = core::Err();
+            }
+        }
+
         mesh_data.add_sub_mesh(std::move(vertex_streams.unwrap()), std::move(triangles.unwrap()));
+    }
+
+    if(skeleton.is_ok()) {
+        mesh_data = MeshData(std::move(mesh_data), std::move(skeleton.unwrap().bones), std::move(skin));
     }
 
     return core::Ok(std::move(mesh_data));
@@ -729,6 +1037,159 @@ core::Result<ImageData> ParsedScene::create_image(int index, bool compress) cons
     const tinygltf::BufferView& view = gltf->bufferViews[image.bufferView];
     const tinygltf::Buffer& buffer = gltf->buffers[view.buffer];
     return import_image(core::Span<u8>(buffer.data.data() + view.byteOffset, view.byteLength), flags);
+}
+
+core::Result<yave::Animation> ParsedScene::create_animation(int index) const {
+    if(index < 0) {
+        return core::Err();
+    }
+
+    const tinygltf::Model& model = *gltf;
+    const tinygltf::Animation& animation = model.animations[index];
+
+    enum Path : usize {
+        Translation,
+        Rotation,
+        Scale,
+
+        PathCount
+    };
+
+    struct Curve {
+        core::Vector<float> times;
+        core::Vector<math::Vec4> values;
+        bool step = false;
+    };
+
+    std::map<int, std::array<Curve, PathCount>> node_curves;
+    float duration = 0.0f;
+
+    for(const tinygltf::AnimationChannel& channel : animation.channels) {
+        if(channel.target_node < 0 || usize(channel.target_node) >= model.nodes.size() || channel.sampler < 0 || usize(channel.sampler) >= animation.samplers.size()) {
+            continue;
+        }
+
+        Path path = PathCount;
+        int value_type = TINYGLTF_TYPE_VEC3;
+        if(channel.target_path == "translation") {
+            path = Translation;
+        } else if(channel.target_path == "rotation") {
+            path = Rotation;
+            value_type = TINYGLTF_TYPE_VEC4;
+        } else if(channel.target_path == "scale") {
+            path = Scale;
+        } else {
+            log_msg(fmt("Animation channel \"{}\" is not supported", channel.target_path), Log::Warning);
+            continue;
+        }
+
+        const tinygltf::AnimationSampler& sampler = animation.samplers[channel.sampler];
+        const bool cubic = sampler.interpolation == "CUBICSPLINE";
+        if(cubic) {
+            log_msg("Cubic spline animation interpolation is not supported, using linear", Log::Warning);
+        }
+
+        auto times = read_accessor(model, sampler.input, TINYGLTF_TYPE_SCALAR);
+        const auto values = read_accessor(model, sampler.output, value_type);
+        const usize components = usize(tinygltf::GetNumComponentsInType(value_type));
+        const usize values_per_key = cubic ? 3 : 1;
+
+        if(times.is_error() || values.is_error() || times.unwrap().is_empty() || values.unwrap().size() != times.unwrap().size() * components * values_per_key) {
+            log_msg(fmt("Invalid animation sampler in \"{}\"", animations[index].name), Log::Error);
+            return core::Err();
+        }
+
+        Curve& curve = node_curves[channel.target_node][path];
+        curve.step = sampler.interpolation == "STEP";
+        curve.times = std::move(times.unwrap());
+        for(usize k = 0; k != curve.times.size(); ++k) {
+            const float* value = values.unwrap().data() + (k * values_per_key + (cubic ? 1 : 0)) * components;
+            math::Vec4 v;
+            for(usize c = 0; c != components; ++c) {
+                v[c] = value[c];
+            }
+            curve.values << v;
+        }
+
+        duration = std::max(duration, curve.times.last());
+    }
+
+    if(node_curves.empty() || duration <= 0.0f) {
+        log_msg(fmt("Animation \"{}\" is empty", animations[index].name), Log::Error);
+        return core::Err();
+    }
+
+    struct Interpolant {
+        math::Vec4 a;
+        math::Vec4 b;
+        float factor = 0.0f;
+
+        math::Vec3 lerp() const {
+            return (a * (1.0f - factor) + b * factor).to<3>();
+        }
+    };
+
+    auto sample = [](const Curve& curve, float time) {
+        const auto it = std::upper_bound(curve.times.begin(), curve.times.end(), time);
+        if(it == curve.times.begin()) {
+            return Interpolant{curve.values.first(), curve.values.first()};
+        }
+        if(it == curve.times.end()) {
+            return Interpolant{curve.values.last(), curve.values.last()};
+        }
+
+        const usize next = usize(it - curve.times.begin());
+        const usize prev = next - 1;
+        if(curve.step) {
+            return Interpolant{curve.values[prev], curve.values[prev]};
+        }
+
+        const float factor = (time - curve.times[prev]) / (curve.times[next] - curve.times[prev]);
+        return Interpolant{curve.values[prev], curve.values[next], factor};
+    };
+
+    core::Vector<AnimationChannel> channels;
+    for(const auto& [node_index, curves] : node_curves) {
+        core::Vector<float> times;
+        times << 0.0f;
+        times << duration;
+        for(const Curve& curve : curves) {
+            for(const float t : curve.times) {
+                times << std::clamp(t, 0.0f, duration);
+                if(curve.step) {
+                    times << std::clamp(std::nextafter(t, 0.0f), 0.0f, duration);
+                }
+            }
+        }
+        std::sort(times.begin(), times.end());
+        times.shrink_to(std::unique(times.begin(), times.end()) - times.begin());
+
+        const BoneTransform rest = parse_bone_transform(model.nodes[node_index]);
+
+        core::Vector<AnimationChannel::BoneKey> keys;
+        for(const float t : times) {
+            BoneTransform transform = rest;
+
+            if(!curves[Translation].times.is_empty()) {
+                transform.position = sample(curves[Translation], t).lerp();
+            }
+
+            if(!curves[Rotation].times.is_empty()) {
+                const Interpolant i = sample(curves[Rotation], t);
+                transform.rotation = math::Quaternion<>(i.a).slerp(math::Quaternion<>(i.b), i.factor);
+            }
+
+            if(!curves[Scale].times.is_empty()) {
+                transform.scale = sample(curves[Scale], t).lerp();
+            }
+
+            keys << AnimationChannel::BoneKey{t, transform};
+        }
+
+        channels << AnimationChannel(nodes[node_index].name, std::move(keys));
+    }
+
+    return core::Ok(yave::Animation(duration, std::move(channels)));
 }
 
 core::String supported_scene_extensions() {

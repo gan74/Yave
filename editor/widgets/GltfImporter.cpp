@@ -238,6 +238,15 @@ static void import_all(concurrent::JobSystem& job_system, import::ParsedScene& s
         }, material_jobs));
     }
 
+    for(usize i = 0; i != scene.animations.size(); ++i) {
+        job_system.schedule([i, settings, &scene] {
+            auto& animation = scene.animations[i];
+            if(const auto animation_data = scene.create_animation(int(i))) {
+                animation.set_id(import_asset(animation.name, animation_data.unwrap(), AssetType::Animation, settings.import_path, {}));
+            }
+        });
+    }
+
     job_system.schedule([settings, &scene] {
         import_node(scene, scene.root_node, settings);
     }, mesh_jobs);

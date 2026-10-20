@@ -89,6 +89,9 @@ inline FullVertex unpack_vertex(const PackedVertex& v) {
 using IndexedTriangle = std::array<u32, 3>;
 
 static_assert(sizeof(IndexedTriangle) == 3 * sizeof(u32));
+static_assert(std::is_trivially_copyable_v<IndexedTriangle>, "IndexedTriangle should be trivially copyable");
+
+
 
 struct SkinWeights {
     static constexpr usize size = 4;
@@ -97,13 +100,8 @@ struct SkinWeights {
     math::Vec<size, u16> weights;
 };
 
-struct SkinnedVertex {
-    PackedVertex vertex;
-    SkinWeights weights;
-};
+static_assert(sizeof(SkinWeights) == 4 * sizeof(u32));
 
-static_assert(std::is_trivially_copyable_v<SkinnedVertex>, "SkinnedVertex should be trivially copyable");
-static_assert(std::is_trivially_copyable_v<IndexedTriangle>, "IndexedTriangle should be trivially copyable");
 
 }
 

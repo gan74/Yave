@@ -24,8 +24,8 @@ SOFTWARE.
 
 namespace yave {
 
-SkeletonInstance::SkeletonInstance(const Skeleton* skeleton) :
-        _skeleton(skeleton),
+SkeletonInstance::SkeletonInstance(std::shared_ptr<const Skeleton> skeleton) :
+        _skeleton(std::move(skeleton)),
         _bone_transforms(new std::array<math::Transform<>, Skeleton::max_bones>()),
         _bone_transform_buffer(Skeleton::max_bones) {
 
@@ -38,7 +38,7 @@ void SkeletonInstance::animate(const AssetPtr<Animation>& anim) {
 }
 
 void SkeletonInstance::update() {
-    if(!_animation) {
+    if(!_animation || !_skeleton) {
         return;
     }
 

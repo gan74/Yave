@@ -37,6 +37,8 @@ namespace yave {
 
 class StaticMesh : NonCopyable {
     public:
+        using SkinWeightsBuffer = TypedBuffer<SkinWeights, BufferUsage::StorageBit | BufferUsage::TransferDstBit, MemoryType::DeviceLocal>;
+
         StaticMesh() = default;
         StaticMesh(const MeshData& mesh_data);
 
@@ -56,6 +58,9 @@ class StaticMesh : NonCopyable {
 
         const MeshTriangleData& triangle_data() const;
 
+        const std::shared_ptr<const Skeleton>& skeleton() const;
+        const SkinWeightsBuffer& skin_weights() const;
+
         float radius() const;
         const AABB& aabb() const;
 
@@ -67,6 +72,9 @@ class StaticMesh : NonCopyable {
         AABB _aabb;
 
         MeshTriangleData _triangle_data;
+
+        std::shared_ptr<const Skeleton> _skeleton;
+        SkinWeightsBuffer _skin_weights;
 };
 
 YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(StaticMesh, MeshData, AssetType::Mesh);

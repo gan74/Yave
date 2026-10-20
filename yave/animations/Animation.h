@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "AnimationChannel.h"
 
+#include <yave/assets/AssetTraits.h>
+
 #include <optional>
 
 namespace yave {
@@ -47,6 +49,8 @@ class Animation {
         core::Vector<AnimationChannel> _channels;
 
 };
+
+YAVE_DECLARE_GENERIC_ASSET_TRAITS(Animation, AssetType::Animation);
 
 }
 

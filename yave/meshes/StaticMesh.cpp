@@ -22,7 +22,9 @@ SOFTWARE.
 #include "StaticMesh.h"
 #include "MeshData.h"
 
+#include <yave/graphics/graphics.h>
 #include <yave/graphics/device/MeshAllocator.h>
+#include <yave/graphics/commands/CmdBufferRecorder.h>
 #include <yave/graphics/raytracing/AccelerationStructure.h>
 
 namespace yave {
@@ -47,6 +49,23 @@ StaticMesh::StaticMesh(const MeshData& mesh_data) :
         std::transform(_sub_meshes.begin(), _sub_meshes.end(), _blases.get(), [this](const MeshDrawCommand& draw_cmd) {
             return BLAS(_draw_data, draw_cmd);
         });
+    }
+
+    if(mesh_data.has_skinning_data()) {
+        _skeleton = std::make_shared<Skeleton>(mesh_data.bones());
+
+        const core::Span<SkinWeights> skin = mesh_data.skin();
+        _skin_weights = SkinWeightsBuffer(skin.size());
+
+        TypedStagingBuffer<SkinWeights> staging(skin.size());
+        {
+            auto mapping = staging.map(MappingAccess::WriteOnly);
+            std::copy(skin.begin(), skin.end(), mapping.begin());
+        }
+
+        TransferCmdBufferRecorder recorder = create_disposable_transfer_cmd_buffer();
+        recorder.unbarriered_copy(staging, _skin_weights);
+        recorder.submit_async();
     }
 }
 
@@ -81,6 +100,14 @@ const MeshTriangleData& StaticMesh::triangle_data() const {
 
 core::Span<BLAS> StaticMesh::blases() const {
     return core::Span<BLAS>(_blases.get(), _sub_meshes.size());
+}
+
+const std::shared_ptr<const Skeleton>& StaticMesh::skeleton() const {
+    return _skeleton;
+}
+
+const StaticMesh::SkinWeightsBuffer& StaticMesh::skin_weights() const {
+    return _skin_weights;
 }
 
 float StaticMesh::radius() const {
