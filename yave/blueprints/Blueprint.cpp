@@ -376,6 +376,33 @@ core::FixedArray<bool> Blueprint::downstream_nodes(const BlueprintNode* node) co
 }
 
 void Blueprint::post_deserialize() {
+    for(usize i = 0; i != _nodes.size(); ++i) {
+        if(_nodes[i]) {
+            continue;
+        }
+
+        for(usize k = 0; k != _links.size(); ++k) {
+            BlueprintLink& link = _links[k];
+            if(link.src_node == i || link.dst_node == i) {
+                _links.erase_unordered(_links.begin() + k);
+                --k;
+            } else {
+                link.src_node -= link.src_node > i;
+                link.dst_node -= link.dst_node > i;
+            }
+        }
+
+        _nodes.erase(_nodes.begin() + i);
+        --i;
+    }
+
+    for(usize k = 0; k != _links.size(); ++k) {
+        if(!is_link_in_range(_nodes, _links[k])) {
+            _links.erase_unordered(_links.begin() + k);
+            --k;
+        }
+    }
+
     resolve_generic_types();
 }
 
