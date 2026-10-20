@@ -120,6 +120,7 @@ class FileSystemView : public Widget {
         void update_nodes(std::string_view path, core::Vector<TreeNode>& nodes);
         void expand_node_path(std::string_view path, core::Vector<TreeNode>& nodes);
         void draw_node(TreeNode &node);
+        void accept_path_drop(const core::String& drop_path);
 
         const Entry* entry(usize index) const;
 

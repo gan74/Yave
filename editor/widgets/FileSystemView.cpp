@@ -248,25 +248,11 @@ void FileSystemView::on_gui() {
         update();
     }
 
-    auto make_drop_target = [&](const core::String& drop_path) {
-        if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_path_id)) {
-            const std::string_view original_name = static_cast<const char*>(payload->Data);
-            const FileSystemModel* fs = filesystem();
-            const core::String target_name = fs->join(drop_path, fs->filename(original_name));
-            if(!fs->rename(original_name, target_name)) {
-                log_msg(fmt("Unable to move \"{}\" to \"{}\"", original_name, drop_path), Log::Error);
-            } else {
-                log_msg(fmt("Move \"{}\" to \"{}\"", original_name, drop_path));
-            }
-            refresh_all();
-        }
-    };
-
     auto post_draw_entry = [&](usize index) {
         const Entry& entry = _entries[index];
         if(_allow_modify) {
             if(entry.type == EntryType::Directory && ImGui::BeginDragDropTarget()) {
-                make_drop_target(entry.full_name);
+                accept_path_drop(entry.full_name);
                 ImGui::EndDragDropTarget();
             } else if(ImGui::GetItemID() && ImGui::BeginDragDropSource()) {
                 ImGui::SetDragDropPayload(imgui::drag_drop_path_id, entry.full_name.data(), entry.full_name.size() + 1);
@@ -297,6 +283,11 @@ void FileSystemView::on_gui() {
 
             if(!ImGui::IsItemToggledOpen() && ImGui::IsItemActivated()) {
                 set_path(root_path());
+            }
+
+            if(_allow_modify && ImGui::BeginDragDropTarget()) {
+                accept_path_drop(root_path());
+                ImGui::EndDragDropTarget();
             }
 
             if(root_open) {
@@ -386,7 +377,7 @@ void FileSystemView::on_gui() {
                     }
 
                     if(ImGui::BeginDragDropTarget()) {
-                        make_drop_target(parent_path.unwrap());
+                        accept_path_drop(parent_path.unwrap());
                         ImGui::EndDragDropTarget();
                     }
                 }
@@ -421,6 +412,24 @@ void FileSystemView::on_gui() {
     }
 }
 
+void FileSystemView::accept_path_drop(const core::String& drop_path) {
+    if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(imgui::drag_drop_path_id)) {
+        const std::string_view original_name = static_cast<const char*>(payload->Data);
+        const FileSystemModel* fs = filesystem();
+        const core::String target_name = fs->join(drop_path, fs->filename(original_name));
+        if(target_name == original_name) {
+            return;
+        }
+
+        if(!fs->rename(original_name, target_name)) {
+            log_msg(fmt("Unable to move \"{}\" to \"{}\"", original_name, drop_path), Log::Error);
+        } else {
+            log_msg(fmt("Move \"{}\" to \"{}\"", original_name, drop_path));
+        }
+        refresh_all();
+    }
+}
+
 void FileSystemView::draw_node(TreeNode& node) {
     const bool selected = node.expanded ? _current_path == node.full_name : _current_path.starts_with(node.full_name);
     const int flags = (node.expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0) | (selected ? ImGuiTreeNodeFlags_Selected : 0);
@@ -434,6 +443,11 @@ void FileSystemView::draw_node(TreeNode& node) {
 
     if(!ImGui::IsItemToggledOpen() && ImGui::IsItemActivated()) {
         set_path(node.full_name);
+    }
+
+    if(_allow_modify && ImGui::BeginDragDropTarget()) {
+        accept_path_drop(node.full_name);
+        ImGui::EndDragDropTarget();
     }
 
     if(opened) {

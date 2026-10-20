@@ -31,13 +31,6 @@ SOFTWARE.
 
 namespace editor {
 
-/*static std::string_view decompose_path(std::string_view full_name, std::string_view name) {
-    y_debug_assert(full_name.size() >= name.size());
-    y_debug_assert(full_name.substr(full_name.size() - name.size()) == name);
-    return full_name.substr(0, full_name.size() - name.size());
-}*/
-
-
 
 Renamer::Renamer(std::string_view name, std::function<bool(std::string_view)> callback) :
         Widget("Rename", ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking),
@@ -70,14 +63,25 @@ void Renamer::on_gui() {
     }
 }
 
-static bool rename_file(const FileSystemModel* fs, std::string_view old_name, std::string_view new_name) {
-    const auto path = fs->parent_path(old_name);
-    const core::String full_new_name = path ? fs->join(path.unwrap(), new_name) : core::String(new_name);
-    return fs->rename(old_name, full_new_name).is_ok();
+
+
+static bool is_valid_filename(std::string_view name) {
+    if(name.empty() || name == "." || name == "..") {
+        return false;
+    }
+    return name.find_first_of("/\\") == std::string_view::npos;
 }
 
 FileRenamer::FileRenamer(const FileSystemModel* fs, core::String filename) :
-        Renamer(filename, [=](std::string_view new_name) { return rename_file(fs, filename, new_name); }) {
+        Renamer(fs->filename(filename), [=](std::string_view new_name) {
+            if(!is_valid_filename(new_name)) {
+                return false;
+            }
+
+            const auto path = fs->parent_path(filename);
+            const core::String full_new_name = path ? fs->join(path.unwrap(), new_name) : core::String(new_name);
+            return fs->rename(filename, full_new_name).is_ok();
+        }) {
 }
 
 
