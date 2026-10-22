@@ -58,6 +58,7 @@ static SceneVisibilitySubPass filter_selected(const SceneVisibilitySubPass& visi
     SceneVisibilitySubPass filtered = visibility;
     filtered.visible = std::make_shared<SceneVisibility>();
     filtered.visible->meshes = filter(visibility.visible->meshes);
+    filtered.visible->skinned_meshes = filter(visibility.visible->skinned_meshes);
     filtered.visible->point_lights = filter(visibility.visible->point_lights);
     filtered.visible->spot_lights = filter(visibility.visible->spot_lights);
 

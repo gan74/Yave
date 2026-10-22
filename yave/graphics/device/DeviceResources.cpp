@@ -135,6 +135,7 @@ static constexpr std::array<std::string_view, usize(ComputePrograms::MaxComputeP
     "rtgi_TRACE",
     "rtgi_APPLY",
     "rtgi_TRIM",
+    "skinning",
 };
 
 

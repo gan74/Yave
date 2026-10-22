@@ -27,6 +27,7 @@ SOFTWARE.
 #include <yave/assets/AssetPtr.h>
 #include <yave/meshes/Skeleton.h>
 #include <yave/graphics/buffers/Buffer.h>
+#include <yave/graphics/buffers/buffers.h>
 
 #include "Animation.h"
 
@@ -35,6 +36,8 @@ namespace yave {
 class SkeletonInstance {
 
     public:
+        using BoneTransformBuffer = TypedBuffer<math::Transform<>, BufferUsage::StorageBit, MemoryType::CpuVisible>;
+
         SkeletonInstance() = default;
 
         SkeletonInstance(std::shared_ptr<const Skeleton> skeleton);
@@ -43,13 +46,15 @@ class SkeletonInstance {
 
         void update();
 
+        const BoneTransformBuffer& bone_transform_buffer() const;
+
     private:
         void flush_data();
 
         std::shared_ptr<const Skeleton> _skeleton;
         std::unique_ptr<std::array<math::Transform<>, Skeleton::max_bones>> _bone_transforms;
 
-        TypedUniformBuffer<math::Transform<>, MemoryType::CpuVisible> _bone_transform_buffer;
+        BoneTransformBuffer _bone_transform_buffer;
 
         AssetPtr<Animation> _animation;
         core::StopWatch _anim_timer;

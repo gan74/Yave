@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/components/SkinnedMeshComponent.h>
 
 #include <yave/graphics/commands/CmdBufferRecorder.h>
 
@@ -266,6 +267,7 @@ void EcsScene::update_from_world() {
 
     bool need_tlas_rebuild = _tlas.is_null();
     need_tlas_rebuild |= process_transformable_components<StaticMeshComponent>(IndexType::Mesh, _meshes);
+    need_tlas_rebuild |= process_transformable_components<SkinnedMeshComponent>(IndexType::SkinnedMesh, _skinned_meshes);
 
     process_transformable_components<PointLightComponent>(IndexType::PointLight, _point_lights);
     process_transformable_components<SpotLightComponent>(IndexType::SpotLight, _spot_lights);
@@ -275,11 +277,15 @@ void EcsScene::update_from_world() {
 
     process_atmosphere();
 
-    if(_transform_manager.need_update()) {
+    const bool update_transforms = _transform_manager.need_update();
+    if(update_transforms || !_skinned_meshes.is_empty()) {
         ComputeCmdBufferRecorder recorder = create_disposable_compute_cmd_buffer();
-        _transform_manager.update_buffer(recorder);
+        if(update_transforms) {
+            _transform_manager.update_buffer(recorder);
+            need_tlas_rebuild |= true;
+        }
+        _skinned_mesh_renderer.update(recorder, _skinned_meshes);
         recorder.submit_async();
-        need_tlas_rebuild |= true;
     }
 
     if(need_tlas_rebuild) {

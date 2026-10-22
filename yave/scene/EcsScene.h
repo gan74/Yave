@@ -34,6 +34,7 @@ namespace yave {
 class EcsScene : public Scene {
     enum IndexType {
         Mesh = 0,
+        SkinnedMesh,
         PointLight,
         SpotLight,
         DirectionalLight,

@@ -53,18 +53,16 @@ ForwardPass ForwardPass::create(FrameGraph& framegraph, FrameGraphImageId in_dep
     pass.lit = lit;
     pass.scene_pass = SceneRenderSubPass::create(builder, camera, visibility, PassType::Forward);
 
-    {
-        builder.add_uniform_input(cluster.shadow_pass.shadow_map, SamplerType::Shadow, PipelineStage::None, pass.scene_pass.descriptor_set_index);
-        builder.add_storage_input(cluster.shadow_pass.shadow_infos, PipelineStage::None, pass.scene_pass.descriptor_set_index);
-        builder.add_uniform_input(cluster.cluster_info, PipelineStage::None, pass.scene_pass.descriptor_set_index);
-        builder.add_storage_input(cluster.tiles, PipelineStage::None, pass.scene_pass.descriptor_set_index);
-    }
+    pass.scene_pass.for_each_descriptor_set([&](i32 ds_index) {
+        builder.add_uniform_input(cluster.shadow_pass.shadow_map, SamplerType::Shadow, PipelineStage::None, ds_index);
+        builder.add_storage_input(cluster.shadow_pass.shadow_infos, PipelineStage::None, ds_index);
+        builder.add_uniform_input(cluster.cluster_info, PipelineStage::None, ds_index);
+        builder.add_storage_input(cluster.tiles, PipelineStage::None, ds_index);
 
-    {
-        builder.add_external_input(*ibl_probe);
-        builder.add_external_input(Descriptor(device_resources().brdf_lut(), SamplerType::LinearClamp));
-        builder.add_inline_input(params);
-    }
+        builder.add_external_input(*ibl_probe, PipelineStage::None, ds_index);
+        builder.add_external_input(Descriptor(device_resources().brdf_lut(), SamplerType::LinearClamp), PipelineStage::None, ds_index);
+        builder.add_inline_input(params, ds_index);
+    });
 
     builder.add_depth_output(depth);
     builder.add_color_output(lit);

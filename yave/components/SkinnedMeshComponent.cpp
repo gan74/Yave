@@ -35,20 +35,6 @@ SkinnedMeshComponent::SkinnedMeshComponent(const AssetPtr<StaticMesh>& mesh, cor
         _mesh(mesh), _materials(std::move(materials)), _animation(animation) {
 }
 
-SkinnedMeshComponent::SkinnedMeshComponent(const SkinnedMeshComponent& other) :
-        _mesh(other._mesh), _materials(other._materials), _animation(other._animation) {
-}
-
-SkinnedMeshComponent& SkinnedMeshComponent::operator=(const SkinnedMeshComponent& other) {
-    if(this != &other) {
-        _mesh = other._mesh;
-        _materials = other._materials;
-        _animation = other._animation;
-        _skeleton_instance = nullptr;
-    }
-    return *this;
-}
-
 AssetPtr<StaticMesh>& SkinnedMeshComponent::mesh() {
     return _mesh;
 }
@@ -73,11 +59,7 @@ const AssetPtr<Animation>& SkinnedMeshComponent::animation() const {
     return _animation;
 }
 
-SkeletonInstance* SkinnedMeshComponent::skeleton_instance() {
-    return _skeleton_instance.get();
-}
-
-const SkeletonInstance* SkinnedMeshComponent::skeleton_instance() const {
+SkeletonInstance* SkinnedMeshComponent::skeleton_instance() const {
     return _skeleton_instance.get();
 }
 
@@ -106,7 +88,7 @@ bool SkinnedMeshComponent::update_asset_loading_status() {
 
     _skeleton_instance = nullptr;
     if(_mesh && _mesh->skeleton()) {
-        _skeleton_instance = std::make_unique<SkeletonInstance>(_mesh->skeleton());
+        _skeleton_instance = std::make_shared<SkeletonInstance>(_mesh->skeleton());
         _skeleton_instance->animate(_animation);
     }
 

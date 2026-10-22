@@ -178,6 +178,7 @@ function(build_engine_shaders SHADER_TARGET)
     add_slang_shader(${SHADER_TARGET} "exposure_params.slang" "")
     add_slang_shader(${SHADER_TARGET} "exposure_debug.slang" "")
     add_slang_shader(${SHADER_TARGET} "update_transforms.slang" "")
+    add_slang_shader(${SHADER_TARGET} "skinning.slang" "")
 
     add_slang_shader(${SHADER_TARGET} "brdf_integrator.slang" "")
     add_slang_shader(${SHADER_TARGET} "linearize_depth.slang" "")

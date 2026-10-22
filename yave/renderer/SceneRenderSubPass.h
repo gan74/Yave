@@ -39,6 +39,7 @@ struct SceneRenderSubPass {
     SceneView scene_view;
 
     i32 descriptor_set_index = -1;
+    i32 skinned_descriptor_set_index = -1;
     FrameGraphTypedBufferId<shader::Camera> camera;
 
     RenderFunc render_func;
@@ -50,6 +51,14 @@ struct SceneRenderSubPass {
     static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const CameraBufferPass& camera, const SceneVisibilitySubPass& visibility, PassType pass_type);
 
     void render(RenderPassRecorder& render_pass, const FrameGraphPass* pass) const;
+
+    template<typename F>
+    void for_each_descriptor_set(F&& func) const {
+        func(descriptor_set_index);
+        if(skinned_descriptor_set_index >= 0) {
+            func(skinned_descriptor_set_index);
+        }
+    }
 };
 
 

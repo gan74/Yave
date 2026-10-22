@@ -34,6 +34,7 @@ SceneVisibilitySubPass SceneVisibilitySubPass::create(const SceneView& scene_vie
     pass.visible = std::make_shared<SceneVisibility>();
 
     scene->gather_visible(pass.visible->meshes, scene->meshes(), scene_view.camera(), scene_view.visibility_mask());
+    scene->gather_visible(pass.visible->skinned_meshes, scene->skinned_meshes(), scene_view.camera(), scene_view.visibility_mask());
     scene->gather_visible(pass.visible->point_lights, scene->point_lights(), scene_view.camera(), scene_view.visibility_mask());
     scene->gather_visible(pass.visible->spot_lights, scene->spot_lights(), scene_view.camera(), scene_view.visibility_mask());
     

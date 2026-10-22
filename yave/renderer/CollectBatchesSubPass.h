@@ -37,6 +37,7 @@ struct StaticMeshBatch {
 
 struct SceneBatches {
     core::Vector<StaticMeshBatch> static_mesh_batches;
+    core::Vector<StaticMeshBatch> skinned_mesh_batches;
 };
 
 struct CollectBatchesSubPass {

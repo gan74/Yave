@@ -44,12 +44,6 @@ class SkinnedMeshComponent final :
         SkinnedMeshComponent() = default;
         SkinnedMeshComponent(const AssetPtr<StaticMesh>& mesh, core::Vector<AssetPtr<Material>> materials, const AssetPtr<Animation>& animation = {});
 
-        SkinnedMeshComponent(const SkinnedMeshComponent& other);
-        SkinnedMeshComponent& operator=(const SkinnedMeshComponent& other);
-
-        SkinnedMeshComponent(SkinnedMeshComponent&&) = default;
-        SkinnedMeshComponent& operator=(SkinnedMeshComponent&&) = default;
-
         AssetPtr<StaticMesh>& mesh();
         const AssetPtr<StaticMesh>& mesh() const;
 
@@ -59,8 +53,7 @@ class SkinnedMeshComponent final :
         AssetPtr<Animation>& animation();
         const AssetPtr<Animation>& animation() const;
 
-        SkeletonInstance* skeleton_instance();
-        const SkeletonInstance* skeleton_instance() const;
+        SkeletonInstance* skeleton_instance() const;
 
         AABB aabb() const;
 
@@ -78,7 +71,7 @@ class SkinnedMeshComponent final :
         core::Vector<AssetPtr<Material>> _materials;
         AssetPtr<Animation> _animation;
 
-        std::unique_ptr<SkeletonInstance> _skeleton_instance;
+        std::shared_ptr<SkeletonInstance> _skeleton_instance;
 };
 
 

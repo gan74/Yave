@@ -82,6 +82,7 @@ class DeviceResources final : NonMovable {
             RTGITraceProgram,
             RTGIApplyProgram,
             RTGITrimProgram,
+            SkinningProgram,
 
             MaxComputePrograms
         };

@@ -23,8 +23,10 @@ SOFTWARE.
 #define YAVE_SCENE_SCENE_H
 
 #include "TransformManager.h"
+#include "SkinnedMeshRenderer.h"
 
 #include <yave/components/StaticMeshComponent.h>
+#include <yave/components/SkinnedMeshComponent.h>
 #include <yave/components/PointLightComponent.h>
 #include <yave/components/SpotLightComponent.h>
 #include <yave/components/DirectionalLightComponent.h>
@@ -66,6 +68,10 @@ using SpotLightObject           = TransformableSceneObject<SpotLightComponent>;
 using DirectionalLightObject    = SceneObject<DirectionalLightComponent>;
 using SkyLightObject            = SceneObject<SkyLightComponent>;
 
+struct SkinnedMeshObject : TransformableSceneObject<SkinnedMeshComponent> {
+    SkinnedMeshRenderer::PositionBuffer skinned_positions;
+};
+
 struct AtmosphereObject : SceneObject<AtmosphereComponent> {
     DirectionalLightComponent sun;
 };
@@ -83,8 +89,10 @@ class Scene : NonMovable {
 
         const TLAS& tlas() const;
 
+        const SkinnedMeshRenderer& skinned_mesh_renderer() const;
 
         core::Span<StaticMeshObject>        meshes() const          { return _meshes; }
+        core::Span<SkinnedMeshObject>       skinned_meshes() const  { return _skinned_meshes; }
         core::Span<PointLightObject>        point_lights() const    { return _point_lights; }
         core::Span<SpotLightObject>         spot_lights() const     { return _spot_lights; }
         core::Span<DirectionalLightObject>  directionals() const    { return _directionals; }
@@ -93,8 +101,8 @@ class Scene : NonMovable {
         const AtmosphereObject*             atmosphere() const      { return _atmosphere.get(); }
 
 
-        template<typename T>
-        static void gather_visible(core::Vector<const TransformableSceneObject<T>*>& visible, core::Span<TransformableSceneObject<T>> objects, const Camera& cam, u32 visibility_mask = u32(-1)) {
+        template<typename O>
+        static void gather_visible(core::Vector<const O*>& visible, core::Span<O> objects, const Camera& cam, u32 visibility_mask = u32(-1)) {
             y_profile();
 
             const Frustum frustum = cam.frustum();
@@ -141,6 +149,7 @@ class Scene : NonMovable {
 
     protected:
         core::Vector<StaticMeshObject> _meshes;
+        core::Vector<SkinnedMeshObject> _skinned_meshes;
         core::Vector<PointLightObject> _point_lights;
         core::Vector<SpotLightObject> _spot_lights;
 
@@ -150,6 +159,7 @@ class Scene : NonMovable {
         std::unique_ptr<AtmosphereObject> _atmosphere;
 
         TransformManager _transform_manager;
+        SkinnedMeshRenderer _skinned_mesh_renderer;
         TLAS _tlas;
 };
 

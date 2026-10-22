@@ -27,16 +27,29 @@ SOFTWARE.
 
 namespace yave {
 
-template<std::predicate<const Material&> F>
-static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Vector<StaticMeshBatch>& batches, PassType pass_type, F&& mat_filter) {
+static u32 mesh_data_index(const Scene*, const StaticMeshObject* mesh) {
+    return mesh->component.mesh()->mesh_data_index();
+}
+
+static u32 mesh_data_index(const Scene* scene, const SkinnedMeshObject* mesh) {
+    return SkinnedMeshRenderer::is_ready(*mesh) ? u32(mesh - scene->skinned_meshes().data()) : u32(-1);
+}
+
+template<typename O, std::predicate<const Material&> F>
+static void collect_batches(const Scene* scene, core::Span<const O*> meshes, core::Vector<StaticMeshBatch>& batches, PassType pass_type, F&& mat_filter) {
     y_profile();
 
     batches.set_min_capacity(meshes.size() * 4);
-    for(const StaticMeshObject* mesh : meshes) {
+    for(const O* mesh : meshes) {
         const u32 transform_index = mesh->transform_index;
 
         const StaticMesh* static_mesh = mesh->component.mesh().get();
         if(!static_mesh || transform_index == u32(-1)) {
+            continue;
+        }
+
+        const u32 data_index = mesh_data_index(scene, mesh);
+        if(data_index == u32(-1)) {
             continue;
         }
 
@@ -51,7 +64,7 @@ static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Ve
                 batches.emplace_back(
                     templ,
                     static_mesh->draw_command().vk_indirect_data(),
-                    shader::MeshObject{transform_index, mat->draw_data().index(), static_mesh->mesh_data_index()}
+                    shader::MeshObject{transform_index, mat->draw_data().index(), data_index}
                 );
             }
         } else {
@@ -65,7 +78,7 @@ static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Ve
                     batches.emplace_back(
                         templ,
                         static_mesh->sub_meshes()[i].vk_indirect_data(),
-                        shader::MeshObject{transform_index, mat->draw_data().index(), static_mesh->mesh_data_index()}
+                        shader::MeshObject{transform_index, mat->draw_data().index(), data_index}
                     );
                 }
             }
@@ -78,13 +91,13 @@ static void collect_batches(core::Span<const StaticMeshObject*> meshes, core::Ve
     }
 }
 
-static void collect_batches_for_id(core::Span<const StaticMeshObject*> meshes, core::Vector<StaticMeshBatch>& batches) {
+template<typename O>
+static void collect_batches_for_id(const Scene* scene, core::Span<const O*> meshes, core::Vector<StaticMeshBatch>& batches) {
     y_profile();
 
     batches.set_min_capacity(meshes.size());
 
-    u32 index = 0;
-    for(const StaticMeshObject* mesh : meshes) {
+    for(const O* mesh : meshes) {
         const u32 transform_index = mesh->transform_index;
 
         const StaticMesh* static_mesh = mesh->component.mesh().get();
@@ -92,13 +105,16 @@ static void collect_batches_for_id(core::Span<const StaticMeshObject*> meshes, c
             continue;
         }
 
+        const u32 data_index = mesh_data_index(scene, mesh);
+        if(data_index == u32(-1)) {
+            continue;
+        }
+
         batches.emplace_back(
             nullptr,
-            static_mesh->draw_command().vk_indirect_data(index),
-            shader::MeshObject{transform_index, mesh->entity_index, static_mesh->mesh_data_index()}
+            static_mesh->draw_command().vk_indirect_data(),
+            shader::MeshObject{transform_index, mesh->entity_index, data_index}
         );
-
-        ++index;
     }
 }
 
@@ -107,21 +123,31 @@ CollectBatchesSubPass CollectBatchesSubPass::create(const SceneVisibilitySubPass
     pass.pass_type = pass_type;
     pass.batches = std::make_shared<SceneBatches>();
 
+    const Scene* scene = visibility.scene_view.scene();
+    const SceneVisibility& visible = *visibility.visible;
+    SceneBatches& batches = *pass.batches;
+
+    auto collect = [&](auto&& mat_filter) {
+        collect_batches(scene, core::Span<const StaticMeshObject*>(visible.meshes), batches.static_mesh_batches, pass_type, mat_filter);
+        collect_batches(scene, core::Span<const SkinnedMeshObject*>(visible.skinned_meshes), batches.skinned_mesh_batches, pass_type, mat_filter);
+    };
+
     switch(pass_type) {
         case PassType::Depth:
-            collect_batches(visibility.visible->meshes, pass.batches->static_mesh_batches, pass_type, [=](const Material&) { return true; });
+            collect([=](const Material&) { return true; });
         break;
 
         case PassType::GBuffer:
-            collect_batches(visibility.visible->meshes, pass.batches->static_mesh_batches, pass_type, [=](const Material& mat) { return !mat.is_transparent(); });
+            collect([=](const Material& mat) { return !mat.is_transparent(); });
         break;
 
         case PassType::Forward:
-            collect_batches(visibility.visible->meshes, pass.batches->static_mesh_batches, pass_type, [=](const Material& mat) { return mat.is_transparent(); });
+            collect([=](const Material& mat) { return mat.is_transparent(); });
         break;
 
         case PassType::Id:
-            collect_batches_for_id(visibility.visible->meshes, pass.batches->static_mesh_batches);
+            collect_batches_for_id(scene, core::Span<const StaticMeshObject*>(visible.meshes), batches.static_mesh_batches);
+            collect_batches_for_id(scene, core::Span<const SkinnedMeshObject*>(visible.skinned_meshes), batches.skinned_mesh_batches);
         break;
     }
 
