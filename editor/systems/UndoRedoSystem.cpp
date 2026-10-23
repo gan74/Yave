@@ -337,21 +337,18 @@ void UndoRedoSystem::push_state(UndoState state) {
             auto&& [key, redo_properties] = state.redo_properties[k];
             auto&& undo_properties = state.undo_properties[k].second;
             y_debug_assert(state.undo_properties[k].first == key);
-            y_debug_assert(redo_properties.size() == undo_properties.size());
 
             for(usize i = 0; i < redo_properties.size(); ++i) {
                 const Property& redo_prop = redo_properties[i];
-                const Property& undo_prop = undo_properties[i];
+                const auto undo_it = std::find_if(undo_properties.begin(), undo_properties.end(), [&](const Property& p) { return p.name == redo_prop.name; });
 
-                y_debug_assert(redo_prop.name == undo_prop.name);
-                if(value_equal(redo_prop.value, undo_prop.value)) {
+                if(undo_it != undo_properties.end() && value_equal(redo_prop.value, undo_it->value)) {
+                    undo_properties.erase_unordered(undo_it);
                     redo_properties.erase_unordered(redo_properties.begin() + i);
-                    undo_properties.erase_unordered(undo_properties.begin() + i);
                     --i;
                 }
             }
 
-            y_debug_assert(redo_properties.size() == undo_properties.size());
             if(redo_properties.is_empty() && undo_properties.is_empty()) {
                 state.redo_properties.erase_unordered(state.redo_properties.begin() + k);
                 state.undo_properties.erase_unordered(state.undo_properties.begin() + k);
