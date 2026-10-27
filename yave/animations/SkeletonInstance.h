@@ -48,6 +48,9 @@ class SkeletonInstance {
 
         const BoneTransformBuffer& bone_transform_buffer() const;
 
+        const std::shared_ptr<const Skeleton>& skeleton() const;
+        const AssetPtr<Animation>& animation() const;
+
     private:
         void flush_data();
 

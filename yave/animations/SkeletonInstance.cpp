@@ -69,6 +69,14 @@ const SkeletonInstance::BoneTransformBuffer& SkeletonInstance::bone_transform_bu
     return _bone_transform_buffer;
 }
 
+const std::shared_ptr<const Skeleton>& SkeletonInstance::skeleton() const {
+    return _skeleton;
+}
+
+const AssetPtr<Animation>& SkeletonInstance::animation() const {
+    return _animation;
+}
+
 void SkeletonInstance::flush_data() {
     auto map = _bone_transform_buffer.map(MappingAccess::WriteOnly);
     std::copy(_bone_transforms->begin(), _bone_transforms->end(), map.begin());

@@ -86,9 +86,15 @@ bool SkinnedMeshComponent::update_asset_loading_status() {
         return false;
     }
 
-    _skeleton_instance = nullptr;
-    if(_mesh && _mesh->skeleton()) {
+    if(!_mesh || !_mesh->skeleton()) {
+        _skeleton_instance = nullptr;
+        return true;
+    }
+
+    if(!_skeleton_instance || _skeleton_instance->skeleton() != _mesh->skeleton()) {
         _skeleton_instance = std::make_shared<SkeletonInstance>(_mesh->skeleton());
+        _skeleton_instance->animate(_animation);
+    } else if(_skeleton_instance->animation() != _animation) {
         _skeleton_instance->animate(_animation);
     }
 
