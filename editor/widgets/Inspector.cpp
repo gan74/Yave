@@ -528,6 +528,10 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
                     asset_ptr_selector<Blueprint>(p, name, _id, _type, _workspace);
                 break;
 
+                case AssetType::Animation:
+                    asset_ptr_selector<Animation>(p, name, _id, _type, _workspace);
+                break;
+
                 default:
                     ImGui::TextDisabled(fmt_c_str("{} assets are not supported", asset_type_name(p.type())));
                 break;
