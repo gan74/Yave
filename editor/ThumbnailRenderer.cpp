@@ -310,6 +310,13 @@ std::shared_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_re
             case AssetType::Prefab:
                 if(const auto ptr = _loader->load<ecs::EntityPrefab>(id)) {
                     data->texture = render_prefab(ptr);
+
+                    core::String components;
+                    for(const auto& box : ptr->components()) {
+                        components += fmt("{}{}", components.is_empty() ? "" : ", ", box->runtime_info().clean_component_name());
+                    }
+                    data->infos.emplace_back(fmt("Components: {}", components.is_empty() ? "none" : components));
+                    data->infos.emplace_back(fmt("Children: {} ({} prefab refs)", ptr->children().size() + ptr->asset_children().size(), ptr->asset_children().size()));
                     ok = true;
                 }
             break;
@@ -317,6 +324,14 @@ std::shared_ptr<ThumbnailRenderer::ThumbnailData> ThumbnailRenderer::schedule_re
             case AssetType::Blueprint:
                 if(const auto ptr = _loader->load<Blueprint>(id)) {
                     data->infos.emplace_back(fmt("Nodes: {}", ptr->all_nodes().size()));
+                    ok = true;
+                }
+            break;
+
+            case AssetType::Animation:
+                if(const auto ptr = _loader->load<Animation>(id)) {
+                    data->infos.emplace_back(fmt("Duration: {:.2f}s", ptr->duration()));
+                    data->infos.emplace_back(fmt("Animated bones: {}", ptr->channels().size()));
                     ok = true;
                 }
             break;

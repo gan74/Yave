@@ -244,7 +244,7 @@ bool position_input(const char* str_id, math::Vec3& position) {
 
 bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* clear) {
     static constexpr ImVec2 button_size = ImVec2(64.0f, 64.0f);
-    const ImVec2 padded_button_size = button_size + ImGui::GetStyle().FramePadding * 4.0f;
+    const ImVec2 padded_button_size = button_size + ImGui::GetStyle().FramePadding * 2.0f;
 
     ImGui::PushID(fmt_c_str("{}_{}_{}", id.id(), uenum(type), text));
     ImGui::BeginGroup();
@@ -258,6 +258,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
 
     bool ret = false;
     if(is_valid) {
+        ImGui::PushFont(nullptr, button_size.x * 0.5f);
         const auto* data = thumbnail_renderer().thumbnail_data(id);
         if(data && !data->view.is_null()) {
             ret = ImGui::ImageButton("##tex", imgui_platform()->to_ui(data->view), button_size);
@@ -266,6 +267,7 @@ bool asset_selector(AssetId id, AssetType type, std::string_view text, bool* cle
         } else {
             ret = ImGui::Button(ICON_FA_HOURGLASS_HALF, padded_button_size);
         }
+        ImGui::PopFont();
     } else {
         if(id == AssetId::invalid_id()) {
             ret = ImGui::Button(ICON_FA_FOLDER_OPEN, padded_button_size);
