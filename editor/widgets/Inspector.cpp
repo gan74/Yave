@@ -546,11 +546,14 @@ class InspectorPanelInspector : public ecs::ComponentInspector {
             }
 
             ImGui::Unindent();
+            begin_table();
             return false;
         }
 
         void end_collection() override {
+            end_table();
             ImGui::Unindent();
+            begin_table();
         }
 
         ecs::EntityId _id;
