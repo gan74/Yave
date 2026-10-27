@@ -284,7 +284,7 @@ void EcsScene::update_from_world() {
             _transform_manager.update_buffer(recorder);
             need_tlas_rebuild |= true;
         }
-        _skinned_mesh_renderer.update(recorder, _skinned_meshes);
+        std::apply([&](auto&... renderers) { (static_cast<RendererBase&>(renderers).update(recorder, *this), ...); }, _renderers);
         recorder.submit_async();
     }
 

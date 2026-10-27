@@ -103,6 +103,7 @@ struct UndoState;
 
 
 namespace editor::import {
+struct Animation;
 struct Asset;
 struct Image;
 struct Light;

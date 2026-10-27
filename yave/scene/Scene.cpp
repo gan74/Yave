@@ -44,9 +44,5 @@ const TLAS& Scene::tlas() const {
     return _tlas;
 }
 
-const SkinnedMeshRenderer& Scene::skinned_mesh_renderer() const {
-    return _skinned_mesh_renderer;
-}
-
 }
 

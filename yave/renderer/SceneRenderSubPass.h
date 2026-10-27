@@ -27,25 +27,19 @@ SOFTWARE.
 #include <yave/framegraph/FrameGraphResourceId.h>
 
 #include "SceneVisibilitySubPass.h"
-#include "CollectBatchesSubPass.h"
-
-#include <functional>
 
 namespace yave {
 
 struct SceneRenderSubPass {
-    using RenderFunc = std::function<void(RenderPassRecorder&, const FrameGraphPass*)>;
-
     SceneView scene_view;
+    PassType pass_type;
 
-    i32 descriptor_set_index = -1;
-    i32 skinned_descriptor_set_index = -1;
     FrameGraphTypedBufferId<shader::Camera> camera;
 
-    RenderFunc render_func;
+    core::Vector<i32> descriptor_set_indices;
+    core::Vector<RenderFunc> render_funcs;
 
     SceneVisibilitySubPass visibility;
-    CollectBatchesSubPass batches;
 
     static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const SceneView& scene_view, const SceneVisibilitySubPass& visibility, PassType pass_type);
     static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const CameraBufferPass& camera, const SceneVisibilitySubPass& visibility, PassType pass_type);
@@ -54,9 +48,8 @@ struct SceneRenderSubPass {
 
     template<typename F>
     void for_each_descriptor_set(F&& func) const {
-        func(descriptor_set_index);
-        if(skinned_descriptor_set_index >= 0) {
-            func(skinned_descriptor_set_index);
+        for(const i32 index : descriptor_set_indices) {
+            func(index);
         }
     }
 };

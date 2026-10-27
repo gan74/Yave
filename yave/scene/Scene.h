@@ -23,7 +23,7 @@ SOFTWARE.
 #define YAVE_SCENE_SCENE_H
 
 #include "TransformManager.h"
-#include "SkinnedMeshRenderer.h"
+#include "renderers.h"
 
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/SkinnedMeshComponent.h>
@@ -38,6 +38,7 @@ SOFTWARE.
 #include <yave/camera/Camera.h>
 
 #include <functional>
+#include <tuple>
 
 namespace yave {
 
@@ -70,6 +71,7 @@ using SkyLightObject            = SceneObject<SkyLightComponent>;
 
 struct SkinnedMeshObject : TransformableSceneObject<SkinnedMeshComponent> {
     SkinnedMeshRenderer::PositionBuffer skinned_positions;
+    u32 mesh_data_index = u32(-1);
 };
 
 struct AtmosphereObject : SceneObject<AtmosphereComponent> {
@@ -89,7 +91,10 @@ class Scene : NonMovable {
 
         const TLAS& tlas() const;
 
-        const SkinnedMeshRenderer& skinned_mesh_renderer() const;
+        template<typename F>
+        void for_each_renderer(F&& func) const {
+            std::apply([&](const auto&... renderers) { (func(static_cast<const RendererBase&>(renderers)), ...); }, _renderers);
+        }
 
         core::Span<StaticMeshObject>        meshes() const          { return _meshes; }
         core::Span<SkinnedMeshObject>       skinned_meshes() const  { return _skinned_meshes; }
@@ -145,6 +150,8 @@ class Scene : NonMovable {
         }
 
     protected:
+        friend class SkinnedMeshRenderer;
+
         void update_tlas();
 
     protected:
@@ -158,8 +165,8 @@ class Scene : NonMovable {
 
         std::unique_ptr<AtmosphereObject> _atmosphere;
 
+        std::tuple<StaticMeshRenderer, SkinnedMeshRenderer> _renderers;
         TransformManager _transform_manager;
-        SkinnedMeshRenderer _skinned_mesh_renderer;
         TLAS _tlas;
 };
 
