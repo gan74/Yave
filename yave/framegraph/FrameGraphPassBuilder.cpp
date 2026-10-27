@@ -269,8 +269,12 @@ void set_stage(const FrameGraphPass* pass, T& info, PipelineStage stage) {
         return;
     }
 
+    if(info.stage == stage && !info.written_to) {
+        return;
+    }
+
     if(info.stage != PipelineStage::None) {
-        Y_TODO(This should be either one write or many reads)
+        Y_TODO(Allow multiple reads from different stages)
         y_fatal("Resource can only be used once per pass (used twice by \"{}\", previous stage was {})", pass->name(), usize(info.stage));
     }
     info.stage = stage;
