@@ -51,17 +51,16 @@ class GltfImporter final : public Widget {
         bool should_keep_alive() const override;
 
     private:
+        void cancel();
+
         State _state = State::Browsing;
 
         FileBrowser _browser;
-        core::Result<import::ParsedScene> _scene = core::Err();
+        core::Result<import::gltf::Scene> _scene = core::Err();
 
-        struct {
-            core::String import_path;
-            bool import_child_prefabs_as_assets = false;
-            bool create_colliders = false;
-        } _settings;
-
+        import::GltfImportSettings _settings;
+        concurrent::JobSystem::JobHandle _import_job;
+        std::shared_ptr<import::GltfImportStatus> _import_status;
 
         concurrent::JobSystem _job_system;
 };

@@ -23,12 +23,25 @@ SOFTWARE.
 #include "import.h"
 #include "image_utils.h"
 
-#include <yave/meshes/Vertex.h>
 #include <yave/graphics/images/ImageData.h>
+#include <yave/assets/AssetStore.h>
+#include <yave/assets/AssetLoader.h>
+#include <yave/ecs/EntityPrefab.h>
+#include <yave/components/TransformableComponent.h>
+#include <yave/components/StaticMeshComponent.h>
+#include <yave/components/PointLightComponent.h>
+#include <yave/components/RigidBodyComponent.h>
+#include <yave/meshes/MeshData.h>
+#include <yave/meshes/StaticMesh.h>
+#include <yave/material/Material.h>
 #include <yave/material/MaterialData.h>
+#include <yave/utils/FileSystemModel.h>
+
+#include <editor/components/EditorComponent.h>
 
 #include <y/io2/File.h>
-#include <y/core/Chrono.h>
+#include <y/io2/Buffer.h>
+#include <y/serde3/archives.h>
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
@@ -147,131 +160,130 @@ core::String supported_image_extensions() {
 
 
 
+core::String supported_scene_extensions() {
+    return "*.gltf;*.glb";
+}
+
+
+
+
+
+// ----------------------------- ASSET STORE -----------------------------
+
 template<typename T>
-static void propagate_transforms(T& nodes, int index, math::Transform<> parent) {
-    auto& node = nodes[index];
-    node.transform = parent * node.transform;
-
-    for(const int child_index : node.children) {
-        propagate_transforms(nodes, child_index, node.transform);
-    }
-}
-
-core::Result<ParsedScene> parse_scene(const core::String& filename) {
+static AssetId import_asset(const core::String& name, const T& asset, AssetType type, const core::String& import_path, core::Span<AssetId> refs) {
     y_profile();
+    y_profile_msg(fmt_c_str("Importing {} {}", asset_type_name(type), name));
 
-    core::DebugTimer timer("Parsing gltf");
-
-    auto loaded = gltf::load_gltf(filename);
-    if(!loaded) {
-        return core::Err();
-    }
-
-    ParsedScene scene;
-    scene.filename = filename;
-    scene.name = clean_asset_name(filename);
-    scene.source = std::move(loaded.unwrap());
-
-    const gltf::Scene& source = scene.source;
-
-    for(const gltf::Image& src_image : source.images) {
-        auto& image = scene.images.emplace_back();
-        image.name = src_image.name;
-        image.as_sRGB = src_image.color_space == gltf::ColorSpace::sRGB;
-        image.as_normal = src_image.is_normal_map;
-    }
-
-    for(const gltf::Material& src_material : source.materials) {
-        auto& material = scene.materials.emplace_back();
-        material.name = src_material.name;
-    }
-
-    for(const gltf::Mesh& src_mesh : source.meshes) {
-        auto& mesh = scene.meshes.emplace_back();
-        mesh.name = src_mesh.name;
-
-        for(const gltf::Primitive& primitive : src_mesh.primitives) {
-            mesh.materials << primitive.material;
+    io2::Buffer buffer;
+    {
+        y_profile_zone("serialize");
+        serde3::WritableArchive arc(buffer);
+        if(const auto res = arc.serialize(asset); res.is_error()) {
+            log_msg(fmt("Unable to serialize {}", name), Log::Error);
+            return AssetId::invalid_id();
         }
     }
 
-    for(const gltf::Light& src_light : source.lights) {
-        auto& light = scene.lights.emplace_back();
+    {
+        y_profile_zone("import");
 
-        light.name = src_light.name;
-        light.intensity = src_light.intensity;
-        light.color = src_light.color;
-
-        if(src_light.range > 0.0f) {
-            light.range = src_light.range;
-        } else {
-            const float intensity = light.color.dot(math::Vec3(light.intensity));
-            light.range = std::sqrt(intensity * 100.0f); // Put radius where lum < 1%
+        core::String suffix;
+        for(usize i = 0;; ++i) {
+            buffer.reset();
+            if(const auto res = asset_store().import(buffer, asset_store().filesystem()->join(import_path, name + suffix), type, refs); res.is_ok()) {
+                log_msg(fmt("Imported {} \"{}\" as {}", asset_type_name(type), name, stringify_id(res.unwrap())));
+                return res.unwrap();
+            } else if(res.error() == AssetStore::ErrorType::NameAlreadyExists) {
+                suffix = fmt_to_owned(" ({})", i);
+            } else {
+                log_msg(fmt("Unable to import {}, error: {}", name, res.error()), Log::Error);
+                break;
+            }
         }
     }
 
-    for(const gltf::Node& src_node : source.nodes) {
-        auto& node = scene.nodes.emplace_back();
-
-        node.name = src_node.name;
-        node.transform = src_node.local_transform;
-        node.mesh_index = src_node.mesh;
-        node.light_index = src_node.light;
-        node.parent_index = src_node.parent;
-        node.children = core::Vector<int>(src_node.children);
-    }
-
-    for(const int root : source.roots) {
-        propagate_transforms(scene.nodes, root, math::Transform<>());
-    }
-
-    if(source.roots.size() == 1) {
-        scene.root_node = source.roots.first();
-    } else {
-        scene.root_node = int(scene.nodes.size());
-        auto& root = scene.nodes.emplace_back();
-
-        root.name = scene.name;
-        root.children = core::Vector<int>(source.roots);
-        for(int child : root.children) {
-            scene.nodes[child].parent_index = scene.root_node;
-        }
-    }
-
-    return core::Ok(std::move(scene));
+    return AssetId::invalid_id();
 }
 
-core::Result<MeshData> ParsedScene::create_mesh(int index) const {
-    if(index < 0) {
-        return core::Err();
-    }
-
-    const gltf::Mesh& mesh = source.meshes[index];
-    if(mesh.primitives.is_empty()) {
-        log_msg(fmt("Mesh \"{}\" has no valid primitive", mesh.name), Log::Error);
-        return core::Err();
-    }
-
-    MeshData mesh_data;
-    for(const gltf::Primitive& primitive : mesh.primitives) {
-        mesh_data.add_sub_mesh(primitive.vertices, primitive.triangles);
-    }
-
-    return core::Ok(std::move(mesh_data));
+static void deduplicate_refs(core::Vector<AssetId>& refs) {
+    std::sort(refs.begin(), refs.end());
+    refs.shrink_to(std::unique(refs.begin(), refs.end()) - refs.begin());
 }
 
-core::Result<MaterialData> ParsedScene::create_material(int index) const {
-    if(index < 0) {
+static core::Vector<AssetId> collect_refs(const MaterialData& data) {
+    core::Vector<AssetId> refs;
+    for(const auto& tex : data.textures()) {
+        refs << tex.id();
+    }
+    deduplicate_refs(refs);
+    return refs;
+}
+
+static void collect_refs(const ecs::EntityPrefab& prefab, core::Vector<AssetId>& refs) {
+    for(const auto& child : prefab.asset_children()) {
+        refs << child.id();
+    }
+
+    for(const auto& child : prefab.children()) {
+        collect_refs(*child, refs);
+    }
+
+    for(const auto& box : prefab.components()) {
+        if(const auto* mesh_box = dynamic_cast<const ecs::ComponentBox<StaticMeshComponent>*>(box.get())) {
+            const StaticMeshComponent& mesh = mesh_box->component();
+            refs << mesh.mesh().id();
+            for(const auto& mat : mesh.materials()) {
+                refs << mat.id();
+            }
+        }
+    }
+}
+
+static core::Vector<AssetId> collect_refs(const ecs::EntityPrefab& prefab) {
+    core::Vector<AssetId> refs;
+    collect_refs(prefab, refs);
+    deduplicate_refs(refs);
+    return refs;
+}
+
+
+
+
+// ----------------------------- CONVERSIONS -----------------------------
+
+static core::Result<ImageData> to_image_data(const gltf::Image& image, bool compress) {
+    ImageImportFlags flags = ImageImportFlags::GenerateMipmaps;
+    if(compress) {
+        flags = flags | ImageImportFlags::Compress;
+    }
+
+    if(image.color_space == gltf::ColorSpace::sRGB) {
+        flags = flags | ImageImportFlags::ImportAsSRGB;
+    }
+
+    if(image.is_normal_map) {
+        flags = flags | ImageImportFlags::IsNormalMap;
+    }
+
+    if(!image.path.is_empty()) {
+        return import_image(image.path, flags);
+    }
+
+    if(image.data.is_empty()) {
+        log_msg(fmt("Image \"{}\" has no data", image.name), Log::Error);
         return core::Err();
     }
 
-    const gltf::Material& material = source.materials[index];
+    return import_image(image.data, flags);
+}
 
+static MaterialData to_material_data(const gltf::Material& material, core::Span<AssetId> images) {
     auto find_texture = [&](const gltf::TextureRef& ref) -> AssetPtr<Texture> {
         if(!ref.is_valid()) {
             return {};
         }
-        return make_asset_with_id<Texture>(images[ref.image].asset_id);
+        return make_asset_with_id<Texture>(images[ref.image]);
     };
 
     auto fill_common = [&](auto& data) {
@@ -287,8 +299,6 @@ core::Result<MaterialData> ParsedScene::create_material(int index) const {
         data.double_sided = material.double_sided;
     };
 
-    MaterialData mat_data;
-
     if(material.has_specular) {
         MaterialData::SpecularMaterialData data;
         fill_common(data.common);
@@ -296,59 +306,212 @@ core::Result<MaterialData> ParsedScene::create_material(int index) const {
         data.specular_color = find_texture(material.specular_color);
         data.specular_color_factor = material.specular_color_factor;
         data.specular_factor = material.specular_factor;
+        return MaterialData(std::move(data));
+    }
 
-        mat_data = MaterialData(std::move(data));
+    MaterialData::MetallicRoughnessMaterialData data;
+    fill_common(data.common);
+    data.metallic_roughness = find_texture(material.metallic_roughness);
+    data.metallic_factor = material.metallic_factor;
+    data.roughness_factor = material.roughness_factor;
+    return MaterialData(std::move(data));
+}
+
+static MeshData to_mesh_data(const gltf::Mesh& mesh) {
+    MeshData mesh_data;
+    for(const gltf::Primitive& primitive : mesh.primitives) {
+        mesh_data.add_sub_mesh(primitive.vertices, primitive.triangles);
+    }
+    return mesh_data;
+}
+
+static PointLightComponent to_point_light(const gltf::Light& light) {
+    PointLightComponent component;
+    component.intensity() = light.intensity;
+    component.color() = light.color;
+
+    if(light.range > 0.0f) {
+        component.range() = light.range;
     } else {
-        MaterialData::MetallicRoughnessMaterialData data;
-        fill_common(data.common);
-        data.metallic_roughness = find_texture(material.metallic_roughness);
-        data.metallic_factor = material.metallic_factor;
-        data.roughness_factor = material.roughness_factor;
-
-        mat_data = MaterialData(std::move(data));
+        const float intensity = light.color.dot(math::Vec3(light.intensity));
+        component.range() = std::sqrt(intensity * 100.0f); // Put radius where lum < 1%
     }
 
-    return core::Ok(std::move(mat_data));
+    return component;
 }
 
-core::Result<ImageData> ParsedScene::create_image(int index, bool compress) const {
-    if(index < 0) {
-        return core::Err();
+static void compute_world_transforms(const gltf::Scene& scene, core::MutableSpan<math::Transform<>> transforms, int index, const math::Transform<>& parent) {
+    transforms[index] = parent * scene.nodes[index].local_transform;
+    for(const int child : scene.nodes[index].children) {
+        compute_world_transforms(scene, transforms, child, transforms[index]);
     }
-
-    ImageImportFlags flags = ImageImportFlags::None;
-    if(compress) {
-        flags = flags | ImageImportFlags::Compress;
-    }
-
-    if(images[index].as_sRGB && !images[index].as_normal) {
-        flags = flags | ImageImportFlags::ImportAsSRGB;
-    }
-
-    if(!images[index].as_sRGB && images[index].as_normal) {
-        flags = flags | ImageImportFlags::IsNormalMap;
-    }
-
-    if(images[index].generate_mips) {
-        flags = flags | ImageImportFlags::GenerateMipmaps;
-    }
-
-    const gltf::Image& image = source.images[index];
-
-    if(!image.path.is_empty()) {
-        return import_image(image.path, flags);
-    }
-
-    if(image.data.is_empty()) {
-        log_msg(fmt("Image \"{}\" has no data", image.name), Log::Error);
-        return core::Err();
-    }
-
-    return import_image(image.data, flags);
 }
 
-core::String supported_scene_extensions() {
-    return "*.gltf;*.glb";
+
+
+
+// ----------------------------- SCENE IMPORT -----------------------------
+
+namespace {
+// Shared by all the jobs of an import, each id is only written by the job that imports it
+struct ImportState : NonMovable {
+    ImportState(gltf::Scene s, GltfImportSettings st) :
+            scene(std::move(s)),
+            settings(std::move(st)),
+            name(clean_asset_name(scene.filename)),
+            world_transforms(scene.nodes.size(), math::Transform<>()),
+            images(scene.images.size(), AssetId::invalid_id()),
+            materials(scene.materials.size(), AssetId::invalid_id()),
+            meshes(scene.meshes.size(), AssetId::invalid_id()),
+            prefabs(scene.nodes.size() + 1, AssetId::invalid_id()),
+            status(std::make_shared<GltfImportStatus>()) {
+
+        for(const int root : scene.roots) {
+            compute_world_transforms(scene, world_transforms, root, math::Transform<>());
+        }
+
+        status->total = images.size() + materials.size() + meshes.size() + 1;
+    }
+
+    const gltf::Scene scene;
+    const GltfImportSettings settings;
+    const core::String name;
+
+    core::Vector<math::Transform<>> world_transforms;
+
+    core::Vector<AssetId> images;
+    core::Vector<AssetId> materials;
+    core::Vector<AssetId> meshes;
+    core::Vector<AssetId> prefabs;
+
+    const std::shared_ptr<GltfImportStatus> status;
+};
+}
+
+// Runs func unless the import was cancelled, func returns the imported id
+template<typename F>
+static void run_job(ImportState& state, F&& func) {
+    const bool success = !state.status->cancelled && func() != AssetId::invalid_id();
+    if(!success) {
+        ++state.status->failed;
+    }
+    ++state.status->done;
+}
+
+static AssetId import_image(ImportState& state, usize index) {
+    const gltf::Image& image = state.scene.images[index];
+    if(const auto image_data = to_image_data(image, state.settings.compress_textures)) {
+        state.images[index] = import_asset(image.name, image_data.unwrap(), AssetType::Image, state.settings.import_path, {});
+    }
+    return state.images[index];
+}
+
+static AssetId import_material(ImportState& state, usize index) {
+    const gltf::Material& material = state.scene.materials[index];
+    const MaterialData material_data = to_material_data(material, state.images);
+    const core::Vector<AssetId> refs = collect_refs(material_data);
+    return state.materials[index] = import_asset(material.name, material_data, AssetType::Material, state.settings.import_path, refs);
+}
+
+static AssetId import_mesh(ImportState& state, usize index) {
+    const gltf::Mesh& mesh = state.scene.meshes[index];
+    if(mesh.primitives.is_empty()) {
+        log_msg(fmt("Mesh \"{}\" has no valid primitive", mesh.name), Log::Error);
+        return AssetId::invalid_id();
+    }
+    return state.meshes[index] = import_asset(mesh.name, to_mesh_data(mesh), AssetType::Mesh, state.settings.import_path, {});
+}
+
+// Index of a node parenting all the scene's roots, used when the scene doesn't have a single root
+static int synthetic_root_index(const ImportState& state) {
+    return int(state.scene.nodes.size());
+}
+
+static AssetId import_node(ImportState& state, int index);
+
+static std::unique_ptr<ecs::EntityPrefab> create_prefab(ImportState& state, int index) {
+    const gltf::Scene& scene = state.scene;
+
+    auto prefab = std::make_unique<ecs::EntityPrefab>(ecs::EntityId::dummy(u32(index)));
+
+    const bool is_synthetic = (index == synthetic_root_index(state));
+    const core::Span<int> children = is_synthetic ? core::Span<int>(scene.roots) : core::Span<int>(scene.nodes[index].children);
+
+    if(!is_synthetic) {
+        const gltf::Node& node = scene.nodes[index];
+
+        if(node.mesh >= 0 && state.meshes[node.mesh] != AssetId::invalid_id()) {
+            const gltf::Mesh& mesh = scene.meshes[node.mesh];
+
+            core::Vector<AssetPtr<Material>> materials;
+            for(const gltf::Primitive& primitive : mesh.primitives) {
+                materials << (primitive.material < 0 ? AssetPtr<Material>() : make_asset_with_id<Material>(state.materials[primitive.material]));
+            }
+
+            prefab->add(StaticMeshComponent(make_asset_with_id<StaticMesh>(state.meshes[node.mesh]), std::move(materials)));
+
+            if(state.settings.create_colliders) {
+                prefab->add(RigidBodyComponent());
+            }
+        }
+
+        if(node.light >= 0) {
+            prefab->add(to_point_light(scene.lights[node.light]));
+        }
+    }
+
+    for(const int child_index : children) {
+        if(state.settings.import_child_prefabs_as_assets) {
+            if(const AssetId id = import_node(state, child_index); id != AssetId::invalid_id()) {
+                prefab->add_child(make_asset_with_id<ecs::EntityPrefab>(id));
+            }
+        } else {
+            prefab->add_child(create_prefab(state, child_index));
+        }
+    }
+
+    // Transforms are in world space: the engine doesn't propagate parent transforms
+    prefab->add(TransformableComponent(is_synthetic ? math::Transform<>() : state.world_transforms[index]));
+    prefab->add(EditorComponent(is_synthetic ? state.name : scene.nodes[index].name));
+
+    return prefab;
+}
+
+static AssetId import_node(ImportState& state, int index) {
+    if(state.prefabs[index] != AssetId::invalid_id()) {
+        return state.prefabs[index];
+    }
+
+    const std::unique_ptr<ecs::EntityPrefab> prefab = create_prefab(state, index);
+    const core::String& name = (index == synthetic_root_index(state)) ? state.name : state.scene.nodes[index].name;
+    return state.prefabs[index] = import_asset(name, *prefab, AssetType::Prefab, state.settings.import_path, collect_refs(*prefab));
+}
+
+static AssetId import_root(ImportState& state) {
+    const int root = state.scene.roots.size() == 1 ? state.scene.roots.first() : synthetic_root_index(state);
+    return state.status->root_prefab = import_node(state, root);
+}
+
+std::pair<concurrent::JobSystem::JobHandle, std::shared_ptr<GltfImportStatus>> schedule_gltf_import(concurrent::JobSystem& job_system, gltf::Scene scene, GltfImportSettings settings) {
+    const auto state = std::make_shared<ImportState>(std::move(scene), std::move(settings));
+
+    core::Vector<concurrent::JobSystem::JobHandle> image_jobs;
+    core::Vector<concurrent::JobSystem::JobHandle> asset_jobs;
+
+    for(usize i = 0; i != state->images.size(); ++i) {
+        image_jobs.emplace_back(job_system.schedule([=] { run_job(*state, [&] { return import_image(*state, i); }); }));
+    }
+
+    for(usize i = 0; i != state->materials.size(); ++i) {
+        asset_jobs.emplace_back(job_system.schedule([=] { run_job(*state, [&] { return import_material(*state, i); }); }, image_jobs));
+    }
+
+    for(usize i = 0; i != state->meshes.size(); ++i) {
+        asset_jobs.emplace_back(job_system.schedule([=] { run_job(*state, [&] { return import_mesh(*state, i); }); }));
+    }
+
+    auto root_job = job_system.schedule([=] { run_job(*state, [&] { return import_root(*state); }); }, asset_jobs);
+    return {std::move(root_job), state->status};
 }
 
 }
