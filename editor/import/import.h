@@ -22,6 +22,8 @@ SOFTWARE.
 #ifndef EDITOR_IMPORT_IMPORT_H
 #define EDITOR_IMPORT_IMPORT_H
 
+#include "gltf.h"
+
 #include <yave/graphics/images/ImageData.h>
 #include <yave/meshes/MeshData.h>
 #include <yave/animations/Animation.h>
@@ -31,10 +33,6 @@ SOFTWARE.
 #include <y/core/Vector.h>
 #include <y/math/math.h>
 
-
-namespace tinygltf {
-class Model;
-}
 
 namespace editor {
 namespace import {
@@ -101,7 +99,7 @@ struct ParsedScene : NonCopyable {
     core::Vector<Node> nodes;
     int root_node = -1;
 
-    std::unique_ptr<tinygltf::Model, std::function<void(tinygltf::Model*)>> gltf;
+    gltf::Scene source;
 
     core::Result<MeshData> create_mesh(int index) const;
     core::Result<MaterialData> create_material(int index) const;

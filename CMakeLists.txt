@@ -131,8 +131,7 @@ file(GLOB_RECURSE IMGUI_FILES
 )
 
 file(GLOB_RECURSE EDITOR_EXTERNAL_FILES
-    "external/tinygltf/*.hpp"
-    "external/tinygltf/*.h"
+    "external/cgltf/*.h"
 )
 
 # Shader files they are here so the IDE can find them
