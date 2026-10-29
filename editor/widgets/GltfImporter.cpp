@@ -30,6 +30,7 @@ SOFTWARE.
 #include <editor/utils/ui.h>
 
 #include <y/core/Chrono.h>
+#include <y/utils/format.h>
 
 
 namespace editor {
@@ -116,7 +117,9 @@ void GltfImporter::on_gui() {
         case State::Importing: {
             y_debug_assert(_import_status);
 
-            ImGui::Text("Importing%s (%u/%u)", imgui::ellipsis(), u32(_import_status->done), u32(_import_status->total));
+            const usize done = _import_status->done;
+            const usize total = _import_status->total;
+            ImGui::ProgressBar(float(done) / float(total), ImVec2(-1.0f, 0.0f), fmt_c_str("{} / {}", done, total));
             if(_import_job.is_finished()) {
                 refresh_all();
                 _state = State::Done;
