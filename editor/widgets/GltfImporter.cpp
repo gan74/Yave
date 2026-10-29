@@ -22,237 +22,18 @@ SOFTWARE.
 
 #include "GltfImporter.h"
 
-#include <yave/graphics/graphics.h>
-#include <yave/graphics/device/DeviceResources.h>
+#include <editor/import/import.h>
+
 #include <yave/assets/AssetStore.h>
-#include <yave/assets/AssetLoader.h>
-#include <yave/ecs/EntityWorld.h>
-#include <yave/components/TransformableComponent.h>
-#include <yave/components/StaticMeshComponent.h>
-#include <yave/components/PointLightComponent.h>
-#include <yave/components/RigidBodyComponent.h>
-#include <yave/meshes/StaticMesh.h>
-#include <yave/material/Material.h>
+#include <yave/utils/FileSystemModel.h>
 
 #include <editor/utils/ui.h>
-#include <editor/components/EditorComponent.h>
 
-#include <y/io2/Buffer.h>
-
+#include <y/core/Chrono.h>
+#include <y/utils/format.h>
 
 
 namespace editor {
-
-template<typename T>
-static AssetId import_asset(const core::String& name, const T& asset, AssetType type, const core::String& import_path, core::Span<AssetId> refs) {
-    y_profile();
-    y_profile_msg(fmt_c_str("Importing {} {}", asset_type_name(type), name));
-
-    io2::Buffer buffer;
-    {
-        y_profile_zone("serialize");
-        serde3::WritableArchive arc(buffer);
-        if(const auto res = arc.serialize(asset); res.is_error()) {
-            log_msg(fmt("Unable to serialize {}", name), Log::Error);
-            return AssetId::invalid_id();
-        }
-    }
-
-    {
-        y_profile_zone("import");
-
-        core::String suffix;
-        for(usize i = 0;; ++i) {
-            buffer.reset();
-            if(const auto res = asset_store().import(buffer, asset_store().filesystem()->join(import_path, name + suffix), type, refs); res.is_ok()) {
-                log_msg(fmt("Imported {} \"{}\" as {}", asset_type_name(type), name, stringify_id(res.unwrap())));
-                return res.unwrap();
-            } else if(res.error() == AssetStore::ErrorType::NameAlreadyExists) {
-                suffix = fmt_to_owned(" ({})", i);
-            } else {
-                log_msg(fmt("Unable to import {}, error: {}", name, res.error()), Log::Error);
-                break;
-            }
-        }
-
-    }
-
-    return AssetId::invalid_id();
-}
-
-struct PrefabImportSettings {
-    core::String import_path;
-    bool import_child_prefabs_as_assets;
-    bool create_colliders;
-};
-
-static AssetId import_node(import::ParsedScene& scene, int index, const PrefabImportSettings& settings);
-
-static std::pair<std::unique_ptr<ecs::EntityPrefab>, core::String> create_prefab(import::ParsedScene& scene, int index, const PrefabImportSettings& settings) {
-    if(index < 0 || scene.nodes[index].is_error) {
-        return {};
-    }
-
-    auto& node = scene.nodes[index];
-
-    auto prefab = std::make_unique<ecs::EntityPrefab>(ecs::EntityId::dummy(u32(index)));
-
-    if(node.mesh_index >= 0) {
-        if(const auto& mesh = scene.meshes[node.mesh_index]; mesh.asset_id != AssetId::invalid_id()) {
-            core::Vector<AssetPtr<Material>> materials;
-            std::transform(mesh.materials.begin(), mesh.materials.end(), std::back_inserter(materials), [&](int mat_index) {
-                if(mat_index < 0) {
-                    return AssetPtr<Material>();
-                }
-                return make_asset_with_id<Material>(scene.materials[mat_index].asset_id);
-            });
-
-            prefab->add(StaticMeshComponent(make_asset_with_id<StaticMesh>(mesh.asset_id), std::move(materials)));
-
-            if(settings.create_colliders) {
-                prefab->add(RigidBodyComponent());
-            }
-        }
-    }
-
-    if(node.light_index >= 0) {
-        const auto& light = scene.lights[node.light_index];
-
-        PointLightComponent component;
-        component.intensity() = light.intensity;
-        component.range() = light.range;
-        component.color() = light.color;
-
-        prefab->add(component);
-    }
-
-    for(const int child_index : node.children) {
-        if(settings.import_child_prefabs_as_assets) {
-            if(const AssetId id = import_node(scene, child_index, settings); id != AssetId::invalid_id()) {
-                prefab->add_child(make_asset_with_id<ecs::EntityPrefab>(id));
-            }
-        } else {
-            if(auto child = create_prefab(scene, child_index, settings); child.first) {
-                prefab->add_child(std::move(child.first));
-            }
-        }
-    }
-
-    prefab->add(TransformableComponent(node.transform));
-    prefab->add(EditorComponent(node.name));
-
-    return {std::move(prefab), node.name};
-}
-
-
-static void deduplicate_refs(core::Vector<AssetId>& refs) {
-    std::sort(refs.begin(), refs.end());
-    refs.shrink_to(std::unique(refs.begin(), refs.end()) - refs.begin());
-}
-
-static core::Vector<AssetId> collect_refs(const MaterialData& data) {
-    core::Vector<AssetId> refs;
-    for(const auto& tex : data.textures()) {
-        refs << tex.id();
-    }
-    deduplicate_refs(refs);
-    return refs;
-}
-
-static void collect_refs(const ecs::EntityPrefab& prefab, core::Vector<AssetId>& refs) {
-    for(const auto& child : prefab.asset_children()) {
-        refs << child.id();
-    }
-
-    for(const auto& child : prefab.children()) {
-        collect_refs(*child, refs);
-    }
-
-    for(const auto& box : prefab.components()) {
-        if(const auto* mesh_box = dynamic_cast<const ecs::ComponentBox<StaticMeshComponent>*>(box.get())) {
-            const StaticMeshComponent& mesh = mesh_box->component();
-            refs << mesh.mesh().id();
-            for(const auto& mat : mesh.materials()) {
-                refs << mat.id();
-            }
-        }
-    }
-}
-
-static core::Vector<AssetId> collect_refs(const ecs::EntityPrefab& prefab) {
-    core::Vector<AssetId> refs;
-    collect_refs(prefab, refs);
-    deduplicate_refs(refs);
-    return refs;
-}
-
-
-
-static AssetId import_node(import::ParsedScene& scene, int index, const PrefabImportSettings& settings) {
-    if(index < 0 || scene.nodes[index].is_error) {
-        return AssetId();
-    }
-
-    auto& node = scene.nodes[index];
-    if(node.asset_id != AssetId::invalid_id()) {
-        return node.asset_id;
-    }
-
-    const auto [prefab, name] = create_prefab(scene, index, settings);
-    const core::Vector<AssetId> refs = collect_refs(*prefab);
-    node.set_id(import_asset(name, *prefab, AssetType::Prefab, settings.import_path, refs));
-
-    return node.asset_id;
-}
-
-static void import_all(concurrent::JobSystem& job_system, import::ParsedScene& scene, const PrefabImportSettings& settings) {
-    core::Vector<concurrent::JobSystem::JobHandle> image_jobs;
-    core::Vector<concurrent::JobSystem::JobHandle> material_jobs;
-    core::Vector<concurrent::JobSystem::JobHandle> mesh_jobs;
-
-    for(usize i = 0; i != scene.images.size(); ++i) {
-        image_jobs.emplace_back(job_system.schedule([i, settings, &scene] {
-            auto& image = scene.images[i];
-            if(const auto image_data = scene.create_image(int(i), true)) {
-                image.set_id(import_asset(image.name, image_data.unwrap(), AssetType::Image, settings.import_path, {}));
-            }
-        }));
-    }
-
-    for(usize i = 0; i != scene.materials.size(); ++i) {
-        material_jobs.emplace_back(job_system.schedule([i, settings, &scene] {
-            auto& material = scene.materials[i];
-            if(auto material_data = scene.create_material(int(i))) {
-                const core::Vector<AssetId> refs = collect_refs(material_data.unwrap());
-                material.set_id(import_asset(material.name, std::move(material_data.unwrap()), AssetType::Material, settings.import_path, refs));
-            }
-        }, image_jobs));
-    }
-
-    for(usize i = 0; i != scene.meshes.size(); ++i) {
-        mesh_jobs.emplace_back(job_system.schedule([i, settings, &scene] {
-            auto& mesh = scene.meshes[i];
-            if(const auto mesh_data = scene.create_mesh(int(i))) {
-                mesh.set_id(import_asset(mesh.name, mesh_data.unwrap(), AssetType::Mesh, settings.import_path, {}));
-            }
-        }, material_jobs));
-    }
-
-    for(usize i = 0; i != scene.animations.size(); ++i) {
-        job_system.schedule([i, settings, &scene] {
-            auto& animation = scene.animations[i];
-            if(const auto animation_data = scene.create_animation(int(i))) {
-                animation.set_id(import_asset(animation.name, animation_data.unwrap(), AssetType::Animation, settings.import_path, {}));
-            }
-        });
-    }
-
-    job_system.schedule([settings, &scene] {
-        import_node(scene, scene.root_node, settings);
-    }, mesh_jobs);
-}
-
-
 
 GltfImporter::GltfImporter() : GltfImporter(asset_store().filesystem()->current_path().unwrap_or(".")) {
 }
@@ -267,7 +48,8 @@ GltfImporter::GltfImporter(core::String dst_import_path) :
     _browser.set_selected_callback([this](const auto& filename) {
         _job_system.schedule([=, this] {
             y_profile_zone("parsing import");
-            _scene = import::parse_scene(filename);
+            core::DebugTimer timer("Parsing gltf");
+            _scene = import::gltf::load_gltf(filename);
         });
         y_debug_assert(_state == State::Browsing);
         _state = State::Parsing;
@@ -279,6 +61,13 @@ bool GltfImporter::should_keep_alive() const {
      return !_job_system.is_empty();
 }
 
+void GltfImporter::cancel() {
+    if(_import_status) {
+        _import_status->cancelled = true;
+    }
+    close();
+}
+
 void GltfImporter::on_gui() {
     switch(_state) {
         case State::Browsing:
@@ -288,21 +77,19 @@ void GltfImporter::on_gui() {
         case State::Parsing:
             ImGui::Text("Parsing scene%s", imgui::ellipsis());
             if(_job_system.is_empty()) {
-                if(_scene.is_error()) {
-                    _state = State::Failed;
-                } else {
-                    _state = State::Settings;
-                }
+                _state = _scene.is_error() ? State::Failed : State::Settings;
             }
 
             if(ImGui::Button("Cancel")) {
-                // _job_system.cancel_pending_jobs();
-                close();
+                cancel();
             }
         break;
 
         case State::Settings: {
             y_debug_assert(_scene.is_ok());
+
+            const import::gltf::Scene& scene = _scene.unwrap();
+            ImGui::Text("%u meshes, %u materials, %u images, %u nodes", u32(scene.meshes.size()), u32(scene.materials.size()), u32(scene.images.size()), u32(scene.nodes.size()));
 
             if(imgui::path_selector("Import path:", _settings.import_path)) {
                 FileBrowser* browser = add_top_level_widget<FileBrowser>(asset_store().filesystem());
@@ -318,33 +105,35 @@ void GltfImporter::on_gui() {
 
             ImGui::Checkbox("Import children prefabs as assets", &_settings.import_child_prefabs_as_assets);
             ImGui::Checkbox("Create colliders", &_settings.create_colliders);
+            ImGui::Checkbox("Compress textures", &_settings.compress_textures);
 
             if(ImGui::Button(ICON_FA_CHECK " Import")) {
-                const PrefabImportSettings settings {
-                    _settings.import_path,
-                    _settings.import_child_prefabs_as_assets,
-                    _settings.create_colliders,
-                };
-                import_all(_job_system, _scene.unwrap(), settings);
+                std::tie(_import_job, _import_status) = import::schedule_gltf_import(_job_system, std::move(_scene.unwrap()), _settings);
+                _scene = core::Err();
                 _state = State::Importing;
             }
         } break;
 
         case State::Importing: {
-            ImGui::TextUnformatted("Importing...");
-            if(_job_system.is_empty()) {
+            y_debug_assert(_import_status);
+
+            const usize done = _import_status->done;
+            const usize total = _import_status->total;
+            ImGui::ProgressBar(float(done) / float(total), ImVec2(-1.0f, 0.0f), fmt_c_str("{} / {}", done, total));
+            if(_import_job.is_finished()) {
                 refresh_all();
                 _state = State::Done;
-            } else {
-                if(ImGui::Button("Cancel")) {
-                    // _job_system.cancel_pending_jobs();
-                    close();
-                }
+            } else if(ImGui::Button("Cancel")) {
+                cancel();
             }
         } break;
 
         case State::Done: {
-            ImGui::TextUnformatted("Done!");
+            if(const usize failed = _import_status->failed) {
+                ImGui::Text("Done, %u out of %u assets failed to import, check the log for details", u32(failed), u32(_import_status->total));
+            } else {
+                ImGui::TextUnformatted("Done!");
+            }
 
             if(ImGui::Button("Ok")) {
                 close();

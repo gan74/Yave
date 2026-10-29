@@ -77,6 +77,10 @@ MaterialDrawData MaterialAllocator::allocate_material(const MaterialData& materi
         data.base_color_factor = material.base_color_factor();
         data.roughness_factor = material.roughness_factor();
         data.metallic_factor = material.metallic_factor();
+        data.specular_color_factor = material.specular_color();
+        data.specular_factor = material.specular_factor();
+        data.alpha_factor = material.alpha_factor();
+        data.alpha_cutoff = material.alpha_cutoff();
         y_debug_assert(textures.size() <= sizeof(data.texture_indices) / sizeof(data.texture_indices[0]));
         for(usize i = 0; i != textures.size(); ++i) {
             data.texture_indices[i] = texture_library().add_texture(textures[i]);

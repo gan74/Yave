@@ -617,6 +617,8 @@ void EngineView::draw_settings_menu() {
             settings.ray_budget = u32(ray_budget) << 10;
         }
 
+        ImGui::SliderFloat("Max ray length", &settings.max_ray_length, 1.0f, 10000.0f, "%.1f", ImGuiSliderFlags_Logarithmic);
+
         ImGui::Separator();
 
         {

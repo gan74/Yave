@@ -49,6 +49,8 @@ static MaterialData::CommonMaterialData common_from_material(const MaterialData&
     common.emissive = textures[shader::TextureSlots::Emissive];
     common.color_factor = data.base_color_factor();
     common.emissive_factor = data.emissive_factor();
+    common.alpha_factor = data.alpha_factor();
+    common.alpha_cutoff = data.alpha_cutoff();
     common.blend_mode = data.blend_mode();
     common.alpha_tested = data.alpha_tested();
     common.double_sided = data.double_sided();

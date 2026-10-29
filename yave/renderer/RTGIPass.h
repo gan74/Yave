@@ -35,6 +35,8 @@ struct RTGISettings {
 
     u32 gather_samples = 4;
 
+    float max_ray_length = 100.0f;
+
     u32 hash_size = 22;
 
     float lod_dist = 5.0f;

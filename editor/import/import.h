@@ -22,19 +22,20 @@ SOFTWARE.
 #ifndef EDITOR_IMPORT_IMPORT_H
 #define EDITOR_IMPORT_IMPORT_H
 
+#include "gltf.h"
+
 #include <yave/graphics/images/ImageData.h>
-#include <yave/meshes/MeshData.h>
-#include <yave/animations/Animation.h>
-#include <yave/material/MaterialData.h>
+#include <yave/assets/AssetId.h>
 
 #include <y/core/Result.h>
 #include <y/core/Vector.h>
 #include <y/math/math.h>
+#include <y/concurrent/JobSystem.h>
 
+#include <atomic>
+#include <memory>
+#include <utility>
 
-namespace tinygltf {
-class Model;
-}
 
 namespace editor {
 namespace import {
@@ -47,76 +48,25 @@ core::String clean_asset_name(const core::String& name);
 
 
 // ----------------------------- SCENE -----------------------------
-struct ParsedScene : NonCopyable {
-    struct Asset {
-        core::String name = "Unnamed asset";
-        AssetId asset_id;
-        bool is_error = false;
-
-        void set_id(AssetId id) {
-            asset_id = id;
-            is_error = (id == AssetId::invalid_id());
-        }
-    };
-
-    struct Image : Asset {
-        bool as_sRGB = false;
-        bool as_normal = false;
-        bool generate_mips = true;
-    };
-
-    struct Material : Asset {
-
-    };
-
-    struct Mesh : Asset {
-        core::Vector<int> materials;
-        int skin_index = -1;
-        int skin_node_index = -1;
-    };
-
-    struct Animation : Asset {
-    };
-
-    struct Node : Asset {
-        math::Transform<> transform;
-        core::Vector<int> children;
-
-        int mesh_index = -1;
-        int light_index = -1;
-        int parent_index = -1;
-    };
-
-    struct Light {
-        core::String name = "Unnamed light";
-
-        float range = 1.0f;
-        float intensity = 1.0f;
-        math::Vec3 color = math::Vec3(1.0f);
-    };
-
-    core::String name;
-    core::String filename;
-
-    core::Vector<Mesh> meshes;
-    core::Vector<Material> materials;
-    core::Vector<Image> images;
-    core::Vector<Light> lights;
-    core::Vector<Animation> animations;
-
-    core::Vector<Node> nodes;
-    int root_node = -1;
-
-    std::unique_ptr<tinygltf::Model, std::function<void(tinygltf::Model*)>> gltf;
-
-    core::Result<MeshData> create_mesh(int index) const;
-    core::Result<MaterialData> create_material(int index) const;
-    core::Result<ImageData> create_image(int index, bool compress = false) const;
-    core::Result<yave::Animation> create_animation(int index) const;
+struct GltfImportSettings {
+    core::String import_path;
+    bool import_child_prefabs_as_assets = false;
+    bool create_colliders = false;
+    bool compress_textures = true;
 };
 
+struct GltfImportStatus : NonMovable {
+    std::atomic<bool> cancelled = false;
 
-core::Result<ParsedScene> parse_scene(const core::String& filename);
+    std::atomic<usize> done = 0;
+    std::atomic<usize> failed = 0;
+    usize total = 0;
+
+    // Only valid once the returned job is finished
+    AssetId root_prefab = AssetId::invalid_id();
+};
+std::pair<concurrent::JobSystem::JobHandle, std::shared_ptr<GltfImportStatus>> schedule_gltf_import(concurrent::JobSystem& job_system, gltf::Scene scene, GltfImportSettings settings);
+
 core::String supported_scene_extensions();
 
 

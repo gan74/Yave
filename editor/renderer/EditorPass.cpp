@@ -153,7 +153,7 @@ static void render_selection(DirectDraw& draw, const SceneView& scene_view) {
             const float scale = tr.scale().max_component();
             draw.add_primitive("selected light outer")->add_wire_cone(editor_pass_draw_color, tr.position(), tr.forward(), tr.up(), obj->component.range() * scale, obj->component.half_angle());
             draw.add_primitive("selected light inner")->add_wire_cone(inner_color, tr.position(), tr.forward(), tr.up(), obj->component.range() * scale, obj->component.half_inner_angle());
-            // draw.add_primitive("selected light sphere")->add_sphere_3circles(tr.transform_point(math::Vec3(0.0f, sphere.dist_to_center, 0.0f)), sphere.radius * scale);
+            // draw.add_primitive("selected light sphere")->add_sphere_3circles(tr.transform_point(math::Vec3(0.0f, 0.0f, sphere.dist_to_center)), sphere.radius * scale);
         }
 
         if(app_settings().debug.display_selected_bbox) {

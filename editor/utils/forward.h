@@ -103,14 +103,20 @@ struct UndoState;
 
 
 namespace editor::import {
-struct Animation;
-struct Asset;
+struct GltfImportSettings;
+struct GltfImportStatus;
+}
+
+
+namespace editor::import::gltf {
 struct Image;
 struct Light;
 struct Material;
 struct Mesh;
 struct Node;
-struct ParsedScene;
+struct Primitive;
+struct Scene;
+struct TextureRef;
 }
 
 

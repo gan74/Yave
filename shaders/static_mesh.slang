@@ -152,10 +152,11 @@ PixelStageOut frag_main(PixelStageIn in) {
 
     const float4 albedo_alpha = albedo_tex.Sample(in.uv);
     const float3 albedo = albedo_alpha.rgb * material.base_color_factor;
+    const float alpha = albedo_alpha.a * material.alpha_factor;
     // const float3 albedo = heat_spectrum(frac(mesh_objects[in.instance_index].mesh_data_index / 128.0));
 
 #ifdef ALPHA_TEST
-    if(albedo_alpha.a < 0.5) {
+    if(alpha < material.alpha_cutoff) {
         discard;
     }
 #endif
@@ -208,7 +209,7 @@ PixelStageOut frag_main(PixelStageIn in) {
         in_shadows
     );
 
-    const float4 out = float4(emissive + indirect + direct, albedo_alpha.a);
+    const float4 out = float4(emissive + indirect + direct, alpha);
 
 #endif
 
