@@ -51,7 +51,6 @@ void SkeletonInstance::update() {
 
     auto& out_transforms = *_bone_transforms;
 
-
     for(usize i = 0; i != bones.size(); ++i) {
         const auto& bone = bones[i];
         auto bone_tr = anim.bone_transform(bone.name, time).value_or(bone_transforms[i]);

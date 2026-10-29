@@ -45,13 +45,6 @@ struct SceneRenderSubPass {
     static SceneRenderSubPass create(FrameGraphPassBuilder& builder, const CameraBufferPass& camera, const SceneVisibilitySubPass& visibility, PassType pass_type);
 
     void render(RenderPassRecorder& render_pass, const FrameGraphPass* pass) const;
-
-    template<typename F>
-    void for_each_descriptor_set(F&& func) const {
-        for(const i32 index : descriptor_set_indices) {
-            func(index);
-        }
-    }
 };
 
 

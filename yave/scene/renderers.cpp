@@ -61,7 +61,7 @@ template<typename O, typename F>
 static core::Vector<MeshBatch> collect_batches(core::Span<const O*> meshes, PassType pass_type, F&& mesh_data_index) {
     y_profile();
 
-    auto batches = core::Vector<MeshBatch>::with_capacity(meshes.size() * 4);
+    auto batches = core::Vector<MeshBatch>::with_capacity(pass_type == PassType::Id ? meshes.size() : meshes.size() * 4);
     for(const O* mesh : meshes) {
         const u32 transform_index = mesh->transform_index;
 
@@ -85,33 +85,20 @@ static core::Vector<MeshBatch> collect_batches(core::Span<const O*> meshes, Pass
         }
 
         const core::Span<AssetPtr<Material>> materials = mesh->component.materials();
-        if(materials.size() == 1) {
-            if(const Material* mat = materials[0].get()) {
-                y_debug_assert(!static_mesh->draw_command().vk_indirect_data().vertexOffset);
+        const bool single_material = materials.size() == 1;
+        y_debug_assert(single_material ? !static_mesh->draw_command().vk_indirect_data().vertexOffset : static_mesh->sub_meshes().size() == materials.size());
+
+        for(usize i = 0; i != materials.size(); ++i) {
+            if(const Material* mat = materials[i].get()) {
                 const MaterialTemplate* templ = mat->material_template(pass_type);
                 if(!templ || !accept_material(*mat, pass_type)) {
                     continue;
                 }
                 batches.emplace_back(
                     templ,
-                    static_mesh->draw_command().vk_indirect_data(),
+                    single_material ? static_mesh->draw_command().vk_indirect_data() : static_mesh->sub_meshes()[i].vk_indirect_data(),
                     shader::MeshObject{transform_index, mat->draw_data().index(), data_index}
                 );
-            }
-        } else {
-            y_debug_assert(static_mesh->sub_meshes().size() == materials.size());
-            for(usize i = 0; i != materials.size(); ++i) {
-                if(const Material* mat = materials[i].get()) {
-                    const MaterialTemplate* templ = mat->material_template(pass_type);
-                    if(!templ || !accept_material(*mat, pass_type)) {
-                        continue;
-                    }
-                    batches.emplace_back(
-                        templ,
-                        static_mesh->sub_meshes()[i].vk_indirect_data(),
-                        shader::MeshObject{transform_index, mat->draw_data().index(), data_index}
-                    );
-                }
             }
         }
     }

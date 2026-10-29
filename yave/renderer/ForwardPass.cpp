@@ -53,7 +53,7 @@ ForwardPass ForwardPass::create(FrameGraph& framegraph, FrameGraphImageId in_dep
     pass.lit = lit;
     pass.scene_pass = SceneRenderSubPass::create(builder, camera, visibility, PassType::Forward);
 
-    pass.scene_pass.for_each_descriptor_set([&](i32 ds_index) {
+    for(const i32 ds_index : pass.scene_pass.descriptor_set_indices) {
         builder.add_uniform_input(cluster.shadow_pass.shadow_map, SamplerType::Shadow, PipelineStage::None, ds_index);
         builder.add_storage_input(cluster.shadow_pass.shadow_infos, PipelineStage::None, ds_index);
         builder.add_uniform_input(cluster.cluster_info, PipelineStage::None, ds_index);
@@ -62,7 +62,7 @@ ForwardPass ForwardPass::create(FrameGraph& framegraph, FrameGraphImageId in_dep
         builder.add_external_input(*ibl_probe, PipelineStage::None, ds_index);
         builder.add_external_input(Descriptor(device_resources().brdf_lut(), SamplerType::LinearClamp), PipelineStage::None, ds_index);
         builder.add_inline_input(params, ds_index);
-    });
+    }
 
     builder.add_depth_output(depth);
     builder.add_color_output(lit);

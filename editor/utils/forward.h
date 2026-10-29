@@ -109,6 +109,8 @@ struct GltfImportStatus;
 
 
 namespace editor::import::gltf {
+struct Animation;
+struct AnimationChannel;
 struct Image;
 struct Light;
 struct Material;
@@ -116,7 +118,10 @@ struct Mesh;
 struct Node;
 struct Primitive;
 struct Scene;
+struct Skin;
+struct SkinInfluences;
 struct TextureRef;
+struct UvTransform;
 }
 
 

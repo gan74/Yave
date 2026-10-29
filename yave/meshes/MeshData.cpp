@@ -167,7 +167,7 @@ MeshTriangleData MeshData::triangle_data() const {
 }
 
 bool MeshData::has_skinning_data() const {
-    return !!_skinning;
+    return bool(_skinning);
 }
 
 bool MeshData::is_empty() const {

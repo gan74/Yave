@@ -35,6 +35,8 @@ SOFTWARE.
 #include <yave/components/RigidBodyComponent.h>
 #include <yave/meshes/MeshData.h>
 #include <yave/meshes/StaticMesh.h>
+#include <yave/meshes/Skeleton.h>
+#include <yave/animations/Animation.h>
 #include <yave/material/Material.h>
 #include <yave/material/MaterialData.h>
 #include <yave/utils/FileSystemModel.h>
@@ -47,6 +49,8 @@ SOFTWARE.
 
 #include <y/utils/log.h>
 #include <y/utils/format.h>
+
+#include <map>
 
 
 // -------------- STB --------------
@@ -208,9 +212,10 @@ static AssetId import_asset(const core::String& name, const T& asset, AssetType 
     return AssetId::invalid_id();
 }
 
-static void deduplicate_refs(core::Vector<AssetId>& refs) {
-    std::sort(refs.begin(), refs.end());
-    refs.shrink_to(std::unique(refs.begin(), refs.end()) - refs.begin());
+template<typename T>
+static void sort_unique(core::Vector<T>& values) {
+    std::sort(values.begin(), values.end());
+    values.shrink_to(std::unique(values.begin(), values.end()) - values.begin());
 }
 
 static core::Vector<AssetId> collect_refs(const MaterialData& data) {
@@ -218,7 +223,7 @@ static core::Vector<AssetId> collect_refs(const MaterialData& data) {
     for(const auto& tex : data.textures()) {
         refs << tex.id();
     }
-    deduplicate_refs(refs);
+    sort_unique(refs);
     return refs;
 }
 
@@ -245,7 +250,7 @@ static void collect_refs(const ecs::EntityPrefab& prefab, core::Vector<AssetId>&
 static core::Vector<AssetId> collect_refs(const ecs::EntityPrefab& prefab) {
     core::Vector<AssetId> refs;
     collect_refs(prefab, refs);
-    deduplicate_refs(refs);
+    sort_unique(refs);
     return refs;
 }
 
@@ -384,6 +389,300 @@ static void compute_world_transforms(const gltf::Scene& scene, core::MutableSpan
 
 
 
+// ----------------------------- SKINNING -----------------------------
+
+static BoneTransform to_bone_transform(const math::Transform<>& transform) {
+    const auto [position, rotation, scale] = transform.decompose();
+    return BoneTransform{position, scale, rotation};
+}
+
+struct ImportedSkeleton {
+    core::Vector<Bone> bones;
+    core::Vector<u32> joint_to_bone;
+};
+
+static void add_skeleton_bones(const gltf::Scene& scene, int node_index, u32 parent, core::Span<u8> in_skeleton, core::MutableSpan<u32> node_to_bone, core::Vector<Bone>& bones) {
+    const gltf::Node& node = scene.nodes[node_index];
+
+    const u32 bone_index = u32(bones.size());
+    node_to_bone[node_index] = bone_index;
+    bones << Bone {
+        node.name,
+        parent,
+        to_bone_transform(node.local_transform),
+    };
+
+    for(const int child : node.children) {
+        if(in_skeleton[child]) {
+            add_skeleton_bones(scene, child, bone_index, in_skeleton, node_to_bone, bones);
+        }
+    }
+}
+
+static core::Result<ImportedSkeleton> import_skeleton(const gltf::Scene& scene, const gltf::Skin& skin, const math::Transform<>& mesh_to_world) {
+    const usize node_count = scene.nodes.size();
+
+    if(skin.joints.is_empty()) {
+        log_msg(fmt("Skin \"{}\" has no joints", skin.name), Log::Error);
+        return core::Err();
+    }
+
+    core::Vector<u8> in_skeleton;
+    in_skeleton.set_min_size(node_count);
+    for(const int joint : skin.joints) {
+        if(joint < 0 || usize(joint) >= node_count) {
+            log_msg(fmt("Skin \"{}\" has an invalid joint", skin.name), Log::Error);
+            return core::Err();
+        }
+        for(int node = joint; node >= 0 && !in_skeleton[node]; node = scene.nodes[node].parent) {
+            in_skeleton[node] = 1;
+        }
+    }
+
+    ImportedSkeleton skeleton;
+
+    skeleton.bones << Bone {
+        "__mesh_root",
+        u32(-1),
+        to_bone_transform(mesh_to_world.inverse()),
+    };
+
+    core::Vector<u32> node_to_bone;
+    node_to_bone.set_min_size(node_count, u32(-1));
+    for(usize i = 0; i != node_count; ++i) {
+        if(in_skeleton[i] && scene.nodes[i].parent < 0) {
+            add_skeleton_bones(scene, int(i), 0, in_skeleton, node_to_bone, skeleton.bones);
+        }
+    }
+
+    if(skeleton.bones.size() > Skeleton::max_bones) {
+        log_msg(fmt("Skin \"{}\" has too many bones ({}, max is {})", skin.name, skeleton.bones.size(), Skeleton::max_bones), Log::Error);
+        return core::Err();
+    }
+
+    for(const int joint : skin.joints) {
+        y_debug_assert(node_to_bone[joint] != u32(-1));
+        skeleton.joint_to_bone << node_to_bone[joint];
+    }
+
+    {
+        core::Vector<core::String> names;
+        for(const Bone& bone : skeleton.bones) {
+            names << bone.name;
+        }
+        std::sort(names.begin(), names.end());
+        if(std::adjacent_find(names.begin(), names.end()) != names.end()) {
+            log_msg(fmt("Skin \"{}\" has several bones with the same name, animations might not work", skin.name), Log::Warning);
+        }
+    }
+
+    if(!skin.inverse_bind_matrices.is_empty()) {
+        y_debug_assert(skin.inverse_bind_matrices.size() == skin.joints.size());
+
+        const Skeleton rest_pose(skeleton.bones);
+        const core::Span<math::Transform<>> inverse_absolute = rest_pose.inverse_absolute_transforms();
+
+        bool matches = true;
+        for(usize j = 0; j != skin.joints.size() && matches; ++j) {
+            const math::Transform<>& expected = inverse_absolute[skeleton.joint_to_bone[j]];
+            const math::Transform<>& inverse_bind = skin.inverse_bind_matrices[j];
+            matches = std::equal(expected.begin(), expected.end(), inverse_bind.begin(), [](float a, float b) {
+                return std::abs(a - b) <= 1.0e-3f * std::max(1.0f, std::abs(b));
+            });
+        }
+
+        if(!matches) {
+            log_msg(fmt("Skin \"{}\" bind pose doesn't match the rest pose, skinning will be wrong", skin.name), Log::Warning);
+        }
+    }
+
+    return core::Ok(std::move(skeleton));
+}
+
+static core::Result<core::Vector<SkinWeights>> to_skin_weights(const gltf::Mesh& mesh, core::Span<u32> joint_to_bone) {
+    // Unweighted vertices follow the mesh root
+    SkinWeights root_weights = {};
+    root_weights.weights[0] = u16(0xFFFF);
+
+    core::Vector<SkinWeights> skin;
+    {
+        usize vertex_count = 0;
+        for(const gltf::Primitive& primitive : mesh.primitives) {
+            vertex_count += primitive.vertices.size();
+        }
+        skin.set_min_capacity(vertex_count);
+    }
+
+    for(const gltf::Primitive& primitive : mesh.primitives) {
+        if(primitive.skin_influences.is_empty()) {
+            for(usize i = 0; i != primitive.vertices.size(); ++i) {
+                skin << root_weights;
+            }
+            continue;
+        }
+
+        y_debug_assert(primitive.skin_influences.size() == primitive.vertices.size());
+
+        for(const gltf::SkinInfluences& inf : primitive.skin_influences) {
+            float total = 0.0f;
+            for(const float weight : inf.weights) {
+                total += weight;
+            }
+
+            if(total <= 0.0f) {
+                skin << root_weights;
+                continue;
+            }
+
+            SkinWeights w = {};
+            u32 sum = 0;
+            for(usize k = 0; k != SkinWeights::size; ++k) {
+                if(inf.joints[k] >= joint_to_bone.size()) {
+                    log_msg("Invalid skin joint index", Log::Error);
+                    return core::Err();
+                }
+
+                w.indices[k] = u16(joint_to_bone[inf.joints[k]]);
+                w.weights[k] = u16(std::round(inf.weights[k] / total * float(0xFFFF)));
+                sum += w.weights[k];
+            }
+            w.weights[0] = u16(i32(w.weights[0]) + (i32(0xFFFF) - i32(sum)));
+
+            skin << w;
+        }
+    }
+
+    return core::Ok(std::move(skin));
+}
+
+static MeshData to_skinned_mesh_data(const gltf::Scene& scene, const gltf::Mesh& mesh, const gltf::Skin& skin, const math::Transform<>& mesh_to_world) {
+    MeshData mesh_data = to_mesh_data(mesh);
+
+    auto skeleton = import_skeleton(scene, skin, mesh_to_world);
+    if(skeleton.is_error()) {
+        log_msg(fmt("Unable to import skeleton of \"{}\", mesh will be imported as static", mesh.name), Log::Error);
+        return mesh_data;
+    }
+
+    auto weights = to_skin_weights(mesh, skeleton.unwrap().joint_to_bone);
+    if(weights.is_error()) {
+        log_msg(fmt("Unable to import skin of \"{}\", mesh will be imported as static", mesh.name), Log::Error);
+        return mesh_data;
+    }
+
+    return MeshData(std::move(mesh_data), std::move(skeleton.unwrap().bones), std::move(weights.unwrap()));
+}
+
+
+
+
+// ----------------------------- ANIMATIONS -----------------------------
+
+static core::Result<Animation> to_animation(const gltf::Scene& scene, const gltf::Animation& animation) {
+    // Indexed by gltf::AnimationPath, null if the path isn't animated
+    using Curves = std::array<const gltf::AnimationChannel*, 3>;
+
+    std::map<int, Curves> node_curves;
+    float duration = 0.0f;
+
+    for(const gltf::AnimationChannel& channel : animation.channels) {
+        y_debug_assert(!channel.times.is_empty() && channel.times.size() == channel.values.size());
+
+        node_curves[channel.node][usize(channel.path)] = &channel;
+        duration = std::max(duration, channel.times.last());
+    }
+
+    if(node_curves.empty() || duration <= 0.0f) {
+        log_msg(fmt("Animation \"{}\" is empty", animation.name), Log::Error);
+        return core::Err();
+    }
+
+    struct Interpolant {
+        math::Vec4 a;
+        math::Vec4 b;
+        float factor = 0.0f;
+
+        math::Vec3 lerp() const {
+            return math::lerp(a, b, factor).to<3>();
+        }
+    };
+
+    auto sample = [](const gltf::AnimationChannel& curve, float time) {
+        const auto it = std::upper_bound(curve.times.begin(), curve.times.end(), time);
+        if(it == curve.times.begin()) {
+            return Interpolant{curve.values[0], curve.values[0]};
+        }
+        if(it == curve.times.end()) {
+            return Interpolant{curve.values.last(), curve.values.last()};
+        }
+
+        const usize next = usize(it - curve.times.begin());
+        const usize prev = next - 1;
+        if(curve.interpolation == gltf::Interpolation::Step) {
+            return Interpolant{curve.values[prev], curve.values[prev]};
+        }
+
+        const float factor = (time - curve.times[prev]) / (curve.times[next] - curve.times[prev]);
+        return Interpolant{curve.values[prev], curve.values[next], factor};
+    };
+
+    core::Vector<AnimationChannel> channels;
+    channels.set_min_capacity(node_curves.size());
+    for(const auto& [node_index, curves] : node_curves) {
+        core::Vector<float> times;
+        times << 0.0f;
+        times << duration;
+        for(const gltf::AnimationChannel* curve : curves) {
+            if(!curve) {
+                continue;
+            }
+            const bool step = (curve->interpolation == gltf::Interpolation::Step);
+            for(const float t : curve->times) {
+                times << std::clamp(t, 0.0f, duration);
+                if(step) {
+                    times << std::clamp(std::nextafter(t, 0.0f), 0.0f, duration);
+                }
+            }
+        }
+        sort_unique(times);
+
+        const gltf::Node& node = scene.nodes[node_index];
+        const BoneTransform rest_pose = to_bone_transform(node.local_transform);
+
+        const gltf::AnimationChannel* translation = curves[usize(gltf::AnimationPath::Translation)];
+        const gltf::AnimationChannel* rotation = curves[usize(gltf::AnimationPath::Rotation)];
+        const gltf::AnimationChannel* scale = curves[usize(gltf::AnimationPath::Scale)];
+
+        core::Vector<AnimationChannel::BoneKey> keys;
+        keys.set_min_capacity(times.size());
+        for(const float t : times) {
+            BoneTransform transform = rest_pose;
+
+            if(translation) {
+                transform.position = sample(*translation, t).lerp();
+            }
+
+            if(rotation) {
+                const Interpolant i = sample(*rotation, t);
+                transform.rotation = math::Quaternion<>(i.a).slerp(math::Quaternion<>(i.b), i.factor);
+            }
+
+            if(scale) {
+                transform.scale = sample(*scale, t).lerp();
+            }
+
+            keys << AnimationChannel::BoneKey{t, transform};
+        }
+
+        channels << AnimationChannel(node.name, std::move(keys));
+    }
+
+    return core::Ok(Animation(duration, std::move(channels)));
+}
+
+
+
+
 // ----------------------------- SCENE IMPORT -----------------------------
 
 
@@ -393,9 +692,11 @@ struct ImportState : NonMovable {
             settings(std::move(st)),
             name(clean_asset_name(scene.filename)),
             world_transforms(scene.nodes.size(), math::Transform<>()),
+            mesh_skin_nodes(scene.meshes.size(), -1),
             images(scene.images.size(), AssetId::invalid_id()),
             materials(scene.materials.size(), AssetId::invalid_id()),
             meshes(scene.meshes.size(), AssetId::invalid_id()),
+            animations(scene.animations.size(), AssetId::invalid_id()),
             prefabs(scene.nodes.size() + 1, AssetId::invalid_id()),
             status(std::make_shared<GltfImportStatus>()) {
 
@@ -403,7 +704,21 @@ struct ImportState : NonMovable {
             compute_world_transforms(scene, world_transforms, root, math::Transform<>());
         }
 
-        status->total = images.size() + materials.size() + meshes.size() + 1;
+        for(usize i = 0; i != scene.nodes.size(); ++i) {
+            const gltf::Node& node = scene.nodes[i];
+            if(node.mesh < 0 || node.skin < 0) {
+                continue;
+            }
+
+            int& skin_node = mesh_skin_nodes[node.mesh];
+            if(skin_node < 0) {
+                skin_node = int(i);
+            } else if(scene.nodes[skin_node].skin != node.skin) {
+                log_msg(fmt("Mesh \"{}\" is used with several skins, only the first one will be imported", scene.meshes[node.mesh].name), Log::Warning);
+            }
+        }
+
+        status->total = images.size() + materials.size() + meshes.size() + animations.size() + 1;
     }
 
     const gltf::Scene scene;
@@ -412,9 +727,13 @@ struct ImportState : NonMovable {
 
     core::Vector<math::Transform<>> world_transforms;
 
+    // Node that uses the mesh with a skin, -1 for static meshes
+    core::Vector<int> mesh_skin_nodes;
+
     core::Vector<AssetId> images;
     core::Vector<AssetId> materials;
     core::Vector<AssetId> meshes;
+    core::Vector<AssetId> animations;
     core::Vector<AssetId> prefabs;
 
     const std::shared_ptr<GltfImportStatus> status;
@@ -451,7 +770,20 @@ static AssetId import_mesh(ImportState& state, usize index) {
         log_msg(fmt("Mesh \"{}\" has no valid primitive", mesh.name), Log::Error);
         return AssetId::invalid_id();
     }
-    return state.meshes[index] = import_asset(mesh.name, to_mesh_data(mesh), AssetType::Mesh, state.settings.import_path, {});
+    const int skin_node = state.mesh_skin_nodes[index];
+    const MeshData mesh_data = skin_node < 0
+        ? to_mesh_data(mesh)
+        : to_skinned_mesh_data(state.scene, mesh, state.scene.skins[state.scene.nodes[skin_node].skin], state.world_transforms[skin_node]);
+
+    return state.meshes[index] = import_asset(mesh.name, mesh_data, AssetType::Mesh, state.settings.import_path, {});
+}
+
+static AssetId import_animation(ImportState& state, usize index) {
+    const gltf::Animation& animation = state.scene.animations[index];
+    if(const auto animation_data = to_animation(state.scene, animation)) {
+        state.animations[index] = import_asset(animation.name, animation_data.unwrap(), AssetType::Animation, state.settings.import_path, {});
+    }
+    return state.animations[index];
 }
 
 static int synthetic_root_index(const ImportState& state) {
@@ -562,6 +894,10 @@ std::pair<concurrent::JobSystem::JobHandle, std::shared_ptr<GltfImportStatus>> s
 
     for(usize i = 0; i != state->meshes.size(); ++i) {
         asset_jobs.emplace_back(job_system.schedule([=] { run_job(*state, [&] { return import_mesh(*state, i); }); }));
+    }
+
+    for(usize i = 0; i != state->animations.size(); ++i) {
+        asset_jobs.emplace_back(job_system.schedule([=] { run_job(*state, [&] { return import_animation(*state, i); }); }));
     }
 
     auto root_job = job_system.schedule([=] { run_job(*state, [&] { return import_root(*state); }); }, asset_jobs);

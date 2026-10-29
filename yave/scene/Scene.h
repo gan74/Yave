@@ -96,6 +96,11 @@ class Scene : NonMovable {
             std::apply([&](const auto&... renderers) { (func(static_cast<const RendererBase&>(renderers)), ...); }, _renderers);
         }
 
+        template<typename F>
+        void for_each_renderer(F&& func) {
+            std::apply([&](auto&... renderers) { (func(static_cast<RendererBase&>(renderers)), ...); }, _renderers);
+        }
+
         core::Span<StaticMeshObject>        meshes() const          { return _meshes; }
         core::Span<SkinnedMeshObject>       skinned_meshes() const  { return _skinned_meshes; }
         core::Span<PointLightObject>        point_lights() const    { return _point_lights; }

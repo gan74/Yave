@@ -29,13 +29,22 @@ SOFTWARE.
 #include <y/core/String.h>
 #include <y/math/Transform.h>
 
+#include <array>
+
 namespace editor {
 namespace import {
 namespace gltf {
 
+// Strongest influences first, weights are not normalized (all zero if the vertex isn't weighted)
+struct SkinInfluences {
+    std::array<u32, SkinWeights::size> joints = {};     // Indices into Skin::joints
+    std::array<float, SkinWeights::size> weights = {};
+};
+
 struct Primitive {
     core::Vector<FullVertex> vertices;
     core::Vector<IndexedTriangle> triangles;
+    core::Vector<SkinInfluences> skin_influences; // Empty or one per vertex
     int material = -1;
 };
 
@@ -140,6 +149,38 @@ struct Light {
     float outer_cone_angle = math::pi<float> / 4.0f;
 };
 
+struct Skin {
+    core::String name;
+
+    core::Vector<int> joints;
+    core::Vector<math::Transform<>> inverse_bind_matrices; // Empty if absent or invalid
+};
+
+enum class AnimationPath : u8 {
+    Translation,
+    Rotation,
+    Scale,
+};
+
+enum class Interpolation : u8 {
+    Linear,
+    Step, // Cubic splines are decoded as linear
+};
+
+struct AnimationChannel {
+    int node = -1;
+    AnimationPath path = AnimationPath::Translation;
+    Interpolation interpolation = Interpolation::Linear;
+
+    core::Vector<float> times;
+    core::Vector<math::Vec4> values; // One per key, xyz for translation and scale, xyzw quaternion for rotation
+};
+
+struct Animation {
+    core::String name;
+    core::Vector<AnimationChannel> channels;
+};
+
 struct Node {
     core::String name;
     math::Transform<> local_transform;
@@ -149,6 +190,7 @@ struct Node {
 
     int mesh = -1;
     int light = -1;
+    int skin = -1;
 };
 
 struct Scene {
@@ -158,6 +200,8 @@ struct Scene {
     core::Vector<Material> materials;
     core::Vector<Image> images;
     core::Vector<Light> lights;
+    core::Vector<Skin> skins;
+    core::Vector<Animation> animations;
     core::Vector<Node> nodes;
 
     core::Vector<int> roots;

@@ -223,9 +223,16 @@ static math::Vec3 safe_normalize(const math::Vec3& v, const math::Vec3& fallback
     return len > 1.0e-12f ? v / len : fallback;
 }
 
-static void compute_flat_normals(core::Vector<FullVertex>& vertices, core::Vector<IndexedTriangle>& triangles) {
+static void compute_flat_normals(core::Vector<FullVertex>& vertices, core::Vector<SkinInfluences>& skin_influences, core::Vector<IndexedTriangle>& triangles) {
+    const bool skinned = !skin_influences.is_empty();
+
     core::Vector<FullVertex> flat;
     flat.set_min_capacity(triangles.size() * 3);
+
+    core::Vector<SkinInfluences> flat_skin;
+    if(skinned) {
+        flat_skin.set_min_capacity(triangles.size() * 3);
+    }
 
     for(IndexedTriangle& tri : triangles) {
         const math::Vec3 a = vertices[tri[0]].position;
@@ -236,12 +243,16 @@ static void compute_flat_normals(core::Vector<FullVertex>& vertices, core::Vecto
         for(u32& index : tri) {
             FullVertex v = vertices[index];
             v.normal = normal;
+            if(skinned) {
+                flat_skin.push_back(skin_influences[index]);
+            }
             index = u32(flat.size());
             flat.push_back(v);
         }
     }
 
     vertices = std::move(flat);
+    skin_influences = std::move(flat_skin);
 }
 
 static void compute_tangents(core::Vector<FullVertex>& vertices, core::Span<IndexedTriangle> triangles) {
@@ -281,11 +292,74 @@ static void compute_tangents(core::Vector<FullVertex>& vertices, core::Span<Inde
     }
 }
 
+static void add_influence(SkinInfluences& influences, u32 joint, float weight) {
+    usize i = SkinWeights::size;
+    while(i && influences.weights[i - 1] < weight) {
+        --i;
+    }
+    if(i == SkinWeights::size) {
+        return;
+    }
+    for(usize k = SkinWeights::size - 1; k > i; --k) {
+        influences.weights[k] = influences.weights[k - 1];
+        influences.joints[k] = influences.joints[k - 1];
+    }
+    influences.weights[i] = weight;
+    influences.joints[i] = joint;
+}
+
+static bool decode_skin_influences(core::Span<const cgltf_accessor*> joint_sets, core::Span<const cgltf_accessor*> weight_sets, usize vertex_count, core::Vector<SkinInfluences>& out) {
+    out.make_empty();
+
+    core::Vector<float> joints;
+    core::Vector<float> weights;
+    for(usize set = 0; set < joint_sets.size() && set < weight_sets.size(); ++set) {
+        const cgltf_accessor* joint_acc = joint_sets[set];
+        const cgltf_accessor* weight_acc = weight_sets[set];
+        if(!joint_acc || !weight_acc) {
+            break;
+        }
+
+        if(joint_acc->count != vertex_count || weight_acc->count != vertex_count) {
+            return false;
+        }
+
+        if(!unpack_floats(joint_acc, 4, joints) || !unpack_floats(weight_acc, 4, weights)) {
+            return false;
+        }
+
+        if(out.is_empty()) {
+            out.set_min_size(vertex_count, SkinInfluences{});
+        }
+
+        for(usize v = 0; v != vertex_count; ++v) {
+            for(usize k = 0; k != 4; ++k) {
+                const float weight = weights[v * 4 + k];
+                if(weight > 0.0f) {
+                    add_influence(out[v], u32(joints[v * 4 + k]), weight);
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
 static core::Result<Primitive> decode_primitive(const cgltf_data* data, const cgltf_primitive& prim) {
     const cgltf_accessor* positions = nullptr;
     const cgltf_accessor* normals = nullptr;
     const cgltf_accessor* tangents = nullptr;
     const cgltf_accessor* uvs = nullptr;
+
+    core::Vector<const cgltf_accessor*> joint_sets;
+    core::Vector<const cgltf_accessor*> weight_sets;
+
+    auto set_skin_attrib = [](core::Vector<const cgltf_accessor*>& sets, const cgltf_attribute& attrib) {
+        if(attrib.index >= 0) {
+            sets.set_min_size(usize(attrib.index) + 1, nullptr);
+            sets[usize(attrib.index)] = attrib.data;
+        }
+    };
 
     for(usize i = 0; i != prim.attributes_count; ++i) {
         const cgltf_attribute& attrib = prim.attributes[i];
@@ -298,6 +372,9 @@ static core::Result<Primitive> decode_primitive(const cgltf_data* data, const cg
                     uvs = attrib.data;
                 }
             break;
+
+            case cgltf_attribute_type_joints:   set_skin_attrib(joint_sets, attrib);    break;
+            case cgltf_attribute_type_weights:  set_skin_attrib(weight_sets, attrib);   break;
 
             default:
             break;
@@ -348,6 +425,11 @@ static core::Result<Primitive> decode_primitive(const cgltf_data* data, const cg
         }
     }
 
+    if(!decode_skin_influences(joint_sets, weight_sets, vertex_count, primitive.skin_influences)) {
+        log_msg("Unable to decode skin attributes, primitive will be imported without skinning", Log::Error);
+        primitive.skin_influences.make_empty();
+    }
+
     {
         core::Vector<u32> indices;
         if(prim.indices) {
@@ -380,7 +462,7 @@ static core::Result<Primitive> decode_primitive(const cgltf_data* data, const cg
     }
 
     if(!normals) {
-        compute_flat_normals(primitive.vertices, primitive.triangles);
+        compute_flat_normals(primitive.vertices, primitive.skin_influences, primitive.triangles);
     }
 
     if(!tangents || !normals) {
@@ -692,6 +774,7 @@ static Node decode_node(const cgltf_data* data, usize index) {
     node.parent = index_of(data->nodes, gltf_node.parent);
     node.mesh = index_of(data->meshes, gltf_node.mesh);
     node.light = index_of(data->lights, gltf_node.light);
+    node.skin = index_of(data->skins, gltf_node.skin);
 
     for(usize i = 0; i != gltf_node.children_count; ++i) {
         node.children.push_back(index_of(data->nodes, gltf_node.children[i]));
@@ -722,6 +805,106 @@ static core::Vector<int> find_roots(const cgltf_data* data) {
     }
 
     return roots;
+}
+
+
+
+
+// ----------------------------- SKINS & ANIMATIONS -----------------------------
+
+static Skin decode_skin(const cgltf_data* data, usize index) {
+    const cgltf_skin& gltf_skin = data->skins[index];
+
+    Skin skin;
+    skin.name = name_or_default(gltf_skin.name, "skin", index);
+
+    for(usize i = 0; i != gltf_skin.joints_count; ++i) {
+        skin.joints.push_back(index_of(data->nodes, gltf_skin.joints[i]));
+    }
+
+    if(gltf_skin.inverse_bind_matrices) {
+        core::Vector<float> floats;
+        if(gltf_skin.inverse_bind_matrices->count == skin.joints.size() && unpack_floats(gltf_skin.inverse_bind_matrices, 16, floats)) {
+            for(usize i = 0; i != skin.joints.size(); ++i) {
+                math::Matrix4<> mat;
+                std::copy_n(floats.data() + i * 16, 16, mat.begin());
+                skin.inverse_bind_matrices.push_back(mat);
+            }
+        } else {
+            log_msg(fmt("Skin \"{}\" has invalid inverse bind matrices", skin.name), Log::Warning);
+        }
+    }
+
+    return skin;
+}
+
+static core::Result<AnimationChannel> decode_animation_channel(const cgltf_data* data, const cgltf_animation_channel& gltf_channel) {
+    AnimationChannel channel;
+    channel.node = index_of(data->nodes, gltf_channel.target_node);
+
+    usize components = 3;
+    switch(gltf_channel.target_path) {
+        case cgltf_animation_path_type_translation: channel.path = AnimationPath::Translation;                     break;
+        case cgltf_animation_path_type_rotation:    channel.path = AnimationPath::Rotation;       components = 4; break;
+        case cgltf_animation_path_type_scale:       channel.path = AnimationPath::Scale;                          break;
+        default:
+            log_msg("Morph target animations are not supported", Log::Warning);
+            return core::Err();
+    }
+
+    const cgltf_animation_sampler& sampler = *gltf_channel.sampler;
+
+    usize values_per_key = 1;
+    switch(sampler.interpolation) {
+        case cgltf_interpolation_type_step:
+            channel.interpolation = Interpolation::Step;
+        break;
+
+        case cgltf_interpolation_type_cubic_spline:
+            log_msg("Cubic spline animation interpolation is not supported, using linear", Log::Warning);
+            values_per_key = 3; // in tangent, value, out tangent
+        break;
+
+        default:
+        break;
+    }
+
+    core::Vector<float> values;
+    if(!unpack_floats(sampler.input, 1, channel.times) || !unpack_floats(sampler.output, components, values)) {
+        return core::Err();
+    }
+
+    if(channel.node < 0 || channel.times.is_empty() || values.size() != channel.times.size() * components * values_per_key) {
+        return core::Err();
+    }
+
+    const usize value_offset = values_per_key == 3 ? 1 : 0;
+    channel.values.set_min_capacity(channel.times.size());
+    for(usize k = 0; k != channel.times.size(); ++k) {
+        const float* value = values.data() + (k * values_per_key + value_offset) * components;
+        math::Vec4 v;
+        std::copy_n(value, components, v.begin());
+        channel.values.push_back(v);
+    }
+
+    return core::Ok(std::move(channel));
+}
+
+static Animation decode_animation(const cgltf_data* data, usize index) {
+    const cgltf_animation& gltf_animation = data->animations[index];
+
+    Animation animation;
+    animation.name = name_or_default(gltf_animation.name, "animation", index);
+
+    for(usize i = 0; i != gltf_animation.channels_count; ++i) {
+        if(auto channel = decode_animation_channel(data, gltf_animation.channels[i])) {
+            animation.channels.push_back(std::move(channel.unwrap()));
+        } else {
+            log_msg(fmt("Animation \"{}\" channel {} could not be imported", animation.name, i), Log::Warning);
+        }
+    }
+
+    return animation;
 }
 
 
@@ -804,6 +987,14 @@ core::Result<Scene> load_gltf(const core::String& filename) {
 
     for(usize i = 0; i != data->lights_count; ++i) {
         scene.lights.push_back(decode_light(data, i));
+    }
+
+    for(usize i = 0; i != data->skins_count; ++i) {
+        scene.skins.push_back(decode_skin(data, i));
+    }
+
+    for(usize i = 0; i != data->animations_count; ++i) {
+        scene.animations.push_back(decode_animation(data, i));
     }
 
     for(usize i = 0; i != data->nodes_count; ++i) {
