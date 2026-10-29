@@ -90,12 +90,11 @@ struct Material {
     float normal_scale = 1.0f;
     float occlusion_strength = 1.0f;
 
-    // KHR_materials_specular
-    bool has_specular = false;
-    TextureRef specular;
-    TextureRef specular_color;
-    math::Vec3 specular_color_factor = math::Vec3(1.0f);
-    float specular_factor = 1.0f;
+    // KHR_materials_pbrSpecularGlossiness, base_color holds the diffuse texture and factor
+    bool is_specular_glossiness = false;
+    TextureRef specular_glossiness;
+    math::Vec3 specular_factor = math::Vec3(1.0f);
+    float glossiness_factor = 1.0f;
 
     AlphaMode alpha_mode = AlphaMode::Opaque;
     float alpha_cutoff = 0.5f;

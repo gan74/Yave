@@ -1,7 +1,7 @@
 /*******************************
 Copyright (c) 2016-2026 Grégoire Angerand
 
-Permission is hereby granted, free of charge, to any person obtaining as_alb copy
+Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
@@ -30,6 +30,8 @@ SOFTWARE.
 #include <yave/components/TransformableComponent.h>
 #include <yave/components/StaticMeshComponent.h>
 #include <yave/components/PointLightComponent.h>
+#include <yave/components/SpotLightComponent.h>
+#include <yave/components/DirectionalLightComponent.h>
 #include <yave/components/RigidBodyComponent.h>
 #include <yave/meshes/MeshData.h>
 #include <yave/meshes/StaticMesh.h>
@@ -299,13 +301,13 @@ static MaterialData to_material_data(const gltf::Material& material, core::Span<
         data.double_sided = material.double_sided;
     };
 
-    if(material.has_specular) {
+    if(material.is_specular_glossiness) {
         MaterialData::SpecularMaterialData data;
         fill_common(data.common);
-        data.specular = find_texture(material.specular);
-        data.specular_color = find_texture(material.specular_color);
-        data.specular_color_factor = material.specular_color_factor;
-        data.specular_factor = material.specular_factor;
+        data.specular = find_texture(material.specular_glossiness);
+        data.specular_color = find_texture(material.specular_glossiness);
+        data.specular_color_factor = material.specular_factor;
+        data.specular_factor = material.glossiness_factor;
         return MaterialData(std::move(data));
     }
 
@@ -325,8 +327,9 @@ static MeshData to_mesh_data(const gltf::Mesh& mesh) {
     return mesh_data;
 }
 
-static PointLightComponent to_point_light(const gltf::Light& light) {
-    PointLightComponent component;
+template<typename T>
+static T to_local_light(const gltf::Light& light) {
+    T component;
     component.intensity() = light.intensity;
     component.color() = light.color;
 
@@ -338,6 +341,35 @@ static PointLightComponent to_point_light(const gltf::Light& light) {
     }
 
     return component;
+}
+
+static SpotLightComponent to_spot_light(const gltf::Light& light) {
+    SpotLightComponent component = to_local_light<SpotLightComponent>(light);
+    component.half_angle() = light.outer_cone_angle;
+    component.half_inner_angle() = std::min(light.inner_cone_angle, light.outer_cone_angle);
+    return component;
+}
+
+static DirectionalLightComponent to_directional_light(const gltf::Light& light, const math::Transform<>& world_transform) {
+    DirectionalLightComponent component;
+    component.intensity() = light.intensity;
+    component.color() = light.color;
+
+    // glTF lights shine along -Z
+    const math::Vec3 direction = -world_transform.forward();
+    if(!direction.is_zero()) {
+        component.direction() = direction.normalized();
+    }
+
+    return component;
+}
+
+// glTF spot lights shine along -Z while ours shine along +Z (forward)
+static math::Transform<> to_spot_light_transform(const math::Transform<>& world_transform) {
+    math::Transform<> tr = world_transform;
+    tr.column(0) = -tr.column(0);
+    tr.column(2) = -tr.column(2);
+    return tr;
 }
 
 static void compute_world_transforms(const gltf::Scene& scene, core::MutableSpan<math::Transform<>> transforms, int index, const math::Transform<>& parent) {
@@ -352,8 +384,7 @@ static void compute_world_transforms(const gltf::Scene& scene, core::MutableSpan
 
 // ----------------------------- SCENE IMPORT -----------------------------
 
-namespace {
-// Shared by all the jobs of an import, each id is only written by the job that imports it
+
 struct ImportState : NonMovable {
     ImportState(gltf::Scene s, GltfImportSettings st) :
             scene(std::move(s)),
@@ -386,9 +417,8 @@ struct ImportState : NonMovable {
 
     const std::shared_ptr<GltfImportStatus> status;
 };
-}
 
-// Runs func unless the import was cancelled, func returns the imported id
+
 template<typename F>
 static void run_job(ImportState& state, F&& func) {
     const bool success = !state.status->cancelled && func() != AssetId::invalid_id();
@@ -422,7 +452,6 @@ static AssetId import_mesh(ImportState& state, usize index) {
     return state.meshes[index] = import_asset(mesh.name, to_mesh_data(mesh), AssetType::Mesh, state.settings.import_path, {});
 }
 
-// Index of a node parenting all the scene's roots, used when the scene doesn't have a single root
 static int synthetic_root_index(const ImportState& state) {
     return int(state.scene.nodes.size());
 }
@@ -436,6 +465,8 @@ static std::unique_ptr<ecs::EntityPrefab> create_prefab(ImportState& state, int 
 
     const bool is_synthetic = (index == synthetic_root_index(state));
     const core::Span<int> children = is_synthetic ? core::Span<int>(scene.roots) : core::Span<int>(scene.nodes[index].children);
+
+    math::Transform<> transform = is_synthetic ? math::Transform<>() : state.world_transforms[index];
 
     if(!is_synthetic) {
         const gltf::Node& node = scene.nodes[index];
@@ -456,7 +487,29 @@ static std::unique_ptr<ecs::EntityPrefab> create_prefab(ImportState& state, int 
         }
 
         if(node.light >= 0) {
-            prefab->add(to_point_light(scene.lights[node.light]));
+            const gltf::Light& light = scene.lights[node.light];
+            switch(light.type) {
+                case gltf::LightType::Point:
+                    prefab->add(to_local_light<PointLightComponent>(light));
+                break;
+
+                case gltf::LightType::Directional:
+                    prefab->add(to_directional_light(light, state.world_transforms[index]));
+                break;
+
+                case gltf::LightType::Spot:
+                    if(node.mesh >= 0) {
+                        auto light_prefab = std::make_unique<ecs::EntityPrefab>(ecs::EntityId::dummy(u32(scene.nodes.size() + 1 + index)));
+                        light_prefab->add(to_spot_light(light));
+                        light_prefab->add(TransformableComponent(to_spot_light_transform(state.world_transforms[index])));
+                        light_prefab->add(EditorComponent(light.name));
+                        prefab->add_child(std::move(light_prefab));
+                    } else {
+                        prefab->add(to_spot_light(light));
+                        transform = to_spot_light_transform(transform);
+                    }
+                break;
+            }
         }
     }
 
@@ -470,8 +523,7 @@ static std::unique_ptr<ecs::EntityPrefab> create_prefab(ImportState& state, int 
         }
     }
 
-    // Transforms are in world space: the engine doesn't propagate parent transforms
-    prefab->add(TransformableComponent(is_synthetic ? math::Transform<>() : state.world_transforms[index]));
+    prefab->add(TransformableComponent(transform));
     prefab->add(EditorComponent(is_synthetic ? state.name : scene.nodes[index].name));
 
     return prefab;

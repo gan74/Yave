@@ -127,6 +127,7 @@ static core::String name_or_default(const char* name, std::string_view prefix, u
 static const char* supported_extensions[] = {
     "KHR_lights_punctual",
     "KHR_materials_emissive_strength",
+    "KHR_materials_pbrSpecularGlossiness",
     "KHR_materials_specular",
     "KHR_materials_unlit",
     "KHR_mesh_quantization",
@@ -589,16 +590,22 @@ static Material decode_material(const cgltf_data* data, usize index, ImageResolv
     Material mat;
     mat.name = name_or_default(gltf_mat.name, "material", index);
 
-    if(gltf_mat.has_pbr_specular_glossiness && !gltf_mat.has_pbr_metallic_roughness) {
-        log_msg(fmt("Material \"{}\" uses KHR_materials_pbrSpecularGlossiness which is not supported", mat.name), Log::Warning);
+    if(gltf_mat.has_pbr_specular_glossiness) {
+        const cgltf_pbr_specular_glossiness& pbr = gltf_mat.pbr_specular_glossiness;
+        mat.is_specular_glossiness = true;
+        mat.base_color = images.color(pbr.diffuse_texture);
+        mat.base_color_factor = math::Vec4(pbr.diffuse_factor[0], pbr.diffuse_factor[1], pbr.diffuse_factor[2], pbr.diffuse_factor[3]);
+        mat.specular_glossiness = images.color(pbr.specular_glossiness_texture);
+        mat.specular_factor = math::Vec3(pbr.specular_factor[0], pbr.specular_factor[1], pbr.specular_factor[2]);
+        mat.glossiness_factor = pbr.glossiness_factor;
+    } else {
+        const cgltf_pbr_metallic_roughness& pbr = gltf_mat.pbr_metallic_roughness;
+        mat.base_color = images.color(pbr.base_color_texture);
+        mat.metallic_roughness = images.data(pbr.metallic_roughness_texture);
+        mat.base_color_factor = math::Vec4(pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]);
+        mat.metallic_factor = pbr.metallic_factor;
+        mat.roughness_factor = pbr.roughness_factor;
     }
-
-    const cgltf_pbr_metallic_roughness& pbr = gltf_mat.pbr_metallic_roughness;
-    mat.base_color = images.color(pbr.base_color_texture);
-    mat.metallic_roughness = images.data(pbr.metallic_roughness_texture);
-    mat.base_color_factor = math::Vec4(pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]);
-    mat.metallic_factor = pbr.metallic_factor;
-    mat.roughness_factor = pbr.roughness_factor;
 
     mat.normal = images.normal(gltf_mat.normal_texture);
     mat.normal_scale = gltf_mat.normal_texture.texture ? gltf_mat.normal_texture.scale : 1.0f;
@@ -609,15 +616,6 @@ static Material decode_material(const cgltf_data* data, usize index, ImageResolv
     mat.emissive = images.color(gltf_mat.emissive_texture);
     const float emissive_strength = gltf_mat.has_emissive_strength ? gltf_mat.emissive_strength.emissive_strength : 1.0f;
     mat.emissive_factor = math::Vec3(gltf_mat.emissive_factor[0], gltf_mat.emissive_factor[1], gltf_mat.emissive_factor[2]) * emissive_strength;
-
-    if(gltf_mat.has_specular) {
-        const cgltf_specular& spec = gltf_mat.specular;
-        mat.has_specular = true;
-        mat.specular = images.data(spec.specular_texture);
-        mat.specular_color = images.color(spec.specular_color_texture);
-        mat.specular_color_factor = math::Vec3(spec.specular_color_factor[0], spec.specular_color_factor[1], spec.specular_color_factor[2]);
-        mat.specular_factor = spec.specular_factor;
-    }
 
     switch(gltf_mat.alpha_mode) {
         case cgltf_alpha_mode_mask:  mat.alpha_mode = AlphaMode::Mask;   break;
