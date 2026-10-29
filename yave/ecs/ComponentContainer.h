@@ -159,15 +159,11 @@ class ComponentContainer final : public ComponentContainerBase {
 
             Y_TODO(lock?)
 
-            if constexpr(Inspectable<T>) {
-                if(inspector->inspect_component_type(runtime_info(), true)) {
+            if(inspector->inspect_component_type(runtime_info(), Inspectable<T>)) {
+                if constexpr(Inspectable<T>) {
                     _components.try_get(id)->inspect(inspector);
-                    _mutated.insert(id);
                 }
-            } else {
-                if(inspector->inspect_component_type(runtime_info(), false)) {
-                    _mutated.insert(id);
-                }
+                _mutated.insert(id);
             }
         }
 
@@ -198,8 +194,8 @@ class ComponentContainer final : public ComponentContainerBase {
             if constexpr(std::is_base_of_v<RegisterComponentTag, T>) {
                 static_assert(Registerable<T>, "Components must inherit from RegisterComponent only once, listing every system");
                 static_assert(std::is_same_v<typename T::registered_component_type, T>, "RegisterComponent must be given the component type itself");
-                T::register_component_type(system);
-            } else if constexpr(Registerable<T>) {
+            }
+            if constexpr(Registerable<T>) {
                 T::register_component_type(system);
             }
         }

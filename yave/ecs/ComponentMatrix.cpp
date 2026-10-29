@@ -35,21 +35,8 @@ namespace ecs {
 
 ComponentMatrix::ComponentMatrix(usize type_count) :
         _type_count(std::max(1u, u32(type_count))),
-        _groups(_type_count),
-        _required(std::make_unique<bool[]>(_type_count * _type_count)) {
-
-    std::fill_n(_required.get(), _type_count * _type_count, false);
+        _groups(_type_count) {
 }
-
-/*void ComponentMatrix::set_required_components(ComponentTypeIndex type, core::Span<ComponentTypeIndex> required) {
-    y_always_assert(_bits.is_empty(), "Can't set required components after entities have been added");
-    y_debug_assert(type_exists(type));
-
-    const usize start = usize(type) * _type_count;
-    for(ComponentTypeIndex index : required) {
-        _required[start + index] = true;
-    }
-}*/
 
 void ComponentMatrix::clear() {
     _bits.clear();
@@ -67,13 +54,16 @@ bool ComponentMatrix::type_exists(ComponentTypeIndex type) const {
 void ComponentMatrix::register_group(EntityGroupProvider* group) {
     y_profile();
 
-    for(const ComponentTypeIndex type : group->types()) {
-        _groups[usize(type)] << group;
-    }
+    const auto for_each_type = [&](auto&& func) {
+        for(const ComponentTypeIndex type : group->types()) {
+            func(type);
+        }
+        for(const ComponentTypeIndex type : group->type_filters()) {
+            func(type);
+        }
+    };
 
-    for(const ComponentTypeIndex type : group->type_filters()) {
-        _groups[usize(type)] << group;
-    }
+    for_each_type([&](ComponentTypeIndex type) { _groups[usize(type)] << group; });
 
     for(const core::String& tag : group->tags()) {
         y_debug_assert(!is_computed_tag(tag));
@@ -87,16 +77,11 @@ void ComponentMatrix::register_group(EntityGroupProvider* group) {
 
     for(const EntityId id : _ids) {
         if(id.is_valid()) {
-            for(const ComponentTypeIndex type : group->types()) {
+            for_each_type([&](ComponentTypeIndex type) {
                 if(has_component(id, type)) {
                     group->add_entity_component(id);
                 }
-            }
-            for(const ComponentTypeIndex type : group->type_filters()) {
-                if(has_component(id, type)) {
-                    group->add_entity_component(id);
-                }
-            }
+            });
         }
     }
 }
@@ -182,6 +167,17 @@ void ComponentMatrix::remove_tag(EntityId id, const core::String& tag) {
     if(set.ids.erase(id)) {
         for(EntityGroupProvider* group : set.groups) {
             group->remove_entity_component(id);
+        }
+    }
+}
+
+void ComponentMatrix::remove_all_tags(EntityId id) {
+    y_debug_assert(contains(id));
+    for(auto& [tag, set] : _tags) {
+        if(set.ids.erase(id)) {
+            for(EntityGroupProvider* group : set.groups) {
+                group->remove_entity_component(id);
+            }
         }
     }
 }

@@ -138,9 +138,6 @@ template<typename T>
 using component_type_t = typename component_type<T>::type;
 
 template<typename T>
-using discard_query_qualifiers_t = typename component_type<T>::discard_query_quals;
-
-template<typename T>
 concept is_component_changed = component_type<T>::changed;
 
 template<typename T>

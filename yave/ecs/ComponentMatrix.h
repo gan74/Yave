@@ -117,6 +117,8 @@ class ComponentMatrix {
         void add_component(EntityId id, ComponentTypeIndex type);
         void remove_component(EntityId id, ComponentTypeIndex type);
 
+        void remove_all_tags(EntityId id);
+
         ComponentIndex component_index(EntityId id, ComponentTypeIndex type) const;
 
 
@@ -124,7 +126,6 @@ class ComponentMatrix {
         core::Vector<u64> _bits;
         core::Vector<EntityId> _ids;
         core::FixedArray<core::Vector<EntityGroupProvider*>> _groups;
-        std::unique_ptr<bool[]> _required;
 
         core::FlatHashMap<core::String, TagSet> _tags;
 };

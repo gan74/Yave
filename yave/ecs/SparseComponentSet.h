@@ -30,6 +30,7 @@ SOFTWARE.
 
 #include <tuple>
 #include <iterator>
+#include <utility>
 
 // #define YAVE_ECS_COMPONENT_SET_AUDIT
 
@@ -169,8 +170,11 @@ class SparseIdSet final : public SparseIdSetBase {
         }
 
         void make_empty() {
+            // Keep _sparse allocated: re-growing it costs O(max index) on the next insert
+            for(const EntityId id : _ids) {
+                _sparse[id.index()] = {};
+            }
             _ids.make_empty();
-            _sparse.make_empty();
         }
 
         void clear() {
@@ -339,16 +343,7 @@ class SparseComponentSet : public SparseIdSetBase {
         }
 
         pointer try_get(EntityId id) {
-            y_debug_assert(id.version() != u32(-1));
-            const u32 index = id.index();
-            if(index >= _sparse.size()) {
-                return nullptr;
-            }
-            const SparseElement elem = _sparse[index];
-            if(elem.index >= _values.size()) {
-                return nullptr;
-            }
-            return elem.version == id.version() ? &_values[elem.index] : nullptr;
+            return const_cast<pointer>(std::as_const(*this).try_get(id));
         }
 
         const_pointer try_get(EntityId id) const {
@@ -370,8 +365,10 @@ class SparseComponentSet : public SparseIdSetBase {
         }
 
         void make_empty() {
+            for(const EntityId id : _ids) {
+                _sparse[id.index()] = {};
+            }
             _ids.make_empty();
-            _sparse.make_empty();
             _values.make_empty();
         }
 

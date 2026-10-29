@@ -45,13 +45,13 @@ void EntityPool::Entity::invalidate_hierarchy() {
 void EntityPool::Entity::make_valid(u32 index) {
     y_debug_assert(!is_valid());
     id.make_valid(index);
-    left_sibling = right_sibling = parent = {};
+    invalidate_hierarchy();
 }
 
 void EntityPool::Entity::make_valid(EntityId new_id) {
     y_debug_assert(!is_valid());
     id = new_id;
-    left_sibling = right_sibling = parent = {};
+    invalidate_hierarchy();
 }
 
 usize EntityPool::size() const {
@@ -109,10 +109,7 @@ EntityId EntityPool::create_with_id(EntityId id) {
 
 void EntityPool::reroot_all_children(EntityId id, EntityId new_parent) {
     Y_TODO(Fix alloc, maybe use a recursive function)
-    core::SmallVector<EntityId, 64> children_cached;
-    for(const EntityId child : children(id)) {
-        children_cached << child;
-    }
+    const auto children_cached = core::SmallVector<EntityId, 64>::from_range(children(id));
 
     for(const EntityId child : children_cached) {
         _entities[child.index()].invalidate_hierarchy();

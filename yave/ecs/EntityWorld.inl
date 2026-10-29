@@ -51,20 +51,13 @@ auto SystemScheduler::prepare_argument(std::type_identity<EntityGroup<Ts...>>) c
     };
 }
 
-template<typename Component, typename SystemType, typename... Tail>
-static inline void register_component_type_rec(System* system) {
-    if(SystemType* s = dynamic_cast<SystemType*>(system)) {
-        s->template register_component_type<Component>();
-    }
-    if constexpr(sizeof...(Tail)) {
-        register_component_type_rec<Component, Tail...>(system);
-    }
-}
-
-
 template<typename Component, typename... SystemTypes>
 void RegisterComponent<Component, SystemTypes...>::register_component_type(System* system) {
-    register_component_type_rec<Component, SystemTypes...>(system);
+    ([&] {
+        if(SystemTypes* s = dynamic_cast<SystemTypes*>(system)) {
+            s->template register_component_type<Component>();
+        }
+    }(), ...);
 }
 
 template<typename Component, typename... SystemTypes>

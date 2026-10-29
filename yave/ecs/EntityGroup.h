@@ -285,7 +285,6 @@ class EntityGroup final : NonMovable {
 
         private:
             friend class EntityGroup;
-            friend class Query;
 
             Iterator(const EntityId* it, const SetTuple& sets) : _it(it), _sets(sets) {
             }
@@ -347,16 +346,6 @@ class EntityGroup final : NonMovable {
             static_assert(((std::is_same_v<traits::component_raw_type_t<Ts>, T> && traits::is_component_mutable<Ts>) || ...), "T is not mutable in this group");
             std::get<ComponentContainer<T>*>(_containers)->_mutated.insert(id);
         }
-
-        /*void swap(EntityGroup& other) {
-            _ids.swap(other.ids());
-            std::swap(_sets, other._sets);
-            std::swap(_mutate, other._mutate);
-            std::swap(_filter, other._filter);
-            std::swap(_write_locks, other._write_locks);
-            std::swap(_read_locks, other._read_locks);
-            std::swap(_provider, other._provider);
-        }*/
 
     private:
         friend class EntityWorld;

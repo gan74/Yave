@@ -28,11 +28,15 @@ SOFTWARE.
 
 #include <yave/assets/AssetLoadingContext.h>
 
-#include <numeric>
-
 
 namespace yave {
 namespace ecs {
+
+static void place_container(core::Vector<std::unique_ptr<ComponentContainerBase>>& containers, std::unique_ptr<ComponentContainerBase> container) {
+    const usize index = usize(container->type_id());
+    containers.set_min_size(index + 1);
+    containers[index] = std::move(container);
+}
 
 static auto create_component_containers() {
     y_profile();
@@ -42,17 +46,27 @@ static auto create_component_containers() {
         if(poly_base->create) {
             std::unique_ptr<ComponentContainerBase> container = poly_base->create();
             y_debug_assert(container);
-
-            const usize index = usize(container->type_id());
-            containers.set_min_size(index + 1);
-
-            y_debug_assert(!containers[index]);
-            containers[index] = std::move(container);
+            y_debug_assert(usize(container->type_id()) >= containers.size() || !containers[usize(container->type_id())]);
+            place_container(containers, std::move(container));
         } else {
             log_msg(fmt("Could not create '{}'", poly_base->name), Log::Warning);
         }
     }
     return containers;
+}
+
+template<typename F>
+static void for_each_prefab_child(const EntityPrefab& prefab, F&& func) {
+    for(const auto& child : prefab.children()) {
+        if(child) {
+            func(*child);
+        }
+    }
+    for(const auto& child : prefab.asset_children()) {
+        if(child) {
+            func(*child);
+        }
+    }
 }
 
 static EntityId create_prefab_entities(EntityWorld& world, const EntityPrefab& prefab, EntityIdMap& id_map, bool keep_ids, EntityId base_id = {}) {
@@ -70,19 +84,9 @@ static EntityId create_prefab_entities(EntityWorld& world, const EntityPrefab& p
     y_always_assert(id_map.find(prefab.original_id()) == id_map.end(), "Invalid prefab: id is duplicated");
     id_map.emplace_back(prefab.original_id(), id);
 
-    auto parent_child = [&](const auto& child) {
-        if(child) {
-            world.set_parent(create_prefab_entities(world, *child, id_map, keep_ids), id);
-        }
-    };
-
-    for(const auto& child : prefab.children()) {
-        parent_child(child);
-    }
-
-    for(const auto& child : prefab.asset_children()) {
-        parent_child(child);
-    }
+    for_each_prefab_child(prefab, [&](const EntityPrefab& child) {
+        world.set_parent(create_prefab_entities(world, child, id_map, keep_ids), id);
+    });
 
     return id;
 }
@@ -101,19 +105,9 @@ static void add_prefab_components(EntityWorld& world, const EntityPrefab& prefab
         }
     }
 
-    auto add_child_components = [&](const auto& child) {
-        if(child) {
-            add_prefab_components(world, *child, id_map);
-        }
-    };
-
-    for(const auto& child : prefab.children()) {
-        add_child_components(child);
-    }
-
-    for(const auto& child : prefab.asset_children()) {
-        add_child_components(child);
-    }
+    for_each_prefab_child(prefab, [&](const EntityPrefab& child) {
+        add_prefab_components(world, child, id_map);
+    });
 }
 
 
@@ -287,9 +281,7 @@ void EntityWorld::remove_all_components(EntityId id) {
 void EntityWorld::remove_all_tags(EntityId id) {
     y_profile();
 
-    for(const core::String& tag : _matrix.tags()) {
-        _matrix.remove_tag(id, tag);
-    }
+    _matrix.remove_all_tags(id);
 }
 
 void EntityWorld::remove_all_entities() {
@@ -349,7 +341,7 @@ bool EntityWorld::has_parent(EntityId id) const {
 }
 
 bool EntityWorld::has_children(EntityId id) const {
-    return _entities.first_child(id).is_valid();
+    return _entities.has_children(id);
 }
 
 bool EntityWorld::is_parent(EntityId id, EntityId parent) const {
@@ -428,12 +420,8 @@ void EntityWorld::register_containers() {
             container->_required = core::FixedArray<ComponentContainerBase*>(required_types.size());
             for(usize i = 0; i != required_types.size(); ++i) {
                 ComponentContainerBase* req_container = find_container(required_types[i]);
+                y_debug_assert(req_container);
                 container->_required[i] = req_container;
-            }
-
-            y_debug_assert(std::all_of(container->_required.begin(), container->_required.end(), [](auto* p) { return !!p; }));
-
-            for(ComponentContainerBase* req_container : container->_required) {
                 req_container->_required_by << container->type_id();
             }
         }
@@ -477,17 +465,15 @@ serde3::Result EntityWorld::load_state(serde3::ReadableArchive& arc) {
     _containers = create_component_containers();
     for(auto&& container : containers) {
         if(container) {
-            const usize index = usize(container->type_id());
-            _containers.set_min_size(index + 1);
-            _containers[index] = std::move(container);
+            place_container(_containers, std::move(container));
         }
     }
 
     register_containers();
 
     // Required containers first
-    for(usize i = _ordered_containers.size(); i != 0; --i) {
-        _ordered_containers[i - 1]->post_load();
+    for(ComponentContainerBase* container : core::reversed(_ordered_containers)) {
+        container->post_load();
     }
 
     _triggers.reset();
