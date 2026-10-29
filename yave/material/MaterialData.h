@@ -38,6 +38,9 @@ class MaterialData {
             math::Vec3 color_factor = math::Vec3(1.0f);
             math::Vec3 emissive_factor;
 
+            float alpha_factor = 1.0f;
+            float alpha_cutoff = 0.5f;
+
             BlendMode blend_mode = BlendMode::None;
 
             bool alpha_tested = false;
@@ -86,6 +89,9 @@ class MaterialData {
         float metallic_factor() const;
         float specular_factor() const;
 
+        float alpha_factor() const;
+        float alpha_cutoff() const;
+
         bool alpha_tested() const;
         bool double_sided() const;
 
@@ -96,7 +102,8 @@ class MaterialData {
               _type, _textures, _blend_mode,
               _emissive_factor, _base_color_factor, _specular_color_factor,
               _roughness_factor, _metallic_factor, _specular_factor,
-              _alpha_tested, _double_sided
+              _alpha_tested, _double_sided,
+              _alpha
         )
 
     private:
@@ -117,6 +124,14 @@ class MaterialData {
         float _roughness_factor = 1.0f;
         float _metallic_factor = 1.0f;
         float _specular_factor = 1.0f;
+
+        // Grouped: MSVC can't compile serde3 for more than 12 members
+        struct Alpha {
+            float factor = 1.0f;
+            float cutoff = 0.5f;
+
+            y_reflect(Alpha, factor, cutoff)
+        } _alpha;
 
         bool _alpha_tested = false;
         bool _double_sided = false;

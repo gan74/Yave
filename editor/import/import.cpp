@@ -295,6 +295,8 @@ static MaterialData to_material_data(const gltf::Material& material, core::Span<
 
         data.color_factor = material.base_color_factor.to<3>();
         data.emissive_factor = material.emissive_factor;
+        data.alpha_factor = material.base_color_factor.w();
+        data.alpha_cutoff = material.alpha_cutoff;
 
         data.alpha_tested = (material.alpha_mode == gltf::AlphaMode::Mask);
         data.blend_mode = (material.alpha_mode == gltf::AlphaMode::Blend ? BlendMode::SrcAlpha : BlendMode::None);

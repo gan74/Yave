@@ -51,6 +51,8 @@ MaterialData::MaterialData(Type type, CommonMaterialData data) : _type(type) {
     _blend_mode = data.blend_mode;
     _base_color_factor = data.color_factor;
     _emissive_factor = data.emissive_factor;
+    _alpha.factor = data.alpha_factor;
+    _alpha.cutoff = data.alpha_cutoff;
     _alpha_tested = data.alpha_tested;
     _double_sided = data.double_sided;
 }
@@ -100,6 +102,14 @@ float MaterialData::metallic_factor() const {
 
 float MaterialData::specular_factor() const {
     return _specular_factor;
+}
+
+float MaterialData::alpha_factor() const {
+    return _alpha.factor;
+}
+
+float MaterialData::alpha_cutoff() const {
+    return _alpha.cutoff;
 }
 
 bool MaterialData::alpha_tested() const {

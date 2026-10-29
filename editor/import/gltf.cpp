@@ -536,6 +536,12 @@ class ImageResolver {
             ref.uv_set = u32(view.has_transform && view.transform.has_texcoord ? view.transform.texcoord : view.texcoord);
             ref.image = variant(image_index, usage);
 
+            if(view.has_transform) {
+                ref.transform.offset = math::Vec2(view.transform.offset[0], view.transform.offset[1]);
+                ref.transform.scale = math::Vec2(view.transform.scale[0], view.transform.scale[1]);
+                ref.transform.rotation = view.transform.rotation;
+            }
+
             if(ref.uv_set != 0) {
                 log_msg(fmt("Texture \"{}\" uses UV set {}, only UV set 0 is supported", _scene.images[ref.image].name, ref.uv_set), Log::Warning);
             }
@@ -610,9 +616,6 @@ static Material decode_material(const cgltf_data* data, usize index, ImageResolv
     mat.normal = images.normal(gltf_mat.normal_texture);
     mat.normal_scale = gltf_mat.normal_texture.texture ? gltf_mat.normal_texture.scale : 1.0f;
 
-    mat.occlusion = images.data(gltf_mat.occlusion_texture);
-    mat.occlusion_strength = gltf_mat.occlusion_texture.texture ? gltf_mat.occlusion_texture.scale : 1.0f;
-
     mat.emissive = images.color(gltf_mat.emissive_texture);
     const float emissive_strength = gltf_mat.has_emissive_strength ? gltf_mat.emissive_strength.emissive_strength : 1.0f;
     mat.emissive_factor = math::Vec3(gltf_mat.emissive_factor[0], gltf_mat.emissive_factor[1], gltf_mat.emissive_factor[2]) * emissive_strength;
@@ -621,6 +624,17 @@ static Material decode_material(const cgltf_data* data, usize index, ImageResolv
         case cgltf_alpha_mode_mask:  mat.alpha_mode = AlphaMode::Mask;   break;
         case cgltf_alpha_mode_blend: mat.alpha_mode = AlphaMode::Blend;  break;
         default:                     mat.alpha_mode = AlphaMode::Opaque; break;
+    }
+
+    {
+        const TextureRef* refs[] = {&mat.base_color, &mat.normal, &mat.emissive, &mat.metallic_roughness, &mat.specular_glossiness};
+        const auto first = std::find_if(std::begin(refs), std::end(refs), [](const TextureRef* ref) { return ref->is_valid(); });
+        if(first != std::end(refs)) {
+            mat.uv_transform = (*first)->transform;
+            if(std::any_of(first, std::end(refs), [&](const TextureRef* ref) { return ref->is_valid() && ref->transform != mat.uv_transform; })) {
+                log_msg(fmt("Material \"{}\" uses different texture transforms, only one will be applied", mat.name), Log::Warning);
+            }
+        }
     }
 
     mat.alpha_cutoff = gltf_mat.alpha_cutoff;
@@ -771,6 +785,21 @@ core::Result<Scene> load_gltf(const core::String& filename) {
 
     for(usize i = 0; i != data->meshes_count; ++i) {
         scene.meshes.push_back(decode_mesh(data, i));
+    }
+
+    for(Mesh& mesh : scene.meshes) {
+        for(Primitive& primitive : mesh.primitives) {
+            if(primitive.material < 0) {
+                continue;
+            }
+
+            const UvTransform& transform = scene.materials[primitive.material].uv_transform;
+            if(!transform.is_identity()) {
+                for(FullVertex& vertex : primitive.vertices) {
+                    vertex.uv = transform.apply(vertex.uv);
+                }
+            }
+        }
     }
 
     for(usize i = 0; i != data->lights_count; ++i) {

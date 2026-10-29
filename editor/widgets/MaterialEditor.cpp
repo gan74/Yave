@@ -110,8 +110,12 @@ static void edit_common(MaterialData::CommonMaterialData& common) {
     edit_texture(common.emissive, "Emissive");
     edit_color(common.color_factor, "Color");
     edit_color(common.emissive_factor, "Emissive factor");
+    edit_float(common.alpha_factor, "Alpha");
     edit_blend_mode(common.blend_mode);
     edit_bool(common.alpha_tested, "Alpha tested");
+    if(common.alpha_tested) {
+        edit_float(common.alpha_cutoff, "Alpha cutoff");
+    }
     edit_bool(common.double_sided, "Double sided");
 }
 

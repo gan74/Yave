@@ -96,6 +96,11 @@ struct MaterialData {
     uint texture_indices[7];
     MaterialFlags flags;
 
+    float alpha_factor;
+    float alpha_cutoff;
+    uint padding_0;
+    uint padding_1;
+
     bool is(MaterialFlags f) SLANG_CONST {
         return (uint(flags) & uint(f)) == uint(f);
     }

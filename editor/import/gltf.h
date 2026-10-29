@@ -59,9 +59,30 @@ struct Image {
     bool is_normal_map = false;
 };
 
+// KHR_texture_transform
+struct UvTransform {
+    math::Vec2 offset;
+    math::Vec2 scale = math::Vec2(1.0f);
+    float rotation = 0.0f;
+
+    bool is_identity() const {
+        return offset.is_zero() && scale == math::Vec2(1.0f) && rotation == 0.0f;
+    }
+
+    bool operator==(const UvTransform&) const = default;
+
+    math::Vec2 apply(const math::Vec2& uv) const {
+        const math::Vec2 s = uv * scale;
+        const float c = std::cos(rotation);
+        const float r = std::sin(rotation);
+        return offset + math::Vec2(c * s.x() + r * s.y(), c * s.y() - r * s.x());
+    }
+};
+
 struct TextureRef {
     int image = -1;
     u32 uv_set = 0;
+    UvTransform transform;
 
     bool is_valid() const {
         return image >= 0;
@@ -80,7 +101,6 @@ struct Material {
     TextureRef base_color;
     TextureRef normal;
     TextureRef emissive;
-    TextureRef occlusion;
     TextureRef metallic_roughness;
 
     math::Vec4 base_color_factor = math::Vec4(1.0f);
@@ -88,13 +108,14 @@ struct Material {
     float metallic_factor = 1.0f;
     float roughness_factor = 1.0f;
     float normal_scale = 1.0f;
-    float occlusion_strength = 1.0f;
 
-    // KHR_materials_pbrSpecularGlossiness, base_color holds the diffuse texture and factor
+    // KHR_materials_pbrSpecularGlossiness
     bool is_specular_glossiness = false;
     TextureRef specular_glossiness;
     math::Vec3 specular_factor = math::Vec3(1.0f);
     float glossiness_factor = 1.0f;
+
+    UvTransform uv_transform;
 
     AlphaMode alpha_mode = AlphaMode::Opaque;
     float alpha_cutoff = 0.5f;
