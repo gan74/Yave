@@ -387,7 +387,7 @@ class ImGuiEventHandler : public EventHandler {
         }
 
         void mouse_wheel(i32 vdelta, i32 hdelta) override {
-            ImGui::GetIO().AddMouseWheelEvent(float(hdelta), float(vdelta));
+            ImGui::GetIO().AddMouseWheelEvent(-float(hdelta), float(vdelta));
         }
 
         void char_input(u32 character) override {

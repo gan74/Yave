@@ -118,6 +118,7 @@ class Window : NonMovable {
 #ifdef Y_OS_WIN
         friend void notify_resized(Window* win);
         friend void update_capture_state(Window* win, bool button_down, MouseButton button);
+        friend void release_mouse_buttons(Window* win);
 
         HINSTANCE_ _hinstance = nullptr;
         HWND_ _hwnd = nullptr;

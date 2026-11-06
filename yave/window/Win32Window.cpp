@@ -147,7 +147,6 @@ static LPTSTR to_windows_cursor_icon(CursorShape shape) {
     }
 }
 
-[[maybe_unused]]
 static math::Vec2i client_mouse_pos(Window* win) {
     POINT mouse_pos = {};
     ::GetCursorPos(&mouse_pos);
@@ -172,6 +171,22 @@ void update_capture_state(Window* win, bool button_down, MouseButton button) {
         win->_mouse_state &= ~mask;
         if(!win->_mouse_state && ::GetCapture() == win->handle()) {
             ::ReleaseCapture();
+        }
+    }
+}
+
+void release_mouse_buttons(Window* win) {
+    if(!win->_mouse_state) {
+        return;
+    }
+
+    const u32 state = std::exchange(win->_mouse_state, 0);
+    if(EventHandler* handler = win->event_handler()) {
+        const math::Vec2i pos = client_mouse_pos(win);
+        for(u32 i = 0; i != u32(MouseButton::Max); ++i) {
+            if(state & (1 << i)) {
+                handler->mouse_released(pos, MouseButton(i));
+            }
         }
     }
 }
@@ -232,6 +247,12 @@ static LRESULT CALLBACK windows_event_handler(HWND hwnd, UINT u_msg, WPARAM w_pa
                     return 0;
                 }
              } break;
+
+            case WM_CAPTURECHANGED:
+                if(HWND(l_param) != hwnd) {
+                    release_mouse_buttons(window);
+                }
+            break;
 
             case WM_MOUSEMOVE:
                 if(const auto handler = window->event_handler()) {
