@@ -45,6 +45,8 @@ struct RTGISettings {
     float pos_jitter = 1.0f;
     float norm_jitter = 0.5f;
     float lod_jitter = 0.5f;
+    
+    bool reset = false;
 };
 
 struct RTGIPass {

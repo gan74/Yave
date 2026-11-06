@@ -60,8 +60,6 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     unused(display_sky);
     const u32 gi_light_count = u32(std::count_if(visibility.directional_lights.begin(), visibility.directional_lights.end(), [](const auto& l) { return l->component.cast_gi(); }));
 
-
-
     FrameGraphComputePassBuilder builder = framegraph.add_compute_pass("RTGI pass");
 
     const auto gi = builder.declare_image(VK_FORMAT_B10G11R11_UFLOAT_PACK32, size);
@@ -75,12 +73,10 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     const auto [hash, hash_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_hash_id, hash_size * 4);
     const auto [sum, sum_reset] = framegraph.create_scratch_buffer<shader::RTGICell, BufferUsage::StorageBit>(persistent_sum_id, hash_size);
     const auto [update_indices, update_indices_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_update_indices_id, max_updates);
-    const auto [update_count, update_count_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_update_count_id, 4);
+    const auto [update_count, update_count_reset] = framegraph.create_scratch_buffer<u32, BufferUsage::StorageBit>(persistent_update_count_id, 8);
     const auto [update_data, update_data_reset] = framegraph.create_scratch_buffer<math::Vec4, BufferUsage::StorageBit>(persistent_update_data_id, hash_size);
 
-    const bool reset = false; // editor::debug_values().command("Reset RTGI");
     unused(update_indices_reset, update_data_reset);
-
 
     const struct Params {
         u32 hash_size;
@@ -108,7 +104,7 @@ RTGIPass RTGIPass::create(FrameGraph& framegraph, const GBufferPass& gbuffer, Fr
     } params {
         hash_size,
         u32(framegraph.frame_id()),
-        u32(hash_reset || sum_reset || update_count_reset || reset ? 1 : 0),
+        u32(hash_reset || sum_reset || update_count_reset || settings.reset ? 1 : 0),
         settings.lod_jitter,
 
         settings.lod_dist,

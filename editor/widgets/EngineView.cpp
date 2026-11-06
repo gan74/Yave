@@ -190,7 +190,6 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
     DstTexture output;
     FrameGraph framegraph(_resource_pool);
 
-
     EditorRendererSettings settings = _settings;
     {
         settings.show_debug_drawer = app_settings().debug.display_debug_drawer;
@@ -261,6 +260,8 @@ void EngineView::draw(CmdBufferRecorder& recorder) {
 
 void EngineView::update() {
     set_is_moving_camera(false);
+
+    _settings.renderer_settings.rtgi.reset = false;
 
     if(!ImGui::IsWindowHovered() || !is_mouse_inside()) {
         if(ImGui::BeginDragDropTarget()) {
@@ -613,17 +614,17 @@ void EngineView::draw_settings_menu() {
 
         {
             int ray_budget = int(settings.ray_budget >> 10);
-            ImGui::SliderInt("Ray budget", &ray_budget, 256, 8 * 1024, "%dk");
+            settings.reset |= ImGui::SliderInt("Ray budget", &ray_budget, 256, 8 * 1024, "%dk");
             settings.ray_budget = u32(ray_budget) << 10;
         }
 
-        ImGui::SliderFloat("Max ray length", &settings.max_ray_length, 1.0f, 10000.0f, "%.1f", ImGuiSliderFlags_Logarithmic);
+        settings.reset |= ImGui::SliderFloat("Max ray length", &settings.max_ray_length, 1.0f, 10000.0f, "%.1f", ImGuiSliderFlags_Logarithmic);
 
         ImGui::Separator();
 
         {
             int gather_samples = int(settings.gather_samples);
-            ImGui::SliderInt("Gather samples", &gather_samples, 1, 16);
+            settings.reset |= ImGui::SliderInt("Gather samples", &gather_samples, 1, 16);
             settings.gather_samples = u32(gather_samples);
         }
 
@@ -632,22 +633,22 @@ void EngineView::draw_settings_menu() {
         {
             int ray_min = int(settings.min_cell_rays);
             int ray_max = int(settings.max_cell_rays);
-            ImGui::SliderInt("Min rays per cell", &ray_min, 1, 64);
-            ImGui::SliderInt("Max rays per cell", &ray_max, 64, 4096);
+            settings.reset |= ImGui::SliderInt("Min rays per cell", &ray_min, 1, 64);
+            settings.reset |= ImGui::SliderInt("Max rays per cell", &ray_max, 64, 4096);
             settings.min_cell_rays = u32(std::min(ray_min, ray_max));
             settings.max_cell_rays = u32(std::max(ray_min, ray_max));
         }
 
         ImGui::Separator();
 
-        ImGui::SliderFloat("Cell size", &settings.base_cell_size, 0.01f, 0.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
-        ImGui::SliderFloat("LoD distance", &settings.lod_dist, 1.0f, 100.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+        settings.reset |= ImGui::SliderFloat("Cell size", &settings.base_cell_size, 0.01f, 0.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
+        settings.reset |= ImGui::SliderFloat("LoD distance", &settings.lod_dist, 1.0f, 100.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
 
         ImGui::Separator();
 
-        ImGui::SliderFloat("LoD jitter", &settings.lod_jitter, 0.0f, 1.0f);
-        ImGui::SliderFloat("Position jitter", &settings.pos_jitter, 0.0f, 4.0f);
-        ImGui::SliderFloat("Normal jitter", &settings.norm_jitter, 0.0f, 2.0f);
+        settings.reset |= ImGui::SliderFloat("LoD jitter", &settings.lod_jitter, 0.0f, 1.0f);
+        settings.reset |= ImGui::SliderFloat("Position jitter", &settings.pos_jitter, 0.0f, 4.0f);
+        settings.reset |= ImGui::SliderFloat("Normal jitter", &settings.norm_jitter, 0.0f, 2.0f);
 
         ImGui::EndMenu();
     }
