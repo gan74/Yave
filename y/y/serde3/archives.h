@@ -644,7 +644,7 @@ class ReadableArchive final {
             size_type collection_size = 0;
             y_try(read_one(collection_size));
 
-            if constexpr(IsRange) {
+            if constexpr(IsRange || is_array<T>) {
                 if(collection_size != object.object.size()) {
                     return core::Err(Error(ErrorType::SizeError, object.name.data()));
                 }

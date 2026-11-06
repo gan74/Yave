@@ -620,7 +620,7 @@ template<typename C, typename P, typename T, typename U>
 static void make_persistent(C& c, P& persistents, T res, U persistent_id) {
     persistent_id.check_valid();
     auto& info = check_exists(c, res);
-    y_debug_assert(std::find(info.persistents.begin(), info.persistents.end(), persistent_id) == info.persistents.end());
+    y_always_assert(info.persistents.is_empty(), "Resource can only have one persistent id");
     info.persistents << persistent_id;
 
     persistents.set_min_size(persistent_id.id() + 1);
