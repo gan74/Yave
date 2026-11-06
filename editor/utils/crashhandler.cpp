@@ -84,7 +84,7 @@ static int print_addr(STACKFRAME64 frame) {
     // https://gist.github.com/jvranish/4441299
     // http://theorangeduck.com/page/printing-stack-trace-mingw
     char buffer[512] = {};
-    std::sprintf(buffer, "addr2line -f -p -s -C -e %s %p", __argv[0], ptr);
+    std::snprintf(buffer, sizeof(buffer), "addr2line -f -p -s -C -e %s %p", __argv[0], ptr);
     return ::system(buffer);
 #endif
 }

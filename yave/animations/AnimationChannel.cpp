@@ -24,24 +24,26 @@ SOFTWARE.
 
 namespace yave {
 
-AnimationChannel::AnimationChannel(const core::String& name, core::Vector<BoneKey>&& keys) : _name(name), _keys(keys) {
+AnimationChannel::AnimationChannel(const core::String& name, core::Vector<BoneKey>&& keys) : _name(name), _keys(std::move(keys)) {
     if(_keys.is_empty()) {
         y_fatal("Empty animation channel");
     }
 }
 
 math::Transform<> AnimationChannel::bone_transform(float time) const {
-    auto key = std::find_if(_keys.begin(), _keys.end(), [=](const auto& k) { return k.time > time; });
+    const auto next = std::upper_bound(_keys.begin(), _keys.end(), time, [](float t, const BoneKey& k) { return t < k.time; });
 
-    const auto next = key == _keys.end() ? _keys.begin() : key;
-    key = key == _keys.begin() ? key : std::prev(key);
+    if(next == _keys.begin()) {
+        return _keys[0].local_transform.to_transform();
+    }
 
-    float delta = next->time - key->time;
-    delta = delta < 0.0f ? delta + _keys.last().time : delta;
+    const auto prev = std::prev(next);
+    if(next == _keys.end()) {
+        return prev->local_transform.to_transform();
+    }
 
-    const float factor = (time - key->time) / delta;
-
-    return key->local_transform.lerp(next->local_transform, factor);
+    const float factor = (time - prev->time) / (next->time - prev->time);
+    return prev->local_transform.lerp(next->local_transform, factor);
 }
 
 

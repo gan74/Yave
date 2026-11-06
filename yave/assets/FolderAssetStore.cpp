@@ -914,6 +914,11 @@ FolderAssetStore::Result<> FolderAssetStore::load_asset_descs() {
                 }
             }
         });
+
+        if(!result) {
+            log_msg(fmt("Unable to enumerate assets in \"{}\"", _root), Log::Error);
+            return core::Err(ErrorType::FilesytemError);
+        }
     }
 
 
@@ -993,8 +998,13 @@ FolderAssetStore::Result<> FolderAssetStore::reload_all() {
 
     const auto lock = std::unique_lock(_lock);
 
-    load_tree().unwrap();
-    load_asset_descs().unwrap();
+    if(auto r = load_tree(); !r) {
+        return r;
+    }
+
+    if(auto r = load_asset_descs(); !r) {
+        return r;
+    }
 
     rebuild_id_map();
 

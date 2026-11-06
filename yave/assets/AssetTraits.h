@@ -35,8 +35,6 @@ struct AssetTraits {
     static constexpr bool is_asset = false;
 };
 
-Y_TODO(Merge these two)
-
 #define YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(Type, LoadFrom, TypeEnum)                         \
     template<>                                                                              \
     struct AssetTraits<Type> {                                                              \
@@ -46,12 +44,7 @@ Y_TODO(Merge these two)
     }
 
 #define YAVE_DECLARE_GENERIC_ASSET_TRAITS(Type, TypeEnum)                                   \
-    template<>                                                                              \
-    struct AssetTraits<Type> {                                                              \
-        static constexpr bool is_asset = true;                                              \
-        static constexpr AssetType type = TypeEnum;                                         \
-        using load_from = Type;                                                             \
-    }
+    YAVE_DECLARE_GRAPHIC_ASSET_TRAITS(Type, Type, TypeEnum)
 
 
 }

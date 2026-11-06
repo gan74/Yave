@@ -198,8 +198,20 @@ void UndoRedoSystem::setup(ecs::SystemScheduler& sched) {
             };
 
             UndoState state;
-            for(const ecs::EntityId id : world().pending_deletions()) {
+            const ecs::SparseIdSet& pending_deletions = world().pending_deletions();
+            for(const ecs::EntityId id : pending_deletions) {
                 state.removed_entities.emplace_back(id, world().parent(id));
+
+                ecs::EntityId new_parent = world().parent(id);
+                while(new_parent.is_valid() && pending_deletions.contains(new_parent)) {
+                    new_parent = world().parent(new_parent);
+                }
+
+                for(const ecs::EntityId child : world().direct_children(id)) {
+                    if(!pending_deletions.contains(child) && !world().parent_changed().contains(child)) {
+                        state.parent_changed.emplace_back(child, id, new_parent);
+                    }
+                }
             }
 
             for(const ecs::EntityId id : world().recently_added()) {
@@ -326,6 +338,7 @@ void UndoRedoSystem::push_state(UndoState state) {
                         return false;
                     }
                 }
+                return true;
             }
             return a == b;
         };
