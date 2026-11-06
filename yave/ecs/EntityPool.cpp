@@ -151,7 +151,7 @@ bool EntityPool::has_children(EntityId id) const {
 }
 
 EntityId EntityPool::parent(EntityId id) const {
-    if(id.index() < _entities.size()) {
+    if(exists(id)) {
         return _entities[id.index()].parent;
     }
     return {};
