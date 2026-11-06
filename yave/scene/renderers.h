@@ -57,7 +57,7 @@ class StaticMeshRenderer final : public RendererBase {
 
 class SkinnedMeshRenderer final : public RendererBase {
     public:
-        using PositionBuffer = Buffer<BufferUsage::StorageBit | BufferUsage::AccelStructureInputBit, MemoryType::DeviceLocal>;
+        using SkinnedStreamBuffer = Buffer<BufferUsage::StorageBit | BufferUsage::AccelStructureInputBit, MemoryType::DeviceLocal>;
         using MeshDataBuffer = TypedBuffer<shader::StaticMeshData, BufferUsage::StorageBit, MemoryType::CpuVisible>;
 
         void update(ComputeCapableCmdBufferRecorder& recorder, Scene& scene) override;

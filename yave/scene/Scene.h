@@ -70,7 +70,8 @@ using DirectionalLightObject    = SceneObject<DirectionalLightComponent>;
 using SkyLightObject            = SceneObject<SkyLightComponent>;
 
 struct SkinnedMeshObject : TransformableSceneObject<SkinnedMeshComponent> {
-    SkinnedMeshRenderer::PositionBuffer skinned_positions;
+    SkinnedMeshRenderer::SkinnedStreamBuffer skinned_positions;
+    SkinnedMeshRenderer::SkinnedStreamBuffer skinned_tbns;
     u32 mesh_data_index = u32(-1);
 };
 

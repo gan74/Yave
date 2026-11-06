@@ -224,12 +224,18 @@ void SkinnedMeshRenderer::update(ComputeCapableCmdBufferRecorder& recorder, Scen
             const u32 vertex_count = mesh ? mesh->draw_data().vertex_count() : 0;
             if(!instance || !vertex_count) {
                 obj.skinned_positions = {};
+                obj.skinned_tbns = {};
                 continue;
             }
 
-            const u64 byte_size = vertex_count * sizeof(math::Vec3);
-            if(obj.skinned_positions.byte_size() != byte_size) {
-                obj.skinned_positions = PositionBuffer(byte_size);
+            const u64 position_byte_size = u64(vertex_count) * sizeof(math::Vec3);
+            if(obj.skinned_positions.byte_size() != position_byte_size) {
+                obj.skinned_positions = SkinnedStreamBuffer(position_byte_size);
+            }
+
+            const u64 tbn_byte_size = u64(vertex_count) * sizeof(math::Vec2ui);
+            if(obj.skinned_tbns.byte_size() != tbn_byte_size) {
+                obj.skinned_tbns = SkinnedStreamBuffer(tbn_byte_size);
             }
 
             instance->update();
@@ -238,7 +244,9 @@ void SkinnedMeshRenderer::update(ComputeCapableCmdBufferRecorder& recorder, Scen
 
             const auto descriptors = make_descriptor_set(
                 obj.skinned_positions,
+                obj.skinned_tbns,
                 SubBuffer<BufferUsage::StorageBit>(buffers.attribs[usize(VertexStreamType::Position)]),
+                SubBuffer<BufferUsage::StorageBit>(buffers.attribs[usize(VertexStreamType::NormalTangent)]),
                 mesh->skin_weights(),
                 instance->bone_transform_buffer(),
                 InlineDescriptor(vertex_count)
@@ -248,7 +256,7 @@ void SkinnedMeshRenderer::update(ComputeCapableCmdBufferRecorder& recorder, Scen
 
             mapping[i] = shader::StaticMeshData {
                 obj.skinned_positions.vk_device_address(),
-                buffers.attribs[usize(VertexStreamType::NormalTangent)].vk_device_address(),
+                obj.skinned_tbns.vk_device_address(),
                 buffers.attribs[usize(VertexStreamType::Uv)].vk_device_address(),
                 0
             };

@@ -4,15 +4,21 @@
 RWStructuredBuffer<float> out_positions;
 
 [[vk::binding(1)]]
-StructuredBuffer<float> in_positions;
+RWStructuredBuffer<uint2> out_tbns;
 
 [[vk::binding(2)]]
-StructuredBuffer<uint4> skin_weights;
+StructuredBuffer<float> in_positions;
 
 [[vk::binding(3)]]
-StructuredBuffer<float4x4> bone_transforms;
+StructuredBuffer<uint2> in_tbns;
 
 [[vk::binding(4)]]
+StructuredBuffer<uint4> skin_weights;
+
+[[vk::binding(5)]]
+StructuredBuffer<float4x4> bone_transforms;
+
+[[vk::binding(6)]]
 cbuffer Params {
     uint vertex_count;
 };
@@ -42,5 +48,17 @@ void comp_main() {
     out_positions[id * 3 + 0] = position.x;
     out_positions[id * 3 + 1] = position.y;
     out_positions[id * 3 + 2] = position.z;
+
+    const uint2 in_tbn = in_tbns[id];
+    const float3 in_normal = unpack_2_10_10_10(in_tbn.x).xyz;
+    const float4 in_tangent_sign = unpack_2_10_10_10(in_tbn.y);
+
+    const float3 normal = normalize(mul(bone_transform, float4(in_normal, 0.0)).xyz);
+    const float3 tangent = normalize(mul(bone_transform, float4(in_tangent_sign.xyz, 0.0)).xyz);
+
+    out_tbns[id] = uint2(
+        pack_2_10_10_10(normal),
+        pack_2_10_10_10(tangent, in_tangent_sign.w < 0.0)
+    );
 }
 

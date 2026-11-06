@@ -349,6 +349,11 @@ float3 unpack_normal_map(float2 normal) {
     return float3(normal, sqrt(saturate(1.0 - dot(normal, normal))));
 }
 
+uint pack_2_10_10_10(float3 v, bool sign = false) {
+    const uint3 q = uint3(round(saturate(v * 0.5 + 0.5) * float(0x03FF)));
+    return (q.x << 20) | (q.y << 10) | q.z | (sign ? (1u << 31) : 0u);
+}
+
 float4 unpack_2_10_10_10(uint packed) {
     return float4(
         (float3(
